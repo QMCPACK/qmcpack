@@ -15,7 +15,7 @@ from ..testing import FailedTest,failed
 from ..generic import NexusUserWarning
 from ..developer import obj
 from ..machines import Job
-from ..simulation import Simulation,SimulationInput,SimulationAnalyzer
+from ..simulation import Simulation,SimulationInput,SimulationAnalyzer, AppResult
 
 
 class SimulationInputForTests(SimulationInput):
@@ -70,7 +70,7 @@ class SimulationForTests(Simulation):
     input_type    = SimulationInputForTests
     analyzer_type = SimulationAnalyzerForTests
 
-    application_results = frozenset({'quant1','quant2','quant3'})
+    application_results = AppResult.STRUCTURE | AppResult.ORBITALS | AppResult.JASTROW
 
     def check_sim_status(self):
         self.finished = True
@@ -870,8 +870,8 @@ def test_virtuals():
     s = Simulation()
 
     virts = [
-        (s.check_result,[None,None]),
-        (s.get_result,[None,None]),
+        (s.check_result,[AppResult.STRUCTURE,None]),
+        (s.get_result,[AppResult.STRUCTURE,None]),
         (s.incorporate_result,[None,None,None]),
         s.app_command,
         s.check_sim_status,
@@ -1076,10 +1076,7 @@ def check_dependency_objects(*sims,**kwargs):
                 assert(len(dep)==3)
                 assert(isinstance(dep.sim,Simulation))
                 assert(simid==dep.sim.simid)
-                assert(isinstance(dep.result_names,list))
-                for name in dep.result_names:
-                    assert(isinstance(name,str))
-                #end for
+                assert(isinstance(dep.result_names,AppResult))
                 assert(isinstance(dep.results,obj))
                 assert(len(dep.results)==0)
             #end for
@@ -1117,7 +1114,7 @@ def check_dependency_objects(*sims,**kwargs):
 
 
 
-def check_dependency(sim2,sim1,quants=('other',),*,only=False,objects=False):
+def check_dependency(sim2,sim1,quants=AppResult.OTHER,*,only=False,objects=False):
     # sim2 depends on sim1 for all quantities
     if objects:
         check_dependency_objects(sim1)
@@ -1128,7 +1125,7 @@ def check_dependency(sim2,sim1,quants=('other',),*,only=False,objects=False):
     assert(sim1.simid in sim2.dependency_ids)
     assert(sim1.simid in sim2.dependencies)
     assert(id(sim2.dependencies[sim1.simid].sim)==id(sim1))
-    assert(set(sim2.dependencies[sim1.simid].result_names)==set(quants))
+    assert(sim2.dependencies[sim1.simid].result_names is quants)
     if only:
         assert(len(sim1.dependents)==1)
         assert(len(sim2.dependency_ids)==1)
@@ -1179,55 +1176,55 @@ def test_depends():
     s1 = get_test_sim()
     s2 = get_test_sim()
 
-    quants = ['quant1','quant2','quant3']
+    quants = AppResult.STRUCTURE | AppResult.ORBITALS | AppResult.JASTROW
 
     check_dependency_objects(s1,empty=True)
     check_dependency_objects(s2,empty=True)
 
-    s2.depends(s1,'quant1','quant2','quant3')
+    s2.depends(s1, AppResult.STRUCTURE | AppResult.ORBITALS | AppResult.JASTROW)
 
     check_dependency(s2,s1,quants,objects=True,only=True)
     del s1,s2
 
     s1 = get_test_sim()
     s2 = get_test_sim()
-    s2.depends(s1,'quant1')
-    s2.depends(s1,'quant2')
-    s2.depends(s1,'quant3')
+    s2.depends(s1,AppResult.STRUCTURE)
+    s2.depends(s1,AppResult.ORBITALS)
+    s2.depends(s1,AppResult.JASTROW)
     check_dependency(s2,s1,quants,objects=True,only=True)
     del s1,s2
 
     s1 = get_test_sim()
     s2 = get_test_sim()
-    s2.depends(s1,'quant1','quant2')
-    s2.depends(s1,'quant3')
+    s2.depends(s1,AppResult.STRUCTURE | AppResult.ORBITALS)
+    s2.depends(s1,AppResult.JASTROW)
     check_dependency(s2,s1,quants,objects=True,only=True)
     del s1,s2
 
     s1 = get_test_sim()
     s2 = get_test_sim()
-    s2.depends((s1,'quant1','quant2','quant3'))
+    s2.depends((s1,AppResult.STRUCTURE | AppResult.ORBITALS | AppResult.JASTROW))
     check_dependency(s2,s1,quants,objects=True,only=True)
     del s1,s2
 
     s1 = get_test_sim()
     s2 = get_test_sim()
-    s2.depends((s1,'quant1'))
-    s2.depends((s1,'quant2'))
-    s2.depends((s1,'quant3'))
+    s2.depends((s1,AppResult.STRUCTURE))
+    s2.depends((s1,AppResult.ORBITALS))
+    s2.depends((s1,AppResult.JASTROW))
     check_dependency(s2,s1,quants,objects=True,only=True)
     del s1,s2
 
     s1 = get_test_sim()
     s2 = get_test_sim(
-        dependencies = (s1,'quant1','quant2','quant3'),
+        dependencies = (s1,'structure','orbitals','jastrow'),
         )
     check_dependency(s2,s1,quants,objects=True,only=True)
     del s1,s2
 
     s1 = get_test_sim()
     s2 = get_test_sim(
-        dependencies = [(s1,'quant1','quant2','quant3')],
+        dependencies = [(s1,'structure','orbitals','jastrow')],
         )
     check_dependency(s2,s1,quants,objects=True,only=True)
     del s1,s2
@@ -1235,9 +1232,9 @@ def test_depends():
     s1 = get_test_sim()
     s2 = get_test_sim(
         dependencies = [
-            (s1,'quant1'),
-            (s1,'quant2'),
-            (s1,'quant3'),
+            (s1,'structure'),
+            (s1,'orbitals'),
+            (s1,'jastrow'),
             ],
         )
     check_dependency(s2,s1,quants,objects=True,only=True)
@@ -1251,94 +1248,102 @@ def test_depends():
 
     s21 = get_test_sim(
         dependencies = [
-            (s11,'quant1'),
-            (s12,'quant2'),
+            (s11,'structure'),
+            (s12,'orbitals'),
             ]
         )
     s22 = get_test_sim(
         dependencies = [
-            (s12,'quant2'),
-            (s13,'quant3'),
+            (s12,'orbitals'),
+            (s13,'jastrow'),
             ]
         )
 
     s31 = get_test_sim(
         dependencies = [
-            (s21,'quant1'),
-            (s22,'quant2'),
+            (s21,'structure'),
+            (s22,'orbitals'),
             ]
         )
     s32 = get_test_sim(
         dependencies = [
-            (s21,'quant1'),
-            (s22,'quant2'),
+            (s21,'structure'),
+            (s22,'orbitals'),
             ]
         )
     s33 = get_test_sim(
         dependencies = [
-            (s21,'quant1'),
-            (s22,'quant2'),
+            (s21,'structure'),
+            (s22,'orbitals'),
             ]
         )
 
     s41 = get_test_sim(
         dependencies = [
-            (s11,'quant1'),
-            (s22,'quant2'),
-            (s32,'quant3'),
+            (s11,'structure'),
+            (s22,'orbitals'),
+            (s32,'jastrow'),
             ]
         )
 
     check_dependency_objects(s11,s12,s13,s21,s22,s31,s32,s33,s41)
 
-    check_dependency(s21,s11,['quant1'])
-    check_dependency(s21,s12,['quant2'])
+    check_dependency(s21,s11,AppResult.STRUCTURE)
+    check_dependency(s21,s12,AppResult.ORBITALS)
 
-    check_dependency(s22,s12,['quant2'])
-    check_dependency(s22,s13,['quant3'])
+    check_dependency(s22,s12,AppResult.ORBITALS)
+    check_dependency(s22,s13,AppResult.JASTROW)
 
-    check_dependency(s31,s21,['quant1'])
-    check_dependency(s31,s22,['quant2'])
+    check_dependency(s31,s21,AppResult.STRUCTURE)
+    check_dependency(s31,s22,AppResult.ORBITALS)
 
-    check_dependency(s32,s21,['quant1'])
-    check_dependency(s32,s22,['quant2'])
+    check_dependency(s32,s21,AppResult.STRUCTURE)
+    check_dependency(s32,s22,AppResult.ORBITALS)
 
-    check_dependency(s33,s21,['quant1'])
-    check_dependency(s33,s22,['quant2'])
+    check_dependency(s33,s21,AppResult.STRUCTURE)
+    check_dependency(s33,s22,AppResult.ORBITALS)
 
-    check_dependency(s41,s11,['quant1'])
-    check_dependency(s41,s22,['quant2'])
-    check_dependency(s41,s32,['quant3'])
+    check_dependency(s41,s11,AppResult.STRUCTURE)
+    check_dependency(s41,s22,AppResult.ORBITALS)
+    check_dependency(s41,s32,AppResult.JASTROW)
 
     del s11,s12,s13,s21,s22,s31,s32,s33,s41
 
 
+    s1 = get_sim()
+    # Fail for unknown dependency name
+    with pytest.raises(
+        ValueError,
+        match="Result name 'bean' is not a known application result!"
+        ):
+        get_sim(
+            dependencies = [(s1,'bean')],
+            )
+
     # fail when dependency does not exist
     with pytest.raises(
         ValueError,
-        match="quant1 is not known to be a result of Simulation"
+        match="'wavefunction' is not known to be a result of Simulation"
         ):
-        s1 = get_sim()
-        s2 = get_sim(
-            dependencies = [(s1,'quant1')],
+        get_sim(
+            dependencies = [(s1,'wavefunction')],
             )
 
     with pytest.raises(
         ValueError,
-        match="quant2 is not known to be a result of Simulation"
+        match="'wavefunction' is not known to be a result of Simulation"
         ):
-        s1 = get_sim()
-        s2 = get_sim(
-            dependencies = [(s1,'other','quant2')],
+        get_sim(
+            dependencies = [(s1,'other','wavefunction')],
             )
 
+    s1 = get_test_sim()
     with pytest.raises(
         ValueError,
-        match="apple is not known to be a result of SimulationForTests"
+        match="'wavefunction' is not known to be a result of SimulationForTests"
         ):
-        s1 = get_test_sim()
-        s2 = get_test_sim(
-            dependencies = [(s1,'quant1','apple')],
+        get_test_sim(
+            dependencies = [(s1,'structure','wavefunction')],
             )
 
     Simulation.clear_all_sims()
@@ -1407,41 +1412,41 @@ def test_check_dependencies():
 
     s21 = get_test_sim(
         dependencies = [
-            (s11,'quant1'),
-            (s12,'quant2'),
+            (s11,'structure'),
+            (s12,'orbitals'),
             ]
         )
     s22 = get_test_sim(
         dependencies = [
-            (s12,'quant2'),
-            (s13,'quant3'),
+            (s12,'orbitals'),
+            (s13,'jastrow'),
             ]
         )
 
     s31 = get_test_sim(
         dependencies = [
-            (s21,'quant1'),
-            (s22,'quant2'),
+            (s21,'structure'),
+            (s22,'orbitals'),
             ]
         )
     s32 = get_test_sim(
         dependencies = [
-            (s21,'quant1'),
-            (s22,'quant2'),
+            (s21,'structure'),
+            (s22,'orbitals'),
             ]
         )
     s33 = get_test_sim(
         dependencies = [
-            (s21,'quant1'),
-            (s22,'quant2'),
+            (s21,'structure'),
+            (s22,'orbitals'),
             ]
         )
 
     s41 = get_test_sim(
         dependencies = [
-            (s11,'quant1'),
-            (s22,'quant2'),
-            (s32,'quant3'),
+            (s11,'structure'),
+            (s22,'orbitals'),
+            (s32,'jastrow'),
             ]
         )
 
@@ -1453,11 +1458,11 @@ def test_check_dependencies():
 
 
     # non-existent dependency
+    s = get_test_sim()
     with pytest.raises(
         ValueError,
-        match="nonexistent is not known to be a result of SimulationForTests"
+        match="Result name 'nonexistent' is not a known application result!"
         ):
-        s  = get_test_sim()
         s2 = get_test_sim(dependencies=((s,'nonexistent')))
 
 
@@ -1473,17 +1478,14 @@ def test_check_dependencies():
 
     s2 = get_test_sim(
         input = GenInput(),
-        dependencies = (s,'quant1')
+        dependencies = (s,'structure')
         )
 
     result = obj(dependencies_satisfied=True)
     s.check_dependencies(result)
     assert(result.dependencies_satisfied)
 
-    with pytest.warns(
-        NexusUserWarning,
-        match="a simulation result cannot be inferred from generic formatted or template input"
-        ):
+    with pytest.warns(NexusUserWarning):
         s2.check_dependencies(result)
 
     Simulation.clear_all_sims()
@@ -1508,44 +1510,44 @@ def test_get_dependencies():
     simdeps[s13.simid] = deps
 
     deps = [
-        (s11,'quant1'),
-        (s12,'quant2'),
+        (s11,'structure'),
+        (s12,'orbitals'),
         ]
     s21 = get_test_sim(dependencies=deps)
     simdeps[s21.simid] = deps
 
     deps = [
-        (s12,'quant2'),
-        (s13,'quant3'),
+        (s12,'orbitals'),
+        (s13,'jastrow'),
         ]
     s22 = get_test_sim(dependencies=deps)
     simdeps[s22.simid] = deps
 
     deps = [
-        (s21,'quant1'),
-        (s22,'quant2'),
+        (s21,'structure'),
+        (s22,'orbitals'),
         ]
     s31 = get_test_sim(dependencies=deps)
     simdeps[s31.simid] = deps
 
     deps = [
-        (s21,'quant1'),
-        (s22,'quant2'),
+        (s21,'structure'),
+        (s22,'orbitals'),
         ]
     s32 = get_test_sim(dependencies=deps)
     simdeps[s32.simid] = deps
 
     deps = [
-        (s21,'quant1'),
-        (s22,'quant2'),
+        (s21,'structure'),
+        (s22,'orbitals'),
         ]
     s33 = get_test_sim(dependencies=deps)
     simdeps[s33.simid] = deps
 
     deps = [
-        (s11,'quant1'),
-        (s22,'quant2'),
-        (s32,'quant3'),
+        (s11,'structure'),
+        (s22,'orbitals'),
+        (s32,'jastrow'),
         ]
     s41 = get_test_sim(dependencies=deps)
     simdeps[s41.simid] = deps
@@ -1560,7 +1562,7 @@ def test_get_dependencies():
         deps = simdeps[s.simid]
         for sim,resname in deps:
             assert(sim.simid in resdata)
-            assert(resdata[sim.simid]==resname)
+            assert(resdata[sim.simid]==AppResult[resname.upper()])
         #end for
     #end for
 
@@ -1579,41 +1581,41 @@ def test_downstream_simids():
 
     s21 = get_test_sim(
         dependencies = [
-            (s11,'quant1'),
-            (s12,'quant2'),
+            (s11,'structure'),
+            (s12,'orbitals'),
             ]
         )
     s22 = get_test_sim(
         dependencies = [
-            (s12,'quant2'),
-            (s13,'quant3'),
+            (s12,'orbitals'),
+            (s13,'jastrow'),
             ]
         )
 
     s31 = get_test_sim(
         dependencies = [
-            (s21,'quant1'),
-            (s22,'quant2'),
+            (s21,'structure'),
+            (s22,'orbitals'),
             ]
         )
     s32 = get_test_sim(
         dependencies = [
-            (s21,'quant1'),
-            (s22,'quant2'),
+            (s21,'structure'),
+            (s22,'orbitals'),
             ]
         )
     s33 = get_test_sim(
         dependencies = [
-            (s21,'quant1'),
-            (s22,'quant2'),
+            (s21,'structure'),
+            (s22,'orbitals'),
             ]
         )
 
     s41 = get_test_sim(
         dependencies = [
-            (s11,'quant1'),
-            (s22,'quant2'),
-            (s32,'quant3'),
+            (s11,'structure'),
+            (s22,'orbitals'),
+            (s32,'jastrow'),
             ]
         )
 
@@ -2905,14 +2907,15 @@ def test_generic_simulation(tmp_path):
 
 
 
-def test_graph_sims():
+def test_graph_sims(tmp_path):
     _ = pytest.importorskip("matplotlib")
     _ = pytest.importorskip("pydot")
     from ..simulation import Simulation,graph_sims
 
     sims = get_test_workflow(3)
 
-    graph_sims(list(sims.values()),display=False,exit=False)
+    tmp_file = tmp_path / "pydot.png"
+    graph_sims(list(sims.values()), savefile=str(tmp_file), display=False,exit=False)
 
     Simulation.clear_all_sims()
 #end def test_graph_sims

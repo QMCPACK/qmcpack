@@ -63,27 +63,49 @@
 #      User-facing function to create SimulationInputMultiTemplate's.#
 #                                                                    #
 #====================================================================#
+from __future__ import annotations
 
-
-import contextlib
 import os
-import sys
 import shutil
+import sys
 import tempfile
 import traceback
-from functools import partial
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from datetime import datetime
+from enum import Flag, auto
 from pathlib import Path
 from string import Template
 from subprocess import Popen
-from typing import ClassVar
-from .developer import DevBase, obj, FileFormatError, NexusError
-from .structure import Structure, read_structure
-from .physical_system import PhysicalSystem
+from typing import Any, ClassVar
+
+from .developer import DevBase, FileFormatError, NexusError, obj
 from .machines import Job, Workstation, get_machine
 from .nexus_base import NexusCore, nexus_config, SimStage, dynamic_storage
+from .physical_system import PhysicalSystem
+from .structure import Structure, read_structure
 from .utilities import path_string
+
+
+class AppResult(Flag):
+    """Flags for what results an application can produce."""
+
+    NONE = auto()
+    ENERGY = auto()
+    CHARGE_DENSITY = auto()
+    ORBITALS = auto()
+    WAVEFUNCTION = auto()
+    STRUCTURE = auto()
+    RESTART = auto()
+    JASTROW = auto()
+    CUSPCORR = auto()
+    HUBBARD_PARAMETERS = auto()
+    GC_OCCUPATION = auto()
+    PARTICLES = auto()
+    DETERMINANTSET = auto()
+    HAMILTONIAN = auto()
+    OTHER = auto()
+    PWSCF_ORBITALS = auto() # For DynamicProcess support
 
 
 class SimulationInput(NexusCore):
@@ -273,15 +295,34 @@ class Simulation(NexusCore):
     errfile_extension  = '.err'
     application   = 'simapp'
     application_properties = frozenset({'serial'})
-    application_results    = frozenset()
+    application_results: AppResult = AppResult.NONE
     allow_overlapping_files = False
-    allowed_inputs = frozenset({
-        'identifier','path','infile','outfile','errfile','imagefile',
-        'input','job','files','dependencies','analysis_request',
-        'block','block_subcascade','app_name','app_props','system',
-        'skip_submit','force_write','simlabel','fake_sim',
-        'restartable','force_restart'
-        })
+    allowed_inputs = frozenset(
+        {
+            "identifier",
+            "path",
+            "infile",
+            "outfile",
+            "errfile",
+            "imagefile",
+            "input",
+            "job",
+            "files",
+            "dependencies",
+            "analysis_request",
+            "block",
+            "block_subcascade",
+            "app_name",
+            "app_props",
+            "system",
+            "skip_submit",
+            "force_write",
+            "simlabel",
+            "fake_sim",
+            "restartable",
+            "force_restart",
+        }
+    )
     sim_imagefile      = 'sim.p'
     input_imagefile    = 'input.p'
     analyzer_imagefile = 'analyzer.p'
@@ -296,6 +337,12 @@ class Simulation(NexusCore):
 
     sim_directories: ClassVar[dict] = dict()
     all_sims: ClassVar[list] = []
+
+    # Type definitions
+    allowed_requirements: AppResult
+    produces: AppResult
+    products: obj
+    filled_products: bool
 
     @classmethod
     def clear_all_sims(cls):
@@ -422,12 +469,12 @@ class Simulation(NexusCore):
         # dynamic workflow support
         if nexus_config.dynamic:
             assert self.simid not in dynamic_storage.simulation_ids
-            self.produces = set()
+            self.produces = AppResult(0)
             self.products = obj()
             self.filled_products = False
             self.fill_produces()
             for prod in self.produces:
-                self.products[prod] = None
+                self.products[prod.name.lower()] = None
             dynamic_storage.simulations[self.simid] = self
             dynamic_storage.simulation_ids.add(self.simid)
             # instantly restore image/state data from disk
@@ -655,15 +702,22 @@ class Simulation(NexusCore):
     #end def ready
 
 
-    def check_result(self,result_name,sim):
+    def check_result(self, result_name: AppResult, sim: Simulation) -> bool:
+        """Check if ``result_name`` is produced by ``self``."""
         raise NotImplementedError
     #end def check_result
 
-    def get_result(self,result_name,sim):
+    def get_result(self, result_name: AppResult, sim: Simulation) -> obj | Any:
+        """Get result from ``self``."""
         raise NotImplementedError
     #end def get_result
 
-    def incorporate_result(self,result_name,result,sim):
+    def incorporate_result(
+        self,
+        result_name: AppResult,
+        result: Any,
+        sim: Simulation,
+    ):
         raise NotImplementedError
     #end def incorporate_result
 
@@ -720,12 +774,6 @@ class Simulation(NexusCore):
         None
     #end def post_analyze
 
-
-    def condense_name(self,name):
-        return name.strip().lower().replace('-','_').replace(' ','_')
-    #end def condense_name
-
-
     def has_generic_input(self):
         return isinstance(self.input,GenericSimulationInput)
     #end def has_generic_input
@@ -767,7 +815,7 @@ class Simulation(NexusCore):
     #end def create_directories
 
 
-    def depends(self,*dependencies):
+    def depends(self, *dependencies: tuple[Simulation, str]):
         if nexus_config.dynamic:
             msg = 'dynamic workflows do not allow explicit dependencies between simulations'
             raise ValueError(msg)
@@ -788,20 +836,38 @@ class Simulation(NexusCore):
             #end if
             dep = obj()
             dep.sim = sim
-            rn = []
+            rn = AppResult(0)
             msg = ""
-            app_results = sim.application_results | {'other'}
+            app_results = sim.application_results | AppResult.OTHER
             for name in d[1:]:
-                result_name = self.condense_name(name)
-                if result_name in app_results:
-                    rn.append(result_name)
+                if isinstance(name, str):
+                    result_name = name.strip().replace('-','_').replace(' ','_').upper()
+                    if result_name not in AppResult.__members__:
+                        msg = (
+                            f"Result name '{name}' is not a known application result!\n"
+                            f"Must be one of {[i.name.lower() for i in AppResult]}"
+                        )
+                        raise ValueError(msg)
+
+                    result = AppResult[result_name]
+                elif isinstance(name, AppResult):
+                    result = name
                 else:
-                    msg += name+' is not known to be a result of '+sim.__class__.__name__+"\n"
+                    msg = (
+                        "Invalid type for an application result!\n"
+                        f"Expected AppResult or str but got {type(name).__name__}"
+                    )
+                    raise TypeError(msg)
+
+                if result in app_results:
+                    rn |= result
+                else:
+                    msg += f"'{name}' is not known to be a result of {type(sim).__name__}\n"
                 #end if
             #end for
             if len(msg) > 0:
                 msg = (
-                    'unrecognized dependencies specified for simulation '+self.identifier+":\n"
+                    f"Unrecognized dependencies specified for simulation {self.identifier}:\n"
                     f"{msg}"
                     )
                 raise ValueError(msg)
@@ -810,12 +876,12 @@ class Simulation(NexusCore):
             dep.results = obj()
             if sim.simid not in self.dependencies:
                 self.ordered_dependencies.append(dep)
-                self.dependencies[sim.simid]=dep
-                sim.dependents[self.simid]=self
+                self.dependencies[sim.simid] = dep
+                sim.dependents[self.simid] = self
                 self.dependency_ids.add(sim.simid)
                 self.wait_ids.add(sim.simid)
             else:
-                self.dependencies[sim.simid].result_names.extend(dep.result_names)
+                self.dependencies[sim.simid].result_names |= dep.result_names
             #end if
         #end for
     #end def depends
@@ -875,7 +941,7 @@ class Simulation(NexusCore):
         for dep in self.dependencies.values():
             sim = dep.sim
             for result_name in dep.result_names:
-                if result_name!='other':
+                if result_name is not AppResult.OTHER:
                     if sim.has_generic_input():
                         calculating_result = False
                         cls = self.__class__
@@ -885,11 +951,11 @@ class Simulation(NexusCore):
                             'see error below for information identifying this simulation instance'
                             )
                     else:
-                        calculating_result = sim.check_result(result_name,self)
+                        calculating_result = sim.check_result(result_name, self)
                     #end if
                     if not calculating_result:
                         self.warn(
-                            f'simulation {sim.identifier} id {sim.simid} is not calculating result {result_name}\n'
+                            f'simulation {sim.identifier} id {sim.simid} is not calculating result {result_name.name}\n'
                             f'required by simulation {self.identifier} id {self.simid}\n'
                             f'{sim.identifier} {sim.simid} directory: {sim.locdir}\n'
                             f'{self.identifier} {self.simid} directory: {self.locdir}'
@@ -916,7 +982,7 @@ class Simulation(NexusCore):
             for dep in self.dependencies.values():
                 sim = dep.sim
                 for result_name in dep.result_names:
-                    if result_name!='other':
+                    if result_name is not AppResult.OTHER:
                         if sim.has_generic_input():
                             msg = (
                                 'a simulation result cannot be inferred from generic formatted or template input\n'
@@ -929,7 +995,7 @@ class Simulation(NexusCore):
                         #end if
                         dep.results[result_name] = sim.get_result(result_name,sim)
                     else:
-                        dep.results['other'] = obj()
+                        dep.results[AppResult.OTHER] = obj()
                     #end if
                 #end for
             #end for
@@ -937,7 +1003,7 @@ class Simulation(NexusCore):
                 for dep in self.ordered_dependencies:
                     sim = dep.sim
                     for result_name,result in dep.results.items():
-                        if result_name!='other':
+                        if result_name is not AppResult.OTHER:
                             if self.has_generic_input():
                                 msg = (
                                     'a simulation result cannot be incorporated into generic formatted or template input\n'
@@ -1935,7 +2001,7 @@ def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,displ
             other = nodes[simid].node
             if quants:
                 for quantity in dep.result_names:
-                    edge = Edge(other,node.node,label=quantity,fontsize='10.0')
+                    edge = Edge(other,node.node,label=quantity.name,fontsize='10.0')
                     graph.add_edge(edge)
                 #end for
             else:
@@ -1987,18 +2053,18 @@ class DynamicProcess(DevBase):
 
     all_dynamic_processes = obj()
 
-    allowed_requirements = frozenset({
-        'none',
-        'structure',
-        'charge_density',
-        'orbitals',
-        'jastrow',
-        'wavefunction',
-        'pwscf_orbitals', # explicit QE
-        })
+    allowed_requirements = (
+        AppResult.NONE
+        | AppResult.STRUCTURE
+        | AppResult.CHARGE_DENSITY
+        | AppResult.ORBITALS
+        | AppResult.JASTROW
+        | AppResult.WAVEFUNCTION
+        | AppResult.PWSCF_ORBITALS
+    )
 
     @classmethod
-    def check_first_gen(cls,kw):
+    def check_first_gen(cls, kw: Mapping) -> tuple[DynamicProcess, None] | tuple[None, obj]:
         nc_loc     = nexus_config.local_directory
         runs       = nexus_config.runs
         path       = kw['path']
@@ -2027,7 +2093,12 @@ class DynamicProcess(DevBase):
     #end def check_first_gen
 
 
-    def __init__(self,dpid,sim,requires):
+    def __init__(
+        self,
+        dpid: str,
+        sim: Simulation,
+        requires: AppResult | str | Sequence[str] | set[str],
+    ):
         # check dynamic id
         if dpid in self.all_dynamic_processes:
             msg = f'dynamic process created with overlapping id.  Provided id: {dpid}'
@@ -2039,59 +2110,51 @@ class DynamicProcess(DevBase):
             raise TypeError(msg)
 
         # check requires
-        if isinstance(requires,str):
-            requires = [requires]
-        elif not isinstance(requires,(tuple,list,set)):
-            msg = 'keyword "requires" must be a tuple, list or set of requirements'
+        reqs = AppResult(0)
+        if isinstance(requires, AppResult):
+            reqs |= requires
+        elif isinstance(requires, str):
+            reqs |= AppResult[requires.upper()]
+        elif isinstance(requires, tuple | list | set):
+            for req in requires:
+                if not isinstance(req, str):
+                    msg = (
+                        'each requirement in "requires" must be given as a string.\n'
+                        f'Type received: {type(req).__name__}\n'
+                        f'Value received: {req}'
+                        )
+                    raise TypeError(msg)
+
+                reqs |= AppResult[req.upper()]
+        else:
+            msg = "Keyword 'requires' must be a string, AppResult, tuple, list or set of requirements"
             raise TypeError(msg)
-        for req in requires:
-            if not isinstance(req,str):
-                msg = (
-                    'each requirement in "requires" must be given as a string.\n'
-                    f'Type received: {type(req).__name__}\n'
-                    f'Value received: {req}'
-                    )
-                raise TypeError(msg)
-        requires = set(requires)
-        invalid_reqs = requires-self.allowed_requirements
-        if len(invalid_reqs)>0:
-            msg = (
-                'invalid requirements provided.\n'
-                f'Allowed requirements: {list(self.allowed_requirements)}\n'
-                f'Requirements provided: {list(invalid_reqs)}'
-                )
-            raise ValueError(msg)
-        if len(requires)==0:
+
+        if reqs is AppResult(0):
             msg = (
                 "every simulation dynamic process must specify least one dependency requirement.\n"
                 "If there are no dependencies/requirements, set requires='none'"
                 )
             raise ValueError(msg)
-        if 'none' in requires:
-            requires.remove('none')
+
+        if AppResult.NONE in reqs:
+            reqs ^= AppResult.NONE # xor NONE out of the requirements.
 
         # check produces
         produces = sim.produces
-        if isinstance(produces,str):
-            produces = [produces]
-        if not isinstance(produces,(tuple,list,set)):
-            msg = 'keyword "requires" must be a tuple, list or set of products'
-            raise TypeError(msg)
-        for prod in produces:
-            if not isinstance(prod,str):
-                msg = (
-                    'each product in "produces" must be given as a string.\n'
-                    f'Type received: {type(prod).__name__}\n'
-                    f'Value received: {prod}'
-                    )
-                raise TypeError(msg)
-        produces = set(produces)
+        if not isinstance(produces, AppResult):
+            msg = (
+                "A simulation does not have its 'produces' attribute set properly!\n"
+                f"Expected AppResult, but got {type(produces).__name__}\n"
+                "This is a developer error, please report it!"
+            )
+            raise NexusError(msg)
 
         # initial values
         self.dpid       = dpid     # unique identifier, str
         self.sim        = sim      # wrapped Simulation object
-        self.requires   = requires # replaces dependencies
-        self.unmet_reqs = set(requires)
+        self.requires   = reqs     # replaces dependencies
+        self.unmet_reqs = reqs
         self.req_values = obj()
         self.reqs_met   = False
         self.produces   = produces
@@ -2103,19 +2166,22 @@ class DynamicProcess(DevBase):
     #end def __init__
 
 
-    def requirements_met(self):
+    def requirements_met(self) -> bool:
         '''Check if all input/dependency requirements are met'''
         if self.reqs_met:
             return True
+        req_vals_met = AppResult(0)
+        for req_val in self.req_values:
+            req_vals_met |= req_val
         reqs_met  = True
-        reqs_met &= len(self.unmet_reqs)==0
-        reqs_met &= len(self.requires-set(self.req_values))==0
+        reqs_met &= self.unmet_reqs is AppResult(0)
+        reqs_met &= (self.requires ^ req_vals_met) is AppResult(0)
         if reqs_met:
             self.reqs_met = reqs_met
         return reqs_met
     #end def requirements_met
 
-    def _check_get_product(self,prod_name):
+    def _check_get_product(self, prod_name: AppResult) -> Any:
         '''Support product getter functions
 
         Note that requirements are a subset of products
@@ -2123,15 +2189,15 @@ class DynamicProcess(DevBase):
         sim = self.sim
         msg = None
         if prod_name not in sim.produces:
-            msg = f'simulation does not produce "{prod_name}"'
+            msg = f'simulation does not produce "{prod_name.name}"'
         elif not sim.finished:
             msg = (
                 'Simulation is not finished\n'
-                f'Product "{prod_name}" not yet computed'
+                f'Product "{prod_name.name}" not yet computed'
                 )
         elif not sim.analyzed:
-            msg = f'simulation has not been analyzed, requested prod_name "{prod_name}" has not been computed yet'
-        elif prod_name not in sim.products:
+            msg = f'simulation has not been analyzed, requested prod_name "{prod_name.name}" has not been computed yet'
+        elif prod_name.name.lower() not in sim.products:
             msg = 'simulation products have not been handled correctly.  This is a developer error'
         if msg is not None:
             msg = (
@@ -2142,17 +2208,18 @@ class DynamicProcess(DevBase):
                 f'Dynamic process id  : {self.dpid}'
                 )
             raise NexusError(msg)
-        return sim.products[prod_name]
+        return sim.products[prod_name.name.lower()]
     #end def _check_get_product
 
 
-    def _check_set_requirement(self,
-                               req_name,
-                               req_value = None,
-                               req_type  = str,
-                               *,
-                               is_path   = False,
-                               ):
+    def _check_set_requirement(
+        self,
+        req_name: AppResult,
+        req_value: Any | None = None,
+        req_type: type | tuple[type] = str,
+        *,
+        is_path: bool = False,
+        ) -> bool:
         '''Support requirement setter functions'''
         # check supported requirement value types
         if not isinstance(req_value,req_type):
@@ -2169,7 +2236,7 @@ class DynamicProcess(DevBase):
         if req_name not in self.req_values:
             self.req_values[req_name] = req_value
             already_set = False
-        elif isinstance(req_value,(str,int)) and req_value!=self.req_values[req_name]:
+        elif isinstance(req_value, str | int) and req_value != self.req_values[req_name]:
             msg = (
                 f'attempted assignment of required parameter "{req_name}" with value differing from the original.\n'
                 f'Original value: {self.req_values[req_name]}\n'
@@ -2202,7 +2269,8 @@ class DynamicProcess(DevBase):
                 )
             raise FileNotFoundError(msg)
         # mark the requirement as fulfilled
-        self.unmet_reqs.remove(req_name)
+        if req_name in self.unmet_reqs:
+            self.unmet_reqs ^= req_name
         return already_set
     #end def _check_set_requirement
 
@@ -2219,34 +2287,38 @@ class DynamicProcess(DevBase):
     # getters for all possible requirements (subset of products)
     @property
     def structure(self):
-        return self._check_get_product('structure')
+        return self._check_get_product(AppResult.STRUCTURE)
 
     @property
     def charge_density(self):
-        return self._check_get_product('charge_density')
+        return self._check_get_product(AppResult.CHARGE_DENSITY)
 
     @property
     def orbitals(self):
-        return self._check_get_product('orbitals')
+        return self._check_get_product(AppResult.ORBITALS)
 
     @property
     def jastrow(self):
-        return self._check_get_product('jastrow')
+        return self._check_get_product(AppResult.JASTROW)
 
     @property
     def wavefunction(self):
-        return self._check_get_product('wavefunction')
+        return self._check_get_product(AppResult.WAVEFUNCTION)
 
     @property
     def pwscf_orbitals(self):
-        return self._check_get_product('pwscf_orbitals')
+        return self._check_get_product(AppResult.PWSCF_ORBITALS)
 
 
     # setters for all possible requirements
     @structure.setter
     def structure(self,struct):
         already_set = self._check_set_requirement(
-            'structure',struct,req_type=(str,Structure),is_path=True)
+            AppResult.STRUCTURE,
+            struct,
+            req_type=(str,Structure),
+            is_path=True,
+            )
         if already_set:
             return
         if isinstance(struct,str):
@@ -2259,7 +2331,10 @@ class DynamicProcess(DevBase):
     @charge_density.setter
     def charge_density(self,charge_density):
         already_set = self._check_set_requirement(
-            'charge_density',charge_density,is_path=True)
+            AppResult.CHARGE_DENSITY,
+            charge_density,
+            is_path=True,
+            )
         if already_set:
             return
         self.sim.receive_charge_density(charge_density)
@@ -2268,7 +2343,10 @@ class DynamicProcess(DevBase):
     @orbitals.setter
     def orbitals(self,orbitals):
         already_set = self._check_set_requirement(
-            'orbitals',orbitals,is_path=True)
+            AppResult.ORBITALS,
+            orbitals,
+            is_path=True,
+            )
         if already_set:
             return
         self.sim.receive_orbitals(orbitals)
@@ -2277,7 +2355,10 @@ class DynamicProcess(DevBase):
     @jastrow.setter
     def jastrow(self,jastrow):
         already_set = self._check_set_requirement(
-            'jastrow',jastrow,is_path=True)
+            AppResult.JASTROW,
+            jastrow,
+            is_path=True,
+            )
         if already_set:
             return
         self.sim.receive_jastrow(jastrow)
@@ -2286,7 +2367,10 @@ class DynamicProcess(DevBase):
     @wavefunction.setter
     def wavefunction(self,wavefunction):
         already_set = self._check_set_requirement(
-            'wavefunction',wavefunction,is_path=True)
+            AppResult.WAVEFUNCTION,
+            wavefunction,
+            is_path=True,
+            )
         if already_set:
             return
         self.sim.receive_wavefunction(wavefunction)
@@ -2295,7 +2379,10 @@ class DynamicProcess(DevBase):
     @pwscf_orbitals.setter
     def pwscf_orbitals(self,pwscf_orbitals):
         already_set = self._check_set_requirement(
-            'pwscf_orbitals',pwscf_orbitals,is_path=True)
+            AppResult.PWSCF_ORBITALS,
+            pwscf_orbitals,
+            is_path=True,
+            )
         if already_set:
             return
         self.sim.receive_pwscf_orbitals(pwscf_orbitals)

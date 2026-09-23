@@ -11,7 +11,7 @@ from . import isolate_nexus_core, create_pseudo_files, TEST_DIR
 from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
 from ..testing import value_eq,text_eq
-
+from ..simulation import AppResult
 
 
 def get_system(tiling=(1,1,1),kgrid=(1,1,1)):
@@ -95,34 +95,34 @@ def test_check_result():
 
     sim = get_qmcpack_sim()
 
-    assert(not sim.check_result('unknown',None))
-    assert(not sim.check_result('jastrow',None))
-    assert(not sim.check_result('wavefunction',None))
-    assert(not sim.check_result('cuspcorr',None))
-    assert(not sim.check_result('restart',None))
+    assert(not sim.check_result(AppResult.NONE,None))
+    assert(not sim.check_result(AppResult.JASTROW,None))
+    assert(not sim.check_result(AppResult.WAVEFUNCTION,None))
+    assert(not sim.check_result(AppResult.CUSPCORR,None))
+    assert(not sim.check_result(AppResult.RESTART,None))
 
     ds = sim.input.get('determinantset')
     ds.cuspcorrection = True
 
-    assert(not sim.check_result('jastrow',None))
-    assert(not sim.check_result('wavefunction',None))
-    assert(sim.check_result('cuspcorr',None))
+    assert(not sim.check_result(AppResult.JASTROW,None))
+    assert(not sim.check_result(AppResult.WAVEFUNCTION,None))
+    assert(sim.check_result(AppResult.CUSPCORR,None))
 
     opt = get_qmcpack_sim(identifier='opt',qmc='opt')
 
-    assert(opt.check_result('jastrow',None))
-    assert(opt.check_result('wavefunction',None))
-    assert(not opt.check_result('cuspcorr',None))
+    assert(opt.check_result(AppResult.JASTROW,None))
+    assert(opt.check_result(AppResult.WAVEFUNCTION,None))
+    assert(not opt.check_result(AppResult.CUSPCORR,None))
 
     restart_default = get_qmcpack_sim(identifier='restart_default',calculations=[dmc()])
     restart_zero = get_qmcpack_sim(identifier='restart_zero',calculations=[dmc(checkpoint=0)])
     restart_periodic = get_qmcpack_sim(identifier='restart_periodic',calculations=[dmc(checkpoint=5)])
     restart_disabled = get_qmcpack_sim(identifier='restart_disabled',calculations=[dmc(checkpoint=-1)])
 
-    assert(restart_default.check_result('restart',None))
-    assert(restart_zero.check_result('restart',None))
-    assert(restart_periodic.check_result('restart',None))
-    assert(not restart_disabled.check_result('restart',None))
+    assert(restart_default.check_result(AppResult.RESTART,None))
+    assert(restart_zero.check_result(AppResult.RESTART,None))
+    assert(restart_periodic.check_result(AppResult.RESTART,None))
+    assert(not restart_disabled.check_result(AppResult.RESTART,None))
 
     clear_all_sims()
 #end def test_check_result
@@ -147,11 +147,11 @@ def test_get_result(tmp_path):
 
     with pytest.raises(
         NotImplementedError,
-        match="ability to get result unknown has not been implemented",
+        match="Ability to get result 'NONE' has not been implemented!",
         ):
-        sim.get_result('unknown',None)
+        sim.get_result(AppResult.NONE,None)
 
-    result = sim.get_result('cuspcorr',None)
+    result = sim.get_result(AppResult.CUSPCORR,None)
 
     result_ref = obj(
         updet_cusps  = 'updet.cuspInfo.xml',
@@ -188,7 +188,7 @@ def test_get_result(tmp_path):
     config_file.touch()
     random_file.touch()
 
-    result = restart_sim.get_result('restart',None)
+    result = restart_sim.get_result(AppResult.RESTART,None)
 
     assert(len(result.restarts)==1)
     restart = result.restarts[0]
@@ -206,7 +206,7 @@ def test_get_result(tmp_path):
         FileNotFoundError,
         match='restart files do not exist'
         ):
-        restart_sim.get_result('restart',None)
+        restart_sim.get_result(AppResult.RESTART,None)
     #end with
     random_file.touch()
 
@@ -221,7 +221,7 @@ def test_get_result(tmp_path):
 
     qa.save(Path(sim.imresdir).resolve() / sim.analyzer_image)
 
-    result = sim.get_result('jastrow',None)
+    result = sim.get_result(AppResult.JASTROW,None)
 
     result_ref = obj(
         opt_file = 'opt.s003.opt.xml',
@@ -271,7 +271,7 @@ def test_restart_twist_average(tmp_path):
         Path(str(root)+'.random.h5').touch()
     #end for
 
-    result = source.get_result('restart',None)
+    result = source.get_result(AppResult.RESTART,None)
 
     assert([r.twistnum for r in result.restarts]==[0,1])
 
@@ -283,7 +283,7 @@ def test_restart_twist_average(tmp_path):
         )
     target.create_directories()
     target.twist_average([0,1])
-    target.incorporate_result('restart',result,source)
+    target.incorporate_result(AppResult.RESTART,result,source)
     target.got_dependencies = True
     target.write_prep()
 
@@ -341,7 +341,7 @@ def test_incorporate_result(tmp_path):
         dst = tmp_path / cc_file,
         )
 
-    result = vasp_struct.get_result('structure',None)
+    result = vasp_struct.get_result(AppResult.STRUCTURE,None)
 
     ion0 = sim.input.get('ion0')
     c = ion0.groups.C
@@ -355,7 +355,7 @@ def test_incorporate_result(tmp_path):
     assert(not value_eq(c.position[0],cp0,atol=1e-8))
     assert(not value_eq(c.position[0],rp0,atol=1e-8))
 
-    sim.incorporate_result('structure',result,vasp_struct)
+    sim.incorporate_result(AppResult.STRUCTURE,result,vasp_struct)
 
     ion0 = sim.input.get('ion0')
     c = ion0.groups.C
@@ -367,7 +367,7 @@ def test_incorporate_result(tmp_path):
 
     p2q_orb = get_pw2qmcpack_sim(identifier='p2q_orbitals')
 
-    result = p2q_orb.get_result('orbitals',None)
+    result = p2q_orb.get_result(AppResult.ORBITALS,None)
 
     p2q_output_path = tmp_path / 'pwscf_output'
     p2q_output_path.mkdir()
@@ -379,7 +379,7 @@ def test_incorporate_result(tmp_path):
     spo = sim.input.get('bspline')
     assert(spo.href=='MISSING.h5')
 
-    sim.incorporate_result('orbitals',result,p2q_orb)
+    sim.incorporate_result(AppResult.ORBITALS,result,p2q_orb)
 
     assert(spo.href=='pwscf_output/pwscf.pwscf.h5')
 
@@ -389,7 +389,7 @@ def test_incorporate_result(tmp_path):
 
     c4q_orb = get_convert4qmc_sim(identifier='c4q_orbitals')
 
-    result = c4q_orb.get_result('orbitals',None)
+    result = c4q_orb.get_result(AppResult.ORBITALS,None)
 
     wfn_file  = tmp_path / 'c4q_orbitals.wfj.xml'
     wfn_file2 = tmp_path / 'c4q_orbitals.orbs.h5'
@@ -410,7 +410,7 @@ def test_incorporate_result(tmp_path):
     dset = sim.input.get('determinantset')
     assert('href' not in dset)
 
-    sim.incorporate_result('orbitals',result,c4q_orb)
+    sim.incorporate_result(AppResult.ORBITALS,result,c4q_orb)
 
     dset = sim.input.get('determinantset')
     assert(dset.href=='c4q_orbitals.orbs.h5')
@@ -427,7 +427,7 @@ def test_incorporate_result(tmp_path):
 
     result = obj(opt_file=opt_file)
 
-    sim.incorporate_result('jastrow',result,sim)
+    sim.incorporate_result(AppResult.JASTROW,result,sim)
 
     j = sim.input.get('jastrow')
 
@@ -477,7 +477,7 @@ def test_incorporate_result(tmp_path):
     assert('mcwalkerset' not in sim.input.simulation)
 
     restart_source = obj(locdir=str(tmp_path/'restart1'))
-    sim.incorporate_result('restart',result,restart_source)
+    sim.incorporate_result(AppResult.RESTART,result,restart_source)
 
     walkers = sim.input.simulation.mcwalkerset
     assert(walkers.fileroot=='../restart1/restart_source.s001')
@@ -496,7 +496,7 @@ def test_incorporate_result(tmp_path):
         calculations = [dmc()],
         )
 
-    sim.incorporate_result('restart',result,restart_source)
+    sim.incorporate_result(AppResult.RESTART,result,restart_source)
 
     project = sim.input.simulation.project
     walkers = sim.input.simulation.mcwalkerset
@@ -514,7 +514,7 @@ def test_incorporate_result(tmp_path):
 
     result = obj(opt_file=opt_file)
 
-    sim.incorporate_result('wavefunction',result,sim)
+    sim.incorporate_result(AppResult.WAVEFUNCTION,result,sim)
 
     j = sim.input.get('jastrow')
 
@@ -528,7 +528,7 @@ def test_incorporate_result(tmp_path):
 
     p2a_wf = get_pyscf_to_afqmc_sim(identifier='p2a_wavefunction')
 
-    result = p2a_wf.get_result('wavefunction',None)
+    result = p2a_wf.get_result(AppResult.WAVEFUNCTION,None)
 
     del result.xml
 
@@ -538,7 +538,7 @@ def test_incorporate_result(tmp_path):
     assert(wfn.filename=='MISSING.h5')
     assert(ham.filename=='MISSING.h5')
 
-    sim.incorporate_result('wavefunction',result,p2a_wf)
+    sim.incorporate_result(AppResult.WAVEFUNCTION,result,p2a_wf)
 
     assert(wfn.filename=='p2a_wavefunction.afqmc.h5')
     assert(ham.filename=='p2a_wavefunction.afqmc.h5')
