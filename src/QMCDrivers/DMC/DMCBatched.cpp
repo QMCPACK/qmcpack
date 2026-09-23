@@ -183,7 +183,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
           if (use_l2_diffusion)
           {
             assert(step_context.l2_workspace);
-            sft.l2_diffusion->prepareMove(taus, grads_now, iat, ps_dispatcher, ham_dispatcher, walker_elecs,
+            L2Diffusion::prepareMove(taus, grads_now, iat, ps_dispatcher, ham_dispatcher, walker_elecs,
                                           walker_hamiltonians, deltas, drifts, log_gf, are_valid,
                                           *step_context.l2_workspace);
           }
@@ -216,7 +216,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
         ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts, are_valid);
         if (use_l2_diffusion)
-          sft.l2_diffusion->applyMoveValidity(are_valid, *step_context.l2_workspace);
+          L2Diffusion::applyMoveValidity(are_valid, *step_context.l2_workspace);
 
         twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 

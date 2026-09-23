@@ -42,7 +42,7 @@ public:
   };
 
   /** Build the L2 drift-diffusion displacement for one particle across a crowd. */
-  void prepareMove(const TauParams<RealType, CoordsType::POS>& taus,
+  static void prepareMove(const TauParams<RealType, CoordsType::POS>& taus,
                    const TWFGrads<CoordsType::POS>& grads_now,
                    int iat,
                    const PSdispatcher& ps_dispatcher,
@@ -53,10 +53,10 @@ public:
                    MCCoords<CoordsType::POS>& proposed_displacements,
                    std::vector<RealType>& log_gf,
                    std::vector<bool>& are_valid,
-                   Workspace& workspace) const;
+                   Workspace& workspace);
 
   /** Combine final-move validity with validity of the temporary L2 moves. */
-  void applyMoveValidity(std::vector<bool>& are_valid, const Workspace& workspace) const;
+  static void applyMoveValidity(std::vector<bool>& are_valid, const Workspace& workspace);
 
   /** Compute the scaled drift used by the L2 propagator. */
   static PosType computeScaledDrift(RealType tauovermass,
