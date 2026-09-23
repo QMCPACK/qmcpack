@@ -23,7 +23,6 @@
 namespace qmcplusplus
 {
 class DriverModifierBase;
-class L2Diffusion;
 class WalkerControl;
 class SFNBranch;
 
