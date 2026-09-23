@@ -17,16 +17,14 @@ void L2Diffusion::Workspace::resize(size_t num_walkers)
 {
   if (move_valid.size() == num_walkers)
   {
-    assert(zero_displacements.positions.size() == num_walkers);
     assert(reject_all_intermediate.size() == num_walkers);
     assert(diffusion_tensors.size() == num_walkers);
     assert(drift_corrections.size() == num_walkers);
     return;
   }
 
-  // MCCoords positions and vector<bool> value-initialize new entries to zero
-  // and false, respectively. Both buffers are passed as const input afterward.
-  zero_displacements.positions.resize(num_walkers);
+  // vector<bool> value-initializes new entries to false. This buffer is passed
+  // as const input afterward.
   reject_all_intermediate.resize(num_walkers, false);
   move_valid.resize(num_walkers);
   diffusion_tensors.resize(num_walkers);
@@ -81,14 +79,9 @@ void L2Diffusion::prepareMove(const TauParams<RealType, CoordsType::POS>& taus,
                    return -halfovertau * dot(displacement, displacement);
                  });
 
-  // L2Potential evaluates D and K from temporary distance-table data. A zero
-  // move stages the current position in those buffers.
-  ps_dispatcher.flex_makeMove(walker_elecs, iat, workspace.zero_displacements, are_valid);
-  for (size_t iw = 0; iw < num_walkers; ++iw)
-    workspace.move_valid[iw] = are_valid[iw];
+  // D and K are evaluated from the committed electron-ion distance-table row.
   ham_dispatcher.flex_computeL2DK(walker_hamiltonians, walker_elecs, iat, workspace.diffusion_tensors,
                                   workspace.drift_corrections);
-  ps_dispatcher.flex_accept_rejectMove<CoordsType::POS>(walker_elecs, iat, workspace.reject_all_intermediate);
 
   for (size_t iw = 0; iw < num_walkers; ++iw)
     proposed_displacements.positions[iw] =
@@ -98,7 +91,7 @@ void L2Diffusion::prepareMove(const TauParams<RealType, CoordsType::POS>& taus,
   // Evaluate the diffusion tensor at the drifted position.
   ps_dispatcher.flex_makeMove(walker_elecs, iat, proposed_displacements, are_valid);
   for (size_t iw = 0; iw < num_walkers; ++iw)
-    workspace.move_valid[iw] = workspace.move_valid[iw] && are_valid[iw];
+    workspace.move_valid[iw] = are_valid[iw];
   ham_dispatcher.flex_computeL2D(walker_hamiltonians, walker_elecs, iat, workspace.diffusion_tensors);
   ps_dispatcher.flex_accept_rejectMove<CoordsType::POS>(walker_elecs, iat, workspace.reject_all_intermediate);
 

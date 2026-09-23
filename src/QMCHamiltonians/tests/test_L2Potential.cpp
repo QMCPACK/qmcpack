@@ -46,7 +46,6 @@ TEST_CASE("L2Potential diffusion and drift correction", "[hamiltonian][l2]")
   radial_potential->rcut = 2.0;
   l2_potential.add(0, std::move(radial_potential));
 
-  electrons.makeMove(0, PosType{0.0, 0.0, 0.0});
   TensorType diffusion_tensor;
   PosType drift_correction;
   l2_potential.evaluateDK(electrons, 0, diffusion_tensor, drift_correction);
@@ -62,6 +61,7 @@ TEST_CASE("L2Potential diffusion and drift correction", "[hamiltonian][l2]")
   CHECK(drift_correction[2] == Approx(0.0));
 
   TensorType diffusion_only;
+  electrons.makeMove(0, PosType{0.0, 0.0, 0.0});
   l2_potential.evaluateD(electrons, 0, diffusion_only);
   for (int i = 0; i < OHMMS_DIM; ++i)
     for (int j = 0; j < OHMMS_DIM; ++j)
@@ -70,11 +70,11 @@ TEST_CASE("L2Potential diffusion and drift correction", "[hamiltonian][l2]")
 
   // Outside the cutoff, L2 contributes neither diffusion nor drift correction.
   electrons.makeMove(0, PosType{2.0, 0.0, 0.0});
+  electrons.acceptMove(0);
   l2_potential.evaluateDK(electrons, 0, diffusion_tensor, drift_correction);
   for (int i = 0; i < OHMMS_DIM; ++i)
     for (int j = 0; j < OHMMS_DIM; ++j)
       CHECK(diffusion_tensor(i, j) == Approx(i == j ? 1.0 : 0.0));
   CHECK(drift_correction == PosType(0.0));
-  electrons.rejectMove(0);
 }
 } // namespace qmcplusplus

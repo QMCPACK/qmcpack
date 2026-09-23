@@ -27,12 +27,10 @@ public:
 
   struct Workspace
   {
-    explicit Workspace(size_t num_walkers = 0) : zero_displacements(num_walkers) { resize(num_walkers); }
+    explicit Workspace(size_t num_walkers = 0) { resize(num_walkers); }
 
     void resize(size_t num_walkers);
 
-    /// Immutable zero-valued input used to stage the current particle positions.
-    MCCoords<CoordsType::POS> zero_displacements;
     /// Immutable false-valued decisions used to reject temporary moves.
     std::vector<bool> reject_all_intermediate;
     /// Output scratch; each entry is overwritten before it is read.
