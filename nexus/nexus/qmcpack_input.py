@@ -3627,7 +3627,7 @@ class vmc(QIxml):
                        'estimator_period','blocks_between_recompute',
                        'drift_modifier','drift_unr_a','maxdisplsq',
                        'debug_checks','measure_imbalance',
-                       'crowd_serialize_walkers','walkers','nonlocalpp','tau',
+                       'crowd_serialize_walkers','vmc_dat','walkers','nonlocalpp','tau',
                        'walkersperthread','reconfiguration',  # legacy - batched
                        'dmcwalkersperthread','current','ratio','firststep',
                        'minimumtargetwalkers','max_seconds')
@@ -3642,6 +3642,7 @@ class vmc(QIxml):
     element_aliases = obj(qmcsystem='qmc_system_selector')
     write_types     = obj(usedrift=yesno,profiling=yesno,append=yesno,walkerlog=yesno,
                       measure_imbalance=yesno,crowd_serialize_walkers=yesno, # batched
+                      vmc_dat=yesno,
                       gpu=yesno,nonlocalpp=yesno,reconfiguration=yesno, # legacy - batched
                       ratio=yesno,completed=yesno)
 #end class vmc
@@ -3740,7 +3741,7 @@ class vmc_batch(QIxml):
                        'estimator_period','blocks_between_recompute',
                        'drift_modifier','drift_unr_a','maxdisplsq',
                        'debug_checks','measure_imbalance',
-                       'crowd_serialize_walkers')
+                       'crowd_serialize_walkers','vmc_dat')
     element_aliases = obj(qmcsystem='qmc_system_selector')
     attributes     += qmc_common_attributes
     parameters     += qmc_common_parameters + ('use_drift',)
@@ -3749,7 +3750,7 @@ class vmc_batch(QIxml):
         'gpu',)
     parents         = ('simulation','loop')
     write_types     = obj(usedrift=yesno,profiling=yesno,append=yesno,walkerlog=yesno,
-                      measure_imbalance=yesno,crowd_serialize_walkers=yesno)
+                      measure_imbalance=yesno,crowd_serialize_walkers=yesno,vmc_dat=yesno)
 #end class vmc_batch
 
 class dmc_batch(QIxml):
@@ -5098,6 +5099,8 @@ class QmcpackInput(SimulationInput,Names):
                     files.opt = fprefix+'opt.xml'
                 elif q.type=='dmc':
                     files.dmc = fprefix+'dmc.dat'
+                elif q.type=='vmc' and 'vmc_dat' in qo and qo.vmc_dat:
+                    files.vmc = fprefix+'vmc.dat'
                 #end if
                 outfiles.extend(files.values())
                 q.files = files
@@ -9520,6 +9523,7 @@ vmc_batched_defaults = obj(
     maxcpusecs       = None,
     crowds           = None,
     spin_mass        = None,
+    vmc_dat          = False,
     )
 vmc_test_batched_defaults = obj(
     warmupsteps = 10,
@@ -10117,6 +10121,7 @@ def generate_batched_vmc_calculations(
         maxcpusecs       ,
         crowds           ,
         spin_mass        ,
+        vmc_dat          ,
         ):
 
     if total_walkers is not None and walkers_per_rank is not None:
@@ -10131,6 +10136,7 @@ def generate_batched_vmc_calculations(
         substeps    = substeps,
         timestep    = timestep,
         usedrift    = usedrift,
+        vmc_dat     = vmc_dat,
         )
     optional_vmc_inputs = obj(
         total_walkers = total_walkers,
