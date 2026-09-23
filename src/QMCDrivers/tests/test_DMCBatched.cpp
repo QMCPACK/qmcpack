@@ -36,6 +36,17 @@ private:
 };
 } // namespace testing
 
+TEST_CASE("DMCDriverInput L2 diffusion", "[drivers]")
+{
+  DMCDriverInput dmcdriver_input;
+  CHECK_FALSE(dmcdriver_input.get_l2_diffusion());
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<qmc method="dmc"><parameter name="L2_diffusion">yes</parameter></qmc>)"));
+  dmcdriver_input.readXML(doc.getRoot());
+  CHECK(dmcdriver_input.get_l2_diffusion());
+}
+
 /** Since we check the DMC only feature of reserve walkers perhaps this should be
  *  a DMC integration test.
  */

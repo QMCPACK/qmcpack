@@ -37,6 +37,7 @@ public:
   double get_feedback() const { return feedback_; }
   DMCRefEnergyScheme get_refenergy_update_scheme() const { return refenergy_update_scheme_; }
   TmoveKind get_non_local_move() const { return tmove_kind_; }
+  bool get_l2_diffusion() const { return l2_diffusion_; }
   double get_alpha() const { return alpha_; }
   double get_gamma() const { return gamma_; }
   RealType get_reserve() const { return reserve_; }
@@ -62,6 +63,8 @@ private:
   bool reconfiguration_ = true;
   ///input to control Tmove
   TmoveKind tmove_kind_ = TmoveKind::OFF;
+  ///whether to use the L2-modified DMC propagator
+  bool l2_diffusion_ = false;
   ///input to control maximum age allowed for walkers.
   IndexType max_age_ = 10;
   /// reserved walkers for population growth

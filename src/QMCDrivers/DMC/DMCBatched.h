@@ -47,6 +47,7 @@ public:
   struct StateForThread
   {
     const QMCDriverInput& qmcdrv_input;
+    const DMCDriverInput& dmcdrv_input;
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
     SFNBranch& branch_engine;
@@ -59,12 +60,14 @@ public:
     const bool serializing_crowd_walkers;
 
     StateForThread(const QMCDriverInput& qmci,
+                   const DMCDriverInput& dmci,
                    DriftModifierBase& drift_mod,
                    SFNBranch& branch_eng,
                    MCPopulation& pop,
                    const size_t steps_per_block,
                    const bool serializing_crowd_walkers)
         : qmcdrv_input(qmci),
+          dmcdrv_input(dmci),
           drift_modifier(drift_mod),
           population(pop),
           branch_engine(branch_eng),

@@ -14,6 +14,7 @@
 #include <cmath>
 
 #include "DMCBatched.h"
+#include "QMCDrivers/DriftOperators.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"
@@ -33,6 +34,7 @@
 #include "TauParams.hpp"
 #include "WalkerLogManager.h"
 #include "CPU/math.hpp"
+#include "Containers/OhmmsPETE/TensorOps.h"
 #include "DMCContextForSteps.h"
 
 namespace qmcplusplus
@@ -112,6 +114,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   const int num_walkers   = crowd.size();
   auto& pset_leader       = walker_elecs.getLeader();
   const int num_particles = pset_leader.getTotalNum();
+  const bool use_l2_diffusion =
+      CT == CoordsType::POS && sft.dmcdrv_input.get_l2_diffusion() && walker_hamiltonians.getLeader().has_L2();
 
   std::vector<bool> are_valid(num_walkers);
   MCCoords<CT> drifts(num_walkers), drifts_reverse(num_walkers);
@@ -137,6 +141,24 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
   std::vector<RealType> rr_proposed(num_walkers, 0.0);
   std::vector<RealType> rr_accepted(num_walkers, 0.0);
+
+  UPtr<MCCoords<CT>> l2_zero_displacements;
+  std::vector<bool> l2_reject_intermediate;
+  std::vector<bool> l2_move_valid;
+  std::vector<QMCHamiltonian::TensorType> l2_diffusion_tensors;
+  std::vector<QMCHamiltonian::PosType> l2_drift_corrections;
+  if (use_l2_diffusion)
+  {
+    l2_zero_displacements = std::make_unique<MCCoords<CT>>(num_walkers);
+    for (auto& pos : l2_zero_displacements->positions)
+      pos = 0.0;
+    if constexpr (CT == CoordsType::POS_SPIN)
+      std::fill(l2_zero_displacements->spins.begin(), l2_zero_displacements->spins.end(), 0.0);
+    l2_reject_intermediate.assign(num_walkers, false);
+    l2_move_valid.resize(num_walkers);
+    l2_diffusion_tensors.resize(num_walkers);
+    l2_drift_corrections.resize(num_walkers);
+  }
 
   {
     ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
@@ -169,10 +191,48 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                        [t = taus.tauovermass](auto& delta_r) { return t * dot(delta_r, delta_r); });
 
         twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
-        sft.drift_modifier.getDrifts(taus, grads_now, drifts);
+        if (use_l2_diffusion)
+        {
+          scaleBySqrtTau(taus, deltas);
+          // Match the legacy L2 propagator: the forward Green's function uses
+          // the unmodified Gaussian displacement.
+          computeLogGreensFunction(deltas, taus, log_gf);
 
-        scaleBySqrtTau(taus, deltas);
-        drifts += deltas;
+          // L2Potential currently evaluates D and K from temporary distance-table
+          // data. A zero move stages the current position in those buffers.
+          ps_dispatcher.flex_makeMove(walker_elecs, iat, *l2_zero_displacements, are_valid);
+          for (int iw = 0; iw < num_walkers; ++iw)
+            l2_move_valid[iw] = are_valid[iw];
+          ham_dispatcher.flex_computeL2DK(walker_hamiltonians, walker_elecs, iat, l2_diffusion_tensors,
+                                          l2_drift_corrections);
+          ps_dispatcher.flex_accept_rejectMove<CT>(walker_elecs, iat, l2_reject_intermediate);
+
+          for (int iw = 0; iw < num_walkers; ++iw)
+            getScaledDriftL2(taus.tauovermass, grads_now.grads_positions[iw], l2_diffusion_tensors[iw],
+                             l2_drift_corrections[iw], drifts.positions[iw]);
+
+          // Stage the drifted positions, where the diffusion tensors used to
+          // transform the Gaussian displacements are evaluated.
+          ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts, are_valid);
+          for (int iw = 0; iw < num_walkers; ++iw)
+            l2_move_valid[iw] = l2_move_valid[iw] && are_valid[iw];
+          ham_dispatcher.flex_computeL2D(walker_hamiltonians, walker_elecs, iat, l2_diffusion_tensors);
+          ps_dispatcher.flex_accept_rejectMove<CT>(walker_elecs, iat, l2_reject_intermediate);
+
+          for (int iw = 0; iw < num_walkers; ++iw)
+          {
+            const auto diffusion_cholesky = cholesky(l2_diffusion_tensors[iw]);
+            deltas.positions[iw]          = dot(diffusion_cholesky, deltas.positions[iw]);
+            drifts.positions[iw] += deltas.positions[iw];
+          }
+        }
+        else
+        {
+          sft.drift_modifier.getDrifts(taus, grads_now, drifts);
+
+          scaleBySqrtTau(taus, deltas);
+          drifts += deltas;
+        }
 
 // in DMC this was done here, changed to match VMCBatched pending factoring to common source
 // if (rr > m_r2max)
@@ -186,10 +246,14 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 #endif
 
         ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts, are_valid);
+        if (use_l2_diffusion)
+          for (int iw = 0; iw < num_walkers; ++iw)
+            are_valid[iw] = are_valid[iw] && l2_move_valid[iw];
 
         twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
-        computeLogGreensFunction(deltas, taus, log_gf);
+        if (!use_l2_diffusion)
+          computeLogGreensFunction(deltas, taus, log_gf);
 
         sft.drift_modifier.getDrifts(taus, grads_new, drifts_reverse);
 
@@ -450,7 +514,8 @@ void DMCBatched::run()
   //register walker log collectors into the manager
   wlog_manager.startRun(Crowd::getWalkerLogCollectorRefs(crowds_));
 
-  StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_,
+  StateForThread dmc_state(qmcdriver_input_, dmcdriver_input_, *drift_modifier_, *branch_engine_, population_,
+                           steps_per_block_,
                            serializing_crowd_walkers_);
 
   LoopTimer<> dmc_loop;
