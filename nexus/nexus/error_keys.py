@@ -69,8 +69,8 @@ linux_exit_signals = (
     )
 
 linux_signal_error_patterns = (
-    r'\b(?:terminated|killed|exited|aborted|died|received signal)\b[^\n]{0,80}\bSIG(?:HUP|ILL|ABRT|FPE|KILL|SEGV|PIPE|TERM|BUS|SYS|TRAP|XCPU|XFSZ)\b',
-    r'\bSIG(?:HUP|ILL|ABRT|FPE|KILL|SEGV|PIPE|TERM|BUS|SYS|TRAP|XCPU|XFSZ)\b[^\n]{0,80}\b(?:terminated|killed|exited|aborted|died)\b',
+    r'\b(?:terminated|killed|exited|aborted|died|received signal)\b[^\n]*\bSIG(?:HUP|ILL|ABRT|FPE|KILL|SEGV|PIPE|TERM|BUS|SYS|TRAP|XCPU|XFSZ)\b',
+    r'\bSIG(?:HUP|ILL|ABRT|FPE|KILL|SEGV|PIPE|TERM|BUS|SYS|TRAP|XCPU|XFSZ)\b[^\n]*\b(?:terminated|killed|exited|aborted|died)\b',
     r'\bterminated with signal\s+\d+\b',
     r'\bexited on signal\s+\d+\b',
     )
@@ -123,8 +123,8 @@ posix_errno_keys = (
 
 posix_error_patterns = (
     r'^\s*(?:bash|sh|zsh|ksh):(?:\s+line\s+\d+:)?\s+[^:\n]+:\s+(?:no such file or directory|permission denied)\s*$',
-    r'\bfatal(?:\s+error)?[^\n]{0,100}\b(?:no such file or directory|permission denied|not a directory|is a directory|no space left on device|too many open files|cannot allocate memory|connection refused|connection timed out|network is unreachable|address already in use|broken pipe)\b',
-    r'\bfatal[^\n]{0,40}\b(?:errno\s+)?(?:ENOENT|EACCES|EISDIR|ENOTDIR|ENOSPC|EMFILE|ENOMEM|ECONNREFUSED|ETIMEDOUT|ENETUNREACH|EADDRINUSE|EPIPE|EIO|ENXIO|EBADF|EBUSY|ENODEV|EROFS|EDQUOT|ECONNRESET|EHOSTUNREACH|ENOTCONN)\b',
+    r'\bfatal(?:\s+error)?[^\n]*\b(?:no such file or directory|permission denied|not a directory|is a directory|no space left on device|too many open files|cannot allocate memory|connection refused|connection timed out|network is unreachable|address already in use|broken pipe)\b',
+    r'\bfatal[^\n]*\b(?:errno\s+)?(?:ENOENT|EACCES|EISDIR|ENOTDIR|ENOSPC|EMFILE|ENOMEM|ECONNREFUSED|ETIMEDOUT|ENETUNREACH|EADDRINUSE|EPIPE|EIO|ENXIO|EBADF|EBUSY|ENODEV|EROFS|EDQUOT|ECONNRESET|EHOSTUNREACH|ENOTCONN)\b',
     )
 
 
@@ -201,9 +201,9 @@ slurm_error_patterns = (
     r'\bDUE TO TIME LIMIT\b',
     r'\bExceeded job memory limit\b',
     r'\bState=(?:FAILED|TIMEOUT|NODE_FAIL|OUT_OF_MEMORY|BOOT_FAIL|DEADLINE|CANCELLED|PREEMPTED)\b',
-    r'\b(?:JOB|STEP)[^\n]{0,80}\b(?:CANCELLED|FAILED|OUT_OF_MEMORY|TIMEOUT|NODE_FAIL)\b',
-    r'\b(?:srun|slurmstepd):[^\n]{0,80}\blaunch failed\b',
-    r'\bslurmstepd:[^\n]{0,80}\boom-kill\b',
+    r'\b(?:JOB|STEP)[^\n]*\b(?:CANCELLED|FAILED|OUT_OF_MEMORY|TIMEOUT|NODE_FAIL)\b',
+    r'\b(?:srun|slurmstepd):[^\n]*\blaunch failed\b',
+    r'\bslurmstepd:[^\n]*\boom-kill\b',
     )
 
 pbs_errors = (
@@ -328,14 +328,14 @@ mpi_errors = (
 
 mpi_error_patterns = (
     r'\b(?:mpirun|orterun|prterun):\s*kill job\b',
-    r'\bmpirun noticed that process rank\s+\d+[^\n]{0,80}\b(?:non-zero|signal|terminated|aborted|died)\b',
+    r'\bmpirun noticed that process rank\s+\d+[^\n]*\b(?:non-zero|signal|terminated|aborted|died)\b',
     r'\bthe first job to fail is listed below\b',
     r'\bjob aborted:',
     r'\bMPI_Abort was invoked\b',
     r'\bone or more processes exited with non-zero status\b',
     r'\bprocess returned a non-zero exit code\b',
     r'\bPrimary job terminated normally, but\b',
-    r'\b(?:mpirun|mpiexec|orterun|prterun)\b[^\n]{0,120}\b(?:aborted|failed|non-zero|signal|terminated)\b',
+    r'\b(?:mpirun|mpiexec|orterun|prterun)\b[^\n]*\b(?:aborted|failed|non-zero|signal|terminated)\b',
     r'\b(?:exited on|terminated with) signal(?:\s+\d+)?\b',
     r'\bexecvp error\b',
     )
@@ -371,7 +371,7 @@ linking_errors = (
 
 linking_error_patterns = (
     r'\b(?:error while loading shared libraries|symbol lookup error|relocation error)',
-    r'\b(?:GLIBCXX|CXXABI)_[0-9.]+\b[^\n]{0,40}\bnot found\b',
+    r'\b(?:GLIBCXX|CXXABI)_[0-9.]+\b[^\n]*\bnot found\b',
     r'\bversion\s+[\'`][^\'`]+[\'`]\s+not found\b',
     )
 
@@ -708,7 +708,7 @@ pyscf_errors = (
     )
 
 pyscf_error_patterns = (
-    r'\b(?:SCF|CASSCF|UCASSCF|CCSD|Newton)[^\n]{0,40}\bnot converged\b',
+    r'\b(?:SCF|CASSCF|UCASSCF|CCSD|Newton)[^\n]*\bnot converged\b',
     r'^\s*(?:pyscf[\w.]*\.)?LibxcError\s*:',
     )
 
@@ -728,7 +728,7 @@ quantum_package_errors = (
 
 quantum_package_error_patterns = (
     r'(?:\bEZFIO error:|\bFATAL ERROR:|\birp_error\b|\bIRP_FATAL\b|\bqp run:\s*Error\b|\bToo many determinants\b|\bSelection failed\b)',
-    r'\b(?:Davidson|CIPSI|SCF|selection)[^\n]{0,60}\bnot converged\b',
+    r'\b(?:Davidson|CIPSI|SCF|selection)[^\n]*\bnot converged\b',
     )
 
 rmg_errors = (
@@ -757,9 +757,9 @@ rmg_error_patterns = (
     r'^\s*(?:FATAL ERROR|CRITICAL):',
     r'\bRMG(?:DFT)?\s*(?:Error|Fatal|Critical)\s*:',
     r'\b(?:Fatal|Critical)\s+RMG(?:DFT)?\s+error\b',
-    r'\bSCF[^\n]{0,60}\b(?:failed to converge|not converged)\b',
-    r'\b(?:multigrid|Davidson|subspace)[^\n]{0,60}\b(?:failed|breakdown|not converged)\b',
-    r'\b(?:domain decomposition|grid decomposition)[^\n]{0,60}\bfailed\b',
+    r'\bSCF[^\n]*\b(?:failed to converge|not converged)\b',
+    r'\b(?:multigrid|Davidson|subspace)[^\n]*\b(?:failed|breakdown|not converged)\b',
+    r'\b(?:domain decomposition|grid decomposition)[^\n]*\bfailed\b',
     )
 
 qmcpack_errors = (

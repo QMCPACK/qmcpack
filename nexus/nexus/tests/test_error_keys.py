@@ -97,6 +97,36 @@ def test_contextual_error_lists():
         assert find_error_keys(text, python=True), key
 
 
+@pytest.mark.parametrize(
+    ("selector", "text"),
+    (
+        ("linux_signals", "rank terminated " + "signal context " * 20 + " SIGSEGV"),
+        ("linux_signals", "SIGSEGV " + "signal context " * 20 + " terminated"),
+        ("posix", "fatal error: " + "filesystem context " * 20 + " No space left on device"),
+        ("posix", "fatal I/O error: " + "filesystem context " * 20 + " errno ENOSPC"),
+        ("slurm", "JOB " + "scheduler metadata " * 20 + " FAILED"),
+        ("slurm", "srun: " + "scheduler metadata " * 20 + " launch failed"),
+        ("slurm", "slurmstepd: " + "scheduler metadata " * 20 + " oom-kill"),
+        ("mpi", "mpirun noticed that process rank 1 " + "runtime context " * 20 + " terminated"),
+        ("mpi", "prterun " + "runtime context " * 20 + " failed"),
+        ("linking", "GLIBCXX_3.4.30 " + "loader context " * 20 + " not found"),
+        ("pyscf", "SCF " + "iteration context " * 20 + " not converged"),
+        ("quantum_package", "Davidson " + "iteration context " * 20 + " not converged"),
+        ("rmg", "SCF " + "iteration context " * 20 + " failed to converge"),
+        ("rmg", "Davidson " + "solver context " * 20 + " breakdown"),
+        ("rmg", "domain decomposition " + "grid context " * 20 + " failed"),
+        ),
+    )
+def test_same_line_context_has_no_arbitrary_length_limit(selector, text):
+    assert len(text) > 120
+    assert find_error_keys(text, **{selector: True})
+
+
+def test_context_patterns_do_not_cross_lines():
+    text = "JOB " + "scheduler metadata " * 20 + "\nFAILED"
+    assert not find_error_keys(text, slurm=True)
+
+
 def test_input_forms_and_return_lines(tmp_path):
     """Check supported input forms and optional matching-line collection."""
     text = (
