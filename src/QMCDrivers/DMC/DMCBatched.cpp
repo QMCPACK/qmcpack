@@ -177,19 +177,14 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                        [t = taus.tauovermass](auto& delta_r) { return t * dot(delta_r, delta_r); });
 
         twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
-        if constexpr (CT == CoordsType::POS)
+        if (step_context.l2_workspace)
         {
-          if (step_context.l2_workspace)
+          if constexpr (CT == CoordsType::POS)
             L2Diffusion::prepareMove(taus, grads_now, iat, ps_dispatcher, ham_dispatcher, walker_elecs,
-                                          walker_hamiltonians, deltas, drifts, log_gf, are_valid,
-                                          *step_context.l2_workspace);
+                                     walker_hamiltonians, deltas, drifts, log_gf, are_valid,
+                                     *step_context.l2_workspace);
           else
-          {
-            sft.drift_modifier.getDrifts(taus, grads_now, drifts);
-
-            scaleBySqrtTau(taus, deltas);
-            drifts += deltas;
-          }
+            throw std::runtime_error("L2 diffusion is not supported for spinor particle sets.");
         }
         else
         {
