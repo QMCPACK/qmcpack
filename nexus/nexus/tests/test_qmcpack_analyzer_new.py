@@ -1062,24 +1062,13 @@ def test_qmcpack_input_info_malformed_qmc_info_is_none(
 #end def test_qmcpack_input_info_malformed_qmc_info_is_none
 
 
-def test_qmcpack_input_info_failed_queries_retain_none(monkeypatch):
-    from .. import qmcpack_analyzer_new
+def test_qmcpack_input_info_unavailable_data_retain_none(tmp_path):
+    from ..qmcpack_analyzer_new import QmcpackInputInfo
 
-    class QueryFailure:
-        def pluralize(self):
-            pass
-        #end def pluralize
+    filepath = tmp_path / 'standalone_project.xml'
+    filepath.write_text('<project id="standalone" series="0" />\n')
 
-        def get(self, name):
-            raise RuntimeError(f'cannot query {name}')
-        #end def get
-    #end class QueryFailure
-
-    monkeypatch.setattr(
-        qmcpack_analyzer_new, 'QmcpackInput', lambda filepath: QueryFailure()
-        )
-
-    info = qmcpack_analyzer_new.QmcpackInputInfo('query_failure.in.xml')
+    info = QmcpackInputInfo(str(filepath))
 
     assert info.prefix is None
     assert info.series_start is None
@@ -1087,28 +1076,23 @@ def test_qmcpack_input_info_failed_queries_retain_none(monkeypatch):
     assert info.qmc_info is None
     assert info.qmc_type is None
     assert info.incomplete
-#end def test_qmcpack_input_info_failed_queries_retain_none
+#end def test_qmcpack_input_info_unavailable_data_retain_none
 
 
-def test_qmcpack_input_info_loop_check_uses_loop_type(monkeypatch):
-    from .. import qmcpack_analyzer_new
-    from ..developer import obj
-    from ..qmcpack_input import project, simulation, vmc
+def test_qmcpack_input_info_non_loop_qmc_is_not_expanded(tmp_path):
+    from ..qmcpack_analyzer_new import QmcpackInputInfo
 
-    calculation = vmc(method='vmc')
-    calculation.max = 3
-    qmc_input = obj(simulation=simulation(
-        project = project(id='typed_loop',series=0),
-        qmc     = calculation,
-        ))
-
-    monkeypatch.setattr(
-        qmcpack_analyzer_new, 'QmcpackInput', lambda filepath: qmc_input
+    filepath = tmp_path / 'non_loop_qmc.in.xml'
+    filepath.write_text(
+        '<simulation>\n'
+        '  <project id="non_loop" series="0" />\n'
+        '  <qmc method="vmc" multiple="yes" />\n'
+        '</simulation>\n'
         )
 
-    info = qmcpack_analyzer_new.QmcpackInputInfo('typed_loop.in.xml')
+    info = QmcpackInputInfo(str(filepath))
 
     assert list(info.qmc_info) == [0]
     assert info.qmc_info[0].qmc == 'vmc'
     assert info.qmc_type == 'vmc'
-#end def test_qmcpack_input_info_loop_check_uses_loop_type
+#end def test_qmcpack_input_info_non_loop_qmc_is_not_expanded
