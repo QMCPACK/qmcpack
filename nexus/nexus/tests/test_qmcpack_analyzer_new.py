@@ -789,7 +789,7 @@ def test_qmcpack_input_info_from_run_inputs(
     assert info.prefix == prefix
     assert info.group_index == group_index
     assert info.has_twist
-    assert info.incomplete == (group_index is None)
+    assert not info.incomplete
     assert len(info.qmc_info) == nseries
     assert info.qmc_info[nseries - 1].outfiles == expected_outfiles
 #end def test_qmcpack_input_info_from_run_inputs
@@ -869,7 +869,7 @@ def test_qmcpack_input_info_from_input_fixture():
     assert info.qmc_info[2].outfiles == (
         'qmc.s002.scalar.dat', 'qmc.s002.dmc.dat'
         )
-    assert info.incomplete
+    assert not info.incomplete
 #end def test_qmcpack_input_info_from_input_fixture
 
 
@@ -921,7 +921,45 @@ def test_qmcpack_input_info_optimization_method_aliases(tmp_path, method):
 
     assert info.qmc_type == 'opt'
     assert info.qmc_info[0].qmc == 'opt'
+    assert info.qmc_info[0].warmupsteps is None
+    assert info.qmc_info[0].blocks is None
+    assert info.qmc_info[0].timestep is None
+    assert 'steps' not in info.qmc_info[0]
 #end def test_qmcpack_input_info_optimization_method_aliases
+
+
+@pytest.mark.parametrize(
+    'method,qmc_type',
+    [
+        ('vmc', 'vmc'),
+        ('vmc_batch', 'vmc'),
+        ('dmc', 'dmc'),
+        ('dmc_batch', 'dmc'),
+        ],
+    )
+def test_qmcpack_input_info_does_not_reproduce_qmcpack_defaults(
+    tmp_path, method, qmc_type
+    ):
+    from ..qmcpack_analyzer_new import QmcpackInputInfo
+
+    filepath = tmp_path / f'{method}.in.xml'
+    filepath.write_text(
+        '<simulation>\n'
+        '  <project id="no_defaults" series="0" />\n'
+        f'  <qmc method="{method}" />\n'
+        '</simulation>\n'
+        )
+
+    info = QmcpackInputInfo(str(filepath))
+    qmc = info.qmc_info[0]
+
+    assert qmc.qmc == qmc_type
+    assert qmc.warmupsteps is None
+    assert qmc.blocks is None
+    assert qmc.steps is None
+    assert qmc.timestep is None
+    assert not info.incomplete
+#end def test_qmcpack_input_info_does_not_reproduce_qmcpack_defaults
 
 
 def test_qmcpack_input_info_projectless_qmc(tmp_path):

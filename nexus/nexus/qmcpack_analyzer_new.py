@@ -486,6 +486,8 @@ class QmcpackInputInfo(DevBase):
         Project identifier used as the output-file prefix.
     group_index : int or None
         Group index obtained from a ``gNNN`` component of the input filename.
+        ``None`` denotes an ungrouped calculation and does not by itself make
+        the input information incomplete.
     series_start : int or None
         Initial QMCPACK series number.  A calculation sequence without an
         explicit project series starts at zero.
@@ -495,16 +497,16 @@ class QmcpackInputInfo(DevBase):
         Mapping from integer series numbers to per-calculation ``obj``
         records.  Each record contains ``series``, normalized ``qmc`` type,
         ``warmupsteps``, ``blocks``, ``timestep``, and ``outfiles``.  VMC and
-        DMC records also contain ``steps``.  Input values override method
-        defaults.  ``outfiles`` is a tuple of expected output filenames, or
-        ``None`` when no project prefix is available.  Loop calculations are
-        expanded in execution order.  If any QMC section is malformed, the
-        complete mapping is unavailable and remains ``None``.
+        DMC records also contain ``steps``.  Calculation parameters not
+        provided in the input remain ``None``; QMCPACK runtime defaults are
+        not reproduced here.  ``outfiles`` is a tuple of expected output
+        filenames, or ``None`` when no project prefix is available.  Loop
+        calculations are expanded in execution order.  If any QMC section is
+        malformed, the complete mapping is unavailable and remains ``None``.
     incomplete : bool
-        Whether any other attribute initialized by the constructor is
-        ``None`` after reading.  Thus an optional value that is absent, such
-        as ``group_index`` for an ungrouped input, also marks the information
-        as incomplete.
+        Whether any required attribute initialized by the constructor is
+        ``None`` after reading.  ``group_index`` is excluded because ``None``
+        is the valid state for an ungrouped calculation.
     """
 
     def __init__(self,filepath):
@@ -521,7 +523,6 @@ class QmcpackInputInfo(DevBase):
             self.filepath,
             self.qmc_type,
             self.prefix,
-            self.group_index,
             self.series_start,
             self.has_twist,
             self.qmc_info,
@@ -572,11 +573,6 @@ class QmcpackInputInfo(DevBase):
 
         # qmc method info
         qmc_info = obj()
-        shr = dict(blocks=1,timestep=0.)
-        defaults = dict(
-            vmc = dict(qmc='vmc',warmupsteps=0  ,steps=1,**shr),
-            dmc = dict(qmc='dmc',warmupsteps=200,steps=1,**shr),
-            opt = dict(qmc='opt',warmupsteps=0  ,**shr))
         method_types = dict(
             opt          = 'opt',
             linear       = 'opt',
@@ -639,7 +635,14 @@ class QmcpackInputInfo(DevBase):
             if not isinstance(method,str) or method not in method_types:
                 return None
             qmc_type = method_types[method]
-            qinfo = obj(**defaults[qmc_type])
+            qinfo = obj(
+                qmc         = qmc_type,
+                warmupsteps = None,
+                blocks      = None,
+                timestep    = None,
+                )
+            if qmc_type in {'vmc','dmc'}:
+                qinfo.steps = None
             for k,v in qmc.items():
                 if k in qinfo:
                     qinfo[k] = v
