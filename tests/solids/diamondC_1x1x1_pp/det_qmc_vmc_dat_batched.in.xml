@@ -90,6 +90,6 @@
       <parameter name="subSteps"            >    2               </parameter>
       <parameter name="timestep"            >    0.3             </parameter>
       <parameter name="warmupSteps"         >    3               </parameter>
-      <parameter name="vmc_dat"             >    yes             </parameter>
+      <parameter name="write_vmc_dat"             >    yes             </parameter>
    </qmc>
 </simulation>

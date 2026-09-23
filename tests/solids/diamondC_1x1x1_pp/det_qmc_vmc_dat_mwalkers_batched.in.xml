@@ -88,7 +88,7 @@
      <parameter name="total_walkers">    4   </parameter>
      <parameter name="substeps">  2 </parameter>
      <parameter name="warmupSteps">  3  </parameter>
-     <parameter name="vmc_dat"> yes </parameter>
+     <parameter name="write_vmc_dat"> yes </parameter>
      <parameter name="steps">  3 </parameter>
      <parameter name="blocks">  3 </parameter>
      <parameter name="timestep">  1.0 </parameter>
@@ -99,7 +99,7 @@
      <parameter name="total_walkers">    4   </parameter>
      <parameter name="substeps">  2 </parameter>
      <parameter name="warmupSteps">  3  </parameter>
-     <parameter name="vmc_dat"> yes </parameter>
+     <parameter name="write_vmc_dat"> yes </parameter>
      <parameter name="steps">  3 </parameter>
      <parameter name="blocks">  3 </parameter>
      <parameter name="timestep">  0.3 </parameter>

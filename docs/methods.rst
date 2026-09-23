@@ -226,7 +226,7 @@ Parameters:
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
   | ``estimator_period``           | integer      | :math:`> 0`             | 1           | Number of steps between estimator measurements       |
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
-  | ``vmc_dat``                    | boolean      | yes,no                  | no          | Write scalar quantities for every VMC step           |
+  | ``write_vmc_dat``                    | boolean      | yes,no                  | no          | Write scalar quantities for every VMC step           |
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
   | ``samples``                    | integer      | :math:`\geq 0`          | 0           | Total number of walker samples for this VMC run      |
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
@@ -297,7 +297,7 @@ Additional information:
 - ``estimator_period`` The period with which estimators are evaluated, measured in steps. If measurements have a significant
     correlation time, this can reduce the computational cost of unnecessarily frequent estimator evaluations.
 
-- ``vmc_dat`` When ``yes``, write one row of scalar quantities for every VMC step to
+- ``write_vmc_dat`` When ``yes``, write one row of scalar quantities for every VMC step to
   ``<project id>.s<series>.vmc.dat``. The columns match the corresponding
   ``scalar.dat`` file and include the walker weight. Each VMC section has its
   own series and therefore produces its own file. This optional output is

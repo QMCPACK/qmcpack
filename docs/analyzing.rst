@@ -18,7 +18,7 @@ spent per block, among others. The ``*.dmc.dat`` files provide
 information regarding the DMC walker population in addition to the local
 energy.
 
-When the batched VMC ``vmc_dat`` input parameter is enabled, QMCPACK writes
+When the batched VMC ``write_vmc_dat`` input parameter is enabled, QMCPACK writes
 ``*.vmc.dat`` with one row per VMC step. Its scalar columns, including
 ``LocalEnergy`` and ``BlockWeight``, match those in the corresponding
 ``*.scalar.dat`` file. It can be analyzed in the same way; for example:
