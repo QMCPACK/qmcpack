@@ -25,6 +25,7 @@ set(FORCE_SRCS test_force.cpp test_force_ewald.cpp test_stress.cpp test_spacewar
 set(HAM_SRCS
     test_bare_kinetic.cpp
     test_density_estimator.cpp
+    test_L2Potential.cpp
     test_NonLocalTOperator.cpp
     test_ecp.cpp
     test_hamiltonian_pool.cpp

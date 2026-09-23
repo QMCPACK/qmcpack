@@ -23,6 +23,7 @@
 namespace qmcplusplus
 {
 class DriverModifierBase;
+class L2Diffusion;
 class WalkerControl;
 class SFNBranch;
 
@@ -47,7 +48,7 @@ public:
   struct StateForThread
   {
     const QMCDriverInput& qmcdrv_input;
-    const DMCDriverInput& dmcdrv_input;
+    const L2Diffusion* l2_diffusion;
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
     SFNBranch& branch_engine;
@@ -60,14 +61,14 @@ public:
     const bool serializing_crowd_walkers;
 
     StateForThread(const QMCDriverInput& qmci,
-                   const DMCDriverInput& dmci,
+                   const L2Diffusion* l2,
                    DriftModifierBase& drift_mod,
                    SFNBranch& branch_eng,
                    MCPopulation& pop,
                    const size_t steps_per_block,
                    const bool serializing_crowd_walkers)
         : qmcdrv_input(qmci),
-          dmcdrv_input(dmci),
+          l2_diffusion(l2),
           drift_modifier(drift_mod),
           population(pop),
           branch_engine(branch_eng),
@@ -129,6 +130,8 @@ private:
   class DMCContextForSteps;
 
   const DMCDriverInput dmcdriver_input_;
+  /// Optional L2 drift-diffusion proposal strategy.
+  std::unique_ptr<L2Diffusion> l2_;
   /// Per crowd, driver-specific move contexts
   UPtrVector<DMCContextForSteps> step_contexts_;
   /// obtain reference vector of step contexts
