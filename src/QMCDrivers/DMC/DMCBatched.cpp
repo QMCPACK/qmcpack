@@ -67,8 +67,13 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
       l2_(dmcdriver_input_.get_l2_diffusion() ? std::make_unique<L2Diffusion>() : nullptr),
       dmc_timers_("DMCBatched::")
 {
-  if (l2_ && population_.get_golden_electrons().isSpinor())
-    throw UniformCommunicateError("L2 diffusion is not supported for spinor particle sets.");
+  if (l2_)
+  {
+    if (population_.get_golden_electrons().isSpinor())
+      throw UniformCommunicateError("L2 diffusion is not supported for spinor particle sets.");
+    if (!population_.get_golden_hamiltonian().has_L2())
+      throw UniformCommunicateError("L2 diffusion was requested, but the Hamiltonian has no L2 potential.");
+  }
 }
 
 DMCBatched::~DMCBatched() = default;
@@ -117,8 +122,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   const int num_walkers   = crowd.size();
   auto& pset_leader       = walker_elecs.getLeader();
   const int num_particles = pset_leader.getTotalNum();
-  const bool use_l2_diffusion =
-      CT == CoordsType::POS && sft.l2_diffusion != nullptr && walker_hamiltonians.getLeader().has_L2();
+  const bool use_l2_diffusion = sft.l2_diffusion != nullptr;
 
   std::vector<bool> are_valid(num_walkers);
   MCCoords<CT> drifts(num_walkers), drifts_reverse(num_walkers);

@@ -50,7 +50,7 @@ TEST_CASE("DMCDriverInput L2 diffusion", "[drivers]")
   CHECK(dmcdriver_input.get_l2_diffusion());
 }
 
-TEST_CASE("DMCBatched rejects L2 diffusion with spinors", "[drivers]")
+TEST_CASE("DMCBatched rejects invalid L2 diffusion configurations", "[drivers]")
 {
   using namespace testing;
   RandomNumberGeneratorPool rng_pool(1);
@@ -69,7 +69,17 @@ TEST_CASE("DMCBatched rejects L2 diffusion with spinors", "[drivers]")
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  particle_pool.getParticleSet("e")->setSpinor(true);
+
+  std::string expected_error;
+  SECTION("spinor ParticleSet")
+  {
+    particle_pool.getParticleSet("e")->setSpinor(true);
+    expected_error = "L2 diffusion is not supported for spinor particle sets.";
+  }
+  SECTION("Hamiltonian without L2 potential")
+  {
+    expected_error = "L2 diffusion was requested, but the Hamiltonian has no L2 potential.";
+  }
 
   WalkerConfigurations walker_confs;
   auto construct_driver = [&]() {
@@ -83,11 +93,11 @@ TEST_CASE("DMCBatched rejects L2 diffusion with spinors", "[drivers]")
   try
   {
     construct_driver();
-    FAIL("DMCBatched accepted L2 diffusion with a spinor ParticleSet");
+    FAIL("DMCBatched accepted an invalid L2 diffusion configuration");
   }
   catch (const UniformCommunicateError& error)
   {
-    CHECK(std::string(error.what()) == "L2 diffusion is not supported for spinor particle sets.");
+    CHECK(std::string(error.what()) == expected_error);
   }
 }
 
