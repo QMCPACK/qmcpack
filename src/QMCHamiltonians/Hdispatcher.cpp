@@ -25,8 +25,6 @@ std::vector<QMCHamiltonian::FullPrecRealType> Hdispatcher::flex_evaluate(
     const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   assert(ham_list.size() == p_list.size());
-  assert(ham_list.size() == diffusion_tensors.size());
-  assert(ham_list.size() == drift_corrections.size());
   if (use_batch_)
     return QMCHamiltonian::mw_evaluate(ham_list, wf_list, p_list);
   else
@@ -44,7 +42,6 @@ std::vector<QMCHamiltonian::FullPrecRealType> Hdispatcher::flex_evaluateWithTope
     const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   assert(ham_list.size() == p_list.size());
-  assert(ham_list.size() == diffusion_tensors.size());
   if (use_batch_)
     return QMCHamiltonian::mw_evaluateWithToperator(ham_list, wf_list, p_list);
   else
@@ -63,6 +60,8 @@ void Hdispatcher::flex_computeL2DK(const RefVectorWithLeader<QMCHamiltonian>& ha
                                    std::vector<PosType>& drift_corrections) const
 {
   assert(ham_list.size() == p_list.size());
+  assert(ham_list.size() == diffusion_tensors.size());
+  assert(ham_list.size() == drift_corrections.size());
   if (use_batch_)
     QMCHamiltonian::mw_computeL2DK(ham_list, p_list, iel, diffusion_tensors, drift_corrections);
   else
@@ -76,6 +75,7 @@ void Hdispatcher::flex_computeL2D(const RefVectorWithLeader<QMCHamiltonian>& ham
                                   std::vector<TensorType>& diffusion_tensors) const
 {
   assert(ham_list.size() == p_list.size());
+  assert(ham_list.size() == diffusion_tensors.size());
   if (use_batch_)
     QMCHamiltonian::mw_computeL2D(ham_list, p_list, iel, diffusion_tensors);
   else
