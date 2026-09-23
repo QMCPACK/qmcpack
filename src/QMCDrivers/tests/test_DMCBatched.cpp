@@ -11,12 +11,14 @@
 #include <string>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Message/Communicate.h"
 #include "Message/UniformCommunicateError.h"
 #include "QMCDrivers/DMC/DMCDriverInput.h"
 #include "QMCDrivers/DMC/DMCBatched.h"
+#include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
 #include "QMCDrivers/tests/SetupDMCTest.h"
 #include "EstimatorInputDelegates.h"
@@ -50,20 +52,16 @@ TEST_CASE("DMCDriverInput L2 diffusion", "[drivers]")
   CHECK(dmcdriver_input.get_l2_diffusion());
 }
 
-TEST_CASE("DMCBatched rejects invalid L2 diffusion configurations", "[drivers]")
+TEST_CASE("QMCDriverFactory rejects invalid L2 diffusion configurations for DMCBatched", "[drivers]")
 {
   using namespace testing;
   RandomNumberGeneratorPool rng_pool(1);
-  ProjectData test_project;
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm = OHMMS::Controller;
 
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(R"(<qmc method="dmc"><parameter name="L2_diffusion">yes</parameter></qmc>)"));
   xmlNodePtr node = doc.getRoot();
-  QMCDriverInput qmcdriver_input;
-  qmcdriver_input.readXML(node);
-  DMCDriverInput dmcdriver_input;
-  dmcdriver_input.readXML(node);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
@@ -81,24 +79,15 @@ TEST_CASE("DMCBatched rejects invalid L2 diffusion configurations", "[drivers]")
     expected_error = "L2 diffusion was requested, but the Hamiltonian has no L2 potential.";
   }
 
-  WalkerConfigurations walker_confs;
+  QMCDriverFactory driver_factory(test_project);
+  auto das = driver_factory.readSection(node);
+
   auto construct_driver = [&]() {
-    DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), nullptr, std::move(dmcdriver_input), walker_confs,
-                         MCPopulation(comm->size(), comm->rank(), *particle_pool.getParticleSet("e"),
-                                      wavefunction_pool.getWaveFunction().value(),
-                                      hamiltonian_pool.getHamiltonian().value()),
-                         rng_pool.getRngRefs(), comm);
+    driver_factory.createQMCDriver(node, das, std::nullopt, *particle_pool.getWalkerSet("e"), particle_pool,
+                                   wavefunction_pool, hamiltonian_pool, comm);
   };
 
-  try
-  {
-    construct_driver();
-    FAIL("DMCBatched accepted an invalid L2 diffusion configuration");
-  }
-  catch (const UniformCommunicateError& error)
-  {
-    CHECK(std::string(error.what()) == expected_error);
-  }
+  CHECK_THROWS_MATCHES(construct_driver(), UniformCommunicateError, Catch::Matchers::Message(expected_error));
 }
 
 /** Since we check the DMC only feature of reserve walkers perhaps this should be

@@ -69,10 +69,8 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
 {
   if (l2_)
   {
-    if (population_.get_golden_electrons().isSpinor())
-      throw UniformCommunicateError("L2 diffusion is not supported for spinor particle sets.");
-    if (!population_.get_golden_hamiltonian().has_L2())
-      throw UniformCommunicateError("L2 diffusion was requested, but the Hamiltonian has no L2 potential.");
+    assert(!population_.get_golden_electrons().isSpinor() && "L2 diffusion is not supported for spinor particle sets.");
+    assert(population_.get_golden_hamiltonian().has_L2() && "L2 diffusion was requested, but the Hamiltonian has no L2 potential.");
   }
 }
 
