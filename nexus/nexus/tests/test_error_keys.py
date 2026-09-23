@@ -129,6 +129,23 @@ def test_input_forms_and_return_lines(tmp_path):
         find_error_keys(BytesIO(text.encode()), qmcpack=True)
 
 
+def test_stdout_and_stderr_are_checked_separately(tmp_path):
+    stdout_file = tmp_path / 'pyscf.out'
+    stderr_file = tmp_path / 'pyscf.err'
+    stdout_file.write_text('PySCF calculation completed normally\n')
+    stderr_file.write_text(
+        'Traceback (most recent call last):\n'
+        'pyscf.lib.exceptions.SomeError: failed operation\n'
+        )
+
+    stdout_failed = find_error_keys(stdout_file, pyscf=True)
+    stderr_failed = find_error_keys(stderr_file, pyscf=True)
+
+    assert not stdout_failed
+    assert stderr_failed
+    assert stdout_failed or stderr_failed
+
+
 def test_selectors():
     """Check individual, batch, combined, and all-error selectors."""
     # Every group is opt-in, including operating-system diagnostics.
@@ -221,6 +238,8 @@ def test_hpc_environment_catches():
         'MPI_Abort was invoked on rank 2 in communicator MPI_COMM_WORLD',
         mpi=True,
         )
+    for launcher in ('mpirun', 'orterun', 'prterun'):
+        assert find_error_keys(f'{launcher}: kill job', mpi=True)
     assert find_error_keys(
         'libgomp: Thread creation failed: Resource unavailable',
         openmp=True,
@@ -491,6 +510,19 @@ cycle= 50 E= -75.983948  delta_E= -1.2e-7  |g|= 0.00031
 SCF not converged.
 SCF energy = -75.983948
 ''',
+        pyscf=True,
+        )
+    assert find_error_keys(
+        '''
+Traceback (most recent call last):
+  File "run_pyscf.py", line 8, in <module>
+    run_calculation()
+pyscf.lib.exceptions.SomeError: failed operation
+''',
+        pyscf=True,
+        )
+    assert not find_error_keys(
+        'ValueError: optional operation failed; using fallback',
         pyscf=True,
         )
     assert not find_error_keys(

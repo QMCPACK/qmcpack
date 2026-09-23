@@ -302,6 +302,8 @@ mpi_errors = (
     # 'MPI_T_ERR_INVALID_NAME',
     # 'MPI_ERR_SESSION',
     'mpirun: kill job',
+    'orterun: kill job',
+    'prterun: kill job',
     'mpirun noticed that process rank 1 exited on signal 11',
     # ORTE/PRTE can log handled internal errors during component selection.
     # 'ORTE_ERROR_LOG',
@@ -325,7 +327,7 @@ mpi_errors = (
     )
 
 mpi_error_patterns = (
-    r'\bmpirun:\s*kill job\b',
+    r'\b(?:mpirun|orterun|prterun):\s*kill job\b',
     r'\bmpirun noticed that process rank\s+\d+[^\n]{0,80}\b(?:non-zero|signal|terminated|aborted|died)\b',
     r'\bthe first job to fail is listed below\b',
     r'\bjob aborted:',
@@ -1045,7 +1047,8 @@ def find_error_keys(
     source : str, os.PathLike, or text file
         Text to search, a path to a text file, or an open text stream.  A
         string naming an existing file is interpreted as a path; all other
-        strings are interpreted as text.
+        strings are interpreted as text.  Callers inspecting a simulation
+        must search its standard output and standard error separately.
     all_errors : bool, optional
         Enable every individual error set.
     operating_system : bool, optional
@@ -1083,8 +1086,11 @@ def find_error_keys(
         Select h5py-specific errors.  An h5py exception can be handled, so no
         standalone exception is currently definitive; enable ``python`` to
         detect an uncaught exception through its traceback.
-    pwscf, pyscf, quantum_package, rmg, qmcpack, vasp, gamess : bool, optional
+    pwscf, quantum_package, rmg, qmcpack, vasp, gamess : bool, optional
         Select individual simulation-code error sets.
+    pyscf : bool, optional
+        Select PySCF errors and uncaught Python/interpreter errors.  Enabling
+        this selector also enables ``python``.
     return_lines : bool, optional
         If ``True``, return the lines containing matching diagnostics in
         addition to the status.
@@ -1179,6 +1185,12 @@ def find_error_keys(
         if python_module:
             for name in ('numpy', 'scipy', 'h5py'):
                 flags[name] = True
+
+    # PySCF is a Python simulation code.  A traceback or fatal interpreter
+    # diagnostic is therefore a PySCF run failure even when its exception type
+    # is not one of the PySCF-specific diagnostics above.
+    if flags['pyscf']:
+        flags['python'] = True
 
     enabled_sets = tuple(name for name in _error_set_names if flags[name])
     if len(enabled_sets)==0:
