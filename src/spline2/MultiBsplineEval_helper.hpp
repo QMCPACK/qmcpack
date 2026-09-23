@@ -29,9 +29,9 @@ namespace spline2
  * compute the location of the spline grid point and residual coordinates
  * also it precomputes auxiliary array a, b and c
  */
-template<typename T>
+template<typename ST, typename T>
 inline void computeLocationAndFractional(
-    const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
+    const typename qmcplusplus::bspline_traits<ST, 3>::SplineType* restrict spline_m,
     T x,
     T y,
     T z,
@@ -61,9 +61,9 @@ inline void computeLocationAndFractional(
  * compute the location of the spline grid point and residual coordinates
  * also it precomputes auxiliary array (a,b,c) (da,db,dc) (d2a,d2b,d2c)
  */
-template<typename T>
+template<typename ST, typename T>
 inline void computeLocationAndFractional(
-    const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
+    const typename qmcplusplus::bspline_traits<ST, 3>::SplineType* restrict spline_m,
     T x,
     T y,
     T z,

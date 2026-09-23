@@ -21,7 +21,7 @@ import os
 from copy import deepcopy
 import shutil
 import numpy as np
-from .nexus_base import nexus_core
+from .nexus_base import nexus_config
 from .developer import obj, NexusError
 from .physical_system import PhysicalSystem
 from .pseudoset import PseudoSet
@@ -523,7 +523,7 @@ class Pwscf(Simulation):
 
 def generate_pwscf(**kwargs):
 
-    if nexus_core.dynamic:
+    if nexus_config.dynamic:
         dp,dyn_args = DynamicProcess.check_first_gen(kwargs)
         if dp is not None:
             return dp
@@ -548,7 +548,7 @@ def generate_pwscf(**kwargs):
     #end if
     pwscf = Pwscf(**sim_args)
 
-    if nexus_core.dynamic:
+    if nexus_config.dynamic:
         pwscf = DynamicProcess(sim=pwscf,**dyn_args)
 
     return pwscf

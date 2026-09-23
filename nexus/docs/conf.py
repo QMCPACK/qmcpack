@@ -30,15 +30,18 @@ highlight_language = "python"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-import sys
-from pathlib import Path
 import importlib
+import sys
 from importlib.metadata import PackageNotFoundError
+from pathlib import Path
+
 nxs_root = Path(__file__).parent.parent.resolve()
 sys.path.insert(0,str(nxs_root))
 
 # Not sure why, but Sphinx has problems with this import unless it's in this file
 from CifFile import CifFile
+
+from nexus.nexus_base import nexus_config
 
 try:
     release = importlib.metadata.version("nexus")
@@ -63,6 +66,26 @@ extensions = [
 ]
 
 autodoc_inherit_docstrings = False
+
+
+def _add_nexus_config_defaults(app, what, name, obj, options, lines):
+    """Add defaults from ``NexusConfig.restore_defaults`` to attribute docs."""
+    del app, obj, options
+    prefix = "nexus.nexus_base.NexusConfig."
+    if what != "attribute" or not name.startswith(prefix):
+        return
+
+    attribute = name.removeprefix(prefix)
+    if attribute in nexus_config.__slots__:
+        default = getattr(nexus_config, attribute)
+        if isinstance(default, str):
+            lines.extend(("", f"Default: ``{default!r}``"))
+        else:
+            lines.extend(("", f"Default: ``{default!s}``"))
+
+
+def setup(app):
+    app.connect("autodoc-process-docstring", _add_nexus_config_defaults)
 
 copybutton_exclude = '.linenos, .gp, .go' # Don't copy line numbers, prompts, or outputs.
 

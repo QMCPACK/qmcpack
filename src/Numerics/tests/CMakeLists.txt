@@ -21,6 +21,7 @@ set(UTEST_SRCS
     test_gaussian_basis.cpp
     test_cartesian_tensor.cpp
     test_soa_cartesian_tensor.cpp
+    test_soa_spherical_tensor.cpp
     test_transform.cpp
     test_min_oned.cpp
     test_OneDimCubicSplineLinearGrid.cpp
@@ -30,7 +31,8 @@ set(UTEST_SRCS
     test_RotationMatrix3D.cpp)
 
 # Run gen_gto.py to create these files.  They may take a long time to compile.
-#SET(UTEST_SRCS ${UTEST_SRCS} test_full_cartesian_tensor.cpp test_full_soa_cartesian_tensor.cpp)
+#SET(UTEST_SRCS ${UTEST_SRCS} test_full_cartesian_tensor.cpp test_full_soa_cartesian_tensor.cpp
+#    test_full_soa_spherical_tensor.cpp)
 
 add_executable(${UTEST_EXE} ${UTEST_SRCS})
 
