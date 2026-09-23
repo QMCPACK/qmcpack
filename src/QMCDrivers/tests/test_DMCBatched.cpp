@@ -8,10 +8,13 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+#include <string>
+
 #include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Message/Communicate.h"
+#include "Message/UniformCommunicateError.h"
 #include "QMCDrivers/DMC/DMCDriverInput.h"
 #include "QMCDrivers/DMC/DMCBatched.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
@@ -45,6 +48,47 @@ TEST_CASE("DMCDriverInput L2 diffusion", "[drivers]")
   REQUIRE(doc.parseFromString(R"(<qmc method="dmc"><parameter name="L2_diffusion">yes</parameter></qmc>)"));
   dmcdriver_input.readXML(doc.getRoot());
   CHECK(dmcdriver_input.get_l2_diffusion());
+}
+
+TEST_CASE("DMCBatched rejects L2 diffusion with spinors", "[drivers]")
+{
+  using namespace testing;
+  RandomNumberGeneratorPool rng_pool(1);
+  ProjectData test_project;
+  Communicate* comm = OHMMS::Controller;
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<qmc method="dmc"><parameter name="L2_diffusion">yes</parameter></qmc>)"));
+  xmlNodePtr node = doc.getRoot();
+  QMCDriverInput qmcdriver_input;
+  qmcdriver_input.readXML(node);
+  DMCDriverInput dmcdriver_input;
+  dmcdriver_input.readXML(node);
+
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  particle_pool.getParticleSet("e")->setSpinor(true);
+
+  WalkerConfigurations walker_confs;
+  auto construct_driver = [&]() {
+    DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), nullptr, std::move(dmcdriver_input), walker_confs,
+                         MCPopulation(comm->size(), comm->rank(), *particle_pool.getParticleSet("e"),
+                                      wavefunction_pool.getWaveFunction().value(),
+                                      hamiltonian_pool.getHamiltonian().value()),
+                         rng_pool.getRngRefs(), comm);
+  };
+
+  try
+  {
+    construct_driver();
+    FAIL("DMCBatched accepted L2 diffusion with a spinor ParticleSet");
+  }
+  catch (const UniformCommunicateError& error)
+  {
+    CHECK(std::string(error.what()) == "L2 diffusion is not supported for spinor particle sets.");
+  }
 }
 
 /** Since we check the DMC only feature of reserve walkers perhaps this should be

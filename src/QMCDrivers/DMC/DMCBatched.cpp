@@ -66,7 +66,10 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
       dmcdriver_input_(input),
       l2_(dmcdriver_input_.get_l2_diffusion() ? std::make_unique<L2Diffusion>() : nullptr),
       dmc_timers_("DMCBatched::")
-{}
+{
+  if (l2_ && population_.get_golden_electrons().isSpinor())
+    throw UniformCommunicateError("L2 diffusion is not supported for spinor particle sets.");
+}
 
 DMCBatched::~DMCBatched() = default;
 
@@ -210,18 +213,12 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 #endif
 
         ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts, are_valid);
-        if constexpr (CT == CoordsType::POS)
-          if (use_l2_diffusion)
-            sft.l2_diffusion->applyMoveValidity(are_valid, *step_context.l2_workspace);
+        if (use_l2_diffusion)
+          sft.l2_diffusion->applyMoveValidity(are_valid, *step_context.l2_workspace);
 
         twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
-        if constexpr (CT == CoordsType::POS)
-        {
-          if (!use_l2_diffusion)
-            computeLogGreensFunction(deltas, taus, log_gf);
-        }
-        else
+        if (!use_l2_diffusion)
           computeLogGreensFunction(deltas, taus, log_gf);
 
         sft.drift_modifier.getDrifts(taus, grads_new, drifts_reverse);
