@@ -140,8 +140,8 @@ protected:
 
   /// inject additional barrier and measure load imbalance.
   void measureImbalance(const std::string& tag) const;
-  /// End-of-block operations. When enabled, form scalar.dat from the buffered VMC-step reduction.
-  void endBlock(bool write_vmc_dat = false, int first_vmc_step = 0, int vmc_steps = 0);
+  /// end of a block operations. Aggregates statistics across all MPI ranks and write to disk.
+  void endBlock();
 
 public:
   /** Constructor

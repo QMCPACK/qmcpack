@@ -444,7 +444,7 @@ size_t QMCDriverNew::determineStepsPerBlock(IndexType global_walkers,
 /** The scalar estimator collection is quite strange
  *
  */
-void QMCDriverNew::endBlock(bool write_vmc_dat, int first_vmc_step, int vmc_steps)
+void QMCDriverNew::endBlock()
 {
   ScopedTimer local_timer(timers_.endblock_timer);
   RefVector<ScalarEstimatorBase> main_scalar_estimators;
@@ -457,10 +457,6 @@ void QMCDriverNew::endBlock(bool write_vmc_dat, int first_vmc_step, int vmc_step
   std::vector<RefVector<OperatorEstBase>> crowd_operator_estimators;
   // Seems uneeded see EstimatorManagerNew scalar_ests_ documentation.
   std::vector<RefVector<ScalarEstimatorBase>> crowd_scalar_estimators;
-  std::vector<FullPrecRealType> vmc_step_data;
-  if (write_vmc_dat)
-    // Flattened rows permit one communicator reduction for every VMC step in this block.
-    vmc_step_data.assign(vmc_steps * (estimator_manager_->get_AverageCache().size() + 3), 0.0);
 
   for (const UPtr<Crowd>& crowd : crowds_)
   {
@@ -473,15 +469,6 @@ void QMCDriverNew::endBlock(bool write_vmc_dat, int first_vmc_step, int vmc_step
 
     // This seems altogether easier and more sane.
     crowd_operator_estimators.emplace_back(crowd->get_estimator_manager_crowd().get_operator_estimators());
-
-    if (write_vmc_dat)
-    {
-      // Combine thread-local crowd buffers before the single MPI reduction.
-      const auto& crowd_data = crowd->get_estimator_manager_crowd().getVMCData();
-      for (int step = 0; step < crowd_data.size(); ++step)
-        for (int column = 0; column < crowd_data[step].size(); ++column)
-          vmc_step_data[step * crowd_data[step].size() + column] += crowd_data[step][column];
-    }
   }
 
 #ifdef DEBUG_PER_STEP_ACCEPT_REJECT
@@ -490,22 +477,14 @@ void QMCDriverNew::endBlock(bool write_vmc_dat, int first_vmc_step, int vmc_step
       static_cast<FullPrecRealType>(block_accept) / static_cast<FullPrecRealType>(block_accept + block_reject);
   std::cerr << "   total_accept_ratio: << " << total_accept_ratio << '\n';
 #endif
-  if (!write_vmc_dat)
-  {
-    // The regular scalar path is retained when per-step VMC output is disabled.
-    estimator_manager_->collectMainEstimators(main_scalar_estimators);
-    estimator_manager_->collectScalarEstimators(crowd_scalar_estimators);
-  }
+  estimator_manager_->collectMainEstimators(main_scalar_estimators);
+  estimator_manager_->collectScalarEstimators(crowd_scalar_estimators);
   estimator_manager_->collectOperatorEstimators(crowd_operator_estimators);
 
   /// get the average cpu_block time per crowd
   /// cpu_block_time /= crowds_.size();
 
-  if (write_vmc_dat)
-    // This path writes vmc.dat and forms scalar.dat from the same reduced rows.
-    estimator_manager_->stopBlockVMC(first_vmc_step, vmc_step_data);
-  else
-    estimator_manager_->stopBlock(block_accept, block_reject, total_block_weight);
+  estimator_manager_->stopBlock(block_accept, block_reject, total_block_weight);
 }
 
 void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location, const bool serializing_crowd_walkers)
