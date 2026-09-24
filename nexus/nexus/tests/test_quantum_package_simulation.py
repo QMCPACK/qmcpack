@@ -106,7 +106,7 @@ def test_incorporate_result():
 
     Gamess.ericfmt = ''
 
-    other = Simulation()
+    other = Simulation(job=job(machine='ws1',app_command='test.x'))
 
     gms = generate_gamess(
         job = job(machine='ws1',cores=1),

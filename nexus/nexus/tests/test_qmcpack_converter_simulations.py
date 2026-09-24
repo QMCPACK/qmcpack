@@ -88,6 +88,7 @@ def test_pw2qmcpack_get_result():
 def test_pw2qmcpack_incorporate_result(tmp_path):
     from ..developer import NexusError
     from ..simulation import Simulation
+    from ..machines import job
     from .test_pwscf_simulation import get_pwscf_sim
 
     nexus_config.local_directory  = str(tmp_path)
@@ -96,7 +97,7 @@ def test_pw2qmcpack_incorporate_result(tmp_path):
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
-    other = Simulation()
+    other = Simulation(job=job(machine='ws1',app_command='test.x'))
 
     scf = get_pwscf_sim('scf')
 
@@ -250,12 +251,13 @@ def test_convert4qmc_incorporate_result():
     from ..developer import NexusError, obj
     from ..simulation import Simulation
     from ..gamess import Gamess
+    from ..machines import job
     from ..quantum_package import QuantumPackage
     from .test_gamess_simulation import get_gamess_sim
     from .test_pyscf_simulation import get_pyscf_sim
     from .test_quantum_package_simulation import get_quantum_package_sim
 
-    other = Simulation()
+    other = Simulation(job=job(machine='ws1',app_command='test.x'))
 
     gms = get_gamess_sim('rhf')
     Gamess.ericfmt = None
@@ -463,9 +465,10 @@ def test_pyscf_to_afqmc_incorporate_result():
     import os
     from ..developer import NexusError, obj
     from ..simulation import Simulation
+    from ..machines import job
     from .test_pyscf_simulation import get_pyscf_sim
 
-    other = Simulation()
+    other = Simulation(job=job(machine='ws1',app_command='test.x'))
 
     scf = get_pyscf_sim()
 

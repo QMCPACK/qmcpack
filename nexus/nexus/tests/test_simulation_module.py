@@ -722,9 +722,6 @@ def test_init():
     from ..machines import job,Job
     from ..simulation import Simulation,SimulationInput
 
-    # empty init, tests set(), set_directories(), set_files()
-    se = Simulation()
-
     se_ref = obj(
         analyzed             = False,
         analyzer_image       = 'analyzer.p',
@@ -778,25 +775,8 @@ def test_init():
         input                = SimulationInput(),
         )
 
-    seo = obj()
-    for k in se_ref.keys():
-        seo[k] = se[k]
-    assert(object_eq(seo,se_ref))
-    assert(isinstance(se.simid,int))
-    assert(se.simid>=0)
-    assert(se.simid<Simulation.sim_count)
-    assert(isinstance(se.timestamps,obj))
-    assert(len(se.timestamps)==0)
-
-    Simulation.clear_all_sims()
-    assert(len(Simulation.all_sims)==0)
-    assert(len(Simulation.sim_directories)==0)
-    assert(Simulation.sim_count==0)
-
-
     # make a test job
     test_job = job(machine='ws1',app_command='test.x')
-
 
     # minimal non-empty init, tests init_job()
     sm = Simulation(job=test_job)
@@ -807,9 +787,9 @@ def test_init():
     for k in sm_ref.keys():
         smo[k] = sm[k]
     assert(object_eq(smo,sm_ref))
-    assert(isinstance(se.simid,int))
-    assert(se.simid>=0)
-    assert(se.simid<Simulation.sim_count)
+    assert(isinstance(sm.simid,int))
+    assert(sm.simid>=0)
+    assert(sm.simid<Simulation.sim_count)
     assert(isinstance(sm.job,Job))
     assert(id(sm.job)!=id(test_job))
 
@@ -866,8 +846,11 @@ def test_init():
 
 def test_virtuals():
     from ..simulation import Simulation
+    from ..machines import job
 
-    s = Simulation()
+    s = Simulation(
+        job=job(machine='ws1',app_command='test.x')
+    )
 
     virts = [
         (s.check_result,[None,None]),
@@ -922,6 +905,7 @@ def test_virtuals():
 
 def test_reset_indicators():
     from ..simulation import Simulation
+    from ..machines import job
 
     indicators = '''
         got_dependencies
@@ -934,7 +918,9 @@ def test_reset_indicators():
         analyzed
         '''.split()
 
-    s = Simulation()
+    s = Simulation(
+        job=job(machine='ws1',app_command='test.x')
+    )
 
     for i in indicators:
         s[i] = True
@@ -968,7 +954,9 @@ def test_indicator_checks():
     #end def complete
 
     # test completed()
-    s = Simulation()
+    s = Simulation(
+        job=job(machine='ws1',app_command='test.x')
+    )
     assert(not s.completed())
     complete(s)
     assert(s.completed())
@@ -1001,12 +989,15 @@ def test_indicator_checks():
 def test_create_directories(tmp_path):
     import os
     from ..simulation import Simulation
+    from ..machines import job
 
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
-    s = Simulation()
+    s = Simulation(
+        job=job(machine='ws1',app_command='test.x')
+    )
 
     assert(not os.path.exists(s.locdir))
     assert(not os.path.exists(s.imlocdir))
@@ -1025,12 +1016,15 @@ def test_create_directories(tmp_path):
 @isolate_nexus_core
 def test_file_text(tmp_path):
     from ..simulation import Simulation
+    from ..machines import job
 
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
-    s = Simulation()
+    s = Simulation(
+        job=job(machine='ws1',app_command='test.x')
+    )
     s.create_directories()
 
     outfile = Path(s.locdir).resolve() / s.outfile
@@ -2832,14 +2826,16 @@ def test_write_dependents():
 def test_generate_simulation():
     from ..simulation import Simulation,GenericSimulation
     from ..simulation import generate_simulation
+    from ..machines import job
 
+    test_job = job(machine='ws1',app_command='test.x')
     with pytest.raises(
         ValueError,
         match="sim_type unknown is unrecognized"
         ):
-        sim = generate_simulation(sim_type='unknown')
+        sim = generate_simulation(job=test_job, sim_type='unknown')
 
-    sim = generate_simulation()
+    sim = generate_simulation(job=test_job)
     assert(isinstance(sim,Simulation))
     assert(isinstance(sim,GenericSimulation))
 
