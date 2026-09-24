@@ -230,11 +230,6 @@ protected:
    */
   int Period4WalkerDump;
 
-  /** period of recording walker positions and IDs for forward walking afterwards
-   *
-   */
-  int Period4ConfigDump;
-
   ///current step
   IndexType CurrentStep;
 

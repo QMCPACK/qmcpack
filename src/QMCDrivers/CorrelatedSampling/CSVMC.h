@@ -49,9 +49,6 @@ private:
   std::string UseDrift;
   int prevSteps;
   int prevStepsBetweenSamples;
-  ///blocks over which normalization factors are accumulated
-  int equilBlocks;
-
   ///driver copy of Random number generators
   UPtrVector<RandomBase<QMCTraits::FullPrecRealType>> Rng;
 
