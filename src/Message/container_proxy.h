@@ -126,6 +126,9 @@ struct container_proxy<std::vector<bool, Alloc>>
   std::vector<int> my_copy;
   inline container_proxy(std::vector<bool, Alloc>& a) : ref(a)
   {
+    static_assert(qmc_allocator_traits<Alloc>::is_host_accessible,
+                  "container_proxy<std::vector<bool, Alloc>> requires host-accessible allocator for staging data "
+                  "between storage and scratch.");
     my_copy.resize(a.size());
     copy(a.begin(), a.end(), my_copy.begin());
   }
