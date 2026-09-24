@@ -6,7 +6,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_INPUT)
 
 import shutil
 from . import isolate_nexus_core, TEST_DIR
-from nexus.nexus_base import nexus_core
+from nexus.nexus_base import nexus_config
 from ..testing import object_eq,dict_serialize
 
 
@@ -326,9 +326,9 @@ def test_generate(tmp_path):
     pp_dir = tmp_path / "pseudopotentials"
     pp_dir.mkdir()
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
     for file in ppfiles:
         pp = TEST_FILES[file]
         shutil.copy(

@@ -13,6 +13,7 @@
 #ifndef QMCPLUSPLUS_MPI_DATATYPEDEFINE_H
 #define QMCPLUSPLUS_MPI_DATATYPEDEFINE_H
 
+#include <complex>
 #if defined(HAVE_MPI)
 #include <mpi.h>
 #else
@@ -61,9 +62,14 @@ BOOSTSUB_MPI_DATATYPE(unsigned int, MPI_UNSIGNED);
 
 BOOSTSUB_MPI_DATATYPE(unsigned long, MPI_UNSIGNED_LONG);
 
-BOOSTSUB_MPI_DATATYPE(std::complex<double>, MPI_DOUBLE);
-
-BOOSTSUB_MPI_DATATYPE(std::complex<float>, MPI_FLOAT);
+template<typename T>
+inline MPI_Datatype get_mpi_datatype(const std::complex<T>&)
+{
+  static_assert(sizeof(T) == 0,
+                "get_mpi_datatype is not supported for complex types. Use qmcplusplus::scalar_traits<T>::get_address "
+                "to pass the underlying real buffer.");
+  return 0;
+}
 
 template<typename T>
 void free_column_type(T& datatype)

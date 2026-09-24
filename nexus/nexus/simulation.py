@@ -84,7 +84,7 @@ from .developer_tools import Unset
 from .structure import Structure, read_structure
 from .physical_system import PhysicalSystem
 from .machines import Job, Workstation, get_machine
-from .nexus_base import NexusCore, nexus_core, dynamic_storage
+from .nexus_base import NexusCore, nexus_config, SimStage, dynamic_storage
 from .utilities import path_string
 
 if TYPE_CHECKING:
@@ -461,7 +461,7 @@ class Simulation(NexusCore):
 
         path = path.removeprefix("./")
 
-        ld = nexus_core.local_directory
+        ld = nexus_config.local_directory
 
         if path.startswith(ld):
             path = path.split(ld)[1].lstrip('/')
@@ -506,7 +506,7 @@ class Simulation(NexusCore):
             self.system = deepcopy(system)
             consistent,msg = self.system.check_consistent(exit=False,message=True)
             if not consistent:
-                locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
+                locdir = os.path.join(nexus_config.local_directory,nexus_config.runs,self.path)
                 msg = (
                     'user provided physical system is not internally consistent\n'
                     f'simulation identifier: {self.identifier}\n'
@@ -535,7 +535,7 @@ class Simulation(NexusCore):
         self.subcascade_finished = False
         self.block            = block
         self.block_subcascade = block_subcascade
-        self.skip_submit    = skip_submit if skip_submit is not None else nexus_core.skip_submit
+        self.skip_submit    = skip_submit if skip_submit is not None else nexus_config.skip_submit
         self.force_write    = force_write
         self.loaded         = False
         self.process_id     = None
@@ -572,10 +572,10 @@ class Simulation(NexusCore):
         if dependencies is not None:
             self.depends(*dependencies)
 
-        nc_locdir = nexus_core.local_directory
-        nc_remdir = nexus_core.remote_directory
-        nc_rundir = nexus_core.runs
-        nc_resdir = nexus_core.results
+        nc_locdir = nexus_config.local_directory
+        nc_remdir = nexus_config.remote_directory
+        nc_rundir = nexus_config.runs
+        nc_resdir = nexus_config.results
         self.locdir = os.path.join(nc_locdir, nc_rundir, self.path)
         self.remdir = os.path.join(nc_remdir, nc_rundir, self.path)
         self.resdir = os.path.join(nc_locdir, nc_resdir, nc_rundir, self.path)
@@ -626,7 +626,7 @@ class Simulation(NexusCore):
         Simulation.all_sims.append(self)
 
         # dynamic workflow support
-        if nexus_core.dynamic:
+        if nexus_config.dynamic:
             assert self.simid not in dynamic_storage.simulation_ids
             self.produces = set()
             self.products = obj()
@@ -830,7 +830,7 @@ class Simulation(NexusCore):
 
 
     def depends(self,*dependencies):
-        if nexus_core.dynamic:
+        if nexus_config.dynamic:
             msg = 'dynamic workflows do not allow explicit dependencies between simulations'
             raise ValueError(msg)
         if len(dependencies)==0:
@@ -968,7 +968,7 @@ class Simulation(NexusCore):
 
 
     def get_dependencies(self):
-        if nexus_core.generate_only or self.finished:
+        if nexus_config.generate_only or self.finished:
             for dep in self.dependencies.values():
                 for result_name in dep.result_names:
                     dep.results[result_name] = result_name
@@ -1179,7 +1179,7 @@ class Simulation(NexusCore):
             self.files.add(self.infile)
         #end if
         send_files = self.files
-        file_locations = [self.locdir]+nexus_core.file_locations
+        file_locations = [self.locdir]+nexus_config.file_locations
         remote = self.remdir
         for file in send_files:
             found_file = False
@@ -1230,7 +1230,7 @@ class Simulation(NexusCore):
             #end if
             self.submitted = True
             self.record_timestamp('submitted')
-            if (self.job.batch_mode or not nexus_core.monitor) and not nexus_core.generate_only:
+            if (self.job.batch_mode or not nexus_config.monitor) and not nexus_config.generate_only:
                 self.save_image()
             #end if
         elif not self.finished:
@@ -1255,7 +1255,7 @@ class Simulation(NexusCore):
             newly_exited_queue = 'exited_queue' not in self.timestamps
             self.record_timestamp('exited_queue')
         #end if
-        if nexus_core.generate_only:
+        if nexus_config.generate_only:
             self.finished = self.job.finished
         elif self.job.finished:
             should_check = True
@@ -1272,7 +1272,7 @@ class Simulation(NexusCore):
             elif not self.finished:
                 exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
                 elapsed = datetime.now().astimezone() - exited_queue
-                if elapsed.total_seconds()>nexus_core.timeout:
+                if elapsed.total_seconds()>nexus_config.timeout:
                     self.record_timestamp('timed_out')
                     self.failed = True
                 #end if
@@ -1314,7 +1314,7 @@ class Simulation(NexusCore):
         if self.finished:
             self.enter(self.locdir,changedir=False,msg=self.simid)
             self.nxs_print('copying results'+self.idstr(),n=3)
-            if not nexus_core.generate_only:
+            if not nexus_config.generate_only:
                 output_files = self.get_output_files()
                 if self.infile is not None:
                     output_files.append(self.infile)
@@ -1355,7 +1355,7 @@ class Simulation(NexusCore):
         if self.finished:
             self.enter(self.locdir,changedir=False,msg=self.simid)
             self.nxs_print('analyzing'+self.idstr(),n=3)
-            if not nexus_core.generate_only:
+            if not nexus_config.generate_only:
                 analyzer = self.analyzer_type(self)
                 analyzer.analyze()
                 self.post_analyze(analyzer)
@@ -1367,7 +1367,7 @@ class Simulation(NexusCore):
             self.save_image()
 
             # support dynamic workflows
-            if nexus_core.dynamic:
+            if nexus_config.dynamic:
                 self.fill_products()
         #end if
     #end def analyze
@@ -1407,96 +1407,71 @@ class Simulation(NexusCore):
     def progress(self,dependency_id=None):
         if dependency_id is not None:
             self.wait_ids.remove(dependency_id)
-        #end if
-        if len(self.wait_ids)==0 and not self.block and not self.failed:
-            modes = nexus_core.modes
-            mode  = nexus_core.mode
-            progress = True
-            if mode==modes.none:
-                return
-            elif mode==modes.setup:
-                self.write_inputs()
-            elif mode==modes.send_files:
-                self.send_files()
-            elif mode==modes.submit:
-                self.submit()
-                progress = self.finished
-            elif mode==modes.get_output:
+
+        if len(self.wait_ids) > 0:
+            return
+
+        if self.block or self.failed:
+            if self.force_write:
+                if not self.got_dependencies:
+                    self.get_dependencies()
+
+                if SimStage.write_input in nexus_config.stages:
+                    # Wouldn't this fail if the directories haven't been created?
+                    self.write_inputs()
+
+                if not self.sent_files and SimStage.send_files in nexus_config.stages:
+                    self.send_files()
+            return
+
+        progress = True
+        if not self.created_directories:
+            self.create_directories()
+
+        if not self.got_dependencies:
+            self.get_dependencies()
+
+        if (
+            not self.setup
+            and SimStage.write_input in nexus_config.stages
+            ):
+            self.write_inputs()
+
+        if (
+            not self.sent_files
+            and SimStage.send_files in nexus_config.stages
+            ):
+            self.send_files()
+
+        if (
+            not self.finished
+            and SimStage.submit in nexus_config.stages
+            ):
+            self.submit()
+
+        if nexus_config.dependent_modes in nexus_config.stages:
+            progress_post = self.finished
+            progress = self.finished and self.analyzed
+        else:
+            progress_post = progress
+
+        if progress_post:
+            if (
+                not self.got_output
+                and SimStage.get_output in nexus_config.stages
+                ):
                 self.get_output()
-                progress = self.finished
-            elif mode==modes.analyze:
+
+            if (
+                not self.analyzed
+                and SimStage.analyze in nexus_config.stages
+                ):
                 self.analyze()
-                progress = self.finished
-            elif mode==modes.stages:
-                if not self.created_directories:
-                    self.create_directories()
-                #end if
-                if not self.got_dependencies:
-                    self.get_dependencies()
-                #end if
-                if not self.setup and 'setup' in nexus_core.stages:
-                    self.write_inputs()
-                #end if
-                if not self.sent_files and 'send_files' in nexus_core.stages:
-                    self.send_files()
-                #end if
-                if not self.finished and 'submit' in nexus_core.stages:
-                    self.submit()
-                #end if
-                if nexus_core.dependent_modes <= nexus_core.stages_set:
-                    progress_post = self.finished
-                    progress = self.finished and self.analyzed
-                else:
-                    progress_post = progress
-                #end if
-                if progress_post:
-                    if not self.got_output and 'get_output' in nexus_core.stages:
-                        self.get_output()
-                    #end if
-                    if not self.analyzed and 'analyze' in nexus_core.stages:
-                        self.analyze()
-                    #end if
-                #end if
-            elif mode==modes.all:
-                if not self.setup:
-                    self.write_inputs()
-                    self.send_files(enter=False)
-                #end if
-                if not self.finished:
-                    self.submit()
-                #end if
-                if self.finished:
-                    if not self.got_output:
-                        self.get_output()
-                    #end if
-                    if not self.analyzed:
-                        self.analyze()
-                    #end if
-                #end if
-                progress = self.finished
-            #end if
-            if progress and not self.block_subcascade and not self.failed:
-                for sim in self.dependents.values():
-                    if not sim.bundled:
-                        sim.progress(self.simid)
-                    #end if
-                #end for
-            #end if
-        elif len(self.wait_ids)==0 and self.force_write:
-            modes = nexus_core.modes
-            mode  = nexus_core.mode
-            if mode==modes.stages:
-                if not self.got_dependencies:
-                    self.get_dependencies()
-                #end if
-                if 'setup' in nexus_core.stages:
-                    self.write_inputs()
-                #end if
-                if not self.sent_files and 'send_files' in nexus_core.stages:
-                    self.send_files()
-                #end if
-            #end if
-        #end if
+
+        if progress and not (self.block_subcascade or self.failed):
+            for sim in self.dependents.values():
+                if not sim.bundled:
+                    sim.progress(self.simid)
     #end def progress
 
 
@@ -1506,7 +1481,7 @@ class Simulation(NexusCore):
             self.load_image()
             # continue from interruption
             if self.submitted and not self.finished and self.process_id is not None:
-                if nexus_core.dynamic:
+                if nexus_config.dynamic:
                     machine = get_machine(Job.machine)
                     if isinstance(machine,Workstation):
                         # fully rerun following interrupt
@@ -1591,7 +1566,7 @@ class Simulation(NexusCore):
         else:
             env = job.env
         #end if
-        if nexus_core.generate_only:
+        if nexus_config.generate_only:
             self.nxs_print(pad+'Would have executed:  '+command)
         else:
             self.nxs_print(pad+'Executing:  '+command)
@@ -2086,8 +2061,8 @@ class DynamicProcess(DevBase):
 
     @classmethod
     def check_first_gen(cls,kw):
-        nc_loc     = nexus_core.local_directory
-        runs       = nexus_core.runs
+        nc_loc     = nexus_config.local_directory
+        runs       = nexus_config.runs
         path       = kw['path']
         identifier = kw['identifier']
         locdir = os.path.join(nc_loc,runs,path)
