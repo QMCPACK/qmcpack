@@ -11,9 +11,9 @@
 
 
 #include "MultiBsplineOffloadMapperBase.hpp"
-#include "MultiBsplineEval_OMPoffload.hpp"
+#include "OMPTarget/OMPrequires.hpp"
 #include "OMPTarget/OMPTargetMath.hpp"
-#include "OMPTarget/OMPTargetUsage.hpp"
+#include "MultiBsplineEval_OMPoffload.hpp"
 
 namespace qmcplusplus
 {
@@ -35,11 +35,12 @@ void MultiBsplineOffloadMapperBase<T>::updateToDevice()
 }
 
 template<typename T>
-void MultiBsplineOffloadMapperBase<T>::mw_evaluate_v(int num_pos,
-                                                     T* pos_arr,
-                                                     int pos_stride,
-                                                     T* spline_v,
-                                                     size_t walker_stride)
+template<typename VT>
+void MultiBsplineOffloadMapperBase<T>::mw_evaluate_v_impl(int num_pos,
+                                                          VT* pos_arr,
+                                                          int pos_stride,
+                                                          VT* spline_v,
+                                                          size_t walker_stride)
 {
   const auto block_offsets = host_bsplines_.getBlockOffsets();
   for (size_t ib = 0; ib < host_bsplines_.getNumBlocks(); ib++)
@@ -67,24 +68,25 @@ void MultiBsplineOffloadMapperBase<T>::mw_evaluate_v(int num_pos,
         auto* pos         = pos_arr + pos_stride * iw;
         auto* spline_v_iw = spline_v + walker_stride * iw;
         int ix, iy, iz;
-        T a[4], b[4], c[4];
-        spline2::computeLocationAndFractional(spline_ptr, pos[0], pos[1], pos[2], ix, iy, iz, a, b, c);
+        VT a[4], b[4], c[4];
+        spline2::computeLocationAndFractional<T, VT>(spline_ptr, pos[0], pos[1], pos[2], ix, iy, iz, a, b, c);
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c,
-                                             spline_v_iw + block_offset + first + index);
+          spline2offload::evaluate_v_impl_v2<T, VT>(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c,
+                                                    spline_v_iw + block_offset + first + index);
       }
   }
 }
 
 template<typename T>
-void MultiBsplineOffloadMapperBase<T>::mw_evaluate_vgh(int num_pos,
-                                                       T* pos_arr,
-                                                       int pos_stride,
-                                                       T* spline_vgh,
-                                                       size_t walker_stride,
-                                                       size_t field_stride)
+template<typename VT>
+void MultiBsplineOffloadMapperBase<T>::mw_evaluate_vgh_impl(int num_pos,
+                                                            VT* pos_arr,
+                                                            int pos_stride,
+                                                            VT* spline_vgh,
+                                                            size_t walker_stride,
+                                                            size_t field_stride)
 {
   const auto block_offsets = host_bsplines_.getBlockOffsets();
   for (size_t ib = 0; ib < host_bsplines_.getNumBlocks(); ib++)
@@ -112,19 +114,53 @@ void MultiBsplineOffloadMapperBase<T>::mw_evaluate_vgh(int num_pos,
         auto* spline_vgh_iw = spline_vgh + walker_stride * iw;
         auto* pos           = pos_arr + pos_stride * iw;
         int ix, iy, iz;
-        T a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
-        spline2::computeLocationAndFractional(spline_ptr, pos[0], pos[1], pos[2], ix, iy, iz, a, b, c, da, db, dc, d2a,
-                                              d2b, d2c);
+        VT a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
+        spline2::computeLocationAndFractional<T, VT>(spline_ptr, pos[0], pos[1], pos[2], ix, iy, iz, a, b, c, da, db,
+                                                     dc, d2a, d2b, d2c);
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c, da, db, dc,
-                                               d2a, d2b, d2c, spline_vgh_iw + block_offset + first + index,
-                                               field_stride);
+          spline2offload::evaluate_vgh_impl_v2<T, VT>(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c, da,
+                                                      db, dc, d2a, d2b, d2c,
+                                                      spline_vgh_iw + block_offset + first + index, field_stride);
       }
   }
 }
 
+
+template<typename T>
+void MultiBsplineOffloadMapperBase<T>::mw_evaluate_v(int num_pos,
+                                                     float* pos_arr,
+                                                     int pos_stride,
+                                                     float* spline_v,
+                                                     size_t walker_stride)
+{ mw_evaluate_v_impl(num_pos, pos_arr, pos_stride, spline_v, walker_stride); }
+
+template<typename T>
+void MultiBsplineOffloadMapperBase<T>::mw_evaluate_v(int num_pos,
+                                                     double* pos_arr,
+                                                     int pos_stride,
+                                                     double* spline_v,
+                                                     size_t walker_stride)
+{ mw_evaluate_v_impl(num_pos, pos_arr, pos_stride, spline_v, walker_stride); }
+
+template<typename T>
+void MultiBsplineOffloadMapperBase<T>::mw_evaluate_vgh(int num_pos,
+                                                       float* pos_arr,
+                                                       int pos_stride,
+                                                       float* spline_vgh,
+                                                       size_t walker_stride,
+                                                       size_t field_stride)
+{ mw_evaluate_vgh_impl(num_pos, pos_arr, pos_stride, spline_vgh, walker_stride, field_stride); }
+
+template<typename T>
+void MultiBsplineOffloadMapperBase<T>::mw_evaluate_vgh(int num_pos,
+                                                       double* pos_arr,
+                                                       int pos_stride,
+                                                       double* spline_vgh,
+                                                       size_t walker_stride,
+                                                       size_t field_stride)
+{ mw_evaluate_vgh_impl(num_pos, pos_arr, pos_stride, spline_vgh, walker_stride, field_stride); }
 template class MultiBsplineOffloadMapperBase<float>;
 template class MultiBsplineOffloadMapperBase<double>;
 } // namespace qmcplusplus
