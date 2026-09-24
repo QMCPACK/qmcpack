@@ -14,6 +14,7 @@
 #include <cmath>
 
 #include "DMCBatched.h"
+#include "L2Diffusion.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"
@@ -63,8 +64,16 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
                    comm,
                    "DMCBatched"),
       dmcdriver_input_(input),
+      use_l2_diffusion_(dmcdriver_input_.get_l2_diffusion()),
       dmc_timers_("DMCBatched::")
-{}
+{
+  if (use_l2_diffusion_)
+  {
+    assert(!population_.get_golden_electrons().isSpinor() && "L2 diffusion is not supported for spinor particle sets.");
+    assert(population_.get_golden_hamiltonian().has_L2() &&
+           "L2 diffusion was requested, but the Hamiltonian has no L2 potential.");
+  }
+}
 
 DMCBatched::~DMCBatched() = default;
 
@@ -169,10 +178,22 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                        [t = taus.tauovermass](auto& delta_r) { return t * dot(delta_r, delta_r); });
 
         twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
-        sft.drift_modifier.getDrifts(taus, grads_now, drifts);
+        if (step_context.l2_workspace)
+        {
+          if constexpr (CT == CoordsType::POS)
+            L2Diffusion::prepareMove(taus, grads_now, iat, ps_dispatcher, ham_dispatcher, walker_elecs,
+                                     walker_hamiltonians, deltas, drifts, log_gf, are_valid,
+                                     *step_context.l2_workspace);
+          else
+            throw std::runtime_error("L2 diffusion is not supported for spinor particle sets.");
+        }
+        else
+        {
+          sft.drift_modifier.getDrifts(taus, grads_now, drifts);
 
-        scaleBySqrtTau(taus, deltas);
-        drifts += deltas;
+          scaleBySqrtTau(taus, deltas);
+          drifts += deltas;
+        }
 
 // in DMC this was done here, changed to match VMCBatched pending factoring to common source
 // if (rr > m_r2max)
@@ -186,10 +207,13 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 #endif
 
         ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts, are_valid);
+        if (step_context.l2_workspace)
+          L2Diffusion::applyMoveValidity(are_valid, *step_context.l2_workspace);
 
         twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
-        computeLogGreensFunction(deltas, taus, log_gf);
+        if (!step_context.l2_workspace)
+          computeLogGreensFunction(deltas, taus, log_gf);
 
         sft.drift_modifier.getDrifts(taus, grads_new, drifts_reverse);
 
@@ -491,8 +515,8 @@ void DMCBatched::run()
           ? qmcdriver_input_.get_recalculate_properties_period()
           : (qmcdriver_input_.get_max_blocks() + 1) * steps_per_block_;
       dmc_state.is_recomputing_block          = qmcdriver_input_.get_blocks_between_recompute()
-                   ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
-                   : false;
+          ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
+          : false;
 
       for (UPtr<Crowd>& crowd : crowds_)
         crowd->startBlock(steps_per_block_);
@@ -570,7 +594,8 @@ void DMCBatched::createStepContexts(int num_crowds)
                                                                    ? dmcdriver_input_.get_non_local_move()
                                                                    : TmoveKind::OFF,
                                                                qmcdriver_input_.get_tau(), dmcdriver_input_.get_alpha(),
-                                                               dmcdriver_input_.get_gamma()));
+                                                               dmcdriver_input_.get_gamma()),
+                                             use_l2_diffusion_);
 }
 
 } // namespace qmcplusplus

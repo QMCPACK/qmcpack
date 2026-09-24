@@ -65,6 +65,7 @@ set(QMCDRIVERS
     DMC/DMCUpdatePbyPL2.cpp
     DMC/DMCFactory.cpp
     DMC/DMCBatched.cpp
+    DMC/L2Diffusion.cpp
     DMC/DMCDriverInput.cpp
     DMC/DMCRefEnergy.cpp
     DMC/WalkerControlFactory.cpp

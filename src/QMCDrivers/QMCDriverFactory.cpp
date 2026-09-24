@@ -273,6 +273,14 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
         throw UniformCommunicateError(e.what());
       }
 
+      if (dmcdriver_input.get_l2_diffusion())
+      {
+        if (qmc_system.isSpinor())
+          throw UniformCommunicateError("L2 diffusion is not supported for spinor particle sets.");
+        if (!primaryH.has_L2())
+          throw UniformCommunicateError("L2 diffusion was requested, but the Hamiltonian has no L2 potential.");
+      }
+
       new_driver =
           std::make_unique<DMCBatched>(project_data_, std::move(qmcdriver_input),
                                        makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input()),

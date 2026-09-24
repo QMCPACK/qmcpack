@@ -81,6 +81,7 @@ set(DRIVER_TEST_SRC
     test_VMCDriverInput.cpp
     test_VMCBatched.cpp
     test_DMCBatched.cpp
+    test_L2Diffusion.cpp
     test_SFNBranch.cpp
     test_QMCCostFunctionBatched.cpp
     test_QMCCostFunctionBase.cpp
