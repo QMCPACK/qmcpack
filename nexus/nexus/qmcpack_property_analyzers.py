@@ -176,7 +176,7 @@ class Jastrow2B(RadialJastrow):
 
 
 class PropertyAnalyzer(QAanalyzer):
-    None
+    pass
 #end class PropertyAnalyzer
 
 

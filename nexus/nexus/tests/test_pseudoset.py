@@ -17,7 +17,6 @@ from nexus.physical_system import generate_physical_system
 from nexus.pseudoset import PseudoSet, ppset, generate_pseudoset
 from nexus.pseudoset import read_potcar_z_valence, read_qmcpack_xml_z_valence, read_upf_z_valence
 
-from ..generic import NexusUserWarning
 from . import TEST_DIR, isolate_nexus_core
 
 TEST_FILES = {
