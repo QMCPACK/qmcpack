@@ -256,7 +256,9 @@ void VMCBatched::runVMCStep(int crowd_id,
   // Are we entering the the last step of a block to recompute at?
   const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == sft.steps_per_block);
   // For VMC we don't call this method for warmup steps.
-  const bool accumulate_this_step = (step % sft.qmcdrv_input.get_estimator_measurement_period() == 0);
+  // Per-step output requires a scalar accumulation even between normal estimator periods.
+  const bool accumulate_this_step = sft.vmcdrv_input.get_write_vmc_dat() ||
+      (step % sft.qmcdrv_input.get_estimator_measurement_period() == 0);
   const bool spin_move            = sft.population.get_golden_electrons().isSpinor();
   if (spin_move)
     advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
@@ -264,6 +266,9 @@ void VMCBatched::runVMCStep(int crowd_id,
   else
     advanceWalkers<CoordsType::POS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
                                     accumulate_this_step);
+  if (sft.vmcdrv_input.get_write_vmc_dat())
+    // Keep the row private to this crowd until VMCBatched ends the block.
+    crowd.recordVMCStep();
 }
 
 void VMCBatched::process(xmlNodePtr node)
@@ -319,6 +324,9 @@ void VMCBatched::run()
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
   //start the main estimator
   estimator_manager_->startDriverRun();
+  if (vmcdriver_input_.get_write_vmc_dat())
+    // Create the rank-zero per-step file once for this VMC series.
+    estimator_manager_->startVMCdat();
 
   //initialize WalkerLogManager and collectors
   WalkerLogManager wlog_manager(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
@@ -417,7 +425,10 @@ void VMCBatched::run()
       print_mem("VMCBatched after a block", app_debug_stream());
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
-      endBlock();
+      if (vmcdriver_input_.get_write_vmc_dat())
+        endBlockWithStepData(global_step - steps_per_block_, steps_per_block_);
+      else
+        endBlock();
       wlog_manager.writeBuffers();
       recordBlock(block);
     }
@@ -470,6 +481,33 @@ void VMCBatched::run()
   estimator_manager_->stopDriverRun();
 
   finalize(num_blocks, true);
+}
+
+void VMCBatched::endBlockWithStepData(int first_step, int steps)
+{
+  ScopedTimer local_timer(timers_.endblock_timer);
+  const std::size_t row_width = estimator_manager_->get_AverageCache().size() + 3;
+  std::vector<FullPrecRealType> step_data(static_cast<std::size_t>(steps) * row_width, 0.0);
+  std::vector<RefVector<OperatorEstBase>> crowd_operator_estimators;
+
+  for (const UPtr<Crowd>& crowd : crowds_)
+  {
+    crowd->stopBlock();
+    crowd_operator_estimators.emplace_back(crowd->get_estimator_manager_crowd().get_operator_estimators());
+
+    // Combine crowd-local rows before the estimator manager performs the single MPI reduction.
+    const auto& crowd_data = crowd->get_estimator_manager_crowd().getVMCData();
+    assert(crowd_data.size() == static_cast<std::size_t>(steps));
+    for (std::size_t step = 0; step < crowd_data.size(); ++step)
+    {
+      assert(crowd_data[step].size() == row_width);
+      for (std::size_t column = 0; column < row_width; ++column)
+        step_data[step * row_width + column] += crowd_data[step][column];
+    }
+  }
+
+  estimator_manager_->collectOperatorEstimators(crowd_operator_estimators);
+  estimator_manager_->stopBlockVMC(first_step, step_data);
 }
 
 RefVector<QMCDriverNew::ContextForSteps> VMCBatched::getContextForStepsRefs() const

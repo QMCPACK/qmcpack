@@ -2405,6 +2405,37 @@ qmc_run_and_check(
   0
   DET_DIAMOND_BATCHED_SCALARS)
 
+# Per-step VMC output is a batched-driver feature.  Check its final block,
+# matching the scalar reference convention used by the deterministic tests.
+if(QMC_MIXED_PRECISION)
+  set(DET_DIAMOND_VMC_DAT_TOLERANCE 0.00001582)
+else()
+  set(DET_DIAMOND_VMC_DAT_TOLERANCE 0.000001)
+endif()
+
+simple_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc-dat-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_vmc_dat_batched.in.xml
+  1
+  1
+  check_vmc_dat.py
+  det_qmc_vmc_dat_batched
+  0:-10.65021864:${DET_DIAMOND_VMC_DAT_TOLERANCE}:3)
+
+if(NOT QMC_MIXED_PRECISION)
+  simple_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-dat-mpi-omp-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_vmc_dat_mwalkers_batched.in.xml
+    4
+    4
+    check_vmc_dat.py
+    det_qmc_vmc_dat_mwalkers_batched
+    0:-10.79113742:0.000001:3
+    1:-10.47675083:0.000001:3)
+endif()
+
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj_excited-batched
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
