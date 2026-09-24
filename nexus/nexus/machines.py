@@ -2814,6 +2814,7 @@ class Perlmutter(NerscMachine):
         #end if
 
         # Check if the user gave reasonable queue inputs
+        # See https://docs.nersc.gov/jobs/policy/#perlmutter-cpu and https://docs.nersc.gov/jobs/policy/#perlmutter-gpu
         if job.queue == 'debug':
             base_partition = 1
             max_partition = 8
@@ -2821,15 +2822,15 @@ class Perlmutter(NerscMachine):
         elif job.queue == 'regular':
             base_partition = 1
             max_partition = self.nodes
-            max_time = 12
+            max_time = 48
         elif job.queue == 'preempt':
             base_partition = 1
             max_partition = 128
-            max_time = 24
+            max_time = 48
         elif job.queue == 'overrun':
             base_partition = 1
             max_partition = self.nodes
-            max_time = 12
+            max_time = 48
         else:
             msg = 'The requested queue is not implemented.'
             raise NotImplementedError(msg)
