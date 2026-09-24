@@ -69,7 +69,7 @@ inline void Communicate::gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int
 }
 
 template<typename T, typename TMPI, typename IT>
-inline void Communicate::gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest)
+inline void Communicate::gatherv_in_place(T* buf, const TMPI& datatype, IT& counts, IT& displ, int dest)
 {}
 
 template<typename T>

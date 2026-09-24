@@ -353,8 +353,7 @@ TEST_CASE("communicate_collectives_float_pointer_gatherv_in_place", "[message][c
   for (int element = 0; element < counts[comm->rank()]; ++element)
     buffer[displacements[comm->rank()] + element] = 10.0f * comm->rank() + element + 1.0f;
 
-  auto type_id = qmcplusplus::mpi::get_mpi_datatype(buffer[0]);
-  comm->gatherv_in_place(buffer.data(), type_id, counts, displacements);
+  comm->gatherv_in_place(buffer.data(), qmcplusplus::mpi::get_mpi_datatype(buffer[0]), counts, displacements);
 
   if (comm->rank() == 0)
     for (int rank = 0; rank < comm->size(); ++rank)

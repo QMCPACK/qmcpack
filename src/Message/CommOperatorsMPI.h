@@ -219,7 +219,7 @@ inline void Communicate::bcast(std::string& g)
 
 
 template<typename T, typename TMPI, typename IT>
-inline void Communicate::gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest)
+inline void Communicate::gatherv_in_place(T* buf, const TMPI& datatype, IT& counts, IT& displ, int dest)
 {
   static_assert(qmcplusplus::scalar_traits<T>::DIM == 1, "Complex types not supported for this method");
   if (!d_mycontext)
