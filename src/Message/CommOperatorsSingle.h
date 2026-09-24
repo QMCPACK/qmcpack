@@ -40,26 +40,17 @@ inline void Communicate::bcast(T* restrict, int n)
 {}
 
 
-
-
 template<typename T>
 inline void Communicate::gather(T& sb, T& rb, int dest)
 { rb = sb; }
 
 template<typename T>
 inline void Communicate::allgather(T& sb, T& rb)
-{
-  rb = sb;
-}
+{ rb = sb; }
 
 template<typename T>
 inline void Communicate::scatter(T& sb, T& rb, int dest)
 { rb = sb; }
-
-
-
-
-
 
 
 template<typename T, typename IT>

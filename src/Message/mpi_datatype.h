@@ -91,6 +91,10 @@ MPI_Datatype construct_column_type(const T* element, int nrow, int ncol)
 #else
 using status       = int;
 using request      = int;
+
+template<typename T>
+inline MPI_Datatype get_mpi_datatype(const T&)
+{ return 0; }
 using MPI_Datatype = int;
 
 
