@@ -9,7 +9,7 @@ from copy import deepcopy
 from . import isolate_nexus_core, create_pseudo_files
 from nexus.nexus_base import nexus_config
 from ..testing import clear_all_sims
-from ..testing import failed,FailedTest
+from ..testing import failed
 from ..testing import value_eq,object_eq
 
 
@@ -109,7 +109,6 @@ def test_check_result(tmp_path):
 
 @isolate_nexus_core
 def test_get_result(tmp_path):
-    from ..developer import NexusError
 
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
@@ -239,7 +238,7 @@ def test_check_sim_status(tmp_path):
     try:
         sim.check_sim_status()
     except IOError:
-        None
+        pass
     except Exception as e:
         failed(str(e))
     #end try

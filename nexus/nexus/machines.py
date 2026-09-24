@@ -1180,7 +1180,7 @@ class Machine(NexusCore):
 
 
     def requeue_job(self,job):
-        None
+        pass
     #end def requeue_job
 
 
@@ -1642,7 +1642,7 @@ class Supercomputer(Machine):
                                  )
         elif self.queue_querier=='qstata':
             #already gives status as queued, running, etc.
-            None
+            pass
         elif  self.queue_querier=='squeue':
             self.job_states=dict(CG = 'exiting',
                                  TO = 'timeout',
@@ -1721,7 +1721,7 @@ class Supercomputer(Machine):
                                  SSUSP = 'suspended',
                                  )
         elif self.queue_querier=='test_query':
-            None
+            pass
         else:
             msg = 'ability to query queue with '+self.queue_querier+' has not yet been implemented'
             raise NotImplementedError(msg)
@@ -1872,16 +1872,16 @@ class Supercomputer(Machine):
                 envs     = envs
                 )
         elif launcher=='srun':  # Amos contribution from Ryan McAvoy
-            None
+            pass
         elif launcher=='ibrun': # Lonestar contribution from Paul Young
             job.run_options.add(
             np	= '-n '+str(job.processes),
             p	= '-o '+str(0),
             )
         elif launcher=='jsrun': # Summit
-            None # Summit class takes care of this in post_process_job
+            pass # Summit class takes care of this in post_process_job
         elif launcher=='lrun': # Lassen
-            None # Lassen class takes care of this in post_process_job
+            pass # Lassen class takes care of this in post_process_job
         else:
             msg = launcher+' is not yet implemented as an application launcher'
             raise NotImplementedError(msg)
@@ -1890,12 +1890,12 @@ class Supercomputer(Machine):
 
 
     def pre_process_job(self,job):
-        None
+        pass
     #end def pre_process_job
 
 
     def post_process_job(self,job):
-        None
+        pass
     #end def post_process_job
 
 
@@ -2814,6 +2814,7 @@ class Perlmutter(NerscMachine):
         #end if
 
         # Check if the user gave reasonable queue inputs
+        # See https://docs.nersc.gov/jobs/policy/#perlmutter-cpu and https://docs.nersc.gov/jobs/policy/#perlmutter-gpu
         if job.queue == 'debug':
             base_partition = 1
             max_partition = 8
@@ -2821,15 +2822,15 @@ class Perlmutter(NerscMachine):
         elif job.queue == 'regular':
             base_partition = 1
             max_partition = self.nodes
-            max_time = 12
+            max_time = 48
         elif job.queue == 'preempt':
             base_partition = 1
             max_partition = 128
-            max_time = 24
+            max_time = 48
         elif job.queue == 'overrun':
             base_partition = 1
             max_partition = self.nodes
-            max_time = 12
+            max_time = 48
         else:
             msg = 'The requested queue is not implemented.'
             raise NotImplementedError(msg)
@@ -4909,7 +4910,7 @@ class Lassen(Supercomputer):
             #    job.alloc_flags = 'smt1'
             ##end if
             if job.gpus==0:
-                None
+                pass
             else:
                 opt.mgpu = '-M "-gpu"'
             #end if

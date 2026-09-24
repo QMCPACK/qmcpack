@@ -1200,7 +1200,7 @@ def test_grid_volume():
                     assert(1==0)
                 #end if
             else:
-                None # not supported
+                pass # not supported
             #end if
         else:
             assert(1==0)
@@ -1221,7 +1221,7 @@ def test_grid_cell_volumes():
         if not isinstance(g,SpheroidSurfaceGrid) or g.isotropic:
             assert(value_eq(g.volume(),g.cell_volumes().sum()))
         else:
-            None # not supported
+            pass # not supported
         #end if
     #end for
 #end def test_grid_cell_volumes

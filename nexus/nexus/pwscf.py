@@ -248,7 +248,7 @@ class Pwscf(Simulation):
             res_path = os.path.abspath(result.locdir)
             loc_path = os.path.abspath(self.locdir)
             if res_path==loc_path:
-                None # don't need to do anything if in same directory
+                pass # don't need to do anything if in same directory
             elif self.sync_from_scf: # rsync output into nscf dir
                 outdir = os.path.join(self.locdir,c.outdir)
                 command = f'rsync -av {result.outdir}/* {outdir}/'
@@ -323,7 +323,7 @@ class Pwscf(Simulation):
             res_path = os.path.abspath(result.locdir)
             loc_path = os.path.abspath(self.locdir)
             if res_path==loc_path:
-                None # don't need to do anything if in same directory
+                pass # don't need to do anything if in same directory
             else: # rsync output into new scf dir
                 outdir = os.path.join(self.locdir,c.outdir)
                 command = f'rsync -av {result.outdir}/* {outdir}/'

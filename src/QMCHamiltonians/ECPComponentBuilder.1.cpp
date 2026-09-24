@@ -211,13 +211,8 @@ std::unique_ptr<ECPComponentBuilder::mGridType> ECPComponentBuilder::createGrid(
   //mRealType astep = 1.25e-2;
   int npts = 1001;
   std::string gridType("log");
-  std::string gridID("global");
   OhmmsAttributeSet radAttrib;
   radAttrib.add(gridType, "type");
-  radAttrib.add(gridID, "grid_id");
-  radAttrib.add(gridID, "grid_def");
-  radAttrib.add(gridID, "name");
-  radAttrib.add(gridID, "id");
   radAttrib.add(npts, "npts");
   radAttrib.add(ri, "ri");
   radAttrib.add(rf, "rf");
@@ -226,11 +221,6 @@ std::unique_ptr<ECPComponentBuilder::mGridType> ECPComponentBuilder::createGrid(
   radAttrib.add(ascale, "scale");
   radAttrib.add(astep, "step");
   radAttrib.put(cur);
-  auto git = grid_inp.find(gridID);
-  if (git != grid_inp.end())
-  {
-    return (*git).second->makeClone(); //use the same grid
-  }
   //overwrite the grid type to linear starting at 0.0
   if (useLinear)
   {

@@ -39,10 +39,8 @@ AOBasisBuilder<COT>::AOBasisBuilder(const std::string& eName, Communicate* comm)
 {
   // mmorales: for "Cartesian Gaussian", m is an integer that maps
   //           the component to Gamess notation, see Numerics/CartesianTensor.h
-  nlms_id["n"] = q_n;
   nlms_id["l"] = q_l;
   nlms_id["m"] = q_m;
-  nlms_id["s"] = q_s;
 }
 
 template<class COT>
@@ -256,7 +254,7 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
       {
         std::map<std::string, int>::iterator iit = nlms_id.find(aname);
         if (iit != nlms_id.end())
-        //valid for n,l,m,s
+        // valid for l and m
         {
           nlms[(*iit).second] = atoi((const char*)(att->children->content));
         }

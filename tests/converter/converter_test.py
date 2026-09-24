@@ -41,21 +41,24 @@ def compare(gold_file,test_file):
             return True
 
 
-def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, extra_cmd_args,code):
+def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, extra_cmd_args, code,
+             with_jastrow):
     okay = True
 
     # Example invocation of converter
     #convert4qmc -nojastrow -prefix gold -gamess be.out
 
     cmd = c4q_exe.split()
+    if not with_jastrow:
+        cmd.append('-nojastrow')
     if code=='generic':
-        cmd.extend(['-nojastrow', '-prefix', 'test', '-orbitals', conv_inp])
+        cmd.extend(['-prefix', 'test', '-orbitals', conv_inp])
     if code=='gamess':
-        cmd.extend(['-nojastrow', '-prefix', 'test', '-gamess', conv_inp])
+        cmd.extend(['-prefix', 'test', '-gamess', conv_inp])
     if code=='dirac':
-        cmd.extend(['-nojastrow', '-prefix', 'test', '-TargetState','14','-dirac', conv_inp])
+        cmd.extend(['-prefix', 'test', '-TargetState','14','-dirac', conv_inp])
     if code=='rmg':
-        cmd.extend(['-nojastrow', '-prefix', 'test', '-rmg', conv_inp])
+        cmd.extend(['-prefix', 'test', '-rmg', conv_inp])
 
     for ex_arg in extra_cmd_args:
         if ex_arg == '-ci':
@@ -131,7 +134,7 @@ def read_extra_args():
     return extra_cmd_args
 
 
-def run_one_converter_test(c4q_exe, h5diff_exe):
+def run_one_converter_test(c4q_exe, h5diff_exe, with_jastrow):
     code='gamess'
     if os.path.exists('orbitals'):
        code='generic'
@@ -162,7 +165,7 @@ def run_one_converter_test(c4q_exe, h5diff_exe):
     extra_cmd_args = read_extra_args()
 
     expect_fail = os.path.exists('expect_fail.txt')
-    gold_file = 'gold.wfnoj.xml'
+    gold_file = 'gold.wfj.xml' if with_jastrow else 'gold.wfnoj.xml'
     if expect_fail:
         gold_file = ''
     else:
@@ -170,7 +173,7 @@ def run_one_converter_test(c4q_exe, h5diff_exe):
             print("Gold file missing")
             return False
     return run_test(test_name, c4q_exe, h5diff_exe, conv_input_file, gold_file,
-                    expect_fail, extra_cmd_args,code)
+                    expect_fail, extra_cmd_args, code, with_jastrow)
 
 
 if __name__ == '__main__':
@@ -183,6 +186,9 @@ if __name__ == '__main__':
     parser.add_argument('--h5diff',
                         default='h5diff',
                         help='Location of h5diff executable')
+    parser.add_argument('--jastrow',
+                        action='store_true',
+                        help='Generate and compare Jastrow sections')
     args = parser.parse_args()
 
     test_dir = args.test_name
@@ -193,7 +199,7 @@ if __name__ == '__main__':
     curr_dir = os.getcwd()
     os.chdir(test_dir)
 
-    ret = run_one_converter_test(args.exe, args.h5diff)
+    ret = run_one_converter_test(args.exe, args.h5diff, args.jastrow)
 
     os.chdir(curr_dir)
 

@@ -64,6 +64,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
          <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
          <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
          <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"/>
+         <estimator type="Pressure" name="pressure"/>
 </hamiltonian>)";
 
   Libxml2Document doc;
@@ -76,10 +77,11 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 
   REQUIRE(ham);
   REQUIRE(ham->size() == 3);
-  REQUIRE(ham->total_size() == 3);
+  REQUIRE(ham->total_size() == 4);
 
   REQUIRE(ham->getOperatorType("ElecElec") == "coulomb");
   REQUIRE(ham->getOperatorType("ElecIon") == "coulomb");
+  REQUIRE(ham->getOperatorType("pressure") == "Pressure");
 }
 
 TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
@@ -116,6 +118,7 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
     <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
         <pseudo elementType="C" href="C.BFD.xml"/>
      </pairpot>
+    <estimator type="Force" name="force" mode="bare" source="ion0" target="e"/>
 </hamiltonian>)";
 
   Libxml2Document doc;
@@ -123,6 +126,12 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
 
   xmlNodePtr root = doc.getRoot();
   hf.put(root);
+
+  auto ham = hf.releaseHamiltonian();
+  REQUIRE(ham);
+  CHECK(ham->size() == 3);
+  CHECK(ham->total_size() == 4);
+  CHECK(ham->getOperatorType("force") == "Force");
 }
 
 } // namespace qmcplusplus

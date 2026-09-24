@@ -17,8 +17,6 @@
 #include "Particle/ParticleSet.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "QMCHamiltonians/OperatorBase.h"
-#include "CPU/VectorOps.h"
-#include "OhmmsData/ParameterSet.h"
 
 
 namespace qmcplusplus
@@ -64,64 +62,6 @@ public:
    */
 
   bool put(xmlNodePtr cur) override { return true; }
-
-  //     bool put(xmlNodePtr cur, ParticleSet& P, QMCHamiltonian* H) {
-  //       xmlNodePtr tcur = cur->children;
-  //
-  //       double RPAKCut= -1.0;
-  //       std::string RPAPCorr("ZB");
-  //       std::string RPAPfunc("RPA_LR");
-  //       ParameterSet nattrib;
-  //       OhmmsAttributeSet attrib;
-  //       attrib.add(RPAPCorr,"etype" );
-  //       attrib.add(RPAPfunc,"functor" );
-  //       attrib.put(cur);
-  //       nattrib.add(RPAKCut,"kc");
-  //       nattrib.put(cur);
-
-  //       if (RPAPCorr=="ZB"){
-  //         ZB=true;
-  //         ZV=false;
-  //         bpcorr = new RPAPressureCorrection(P);
-  //         bpcorr-> put(cur, P);
-  //         H->addOperator(bpcorr,"ZVterm");
-  //       }
-  //       else if (RPAPCorr=="ZVZB"){
-  //         ZB=true;
-  //         ZV=true;
-  //         bpcorr = new RPAPressureCorrection(P);
-  //         wfderivE = new RPADerivEnergy(P);
-  //         wfderivE2 = new RPADerivEnergy2(P);
-  //         wfEP = new RPAEnergyPressure(P);
-  //         bpcorr-> put(cur, P);
-  //         wfderiv = new RPADeriv(P);
-  //         wfderiv -> put(cur, bpcorr);
-  //         wfderivE -> put(cur, bpcorr, H);
-  //         wfderivE2 -> put(cur, bpcorr, H);
-  //         wfEP -> put(cur, bpcorr, H);
-  //         potkin = new RPAPotKin(P);
-  //         H->addOperator(potkin,"PotKin");
-  //         H->addOperator(wfEP,"EPterm");
-  //         H->addOperator(bpcorr,"ZVterm");
-  //         H->addOperator(wfderiv,"dpsi");
-  //         H->addOperator(wfderivE,"Edpsi");
-  //         H->addOperator(wfderivE2,"Tdpsi");
-  //       }
-  //       else if (RPAPCorr=="ZV"){
-  //         ZV=true;
-  //         ZB=false;
-  //         bpcorr = new RPAPressureCorrection(P);
-  //         bpcorr-> put(cur, P);
-  //         H->addOperator(bpcorr,"ZVterm");
-  //       }
-  //       else if (RPAPCorr=="none"){
-  //         ZV=false;
-  //         ZB=false;
-  //         app_log() <<" using bare estimator "<< std::endl;;
-  //       }
-
-  //       return true;
-  //     }
 
   bool get(std::ostream& os) const override
   {

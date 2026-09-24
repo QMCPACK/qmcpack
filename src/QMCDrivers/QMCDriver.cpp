@@ -80,10 +80,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   //m_param.add(Period4WalkerDump,"recordWalkers");
   m_param.add(Period4WalkerDump, "record_walkers");
   m_param.add(Period4WalkerDump, "recordwalkers");
-  Period4ConfigDump = 0;
-  //m_param.add(Period4ConfigDump,"recordConfigs");
-  m_param.add(Period4ConfigDump, "recordconfigs");
-  m_param.add(Period4ConfigDump, "record_configs");
   CurrentStep = 0;
   m_param.add(CurrentStep, "current");
   nBlocks = 1;
@@ -433,13 +429,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
         rAttrib.add(Period4CheckPoint, "period");
         rAttrib.put(tcur);
         //DumpConfig=(Period4CheckPoint>0);
-      }
-      else if (cname == "dumpconfig")
-      {
-        OhmmsAttributeSet rAttrib;
-        rAttrib.add(Period4ConfigDump, "stride");
-        rAttrib.add(Period4ConfigDump, "period");
-        rAttrib.put(tcur);
       }
       else if (cname == "random")
       {
