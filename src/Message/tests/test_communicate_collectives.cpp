@@ -281,7 +281,7 @@ TEST_CASE("communicate_collectives_float_vector_gatherv", "[message][collectives
         CHECK(receive[displacements[rank] + element] == 10.0f * rank + element + 1.0f);
 }
 
-TEST_CASE("communicate_collectives_complex_pointer_gatherv", "[message][collectives]")
+TEST_CASE("communicate_collectives_double_pointer_gatherv", "[message][collectives]")
 {
   Communicate* comm     = OHMMS::Controller;
   const int local_count = comm->rank() + 1;
