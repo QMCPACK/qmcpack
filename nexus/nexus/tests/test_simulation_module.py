@@ -30,23 +30,23 @@ class SimulationInputForTests(SimulationInput):
     #end def is_valid
 
     def read(self,filepath):
-        None
+        pass
     #end def read
 
     def write(self,filepath=None):
-        None
+        pass
     #end def write
 
     def read_text(self,text,filepath=None):
-        None
+        pass
     #end def read_text
 
     def write_text(self,filepath=None):
-        None
+        pass
     #end def write_text
 
     def incorporate_system(self,system):
-        None
+        pass
     #end def incorporate_system
 
     def return_system(self):
@@ -409,7 +409,7 @@ def test_simulation_input(tmp_path):
             v(*args)
             raise FailedTest
         except NotImplementedError:
-            None
+            pass
         except FailedTest:
             failed(str(v))
         except Exception as e:
@@ -430,7 +430,7 @@ def test_simulation_analyzer():
     except FailedTest:
         failed()
     except:
-        None
+        pass
     #end try
 
     # virtuals
@@ -438,7 +438,7 @@ def test_simulation_analyzer():
         SimulationAnalyzer(None)
         raise FailedTest
     except NotImplementedError:
-        None
+        pass
     except FailedTest:
         failed()
     except Exception as e:
@@ -450,7 +450,7 @@ def test_simulation_analyzer():
 
 def test_simulation_input_template(tmp_path):
     from string import Template
-    from ..developer import obj, to_obj, NexusError
+    from ..developer import obj, to_obj
     from ..simulation import SimulationInput
     from ..simulation import GenericSimulationInput
     from ..simulation import SimulationInputTemplate
@@ -831,7 +831,7 @@ def test_init():
     except FailedTest:
         failed()
     except:
-        None
+        pass
     #end try
 
     # two sims in same directory w/ different identifiers should be ok
@@ -886,7 +886,7 @@ def test_virtuals():
             v(*args)
             raise FailedTest
         except NotImplementedError:
-            None
+            pass
         except FailedTest:
             failed(str(v))
         except Exception as e:
@@ -1139,7 +1139,6 @@ def check_dependency(sim2,sim1,quants=('other',),*,only=False,objects=False):
 
 
 def test_depends():
-    from ..developer import NexusError
     from ..simulation import Simulation
 
     # single dependency, single quantity
@@ -1379,7 +1378,7 @@ def test_has_generic_input():
     del s
 
     class GenInput(SimulationInput,GenericSimulationInput):
-        None
+        pass
     #end class GenInput
 
     s = get_sim(
@@ -1394,7 +1393,7 @@ def test_has_generic_input():
 
 @isolate_nexus_core
 def test_check_dependencies():
-    from ..developer import obj, NexusError
+    from ..developer import obj
     from ..simulation import Simulation
     from ..simulation import SimulationInput,GenericSimulationInput
 
@@ -1464,7 +1463,7 @@ def test_check_dependencies():
 
     # existent dependency but generic input
     class GenInput(SimulationInput,GenericSimulationInput):
-        None
+        pass
     #end class GenInput
 
     s = get_test_sim(

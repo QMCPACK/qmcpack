@@ -61,7 +61,7 @@ public:
 private:
   ParticleSetPool& PtclPool;
   ParticleSet::ParticlePos deltaR;
-  std::string checkRatio, checkClone, checkHamPbyP, sourceName, wftricks, checkEloc;
+  std::string checkRatio, checkClone, sourceName, wftricks, checkEloc;
   std::string checkBasic, checkRatioV;
   xmlNodePtr myNode;
   double deltaParam;

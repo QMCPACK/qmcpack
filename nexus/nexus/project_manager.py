@@ -49,7 +49,7 @@ def color_status_result(result: Literal['SUCCESS','FAILURE'] | str,logfile: Text
 
 
 def trivial(sim,*args,**kwargs):
-    None
+    pass
 #end def trivial
 
 
@@ -286,7 +286,6 @@ class ProjectManager(NexusCore):
         for cascade in self.cascades.values():
             cascade.traverse_cascade(operation,*args,**kwargs)
         #end for
-        return
     #end def traverse_cascades
 
 
@@ -422,7 +421,6 @@ class ProjectManager(NexusCore):
             self.nxs_print(cascade.__class__.__name__+' '+str(cascade.simid),n=2)
             cascade.write_dependents(n=2)
         #end for
-        return
     #end def write_cascade_dependents
 #end class ProjectManager
 

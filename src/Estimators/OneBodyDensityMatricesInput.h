@@ -73,12 +73,10 @@ public:
       // clang-format off
       section_name  = "OneBodyDensityMatrices";
       attributes    = {"name"};
-      parameters    = {"basis", "energy_matrix", "integrator", "evaluator", "scale",
+      parameters    = {"basis", "integrator", "evaluator", "scale",
                        "corner", "center", "points", "samples", "warmup", "timestep",
-                       "use_drift", "check_overlap", "check_derivatives", "acceptance_ratio", "rstats",
-                       "normalized", "volume_normed"};
-      bools         = {"energy_matrix", "use_drift", "normalized", "volume_normed",
-                       "check_overlap", "check_derivatives", "rstats", "acceptance_ratio"};
+                       "use_drift", "acceptance_ratio", "rstats", "normalized", "volume_normed"};
+      bools         = {"use_drift", "normalized", "volume_normed", "rstats", "acceptance_ratio"};
       enums         = {"integrator", "evaluator"};
       strings       = {"name"};
       multi_strings = {"basis"};
@@ -108,12 +106,9 @@ private:
   OneBodyDensityMatricesInputSection input_section_;
 
   // Default parameters for OneBodyDensityMatrices
-  bool energy_matrix_          = false;
   bool use_drift_              = false;
   bool normalized_             = true;
   bool volume_normalized_      = true;
-  bool check_overlap_          = false;
-  bool check_derivatives_      = false;
   bool rstats_                 = false;
   bool write_acceptance_ratio_ = false;
   /// This flag is derived from input so if you construct an OBDMI directly with center it must be set.
@@ -134,12 +129,9 @@ private:
 
 public:
   const std::string& get_name() const { return name_; }
-  bool get_energy_matrix() const { return energy_matrix_; }
   bool get_use_drift() const { return use_drift_; }
   bool get_normalized() const { return normalized_; }
   bool get_volume_normalized() const { return volume_normalized_; }
-  bool get_check_overlap() const { return check_overlap_; }
-  bool get_check_derivatives() const { return check_derivatives_; }
   bool get_rstats() const { return rstats_; }
   bool get_write_acceptance_ratio() const { return write_acceptance_ratio_; }
   Integrator get_integrator() const { return integrator_; }

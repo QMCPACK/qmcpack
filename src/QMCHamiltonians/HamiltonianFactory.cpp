@@ -114,18 +114,9 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
     std::string noname = "any";
     std::string potType(notype);
     std::string potName(noname);
-    std::string potUnit("hartree");
-    std::string estType("coulomb");
-    std::string sourceInp(targetPtcl.getName());
-    std::string targetInp(targetPtcl.getName());
     OhmmsAttributeSet attrib;
-    attrib.add(sourceInp, "source");
-    attrib.add(sourceInp, "sources");
-    attrib.add(targetInp, "target");
     attrib.add(potType, "type");
     attrib.add(potName, "name");
-    attrib.add(potUnit, "units");
-    attrib.add(estType, "potential");
     attrib.put(element);
 
     int nham = targetH->total_size();
@@ -177,6 +168,17 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
       }
       else if (potType == "latticedeviation")
       {
+        std::string sourceInp(targetPtcl.getName());
+        std::string targetInp(targetPtcl.getName());
+        std::string target_group, source_group;
+        OhmmsAttributeSet local_attrib;
+        local_attrib.add(sourceInp, "source");
+        local_attrib.add(sourceInp, "sources");
+        local_attrib.add(targetInp, "target");
+        local_attrib.add(target_group, "tgroup");
+        local_attrib.add(source_group, "sgroup");
+        local_attrib.put(element);
+
         // find target particle set
         auto pit(ptclPool.find(targetInp));
         if (pit == ptclPool.end())
@@ -191,13 +193,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
           APP_ABORT("Unknown source \"" + sourceInp + "\" for LatticeDeviation.");
         }
 
-        // read xml node
-        OhmmsAttributeSet local_attrib;
-        std::string target_group, source_group;
-        local_attrib.add(target_group, "tgroup");
-        local_attrib.add(source_group, "sgroup");
-        local_attrib.put(element);
-
         std::unique_ptr<LatticeDeviationEstimator> apot =
             std::make_unique<LatticeDeviationEstimator>(*pit->second, *spit->second, target_group, source_group);
         apot->put(element);
@@ -207,6 +202,12 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
         addForceHam(element);
       else if (potType == "gofr")
       {
+        std::string sourceInp(targetPtcl.getName());
+        OhmmsAttributeSet local_attrib;
+        local_attrib.add(sourceInp, "source");
+        local_attrib.add(sourceInp, "sources");
+        local_attrib.put(element);
+
         std::unique_ptr<PairCorrEstimator> apot = std::make_unique<PairCorrEstimator>(targetPtcl, sourceInp);
         apot->put(element);
         targetH->addOperator(std::move(apot), potName, false);
@@ -356,16 +357,16 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
 #endif
       else if (potType == "Pressure")
       {
+        std::string estType("coulomb");
+        OhmmsAttributeSet local_attrib;
+        local_attrib.add(estType, "potential");
+        local_attrib.put(element);
+
         if (estType == "coulomb")
         {
           std::unique_ptr<Pressure> BP = std::make_unique<Pressure>();
           BP->put(element);
           targetH->addOperator(std::move(BP), "Pressure", false);
-          int nlen(100);
-          attrib.add(nlen, "truncateSum");
-          attrib.put(element);
-          //             DMCPressureCorr* DMCP = new DMCPressureCorr(targetPtcl,nlen);
-          //             targetH->addOperator(DMCP,"PressureSum",false);
         }
       }
       else if (potType == "momentum")
