@@ -1180,7 +1180,7 @@ class Machine(NexusCore):
 
 
     def requeue_job(self,job):
-        None
+        pass
     #end def requeue_job
 
 
@@ -1642,7 +1642,7 @@ class Supercomputer(Machine):
                                  )
         elif self.queue_querier=='qstata':
             #already gives status as queued, running, etc.
-            None
+            pass
         elif  self.queue_querier=='squeue':
             self.job_states=dict(CG = 'exiting',
                                  TO = 'timeout',
@@ -1721,7 +1721,7 @@ class Supercomputer(Machine):
                                  SSUSP = 'suspended',
                                  )
         elif self.queue_querier=='test_query':
-            None
+            pass
         else:
             msg = 'ability to query queue with '+self.queue_querier+' has not yet been implemented'
             raise NotImplementedError(msg)
@@ -1872,16 +1872,16 @@ class Supercomputer(Machine):
                 envs     = envs
                 )
         elif launcher=='srun':  # Amos contribution from Ryan McAvoy
-            None
+            pass
         elif launcher=='ibrun': # Lonestar contribution from Paul Young
             job.run_options.add(
             np	= '-n '+str(job.processes),
             p	= '-o '+str(0),
             )
         elif launcher=='jsrun': # Summit
-            None # Summit class takes care of this in post_process_job
+            pass # Summit class takes care of this in post_process_job
         elif launcher=='lrun': # Lassen
-            None # Lassen class takes care of this in post_process_job
+            pass # Lassen class takes care of this in post_process_job
         else:
             msg = launcher+' is not yet implemented as an application launcher'
             raise NotImplementedError(msg)
@@ -1890,12 +1890,12 @@ class Supercomputer(Machine):
 
 
     def pre_process_job(self,job):
-        None
+        pass
     #end def pre_process_job
 
 
     def post_process_job(self,job):
-        None
+        pass
     #end def post_process_job
 
 
@@ -4910,7 +4910,7 @@ class Lassen(Supercomputer):
             #    job.alloc_flags = 'smt1'
             ##end if
             if job.gpus==0:
-                None
+                pass
             else:
                 opt.mgpu = '-M "-gpu"'
             #end if

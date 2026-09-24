@@ -49,7 +49,7 @@ import os
 import sys
 from copy import deepcopy
 from types import MappingProxyType
-from typing import ClassVar, Literal, TypeAlias
+from typing import ClassVar, TypeAlias
 
 import numpy as np
 from numpy import pi
@@ -66,7 +66,6 @@ from .pwscf_input_defs import (
     ElectronsDefinitions,
     FcpDefinitions,
     IonsDefinitions,
-    PwscfInputType,
     RismDefinitions,
     SystemDefinitions,
 )
@@ -347,7 +346,7 @@ class Element(PwscfInputBase):
     #end def write
 
     def post_process_read(self,parent):
-        None
+        pass
     #end def post_process_read
 #end class Element
 
@@ -540,7 +539,7 @@ class Section(Element):
                         sind = f'({index})'
                     elif isinstance(index,tuple):
                         if not allow_spec:
-                            None
+                            pass
                         #end if
                         sind = str(index).replace(' ','')
                     else:
@@ -907,7 +906,7 @@ class atomic_positions(Card):
         if spec=='alat' or spec=='':
             pos *= scale
         elif spec=='bohr':
-            None
+            pass
         elif spec=='angstrom':
             pos *= convert(1.,'A','B')
         elif spec=='crystal':
@@ -926,7 +925,7 @@ class atomic_positions(Card):
         if spec=='alat' or spec=='':
             pos /= scale
         elif spec=='bohr':
-            None
+            pass
         elif spec=='angstrom':
             pos /= convert(1.,'A','B')
         elif spec=='crystal':
@@ -996,7 +995,7 @@ class k_points(Card):
             self.grid  = a[0:3]
             self.shift = a[3:]
         elif self.specifier == 'gamma':
-            None
+            pass
         else:
             msg = 'k_points specifier '+self.specifier+' is unrecognized'
             raise ValueError(msg)
@@ -1018,7 +1017,7 @@ class k_points(Card):
             c+=array_to_string(np.array(self.grid),pad='',format='{0}',converter=int,rowsep='')
             c+=array_to_string(np.array(self.shift),pad=' ',format='{0}',converter=int)
         elif self.specifier == 'gamma':
-            None
+            pass
         else:
             msg = 'k_points specifier '+self.specifier+' is unrecognized'
             raise ValueError(msg)
@@ -1105,7 +1104,7 @@ class cell_parameters(Card):
         if spec=='alat' or spec=='':
             vec *= scale
         elif spec=='bohr':
-            None
+            pass
         elif spec=='angstrom':
             vec *= convert(1.,'A','B')
         else:
@@ -1121,7 +1120,7 @@ class cell_parameters(Card):
         if spec=='alat' or spec=='':
             vec /= scale
         elif spec=='bohr':
-            None
+            pass
         elif spec=='angstrom':
             vec /= convert(1.,'A','B')
         else:

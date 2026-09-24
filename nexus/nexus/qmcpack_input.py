@@ -604,7 +604,7 @@ class QIobj(DevBase):
 
 
 class meta(obj):
-    None
+    pass
 #end class meta
 
 
@@ -1956,7 +1956,7 @@ class QIxmlFactory(Names):
     #end def __call__
 
     def init_class(self):
-        None # this is for compatibility with QIxml only (do not overwrite)
+        pass # this is for compatibility with QIxml only (do not overwrite)
     #end def init_class
 #end class QIxmlFactory
 
@@ -2172,7 +2172,7 @@ class Param(Names):
     #end def write_val
 
     def init_class(self):
-        None
+        pass
     #end def init_class
 #end class Param
 param = Param()
@@ -4029,7 +4029,7 @@ class execute(QIxml):
 #end class execute
 
 class onerdm(QIxml):
-    None
+    pass
 #end class onerdm
 
 
@@ -4511,7 +4511,7 @@ class QmcpackInput(SimulationInput,Names):
         metadata = None
         element  = None
         if arg0 is None and arg1 is None:
-            None
+            pass
         elif isinstance(arg0,(str, Path)) and arg1 is None:
             filepath = path_string(arg0)
         elif isinstance(arg0,QIxml) and arg1 is None:
@@ -10472,7 +10472,7 @@ def generate_basic_input(**kwargs):
             kw.corrections = ['mpc']
         #end if
     elif isinstance(kw.corrections,(list,tuple)):
-        None
+        pass
     else:
         kw.corrections = []
     #end if
