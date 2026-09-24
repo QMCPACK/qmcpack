@@ -30,7 +30,7 @@ def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,*,int_as_float=False):
     v1_str   = isinstance(v1,(str,np.bytes_))
     v2_str   = isinstance(v2,(str,np.bytes_))
     if id(v1)==id(v2):
-        None
+        pass
     elif int_as_float and (v1_int or v1_float) and (v2_int or v2_float):
         diff = float_diff(v1,v2,atol=atol,rtol=rtol)
     elif v1_float and v2_float:
@@ -76,7 +76,7 @@ def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,*,int_as_float=False):
     elif v1 is None and v2 is None:
         diff = False
     elif hasattr(v1,'__len__') and hasattr(v2,'__len__') and len(v1)==0 and len(v2)==0:
-        None
+        pass
     else:
         diff = True # unsupported types
     #end if
@@ -309,7 +309,7 @@ def failed(msg='Test failed.'):
 
 
 class FailedTest(Exception):
-    None
+    pass
 #end class FailedTest
 
 

@@ -19,6 +19,6 @@ from .simulation import NullSimulationAnalyzer
 
 
 class QuantumPackageAnalyzer(NullSimulationAnalyzer):
-    None
+    pass
 #end class QuantumPackageAnalyzer
 

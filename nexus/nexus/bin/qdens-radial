@@ -64,7 +64,7 @@ def find_nexus_modules():
 # Load Nexus modules
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
-from nexus.developer import DevBase,obj,error
+from nexus.developer import DevBase,obj
 import nexus.memory as memory
 from nexus.observables import ChargeDensity, vlog
 from nexus.fileio import XsfFile

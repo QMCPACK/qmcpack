@@ -18,7 +18,7 @@
 
 import os
 from copy import deepcopy
-from .developer import DevBase, obj, nxs_print, NexusError
+from .developer import DevBase, obj, nxs_print
 from .structure import Structure
 from .physical_system import PhysicalSystem
 from .simulation import SimulationInput
@@ -294,7 +294,7 @@ def extract_input_specification(*ezfio_paths):
 
 
 class Section(DevBase):
-    None
+    pass
 #end class Section
 
 
