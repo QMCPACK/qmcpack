@@ -1169,6 +1169,9 @@ class Simulation(NexusCore):
             if (self.job.batch_mode or not nexus_config.monitor) and not nexus_config.generate_only:
                 self.save_image()
             #end if
+            if self.job is not None and self.job.finished:
+                self.check_status()
+            #end if
         elif not self.finished:
             self.check_status()
         #end if
