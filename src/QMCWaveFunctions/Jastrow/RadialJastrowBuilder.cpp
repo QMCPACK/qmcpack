@@ -494,9 +494,13 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
   auto J1 = std::make_unique<J1Type>(jname, *SourcePtcl, targetPtcl, false);
 
   SpeciesSet& sSet = SourcePtcl->getSpeciesSet();
-  for (int ig = 0; ig < sSet.getTotalNum(); ig++)
+  const int num_species = sSet.getTotalNum();
+  for (int ig = 0; ig < num_species; ig++)
   {
-    J1->addFunc(ig, std::move(nfunc));
+    if (ig + 1 == num_species)
+      J1->addFunc(ig, std::move(nfunc));
+    else
+      J1->addFunc(ig, std::make_unique<RadFunctorType>(*nfunc));
   }
 
   return J1;
