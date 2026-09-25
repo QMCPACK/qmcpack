@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from optparse import OptionParser
 
-if sys.version_info[0:3] < (3, 10, 0):
+if sys.version_info[0:3] < (3, 11, 0):
     v = sys.version_info[0:3]
     print(
        f"Your version of Python ({v[0]}.{v[1]}.{v[2]}) is less than the minimum required for Nexus!\n"
