@@ -17,7 +17,6 @@
 #define OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #include "Pools/PooledData.h"
 #include "container_proxy.h"
-#include "Message/mpi_datatype.h"
 #include <cstdint>
 #include <stdexcept>
 ///dummy declarations to be specialized
@@ -97,7 +96,7 @@ inline void Communicate::reduce_in_place(T* restrict res, int n)
 
 
 template<typename T>
-inline void Communicate::allgather(T& sb, T& rb, int count)
+inline void Communicate::allgather(T& sb, T& rb)
 {
   if (d_ncontexts == 1)
   {
@@ -106,12 +105,13 @@ inline void Communicate::allgather(T& sb, T& rb, int count)
   }
   qmcplusplus::container_proxy<T> t_in(sb), t_out(rb);
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*t_in.data());
-  MPI_Allgather(t_in.data(), count, type_id, t_out.data(), count, type_id, myMPI);
+  MPI_Allgather(t_in.data(), t_in.size(), type_id, t_out.data(), t_in.size(), type_id, myMPI);
 }
 
 template<typename T, typename IT>
 inline void Communicate::gatherv(T& sb, T& rb, IT& counts, IT& displ, int dest)
 {
+  static_assert(qmcplusplus::scalar_traits<T>::DIM == 1, "Complex types not supported for this method");
   if (d_ncontexts == 1)
   {
     rb = sb;
@@ -139,6 +139,7 @@ inline void Communicate::scatter(T& sb, T& rb, int dest)
 template<typename T, typename IT>
 inline void Communicate::scatterv(T& sb, T& rb, IT& counts, IT& displ, int source)
 {
+  static_assert(qmcplusplus::scalar_traits<T>::DIM == 1, "Complex types not supported for this method");
   if (d_ncontexts == 1)
   {
     rb = sb;
@@ -218,7 +219,7 @@ inline void Communicate::bcast(std::string& g)
 
 
 template<typename T, typename TMPI, typename IT>
-inline void Communicate::gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest)
+inline void Communicate::gatherv_in_place(T* buf, const TMPI& datatype, IT& counts, IT& displ, int dest)
 {
   static_assert(qmcplusplus::scalar_traits<T>::DIM == 1, "Complex types not supported for this method");
   if (!d_mycontext)

@@ -14,15 +14,16 @@
 
 #ifndef OHMMS_COMMUNICATION_OPERATORS_H
 #define OHMMS_COMMUNICATION_OPERATORS_H
-#include "Message/Communicate.h"
+#include "Communicate.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsArray.h"
+#include "mpi_datatype.h"
 #if defined(HAVE_MPI)
-#include "Message/CommOperatorsMPI.h"
+#include "CommOperatorsMPI.h"
 #else
-#include "Message/CommOperatorsSingle.h"
+#include "CommOperatorsSingle.h"
 #endif
 #endif

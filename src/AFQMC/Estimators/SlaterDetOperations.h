@@ -350,7 +350,7 @@ APP_ABORT("Testing. \n");
         nW++;
 
     to[0] = nW;
-    myComm->allgather(to, from, 1);
+    myComm->allgather(to, from);
     for (int i = 0; i < myComm->size(); i++)
     {
       nWtot += from[i];

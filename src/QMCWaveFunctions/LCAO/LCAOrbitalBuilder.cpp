@@ -773,7 +773,7 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       n++;
     }
   }
-  myComm->bcast(spo.C->data(), spo.C->size());
+  myComm->bcast(*spo.C);
   return true;
 }
 
@@ -865,9 +865,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 
     hin.close();
   }
-#ifdef HAVE_MPI
-  myComm->comm.broadcast_n(spo.C->data(), spo.C->size());
-#endif
+  myComm->bcast(*spo.C);
   return true;
 }
 
