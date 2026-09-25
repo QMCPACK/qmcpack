@@ -525,7 +525,7 @@ class Settings(NexusCore):
     qm_package_vars = frozenset({'qprc'})
 
     deprecated_vars = frozenset({
-        'mode', 'verbose', 'debug', 'trace', 'emulate'
+        'mode', 'trace', 'emulate'
         })
 
     nexus_vars = frozenset(NexusConfig.__slots__)
@@ -731,6 +731,36 @@ class Settings(NexusCore):
             action="version",
             version="Nexus {}.{}.{}".format(*nexus_version)
             )
+        parser.add_argument(
+            "-v",
+            "--verbose",
+            action="count",
+            default=argparse.SUPPRESS,
+            help=(
+                "Control verbosity of Nexus's logging. "
+                f"(default: {nexus_config.verbose})"
+            )
+        )
+        parser.add_argument(
+            "-d",
+            "--debug",
+            action="store_true",
+            default=argparse.SUPPRESS,
+            help=(
+                "Set Nexus's logging to print debug information. "
+                f"(default: {nexus_config.debug})"
+            )
+        )
+        parser.add_argument(
+            "-q",
+            "--quiet",
+            action="store_true",
+            default=argparse.SUPPRESS,
+            help=(
+                "Make Nexus print nothing after initialization. "
+                f"(default: {nexus_config.quiet})"
+            )
+        )
         parser.add_argument(
             "--status-only",
             "--status_only",
@@ -1017,38 +1047,55 @@ class Settings(NexusCore):
 
 
     def process_config_settings(self, kw: dict):
-        # Preserve the runtime meaning of legacy settings while warning users
-        # about their replacement API.  These are deliberately translated
-        # before their keys are discarded.
-        legacy_mode = kw.pop("mode", unset)
-        legacy_verbose = kw.pop("verbose", unset)
-        legacy_debug = kw.pop("debug", unset)
-        legacy_trace = kw.pop("trace", unset)
-        legacy_emulate = kw.pop("emulate", unset)
-
-
-        # `debug=True` historically overrode `verbose=False`.
-        if "quiet" not in kw:
-            if legacy_debug is not unset and legacy_debug:
-                kw["quiet"] = False
-            elif legacy_verbose is not unset:
-                kw["quiet"] = not legacy_verbose
-
-
-        # Deprecated variables
+        # Deprecated settings
         deprecated = (
-            (legacy_mode, "mode", "Please use `stages` instead!"),
-            (legacy_verbose, "verbose", "Please use `quiet=True` to turn off output instead of `verbose=False`!"),
-            (legacy_debug, "debug", "This variable was redundant, please remove from your script!"),
-            (legacy_trace, "trace", "This variable was unused in Nexus, please remove from your script!"),
-            (legacy_emulate, "emulate", "This variable was unused in Nexus, please remove from your script!"),
+            ("mode", "Please use `stages` instead!"),
+            ("trace", "This variable was unused in Nexus, please remove from your script!"),
+            ("emulate", "This variable was unused in Nexus, please remove from your script!"),
         )
-        for value, var, extra in deprecated:
-            if value is not unset:
+        for var, extra in deprecated:
+            if var in kw:
                 warn(
                     f"The setting '{var}' has been deprecated!\n"
                     f"{extra}"
                     )
+
+        quiet = kw.pop("quiet", None)
+        verbose = kw.pop("verbose", None)
+        debug = kw.pop("debug", None)
+
+        if debug is not None:
+            if isinstance(debug, bool) or debug in {0, 1}:
+                nexus_config.debug = bool(debug)
+            else:
+                msg = (
+                    "Setting `debug` must be a bool but is "
+                    f"{type(debug).__name__}!"
+                )
+                raise TypeError(msg)
+
+        if verbose is not None:
+            if nexus_config.debug:
+                warn("Ignoring `verbose` when `debug=True`")
+            elif verbose in {0, 1, 2}:
+                # True/False get converted to 1/0 with int conversion
+                nexus_config.verbose = int(verbose)
+            else:
+                msg = f"Expected one of (0, 1, 2) for `verbose` but got {verbose}!"
+                raise ValueError(msg)
+
+        if quiet is not None:
+            if nexus_config.debug:
+                warn("Ignoring `quiet` when `debug=True`")
+            elif nexus_config.verbose > 0:
+                warn("Ignoring `quiet` when `verbose>0`")
+            elif isinstance(quiet, bool) or quiet in {0, 1}:
+                nexus_config.quiet = bool(quiet)
+            else:
+                msg = (
+                    f"Setting `quiet` must be a bool but is {type(quiet).__name__}!"
+                )
+                raise TypeError(msg)
 
         for arg in ("sleep", "timeout"):
             arg_val = kw.get(arg)
@@ -1081,74 +1128,42 @@ class Settings(NexusCore):
                     raise ValueError(msg)
 
         if status_only := kw.pop("status_only", None):
+            if not (isinstance(status_only, bool) or status_only in {0, 1}):
+                msg = f"Expected a bool for status_only but got {type(status_only).__name__}!"
+                raise TypeError(msg)
+
             nexus_config.status_only = status_only
             if nexus_config.status is ShowStatusMode.none:
                 nexus_config.status = ShowStatusMode.all
 
         stages = kw.pop("stages", None)
         generate_only = kw.pop("generate_only", None)
-        # A legacy mode takes precedence over stages, just as it did before
-        # the Flag representation was introduced.  In particular, legacy
-        # "setup" meant only write_inputs(), whereas SimStage.setup is the
-        # new API spelling for write_inputs() plus send_files().
-        legacy_stages = {
-            "none": SimStage(0),
-            "setup": SimStage.write_input,
-            "send_files": SimStage.send_files,
-            "submit": SimStage.submit,
-            "get_output": SimStage.get_output,
-            "analyze": SimStage.analyze,
-            "all": SimStage.all,
-        }
-        if legacy_mode is not unset:
-            mode = str(legacy_mode).lower()
-            if mode == "stages":
-                pass
-            elif mode in legacy_stages:
-                nexus_config.stages = legacy_stages[mode]
-                stages = None
-            else:
-                msg = f"Invalid mode specified: {legacy_mode}"
-                raise ValueError(msg)
-
-        if isinstance(stages, SimStage):
+        if stages is not None and generate_only is not None:
+            msg = "Can not set both `stages` and `generate_only`!"
+            raise ValueError(msg)
+        elif isinstance(stages, SimStage):
             nexus_config.stages = stages
         elif isinstance(stages, str):
             stage = stages.lower()
-            if stage == "setup":
-                nexus_config.stages = SimStage.write_input
-            elif stage == "all":
-                nexus_config.stages = SimStage.all
-            elif stage not in SimStage.__members__:
+            if stage not in SimStage.__members__:
                 msg = (
                     f"Invalid stages specified: {stages}\n"
                     f"Valid stages are: {[*SimStage.__members__]}"
                 )
                 raise ValueError(msg)
-            else:
-                nexus_config.stages = SimStage[stage]
+
+            nexus_config.stages = SimStage[stage]
         elif isinstance(stages, Collection):
-            # [] and ["all"] were both legacy spellings for all stages.
-            if not all(isinstance(stage, str) for stage in stages):
-                nexus_config.stages = SimStage.from_list(stages)
-            elif len(stages) == 0 or "all" in stages:
-                nexus_config.stages = SimStage.all
+            if len(stages) == 0:
+                nexus_config.stages = SimStage(0)
             else:
-                nexus_config.stages = SimStage.from_list(
-                    [
-                        "write_input" if stage.lower() == "setup" else stage
-                        for stage in stages
-                    ]
-                )
+                nexus_config.stages = SimStage.from_list(stages)
         elif stages is not None:
             msg = f"stages should be a SimStage, str, or list of str, but is {type(stages)}!"
             raise TypeError(msg)
-
-        # Keep this independent of stages.  Legacy generate_only ran the
-        # selected stages (including its simulated submit lifecycle), and
-        # callers were allowed to provide both settings.
-        if generate_only is not None:
-            nexus_config.generate_only = generate_only
+        elif generate_only:
+            nexus_config.stages = SimStage.setup # Preferred new route
+            nexus_config.generate_only = True # Legacy, will replace
 
         if (loc_dir := kw.pop("local_directory", None)) is not None:
             nexus_config.local_directory = path_string(loc_dir)
