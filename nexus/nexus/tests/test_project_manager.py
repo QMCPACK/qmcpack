@@ -1,11 +1,8 @@
-import sys
-
 import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PROJECT_MANAGER)
 
 from . import isolate_nexus_core
-from ..testing import value_eq
 from ..testing import failed,FailedTest
 from ..nexus_base import nexus_config, ShowStatusMode, SimStage
 
@@ -130,7 +127,7 @@ def test_screen_fake_sims():
         pm.screen_fake_sims()
         raise FailedTest
     except NexusError:
-        None
+        pass
     except FailedTest:
         failed()
     except Exception as e:
@@ -143,7 +140,6 @@ def test_screen_fake_sims():
 
 @isolate_nexus_core
 def test_resolve_file_collisions():
-    from ..developer import NexusError
     from ..simulation import Simulation
     from ..project_manager import ProjectManager
 

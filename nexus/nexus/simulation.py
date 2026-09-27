@@ -65,6 +65,7 @@
 #====================================================================#
 from __future__ import annotations
 
+
 import os
 import sys
 import shutil
@@ -88,8 +89,8 @@ from .nexus_base import NexusCore, nexus_config, SimStage, dynamic_storage
 from .utilities import path_string
 
 if TYPE_CHECKING:
-    from .qmcpack_analyzer import QmcpackAnalysisRequest
     from .bundle import SimulationBundle
+    from .qmcpack_analyzer import QmcpackAnalysisRequest
 
 StrPath: TypeAlias = str
 
@@ -236,7 +237,7 @@ class SimulationImage(NexusCore):
     save_fields = load_fields | save_only_fields
 
     def __init__(self):
-        None
+        pass
     #end def __init__
 
     def save_image(self,sim,imagefile):
@@ -655,7 +656,7 @@ class Simulation(NexusCore):
 
 
     def init_job_extra(self):
-        None
+        pass
     #end def init_job_extra
 
 
@@ -743,43 +744,43 @@ class Simulation(NexusCore):
 
 
     def propagate_identifier(self):
-        None
+        pass
     #end def propagate_identifier
 
     def pre_init(self):
-        None
+        pass
     #end def pre_init
 
     def post_init(self):
-        None
+        pass
     #end def post_init
 
     def pre_create_directories(self):
-        None
+        pass
     #end def pre_create_directories
 
     def write_prep(self):
-        None
+        pass
     #end def write_prep
 
     def pre_write_inputs(self,save_image):
-        None
+        pass
     #end def pre_write_inputs
 
     def pre_send_files(self,enter):
-        None
+        pass
     #end def pre_send_files
 
     def post_submit(self):
-        None
+        pass
     #end def post_submit
 
     def pre_check_status(self):
-        None
+        pass
     #end def pre_check_status
 
     def post_analyze(self,analyzer):
-        None
+        pass
     #end def post_analyze
 
 
@@ -1623,23 +1624,23 @@ class NullSimulationInput(SimulationInput):
     #end def is_valid
 
     def read(self,filepath):
-        None
+        pass
     #end def read
 
     def write(self,filepath=None):
-        None
+        pass
     #end def write
 
     def read_text(self,text,filepath=None):
-        None
+        pass
     #end def read_text
 
     def write_text(self,filepath=None):
-        None
+        pass
     #end def write_text
 
     def incorporate_system(self,system):
-        None
+        pass
     #end def incorporate_system
 
     def return_system(self):
@@ -1652,17 +1653,17 @@ class NullSimulationInput(SimulationInput):
 
 class NullSimulationAnalyzer(SimulationAnalyzer):
     def __init__(self,sim):
-        None
+        pass
     #end def __init__
 
     def analyze(self):
-        None
+        pass
     #end def analyze
 #end class NullSimulationAnalyzer
 
 
 class GenericSimulationInput: # marker class for generic user input
-    None
+    pass
 #end class GenericSimulationInput
 
 
@@ -1894,11 +1895,11 @@ class SimulationInputMultiTemplateDev(SimulationInput):
 
 # these are for user access, *Dev are for development
 class SimulationInputTemplate(SimulationInputTemplateDev,GenericSimulationInput):
-    None
+    pass
 #end class SimulationInputTemplate
 
 class SimulationInputMultiTemplate(SimulationInputMultiTemplateDev,GenericSimulationInput):
-    None
+    pass
 #end class SimulationInputMultiTemplate
 
 

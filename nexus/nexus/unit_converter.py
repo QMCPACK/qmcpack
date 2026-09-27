@@ -20,7 +20,6 @@
 #====================================================================#
 
 
-from .developer import error
 from .developer import obj
 from .developer import DevBase
 

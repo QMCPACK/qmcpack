@@ -86,7 +86,6 @@ def test_pw2qmcpack_get_result():
 
 @isolate_nexus_core
 def test_pw2qmcpack_incorporate_result(tmp_path):
-    from ..developer import NexusError
     from ..simulation import Simulation
     from ..machines import job
     from .test_pwscf_simulation import get_pwscf_sim
@@ -135,7 +134,7 @@ def test_pw2qmcpack_check_sim_status(tmp_path):
         sim.check_sim_status()
         raise FailedTest
     except IOError:
-        None
+        pass
     except Exception as e:
         failed(str(e))
     #end try
@@ -248,7 +247,7 @@ def test_convert4qmc_get_result():
 
 
 def test_convert4qmc_incorporate_result():
-    from ..developer import NexusError, obj
+    from ..developer import obj
     from ..simulation import Simulation
     from ..gamess import Gamess
     from ..machines import job
@@ -350,7 +349,7 @@ def test_convert4qmc_check_sim_status(tmp_path):
         sim.check_sim_status()
         raise FailedTest
     except IOError:
-        None
+        pass
     except Exception as e:
         failed(str(e))
     #end try
@@ -432,7 +431,7 @@ def test_pyscf_to_afqmc_check_result():
 
 
 def test_pyscf_to_afqmc_get_result():
-    from ..developer import NexusError, obj
+    from ..developer import obj
 
     sim = get_pyscf_to_afqmc_sim()
 
@@ -463,7 +462,7 @@ def test_pyscf_to_afqmc_get_result():
 
 def test_pyscf_to_afqmc_incorporate_result():
     import os
-    from ..developer import NexusError, obj
+    from ..developer import obj
     from ..simulation import Simulation
     from ..machines import job
     from .test_pyscf_simulation import get_pyscf_sim
@@ -514,7 +513,7 @@ def test_pyscf_to_afqmc_check_sim_status(tmp_path):
         sim.check_sim_status()
         raise FailedTest
     except IOError:
-        None
+        pass
     except Exception as e:
         failed(str(e))
     #end try

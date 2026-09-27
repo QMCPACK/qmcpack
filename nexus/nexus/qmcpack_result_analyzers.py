@@ -34,7 +34,7 @@ from .qmcpack_analyzer_base import QAobject,QAanalyzer
 
 
 class ResultAnalyzer(QAanalyzer):
-    None
+    pass
 #end class ResultAnalyzer
 
 
@@ -91,7 +91,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
 
 
     def init_sub_analyzers(self):
-        None
+        pass
     #end def init_sub_analyzers
 
     def analyze_local(self):
@@ -190,9 +190,9 @@ class OptimizationAnalyzer(ResultAnalyzer):
             ew = 1.0
             vw = 0.0
         elif optimize=='energy_within_variance_tol' or optimize=='ewvt':
-            None
+            pass
         elif optimize=='last':
-            None
+            pass
         elif isinstance(optimize,(tuple,list)) and len(optimize)==2:
             ew,vw = optimize
         else:
@@ -401,7 +401,7 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
     #end def __init__
 
     def init_sub_analyzers(self):
-        None
+        pass
     #end def init_sub_analyzers
 
     def analyze_local(self):
