@@ -186,6 +186,69 @@ if(NOT QMC_COMPLEX)
     H4_DESCENT_SCALARS
     TRUE)
 
+  if(NOT MIXED_PRECISION)
+    set(H4_DETERMINISTIC_DESCENT_TEST deterministic-H4-descent-r1-t4)
+    set(H4_DETERMINISTIC_DESCENT_TEST_ADDED FALSE)
+    run_qmc_app(
+      ${H4_DETERMINISTIC_DESCENT_TEST}
+      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+      1
+      4
+      H4_DETERMINISTIC_DESCENT_TEST_ADDED
+      det-optm-descent.xml)
+
+    if(H4_DETERMINISTIC_DESCENT_TEST_ADDED)
+      add_test(
+        NAME ${H4_DETERMINISTIC_DESCENT_TEST}-energy
+        COMMAND
+          ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series 1 -p
+          det-H4-descent -e 0 --le "-1.2437911397 0.000001"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${H4_DETERMINISTIC_DESCENT_TEST}")
+
+      add_test(
+        NAME ${H4_DETERMINISTIC_DESCENT_TEST}-coefficients
+        COMMAND
+          ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae/check_h4_descent.py
+          det-H4-descent.s000.opt.xml reference.det-H4-descent.s000.opt.xml
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${H4_DETERMINISTIC_DESCENT_TEST}")
+
+      set_tests_properties(
+        ${H4_DETERMINISTIC_DESCENT_TEST}-energy ${H4_DETERMINISTIC_DESCENT_TEST}-coefficients
+        PROPERTIES DEPENDS ${H4_DETERMINISTIC_DESCENT_TEST} LABELS "QMCPACK-checking-results;deterministic")
+    endif()
+
+    set(H4_DETERMINISTIC_BATCHED_DESCENT_TEST deterministic-H4-batched-descent-r1-t4)
+    set(H4_DETERMINISTIC_BATCHED_DESCENT_TEST_ADDED FALSE)
+    run_qmc_app(
+      ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}
+      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+      1
+      4
+      H4_DETERMINISTIC_BATCHED_DESCENT_TEST_ADDED
+      det-optm-batched-descent.xml)
+
+    if(H4_DETERMINISTIC_BATCHED_DESCENT_TEST_ADDED)
+      add_test(
+        NAME ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}-energy
+        COMMAND
+          ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series 1 -p
+          det-H4-batched-descent -e 0 --le "-1.2857706733 0.000001"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}")
+
+      add_test(
+        NAME ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}-coefficients
+        COMMAND
+          ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae/check_h4_descent.py
+          det-H4-batched-descent.s000.opt.xml reference.det-H4-batched-descent.s000.opt.xml
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}")
+
+      set_tests_properties(
+        ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}-energy ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}-coefficients
+        PROPERTIES DEPENDS ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST} LABELS
+                   "QMCPACK-checking-results;deterministic")
+    endif()
+  endif()
+
   list(APPEND H4_TARGET_DESCENT_SCALARS "totenergy" "-2.04604154 0.0045")
 
   qmc_run_and_check(
