@@ -4,7 +4,7 @@ import math
 import sys
 import xml.etree.ElementTree as ET
 
-# Checking optimized wavefunction parameters against a reference.
+# Check optimized wavefunction parameters against a reference.
 # Usage: check_h4_descent.py OUTPUT_XML REFERENCE_XML
 # OUTPUT_XML is the optimized wavefunction produced by QMCPACK.
 # REFERENCE_XML contains the expected optimized parameter values.
