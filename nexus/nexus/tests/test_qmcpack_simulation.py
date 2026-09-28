@@ -9,7 +9,7 @@ from pathlib import Path
 from . import isolate_nexus_core, create_pseudo_files, TEST_DIR
 
 from ..testing import clear_all_sims
-from ..testing import failed,FailedTest
+from ..testing import failed
 from ..testing import value_eq,text_eq
 
 
@@ -130,7 +130,7 @@ def test_check_result():
 
 @isolate_nexus_core
 def test_get_result(tmp_path):
-    from ..developer import NexusError, obj
+    from ..developer import obj
     from ..nexus_base import nexus_config
     from ..qmcpack_analyzer import QmcpackAnalyzer
     from ..qmcpack_input import dmc,mcwalkerset
@@ -566,7 +566,7 @@ def test_check_sim_status(tmp_path):
     try:
         sim.check_sim_status()
     except IOError:
-        None
+        pass
     #end try
 
     assert(not sim.finished)

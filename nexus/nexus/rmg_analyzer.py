@@ -2326,14 +2326,13 @@ class RmgAnalyzer(SimulationAnalyzer):
     def _unavailable(self,quantity,modes):
         """Apply unsupported and required-quantity policy to absent data."""
         if self._query_depth>0:
-            return None
+            return
         if isinstance(self.run_mode,str) and self.run_mode not in modes:
             msg = f'RMG quantity "{quantity}" is not supported for run mode "{self.run_mode}"'
             raise RuntimeError(msg)
         if quantity in self.required:
             msg = f'required RMG quantity "{quantity}" is not available'
             raise RuntimeError(msg)
-        return None
     #end def _unavailable
 
 

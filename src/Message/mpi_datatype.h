@@ -16,8 +16,6 @@
 #include <complex>
 #if defined(HAVE_MPI)
 #include <mpi.h>
-#else
-using MPI_Datatype = int;
 #endif
 
 namespace qmcplusplus
@@ -91,7 +89,11 @@ MPI_Datatype construct_column_type(const T* element, int nrow, int ncol)
 #else
 using status       = int;
 using request      = int;
+
 using MPI_Datatype = int;
+template<typename T>
+inline MPI_Datatype get_mpi_datatype(const T&)
+{ return 0; }
 
 
 template<typename T>
