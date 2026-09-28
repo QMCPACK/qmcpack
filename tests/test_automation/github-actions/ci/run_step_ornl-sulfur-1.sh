@@ -8,6 +8,9 @@ case "$1" in
   # Configure qmcpack using cmake out-of-source builds 
   configure)
   
+    # Make current environment variables available to subsequent steps, ctest
+    echo "PATH=$PATH" >> $GITHUB_ENV
+    
     QMC_DATA_DIR=/scratch/ci/QMC_DATA_FULL
 
     if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build-1 ]

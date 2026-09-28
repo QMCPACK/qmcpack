@@ -8,6 +8,9 @@ case "$1" in
   # Configure qmcpack using cmake out-of-source builds
   configure)
 
+    # Make current environment variables available to subsequent steps, ctest
+    echo "PATH=$PATH" >> $GITHUB_ENV
+
     QMC_DATA_DIR=/scratch/ci/QMC_DATA_FULL
 
     # Using 1.74 to avoid the > 1.75 error: use of undeclared identifier 'noinline'; did you mean 'inline'?
