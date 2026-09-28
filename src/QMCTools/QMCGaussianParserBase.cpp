@@ -1585,13 +1585,13 @@ xmlNodePtr QMCGaussianParserBase::createJ3()
   xmlNewProp(j3, (const xmlChar*)"type", (const xmlChar*)"eeI");
   xmlNewProp(j3, (const xmlChar*)"function", (const xmlChar*)"polynomial");
   xmlNewProp(j3, (const xmlChar*)"source", (const xmlChar*)"ion0");
-  xmlNewProp(j3, (const xmlChar*)"print", (const xmlChar*)"yes");
   SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
   for (int i = 0; i < ionSpecies.getTotalNum(); i++)
   {
     xmlNodePtr uuc = xmlNewNode(NULL, (const xmlChar*)"correlation");
     xmlNewProp(uuc, (const xmlChar*)"ispecies", (const xmlChar*)ionSpecies.speciesName[i].c_str());
-    xmlNewProp(uuc, (const xmlChar*)"especies", (const xmlChar*)"u");
+    xmlNewProp(uuc, (const xmlChar*)"especies1", (const xmlChar*)"u");
+    xmlNewProp(uuc, (const xmlChar*)"especies2", (const xmlChar*)"u");
     xmlNewProp(uuc, (const xmlChar*)"isize", (const xmlChar*)"3");
     xmlNewProp(uuc, (const xmlChar*)"esize", (const xmlChar*)"3");
     if (!PBC)
@@ -1634,7 +1634,6 @@ xmlNodePtr QMCGaussianParserBase::createJ2()
   xmlNewProp(j2, (const xmlChar*)"name", (const xmlChar*)"J2");
   xmlNewProp(j2, (const xmlChar*)"type", (const xmlChar*)"Two-Body");
   xmlNewProp(j2, (const xmlChar*)"function", (const xmlChar*)"Bspline");
-  xmlNewProp(j2, (const xmlChar*)"print", (const xmlChar*)"yes");
   if (NumberOfAlpha > 1 || NumberOfBeta > 1)
   {
     xmlNodePtr uu = xmlNewNode(NULL, (const xmlChar*)"correlation");
@@ -1675,7 +1674,6 @@ xmlNodePtr QMCGaussianParserBase::createJ1()
   xmlNewProp(j1, (const xmlChar*)"type", (const xmlChar*)"One-Body");
   xmlNewProp(j1, (const xmlChar*)"function", (const xmlChar*)"Bspline");
   xmlNewProp(j1, (const xmlChar*)"source", (const xmlChar*)"ion0");
-  xmlNewProp(j1, (const xmlChar*)"print", (const xmlChar*)"yes");
   SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
   for (int i = 0; i < ionSpecies.getTotalNum(); i++)
   {

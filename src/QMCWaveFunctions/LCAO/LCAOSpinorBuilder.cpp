@@ -186,10 +186,8 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
     hin.close();
   }
 
-#ifdef HAVE_MPI
-  myComm->comm.broadcast_n(up.C->data(), up.C->size());
-  myComm->comm.broadcast_n(dn.C->data(), dn.C->size());
-#endif
+  myComm->bcast(*up.C);
+  myComm->bcast(*dn.C);
 
 #else
   myComm->barrier_and_abort("LCAOSpinorBuilder::putFromH5 Must build with QMC_COMPLEX");

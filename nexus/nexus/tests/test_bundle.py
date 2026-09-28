@@ -5,13 +5,11 @@ pytestmark = pytest.mark.order(NexusTestOrder.BUNDLE)
 
 
 from .. import testing
-from ..testing import failed,FailedTest
 from ..testing import object_eq
 
 
 
 def test_bundle():
-    from ..developer import NexusError
     from ..machines import job,get_machine
     from ..bundle import bundle
     from ..bundle import SimulationBundle

@@ -548,7 +548,7 @@ if(add_estimator_tests)
     -s
     0
     -q
-    spindensity
+    "spindensity spindensity"
     -e
     20
     -c
