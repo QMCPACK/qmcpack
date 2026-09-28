@@ -8,7 +8,8 @@ match variable portions or to add context that reduces false positives.
 import os
 import re
 from functools import cache
-
+from os import PathLike
+from typing import TextIO
 
 # Operating-system errors
 
@@ -245,6 +246,8 @@ mpi_errors = (
     'MPI_ERR_SESSION',
     'mpirun: kill job',
     'mpirun noticed that process rank',
+    'prterun: kill job',
+    'prterun noticed that process rank',
     'ORTE_ERROR_LOG',
     'PRTE_ERROR_LOG',
     'the first job to fail is listed below',
@@ -252,6 +255,8 @@ mpi_errors = (
     'mpiexec_callback_proc',
     'cleaning up processes',
     'execvp error',
+    'not enough slots available',
+    'unable to find the specified executable file',
     )
 
 mpi_error_patterns = (
@@ -698,7 +703,7 @@ _error_patterns = {
 _error_set_names = tuple(_error_keys)
 
 
-def _literal_error_pattern(error_key):
+def _literal_error_pattern(error_key: str) -> str:
     """Escape a readable key while allowing flexible whitespace."""
     pattern = r'\s+'.join(re.escape(part) for part in error_key.split())
     if error_key and (error_key[0].isalnum() or error_key[0] == '_'):
@@ -709,7 +714,7 @@ def _literal_error_pattern(error_key):
 
 
 @cache
-def _combined_error_pattern(enabled_sets):
+def _combined_error_pattern(enabled_sets: str) -> re.Pattern[str] | None:
     patterns = []
     seen = set()
     for set_name in enabled_sets:
@@ -730,7 +735,7 @@ def _combined_error_pattern(enabled_sets):
         )
 
 
-def _read_error_text(source):
+def _read_error_text(source: str | PathLike | TextIO) -> str:
     if hasattr(source, 'read'):
         text = source.read()
     elif isinstance(source, os.PathLike):
@@ -747,16 +752,16 @@ def _read_error_text(source):
         else:
             text = source
     else:
-        raise TypeError(
-            'source must be text, a path-like object, or an open text file'
-            )
+        msg = 'source must be text, a path-like object, or an open text file'
+        raise TypeError(msg)
     if not isinstance(text, str):
-        raise TypeError('source must provide text rather than binary data')
+        msg = 'source must provide text rather than binary data'
+        raise TypeError(msg)
     return text
 
 
 def find_error_keys(
-        source,
+        source: str | PathLike | TextIO,
         # select error batches
         *,
         all_errors         = False,
@@ -805,7 +810,7 @@ def find_error_keys(
         gamess             = False,
         # return lines found or not
         return_lines       = False,
-        ):
+        ) -> bool | tuple[bool, list[str]]:
     """Find likely failure diagnostics in scientific-application output.
 
     Parameters
@@ -938,9 +943,8 @@ def find_error_keys(
 
     enabled_sets = tuple(name for name in _error_set_names if flags[name])
     if len(enabled_sets)==0:
-        raise ValueError(
-            'at least one error set must be requested by find_error_keys'
-            )
+        msg = 'at least one error set must be requested by find_error_keys'
+        raise ValueError(msg)
 
     pattern = _combined_error_pattern(enabled_sets)
     if pattern is None:
