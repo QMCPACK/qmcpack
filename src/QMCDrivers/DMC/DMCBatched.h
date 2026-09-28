@@ -126,6 +126,8 @@ private:
   class DMCContextForSteps;
 
   const DMCDriverInput dmcdriver_input_;
+  /// Optional L2 drift-diffusion proposal strategy.
+  const bool use_l2_diffusion_;
   /// Per crowd, driver-specific move contexts
   UPtrVector<DMCContextForSteps> step_contexts_;
   /// obtain reference vector of step contexts
