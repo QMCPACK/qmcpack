@@ -9,9 +9,6 @@ case "$1" in
 
   configure)
 
-    # Make current environment variables available to subsequent steps, ctest
-    echo "PATH=$PATH" >> $GITHUB_ENV
-
     QMC_DATA_DIR=/scratch/pk7/QMC_DATA_FULL
 
     if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build ]
