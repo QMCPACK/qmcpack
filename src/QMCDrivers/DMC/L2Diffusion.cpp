@@ -60,7 +60,7 @@ void L2Diffusion::prepareMove(const TauParams<RealType, CoordsType::POS>& taus,
                               MCCoords<CoordsType::POS>& proposed_displacements,
                               std::vector<RealType>& log_gf,
                               std::vector<bool>& are_valid,
-                              Workspace& workspace) const
+                              Workspace& workspace)
 {
   const size_t num_walkers = walker_elecs.size();
   assert(walker_hamiltonians.size() == num_walkers);
@@ -100,7 +100,7 @@ void L2Diffusion::prepareMove(const TauParams<RealType, CoordsType::POS>& taus,
                  proposed_displacements.positions[iw]);
 }
 
-void L2Diffusion::applyMoveValidity(std::vector<bool>& are_valid, const Workspace& workspace) const
+void L2Diffusion::applyMoveValidity(std::vector<bool>& are_valid, const Workspace& workspace)
 {
   assert(are_valid.size() == workspace.move_valid.size());
   for (size_t iw = 0; iw < are_valid.size(); ++iw)

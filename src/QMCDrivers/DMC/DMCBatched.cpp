@@ -64,15 +64,14 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
                    comm,
                    "DMCBatched"),
       dmcdriver_input_(input),
-      l2_(dmcdriver_input_.get_l2_diffusion() ? std::make_unique<L2Diffusion>() : nullptr),
+      use_l2_diffusion_(dmcdriver_input_.get_l2_diffusion()),
       dmc_timers_("DMCBatched::")
 {
-  if (l2_)
+  if (use_l2_diffusion_)
   {
-    if (population_.get_golden_electrons().isSpinor())
-      throw UniformCommunicateError("L2 diffusion is not supported for spinor particle sets.");
-    if (!population_.get_golden_hamiltonian().has_L2())
-      throw UniformCommunicateError("L2 diffusion was requested, but the Hamiltonian has no L2 potential.");
+    assert(!population_.get_golden_electrons().isSpinor() && "L2 diffusion is not supported for spinor particle sets.");
+    assert(population_.get_golden_hamiltonian().has_L2() &&
+           "L2 diffusion was requested, but the Hamiltonian has no L2 potential.");
   }
 }
 
@@ -122,7 +121,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   const int num_walkers   = crowd.size();
   auto& pset_leader       = walker_elecs.getLeader();
   const int num_particles = pset_leader.getTotalNum();
-  const bool use_l2_diffusion = sft.l2_diffusion != nullptr;
 
   std::vector<bool> are_valid(num_walkers);
   MCCoords<CT> drifts(num_walkers), drifts_reverse(num_walkers);
@@ -180,22 +178,14 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                        [t = taus.tauovermass](auto& delta_r) { return t * dot(delta_r, delta_r); });
 
         twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
-        if constexpr (CT == CoordsType::POS)
+        if (step_context.l2_workspace)
         {
-          if (use_l2_diffusion)
-          {
-            assert(step_context.l2_workspace);
-            sft.l2_diffusion->prepareMove(taus, grads_now, iat, ps_dispatcher, ham_dispatcher, walker_elecs,
-                                          walker_hamiltonians, deltas, drifts, log_gf, are_valid,
-                                          *step_context.l2_workspace);
-          }
+          if constexpr (CT == CoordsType::POS)
+            L2Diffusion::prepareMove(taus, grads_now, iat, ps_dispatcher, ham_dispatcher, walker_elecs,
+                                     walker_hamiltonians, deltas, drifts, log_gf, are_valid,
+                                     *step_context.l2_workspace);
           else
-          {
-            sft.drift_modifier.getDrifts(taus, grads_now, drifts);
-
-            scaleBySqrtTau(taus, deltas);
-            drifts += deltas;
-          }
+            throw std::runtime_error("L2 diffusion is not supported for spinor particle sets.");
         }
         else
         {
@@ -217,12 +207,12 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 #endif
 
         ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts, are_valid);
-        if (use_l2_diffusion)
-          sft.l2_diffusion->applyMoveValidity(are_valid, *step_context.l2_workspace);
+        if (step_context.l2_workspace)
+          L2Diffusion::applyMoveValidity(are_valid, *step_context.l2_workspace);
 
         twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
-        if (!use_l2_diffusion)
+        if (!step_context.l2_workspace)
           computeLogGreensFunction(deltas, taus, log_gf);
 
         sft.drift_modifier.getDrifts(taus, grads_new, drifts_reverse);
@@ -481,8 +471,8 @@ void DMCBatched::run()
   //register walker log collectors into the manager
   wlog_manager.startRun(Crowd::getWalkerLogCollectorRefs(crowds_));
 
-  StateForThread dmc_state(qmcdriver_input_, l2_.get(), *drift_modifier_, *branch_engine_, population_,
-                           steps_per_block_, serializing_crowd_walkers_);
+  StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_,
+                           serializing_crowd_walkers_);
 
   LoopTimer<> dmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
@@ -521,7 +511,7 @@ void DMCBatched::run()
       dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
           ? qmcdriver_input_.get_recalculate_properties_period()
           : (qmcdriver_input_.get_max_blocks() + 1) * steps_per_block_;
-      dmc_state.is_recomputing_block = qmcdriver_input_.get_blocks_between_recompute()
+      dmc_state.is_recomputing_block          = qmcdriver_input_.get_blocks_between_recompute()
           ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
           : false;
 
@@ -602,7 +592,7 @@ void DMCBatched::createStepContexts(int num_crowds)
                                                                    : TmoveKind::OFF,
                                                                qmcdriver_input_.get_tau(), dmcdriver_input_.get_alpha(),
                                                                dmcdriver_input_.get_gamma()),
-                                             l2_ != nullptr);
+                                             use_l2_diffusion_);
 }
 
 } // namespace qmcplusplus
