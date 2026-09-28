@@ -2,7 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.MACHINES)
 
-from ..generic import NexusError
 
 import os
 from random import randint

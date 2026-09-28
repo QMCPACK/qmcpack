@@ -23,7 +23,6 @@
       <parameter name="timestep"> 0.05 </parameter>
       <parameter name="samples"> 64000  </parameter>
       <parameter name="useDrift">  yes </parameter>
-      <parameter name="GEVMethod"> mixed </parameter>
       <parameter name="bigchange">15.0</parameter>
       <estimator name="LocalEnergy" hdf5="no"/>
       <parameter name="usebuffer"> no </parameter>
