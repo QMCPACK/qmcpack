@@ -13,8 +13,8 @@ set(SRC_DIR message)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-add_executable(${UTEST_EXE} test_communciate.cpp)
-target_link_libraries(${UTEST_EXE} PUBLIC message catch_main)
+add_executable(${UTEST_EXE} test_communicate.cpp test_communicate_collectives.cpp)
+target_link_libraries(${UTEST_EXE} PUBLIC message catch_main containers)
 
 foreach(NUM_RANKS 1 2 3 6 12)
   set(UTEST_NAME_MPI ${UTEST_NAME}-r${NUM_RANKS})

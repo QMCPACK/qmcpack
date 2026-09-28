@@ -15,7 +15,7 @@ def to_str(s):
 
 def valid_variable_name(s):
     """Check if a variable name contains invalid characters."""
-    if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in s]):
+    if not any(i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in s):
         return True
     else:
         return False
@@ -46,7 +46,7 @@ def is_valid_path(path: str | bytes | Path) -> bool:
     if not hasattr(is_valid_path,'invalid_chars'):
         unprintable = [chr(c) for c in range(128) if chr(c) not in string.printable]
         special = r'!@#$%^&*;|?\`",()[]{}<>' + r"'"
-        whitespace = set(string.whitespace) - set([' '])
+        whitespace = set(string.whitespace) - {' '}
         invalid = set(unprintable) | set(special) | whitespace
         is_valid_path.invalid_chars = invalid
     invalid_chars = is_valid_path.invalid_chars

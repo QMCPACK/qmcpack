@@ -1205,7 +1205,7 @@ def surface_normals(x,y,z):
 
 
 # test needed
-simple_surface_coords = [set(['x','y','z']),set(['r','phi','z']),set(['r','phi','theta'])]
+simple_surface_coords = [{'x','y','z'},{'r','phi','z'},{'r','phi','theta'}]
 simple_surface_min = {'x':-1.00000000001,'y':-1.00000000001,'z':-1.00000000001,'r':-0.00000000001,'phi':-0.00000000001,'theta':-0.00000000001}
 def simple_surface(origin,axes,grid):
     matched=False

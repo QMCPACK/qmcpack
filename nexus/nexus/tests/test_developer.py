@@ -5,10 +5,6 @@ pytestmark = pytest.mark.order(NexusTestOrder.DEVELOPER)
 from collections.abc import Mapping, MutableMapping
 
 
-
-from ..testing import failed,FailedTest
-
-
 def test_valid_variable_name():
     from ..utilities import valid_variable_name
 
@@ -341,7 +337,7 @@ def test_dotdict_unique():
     # __getattr__ delegates directly to item lookup, so missing dot access has
     # the same KeyError behavior as a missing item (unlike normal attributes).
     try:
-        mapping.missing
+        mapping.missing  # noqa: B018
     except KeyError as error:
         check(error.args == ('missing',), 'missing attribute KeyError contents')
     else:
@@ -425,7 +421,7 @@ def test_obj_unique():
     # Missing attributes follow normal object semantics rather than translating
     # the lookup into a missing mapping key.
     try:
-        mapping.missing
+        mapping.missing  # noqa: B018
     except AttributeError:
         pass
     else:
@@ -603,7 +599,7 @@ def test_developer_tools_devbase(tmp_path):
     del protected[key]
     assert(key not in protected and popped is not None)
 
-    fromkeys = DerivedDevBase({key:shared for key in ('x','y')})
+    fromkeys = DerivedDevBase(dict.fromkeys(('x', 'y'), shared))
     assert(type(fromkeys) is DerivedDevBase)
     assert(fromkeys.x is shared and fromkeys.y is shared)
     protected._clear()

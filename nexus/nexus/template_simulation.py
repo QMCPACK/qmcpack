@@ -152,7 +152,7 @@ class TemplateSimulationInput(SimulationInput):
         #      end section_b
         #
         #    >>> input.section_b.var_c = 25.0
-        None
+        pass
     #end def read_text
 
 
@@ -245,7 +245,7 @@ class TemplateSimulationAnalyzer(SimulationAnalyzer):
         #   or if you want to have a general purpose class to scrape
         #   and process simulation data
         # if you don't want to implement it, no action is required
-        None
+        pass
     #end def analyze
 #end class TemplateSimulationAnalyzer
 

@@ -138,9 +138,6 @@ private:
   /// Number of grid points
   int radial_grid_size_;
 
-  ///maximum cutoff for an orbital, could come from XML always set to -1 by constructor
-  RealType m_rcut;
-
   ///safe common cutoff radius
   RealType m_rcut_safe;
 
@@ -153,7 +150,7 @@ private:
 
 template<typename COT>
 RadialOrbitalSetBuilder<COT>::RadialOrbitalSetBuilder(Communicate* comm, COT& aos, int radial_grid_size)
-    : MPIObjectBase(comm), Normalized(true), m_orbitals(aos), radial_grid_size_(radial_grid_size), m_rcut(-1.0)
+    : MPIObjectBase(comm), Normalized(true), m_orbitals(aos), radial_grid_size_(radial_grid_size)
 {}
 
 template<typename COT>
@@ -239,11 +236,8 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbital(xmlNodePtr cur,
                                                     const QuantumNumberType& nlms)
 {
   std::string radtype(m_infunctype);
-  std::string dsname("0");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(radtype, "type");
-  aAttrib.add(m_rcut, "rmax");
-  aAttrib.add(dsname, "ds");
   aAttrib.put(cur);
   m_nlms = nlms;
   if (radtype == "Gaussian" || radtype == "GTO")
@@ -260,7 +254,6 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbitalH5(hdf_archive& hin,
                                                       const std::string& radtype_atomicBasisSet,
                                                       const QuantumNumberType& nlms)
 {
-  std::string dsname("0");
   std::string radtype(radtype_atomicBasisSet);
   if (myComm->rank() == 0)
     hin.read(radtype, "type");

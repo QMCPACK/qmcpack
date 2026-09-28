@@ -716,11 +716,11 @@ void HybridRepSetReader<ST>::initialize_hybrid_pio_gather(const int spin,
       oneband.fft_spline(cG, mybuilder->Gvecs[0], mybuilder->primcell_kpoints[ti], rotate);
       if (use_duplex_splines_)
       {
-        multi_splines.set_spline(oneband.get_spline_r(), iorb * 2);
-        multi_splines.set_spline(oneband.get_spline_i(), iorb * 2 + 1);
+        multi_splines.setOneSpline(oneband.get_spline_r(), iorb * 2);
+        multi_splines.setOneSpline(oneband.get_spline_i(), iorb * 2 + 1);
       }
       else
-        multi_splines.set_spline(oneband.get_spline_r(), iorb);
+        multi_splines.setOneSpline(oneband.get_spline_r(), iorb);
     }
     band_group_comm.bcast(cG);
     create_atomic_centers_Gspace(cG, band_group_comm, iorb, oneband.getRotatePhase(), half_g, multi_atomic_splines);

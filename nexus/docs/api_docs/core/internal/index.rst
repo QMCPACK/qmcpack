@@ -15,6 +15,7 @@ Nexus's Internal Modules
 * :py:mod:`.memory`
 * :py:mod:`.nexus_base`
 * :py:mod:`.numerics`
+* :py:mod:`.statistics`
 * :py:mod:`.numpy_extensions`
 * :py:mod:`.observables`
 * :py:mod:`.periodic_table`
@@ -39,6 +40,7 @@ Nexus's Internal Modules
     memory
     nexus_base
     numerics
+    statistics
     numpy_extensions
     observables
     periodic_table
