@@ -192,24 +192,6 @@ run_restart_and_check(
   true)
 
 run_restart_and_check(
-  deterministic-save_spline_coefs
-  "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs"
-  1
-  qmc
-  2
-  2
-  false)
-
-run_restart_and_check(
-  deterministic-save_spline_coefs
-  "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs"
-  1
-  qmc
-  1
-  4
-  true)
-
-run_restart_and_check(
   deterministic-save_spline_coefs-batched
   "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs"
   1
@@ -228,13 +210,13 @@ run_restart_and_check(
   true)
 
 run_restart_and_check(
-  deterministic-save_spline_coefs_hybridrep
+  deterministic-save_spline_coefs_hybridrep-batched
   "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs_hybridrep"
   1
-  qmc
-  1
-  3
-  true)
+  qmc_batched
+  2
+  2
+  false)
 
 run_restart_and_check(
   deterministic-save_spline_coefs_hybridrep-batched
