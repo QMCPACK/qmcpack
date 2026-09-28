@@ -187,6 +187,8 @@ if(NOT QMC_COMPLEX)
     TRUE)
 
   if(NOT MIXED_PRECISION)
+    check_python_reqs(h5py deterministic-H4-descent-vp ADD_DESCENT_VP_TESTS)
+
     set(H4_DETERMINISTIC_DESCENT_TEST deterministic-H4-descent-r1-t4)
     set(H4_DETERMINISTIC_DESCENT_TEST_ADDED FALSE)
     run_qmc_app(
@@ -215,6 +217,18 @@ if(NOT QMC_COMPLEX)
       set_tests_properties(
         ${H4_DETERMINISTIC_DESCENT_TEST}-energy ${H4_DETERMINISTIC_DESCENT_TEST}-coefficients
         PROPERTIES DEPENDS ${H4_DETERMINISTIC_DESCENT_TEST} LABELS "QMCPACK-checking-results;deterministic")
+
+      if(ADD_DESCENT_VP_TESTS)
+        add_test(
+          NAME ${H4_DETERMINISTIC_DESCENT_TEST}-vp-h5
+          COMMAND
+            ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/check_vp_h5.py
+            det-H4-descent.s000.vp.h5 det-H4-descent.s000.opt.xml
+          WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${H4_DETERMINISTIC_DESCENT_TEST}")
+        set_tests_properties(
+          ${H4_DETERMINISTIC_DESCENT_TEST}-vp-h5
+          PROPERTIES DEPENDS ${H4_DETERMINISTIC_DESCENT_TEST} LABELS "QMCPACK-checking-results;deterministic")
+      endif()
     endif()
 
     set(H4_DETERMINISTIC_BATCHED_DESCENT_TEST deterministic-H4-batched-descent-r1-t4)
@@ -246,6 +260,19 @@ if(NOT QMC_COMPLEX)
         ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}-energy ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}-coefficients
         PROPERTIES DEPENDS ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST} LABELS
                    "QMCPACK-checking-results;deterministic")
+
+      if(ADD_DESCENT_VP_TESTS)
+        add_test(
+          NAME ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}-vp-h5
+          COMMAND
+            ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/check_vp_h5.py
+            det-H4-batched-descent.s000.vp.h5 det-H4-batched-descent.s000.opt.xml
+          WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}")
+        set_tests_properties(
+          ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}-vp-h5
+          PROPERTIES DEPENDS ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST} LABELS
+                     "QMCPACK-checking-results;deterministic")
+      endif()
     endif()
   endif()
 
