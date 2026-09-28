@@ -16,8 +16,7 @@
 #ifndef OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #define OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #include "Pools/PooledData.h"
-#include "type_traits/container_proxy.h"
-#include "Message/mpi_datatype.h"
+#include "container_proxy.h"
 #include <cstdint>
 #include <stdexcept>
 ///dummy declarations to be specialized
@@ -38,7 +37,8 @@ inline void Communicate::bcast(T* restrict inout, int n)
 {
   if (d_ncontexts == 1)
     return;
-  MPI_Bcast(inout, n, qmcplusplus::mpi::get_mpi_datatype(*inout), 0, myMPI);
+  auto* addr = qmcplusplus::scalar_traits<T>::get_address(inout);
+  MPI_Bcast(addr, n * qmcplusplus::scalar_traits<T>::DIM, qmcplusplus::mpi::get_mpi_datatype(*addr), 0, myMPI);
 }
 
 
@@ -80,39 +80,23 @@ inline void Communicate::reduce(T& g)
     g = gt;
 }
 
-template<typename T>
-inline void Communicate::reduce(T* restrict g, T* restrict res, int n)
-{
-  if (d_ncontexts == 1)
-  {
-    for (int i = 0; i < n; ++i)
-      res[i] = g[i];
-    return;
-  }
-  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*g);
-  MPI_Reduce(g, res, n, type_id, MPI_SUM, 0, myMPI);
-}
 
 template<typename T>
 inline void Communicate::reduce_in_place(T* restrict res, int n)
 {
   if (d_ncontexts == 1)
     return;
-  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*res);
+  auto* addr           = qmcplusplus::scalar_traits<T>::get_address(res);
+  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*addr);
   if (!d_mycontext)
-    MPI_Reduce(MPI_IN_PLACE, res, n, type_id, MPI_SUM, 0, myMPI);
+    MPI_Reduce(MPI_IN_PLACE, addr, n * qmcplusplus::scalar_traits<T>::DIM, type_id, MPI_SUM, 0, myMPI);
   else
-    MPI_Reduce(res, NULL, n, type_id, MPI_SUM, 0, myMPI);
+    MPI_Reduce(addr, NULL, n * qmcplusplus::scalar_traits<T>::DIM, type_id, MPI_SUM, 0, myMPI);
 }
 
 
 template<typename T>
-inline void Communicate::send(int dest, int tag, T&)
-{ throw std::runtime_error("Need specialization for send(int, int, T& )"); }
-
-
-template<typename T>
-inline void Communicate::allgather(T& sb, T& rb, int count)
+inline void Communicate::allgather(T& sb, T& rb)
 {
   if (d_ncontexts == 1)
   {
@@ -121,12 +105,13 @@ inline void Communicate::allgather(T& sb, T& rb, int count)
   }
   qmcplusplus::container_proxy<T> t_in(sb), t_out(rb);
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*t_in.data());
-  MPI_Allgather(t_in.data(), count, type_id, t_out.data(), count, type_id, myMPI);
+  MPI_Allgather(t_in.data(), t_in.size(), type_id, t_out.data(), t_in.size(), type_id, myMPI);
 }
 
 template<typename T, typename IT>
 inline void Communicate::gatherv(T& sb, T& rb, IT& counts, IT& displ, int dest)
 {
+  static_assert(qmcplusplus::scalar_traits<T>::DIM == 1, "Complex types not supported for this method");
   if (d_ncontexts == 1)
   {
     rb = sb;
@@ -154,6 +139,7 @@ inline void Communicate::scatter(T& sb, T& rb, int dest)
 template<typename T, typename IT>
 inline void Communicate::scatterv(T& sb, T& rb, IT& counts, IT& displ, int source)
 {
+  static_assert(qmcplusplus::scalar_traits<T>::DIM == 1, "Complex types not supported for this method");
   if (d_ncontexts == 1)
   {
     rb = sb;
@@ -166,33 +152,6 @@ inline void Communicate::scatterv(T& sb, T& rb, IT& counts, IT& displ, int sourc
                myMPI);
 }
 
-template<typename T>
-inline Communicate::request Communicate::irecv(int source, int tag, T&)
-{
-  throw std::runtime_error("Need specialization for irecv(int source, int tag, T& )");
-  return MPI_REQUEST_NULL;
-}
-
-template<typename T>
-inline Communicate::request Communicate::isend(int dest, int tag, T&)
-{
-  throw std::runtime_error("Need specialization for isend(int source, int tag, T& )");
-  return MPI_REQUEST_NULL;
-}
-
-template<typename T>
-inline Communicate::request Communicate::irecv(int source, int tag, T*, int n)
-{
-  throw std::runtime_error("Need specialization for irecv(int source, int tag, T*, int )");
-  return MPI_REQUEST_NULL;
-}
-
-template<typename T>
-inline Communicate::request Communicate::isend(int dest, int tag, T*, int n)
-{
-  throw std::runtime_error("Need specialization for isend(int source, int tag, T*, int )");
-  return MPI_REQUEST_NULL;
-}
 
 template<typename T>
 inline void Communicate::allgather(T* sb, T* rb, int count)
@@ -203,13 +162,17 @@ inline void Communicate::allgather(T* sb, T* rb, int count)
       rb[i] = sb[i];
     return;
   }
-  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*sb);
-  MPI_Allgather(sb, count, type_id, rb, count, type_id, myMPI);
+  auto* addr_sb        = qmcplusplus::scalar_traits<T>::get_address(sb);
+  auto* addr_rb        = qmcplusplus::scalar_traits<T>::get_address(rb);
+  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*addr_sb);
+  MPI_Allgather(addr_sb, count * qmcplusplus::scalar_traits<T>::DIM, type_id, addr_rb,
+                count * qmcplusplus::scalar_traits<T>::DIM, type_id, myMPI);
 }
 
 template<typename T, typename IT>
 inline void Communicate::gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest)
 {
+  static_assert(qmcplusplus::scalar_traits<T>::DIM == 1, "Complex types not supported for this method");
   if (d_ncontexts == 1)
   {
     std::copy(sb, sb + n, rb);
@@ -254,30 +217,11 @@ inline void Communicate::bcast(std::string& g)
   bcast(g.data(), g.size());
 }
 
-template<>
-inline void Communicate::send(int dest, int tag, std::vector<double>& g)
-{ MPI_Send(g.data(), g.size(), MPI_DOUBLE, dest, tag, myMPI); }
-
-template<>
-inline Communicate::request Communicate::isend(int dest, int tag, std::vector<double>& g)
-{
-  request r;
-  MPI_Isend(g.data(), g.size(), MPI_DOUBLE, dest, tag, myMPI, &r);
-  return r;
-}
-
-template<>
-inline Communicate::request Communicate::irecv(int source, int tag, std::vector<double>& g)
-{
-  request r;
-  MPI_Irecv(g.data(), g.size(), MPI_DOUBLE, source, tag, myMPI, &r);
-  return r;
-}
-
 
 template<typename T, typename TMPI, typename IT>
-inline void Communicate::gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest)
+inline void Communicate::gatherv_in_place(T* buf, const TMPI& datatype, IT& counts, IT& displ, int dest)
 {
+  static_assert(qmcplusplus::scalar_traits<T>::DIM == 1, "Complex types not supported for this method");
   if (!d_mycontext)
     MPI_Gatherv(MPI_IN_PLACE, 0, datatype, buf, counts.data(), displ.data(), datatype, dest, myMPI);
   else

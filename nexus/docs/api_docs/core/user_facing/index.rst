@@ -8,6 +8,7 @@ Nexus's User-Facing Modules
 * :py:mod:`.basisset`
 * :py:mod:`.bundle`
 * :py:mod:`.machines`
+* :py:func:`.analyze_output`
 * :py:mod:`.physical_system`
 * :py:mod:`.pseudopotential`
 * :py:mod:`.pseudoset`
@@ -20,6 +21,7 @@ Nexus's User-Facing Modules
     basisset
     bundle
     machines
+    nexus
     physical_system
     pseudopotential
     pseudoset

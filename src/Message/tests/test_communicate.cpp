@@ -109,5 +109,4 @@ TEST_CASE("test_communicate_split_two_stripe_three", "[message]")
   REQUIRE(c2->rank() == new_rank);
   REQUIRE(c2->getGroupID() == (c->rank() / 3 % 2));
 }
-
 } // namespace qmcplusplus

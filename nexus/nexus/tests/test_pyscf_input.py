@@ -49,9 +49,9 @@ def test_empty_init():
 
     ref = obj(
         addendum      = None,
-        allow_not_set = set([]),
+        allow_not_set = set(),
         checkpoint    = False,
-        keywords      = set([]),
+        keywords      = set(),
         prefix        = None,
         save_qmc      = False,
         template      = None,
@@ -117,9 +117,9 @@ def test_generate(tmp_path):
 
     ref_internal = obj(
         addendum      = None,
-        allow_not_set = set([]),
+        allow_not_set = set(),
         checkpoint    = False,
-        keywords      = set(['system']),
+        keywords      = {'system'},
         prefix        = None,
         save_qmc      = False,
         )
@@ -259,9 +259,9 @@ def test_generate(tmp_path):
 
     ref_internal = obj(
         addendum      = None,
-        allow_not_set = set([]),
+        allow_not_set = set(),
         checkpoint    = False,
-        keywords      = set(['system','calculation','pyscfimport','python_exe']),
+        keywords      = {'system','calculation','pyscfimport','python_exe'},
         prefix        = None,
         save_qmc      = False,
         )
@@ -380,9 +380,9 @@ def test_generate(tmp_path):
 
     ref_internal = obj(
         addendum      = None,
-        allow_not_set = set([]),
+        allow_not_set = set(),
         checkpoint    = False,
-        keywords      = set(['system','calculation','pyscfimport','python_exe']),
+        keywords      = {'system','calculation','pyscfimport','python_exe'},
         prefix        = None,
         save_qmc      = False,
         )

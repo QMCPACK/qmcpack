@@ -29,7 +29,6 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
-#include "Message/CommUtilities.h"
 #include <Pools/PooledData.h>
 #include "Estimators/StructureFactorEstimator.h"
 #include "PairCorrelationEstimator.h"

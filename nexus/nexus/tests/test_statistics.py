@@ -419,7 +419,7 @@ def test_interval_and_lcd_input_validation():
         ]:
         with pytest.raises(ValueError,match=message):
             statistics.interval_dist_peak(intervals,counts)
-    with pytest.raises(ValueError,match=r'peak method must be a string'):
+    with pytest.raises(TypeError,match=r'peak method must be a string'):
         statistics.interval_dist_peak(intervals,[1.,2.],method=1)
     for peak_frac in (np.nan,0.,-1.,1.1):
         with pytest.raises(ValueError,match=r'peak fraction must be in the interval'):

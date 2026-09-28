@@ -765,6 +765,8 @@ parameters:
   +----------------------------+------------------+----------------------+-------------+----------------------------------+
   | ``cell``:math:`^o`         | real array(3,3)  | *anything*           |             | Volume grid exists in            |
   +----------------------------+------------------+----------------------+-------------+----------------------------------+
+  | ``folding``:math:`^o`      | boolean          | yes/no               | no          | Fold periodic copies into cell   |
+  +----------------------------+------------------+----------------------+-------------+----------------------------------+
   | ``corner``:math:`^o`       | real array(3)    | *anything*           |             | Volume corner location           |
   +----------------------------+------------------+----------------------+-------------+----------------------------------+
   | ``center``:math:`^o`       | real array (3)   | *anything*           |             | Volume center/origin location    |
@@ -800,6 +802,15 @@ Additional information:
    the user must specify where the volume is located in space in
    addition to its size/shape (``cell``) using either the ``corner`` or
    ``center`` parameters.
+
+-  ``folding``: When ``yes``, particle positions are folded modulo the
+   explicitly provided ``cell`` before binning. This is useful when the
+   initial simulation cell is an integer supercell of the measurement cell.
+   Folding requires fully periodic boundary conditions and a nonsingular integer
+   transformation from the measurement cell to the initial simulation cell. The
+   measurement-cell corner and axes co-move with subsequent simulation-lattice
+   changes. Every particle in the simulation cell contributes once, so the
+   folded grid integrates to the simulation-cell particle count.
 
 -  ``corner``: The grid volume is defined as
    :math:`corner+\sum_{d=1}^3u_dcell_d` with :math:`0<u_d<1` (“cell”

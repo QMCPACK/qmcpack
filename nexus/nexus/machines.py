@@ -54,7 +54,7 @@ import subprocess
 from subprocess import Popen, CalledProcessError
 import numpy as np
 from .developer import DevBase, obj, warn, NexusError
-from .nexus_base import NexusCore, nexus_core
+from .nexus_base import NexusCore, nexus_config
 from .execute import execute
 from .utilities import path_string
 import importlib.util
@@ -94,7 +94,7 @@ def get_cpu_cores() -> int:
                 output = query.stdout.decode().strip().splitlines()
                 # set will automatically remove duplicate entries.
                 # Anything that remains is the list of physical cores.
-                output = set([i for i in output if not i.startswith("#")])
+                output = {i for i in output if not i.startswith("#")}
                 n_cores = len(output)
             case "Darwin":
                 query = subprocess.run(
@@ -637,7 +637,7 @@ class Job(NexusCore):
         #end if
         if self.subdir is None:
             if machine.local_directory is not None:
-                self.subdir = os.path.join(machine.local_directory,nexus_core.runs,sim.path)
+                self.subdir = os.path.join(machine.local_directory,nexus_config.runs,sim.path)
                 self.abs_subdir = self.subdir
             else:
                 self.subdir = self.directory
@@ -759,7 +759,7 @@ class Job(NexusCore):
 
     # remove?
     def determine_end_status(self,status):
-        if not nexus_core.generate_only:
+        if not nexus_config.generate_only:
             self.successful = False # not really implemented yet
         #end if
     #end def determine_end_status
@@ -1180,7 +1180,7 @@ class Machine(NexusCore):
 
 
     def requeue_job(self,job):
-        None
+        pass
     #end def requeue_job
 
 
@@ -1312,7 +1312,7 @@ class Workstation(Machine):
         self.validate()
         done = []
         for pid,process in self.processes.items():
-            if nexus_core.generate_only or not nexus_core.monitor:
+            if nexus_config.generate_only or not nexus_config.monitor:
                 qpid,status = pid,0
             else:
                 qpid,status = os.waitpid(pid,os.WNOHANG)
@@ -1326,7 +1326,7 @@ class Workstation(Machine):
                 self.running.remove(iid)
                 self.finished.add(iid)
                 done.append(pid)
-                if not nexus_core.generate_only:
+                if not nexus_config.generate_only:
                     job.out.close()
                     job.err.close()
                 #end if
@@ -1369,7 +1369,7 @@ class Workstation(Machine):
         job_req  = job_req[order]
 
         for job in job_req:
-            if job.cores>self.cores and not nexus_core.generate_only:
+            if job.cores>self.cores and not nexus_config.generate_only:
                 msg = (
                     'job '+str(job.internal_id)+' is too large to run on this machine\n'
                     'cores requested: '+str(job.cores)+'\n'
@@ -1443,11 +1443,11 @@ class Workstation(Machine):
         job.status = job.states.running
         process = obj()
         process.job = job
-        if nexus_core.generate_only:
+        if nexus_config.generate_only:
             self.nxs_print(pad+'Would have executed:  '+command)
             job.system_id = job.internal_id
         else:
-            if nexus_core.monitor:
+            if nexus_config.monitor:
                 self.nxs_print(pad+'Executing:  '+command)
                 job.out = open(job.outfile,'w')
                 job.err = open(job.errfile,'w')
@@ -1642,7 +1642,7 @@ class Supercomputer(Machine):
                                  )
         elif self.queue_querier=='qstata':
             #already gives status as queued, running, etc.
-            None
+            pass
         elif  self.queue_querier=='squeue':
             self.job_states=dict(CG = 'exiting',
                                  TO = 'timeout',
@@ -1721,7 +1721,7 @@ class Supercomputer(Machine):
                                  SSUSP = 'suspended',
                                  )
         elif self.queue_querier=='test_query':
-            None
+            pass
         else:
             msg = 'ability to query queue with '+self.queue_querier+' has not yet been implemented'
             raise NotImplementedError(msg)
@@ -1747,7 +1747,7 @@ class Supercomputer(Machine):
             #end if
             self.process_job(job)
             self.jobs[jid] = job
-            if not nexus_core.dynamic:
+            if not nexus_config.dynamic:
                 self.running.add(jid)
                 process = obj(job=job)
                 self.processes[pid] = process
@@ -1872,16 +1872,16 @@ class Supercomputer(Machine):
                 envs     = envs
                 )
         elif launcher=='srun':  # Amos contribution from Ryan McAvoy
-            None
+            pass
         elif launcher=='ibrun': # Lonestar contribution from Paul Young
             job.run_options.add(
             np	= '-n '+str(job.processes),
             p	= '-o '+str(0),
             )
         elif launcher=='jsrun': # Summit
-            None # Summit class takes care of this in post_process_job
+            pass # Summit class takes care of this in post_process_job
         elif launcher=='lrun': # Lassen
-            None # Lassen class takes care of this in post_process_job
+            pass # Lassen class takes care of this in post_process_job
         else:
             msg = launcher+' is not yet implemented as an application launcher'
             raise NotImplementedError(msg)
@@ -1890,12 +1890,12 @@ class Supercomputer(Machine):
 
 
     def pre_process_job(self,job):
-        None
+        pass
     #end def pre_process_job
 
 
     def post_process_job(self,job):
-        None
+        pass
     #end def post_process_job
 
 
@@ -2087,7 +2087,7 @@ class Supercomputer(Machine):
         #end if
         done = []
         for pid,process in self.processes.items():
-            if pid not in self.system_queue or self.system_queue[pid]=='complete' or nexus_core.generate_only:
+            if pid not in self.system_queue or self.system_queue[pid]=='complete' or nexus_config.generate_only:
                 job = process.job
                 job.status = job.states.finished
                 job.finished = True
@@ -2138,7 +2138,7 @@ class Supercomputer(Machine):
             raise FileNotFoundError(msg)
         #end if
         command = self.sub_command(job)
-        if nexus_core.generate_only:
+        if nexus_config.generate_only:
             self.nxs_print(pad+'Would have executed:  '+command)
             job.status = job.states.running
             process = obj()
@@ -2814,6 +2814,7 @@ class Perlmutter(NerscMachine):
         #end if
 
         # Check if the user gave reasonable queue inputs
+        # See https://docs.nersc.gov/jobs/policy/#perlmutter-cpu and https://docs.nersc.gov/jobs/policy/#perlmutter-gpu
         if job.queue == 'debug':
             base_partition = 1
             max_partition = 8
@@ -2821,15 +2822,15 @@ class Perlmutter(NerscMachine):
         elif job.queue == 'regular':
             base_partition = 1
             max_partition = self.nodes
-            max_time = 12
+            max_time = 48
         elif job.queue == 'preempt':
             base_partition = 1
             max_partition = 128
-            max_time = 24
+            max_time = 48
         elif job.queue == 'overrun':
             base_partition = 1
             max_partition = self.nodes
-            max_time = 12
+            max_time = 48
         else:
             msg = 'The requested queue is not implemented.'
             raise NotImplementedError(msg)
@@ -4909,7 +4910,7 @@ class Lassen(Supercomputer):
             #    job.alloc_flags = 'smt1'
             ##end if
             if job.gpus==0:
-                None
+                pass
             else:
                 opt.mgpu = '-M "-gpu"'
             #end if
