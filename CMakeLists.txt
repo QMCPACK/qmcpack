@@ -1,7 +1,7 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-cmake_minimum_required(VERSION 3.21.0)
+cmake_minimum_required(VERSION 3.28.0)
 # Note that cmake_minimum_required affects policy defaults.
 # All policies known to the running version of CMake and introduced in
 # cmake_minimum_required version or earlier will be set to use NEW behavior
@@ -598,12 +598,7 @@ endif(HDF5_FOUND)
 #-------------------------------------------------------------------
 #  set up libboost library, header only
 #-------------------------------------------------------------------
-if(CMAKE_VERSION VERSION_LESS 3.30.0)
-  set(Boost_NO_BOOST_CMAKE on)
-  find_package(Boost 1.61.0 REQUIRED)
-else()
-  find_package(Boost 1.70.0 CONFIG REQUIRED headers)
-endif()
+find_package(Boost 1.70.0 CONFIG REQUIRED headers)
 if(Boost_FOUND)
   target_compile_definitions(Boost::boost INTERFACE "HAVE_LIBBOOST")
   message(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
