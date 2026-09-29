@@ -29,7 +29,7 @@ QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& ps
     : QMCCostFunctionBase(w, psi, h, comm),
       fill_timer_(createGlobalTimer("QMCCostFunction::fillOverlapHamiltonianMatrices", timer_level_medium))
 {
-  CSWeight = 1.0;
+
   app_log() << " Using QMCCostFunction::QMCCostFunction" << std::endl;
 }
 
@@ -56,12 +56,10 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
     {
       // + FiniteDiff
       opt_vars[i] = PM[i] + FiniteDiff;
-      resetPsi();
       correlatedSampling(false);
       auto CostPlus = computedCost();
       // - FiniteDiff
       opt_vars[i] = PM[i] - FiniteDiff;
-      resetPsi();
       correlatedSampling(false);
       auto CostMinus = computedCost();
       // calculate gradient
@@ -71,7 +69,6 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
   }
   else
   {
-    resetPsi();
     //evaluate new local energies and derivatives
     EffectiveWeight effective_weight = correlatedSampling(true);
     //Estimators::accumulate has been called by correlatedSampling
@@ -168,8 +165,6 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
       if (std::abs(w_abs) > 1.0e-10)
         PGradient[j] += w_abs * EDtotals[j];
     }
-
-    IsValid = isEffectiveWeightValid(effective_weight);
   }
 }
 
@@ -329,8 +324,7 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
   app_log() << "  Total weights = " << etemp[1] << std::endl;
   app_log().flush();
   setTargetEnergy(Etarget);
-  ReportCounter = 0;
-  IsValid       = true;
+
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];
   SumValue[SUM_WGTSQ]     = etemp[1];
@@ -346,14 +340,14 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
  *In future, both the LM and descent engines should be children of some parent engine base class.
  * */
 void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                                 DescentEngine& descentEngineObj,
-                                                 const std::string& MinMethod)
+                                                 OptionalRef<DescentEngine> descentEngineObj)
 {
   const auto num_opt_vars = opt_vars.size();
-  if (MinMethod == "descent")
+  if (descentEngineObj)
   {
+    DescentEngine& descent_engine(*descentEngineObj);
     //Reset vectors and scalars from any previous iteration
-    descentEngineObj.prepareStorage(omp_get_max_threads(), num_opt_vars);
+    descent_engine.prepareStorage(omp_get_max_threads(), num_opt_vars);
   }
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
@@ -426,20 +420,18 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
           le_der_samp[i + 1] = HDsaved[i] + etmp * Dsaved[i];
 
 #ifdef HAVE_LMY_ENGINE
-        if (MinMethod == "adaptive")
+        if (descentEngineObj)
         {
-          // pass into engine
-          EngineObj.take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
-        }
-        else if (MinMethod == "descent")
-        {
+          DescentEngine& descent_engine(*descentEngineObj);
           //Could remove this copying over if LM engine becomes compatible with complex numbers
           //so that der_rat_samp and le_der_samp are vectors of std::complex<double> when QMC_COMPLEX=1
           std::vector<FullPrecValueType> der_rat_samp_comp(der_rat_samp.begin(), der_rat_samp.end());
           std::vector<FullPrecValueType> le_der_samp_comp(le_der_samp.begin(), le_der_samp.end());
 
-          descentEngineObj.takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0, saved[REWEIGHT]);
+          descent_engine.takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0, saved[REWEIGHT]);
         }
+        else
+          EngineObj.take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
 #endif
       }
       else
@@ -477,16 +469,19 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
 
 #ifdef HAVE_LMY_ENGINE
   // engine finish taking samples
-  if (MinMethod == "adaptive")
+  if (descentEngineObj)
+  {
+    DescentEngine& descent_engine(*descentEngineObj);
+    descent_engine.sample_finish();
+  }
+  else
     EngineObj.sample_finish();
-  else if (MinMethod == "descent")
-    descentEngineObj.sample_finish();
 #endif
 
   app_log().flush();
 
   setTargetEnergy(Etarget);
-  ReportCounter = 0;
+
 }
 #endif
 
@@ -500,6 +495,8 @@ void QMCCostFunction::resetPsi(bool final_reset)
 
 QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGrad)
 {
+  resetPsi();
+
   const auto num_opt_vars = opt_vars.size();
   for (int ip = 0; ip < NumThreads; ++ip)
   {
@@ -594,7 +591,7 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
   //    app_log()<<"After Purge"<<wgt_tot<<" "<< std::endl;
   for (int i = 0; i < SumValue.size(); i++)
     SumValue[i] = 0.0;
-  CSWeight = wgt_tot = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
+  wgt_tot = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
   for (int ip = 0; ip < NumThreads; ip++)
   {
     int nw = wClones[ip]->numSamples();
@@ -630,7 +627,6 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
   Right = 0.0;
   Left  = 0.0;
 
-  //     resetPsi();
   curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
   RealType V_avg      = curAvg2_w - curAvg_w * curAvg_w;

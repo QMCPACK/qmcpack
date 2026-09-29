@@ -1,0 +1,31 @@
+! Original Nexus regression input; not derived from Quantum ESPRESSO examples.
+&CONTROL
+  calculation = 'bands'
+  prefix = 'nexus_argon'
+  outdir = './nexus_test_tmp'
+  pseudo_dir = './pseudo'
+/
+&SYSTEM
+  ibrav = 1
+  celldm(1) = 9.25
+  nat = 1
+  ntyp = 1
+  nspin = 1
+  ecutwfc = 32.0
+  nbnd = 8
+  occupations = 'fixed'
+/
+&ELECTRONS
+  conv_thr = 2.0d-9
+  diagonalization = 'david'
+/
+ATOMIC_SPECIES
+  Ar 39.948 Ar.nexus-test.UPF
+ATOMIC_POSITIONS crystal
+  Ar 0.0 0.0 0.0
+K_POINTS crystal_b
+  4
+  0.0 0.0 0.0 16
+  0.5 0.0 0.0 16
+  0.5 0.5 0.0 16
+  0.0 0.0 0.0 1

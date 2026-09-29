@@ -8,8 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "test_StructureFactorEstimator.h"
 #include "StructureFactorInput.h"
 #include "ValidStructureFactorInput.h"
@@ -143,7 +143,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 
   // These hamiltomians are just pro forma arguments needed to hold off UBSan,
   // StructureFactorEstimator never accesses into them.
-  auto hamiltonian_pool  = MinimalHamiltonianPool::makeHamWithEEEI(comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::makeHamWithEEEI(comm, particle_pool, wavefunction_pool);
   QMCHamiltonian& gold_hamiltonian(hamiltonian_pool.getHamiltonian().value());
   std::vector<UPtr<QMCHamiltonian>> hams(nwalkers);
   for (int iw = 0; iw < nwalkers; ++iw)
@@ -151,13 +151,6 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 
   auto ref_hams = convertUPtrToRefVector(hams);
   RefVectorWithLeader<QMCHamiltonian> rvwl_hams(ref_hams[0], ref_hams);
-
-  auto updateWalker = [](auto& walker, auto& pset_target, auto& trial_wavefunction) {
-    pset_target.update(false);
-    pset_target.donePbyP();
-    trial_wavefunction.evaluateLog(pset_target);
-    //pset_target.saveWalker(walker);
-  };
 
   using QMCT = OperatorEstBase::QMCT;
   std::vector<QMCT::RealType> rng_reals(nwalkers * QMCT::DIM * 2);
@@ -169,7 +162,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
     // this is not an app_log() because generate_test_data should
     // never be true for merged production code. It is only for
     // developer use when the test data must be regenerated.
-    std::cout << "rng_reals = " << NativePrint(rng_reals) << '\n';
+    app_log() << "rng_reals = " << NativePrint(rng_reals) << '\n';
   }
   else
   {
@@ -283,7 +276,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   };
   // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
-  //std::cout << "kpoint_lists = " << NativePrint(sfe.getKLists().kpts) << '\n';
+  //app_log() << "kpoint_lists = " << NativePrint(sfe.getKLists().kpts) << '\n';
 
   double tolerance = 0.1;
   {
@@ -302,10 +295,10 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 
   if constexpr (generate_test_data)
   {
-    std::cout << "sfk_e_e_expected = ";
-    std::cout << NativePrint(sfk_e_e) << '\n';
-    std::cout << "rhok_e_expected = ";
-    std::cout << NativePrint(rhok_e) << '\n';
+    app_log() << "sfk_e_e_expected = ";
+    app_log() << NativePrint(sfk_e_e) << '\n';
+    app_log() << "rhok_e_expected = ";
+    app_log() << NativePrint(rhok_e) << '\n';
     //    FAIL_CHECK("Test always fails when generating new test reference data.");
   }
 

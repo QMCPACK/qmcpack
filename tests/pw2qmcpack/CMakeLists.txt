@@ -370,3 +370,6 @@ else()
   set_tests_properties(${QE_TEST_NAME}-atomO_pp-vmc_noj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

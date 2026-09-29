@@ -24,6 +24,9 @@
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"
 #include "QMCWaveFunctions/ExampleHeBuilder.h"
+#ifdef ENABLE_DEEPQMC_INFERENCE
+#include "QMCWaveFunctions/DeepQMC/DeepQMCWaveFunctionBuilder.h"
+#endif
 
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
@@ -72,31 +75,8 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
     else if (cname == WaveFunctionComponentBuilder::detset_tag)
     {
       addFermionTerm(*targetPsi, sposet_builder_factory, cur);
-      bool foundtwist(false);
-      xmlNodePtr kcur = cur->children;
-      while (kcur != NULL)
-      {
-        std::string kname((const char*)(kcur->name));
-        if (kname == "h5tag")
-        {
-          std::string hdfName;
-          OhmmsAttributeSet attribs;
-          attribs.add(hdfName, "name");
-          if (hdfName == "twistAngle")
-          {
-            std::vector<ParticleSet::RealType> twists(3, 0);
-            putContent(twists, kcur);
-            targetPsi->setTwist(std::move(twists));
-            foundtwist = true;
-          }
-        }
-        kcur = kcur->next;
-      }
-      if (!foundtwist)
-      {
-        //default twist is [0 0 0]
-        targetPsi->setTwist(std::vector<ParticleSet::RealType>(3, 0));
-      }
+      //default twist is [0 0 0]
+      targetPsi->setTwist(std::vector<ParticleSet::RealType>(3, 0));
     }
     else if (cname == WaveFunctionComponentBuilder::jastrow_tag)
     {
@@ -120,6 +100,15 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
     {
       auto exampleHe_builder = std::make_unique<ExampleHeBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(exampleHe_builder->buildComponent(cur));
+    }
+    else if (cname == "deepqmc")
+    {
+#ifdef ENABLE_DEEPQMC_INFERENCE
+      auto deepqmc_builder = std::make_unique<DeepQMCWaveFunctionBuilder>(myComm, targetPtcl, ptclPool);
+      targetPsi->addComponent(deepqmc_builder->buildComponent(cur));
+#else
+      APP_ABORT("DeepQMC wavefunction input requires ENABLE_DEEPQMC_INFERENCE=ON");
+#endif
     }
     else if (cname == "override_variational_parameters")
     {

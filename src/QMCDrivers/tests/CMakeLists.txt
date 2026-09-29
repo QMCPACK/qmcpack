@@ -81,6 +81,7 @@ set(DRIVER_TEST_SRC
     test_VMCDriverInput.cpp
     test_VMCBatched.cpp
     test_DMCBatched.cpp
+    test_L2Diffusion.cpp
     test_SFNBranch.cpp
     test_QMCCostFunctionBatched.cpp
     test_QMCCostFunctionBase.cpp
@@ -134,3 +135,6 @@ if(HAVE_MPI)
     set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
   endforeach()
 endif(HAVE_MPI)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

@@ -88,3 +88,6 @@ if(NOT QMC_COMPLEX)
   #                    10 HE_BSPLINE_OPT_SCALARS # series for VMC on optimized value
   #                    )
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

@@ -21,8 +21,10 @@ set(UTEST_SRCS
     test_gaussian_basis.cpp
     test_cartesian_tensor.cpp
     test_soa_cartesian_tensor.cpp
+    test_soa_spherical_tensor.cpp
     test_transform.cpp
     test_min_oned.cpp
+    test_OneDimGridFactory.cpp
     test_OneDimCubicSplineLinearGrid.cpp
     test_one_dim_cubic_spline.cpp
     test_Quadrature.cpp
@@ -30,10 +32,14 @@ set(UTEST_SRCS
     test_RotationMatrix3D.cpp)
 
 # Run gen_gto.py to create these files.  They may take a long time to compile.
-#SET(UTEST_SRCS ${UTEST_SRCS} test_full_cartesian_tensor.cpp test_full_soa_cartesian_tensor.cpp)
+#SET(UTEST_SRCS ${UTEST_SRCS} test_full_cartesian_tensor.cpp test_full_soa_cartesian_tensor.cpp
+#    test_full_soa_spherical_tensor.cpp)
 
 add_executable(${UTEST_EXE} ${UTEST_SRCS})
 
 target_link_libraries(${UTEST_EXE} catch_main containers qmcio qmcnumerics)
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

@@ -20,7 +20,8 @@
 #====================================================================#
 
 
-from .developer import DevBase, obj, error
+from .developer import obj
+from .developer import DevBase
 
 
 class Unit(DevBase):
@@ -115,19 +116,19 @@ class UnitConverter(DevBase):
     nanometer        = Unit('distance'  ,'nanometer'       ,'nm'      ,nm             )
     picometer        = Unit('distance'  ,'picometer'       ,'pm'      ,pm             )
     femtometer       = Unit('distance'  ,'femtometer'      ,'pm'      ,fm             )
-                                                                      
+
     second           = Unit('time'      ,'second'          ,'s'       ,s              )
     millisecond      = Unit('time'      ,'millisecond'     ,'ms'      ,ms             )
     nanosecond       = Unit('time'      ,'nanosecond'      ,'ns'      ,ns             )
     picosecond       = Unit('time'      ,'picosecond'      ,'ps'      ,ps             )
     femtosecond      = Unit('time'      ,'femtosecond'     ,'fs'      ,fs             )
-                                                                      
+
     kilogram         = Unit('mass'      ,'kilogram'        ,'kg'      ,kg             )
     electron_mass    = Unit('mass'      ,'electron mass'   ,'me'      ,me             )
     proton_mass      = Unit('mass'      ,'proton mass'     ,'mp'      ,mp             )
     atomic_mass_unit = Unit('mass'      ,'atomic mass unit','amu'     ,amu            )
     dalton           = Unit('mass'      ,'Dalton'          ,'Da'      ,Da             )
-        
+
     joule            = Unit('energy'    ,'Joule'           ,'J'       ,J              )
     electron_volt    = Unit('energy'    ,'electron Volt'   ,'eV'      ,eV             )
     rydberg          = Unit('energy'    ,'Rydberg'         ,'Ry'      ,Ry             )
@@ -137,7 +138,7 @@ class UnitConverter(DevBase):
     kelvin           = Unit('energy'    ,'Kelvin'          ,'K'       ,K              )
     celsius          = Unit('energy'    ,'Celsius'         ,'degC'    ,degC,degC_shift)
     fahrenheit       = Unit('energy'    ,'Fahrenheit'      ,'degF'    ,degF,degF_shift)
-                                                           
+
     coulomb          = Unit('charge'    ,'Coulomb'         ,'C'       ,C              )
     electron_charge  = Unit('charge'    ,'electron charge' ,'e'       ,e              )
 
@@ -146,10 +147,10 @@ class UnitConverter(DevBase):
     megabar          = Unit('pressure'  ,'megabar'         ,'Mbar'    ,Mbar           )
     gigapascal       = Unit('pressure'  ,'gigaPascal'      ,'Gpa'     ,GPa            )
     atmosphere       = Unit('pressure'  ,'atmosphere'      ,'atm'     ,atm            )
-                                                                      
+
     newton           = Unit('force'     ,'Newton'          ,'N'       ,N              )
     piconewton       = Unit('force'     ,'picoNewton'      ,'pN'      ,pN             )
-                                                                      
+
     W_per_mK         = Unit('therm_cond','W/(m*K)'         ,'W_mK'    ,W_mK           )
 
 
@@ -165,7 +166,8 @@ class UnitConverter(DevBase):
 
 
     def __init__(self):
-        self.error('UnitConverter should not be instantiated')
+        msg = 'UnitConverter should not be instantiated'
+        raise RuntimeError(msg)
     #def __init__
 
     @staticmethod
@@ -174,7 +176,11 @@ class UnitConverter(DevBase):
         uo = UnitConverter.unit_dict[target_unit]
 
         if(ui.type != uo.type):
-            error('in UnitConverter.convert()\ntype conversion attempted between '+ui.type+' and '+uo.type)
+            msg = (
+                'in UnitConverter.convert()\n'
+                'type conversion attempted between '+ui.type+' and '+uo.type
+                )
+            raise ValueError(msg)
         else:
             value_out = (value-ui.shift)*ui.value/uo.value+uo.shift
         #end if
@@ -203,4 +209,3 @@ class UnitConverter(DevBase):
 def convert(value,source_unit,target_unit):
     return UnitConverter.convert(value,source_unit,target_unit)[0]
 #end def convert
-

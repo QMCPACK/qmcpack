@@ -8,8 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "StructureFactorInput.h"
 #include "ValidStructureFactorInput.h"
@@ -23,7 +23,6 @@ using Input = testing::ValidStructureFactorInput;
 TEST_CASE("StructureFactorInput::parseXML::valid", "[estimators]")
 {
   Input input;
-  int test_num = 0;
   for (auto input_xml : input)
   {
     Libxml2Document doc;

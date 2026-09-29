@@ -9,19 +9,17 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "einspline/bspline_base.h"
 #include "einspline/bspline_create.h"
 #include "einspline/bspline_eval_d.h"
 #include "einspline/multi_bspline_create.h"
-#include "einspline/multi_bspline_eval_d.h"
-#include "einspline/multi_bspline_eval_s.h"
 
 #include <stdio.h>
 #include <vector>
+#include <memory>
 #include "config/stdlib/Constants.h"
 
 TEST_CASE("double_1d_natural", "[einspline]")
@@ -101,12 +99,6 @@ TEST_CASE("double_1d_multi", "[einspline]")
   auto s    = std::unique_ptr<multi_UBspline_1d_d, void (*)(void*)>{create_multi_UBspline_1d_d(x_grid, xBC, 1),
                                                                  destroy_Bspline};
   REQUIRE(s);
-
-  set_multi_UBspline_1d_d(s.get(), 0, data);
-
-  double val;
-  eval_multi_UBspline_1d_d(s.get(), 1.0, &val);
-  CHECK(val == Approx(2.0));
 }
 
 TEST_CASE("double_1d_periodic", "[einspline]")

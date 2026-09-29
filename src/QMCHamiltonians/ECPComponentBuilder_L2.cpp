@@ -11,6 +11,8 @@
 
 
 #include "QMCHamiltonians/ECPComponentBuilder.h"
+#include <OhmmsData/AttributeSet.h>
+
 namespace qmcplusplus
 {
 void ECPComponentBuilder::buildL2(xmlNodePtr cur)

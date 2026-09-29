@@ -69,11 +69,11 @@
 #     See classes simulation, project, application, random, include, #
 #       mcwalkerset, qmcsystem, simulationcell, particleset, group,  #
 #       sposet, bspline_builder, heg_builder, composite_builder,     #
-#       wavefunction, determinantset, basisset, grid, atomicbasisset,# 
+#       wavefunction, determinantset, basisset, grid, atomicbasisset,#
 #       basisgroup, radfunc, slaterdeterminant, determinant,         #
 #       occupation, multideterminant, detlist, ci, jastrow1,         #
 #       jastrow2, jastrow3, correlation, var, coefficients,          #
-#       coefficient, hamiltonian, coulomb, constant, pseudopotential,# 
+#       coefficient, hamiltonian, coulomb, constant, pseudopotential,#
 #       pseudo, mpc, localenergy, energydensity, reference_points,   #
 #       spacegrid, origin, axis, chiesa, density, nearestneighbors,  #
 #       neighbor_trace, dm1b, spindensity, magnetizationdensity,     #
@@ -134,19 +134,23 @@
 
 
 import os
+import sys
 from pathlib import Path
+from copy import deepcopy
 import inspect
 import keyword
 import numpy as np
 from .numpy_extensions import reshape_inplace
 from .xmlreader import XMLreader, XMLelement
-from .developer import DevBase, obj, hidden, error
+from .developer import DevBase, dotdict, obj, nxs_print, warn, FileFormatError, NexusError, sorted_generic
 from .periodic_table import Elements
 from .structure import Structure, Jellium, get_kpath
 from .physical_system import PhysicalSystem
+from .pseudoset import pp_elem_label, PseudoSet
 from .simulation import SimulationInput, SimulationInputTemplate
 from .pwscf_input import array_to_string as pwscf_array_string
 from .utilities import path_string
+from .unit_converter import convert
 from . import numpy_extensions as npe
 
 yesno_dict     = {True:'yes' ,False:'no'}
@@ -228,22 +232,350 @@ def truefalse(var):
 #end def onezero
 
 def render_bool(var,T,F):
-    if isinstance(var,bool) or var in (1,0):
+    if isinstance(var,bool) or var in {1,0}:
         if var:
             return T
         else:
             return F
         #end if
-    elif var in (T,F):
+    elif var in {T,F}:
         return var
     else:
-        error('Invalid QMCPACK input encountered.\nUser provided an invalid value of "{}" when yes/no was expected.\nValid options are: "{}", "{}", True, False, 1, 0'.format(var,T,F))
+        msg = (
+            'Invalid QMCPACK input encountered.\n'
+            f'User provided an invalid value of "{var}" when yes/no was expected.\n'
+            f'Valid options are: "{T}", "{F}", True, False, 1, 0'
+            )
+        raise ValueError(msg)
 
     #end if
 #end def render_bool
 
 
-bool_write_types = set([yesno,onezero,truefalse])
+bool_write_types = {yesno,onezero,truefalse}
+
+
+
+
+
+
+
+class hobj(obj):
+    def __init__(self,*args,**kwargs):
+        # Route initialization through the public mapping.  Calling
+        # obj.__init__ directly would place values beside hidden's internal
+        # _public_ and _hidden_ objects instead of in _public_.
+        self.update(*args,**kwargs)
+    #end def __init__
+
+    @property
+    def _dict(self):
+        return self.__dict__
+    #end def _dict
+
+    @property
+    def _alt(self):
+        return self.__dict__
+    #end def _alt
+
+    def __len__(self):
+        return len(self._dict)
+    #end def __len__
+
+    def __contains__(self,name):
+        return name in self._dict
+    #end def __contains__
+
+    def __getitem__(self,name):
+        return self._dict[name]
+    #end def __getitem__
+
+    def __setitem__(self,name,value):
+        self._dict[name] = value
+    #end def __setitem__
+
+    def __delitem__(self,name):
+        del self._dict[name]
+    #end def __delitem__
+
+    def __iter__(self):
+        for value in self._dict.values():
+            yield value
+        #end for
+    #end def __iter__
+
+    def keys(self):
+        return self._dict.keys()
+    #end def keys
+
+    def values(self):
+        return self._dict.values()
+    #end def keys
+
+    def items(self):
+        return self._dict.items()
+    #end def items
+
+    def clear(self):
+        self._dict.clear()
+    #end def clear
+
+    # The new obj implements these directly in terms of __dict__.  hobj must
+    # instead preserve its storage indirection so that hidden exposes only its
+    # public mapping.
+    def get(self,*args,**kwargs):
+        return self._dict.get(*args,**kwargs)
+    #end def get
+
+    def pop(self,*args,**kwargs):
+        return self._dict.pop(*args,**kwargs)
+    #end def pop
+
+    def popitem(self):
+        return self._dict.popitem()
+    #end def popitem
+
+    def setdefault(self,*args,**kwargs):
+        return self._dict.setdefault(*args,**kwargs)
+    #end def setdefault
+
+    def update(self,*args,**kwargs):
+        self._dict.update(*args,**kwargs)
+    #end def update
+
+    @classmethod
+    def fromkeys(cls,keys,value=None):
+        return cls(dict.fromkeys(keys,value))
+    #end def fromkeys
+
+    def __eq__(self,other):
+        if not hasattr(other,'items'):
+            return False
+        try:
+            other = dict(other.items())
+        except Exception:
+            return False
+        if len(self._dict)!=len(other):
+            return False
+        for name,value in self._dict.items():
+            if name not in other or type(value)!=type(other[name]):
+                return False
+            equal = value==other[name]
+            if isinstance(equal,(bool,np.bool_)):
+                if not equal:
+                    return False
+            else:
+                try:
+                    if not equal.all():
+                        return False
+                except Exception:
+                    return False
+                #end try
+            #end if
+        #end for
+        return True
+    #end def __eq__
+
+    def __repr__(self):
+        s = ''
+        for name in sorted_generic(self._dict.keys()):
+            if not isinstance(name,str) or not name.startswith('_'):
+                value = self._dict[name]
+                if hasattr(value,'__class__'):
+                    typename = value.__class__.__name__
+                else:
+                    typename = type(value)
+                #end if
+                s += f'  {str(name):<20}  {typename:<20}\n'
+            #end if
+        #end for
+        return s
+    #end def __repr__
+
+    def __str__(self,nindent=1):
+        pad = '  '
+        npad = nindent*pad
+        normal = []
+        nested = []
+        for name,value in self._dict.items():
+            if not isinstance(name,str) or not name.startswith('_'):
+                if isinstance(value,hobj):
+                    nested.append(name)
+                else:
+                    normal.append(name)
+                #end if
+            #end if
+        #end for
+        normal = sorted_generic(normal)
+        nested = sorted_generic(nested)
+        indent = npad+18*' '
+        s = ''
+        for name in normal:
+            value_string = str(self[name]).replace('\n','\n'+indent)
+            s += npad+f'{str(name):<15} = '+value_string+'\n'
+        #end for
+        for name in nested:
+            s += npad+str(name)+'\n'
+            s += self[name].__str__(nindent+1)
+            if isinstance(name,str):
+                s += npad+'end '+name+'\n'
+            #end if
+        #end for
+        return s
+    #end def __str__
+
+    def copy(self):
+        return deepcopy(self)
+    #end def copy
+
+    # logging and error reporting formerly inherited from generic.obj
+    def open_log(self,filepath):
+        self._logfile = open(filepath,'w')
+    #end def open_log
+
+    def close_log(self):
+        self._logfile.close()
+    #end def close_log
+
+    def write(self,s):
+        self._logfile.write(s)
+    #end def write
+
+    def log(self,*items,**kwargs):
+        if 'logfile' not in kwargs and '_logfile' in self.__dict__:
+            kwargs['logfile'] = self._logfile
+        nxs_print(*items,**kwargs)
+    #end def log
+
+    def warn(self,message,header=None):
+        if header is None:
+            header = self.__class__.__name__
+        logfile = self.__dict__.get('_logfile',None)
+        warn(message,header,logfile=logfile)
+    #end def warn
+
+    # access preserving functions
+    #  dict interface
+    def _keys(self,*args,**kwargs):
+        return hobj.keys(self,*args,**kwargs)
+    def _values(self,*args,**kwargs):
+        return hobj.values(self,*args,**kwargs)
+    def _items(self,*args,**kwargs):
+        return hobj.items(self,*args,**kwargs)
+    def _clear(self,*args,**kwargs):
+        hobj.clear(self,*args,**kwargs)
+    def _sorted_keys(self):
+        return sorted_generic(self._dict.keys())
+    def _open_log(self,*args,**kwargs):
+        hobj.open_log(self,*args,**kwargs)
+    def _close_log(self,*args,**kwargs):
+        hobj.close_log(self,*args,**kwargs)
+    def _write(self,*args,**kwargs):
+        hobj.write(self,*args,**kwargs)
+    def _log(self,*args,**kwargs):
+        hobj.log(self,*args,**kwargs)
+#end class hobj
+
+
+
+class hidden(hobj):
+    def __init__(self,*vals,**kwargs):
+        d = object.__getattribute__(self,'__dict__')
+        d['_hidden_'] = hobj()
+        d['_public_'] = hobj()
+        hobj.__init__(self,*vals,**kwargs)
+    #end def __init__
+
+    @property
+    def _dict(self):
+        return self.__dict__['_public_']
+    #end def __get_dict
+
+    @property
+    def _alt(self):
+        return self.__dict__['_hidden_']
+    #end def __alt
+
+    def __getattribute__(self,name):
+        d = object.__getattribute__(self,'__dict__')
+        if '_public_' in d:
+            p = d['_public_']
+            if name in p:
+                return p[name]
+            else:
+                return object.__getattribute__(self,name)
+            #end if
+        else:
+            return object.__getattribute__(self,name)
+        #end if
+    #end def __getattribute__
+
+    def __setattr__(self,name,value):
+        self._dict[name] = value
+    #end def __setattr__
+
+    def __delattr__(self,name):
+        del self._dict[name]
+    #end def __delattr__
+
+    def hidden(self):
+        return self.__dict__['_hidden_']
+    #end def hidden
+
+    def public(self):
+        return self.__dict__['_public_']
+    #end def public
+
+    def _hidden(self):
+        return hidden.hidden(self)
+    #end def _hidden
+
+    def _public(self):
+        return hidden.public(self)
+    #end def _public
+
+    def open_log(self,filepath):
+        self._alt._open_log(filepath)
+    #end def open_log
+
+    def close_log(self):
+        self._alt._close_log()
+    #end def close_log
+
+    def write(self,s):
+        self._alt._write(s)
+    #end def write
+
+    def log(self,*items,**kwargs):
+        self._alt._log(*items,**kwargs)
+    #end def log
+
+    def __repr__(self):
+        s=''
+        for k in sorted_generic(self._dict.keys()):
+            if not isinstance(k,str) or k[0]!='_':
+                v=self._dict[k]
+                if hasattr(v,'__class__'):
+                    s+=f'  {k:<20}  {v.__class__.__name__:<20}\n'
+                else:
+                    s+=f'  {k:<20}  {type(v):<20}\n'
+                #end if
+            #end if
+        #end for
+        return s
+    #end def __repr__
+
+    #  log, warning, and error messages
+    def _open_log(self,*args,**kwargs):
+        hidden.open_log(self,*args,**kwargs)
+    def _close_log(self,*args,**kwargs):
+        hidden.close_log(self,*args,**kwargs)
+    def _write(self,*args,**kwargs):
+        hidden.write(self,*args,**kwargs)
+    def _log(self,*args,**kwargs):
+        hidden.log(self,*args,**kwargs)
+
+#end class hidden
 
 
 
@@ -259,19 +591,20 @@ class QIobj(DevBase):
 
     @staticmethod
     def settings(
+        *,
         permissive_read  = False,
         permissive_write = False,
         permissive_init  = False,
         ):
-        QIobj.permissive_read  = permissive_read 
+        QIobj.permissive_read  = permissive_read
         QIobj.permissive_write = permissive_write
-        QIobj.permissive_init  = permissive_init 
+        QIobj.permissive_init  = permissive_init
     #end def settings
 #end class QIobj
 
 
 class meta(obj):
-    None
+    pass
 #end class meta
 
 
@@ -317,9 +650,14 @@ class collection(hidden):
         self.remove(name)
     #end def __delattr__
 
-    def add(self,element,strict=True,key=None):
+    def add(self,element,*,strict=True,key=None):
         if not isinstance(element,QIxml):
-            self.error('collection cannot be formed\nadd attempted for non QIxml element\ntype received: {0}'.format(element.__class__.__name__))
+            msg = (
+                'collection cannot be formed\n'
+                'add attempted for non QIxml element\n'
+                f'type received: {type(element).__name__}'
+                )
+            raise TypeError(msg)
         #end if
         keyin = key
         key   = None
@@ -327,7 +665,14 @@ class collection(hidden):
         identifier = element.identifier
         missing_identifier = False
         if element.tag not in plurals_inv and element.collection_id is None:
-            self.error('collection cannot be formed\n  encountered non-plural element\n  element class: {0}\n  element tag: {1}\n  tags allowed in a collection: {2}'.format(element.__class__.__name__,element.tag,sorted(plurals_inv.keys())))
+            msg = (
+                'collection cannot be formed\n'
+                '  encountered non-plural element\n'
+                f'  element class: {type(element).__name__}\n'
+                f'  element tag: {element.tag}\n'
+                f'  tags allowed in a collection: {sorted(plurals_inv.keys())}'
+                )
+            raise ValueError(msg)
         elif identifier is None:
             key = len(public)
         elif isinstance(identifier,str):
@@ -349,7 +694,12 @@ class collection(hidden):
             key = len(public)
         #end if
         if keyin is not None and not isinstance(key,int) and keyin.lower()!=key.lower():
-            self.error('attempted to add key with incorrect name\nrequested key: {0}\ncorrect key: {1}'.format(keyin,key))
+            msg = (
+                'attempted to add key with incorrect name\n'
+                f'requested key: {keyin}\n'
+                f'correct key: {key}'
+                )
+            raise ValueError(msg)
         #end if
         #if key in public:
         #    self.error('attempted to add duplicate key to collection: {0}\n keys present: {1}'.format(key,sorted(public.keys())))
@@ -453,12 +803,13 @@ class Names(QIobj):
     rsqmc_expanded_names = None
     afqmc_expanded_names = None
 
-    escape_names = set(keyword.kwlist+['write'])
-    escaped_names = list(escape_names)
+    # Unpack instead of add to ensure no tuple-list incompatibility
+    escape_names = frozenset((*keyword.kwlist, 'write'))
+    escaped_names = list(escape_names)  # noqa: RUF012
     for i in range(len(escaped_names)):
         escaped_names[i]+='_'
     #end for
-    escaped_names = set(escaped_names)
+    escaped_names = frozenset(escaped_names)
 
     @staticmethod
     def set_expanded_names(**kwargs):
@@ -527,10 +878,10 @@ class Names(QIobj):
         keylist = np.array(list(self.condensed_names.keys()))
         order = np.array(list(self.condensed_names.values())).argsort()
         keylist = keylist[order]
-        for expanded in keylist: 
+        for expanded in keylist:
             condensed = self.condensed_names[expanded]
             if expanded!=condensed:
-                print("    {0:15} = '{1}'".format(condensed,expanded))
+                print(f"    {condensed:15} = '{expanded}'")
             #end if
         #end for
         print()
@@ -547,29 +898,29 @@ class QIxml(Names):
         print()
         print('In init from args (not implemented).')
         print('Possible reasons for incorrect entry:  ')
-        print('  Is xml element {0} meant to be plural?'.format(self.__class__.__name__))
+        print(f'  Is xml element {self.__class__.__name__} meant to be plural?')
         print('    If so, add it to the plurals object.')
         print()
         print('Arguments received:')
         print(args)
         print()
-        self.not_implemented()
+        raise NotImplementedError
     #end def init_from_args
 
 
 
     @classmethod
     def init_class(cls):
-        cls.class_set_optional(
+        fields = dict(
             tag         = cls.__name__,
             identifier  = None,
-            attributes  = [],
-            elements    = [],
+            attributes  = (),
+            elements    = (),
             text        = None,
-            parameters  = [],
-            attribs     = [],
-            costs       = [],
-            h5tags      = [],
+            parameters  = (),
+            attribs     = (),
+            costs       = (),
+            h5tags      = (),
             types       = obj(),
             write_types = obj(),
             attr_types  = None,
@@ -578,12 +929,16 @@ class QIxml(Names):
             collection_id = None,
             exp_names   = None,
             )
+        for k,v in fields.items():
+            if not hasattr(cls,k):
+                setattr(cls,k,v)
         for v in ['attributes','elements','parameters','attribs','costs','h5tags']:
-            names = cls.class_get(v)
+            names = list(getattr(cls,v))
             for i in range(len(names)):
                 if names[i] in cls.escape_names:
                     names[i]+='_'
                 #end if
+            setattr(cls, v, tuple(names))
             #end for
         #end for
         cls.params = cls.parameters + cls.attribs + cls.costs + cls.h5tags
@@ -593,14 +948,16 @@ class QIxml(Names):
                 cls.plurals_inv[e] = plurals_inv[e]
             #end if
         #end for
-        cls.plurals = cls.plurals_inv.inverse()
+        cls.plurals = obj({v:k for k,v in cls.plurals_inv.items()})
         if cls.exp_names is not None:
-            cls.expanded_names = obj(Names.expanded_names,cls.exp_names)
+            en = obj(**Names.expanded_names)
+            en.update(**cls.exp_names)
+            cls.expanded_names = en
         #end if
     #end def init_class
 
 
-    def write(self,indent_level=0,pad='   ',first=False):
+    def write(self,indent_level=0,pad='   ',*,first=False):
         param.set_precision(self.get_precision())
         if not QIobj.permissive_write:
             self.check_junk(exit=True)
@@ -678,12 +1035,12 @@ class QIxml(Names):
                     if isinstance(elem,QIxml):
                         c += elem.write(indent_level+1)
                     else:
-                        begin = '<'+e+'>'                        
+                        begin = '<'+e+'>'
                         contents = param.write(elem)
                         end = '</'+e+'>'
                         if contents.strip()=='':
                             c += ip+begin+end+'\n'
-                        else:                            
+                        else:
                             c += ip+begin+'\n'
                             c += ipp+contents+'\n'
                             c += ip+end+'\n'
@@ -692,7 +1049,13 @@ class QIxml(Names):
                 elif e in plurals_inv and plurals_inv[e] in self:
                     coll = self[plurals_inv[e]]
                     if not isinstance(coll,collection):
-                        self.error('write failed\n  element {0} is not a collection\n  contents of element {0}:\n{1}'.format(plurals_inv[e],str(coll)))
+                        msg = (
+                            'write failed\n'
+                            f'  element {plurals_inv[e]} is not a collection\n'
+                            f'  contents of element {plurals_inv[e]}:\n'
+                            f'{str(coll)}'
+                            )
+                        raise TypeError(msg)
                     #end if
                     for instance in coll.list():
                         c += instance.write(indent_level+1)
@@ -722,7 +1085,7 @@ class QIxml(Names):
             elif isinstance(a,section):
                 self.init_from_inputs(a.args,a.kwargs)
             elif isinstance(a,self.__class__):
-                self.transfer_from(a)
+                self.update(**a)
             else:
                 self.init_from_inputs(args,kwargs)
             #end if
@@ -743,7 +1106,8 @@ class QIxml(Names):
             value = xml._elements[ecap]
             if (isinstance(value,list) or isinstance(value,tuple)) and e in self.plurals_inv.keys():
                 if e not in types:
-                    self.error('input element "{}" is unknown'.format(e))
+                    msg = f'input element "{e}" is unknown'
+                    raise ValueError(msg)
                 #end if
                 p = self.plurals_inv[e]
                 plist = []
@@ -753,10 +1117,11 @@ class QIxml(Names):
                 self[p] = make_collection(plist)
             elif e in self.elements:
                 if e not in types:
-                    self.error('input element "{}" is unknown'.format(e))
+                    msg = f'input element "{e}" is unknown'
+                    raise ValueError(msg)
                 #end if
                 self[e] = types[e](value)
-            elif e in ['parameter','attrib','cost','h5tag']:
+            elif e in {'parameter','attrib','cost','h5tag'}:
                 if isinstance(value,XMLelement):
                     value = [value]
                 #end if
@@ -792,7 +1157,11 @@ class QIxml(Names):
                 if aval in boolmap:
                     self[a] = boolmap[aval]
                 else:
-                    self.error('{0} is not a valid value for boolean attribute {1}\n  valid values are: {2}'.format(aval,a,boolmap.keys()))
+                    msg = (
+                        f'{aval} is not a valid value for boolean attribute {a}\n'
+                        f'  valid values are: {boolmap.keys()}'
+                        )
+                    raise ValueError(msg)
                 #end if
             else:
                 self[a] = attribute_to_value(xml._attributes[al[a]])
@@ -807,7 +1176,9 @@ class QIxml(Names):
     def init_from_inputs(self,args,kwargs):
         if len(args)>0:
             if len(args)==1 and isinstance(args[0],self.__class__):
-                self.transfer_from(args[0])
+                a0 = args[0]
+                for k,v in a0.items():
+                    self[k] = v
             elif len(args)==1 and isinstance(args[0],dict):
                 self.init_from_kwargs(args[0])
             else:
@@ -836,7 +1207,7 @@ class QIxml(Names):
         elem = ks & set(self.elements)
         plur = ks & set(self.plurals.keys())
         if self.text is not None:
-            text = ks & set([self.text])
+            text = ks & {self.text}
         else:
             text = set()
         #end if
@@ -871,7 +1242,11 @@ class QIxml(Names):
             elif isinstance(kwcoll,(list,tuple)):
                 plist = kwcoll
             else:
-                self.error('init failed\n  encountered non-list collection')
+                msg = (
+                    'init failed\n'
+                    '  encountered non-list collection'
+                    )
+                raise TypeError(msg)
             #end if
             ilist = []
             for instance in plist:
@@ -885,7 +1260,7 @@ class QIxml(Names):
     #end def init_from_kwargs
 
 
-    def incorporate_defaults(self,elements=False,overwrite=False,propagate=True):
+    def incorporate_defaults(self,*,elements=False,overwrite=False,propagate=True):
         for name,value in self.defaults.items():
             defval=None
             if isinstance(value,classcollection):
@@ -914,22 +1289,22 @@ class QIxml(Names):
             #end if
         #end for
         if propagate:
-            for name,value in self.items():
+            for value in self.values():
                 if isinstance(value,QIxml):
-                    value.incorporate_defaults(elements,overwrite)
+                    value.incorporate_defaults(elements=elements,overwrite=overwrite)
                 elif isinstance(value,collection):
                     for v in value:
                         if isinstance(v,QIxml):
-                            v.incorporate_defaults(elements,overwrite)
+                            v.incorporate_defaults(elements=elements,overwrite=overwrite)
                         #end if
                     #end for
                 #end if
             #end for
         #end if
-    #end def incorporate_defaults                    
+    #end def incorporate_defaults
 
 
-    def check_junk(self,junk=None,exit=False):
+    def check_junk(self,junk=None,*,exit=False):
         if junk is None:
             ks = set(self.keys())
             h5tags     = ks & set(self.h5tags)
@@ -940,7 +1315,7 @@ class QIxml(Names):
             elem = ks & set(self.elements)
             plur = ks & set(self.plurals.keys())
             if self.text is not None:
-                text = ks & set([self.text])
+                text = ks & {self.text}
             else:
                 text = set()
             #end if
@@ -951,7 +1326,7 @@ class QIxml(Names):
             if self.tag!=self.__class__.__name__:
                 oname = ' ('+self.__class__.__name__+')'
             #end if
-            msg = '{0}{1} does not have the following attributes/elements:\n'.format(self.tag,oname)
+            msg = f'{self.tag}{oname} does not have the following attributes/elements:\n'
             for jname in junk:
                 msg+='    '+jname+'\n'
             #end for
@@ -960,8 +1335,10 @@ class QIxml(Names):
             ##end if
 
             #print(obj(dict(self.__class__.__dict__)))
-
-            self.error(msg,'QmcpackInput',exit=exit,trace=exit)
+            if exit:
+                raise ValueError(msg)
+            else:
+                self.warn(msg)
         #end if
     #end def check_junk
 
@@ -995,7 +1372,7 @@ class QIxml(Names):
 
         if len(profile.junk)>0:
             print('  '+xname+' (found '+str(junk)+')')
-            for sector in 'attributes elements'.split():
+            for sector in ('attributes', 'elements'):
                 missing = []
                 for n in profile.junk:
                     if n in profile[sector]:
@@ -1029,8 +1406,8 @@ class QIxml(Names):
                     print(ms)
                 #end if
             #end if
-            if junk!=set(['analysis']) and junk!=set(['ratio']) and junk!=set(['randmo']) and junk!=set(['printeloc', 'source']) and junk!=set(['warmup_steps']) and junk!=set(['sposet_collection']) and junk!=set(['eigensolve', 'atom']) and junk!=set(['maxweight', 'reweightedvariance', 'unreweightedvariance', 'energy', 'exp0', 'stabilizerscale', 'minmethod', 'alloweddifference', 'stepsize', 'beta', 'minwalkers', 'nstabilizers', 'bigchange', 'usebuffer']) and junk!=set(['loop2']) and junk!=set(['random']) and junk!=set(['max_steps']):
-                exit()
+            if junk!={'analysis'} and junk!={'ratio'} and junk!={'randmo'} and junk!={'printeloc', 'source'} and junk!={'warmup_steps'} and junk!={'sposet_collection'} and junk!={'eigensolve', 'atom'} and junk!={'maxweight', 'reweightedvariance', 'unreweightedvariance', 'energy', 'exp0', 'stabilizerscale', 'minmethod', 'alloweddifference', 'stepsize', 'beta', 'minwalkers', 'nstabilizers', 'bigchange', 'usebuffer'} and junk!={'loop2'} and junk!={'random'} and junk!={'max_steps'}:
+                sys.exit()
             #end if
         #end if
 
@@ -1048,7 +1425,7 @@ class QIxml(Names):
     #end def get_single
 
 
-    def get(self,names,namedict=None,host=False,root=True):
+    def get(self,names,namedict=None,*,host=False,root=True):
         if namedict is None:
             namedict = {}
         #end if
@@ -1091,9 +1468,9 @@ class QIxml(Names):
                 #end if
             #end if
         #end for
-        for name,value in self.items():
+        for value in self.values():
             if isinstance(value,QIxml):
-                value.get(names,namedict,host,root=False)
+                value.get(names,namedict,host=host,root=False)
             elif isinstance(value,collection):
                 for n,v in value.items():
                     name_absent = n not in namedict
@@ -1111,7 +1488,7 @@ class QIxml(Names):
                         #end if
                     #end if
                     if isinstance(v,QIxml):
-                        v.get(names,namedict,host,root=False)
+                        v.get(names,namedict,host=host,root=False)
                     #end if
                 #end if
             #end if
@@ -1157,7 +1534,7 @@ class QIxml(Names):
         for name in remove:
             del self[name]
         #end for
-        for name,value in self.items():
+        for value in self.values():
             if isinstance(value,QIxml):
                 value.remove(*names)
             elif isinstance(value,collection):
@@ -1183,7 +1560,7 @@ class QIxml(Names):
                 #end if
             #end if
         #end for
-        for vname,val in self.items():
+        for val in self.values():
             if isinstance(val,QIxml):
                 val.assign(**kwargs)
             elif isinstance(val,collection):
@@ -1229,7 +1606,7 @@ class QIxml(Names):
                 #end if
             #end if
         #end for
-        for vname,val in self.items():
+        for val in self.values():
             if isinstance(val,QIxml):
                 val.replace(*args,**kwargs)
             elif isinstance(val,collection):
@@ -1273,7 +1650,8 @@ class QIxml(Names):
                 if len(elem)==1:
                     self[single_name]=elem[0]
                 elif plural_name is None:
-                    self.error('attempting to combine non-plural elements: '+single_name)
+                    msg = 'attempting to combine non-plural elements: '+single_name
+                    raise ValueError(msg)
                 else:
                     self[plural_name] = make_collection(elem)
                 #end if
@@ -1281,8 +1659,8 @@ class QIxml(Names):
         #end for
     #end def combine
 
-                    
-    def move(self,**elemdests):        
+
+    def move(self,**elemdests):
         names = list(elemdests.keys())
         hosts = self.get_host(names)
         dests = self.get(list(elemdests.values()))
@@ -1334,10 +1712,10 @@ class QIxml(Names):
     #end def pluralize
 
 
-    def difference(self,other,root=True):
+    def difference(self,other,*,root=True):
         if root:
-            q1 = self.copy()
-            q2 = other.copy()
+            q1 = deepcopy(self)
+            q2 = deepcopy(other)
         else:
             q1 = self
             q2 = other
@@ -1358,8 +1736,10 @@ class QIxml(Names):
             diff = cls()
             d1 = cls()
             d2 = cls()
-            d1.transfer_from(q1,unique1)
-            d2.transfer_from(q2,unique2)
+            for k in unique1:
+                d1[k] = q1[k]
+            for k in unique2:
+                d2[k] = q2[k]
             for k in shared:
                 value1 = q1[k]
                 value2 = q2[k]
@@ -1368,7 +1748,11 @@ class QIxml(Names):
                 is_qxml1 = isinstance(value1,QIxml)
                 is_qxml2 = isinstance(value2,QIxml)
                 if is_coll1!=is_coll2 or is_qxml1!=is_qxml2:
-                    self.error('values for '+k+' are of inconsistent types\n  difference could not be taken')
+                    msg = (
+                        'values for '+k+' are of inconsistent types\n'
+                        '  difference could not be taken'
+                        )
+                    raise TypeError(msg)
                 #end if
                 if is_qxml1 and is_qxml2:
                     kdifferent,kdiff,kd1,kd2 = value1.difference(value2,root=False)
@@ -1381,8 +1765,10 @@ class QIxml(Names):
                     kdifferent = len(kunique1)>0 or len(kunique2)>0
                     kd1 = collection()
                     kd2 = collection()
-                    kd1.transfer_from(value1,kunique1)
-                    kd2.transfer_from(value2,kunique2)
+                    for k in kunique1:
+                        kd1[k] = value1[k]
+                    for k in kunique2:
+                        kd2[k] = value2[k]
                     kdiff = collection()
                     for kk in kshared:
                         v1 = value1[kk]
@@ -1439,7 +1825,7 @@ class QIxml(Names):
                     d1[k] = kd1
                 #end if
                 if kd2 is not None:
-                    d2[k] = kd2  
+                    d2[k] = kd2
                 #end if
             #end for
         #end if
@@ -1449,7 +1835,7 @@ class QIxml(Names):
             #end if
             d1.remove_empty()
             d2.remove_empty()
-        #end if 
+        #end if
         return different,diff,d1,d2
     #end def difference
 
@@ -1485,7 +1871,7 @@ class QIxml(Names):
     #end def get_host
 
     def get_precision(self):
-        return self.__class__.class_get('precision')
+        return getattr(self.__class__,'precision')
     #end def get_precision
 #end class QIxml
 
@@ -1527,7 +1913,15 @@ class QIxmlFactory(Names):
             elif self.default is not None:
                 type = self.default
             elif self.typeindex==-1:
-                self.error('QMCPACK input file is misformatted\ncannot identify type for <{0}/> element\nwith contents:\n{1}\nplease find the XML element matching this description in the input file to identify the problem\nmost likely, it is missing attributes "{2}" or "{3}"'.format(self.name,str(v).rstrip(),self.typekey,self.typekey2))
+                msg = (
+                    'QMCPACK input file is misformatted\n'
+                    f'cannot identify type for <{self.name}/> element\n'
+                    'with contents:\n'
+                    f'{str(v).rstrip()}\n'
+                    'please find the XML element matching this description in the input file to identify the problem\n'
+                    f'most likely, it is missing attributes "{self.typekey}" or "{self.typekey2}"'
+                    )
+                raise FileFormatError(msg)
             else:
                 type = a[self.typeindex]
             #end if
@@ -1538,18 +1932,18 @@ class QIxmlFactory(Names):
         else:
             msg = self.name+' factory is not aware of the following subtype:\n'
             msg+= '    '+type+'\n'
-            self.error(msg,exit=False,trace=False)
+            self.warn(msg)
         #end if
     #end def __call__
 
     def init_class(self):
-        None # this is for compatibility with QIxml only (do not overwrite)
+        pass # this is for compatibility with QIxml only (do not overwrite)
     #end def init_class
 #end class QIxmlFactory
 
 
 
-class Param(Names):        
+class Param(Names):
     metadata = None
 
     def __init__(self):
@@ -1565,7 +1959,8 @@ class Param(Names):
         if precision is None:
             self.reset_precision()
         elif not isinstance(precision,str):
-            self.error('attempted to set precision with non-string: {0}'.format(precision))
+            msg = f'attempted to set precision with non-string: {precision}'
+            raise TypeError(msg)
         else:
             self.precision   = precision
             self.prec_format = '{0:'+precision+'}'
@@ -1574,7 +1969,8 @@ class Param(Names):
 
     def __call__(self,*args,**kwargs):
         if len(args)==0:
-            self.error('no arguments provided, should have received one XMLelement')
+            msg = 'no arguments provided, should have received one XMLelement'
+            raise ValueError(msg)
         elif not isinstance(args[0],XMLelement):
             return args[0]
             #self.error('first argument is not an XMLelement')
@@ -1585,7 +1981,7 @@ class Param(Names):
     def read(self,xml):
         val = None
         attr = set(xml._attributes.keys())
-        other_attr = attr-set(['name'])
+        other_attr = attr-{'name'}
         if 'name' in attr and len(other_attr)>0:
             oa = obj()
             for a in other_attr:
@@ -1628,19 +2024,21 @@ class Param(Names):
                 # rows have identical size: 2d
                 reshape_inplace(val,len(rowlens),rowlens[0])
             if val.size==1:
-                self.error('scalar value interpreted as an array.  This is a developer error.')
+                msg = 'scalar value interpreted as an array.  This is a developer error.'
+                raise NexusError(msg)
         if val is None:
             val = ''
         return val
     #end def read
 
 
-    def write(self,value,mode='attr',tag='parameter',name=None,pad='   ',write_type=None,normal_elem=False):
+    def write(self,value,mode='attr',tag='parameter',name=None,pad='   ',write_type=None,*,normal_elem=False):
         c = ''
         attr_mode = mode=='attr'
         elem_mode = mode=='elem'
         if not attr_mode and not elem_mode:
-            self.error(mode+' is not a valid mode.  Options are attr,elem.')
+            msg = mode+' is not a valid mode.  Options are attr,elem.'
+            raise ValueError(msg)
         #end if
         if isinstance(value,list) or isinstance(value,tuple):
             value = np.array(value)
@@ -1723,7 +2121,11 @@ class Param(Names):
                         c+=fmt.format(*value[nr])
                     #end for
                 else:
-                    self.error('only 1 and 2 dimensional arrays are supported for xml formatting.\n  Received '+ndim+' dimensional array.')
+                    msg = (
+                        'only 1 and 2 dimensional arrays are supported for xml formatting.\n'
+                        '  Received '+ndim+' dimensional array.'
+                        )
+                    raise ValueError(msg)
                 #end if
             else:
                 if write_type is not None:
@@ -1732,7 +2134,7 @@ class Param(Names):
                     val = value
                 #end if
                 #c += '    '+str(val)
-                c += '    {0:<10}'.format(self.write_val(val))
+                c += f'    {self.write_val(val):<10}'
             #end if
             if tag is not None:
                 c+=pad+'</'+tag+'>\n'
@@ -1740,7 +2142,7 @@ class Param(Names):
         #end if
         return c
     #end def write
-            
+
 
     def write_val(self,val):
         if self.precision is not None and isinstance(val,float):
@@ -1751,7 +2153,7 @@ class Param(Names):
     #end def write_val
 
     def init_class(self):
-        None
+        pass
     #end def init_class
 #end class Param
 param = Param()
@@ -1760,27 +2162,25 @@ param = Param()
 
 
 class simulation(QIxml):
-    #            afqmc
-    attributes = ['method']
-    #            rsqmc
-    elements   = ['project','random','include','qmcsystem','particleset',
-                  'wavefunction','hamiltonian','init','traces',
-                  'qmc','loop','mcwalkerset','cmc']+\
-                  ['afqmcinfo','walkerset','propagator','execute'] # afqmc
-    afqmc_order = ['project','random','afqmcinfo','hamiltonian',
-                   'wavefunction','walkerset','propagator','execute']
+    attributes = ('method',) # afqmc
+    elements   = ('project','random','include','qmcsystem','particleset', # rsqmc
+                  'wavefunction','hamiltonian','init','traces','estimators', # rsqmc
+                  'mcwalkerset','qmc','loop','cmc',                          # rsqmc
+                  'afqmcinfo','walkerset','propagator','execute')         # afqmc
+    afqmc_order = ('project','random','afqmcinfo','hamiltonian',
+                   'wavefunction','walkerset','propagator','execute')
     write_types = obj(random=yesno)
 #end class simulation
 
 
 class project(QIxml):
-    attributes = ['id','series']
-    parameters = ['driver_version','maxcpusecs','max_seconds']
-    elements   = ['application','host','date','user']
+    attributes = ('id','series')
+    parameters = ('driver_version','maxcpusecs','max_seconds')
+    elements   = ('application','host','date','user')
 #end class project
 
 class application(QIxml):
-    attributes = ['name','role','class','version']
+    attributes = ('name','role','class','version')
 #end class application
 
 class host(QIxml):
@@ -1796,97 +2196,96 @@ class user(QIxml):
 #end class user
 
 class random(QIxml):
-    attributes = ['seed','parallel']
+    attributes = ('seed','parallel')
     write_types= obj(parallel=truefalse)
 #end class random
 
 class include(QIxml):
-    attributes = ['href']
+    attributes = ('href',)
 #end def include
 
 class mcwalkerset(QIxml):
-    attributes = ['fileroot','version','collected','node','nprocs','href','target','file','walkers']
+    attributes = ('fileroot','version','collected','node','nprocs','href','target','file','walkers')
     write_types = obj(collected=yesno)
 #end class mcwalkerset
 
 class qmcsystem(QIxml):
-    attributes = ['dim'] #,'wavefunction','hamiltonian']  # breaks QmcpackInput
-    elements = ['simulationcell','particleset','wavefunction','hamiltonian','random','init','mcwalkerset','estimators']
+    attributes = ('dim',) #,'wavefunction','hamiltonian')  # breaks QmcpackInput
+    elements = ('simulationcell','particleset','wavefunction','hamiltonian','random','init','mcwalkerset','estimators')
 #end class qmcsystem
 
 
 class simulationcell(QIxml):
-    attributes = ['name','tilematrix']
-    parameters = ['lattice','reciprocal','bconds','lr_dim_cutoff','lr_tol','lr_handler','rs','nparticles','scale','uc_grid']
+    attributes = ('name','tilematrix')
+    parameters = ('lattice','reciprocal','bconds','lr_dim_cutoff','lr_tol','lr_handler','rs','nparticles','scale','uc_grid')
 #end class simulationcell
 
 class particleset(QIxml):
-    attributes = ['name','size','random','random_source','randomsrc','charge','source','spinor']
-    elements   = ['group','simulationcell']
-    attribs    = ['ionid','position']
+    attributes = ('name','size','random','random_source','randomsrc','charge','source','spinor')
+    elements   = ('group','simulationcell')
+    attribs    = ('ionid','position')
     write_types= obj(random=yesno,spinor=yesno)
     identifier = 'name'
 #end class particleset
 
 class group(QIxml):
-    attributes = ['name','size','mass'] # mass attr and param, bad bad bad!!!
-    parameters = ['charge','valence','atomicnumber','mass','lmax',
-                  'cutoff_radius','spline_radius','spline_npoints'] 
-    attribs    = ['position']
+    attributes = ('name','size','mass') # mass attr and param, bad bad bad!!!
+    parameters = ('charge','valence','atomicnumber','mass','lmax',
+                  'cutoff_radius','spline_radius','spline_npoints')
+    attribs    = ('position',)
     identifier = 'name'
 #end class group
 
 
 
 class sposet(QIxml):
-    attributes = ['basisset','type','name','group','size',
+    attributes = ('basisset','type','name','group','size',
                   'index_min','index_max','energy_min','energy_max',
                   'spindataset','cuspinfo','sort','gpu','href','twistnum',
                   'gs_sposet','basis_sposet','same_k','frequency','mass',
                   'source','version','precision','tilematrix',
-                  'meshfactor']
-    elements   = ['occupation','coefficient','coefficients']
+                  'meshfactor')
+    elements   = ('occupation','coefficient','coefficients')
     text       = None
     identifier = 'name'
 #end class sposet
 
 class rotated_sposet(QIxml):
-    attributes = ['name']
-    elements   = ['sposet']
+    attributes = ('name',)
+    elements   = ('sposet',)
     identifier = 'name'
 #end class rotated_sposet
 
 class bspline_builder(QIxml):
     tag         = 'sposet_builder'
     identifier  = 'type'
-    attributes  = ['type','href','sort','tilematrix','twistnum','twist','source',
+    attributes  = ('type','href','sort','tilematrix','twistnum','twist','source',
                    'version','meshfactor','gpu','transform','precision','truncate',
-                   'lr_dim_cutoff','shell','randomize','key','buffer','rmax_core','dilation','tag','hybridrep','gpusharing']
-    elements    = ['sposet','rotated_sposet']
+                   'lr_dim_cutoff','shell','randomize','key','buffer','rmax_core','dilation','tag','hybridrep','gpusharing')
+    elements    = ('sposet','rotated_sposet')
     write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,hybridrep=yesno,gpusharing=yesno)
 #end class bspline_builder
 
 class heg_builder(QIxml):
     tag        = 'sposet_builder'
     identifier = 'type'
-    attributes = ['type','twist']
-    elements   = ['sposet']
+    attributes = ('type','twist')
+    elements   = ('sposet',)
 #end class heg_builder
 
 class molecular_orbital_builder(QIxml):
     tag = 'sposet_builder'
     identifier  = 'type'
-    attributes  = ['name','type','transform','source','cuspcorrection','href']
-    elements    = ['basisset','sposet']
-    elements    = ['basisset','sposet','rotated_sposet'] 
+    attributes  = ('name','type','transform','source','cuspcorrection','href')
+    elements    = ('basisset','sposet','rotated_sposet')
     write_types = obj(transform=yesno,cuspcorrection=yesno)
 #end class molecular_orbital_builder
 
 class composite_builder(QIxml):
     tag = 'sposet_builder'
     identifier = 'type'
-    attributes = ['type']
-    elements   = ['sposet']
+    attributes = ('type',)
+    elements   = ('sposet',)
 #end class composite_builder
 
 sposet_builder = QIxmlFactory(
@@ -1911,194 +2310,193 @@ sposet_collection = QIxmlFactory(
 
 
 class wavefunction(QIxml):
-    #            rsqmc                        afqmc
-    attributes = ['name','target','id','ref']+['info','type']
-    #            afqmc
-    parameters = ['filetype','filename','cutoff']
-    elements   = ['sposet_builder','determinantset','jastrow','override_variational_parameters','sposet_collection']
-    identifier = 'name','id'
+    attributes = ('name','target','id','ref', # rsqmc
+                  'info','type') # afqmc
+    parameters = ('filetype','filename','cutoff') # afqmc
+    elements   = ('sposet_builder','determinantset','jastrow','override_variational_parameters','sposet_collection')
+    identifier = ('name','id')
 #end class wavefunction
 
 class determinantset(QIxml):
-    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep','pbcimages','gpusharing']
-    elements   = ['basisset','sposet','slaterdeterminant','multideterminant','spline','backflow','cubicgrid']
-    h5tags     = ['twistindex','twistangle','rcut']
+    attributes = ('type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep','pbcimages','gpusharing')
+    elements   = ('basisset','sposet','slaterdeterminant','multideterminant','spline','backflow','cubicgrid')
+    h5tags     = ('twistindex','twistangle','rcut')
     write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,cuspcorrection=yesno,usegrid=yesno,gpusharing=yesno)
 #end class determinantset
 
 class spline(QIxml):
-    attributes = ['method']
-    elements   = ['grid']
+    attributes = ('method',)
+    elements   = ('grid',)
 #end class spline
 
 class cubicgrid(QIxml):
-    attributes = ['method']
-    elements   = ['grid']
+    attributes = ('method',)
+    elements   = ('grid',)
 #end class cubicgrid
 
 class basisset(QIxml):
-    attributes = ['ecut','name','ref','type','source','transform','key']
-    elements   = ['grid','atomicbasisset']
+    attributes = ('ecut','name','ref','type','source','transform','key')
+    elements   = ('grid','atomicbasisset')
     write_types = obj(transform=yesno)
 #end class basisset
 
 class grid(QIxml):
-    attributes = ['dir','npts','closed','type','ri','rf','rc','step']
+    attributes = ('dir','npts','closed','type','ri','rf','rc','step')
     #identifier = 'dir'
 #end class grid
 
 class atomicbasisset(QIxml):
-    attributes = ['type','elementtype','expandylm','href','normalized','name','angular']
-    elements   = ['grid','basisgroup']
+    attributes = ('type','elementtype','expandylm','href','normalized','name','angular')
+    elements   = ('grid','basisgroup')
     identifier = 'elementtype'
     write_types= obj(#expandylm=yesno,
                      normalized=yesno)
 #end class atomicbasisset
 
 class basisgroup(QIxml):
-    attributes = ['rid','ds','n','l','m','zeta','type','s','imin','source']
-    parameters = ['b']
-    elements   = ['radfunc']
+    attributes = ('rid','ds','n','l','m','zeta','type','s','imin','source')
+    parameters = ('b',)
+    elements   = ('radfunc',)
     #identifier = 'rid'
 #end class basisgroup
 
 class radfunc(QIxml):
-    attributes = ['exponent','node','contraction','id','type']
+    attributes = ('exponent','node','contraction','id','type')
     precision  = '16.12e'
 #end class radfunc
 
 class slaterdeterminant(QIxml):
-    attributes = ['optimize','delay_rank','gpu','matrix_inverter','batch']
-    elements   = ['determinant']
+    attributes = ('optimize','delay_rank','gpu','matrix_inverter','batch')
+    elements   = ('determinant',)
     write_types = obj(optimize=yesno,gpu=yesno,batch=yesno)
 #end class slaterdeterminant
 
 class determinant(QIxml):
-    attributes = ['id','group','sposet','size','ref','spin','href','orbitals','spindataset','name','cuspinfo','debug']
-    elements   = ['occupation','coefficient']
+    attributes = ('id','group','sposet','size','ref','spin','href','orbitals','spindataset','name','cuspinfo','debug')
+    elements   = ('occupation','coefficient')
     identifier = 'id'
     write_types = obj(debug=yesno)
 #end class determinant
 
 class occupation(QIxml):
-    attributes = ['mode','spindataset','size','pairs','format']
+    attributes = ('mode','spindataset','size','pairs','format')
     text       = 'contents'
 #end class occupation
 
 class multideterminant(QIxml):
-    attributes = ['optimize','spo_up','spo_dn']
-    elements   = ['detlist']
+    attributes = ('optimize','spo_up','spo_dn')
+    elements   = ('detlist',)
 #end class multideterminant
 
 class detlist(QIxml):
-    attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff','ext_level','href','optimize']
-    elements   = ['ci','csf']
+    attributes = ('size','type','nca','ncb','nea','neb','nstates','cutoff','ext_level','href','optimize')
+    elements   = ('ci','csf')
 #end class detlist
 
 class ci(QIxml):
-    attributes = ['id','coeff','qc_coeff','alpha','beta']
+    attributes = ('id','coeff','qc_coeff','alpha','beta')
     #identifier = 'id'
     attr_types = obj(alpha=str,beta=str)
     precision  = '16.12e'
 #end class ci
 
 class csf(QIxml):
-    attributes = ['id','exctlvl','coeff','coeff_real','coeff_imag','qchem_coeff','occ']
-    elements   = ['det']
+    attributes = ('id','exctlvl','coeff','coeff_real','coeff_imag','qchem_coeff','occ')
+    elements   = ('det',)
     attr_types = obj(occ=str)
 #end class csf
 
 class det(QIxml):
-    attributes = ['id','coeff','alpha','beta']
+    attributes = ('id','coeff','alpha','beta')
     attr_types = obj(alpha=str,beta=str)
 #end class det
 
 class backflow(QIxml):
-    attributes = ['optimize']
-    elements   = ['transformation']
+    attributes = ('optimize',)
+    elements   = ('transformation',)
     write_types = obj(optimize=yesno)
 #end class backflow
 
 class transformation(QIxml):
-    attributes = ['name','type','function','source']
-    elements   = ['correlation']
+    attributes = ('name','type','function','source')
+    elements   = ('correlation',)
     identifier = 'name'
 #end class transformation
 
 class jastrow1(QIxml):
     tag = 'jastrow'
-    attributes = ['type','name','function','source','print','spin','transform']
-    elements   = ['correlation','distancetable','grid']
+    attributes = ('type','name','function','source','print','spin','transform')
+    elements   = ('correlation','distancetable','grid')
     identifier = 'name'
     write_types = obj(print=yesno,spin=yesno,transform=yesno)
 #end class jastrow1
 
 class jastrow2(QIxml):
     tag = 'jastrow'
-    attributes = ['type','name','function','print','spin','init','kc','transform','source','optimize']
-    elements   = ['correlation','distancetable','basisset','grid','basisgroup']
-    parameters = ['b','longrange']
+    attributes = ('type','name','function','print','spin','init','kc','transform','source','optimize')
+    elements   = ('correlation','distancetable','basisset','grid','basisgroup')
+    parameters = ('b','longrange')
     identifier = 'name'
     write_types = obj(print=yesno,transform=yesno,optimize=yesno)
 #end class jastrow2
 
 class jastrow3(QIxml):
     tag = 'jastrow'
-    attributes = ['type','name','function','print','source']
-    elements   = ['correlation']
+    attributes = ('type','name','function','print','source')
+    elements   = ('correlation',)
     identifier = 'name'
     write_types = obj(print=yesno)
 #end class jastrow3
 
 class kspace_jastrow(QIxml):
     tag = 'jastrow'
-    attributes = ['type','name','source']
-    elements   = ['correlation']
+    attributes = ('type','name','source')
+    elements   = ('correlation',)
     identifier = 'name'
     write_types = obj(optimize=yesno)
 #end class kspace_jastrow
 
 class rpa_jastrow(QIxml):
     tag = 'jastrow'
-    attributes = ['type','name','source','function','kc']
-    parameters = ['longrange']
+    attributes = ('type','name','source','function','kc')
+    parameters = ('longrange',)
     identifier = 'name'
     write_types = obj(longrange=yesno)
 #end class rpa_jastrow
 
 class correlation(QIxml):
-    attributes = ['elementtype','speciesa','speciesb','size','ispecies','especies',
+    attributes = ('elementtype','speciesa','speciesb','size','ispecies','especies',
                   'especies1','especies2','isize','esize','rcut','cusp','pairtype',
                   'kc','type','symmetry','cutoff','spindependent','dimension','init',
-                  'species']
-    parameters = ['a','b','c','d']
-    elements   = ['coefficients','var','coefficient']
+                  'species')
+    parameters = ('a','b','c','d')
+    elements   = ('coefficients','var','coefficient')
     identifier = 'speciesa','speciesb','elementtype','especies1','especies2','ispecies'
     write_types = obj(init=yesno)
 #end class correlation
 
 class var(QIxml):
-    attributes = ['id','name','optimize']
+    attributes = ('id','name','optimize')
     text       = 'value'
     identifier = 'id'
     write_types=obj(optimize=yesno)
 #end class var
 
 class coefficients(QIxml):
-    attributes = ['id','type','optimize','state','size','cusp','rcut']
+    attributes = ('id','type','optimize','state','size','cusp','rcut')
     text       = 'coeff'
     write_types= obj(optimize=yesno)
     exp_names  = obj(array='Array')
 #end class coefficients
 
 class coefficient(QIxml):  # this is bad!!! coefficients/coefficient
-    attributes = ['id','type','size','dataset','spindataset']
+    attributes = ('id','type','size','dataset','spindataset')
     text       = 'coeff'
     precision  = '16.12e'
 #end class coefficient
 
 class distancetable(QIxml):
-    attributes = ['source','target']
+    attributes = ('source','target')
 #end class distancetable
 
 jastrow = QIxmlFactory(
@@ -2108,66 +2506,65 @@ jastrow = QIxmlFactory(
     )
 
 class override_variational_parameters(QIxml):
-    attributes = ['href']
+    attributes = ('href',)
 #end class override_variational_parameters
 
 
 
 class estimators(QIxml):
-    elements = ['estimator']
+    elements = ('estimator',)
 #end class estimators
 
 class hamiltonian(QIxml):
-    #            rsqmc                              afqmc
-    attributes = ['name','type','target','default']+['info']
-    #            afqmc
-    parameters = ['filetype','filename']
-    elements   = ['pairpot','constant','estimator']
+    attributes = ('name','type','target','default', # rsqmc
+                  'info') # afqmc
+    parameters = ('filetype','filename') # afqmc
+    elements   = ('pairpot','constant','estimator')
     identifier = 'name'
 #end class hamiltonian
 
 class coulomb(QIxml):
     tag = 'pairpot'
-    attributes  = ['type','name','source','target','physical','forces']
+    attributes  = ('type','name','source','target','physical','forces')
     write_types = obj(physical=yesno)
     identifier  = 'name'
 #end class coulomb
 
 class constant(QIxml):
-    attributes = ['type','name','source','target','forces']
+    attributes = ('type','name','source','target','forces')
     write_types= obj(forces=yesno)
 #end class constant
 
 class pseudopotential(QIxml):
     tag = 'pairpot'
-    attributes = ['type','name','source','wavefunction','format','target','forces','dla','algorithm']
-    elements   = ['pseudo']
+    attributes = ('type','name','source','wavefunction','format','target','forces','dla','algorithm')
+    elements   = ('pseudo',)
     write_types= obj(forces=yesno,dla=yesno)
     identifier = 'name'
 #end class pseudopotential
 
 class pseudo(QIxml):
-    attributes = ['elementtype','href','format','cutoff','lmax','nrule','l_local']
-    elements   = ['header','local','grid']
+    attributes = ('elementtype','href','format','cutoff','lmax','nrule','l_local')
+    elements   = ('header','local','grid')
     identifier = 'elementtype'
 #end class pseudo
 
 class mpc(QIxml):
     tag='pairpot'
-    attributes=['type','name','source','target','ecut','physical']
-    write_types = obj(physical=yesno)    
+    attributes=('type','name','source','target','ecut','physical')
+    write_types = obj(physical=yesno)
     identifier='name'
 #end class mpc
 
 class cpp(QIxml):
     tag = 'pairpot'
-    attributes = ['type','name','source','target']
-    elements   = ['element']
+    attributes = ('type','name','source','target')
+    elements   = ('element',)
     identifier = 'name'
 #end class cpp
 
 class element(QIxml):
-    attributes = ['name','alpha','rb']
+    attributes = ('name','alpha','rb')
 #end class element
 
 pairpot = QIxmlFactory(
@@ -2180,182 +2577,182 @@ pairpot = QIxmlFactory(
 
 
 class header(QIxml):
-    attributes = ['symbol','atomic-number','zval']
+    attributes = ('symbol','atomic-number','zval')
 #end class header
 
 class local(QIxml):
-    elements = ['grid']
+    elements = ('grid',)
 #end class local
 
 
 class localenergy(QIxml):
     tag = 'estimator'
-    attributes = ['name','hdf5']
+    attributes = ('name','hdf5')
     write_types= obj(hdf5=yesno)
     identifier = 'name'
 #end class localenergy
 
 class energydensity(QIxml):
     tag = 'estimator'
-    attributes  = ['type','name','dynamic','static','ion_points']
-    elements    = ['reference_points','spacegrid']
+    attributes  = ('type','name','dynamic','static','ion_points')
+    elements    = ('reference_points','spacegrid')
     identifier  = 'name'
     write_types = obj(ion_points=yesno)
 #end class energydensity
 
 class reference_points(QIxml):
-    attributes = ['coord']
+    attributes = ('coord',)
     text = 'points'
 #end class reference_points
 
 class spacegrid(QIxml):
-    attributes = ['coord','min_part','max_part']
-    elements   = ['origin','axis']
+    attributes = ('coord','min_part','max_part')
+    elements   = ('origin','axis')
 #end class spacegrid
 
 class origin(QIxml):
-    attributes = ['p1','p2']
+    attributes = ('p1','p2')
 #end class origin
 
 class axis(QIxml):
-    attributes = ['p1','p2','scale','label','grid']
+    attributes = ('p1','p2','scale','label','grid')
     identifier = 'label'
 #end class axis
 
 class chiesa(QIxml):
     tag = 'estimator'
-    attributes = ['name','type','source','psi','wavefunction','target']
+    attributes = ('name','type','source','psi','wavefunction','target')
     identifier = 'name'
 #end class chiesa
 
 class density(QIxml):
     tag = 'estimator'
-    attributes = ['name','type','delta','x_min','x_max','y_min','y_max','z_min','z_max']
+    attributes = ('name','type','delta','x_min','x_max','y_min','y_max','z_min','z_max')
     identifier = 'type'
 #end class density
 
 class nearestneighbors(QIxml):
     tag = 'estimator'
-    attributes = ['type']
-    elements   = ['neighbor_trace']
+    attributes = ('type',)
+    elements   = ('neighbor_trace',)
     identifier = 'type'
 #end class nearestneighbors
 
 class neighbor_trace(QIxml):
-    attributes = ['count','neighbors','centers']
+    attributes = ('count','neighbors','centers')
     identifier = 'neighbors','centers'
 #end class neighbor_trace
 
 class spindensity(QIxml):
     tag = 'estimator'
-    attributes  = ['type','name','report']
-    parameters  = ['dr','grid','cell','center','corner','voronoi','test_moves']
+    attributes  = ('type','name','report')
+    parameters  = ('dr','grid','cell','center','corner','voronoi','test_moves')
     write_types = obj(report=yesno)
     identifier  = 'name'
 #end class spindensity
 
 class magnetizationdensity(QIxml):
     tag = 'estimator'
-    attributes  = ['type','name','report']
-    parameters  = ['dr','grid','center','corner','integrator','samples']
+    attributes  = ('type','name','report')
+    parameters  = ('dr','grid','center','corner','integrator','samples')
     write_types = obj(report=yesno)
     identifier  = 'name'
 #end class magnetizationdensity
 
 class structurefactor(QIxml):
     tag = 'estimator'
-    attributes  = ['type','name','report']
+    attributes  = ('type','name','report')
     write_types = obj(report=yesno)
     identifier  = 'name'
 #end class structurefactor
 
 class force(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','mode','source','species','target','addionion',
-                  'fast_derivatives','spacewarp','epsilon']
-    parameters = ['rcut','nbasis','weightexp']
+    attributes = ('type','name','mode','source','species','target','addionion',
+                  'fast_derivatives','spacewarp','epsilon')
+    parameters = ('rcut','nbasis','weightexp')
     identifier = 'name'
     write_types= obj(addionion=yesno,fast_derivatives=yesno,spacewarp=yesno)
 #end class force
 
 class forwardwalking(QIxml):
     tag = 'estimator'
-    attributes = ['type','blocksize']
-    elements   = ['observable']
+    attributes = ('type','blocksize')
+    elements   = ('observable',)
     identifier = 'name'
 #end class forwardwalking
 
 class pressure(QIxml):
     tag = 'estimator'
-    attributes = ['type','potential','etype','function']
-    parameters = ['kc']
+    attributes = ('type','potential','etype','function')
+    parameters = ('kc',)
     identifier = 'type'
 #end class pressure
 
 class dmccorrection(QIxml):
     tag = 'estimator'
-    attributes = ['type','blocksize','max','frequency']
-    elements   = ['observable']
+    attributes = ('type','blocksize','max','frequency')
+    elements   = ('observable',)
     identifier = 'type'
 #end class dmccorrection
 
 class nofk(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','wavefunction']
+    attributes = ('type','name','wavefunction')
     identifier = 'name'
 #end class nofk
 
 class mpc_est(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','physical']
+    attributes = ('type','name','physical')
     write_types = obj(physical=yesno)
     identifier = 'name'
 #end class mpc_est
 
 class sk(QIxml):
     tag = 'estimator'
-    attributes = ['name','type','hdf5']
+    attributes = ('name','type','hdf5')
     identifier = 'name'
     write_types = obj(hdf5=yesno)
 #end class sk
 
 class skall(QIxml):
     tag = 'estimator'
-    attributes = ['name','type','hdf5','source','target','writeionion']
+    attributes = ('name','type','hdf5','source','target','writeionion')
     identifier = 'name'
     write_types = obj(hdf5=yesno,writeionion=yesno)
 #end class skall
 
 class gofr(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','num_bin','rmax','source']
+    attributes = ('type','name','num_bin','rmax','source')
     identifier = 'name'
 #end class gofr
 
 class flux(QIxml):
     tag = 'estimator'
-    attributes = ['type','name']
+    attributes = ('type','name')
     identifier = 'name'
 #end class flux
 
 class orbitalimages(QIxml):
     tag = 'estimator'
-    attributes  = ['type','name','ions']
-    parameters  = ['sposets','grid','center_grid','value','corner','cell','center','batch_size']
+    attributes  = ('type','name','ions')
+    parameters  = ('sposets','grid','center_grid','value','corner','cell','center','batch_size')
     write_types = obj(center_grid=yesno)
     identifier  = 'name'
 #end class orbitalimages
 
 class momentum(QIxml): # legacy
     tag = 'estimator'
-    attributes = ['type','name','grid','samples','hdf5','wavefunction','kmax','kmax0','kmax1','kmax2']
+    attributes = ('type','name','grid','samples','hdf5','wavefunction','kmax','kmax0','kmax1','kmax2')
     identifier = 'name'
     write_types = obj(hdf5=yesno)
 #end class momentum
 
 class momentumdistribution(QIxml): # batched
     tag = 'estimator'
-    attributes = ['type','name','grid','samples','hdf5','wavefunction','kmax','kmax0','kmax1','kmax2']
+    attributes = ('type','name','grid','samples','hdf5','wavefunction','kmax','kmax0','kmax1','kmax2')
     identifier = 'name'
     write_types = obj(hdf5=yesno)
 #end class momentumdistribution
@@ -2363,16 +2760,16 @@ class momentumdistribution(QIxml): # batched
 class dm1b(QIxml): # legacy
     tag         = 'estimator'
     identifier  = 'type'
-    attributes  = ['type','name','reuse']#reuse is a temporary dummy keyword
-    parameters  = ['energy_matrix','basis_size','integrator','points','scale','basis','evaluator','center','check_overlap','check_derivatives','acceptance_ratio','rstats','normalized','volume_normed','samples']
+    attributes  = ('type','name','reuse')#reuse is a temporary dummy keyword
+    parameters  = ('energy_matrix','basis_size','integrator','points','scale','basis','evaluator','center','check_overlap','check_derivatives','acceptance_ratio','rstats','normalized','volume_normed','samples')
     write_types = obj(energy_matrix=yesno,check_overlap=yesno,check_derivatives=yesno,acceptance_ratio=yesno,rstats=yesno,normalized=yesno,volume_normed=yesno)
 #end class dm1b
 
 class onebodydensitymatrices(QIxml): # batched
     tag         = 'estimator'
     identifier  = 'type'
-    attributes  = ['type','name','reuse']#reuse is a temporary dummy keyword
-    parameters  = ['energy_matrix','basis_size','integrator','points','scale','basis','evaluator','center','check_overlap','check_derivatives','acceptance_ratio','rstats','normalized','volume_normed','samples']
+    attributes  = ('type','name','reuse')#reuse is a temporary dummy keyword
+    parameters  = ('energy_matrix','basis_size','integrator','points','scale','basis','evaluator','center','check_overlap','check_derivatives','acceptance_ratio','rstats','normalized','volume_normed','samples')
     write_types = obj(energy_matrix=yesno,check_overlap=yesno,check_derivatives=yesno,acceptance_ratio=yesno,rstats=yesno,normalized=yesno,volume_normed=yesno)
 #end class onebodydensitymatrices
 
@@ -2380,9 +2777,9 @@ class onebodydensitymatrices(QIxml): # batched
 # afqmc estimators
 class back_propagation(QIxml):
     tag = 'estimator'
-    attributes = ['name']
-    parameters = ['naverages','block_size','ortho','nsteps']
-    elements   = ['onerdm']
+    attributes = ('name',)
+    parameters = ('naverages','block_size','ortho','nsteps')
+    elements   = ('onerdm',)
     identifier = 'name'
 #end class back_propagation
 
@@ -2411,7 +2808,7 @@ estimator = QIxmlFactory(
                  momentum               = momentum,
                  momentumdistribution   = momentumdistribution,
                  onebodydensitymatrices = onebodydensitymatrices,
-                 # afqmc estimators   
+                 # afqmc estimators
                  back_propagation       = back_propagation,
                  ),
     typekey  = 'type',
@@ -2420,40 +2817,40 @@ estimator = QIxmlFactory(
 
 
 class observable(QIxml):
-    attributes = ['name','max','frequency']
+    attributes = ('name','max','frequency')
     identifier = 'name'
 #end class observable
 
 
 
 class init(QIxml):
-    attributes = ['source','target']
+    attributes = ('source','target')
 #end class
 
 
 class scalar_traces(QIxml):
-    attributes  = ['defaults']
+    attributes  = ('defaults',)
     text        = 'quantities'
     write_types = obj(defaults=yesno)
 #end class scalar_traces
 
 class array_traces(QIxml):
-    attributes  = ['defaults']
+    attributes  = ('defaults',)
     text        = 'quantities'
     write_types = obj(defaults=yesno)
 #end class array_traces
 
 class particle_traces(QIxml): # legacy
-    attributes  = ['defaults']
+    attributes  = ('defaults',)
     text        = 'quantities'
     write_types = obj(defaults=yesno)
 #end class particle_traces
 
 class traces(QIxml):
-    attributes = ['write','throttle','format','verbose','scalar','array',
+    attributes = ('write','throttle','format','verbose','scalar','array',
                   'scalar_defaults','array_defaults',
-                  'particle','particle_defaults']
-    elements = ['scalar_traces','array_traces','particle_traces']
+                  'particle','particle_defaults')
+    elements = ('scalar_traces','array_traces','particle_traces')
     write_types = obj(write_=yesno,verbose=yesno,scalar=yesno,array=yesno,
                       scalar_defaults=yesno,array_defaults=yesno,
                       particle=yesno,particle_defaults=yesno)
@@ -2461,14 +2858,14 @@ class traces(QIxml):
 
 
 class record(QIxml):
-    attributes = ['name','stride']
+    attributes = ('name','stride')
 #end class record
 
 
 class loop(QIxml):
     collection_id = 'qmc'
-    attributes = ['max']
-    elements = ['qmc','init']
+    attributes = ('max',)
+    elements = ('qmc','init')
     def unroll(self):
         calculations=[]
         calcs = []
@@ -2477,9 +2874,9 @@ class loop(QIxml):
         elif 'calculations' in self:
             calcs = self.calculations
         #end if
-        for n in range(self.max):
+        for n in range(self.max):  # noqa: B007
             for i in range(len(calcs)):
-                calculations.append(calcs[i].copy())
+                calculations.append(deepcopy(calcs[i]))
             #end for
         #end for
         return make_collection(calculations)
@@ -2493,18 +2890,18 @@ class optimize(QIxml):
 
 class cg_optimizer(QIxml):
     tag        = 'optimizer'
-    attributes = ['method']
-    parameters = ['max_steps','tolerance','stepsize','friction','epsilon',
+    attributes = ('method',)
+    parameters = ('max_steps','tolerance','stepsize','friction','epsilon',
                   'xybisect','verbose','max_linemin','tolerance_g','length_cg',
-                  'rich','xypolish','gfactor']
+                  'rich','xypolish','gfactor')
 #end class cg_optimizer
 
 class flex_optimizer(QIxml):
     tag        = 'optimizer'
-    attributes = ['method']
-    parameters = ['max_steps','tolerance','stepsize','epsilon',
+    attributes = ('method',)
+    parameters = ('max_steps','tolerance','stepsize','epsilon',
                   'xybisect','verbose','max_linemin','tolerance_g','length_cg',
-                  'rich','xypolish','gfactor']
+                  'rich','xypolish','gfactor')
 #end class flex_optimizer
 
 
@@ -2520,25 +2917,25 @@ optimizer = QIxmlFactory(
 class optimize_qmc(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','move','renew','completed','checkpoint','gpu']
-    parameters = ['blocks','steps','timestep','walkers','minwalkers','useweight',
+    attributes = ('method','move','renew','completed','checkpoint','gpu')
+    parameters = ('blocks','steps','timestep','walkers','minwalkers','useweight',
                   'power','correlation','maxweight','usedrift','min_walkers',
                   'minke','samples','warmupsteps','minweight','warmupblocks',
                   'maxdispl','tau','tolerance','stepsize','epsilon',
                   'en_ref','usebuffer','substeps','stepsbetweensamples',
-                  'samplesperthread','max_steps','nonlocalpp']
-    elements = ['optimize','optimizer','estimator']
-    costs    = ['energy','variance','difference','weight','unreweightedvariance','reweightedvariance']
+                  'samplesperthread','max_steps','nonlocalpp')
+    elements = ('optimize','optimizer','estimator')
+    costs    = ('energy','variance','difference','weight','unreweightedvariance','reweightedvariance')
     write_types = obj(renew=yesno,completed=yesno)
 #end class optimize_qmc
 
 class linear(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','move','profiling','kdelay', # batched
-                  'checkpoint','gpu','trace']           # legacy - batched
-    elements   = ['estimator']
-    parameters = ['total_walkers','walkers_per_rank','crowds','opt_num_crowds',   # batched
+    attributes = ('method','move','profiling','kdelay', # batched
+                  'checkpoint','gpu','trace')           # legacy - batched
+    elements   = ('estimator',)
+    parameters = ('total_walkers','walkers_per_rank','crowds','opt_num_crowds',   # batched
                   'walkers','warmupsteps','blocks','steps','substeps','timestep', # who knows
                   'usedrift','stepsbetweensamples','samples','minmethod',
                   'minwalkers','maxweight','nonlocalpp','use_nonlocalpp_deriv',
@@ -2551,8 +2948,8 @@ class linear(QIxml):
                   'chase_lowest','chase_closest','block_lm','nblocks','nolds',
                   'nkept','max_seconds','spin_mass',
                   'sr_tau','sr_tolerance','sr_regularization','line_search',
-                  ]
-    costs      = ['energy','unreweightedvariance','reweightedvariance','variance','difference']
+                  )
+    costs      = ('energy','unreweightedvariance','reweightedvariance','variance','difference')
     write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,
                       use_nonlocalpp_deriv=yesno,chase_lowest=yesno,
                       chase_closest=yesno,block_lm=yesno,line_search=yesno)
@@ -2561,35 +2958,35 @@ class linear(QIxml):
 class cslinear(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','move','checkpoint','gpu','trace']
-    elements   = ['estimator']
-    parameters = ['walkers','warmupsteps','blocks','steps','substeps','timestep',
+    attributes = ('method','move','checkpoint','gpu','trace')
+    elements   = ('estimator',)
+    parameters = ('walkers','warmupsteps','blocks','steps','substeps','timestep',
                   'usedrift','stepsbetweensamples','samples','minmethod',
                   'minwalkers','maxweight','nonlocalpp','usebuffer',
                   'alloweddifference','gevmethod','beta','exp0','bigchange',
                   'stepsize','stabilizerscale','nstabilizers','max_its',
                   'stabilizermethod','cswarmupsteps','alpha_error','gevsplit',
-                  'beta_error','use_nonlocalpp_deriv']
-    costs      = ['energy','unreweightedvariance','reweightedvariance']
+                  'beta_error','use_nonlocalpp_deriv')
+    costs      = ('energy','unreweightedvariance','reweightedvariance')
     write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,use_nonlocalpp_deriv=yesno,usebuffer=yesno)
 #end class cslinear
 
 class vmc(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','move','profiling','kdelay',         # batched
+    attributes = ('method','move','profiling','kdelay',         # batched
                   'multiple','warp','gpu','checkpoint','trace', # legacy - batched
-                  'target','completed','id'] 
-    elements   = ['estimator', # batched
-                  'record']    # legacy - batched
-    parameters = ['total_walkers','walkers_per_rank','crowds','warmupsteps',         # batched
+                  'target','completed','id')
+    elements   = ('estimator','estimators', # batched
+                  'record')                 # legacy - batched
+    parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps',         # batched
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
                   'storeconfigs','checkproperties','recordconfigs','current',
                   'stepsbetweensamples','samplesperthread','samples','usedrift',
                   'spin_mass','estimator_period',
                   'walkers','nonlocalpp','tau','walkersperthread','reconfiguration', # legacy - batched
                   'dmcwalkersperthread','current','ratio','firststep',
-                  'minimumtargetwalkers','max_seconds']
+                  'minimumtargetwalkers','max_seconds')
     write_types = obj(usedrift=yesno,profiling=yesno,                   # batched
                       gpu=yesno,nonlocalpp=yesno,reconfiguration=yesno, # legacy - batched
                       ratio=yesno,completed=yesno)
@@ -2598,11 +2995,11 @@ class vmc(QIxml):
 class dmc(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','move','profiling','kdelay',         # batched
+    attributes = ('method','move','profiling','kdelay',         # batched
                   'gpu','multiple','warp','checkpoint','trace', # legacy - batched
-                  'target','completed','id','continue']
-    elements   = ['estimator']
-    parameters = ['total_walkers','walkers_per_rank','crowds','warmupsteps',
+                  'target','completed','id','continue')
+    elements   = ('estimator','estimators')
+    parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps',
                   'crowd_serialize_walkers',            # batched
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
                   'storeconfigs','checkproperties','recordconfigs','current',
@@ -2615,7 +3012,7 @@ class dmc(QIxml):
                   'fastgrad','popcontrol','branchinterval','usedrift','storeconfigs',
                   'en_ref','tau','alpha','gamma','max_branch','killnode','swap_walkers',
                   'swap_trigger','branching_cutoff_scheme','l2_diffusion','maxage',
-                  'max_seconds']
+                  'max_seconds')
     write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,
                       crowd_serialize_walkers=yesno,    # batched
                       nonlocalmoves=yesnostr,use_nonblocking=yesno,
@@ -2626,45 +3023,45 @@ class dmc(QIxml):
 class rmc(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','multiple','target','observables','target','warp']
-    parameters = ['blocks','steps','chains','cuts','bounce','clone','walkers','timestep','trunclength','maxtouch','mass','collect']
-    elements = ['qmcsystem']
+    attributes = ('method','multiple','target','observables','target','warp')
+    parameters = ('blocks','steps','chains','cuts','bounce','clone','walkers','timestep','trunclength','maxtouch','mass','collect')
+    elements = ('qmcsystem',)
     write_types = obj(collect=yesno)
 #end class rmc
 
 class vmc_batch(QIxml):
     # Do not assume all of the parameters below are supported.
-    # These were simply copied over from legacy drivers because the 
-    # batched driver compatible inputs have yet not been listed anywhere. 
+    # These were simply copied over from legacy drivers because the
+    # batched driver compatible inputs have yet not been listed anywhere.
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','move','profiling','kdelay','checkpoint']
-    elements   = ['estimator']
-    parameters = ['total_walkers','walkers_per_rank','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','usedrift']
+    attributes = ('method','move','profiling','kdelay','checkpoint')
+    elements   = ('estimator','estimators')
+    parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','usedrift')
     write_types = obj(usedrift=yesno,profiling=yesno)
 #end class vmc_batch
 
 class dmc_batch(QIxml):
     # Do not assume all of the parameters below are supported.
-    # These were simply copied over from legacy drivers because the 
-    # batched driver compatible inputs have yet not been listed anywhere. 
+    # These were simply copied over from legacy drivers because the
+    # batched driver compatible inputs have yet not been listed anywhere.
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','move','profiling','kdelay','checkpoint']
-    elements   = ['estimator']
-    parameters = ['total_walkers','walkers_per_rank','crowd_serialize_walkers','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking','branching_cutoff_scheme','feedback','sigmabound']
+    attributes = ('method','move','profiling','kdelay','checkpoint')
+    elements   = ('estimator','estimators')
+    parameters = ('total_walkers','walkers_per_rank','crowd_serialize_walkers','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking','branching_cutoff_scheme','feedback','sigmabound')
     write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno, crowd_serialize_walkers=yesno)
 #end class dmc_batch
 
 class linear_batch(QIxml):
     # Do not assume all of the parameters below are supported.
-    # These were simply copied over from legacy drivers because the 
-    # batched driver compatible inputs have yet not been listed anywhere. 
+    # These were simply copied over from legacy drivers because the
+    # batched driver compatible inputs have yet not been listed anywhere.
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','move','profiling','kdelay']
-    elements   = ['estimator']
-    parameters = ['walkers','warmupsteps','blocks','steps','substeps','timestep',
+    attributes = ('method','move','profiling','kdelay')
+    elements   = ('estimator',)
+    parameters = ('walkers','warmupsteps','blocks','steps','substeps','timestep',
                   'usedrift','stepsbetweensamples','samples','minmethod',
                   'minwalkers','maxweight','nonlocalpp','use_nonlocalpp_deriv',
                   'usebuffer','alloweddifference','gevmethod','beta','exp0',
@@ -2676,27 +3073,27 @@ class linear_batch(QIxml):
                   'chase_lowest','chase_closest','block_lm','nblocks','nolds',
                   'nkept',
                   'crowds','opt_num_crowds'
-                  ]
-    costs      = ['energy','unreweightedvariance','reweightedvariance','variance','difference']
+                  )
+    costs      = ('energy','unreweightedvariance','reweightedvariance','variance','difference')
     write_types = obj(usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,use_nonlocalpp_deriv=yesno,chase_lowest=yesno,chase_closest=yesno,block_lm=yesno)
 #end class linear_batch
 
 class wftest(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','checkpoint', 'gpu', 'move', 'multiple', 'warp']
-    parameters = ['ratio','walkers','clone','source','hamiltonianpbyp','orbitalutility','printeloc','basic','virtual_move']
-    #elements   = ['printeloc','source']
+    attributes = ('method','checkpoint', 'gpu', 'move', 'multiple', 'warp')
+    parameters = ('ratio','walkers','clone','source','hamiltonianpbyp','orbitalutility','printeloc','basic','virtual_move')
+    #elements   = ('printeloc','source')
     write_types = obj(ratio=yesno,clone=yesno,hamiltonianpbyp=yesno,orbitalutility=yesno,printeloc=yesno,basic=yesno,virtual_move=yesno)
-#end class wftest    
+#end class wftest
 
 class setparams(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ['method','move','checkpoint','gpu']
-    parameters = ['alpha','blocks','warmupsteps','stepsbetweensamples','timestep','samples','usedrift']
-    elements   = ['estimator']
-#end class setparams    
+    attributes = ('method','move','checkpoint','gpu')
+    parameters = ('alpha','blocks','warmupsteps','stepsbetweensamples','timestep','samples','usedrift')
+    elements   = ('estimator',)
+#end class setparams
 
 qmc = QIxmlFactory(
     name = 'qmc',
@@ -2708,7 +3105,7 @@ qmc = QIxmlFactory(
 
 
 class cmc(QIxml):
-    attributes = ['method','target']
+    attributes = ('method','target')
 #end class cmc
 
 
@@ -2716,29 +3113,29 @@ class cmc(QIxml):
 # afqmc elements
 
 class afqmcinfo(QIxml):
-    attributes = ['name']
-    parameters = ['nmo','naea','naeb']
+    attributes = ('name',)
+    parameters = ('nmo','naea','naeb')
 #end class afqmcinfo
 
 class walkerset(QIxml):
-    attributes = ['name','type']
-    parameters = ['walker_type']
+    attributes = ('name','type')
+    parameters = ('walker_type',)
 #end class walkerset
 
 class propagator(QIxml):
-    attributes  = ['name','info']
-    parameters  = ['hybrid']
+    attributes  = ('name','info')
+    parameters  = ('hybrid',)
     write_types = obj(hybrid=yesno)
 #end class propagator
 
 class execute(QIxml):
-    attributes = ['info','ham','wfn','wset','prop']
-    parameters = ['ncores','nwalkers','blocks','steps','timestep']
-    elements   = ['estimator']
+    attributes = ('info','ham','wfn','wset','prop')
+    parameters = ('ncores','nwalkers','blocks','steps','timestep')
+    elements   = ('estimator',)
 #end class execute
 
 class onerdm(QIxml):
-    None
+    pass
 #end class onerdm
 
 
@@ -2746,8 +3143,8 @@ class onerdm(QIxml):
 
 
 class gen(QIxml):
-    attributes = []
-    elements   = []
+    attributes = ()
+    elements   = ()
 #end class gen
 
 
@@ -2786,8 +3183,8 @@ types = dict( #simple types and factories
     )
 plurals = obj(
     particlesets    = 'particleset',
-    groups          = 'group',    
-    hamiltonians    = 'hamiltonian', 
+    groups          = 'group',
+    hamiltonians    = 'hamiltonian',
     pairpots        = 'pairpot',
     pseudos         = 'pseudo',
     estimators      = 'estimator',
@@ -2818,7 +3215,7 @@ plurals = obj(
     transformations = 'transformation',
     rotated_sposets = 'rotated_sposet',
     )
-plurals_inv = plurals.inverse()
+plurals_inv  = obj({v:k for k,v in plurals.items()})
 plural_names = set(plurals.keys())
 single_names = set(plurals.values())
 Names.set_expanded_names(
@@ -2889,114 +3286,114 @@ for c in classes:
 
 
 #set default values
-simulation.defaults.set(
+simulation.defaults.update(
     project      = project,
     qmcsystem    = qmcsystem,
     calculations = lambda:list()
     )
-project.defaults.set(
+project.defaults.update(
     series=0,
     application = application
     )
-application.defaults.set(
+application.defaults.update(
     name='qmcpack',role='molecu',class_='serial',version='1.0'
     )
-#simulationcell.defaults.set(
+#simulationcell.defaults.update(
 #    bconds = 'p p p',lr_dim_cutoff=15
 #    )
-wavefunction.defaults.set(
+wavefunction.defaults.update(
     name='psi0'
     )
-#determinantset.defaults.set(
+#determinantset.defaults.update(
 #    type='einspline',tilematrix=lambda:eye(3,dtype=int),meshfactor=1.,gpu=False,precision='double'
 #    )
-#occupation.defaults.set(
+#occupation.defaults.update(
 #    mode='ground',spindataset=0
 #    )
-jastrow1.defaults.set(
+jastrow1.defaults.update(
     name='J1',type='one-body',function='bspline',print=True,source='ion0',
     correlation=correlation
     )
-jastrow2.defaults.set(
+jastrow2.defaults.update(
     name='J2',type='two-body',function='bspline',print=True,
     correlation=correlation
     )
-jastrow3.defaults.set(
+jastrow3.defaults.update(
     name='J3',type='eeI',function='polynomial',print=True,source='ion0',
     correlation=correlation
     )
-correlation.defaults.set(
+correlation.defaults.update(
     coefficients=coefficients
     )
-coefficients.defaults.set(
+coefficients.defaults.update(
     type='Array'
     )
-#hamiltonian.defaults.set(
+#hamiltonian.defaults.update(
 #    name='h0',type='generic',target='e',
 #    constant = constant,
 #    pairpots = classcollection(coulomb,pseudopotential,mpc),
 #    estimators = classcollection(chiesa),
 #    )
-#coulomb.defaults.set(
+#coulomb.defaults.update(
 #    name='ElecElec',type='coulomb',source='e',target='e'
 #    )
-#constant.defaults.set(
+#constant.defaults.update(
 #    name='IonIon',type='coulomb',source='ion0',target='ion0'
 #    )
-#pseudopotential.defaults.set(
+#pseudopotential.defaults.update(
 #    name='PseudoPot',type='pseudo',source='ion0',wavefunction='psi0',format='xml'
 #    )
-#mpc.defaults.set(
+#mpc.defaults.update(
 #    name='MPC',type='MPC',ecut=60.0,source='e',target='e',physical=False
 #    )
-localenergy.defaults.set(
+localenergy.defaults.update(
     name='LocalEnergy',hdf5=True
     )
-#chiesa.defaults.set(
+#chiesa.defaults.update(
 #    name='KEcorr',type='chiesa',source='e',psi='psi0'
 #    )
-#energydensity.defaults.set(
+#energydensity.defaults.update(
 #    type='EnergyDensity',name='EDvoronoi',dynamic='e',static='ion0',
 #    spacegrid = spacegrid
 #    )
-#spacegrid.defaults.set(
+#spacegrid.defaults.update(
 #    coord='voronoi'
 #    )
-density.defaults.set(
+density.defaults.update(
     type='density',name='Density'
     )
-spindensity.defaults.set(
+spindensity.defaults.update(
     type='spindensity',name='SpinDensity'
     )
-magnetizationdensity.defaults.set(
+magnetizationdensity.defaults.update(
     type='magnetizationdensity',name='MagnetizationDensity'
     )
-skall.defaults.set(
+skall.defaults.update(
     type='skall',name='skall',source='ion0',target='e',hdf5=True
     )
-force.defaults.set(
+force.defaults.update(
     type='Force',name='force'
     )
-pressure.defaults.set(
+pressure.defaults.update(
     type='Pressure'
     )
-momentum.defaults.set(
+momentum.defaults.update(
     type='momentum'
     )
-momentumdistribution.defaults.set(
+momentumdistribution.defaults.update(
     type='MomentumDistribution',name='nofk'
     )
-dm1b.defaults.set(
+dm1b.defaults.update(
     type = 'dm1b',name='DensityMatrices',energy_matrix=False,
     evaluator='matrix',
     )
-onebodydensitymatrices.defaults.set(
+onebodydensitymatrices.defaults.update(
     type = 'OneBodyDensityMatrices',name='DensityMatrices',energy_matrix=False,
     evaluator='matrix',
     )
 
 
-linear.defaults.set(
+linear.defaults.update(
      method = 'linear',move='pbyp',checkpoint=-1,
      #estimators = classcollection(localenergy)
 #  #jtk
@@ -3018,8 +3415,8 @@ linear.defaults.set(
 #    nstabilizers      = 10,
 #    stabilizerscale   = .5,
 #    usebuffer         = True,
-    )
-cslinear.defaults.set(
+     )
+cslinear.defaults.update(
     method='cslinear', move='pbyp', checkpoint=-1,
     #estimators = classcollection(localenergy)
   #jtk
@@ -3074,7 +3471,7 @@ cslinear.defaults.set(
     #usebuffer         = True,
     #estimators = classcollection(localenergy)
     )
-vmc.defaults.set(
+vmc.defaults.update(
     method='vmc',move='pbyp',
     #walkers     = 1,
     #warmupsteps = 50,
@@ -3083,44 +3480,44 @@ vmc.defaults.set(
     #timestep    = .5,
     #estimators = classcollection(localenergy)
     )
-dmc.defaults.set(
+dmc.defaults.update(
     method='dmc',move='pbyp',
     #warmupsteps   = 20,
     #timestep      = .01,
     #nonlocalmoves = True,
     #estimators = classcollection(localenergy)
     )
-vmc_batch.defaults.set(
+vmc_batch.defaults.update(
     method='vmc_batch',move='pbyp',
     )
-dmc_batch.defaults.set(
+dmc_batch.defaults.update(
     method='dmc_batch',move='pbyp',
     )
-linear_batch.defaults.set(
+linear_batch.defaults.update(
     method='linear_batch',move='pbyp',
     )
 
 
 
 # afqmc defaults
-afqmcinfo.defaults.set(
+afqmcinfo.defaults.update(
     name = 'info0',
     )
-walkerset.defaults.set(
+walkerset.defaults.update(
     name = 'wset0',
     )
-propagator.defaults.set(
+propagator.defaults.update(
     name = 'prop0',
     info = 'info0',
     )
-execute.defaults.set(
+execute.defaults.update(
     info = 'info0',
     ham  = 'ham0',
     wfn  = 'wfn0',
     wset = 'wset0',
     prop = 'prop0',
     )
-back_propagation.defaults.set(
+back_propagation.defaults.update(
     name='back_propagation'
     )
 
@@ -3142,10 +3539,10 @@ def set_afqmc_mode():
 
 
 class QmcpackInput(SimulationInput,Names):
-    
+
     profile_collection = None
 
-    opt_methods = set(['opt','linear','cslinear','linear_batch'])
+    opt_methods = frozenset({'opt','linear','cslinear','linear_batch'})
 
     simulation_type = simulation
 
@@ -3167,7 +3564,7 @@ class QmcpackInput(SimulationInput,Names):
         metadata = None
         element  = None
         if arg0 is None and arg1 is None:
-            None
+            pass
         elif isinstance(arg0,(str, Path)) and arg1 is None:
             filepath = path_string(arg0)
         elif isinstance(arg0,QIxml) and arg1 is None:
@@ -3176,7 +3573,14 @@ class QmcpackInput(SimulationInput,Names):
             metadata = arg0
             element  = arg1
         else:
-            self.error('input arguments of types '+arg0.__class__.__name__+' and '+arg0.__class__.__name__+' cannot be used to initialize QmcpackInput')
+            msg = (
+                'input arguments of types '
+                +arg0.__class__.__name__+
+                ' and '
+                +arg0.__class__.__name__
+                +' cannot be used to initialize QmcpackInput'
+                )
+            raise TypeError(msg)
         #end if
         if metadata is not None:
             self._metadata = metadata
@@ -3213,7 +3617,11 @@ class QmcpackInput(SimulationInput,Names):
         elem_names = list(self.keys())
         elem_names.remove('_metadata')
         if len(elem_names)>1:
-            self.error('qmcpack input cannot have more than one base element\n  You have provided '+str(len(elem_names))+': '+str(elem_names))
+            msg = (
+                'qmcpack input cannot have more than one base element\n'
+                '  You have provided '+str(len(elem_names))+': '+str(elem_names)
+                )
+            raise ValueError(msg)
         #end if
         return self[elem_names[0]]
     #end def get_base
@@ -3222,7 +3630,11 @@ class QmcpackInput(SimulationInput,Names):
         elem_names = list(self.keys())
         elem_names.remove('_metadata')
         if len(elem_names)>1:
-            self.error('qmcpack input cannot have more than one base element\n  You have provided '+str(len(elem_names))+': '+str(elem_names))
+            msg = (
+                'qmcpack input cannot have more than one base element\n'
+                '  You have provided '+str(len(elem_names))+': '+str(elem_names)
+                )
+            raise ValueError(msg)
         #end if
         return elem_names[0]
     #end def get_basename
@@ -3231,7 +3643,13 @@ class QmcpackInput(SimulationInput,Names):
         if xml is not None or os.path.exists(filepath):
             element_joins=['qmcsystem']
             element_aliases=dict(loop='qmc')
-            xml = XMLreader(filepath,element_joins,element_aliases,warn=False,xml=xml).obj
+            xml = XMLreader(
+                filepath,
+                element_joins   = element_joins,
+                element_aliases = element_aliases,
+                warn            = False,
+                xml             = xml,
+                ).obj
             xml.condense()
             self._metadata = meta() #store parameter/attrib attribute metadata
             Param.metadata = self._metadata
@@ -3241,23 +3659,27 @@ class QmcpackInput(SimulationInput,Names):
                 #try to determine the type
                 elements = []
                 keys = []
-                error = False
+                msg = ""
                 for key,value in xml.items():
                     if isinstance(key,str) and key[0]!='_':
                         if key in types:
                             elements.append(types[key](value))
                             keys.append(key)
                         else:
-                            self.error('element '+key+' is not a recognized type',exit=False)
-                            error = True
+                            msg += 'element '+key+' is not a recognized type'
                         #end if
                     #end if
                 #end for
-                if error:
-                    self.error('cannot read input xml file')
+                if len(msg) > 0:
+                    msg = (
+                        'cannot read input xml file:\n'
+                        f'{msg}'
+                        )
+                    raise FileFormatError(msg)
                 #end if
                 if len(elements)==0:
-                    self.error('no valid elements were found for input xml file')
+                    msg = 'no valid elements were found for input xml file'
+                    raise FileFormatError(msg)
                 #end if
                 for i in range(len(elements)):
                     elem = elements[i]
@@ -3276,7 +3698,11 @@ class QmcpackInput(SimulationInput,Names):
             #end if
             Param.metadata = None
         else:
-            self.error('the filepath you provided does not exist.\n  Input filepath: '+filepath)
+            msg = (
+                'the filepath you provided does not exist.\n'
+                '  Input filepath: '+filepath
+                )
+            raise FileNotFoundError(msg)
         #end if
         return self
     #end def read
@@ -3304,7 +3730,7 @@ class QmcpackInput(SimulationInput,Names):
     #end def write_text
 
 
-    def unroll_calculations(self,modify=True):
+    def unroll_calculations(self,*,modify=True):
         qmc = []
         sim = self.simulation
         if 'calculations' in sim:
@@ -3329,6 +3755,54 @@ class QmcpackInput(SimulationInput,Names):
         return qmc
     #end def unroll_calculations
 
+    def get_qmc_estimator_inputs(self):
+        """Return global and section-local estimator containers by output series.
+
+        QMCPACK permits at most one global ``<estimators>`` container, either
+        below ``<simulation>`` or below ``<qmcsystem>``, and a local container
+        below each VMC or DMC ``<qmc>`` section.  The returned containers are
+        deliberately not merged: QMCPACK combines their children when
+        constructing each driver, and callers that need semantic estimator
+        metadata must retain the QMC-section scope. Series assignments follow
+        Nexus's existing output-info convention.
+        """
+        sim = self.simulation
+        global_estimators = []
+        if 'estimators' in sim:
+            global_estimators.append(sim.estimators)
+        #end if
+        if 'qmcsystem' in sim:
+            qmcsystems = [sim.qmcsystem]
+        elif 'qmcsystems' in sim:
+            qmcsystems = list(sim.qmcsystems)
+        else:
+            qmcsystems = []
+        #end if
+        for qs in qmcsystems:
+            if 'estimators' in qs:
+                global_estimators.append(qs.estimators)
+            #end if
+        #end for
+        if len(global_estimators)>1:
+            msg = 'only one global <estimators> node is permitted'
+            raise RuntimeError(msg)
+        #end if
+        if len(global_estimators)==1:
+            global_estimators = global_estimators[0]
+        else:
+            global_estimators = None
+        #end if
+
+        qmc_inputs = []
+        series = sim.project.series
+        for qmc in self.unroll_calculations(modify=False):
+            local_estimators = qmc.estimators if 'estimators' in qmc else None
+            qmc_inputs.append(obj(qmc=qmc,series=series,estimators=local_estimators))
+            series += 1
+        #end for
+        return obj(global_estimators=global_estimators,qmc=qmc_inputs)
+    #end def get_qmc_estimator_inputs
+
     def get(self,*names):
         base = self.get_base()
         return base.get(names)
@@ -3338,12 +3812,12 @@ class QmcpackInput(SimulationInput,Names):
         base = self.get_base()
         base.remove(*names)
     #end def remove
-    
+
     def assign(self,**kwargs):
         base = self.get_base()
         base.assign(**kwargs)
     #end def assign
-    
+
     def replace(self,*args,**kwargs):# input is list of keyword=(oldval,newval)
         base = self.get_base()
         base.replace(*args,**kwargs)
@@ -3353,16 +3827,16 @@ class QmcpackInput(SimulationInput,Names):
         base = self.get_base()
         base.move(**elemdests)
     #end def move
-            
+
 
     def get_host(self,names):
         base = self.get_base()
         return base.get_host(names)
     #end def get_host
 
-    def incorporate_defaults(self,elements=False,overwrite=False,propagate=False):
+    def incorporate_defaults(self,*,elements=False,overwrite=False,propagate=False):
         base = self.get_base()
-        base.incorporate_defaults(elements,overwrite,propagate)
+        base.incorporate_defaults(elements=elements,overwrite=overwrite,propagate=propagate)
     #end def incorporate_defaults
 
     def pluralize(self):
@@ -3375,8 +3849,8 @@ class QmcpackInput(SimulationInput,Names):
     #end def standard_placements
 
     def difference(self,other):
-        s1 = self.copy()
-        s2 = other.copy()
+        s1 = deepcopy(self)
+        s2 = deepcopy(other)
         b1 = s1.get_basename()
         b2 = s2.get_basename()
         q1 = s1[b1]
@@ -3411,18 +3885,33 @@ class QmcpackInput(SimulationInput,Names):
             element_joins=['qmcsystem']
             element_aliases=dict(loop='qmc')
             if xml is None:
-                xml = XMLreader(filepath,element_joins,element_aliases,warn=False).obj
+                xml = XMLreader(
+                    filepath,
+                    element_joins   = element_joins,
+                    element_aliases = element_aliases,
+                    warn            = False,
+                    ).obj
             else:
-                xml = XMLreader(None,element_joins,element_aliases,warn=False,xml=xml).obj
+                xml = XMLreader(
+                    None,
+                    element_joins   = element_joins,
+                    element_aliases = element_aliases,
+                    warn            = False,
+                    xml             = xml,
+                    ).obj
             #end if
             xml.condense()
         else:
-            self.error('the filepath you provided does not exist.\n  Input filepath: '+filepath)
+            msg = (
+                'the filepath you provided does not exist.\n'
+                '  Input filepath: '+filepath
+                )
+            raise FileNotFoundError(msg)
         #end if
         return xml
     #end def read_xml
 
-    def include_xml(self,xmlfile,replace=True,exists=True):
+    def include_xml(self,xmlfile,*,replace=True,exists=True):
         xml = self.read_xml(xmlfile)
         Param.metadata = self._metadata
         for name,exml in xml.items():
@@ -3431,7 +3920,8 @@ class QmcpackInput(SimulationInput,Names):
                 qname = qxml.tag
                 host = self.get_host(qname)
                 if host is None and exists:
-                    self.error('host xml section for '+qname+' not found','QmcpackInput')
+                    msg = 'host xml section for '+qname+' not found'
+                    raise FileFormatError(msg)
                 #end if
                 if qname in host:
                     section_name = qname
@@ -3475,14 +3965,14 @@ class QmcpackInput(SimulationInput,Names):
     #    i.e. where is the particleset? the wavefunction? a particular determinant?
     #   -Difficulty in locating components makes it difficult to modify them
     #   -Includes necessarily introduce greater variability in input file structure
-    #    and it is difficult to ensure every possible form is preserved each and 
+    #    and it is difficult to ensure every possible form is preserved each and
     #    every time a modification is made
     #   -The only time it is undesirable to incorporate the contents of an
     #    include directly into the input file object is if the data is large
     #    e.g. for an xml wavefunction or pseudopotential.
     #    In these cases, an external file should be provided that contains
     #    only the large object in question (pseudo or wavefunction).
-    #    This is already done for pseudopotentials and should be done for 
+    #    This is already done for pseudopotentials and should be done for
     #    wavefunctions, e.g. multideterminants.
     #    Until that time, wavefunctions will be explicitly read into the full
     #    input file.
@@ -3496,17 +3986,29 @@ class QmcpackInput(SimulationInput,Names):
             hamiltonian    = 'ham'
             )
         if element_type not in elems:
-            self.error('cannot add include for element of type {0}\n  valid element types are {1}'.format(element_type,elems))
+            msg = (
+                f'cannot add include for element of type {element_type}\n'
+                f'  valid element types are {elems}'
+                )
+            raise TypeError(msg)
         #end if
         # check the requested placement
         placements = ('before','on','after')
         if placement not in placements:
-            self.error('cannot add include for element with placement {0}\n  valid placements are {1}'.format(placement,list(placements)))
+            msg = (
+                f'cannot add include for element with placement {placement}\n'
+                f'  valid placements are {list(placements)}'
+                )
+            raise ValueError(msg)
         #end if
         # check that the base element is a simulation
         base = self.get_base()
         if not isinstance(base,simulation):
-            self.error('an include can only be added to simulation\n  attempted to add to {0}'.format(base.__class__.__name__))
+            msg = (
+                'an include can only be added to simulation\n'
+                f'  attempted to add to {type(base).__name__}'
+                )
+            raise TypeError(msg)
         #end if
         # gather a list of current qmcsystems
         if 'qmcsystem' in base:
@@ -3530,7 +4032,11 @@ class QmcpackInput(SimulationInput,Names):
                 inc = qs
                 ekey = qskey.split('_')[1]
                 if ekey not in elems:
-                    self.error('encountered invalid element key: {0}\n  valid keys are: {1}'.format(ekey,elems))
+                    msg = (
+                        f'encountered invalid element key: {ekey}\n'
+                        f'  valid keys are: {elems}'
+                        )
+                    raise FileFormatError(msg)
                 #end if
                 if cur_elems[ekey,'on'] is None:
                     cur_elems[ekey,'before'] = ekey,inc
@@ -3538,7 +4044,8 @@ class QmcpackInput(SimulationInput,Names):
                     cur_elems[ekey,'after' ] = ekey,inc
                 #end if
             elif not isinstance(qs,qmcsystem):
-                self.error('expected qmcsystem element, got {0}'.format(qs.__class__.__name__))
+                msg = f'expected qmcsystem element, got {type(qs).__name__}'
+                raise TypeError(msg)
             else:
                 for elem in qmcsystem.elements:
                     elem_plural = elem+'s'
@@ -3555,14 +4062,15 @@ class QmcpackInput(SimulationInput,Names):
                 #end for
                 residue = list(qs.keys())
                 if len(residue)>0:
-                    self.error('extra keys found in qmcsystem: {0}'.format(sorted(residue)))
+                    msg = f'extra keys found in qmcsystem: {sorted(residue)}'
+                    raise ValueError(msg)
                 #end if
             #end if
         #end for
         for elem in elems:
             pbef = cur_elems[elem,'before']
             pon  = cur_elems[elem,'on'    ]
-            paft = cur_elems[elem,'after' ] 
+            paft = cur_elems[elem,'after' ]
             if pon is None:
                 if pbef is not None and paft is None:
                     cur_elems[elem,'on'    ] = pbef
@@ -3638,7 +4146,7 @@ class QmcpackInput(SimulationInput,Names):
                 files.scalar = fprefix+'scalar.dat'
                 files.stat   = fprefix+'stat.h5'
                 # apparently this one is no longer generated by default as of r5756
-                #files.config = fprefix+'storeConfig.h5' 
+                #files.config = fprefix+'storeConfig.h5'
                 if q.type=='opt':
                     files.opt = fprefix+'opt.xml'
                 elif q.type=='dmc':
@@ -3670,7 +4178,8 @@ class QmcpackInput(SimulationInput,Names):
             if req in res:
                 values.append(res[req])
             else:
-                self.error(req+' is not a valid output info request')
+                msg = req+' is not a valid output info request'
+                raise ValueError(msg)
             #end if
         #end for
         if len(values)==1:
@@ -3693,22 +4202,27 @@ class QmcpackInput(SimulationInput,Names):
         no_particleset = particlesets is None
         no_wavefunction = wavefunction is None
         if no_lattice:
-            self.error('a simulationcell lattice must be present to generate jastrows',exit=False)
+            self.warn('a simulationcell lattice must be present to generate jastrows')
         #end if
         if no_particleset:
-            self.error('a particleset must be present to generate jastrows',exit=False)
+            self.warn('a particleset must be present to generate jastrows')
         #end if
         if no_wavefunction:
-            self.error('a wavefunction must be present to generate jastrows',exit=False)
+            self.warn('a wavefunction must be present to generate jastrows')
         #end if
         if no_lattice or no_particleset or no_wavefunction:
-            self.error('jastrows cannot be generated')
+            msg = 'jastrows cannot be generated'
+            raise RuntimeError(msg)
         #end if
         if isinstance(particlesets,QIxml):
             particlesets = make_collection([particlesets])
         #end if
         if 'e' not in particlesets:
-            self.error('electron particleset (e) not found\n particlesets: '+str(particlesets.keys()))
+            msg = (
+                'electron particleset (e) not found\n'
+                ' particlesets: '+str(particlesets.keys())
+                )
+            raise ValueError(msg)
         #end if
 
 
@@ -3802,7 +4316,7 @@ class QmcpackInput(SimulationInput,Names):
             #end if
         #end if
 
-        #only add the jastrows if ones of the same type 
+        #only add the jastrows if ones of the same type
         # (one-body,two-body,etc) are not already present
         for jastrow in jastrows:
             jtype = jastrow.type.lower().replace('-','_')
@@ -3820,12 +4334,11 @@ class QmcpackInput(SimulationInput,Names):
 
     def incorporate_system(self,system):
         self.warn('incorporate_system may or may not work\n  please check the qmcpack input produced\n  if it is wrong, please contact the developer')
-        system = system.copy()
+        system = deepcopy(system)
         system.check_folded_system()
         system.change_units('B')
         #system.structure.group_atoms()
         system.structure.order_by_species()
-        particles  = system.particles
         structure  = system.structure
         net_charge = system.net_charge
         net_spin   = system.net_spin
@@ -3870,7 +4383,8 @@ class QmcpackInput(SimulationInput,Names):
             elif len(ham)==1:
                 ham = ham.list()[0]
             else:
-                self.error('cannot find hamiltonian for system incorporation')
+                msg = 'cannot find hamiltonian for system incorporation'
+                raise RuntimeError(msg)
             #end if
         #end if
 
@@ -3879,7 +4393,7 @@ class QmcpackInput(SimulationInput,Names):
 
         if len(structure.axes)>0: #exclude systems with open boundaries
             #setting the 'lattice' (cell axes) requires some delicate care
-            #  qmcpack will fail if this is even 1e-10 off of what is in 
+            #  qmcpack will fail if this is even 1e-10 off of what is in
             #  the wavefunction hdf5 file from pwscf
             if structure.folded_structure is not None:
                 fs = structure.folded_structure
@@ -3887,7 +4401,17 @@ class QmcpackInput(SimulationInput,Names):
                 npe.reshape_inplace(axes, fs.axes.shape)
                 axes = np.dot(structure.tmatrix,axes)
                 if np.abs(axes-structure.axes).sum()>1e-5:
-                    self.error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(structure.axes)+'\n  folded axes tiled:\n'+str(axes))
+                    msg = (
+                        'supercell axes do not match tiled version of folded cell axes\n'
+                        '  you may have changed one set of axes (super/folded) and not the other\n'
+                        '  folded cell axes:\n'
+                        +str(fs.axes)+'\n'
+                        '  supercell axes:\n'
+                        +str(structure.axes)+'\n'
+                        '  folded axes tiled:\n'
+                        +str(axes)
+                        )
+                    raise ValueError(msg)
                 #end if
             else:
                 axes = np.array(pwscf_array_string(structure.axes).split(),dtype=float)
@@ -3896,25 +4420,21 @@ class QmcpackInput(SimulationInput,Names):
             structure.adjust_axes(axes)
 
             sc.lattice = axes
-        #end if    
+        #end if
 
-        elns = particles.get_electrons()
-        ions = particles.get_ions()
-        eup  = elns.up_electron
-        edn  = elns.down_electron
 
         particlesets = []
         eps = particleset(
             name='e',random=True,
             groups = [
-                group(name='u',charge=-1,mass=eup.mass,size=eup.count),
-                group(name='d',charge=-1,mass=edn.mass,size=edn.count)
+                group(name='u',charge=-1,mass=1.0,size=system.n_up),
+                group(name='d',charge=-1,mass=1.0,size=system.n_down)
                 ]
             )
         particlesets.append(eps)
-        if len(ions)>0:
+        if system.n_ions>0:
             if sc is not None and 'bconds' in sc and tuple(sc.bconds)!=('p','p','p'):
-                eps.randomsrc = 'ion0'  
+                eps.randomsrc = 'ion0'
             #end if
             ips = particleset(
                 name='ion0',
@@ -3929,20 +4449,21 @@ class QmcpackInput(SimulationInput,Names):
                     pp.pseudos = pseudos
                 #end if
             #end if
-            for ion in ions:
-                gpos = pos[elem==ion.name]
+            for ion in system.ion_labels:
+                gpos = pos[elem==ion]
+                is_elem, element = Elements.is_element(ion, return_element=True)
                 g = group(
-                    name         = ion.name,
-                    charge       = ion.charge,
-                    valence      = ion.charge,
-                    atomicnumber = ion.protons,
-                    mass         = ion.mass,
+                    name         = ion,
+                    charge       = system.Zeff[ion],
+                    valence      = system.Zeff[ion],
+                    atomicnumber = element.atomic_number,
+                    mass         = convert(element.atomic_weight, "amu", "me"),
                     position     = gpos,
                     size         = len(gpos)
                     )
                 groups.append(g)
-                if pseudos is not None and ion.name not in pseudos:
-                    pseudos[ion.name] = pseudo(elementtype=ion.name,href='MISSING.xml')
+                if pseudos is not None and ion not in pseudos:
+                    pseudos[ion] = pseudo(elementtype=ion,href='MISSING.xml')
                 #end if
             #end for
             ips.groups = make_collection(groups)
@@ -3953,17 +4474,17 @@ class QmcpackInput(SimulationInput,Names):
         if old_eps_name is not None:
             self.replace(old_eps_name,'e')
         #end if
-        if old_ips_name is not None and len(ions)>0:
+        if old_ips_name is not None and system.n_ions>0:
             self.replace(old_ips_name,'ion0')
         #end if
-            
+
         udet,ddet = self.get('updet','downdet')
 
         if udet is not None:
-            udet.size = elns.up_electron.count
+            udet.size = system.n_up
         #end if
         if ddet is not None:
-            ddet.size = elns.down_electron.count
+            ddet.size = system.n_down
         #end if
 
         if np.abs(net_spin) > 1e-1:
@@ -3977,17 +4498,17 @@ class QmcpackInput(SimulationInput,Names):
             #end if
         #end if
     #end def incorporate_system
-        
+
 
     def get_electron_particle_set(self):
-        input = self.copy()
+        input = deepcopy(self)
         input.pluralize()
         return input.get('particlesets').e
     #end def get_electron_particle_set
 
 
-    def return_system(self,structure_only=False):
-        input = self.copy()
+    def return_system(self,*,structure_only=False):
+        input = deepcopy(self)
         input.pluralize()
         axes,ps,H = input.get('lattice','particlesets','hamiltonian')
 
@@ -4009,7 +4530,7 @@ class QmcpackInput(SimulationInput,Names):
             #end if
         #end for
         if len(ion_list)==0: #try to identify ions by positive charged groups
-            for name,p in ps.items():
+            for p in ps.values():
                 if 'groups' in p:
                     for g in p.groups:
                         if 'charge' in g and g.charge>0:
@@ -4023,7 +4544,8 @@ class QmcpackInput(SimulationInput,Names):
         if len(ion_list)==1:
             ions = ion_list[0]
         elif len(ion_list)>1:
-            self.error('ability to handle multiple ion particlesets has not been implemented')
+            msg = 'ability to handle multiple ion particlesets has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         if ions is None and elns is not None and 'groups' in elns:
             simcell = input.get('simulationcell')
@@ -4035,10 +4557,12 @@ class QmcpackInput(SimulationInput,Names):
             #end if
         #end if
         if elns is None:
-            self.error('could not find electron particleset')
+            msg = 'could not find electron particleset'
+            raise RuntimeError(msg)
         #end if
         if ions is None and have_ions:
-            self.error('could not find ion particleset')
+            msg = 'could not find ion particleset'
+            raise RuntimeError(msg)
         #end if
 
         #compute spin and electron charge
@@ -4095,7 +4619,8 @@ class QmcpackInput(SimulationInput,Names):
                 #end if
             #end if
             if elem is None:
-                self.error('could not read ions from ion particleset')
+                msg = 'could not read ions from ion particleset'
+                raise RuntimeError(msg)
             #end if
             if axes is None:
                 center = (0,0,0)
@@ -4124,7 +4649,8 @@ class QmcpackInput(SimulationInput,Names):
                 elif 'atomic_number' in element:
                     valence = element.atomic_number
                 else:
-                    self.error('could not identify valency of '+name)
+                    msg = 'could not identify valency of '+name
+                    raise RuntimeError(msg)
                 #end if
                 valency[name] = valence
                 count = list(elem).count(name)
@@ -4137,8 +4663,8 @@ class QmcpackInput(SimulationInput,Names):
 
         net_charge = ion_charge + eln_charge
 
-        system = PhysicalSystem(structure,net_charge,net_spin,**valency) 
-        
+        system = PhysicalSystem(structure,net_charge,net_spin,**valency)
+
         if structure_only:
             return structure
         else:
@@ -4213,7 +4739,7 @@ class QmcpackInput(SimulationInput,Names):
         self.replace('ion0','i')
     #end def remove_physical_system
 
-        
+
     def cusp_correction(self):
         cc = False
         if not self.is_afqmc_input():
@@ -4224,20 +4750,20 @@ class QmcpackInput(SimulationInput,Names):
         #end if
         return cc
     #end def cusp_correction
-        
+
 
     def get_driver(self):
         driver = self.get('driver_version')
         if driver is None or driver.startswith('batch'):
             driver = 'batched'
-        assert driver in ('batched','legacy')
+        assert driver in {'batched','legacy'}
         return driver
     #end def get_driver()
 
     def set_driver(self,driver):
         if driver.startswith('batch'):
             driver = 'batched'
-        assert driver in ('batched','legacy')
+        assert driver in {'batched','legacy'}
         proj = self.get('project')
         proj.driver_version = driver
     #end set_driver
@@ -4298,16 +4824,20 @@ class QmcpackInput(SimulationInput,Names):
         jastrows = generate_jastrows_alt(system=system,**kwargs)
         wfn = self.get('wavefunction')
         if wfn is None:
-            self.error('cannot set jastrows.\nWavefunction is missing.')
+            msg = (
+                'cannot set jastrows.\n'
+                'Wavefunction is missing.'
+                )
+            raise ValueError(msg)
         wfn.jastrows = make_collection(jastrows)
     #end def gen_jastrows
 
-    def optimize_jastrows(self,opt=True):
+    def optimize_jastrows(self,*,opt=True):
         opt = bool(opt)
         jastrows = self.get_jastrows()
         if jastrows is not None:
             jastrow_classes = tuple(jastrow.types.values())
-            for n,Jn in jastrows.items():
+            for Jn in jastrows.values():
                 if not isinstance(Jn,QIxml):
                     continue
                 assert isinstance(Jn,jastrow_classes)
@@ -4332,7 +4862,8 @@ class QmcpackInput(SimulationInput,Names):
         elif 'bspline' in spob:
             spob.bspline.href = orbitals_h5
         else:
-            self.error('orbital file assignment is only supported for sposet_builder with B-spline orbitals')
+            msg = 'orbital file assignment is only supported for sposet_builder with B-spline orbitals'
+            raise ValueError(msg)
     #end def set_orbitals_h5
 
     def has_lcao_orbitals(self):
@@ -4345,7 +4876,8 @@ class QmcpackInput(SimulationInput,Names):
     def set_lcao_orbital_file(self,filepath):
         assert filepath.endswith('.h5')
         if not self.has_lcao_orbitals():
-            self.error('calculation type is not LCAO. Cannot assign LCAO orbital file.')
+            msg = 'calculation type is not LCAO. Cannot assign LCAO orbital file.'
+            raise ValueError(msg)
         dset = self.get('determinantset')
         assert dset is not None
         dset.href = filepath
@@ -4360,11 +4892,12 @@ class QmcpackInput(SimulationInput,Names):
         return self.get('multideterminant')
     #end def get_multidet
 
-    def optimize_multidet(self,opt=True):
+    def optimize_multidet(self,*,opt=True):
         opt = bool(opt)
         md  = self.get_multidet()
         if md is None:
-            self.error('input file has no multideterminant')
+            msg = 'input file has no multideterminant'
+            raise FileFormatError(msg)
         assert isinstance(md,multideterminant)
         assert 'detlist' in md
         md.detlist.optimize = opt
@@ -4373,16 +4906,22 @@ class QmcpackInput(SimulationInput,Names):
     def set_multidet_params(self,**kwargs):
         md = self.get_multidet()
         if md is None:
-            self.error('input file has no multideterminant')
+            msg = 'input file has no multideterminant'
+            raise FileFormatError(msg)
         dl = md.detlist
-        names = set(list(kwargs.keys()))
+        names = set(kwargs.keys())
         mdc = multideterminant
         md_names = set(mdc.attributes)|set(mdc.parameters)
         dl_names = set(detlist.attributes)|set(detlist.parameters)
         allowed_names = md_names|dl_names
         invalid = names - allowed_names
         if len(invalid)>0:
-            self.error('unrecognized multideterminant parameters encountered.\n  Allowed params are: {}\nYou provided:{}'.format(list(sorted(allowed_names)),list(sorted(invalid))))
+            msg = (
+                'unrecognized multideterminant parameters encountered.\n'
+                f'  Allowed params are: {sorted(allowed_names)}\n'
+                f'You provided:{sorted(invalid)}'
+                )
+            raise ValueError(msg)
         for name in md_names:
             if name in kwargs:
                 md[name] = kwargs[name]
@@ -4445,7 +4984,8 @@ class QmcpackInput(SimulationInput,Names):
                     del calcs[series+1]
                     series += 1
             else:
-                self.error('qmc method with series {} not found'.format(series))
+                msg = f'qmc method with series {series} not found'
+                raise KeyError(msg)
         #return qmc
     #end def remove_qmc
 
@@ -4466,10 +5006,14 @@ class QmcpackInput(SimulationInput,Names):
         allowed_qmc = ('opt','vmc','vmc_test','vmc_noJ',
                        'dmc','dmc_test','dmc_noJ')
         if qmc not in allowed_qmc:
-            self.error('calculation type "{}" is unrecognized.\nValid options are: {}'.format(qmc,allowed_qmc))
+            msg = (
+                f'calculation type "{qmc}" is unrecognized.\n'
+                f'Valid options are: {allowed_qmc}'
+                )
+            raise ValueError(msg)
         kw = obj(**kw)
         driver = self.get_driver()
-        kw.set_optional(**qmc_defaults[driver][qmc])
+        set_optional(kw,qmc_defaults[driver][qmc])
         kw.driver = driver
         #self.remove_calculations()
         if qmc=='opt':
@@ -4487,6 +5031,7 @@ class QmcpackInput(SimulationInput,Names):
 
 
     def modify(self,
+               *,
                driver              = None,
                remove_system       = False,
                change_system       = False,
@@ -5058,7 +5603,8 @@ class QmcpackInput(SimulationInput,Names):
         if multidet_opt is not None:
             multidet_opt = bool(multidet_opt)
         if calculations is not None and qmc is not None:
-            self.error('cannot both provide calculation list ("calculations keyword") and request calculation generation ("qmc" keyword)')
+            msg = 'cannot both provide calculation list ("calculations keyword") and request calculation generation ("qmc" keyword)'
+            raise ValueError(msg)
         # set driver version
         if driver is not None:
             self.set_driver(driver)
@@ -5088,32 +5634,32 @@ class QmcpackInput(SimulationInput,Names):
         # generate jastrows
         if J1 or J2 or J3 or J1k or J2k:
             self.gen_jastrows(
-                J1           = J1          , 
-                J2           = J2          , 
-                J3           = J3          , 
-                J1_size      = J1_size     , 
-                J1_rcut      = J1_rcut     , 
-                J1_dr        = J1_dr       , 
-                J1_opt       = J1_opt      , 
-                J2_size      = J2_size     , 
-                J2_rcut      = J2_rcut     , 
-                J2_dr        = J2_dr       , 
-                J2_init      = J2_init     , 
-                J2_opt       = J2_opt      , 
-                J3_isize     = J3_isize    , 
-                J3_esize     = J3_esize    , 
-                J3_rcut      = J3_rcut     , 
-                J3_opt       = J3_opt      , 
-                J1_rcut_open = J1_rcut_open, 
-                J2_rcut_open = J2_rcut_open, 
-                J1k          = J1k         , 
-                J1k_kcut     = J1k_kcut    , 
-                J1k_symm     = J1k_symm    , 
-                J1k_opt      = J1k_opt     , 
-                J2k          = J2k         , 
-                J2k_kcut     = J2k_kcut    , 
-                J2k_symm     = J2k_symm    , 
-                J2k_opt      = J2k_opt     , 
+                J1           = J1          ,
+                J2           = J2          ,
+                J3           = J3          ,
+                J1_size      = J1_size     ,
+                J1_rcut      = J1_rcut     ,
+                J1_dr        = J1_dr       ,
+                J1_opt       = J1_opt      ,
+                J2_size      = J2_size     ,
+                J2_rcut      = J2_rcut     ,
+                J2_dr        = J2_dr       ,
+                J2_init      = J2_init     ,
+                J2_opt       = J2_opt      ,
+                J3_isize     = J3_isize    ,
+                J3_esize     = J3_esize    ,
+                J3_rcut      = J3_rcut     ,
+                J3_opt       = J3_opt      ,
+                J1_rcut_open = J1_rcut_open,
+                J2_rcut_open = J2_rcut_open,
+                J1k          = J1k         ,
+                J1k_kcut     = J1k_kcut    ,
+                J1k_symm     = J1k_symm    ,
+                J1k_opt      = J1k_opt     ,
+                J2k          = J2k         ,
+                J2k_kcut     = J2k_kcut    ,
+                J2k_symm     = J2k_symm    ,
+                J2k_opt      = J2k_opt     ,
                 system       = system      ,
                 )
         # remove deteriminants
@@ -5130,7 +5676,7 @@ class QmcpackInput(SimulationInput,Names):
         # set jastrow params
         if self.has_jastrows():
             if jastrow_opt is not None:
-                self.optimize_jastrows(jastrow_opt)
+                self.optimize_jastrows(opt=jastrow_opt)
         # set multidet params
         if self.has_multidet():
             if multidet_h5 is not None:
@@ -5138,7 +5684,7 @@ class QmcpackInput(SimulationInput,Names):
             if multidet_cutoff is not None:
                 self.set_multidet_params(cutoff=multidet_cutoff)
             if multidet_opt is not None:
-                self.optimize_multidet(multidet_opt)
+                self.optimize_multidet(opt=multidet_opt)
         # set hamiltonian params
         if pseudo_files is not None:
             assert isinstance(pseudo_files,(dict,obj))
@@ -5154,9 +5700,14 @@ class QmcpackInput(SimulationInput,Names):
         if qmc is not None:
             self.gen_calculations(qmc,**gen_calcs)
         elif len(gen_calcs)>0:
-            self.error('invalid keywords provided to the modify function:\n{}\n'.format(sorted(gen_calcs.keys()))+'  Please see the documentation.  If you are trying to generate qmc calculation sections, please provide the "qmc" keyword.')
+            msg = (
+                'invalid keywords provided to the modify function:\n'
+                f'{sorted(gen_calcs.keys())}\n'
+                +'  Please see the documentation.  If you are trying to generate qmc calculation sections, please provide the "qmc" keyword.'
+                )
+            raise ValueError(msg)
         elif calculations is not None:
-            self.simulation.calculations = make_collection(calculations).copy()
+            self.simulation.calculations = deepcopy(make_collection(calculations))
     #end def modify
 
 
@@ -5164,12 +5715,12 @@ class QmcpackInput(SimulationInput,Names):
         return BundledQmcpackInput(inputs,filenames)
     #end def bundle
 
-    
+
     def trace(self,quantity,values):
         return TracedQmcpackInput(quantity,values,self)
     #end def trace
 
-    
+
     def twist_average(self,twistnums):
         return self.trace('twistnum',twistnums)
     #end def twist_average
@@ -5180,11 +5731,11 @@ class QmcpackInput(SimulationInput,Names):
 # base class for bundled qmcpack input
 #  not used on its own
 class BundledQmcpackInput(SimulationInput):
-    
+
     def __init__(self,inputs,filenames):
         self.inputs = obj()
-        for input in inputs:
-            self.inputs.append(input)
+        for inp in inputs:
+            self.inputs[len(self.inputs)] = inp
         #end for
         self.filenames = filenames
     #end def __init__
@@ -5193,8 +5744,8 @@ class BundledQmcpackInput(SimulationInput):
     def get_output_info(self,*requests):
         outfiles = []
 
-        for index,input in self.inputs.items():
-            outfs = input.get_output_info('outfiles')
+        for index,inp in self.inputs.items():
+            outfs = inp.get_output_info('outfiles')
             infile = self.filenames[index]
             outfile= infile.rsplit('.',1)[0]+'.g'+str(index).zfill(3)+'.qmc'
             outfiles.append(infile)
@@ -5222,11 +5773,11 @@ class BundledQmcpackInput(SimulationInput):
         #end if
     #end def get_output_info
 
-        
+
     def generate_filenames(self,infile):
-        self.not_implemented()
+        raise NotImplementedError
     #end def generate_filenames
-        
+
 
     def write(self,filepath=None):
         if filepath is not None and 'filenames' not in self:
@@ -5249,15 +5800,14 @@ class BundledQmcpackInput(SimulationInput):
             ##end if
             c = ''
             for i in range(len(self.inputs)):
-                input = self.inputs[i]
+                inp = self.inputs[i]
                 bfile = self.filenames[i]
                 c += bfile+'\n'
                 bfilepath = os.path.join(path,bfile)
-                input.write(bfilepath)
+                inp.write(bfilepath)
             #end for
-            fobj = open(filepath,'w')
-            fobj.write(c)
-            fobj.close()
+            with open(filepath,'w') as fobj:
+                fobj.write(c)
         #end if
     #end def write
 #end class BundledQmcpackInput
@@ -5277,10 +5827,10 @@ class TracedQmcpackInput(BundledQmcpackInput):
 
     def bundle_inputs(self,quantity,values,input):
         range = len(self.inputs),len(self.inputs)+len(values)
-        self.quantities.append(obj(quantity=quantity,range=range))
+        self.quantities[len(self.quantities)] = obj(quantity=quantity,range=range)
         for value in values:
-            inp = input.copy()
-            qhost = inp.get_host(quantity)                               
+            inp = deepcopy(input)
+            qhost = inp.get_host(quantity)
             #print(qhost)
             if qhost is not None:
                 if not isinstance(value,obj):
@@ -5291,10 +5841,11 @@ class TracedQmcpackInput(BundledQmcpackInput):
                     #end for
                 #end if
             else:
-                self.error('quantity '+quantity+' was not found in '+input.__class__.__name__)
+                msg = 'quantity '+quantity+' was not found in '+type(input).__name__
+                raise KeyError(msg)
             #end if
-            self.variables.append(obj(quantity=quantity,value=value))
-            self.inputs.append(inp)
+            self.variables[len(self.variables)] = obj(quantity=quantity,value=value)
+            self.inputs[len(self.inputs)] = inp
         #end for
     #end def bundle_inputs
 
@@ -5378,7 +5929,12 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler
             sc.lr_handler = lr_handler
         #end if
         if not axes_valid:
-            QmcpackInput.class_error('invalid axes in generate_simulationcell\nargument system must be provided\naxes of the structure must have non-zero dimension')
+            msg = (
+                'invalid axes in generate_simulationcell\n'
+                'argument system must be provided\n'
+                'axes of the structure must have non-zero dimension'
+                )
+            raise ValueError(msg)
         #end if
     #end if
     if axes_valid:
@@ -5387,10 +5943,10 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler
         structure = system.structure
         if isinstance(structure,Jellium):
             sc.rs         = structure.rs()
-            sc.nparticles = system.particles.count_electrons()
+            sc.nparticles = system.n_elec
         else:
             #setting the 'lattice' (cell axes) requires some delicate care
-            #  qmcpack will fail if this is even 1e-10 off of what is in 
+            #  qmcpack will fail if this is even 1e-10 off of what is in
             #  the wavefunction hdf5 file from pwscf
             if structure.folded_structure is not None:
                 fs = structure.folded_structure
@@ -5398,7 +5954,18 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler
                 npe.reshape_inplace(axes, fs.axes.shape)
                 axes = np.dot(structure.tmatrix,axes)
                 if np.abs(axes-structure.axes).sum()>1e-5:
-                    QmcpackInput.class_error('in generate_simulationcell\nsupercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(structure.axes)+'\nfolded axes tiled:\n'+str(axes))
+                    msg = (
+                        'in generate_simulationcell\n'
+                        'supercell axes do not match tiled version of folded cell axes\n'
+                        'you may have changed one set of axes (super/folded) and not the other\n'
+                        'folded cell axes:\n'
+                        +str(fs.axes)+'\n'
+                        'supercell axes:\n'
+                        +str(structure.axes)+'\n'
+                        'folded axes tiled:\n'
+                        +str(axes)
+                        )
+                    raise ValueError(msg)
                 #end if
             else:
                 axes = np.array(pwscf_array_string(structure.axes).split(),dtype=float)
@@ -5408,12 +5975,13 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler
 
             sc.lattice = axes
         #end if
-    #end if    
+    #end if
     return sc
 #end def generate_simulationcell
 
 
-def generate_particlesets(electrons   = 'e',
+def generate_particlesets(*,
+                          electrons   = 'e',
                           ions        = 'ion0',
                           up          = 'u',
                           down        = 'd',
@@ -5424,7 +5992,8 @@ def generate_particlesets(electrons   = 'e',
                           hybrid_lmax = None,
                           ):
     if system is None:
-        QmcpackInput.class_error('generate_particlesets argument system must not be None')
+        msg = 'generate_particlesets argument system must not be None'
+        raise ValueError(msg)
     #end if
 
     ename = electrons
@@ -5440,30 +6009,25 @@ def generate_particlesets(electrons   = 'e',
     system.check_folded_system()
     system.change_units('B')
 
-    particles  = system.particles
     structure  = system.structure
-    net_charge = system.net_charge
-    net_spin   = system.net_spin
 
-    elns = particles.get_electrons()
-    ions = particles.get_ions()
-    eup  = elns.up_electron
-    edn  = elns.down_electron
+    eup  = system.n_up
+    edn  = system.n_down
 
     use_spinor = spinor is not None and spinor
 
     particleset_groups = []
     if not use_spinor:
-        if eup.count > 0:
-            particleset_groups.append(group(name=uname,charge=-1,mass=eup.mass,size=eup.count))
+        if eup > 0:
+            particleset_groups.append(group(name=uname,charge=-1,mass=1.0,size=eup))
         #end if
-        if edn.count > 0:
-            particleset_groups.append(group(name=dname,charge=-1,mass=edn.mass,size=edn.count))
+        if edn > 0:
+            particleset_groups.append(group(name=dname,charge=-1,mass=1.0,size=edn))
         #end if
     else:
-        ecount = eup.count+edn.count
+        ecount = eup+edn
         if ecount>0:
-            particleset_groups.append(group(name=uname,charge=-1,mass=eup.mass,size=ecount))
+            particleset_groups.append(group(name=uname,charge=-1,mass=1.0,size=ecount))
         #end if
     #end if
 
@@ -5477,7 +6041,7 @@ def generate_particlesets(electrons   = 'e',
         eps.spinor = True
     #end if
     particlesets.append(eps)
-    if len(ions)>0:
+    if system.n_ions>0:
         # maintain consistent order
         ion_species,ion_counts = structure.order_by_species()
         elem = structure.elem
@@ -5491,28 +6055,39 @@ def generate_particlesets(electrons   = 'e',
         if hybridrep:
             hybrid_vars = (
                 ('hybrid_rcut',hybrid_rcut),
-                ('hybrid_lmax',hybrid_lmax),                
+                ('hybrid_lmax',hybrid_lmax),
                 )
             for hvar,hval in hybrid_vars:
                 if not isinstance(hval,obj):
-                    QmcpackInput.class_error('generate_particlesets argument "{0}" must be of type obj\nyou provided type: {1}\nwith value: {2}'.format(hvar,hval.__class__.__name__,hval))
+                    msg = (
+                        f'generate_particlesets argument "{hvar}" must be of type obj\n'
+                        f'you provided type: {type(hval).__name__}\n'
+                        f'with value: {hval}'
+                        )
+                    raise TypeError(msg)
                 #end if
                 if set(hval.keys())!=set(ion_species):
-                    QmcpackInput.class_error('generate_particsets argument "{0}" is incorrect\none entry must be present for each atomic species\natomic species present in the simulation: {1}\nvalues provided for the following species: {2}'.format(hvar,sorted(ion_species),sorted(hval.keys())))
+                    msg = (
+                        f'generate_particsets argument "{hvar}" is incorrect\n'
+                        'one entry must be present for each atomic species\n'
+                        f'atomic species present in the simulation: {sorted(ion_species)}\n'
+                        f'values provided for the following species: {sorted(hval.keys())}'
+                        )
+                    raise ValueError(msg)
                 #end if
             #end for
         #end if
         # make groups
         groups = []
         for ion_spec in ion_species:
-            ion = ions[ion_spec]
-            gpos = pos[elem==ion.name]
+            is_elem, element = Elements.is_element(ion_spec, return_element=True)
+            gpos = pos[elem==ion_spec]
             g = group(
-                name         = ion.name,
-                charge       = ion.charge,
-                valence      = ion.charge,
-                atomicnumber = ion.protons,
-                mass         = ion.mass,
+                name         = ion_spec,
+                charge       = system.Zeff[ion_spec],
+                valence      = system.Zeff[ion_spec],
+                atomicnumber = element.atomic_number,
+                mass         = convert(element.atomic_weight, "amu", "me"),
                 position     = gpos,
                 size         = len(gpos)
                 )
@@ -5531,6 +6106,7 @@ def generate_particlesets(electrons   = 'e',
 
 
 def generate_sposets(type           = None,
+                     *,
                      occupation     = None,
                      spin_polarized = False,
                      nup            = None,
@@ -5545,7 +6121,11 @@ def generate_sposets(type           = None,
                      ):
     ndn = ndown
     if type is None:
-        QmcpackInput.class_error('cannot generate sposets\n  type of sposet not specified')
+        msg = (
+            'cannot generate sposets\n'
+            '  type of sposet not specified'
+            )
+        raise ValueError(msg)
     #end if
     if sposets is not None:
         for spo in sposets:
@@ -5554,11 +6134,14 @@ def generate_sposets(type           = None,
     elif occupation=='slater_ground':
         have_counts = not (nup is None or ndown is None)
         if system is None and not have_counts:
-            QmcpackInput.class_error('cannot generate sposets in occupation mode {0}\n  arguments nup & ndown or system must be given to generate_sposets'.format(occupation))
+            msg = (
+                f'cannot generate sposets in occupation mode {occupation}\n'
+                '  arguments nup & ndown or system must be given to generate_sposets'
+                )
+            raise ValueError(msg)
         elif not have_counts:
-            elns = system.particles.get_electrons()
-            nup  = elns.up_electron.count
-            ndn  = elns.down_electron.count
+            nup  = system.n_up
+            ndn  = system.n_down
         else:
             ndn = ndown
         #end if
@@ -5590,7 +6173,12 @@ def generate_sposets(type           = None,
             #end for
         #end if
     else:
-        QmcpackInput.class_error('cannot generate sposets in occupation mode {0}\n  generate_sposets currently supports the following occupation modes:\n  slater_ground'.format(occupation))
+        msg = (
+            f'cannot generate sposets in occupation mode {occupation}\n'
+            '  generate_sposets currently supports the following occupation modes:\n'
+            '  slater_ground'
+            )
+        raise ValueError(msg)
     #end if
     if rotate:
         rotated_sposets = []
@@ -5610,15 +6198,20 @@ def generate_sposet_builder(type,*args,**kwargs):
     elif type=='heg':
         return generate_heg_builder(*args,**kwargs)
     else:
-        QmcpackInput.class_error('cannot generate sposet_builder\n  sposet_builder of type {0} is unrecognized'.format(type))
+        msg = (
+            'cannot generate sposet_builder\n'
+            f'  sposet_builder of type {type} is unrecognized'
+            )
+        raise ValueError(msg)
     #end if
 #end def generate_sposet_builder
 
 
 def generate_bspline_builder(type           = 'bspline',
+                             *,
                              meshfactor     = 1.0,
                              precision      = 'float',
-                             twistnum       = None, 
+                             twistnum       = None,
                              twist          = None,
                              sort           = None,
                              version        = '0.10',
@@ -5694,7 +6287,8 @@ def generate_bspline_builder(type           = 'bspline',
 #end def generate_bspline_builder
 
 
-def generate_heg_builder(twist          = None,
+def generate_heg_builder(*,
+                         twist          = None,
                          spin_polarized = False,
                          spo_up         = 'spo_u',
                          spo_down       = 'spo_d',
@@ -5766,7 +6360,7 @@ def partition_sposets(sposet_builder,partition,partition_meshfactors=None):
                 del part_spo.size
             #end if
             if partition_contents is not None:
-                part_spo.set(**partition_contents[index_min])
+                part_spo.update(**partition_contents[index_min])
             #end if
             part_spos.append(part_spo)
             part_spo_names.append(part_spo_name)
@@ -5778,7 +6372,7 @@ def partition_sposets(sposet_builder,partition,partition_meshfactors=None):
             )
         comp_spos.append(comp_spo)
     #end for
-        
+
     ssb.sposets = make_collection(part_spos)
 
     cssb = composite_builder(
@@ -5790,7 +6384,8 @@ def partition_sposets(sposet_builder,partition,partition_meshfactors=None):
 #end def partition_sposets
 
 
-def generate_determinantset(up             = 'u',
+def generate_determinantset(*,
+                            up             = 'u',
                             down           = 'd',
                             spo_up         = 'spo_u',
                             spo_down       = 'spo_d',
@@ -5803,13 +6398,13 @@ def generate_determinantset(up             = 'u',
                             rotate         = False,
                             ):
     if system is None:
-        QmcpackInput.class_error('generate_determinantset argument system must not be None')
+        msg = 'generate_determinantset argument system must not be None'
+        raise ValueError(msg)
     #end if
-    elns = system.particles.get_electrons()
-    nup  = elns.up_electron.count
-    ndn  = elns.down_electron.count
+    nup  = system.n_up
+    ndn  = system.n_down
     use_spinor = spinor is not None and spinor
-    if not spin_polarized and nup==ndn and not use_spinor:  
+    if not spin_polarized and nup==ndn and not use_spinor:
         spo_u = 'spo_ud'
         spo_d = 'spo_ud'
     else:
@@ -5830,7 +6425,7 @@ def generate_determinantset(up             = 'u',
                     sposet = spo_u,
                     size   = nup
                     )
-            )
+                )
         #end if
         if ndn > 0:
             determinants_list.append(
@@ -5840,7 +6435,7 @@ def generate_determinantset(up             = 'u',
                     sposet = spo_d,
                     size   = ndn
                     )
-            )
+                )
         #end if
     else:
         if nup+ndn > 0:
@@ -5851,7 +6446,7 @@ def generate_determinantset(up             = 'u',
                     sposet = spo_u,
                     size   = nup+ndn,
                     )
-            )
+                )
         #end if
     #end if
     dset = determinantset(
@@ -5906,7 +6501,7 @@ def check_excitation_type(excitation):
 
     # Check first element
     if not format_failed:
-        if exc1.lower() not in ('up','down','singlet','triplet'):
+        if exc1.lower() not in {'up','down','singlet','triplet'}:
             format_failed = True
         else:
             exc_spin = exc_spins[exc1.lower()]
@@ -5949,19 +6544,17 @@ def check_excitation_type(excitation):
             #end if
         #end if
     #end if
-    
+
     if format_failed:
-
-        msg  = 'excitation must be a tuple or list with with two elements.\n'
-        msg += 'The first element must be either "up", "down", "singlet", or "triplet"\n'
-        msg += 'and the second element must be a band format (e.g. "0 45 3 46"),\n'
-        msg += 'energy format (e.g. "-215 +216"), kpoint format (e.g. "L vb F cb"),\n'
-        msg += 'or lowest format (e.g. "lowest").\n'
-        msg += 'You Provided: {0}'
-        msg = msg.format(excitation)
-
-        QmcpackInput.class_error(msg)
-
+        msg = (
+            'excitation must be a tuple or list with with two elements.\n'
+            'The first element must be either "up", "down", "singlet", or "triplet"\n'
+            'and the second element must be a band format (e.g. "0 45 3 46"),\n'
+            'energy format (e.g. "-215 +216"), kpoint format (e.g. "L vb F cb"),\n'
+            'or lowest format (e.g. "lowest").\n'
+            f'You Provided: {excitation}'
+            )
+        raise ValueError(msg)
     #end if
 
     return exc_spin,exc_type,exc_spins,exc_types,exc1,exc2
@@ -5969,9 +6562,10 @@ def check_excitation_type(excitation):
 
 
 def generate_determinantset_old(type           = 'bspline',
+                                *,
                                 meshfactor     = 1.0,
                                 precision      = 'float',
-                                twistnum       = None, 
+                                twistnum       = None,
                                 twist          = None,
                                 spin_polarized = False,
                                 hybridrep      = None,
@@ -5984,9 +6578,9 @@ def generate_determinantset_old(type           = 'bspline',
                                 spinor         = None,
                                 ):
     if system is None:
-        QmcpackInput.class_error('generate_determinantset argument system must not be None')
+        msg = 'generate_determinantset argument system must not be None'
+        raise ValueError(msg)
     #end if
-    elns = system.particles.get_electrons()
     down_spin = 0
     if spin_polarized:
         down_spin=1
@@ -5996,8 +6590,8 @@ def generate_determinantset_old(type           = 'bspline',
         tilematrix = system.structure.tilematrix()
     #end if
     use_spinor = spinor is not None and spinor
-    nup = elns.up_electron.count
-    ndn = elns.down_electron.count
+    nup = system.n_up
+    ndn = system.n_down
     determinants_list = []
     if not use_spinor:
         if nup > 0:
@@ -6007,7 +6601,7 @@ def generate_determinantset_old(type           = 'bspline',
                     size = nup,
                     occupation=section(mode='ground',spindataset=0)
                     ),
-            )
+                )
         #end if
         if ndn > 0:
             determinants_list.append(
@@ -6016,7 +6610,7 @@ def generate_determinantset_old(type           = 'bspline',
                     size = ndn,
                     occupation=section(mode='ground',spindataset=down_spin)
                     )
-            )
+                )
         #end if
     else:
         if nup+ndn > 0:
@@ -6026,7 +6620,7 @@ def generate_determinantset_old(type           = 'bspline',
                     size = nup+ndn,
                     occupation=section(mode='ground',spindataset=0)
                     ),
-            )
+                )
         #end if
     #end if
     dset = determinantset(
@@ -6070,13 +6664,18 @@ def generate_determinantset_old(type           = 'bspline',
             sdet = dset.get('updet')
         elif exc_spin==exc_spins.down:
             sdet = dset.get('downdet')
-        elif exc_spin in (exc_spins.singlet,exc_spins.triplet):
+        elif exc_spin in {exc_spins.singlet,exc_spins.triplet}:
 
             # Are there an equal number of up and down electrons?
-            # If no, then exit. Currently, singlet and triplet 
+            # If no, then exit. Currently, singlet and triplet
             # excitations are assumed to have ms = 0.
-            if elns.down_electron.count != elns.up_electron.count:
-                QmcpackInput.class_error('The \'singlet\' and \'triplet\' excitation types currently assume number of up and down electrons is the same for the reference ground state. Otherwise, one should use \'up\' or \'down\' types.\nFor your system: Nup={} and Ndown={}.\nWe plan to expand to additional cases in the future.'.format(elns.up_electron.count,elns.down_electron.count))
+            if system.n_down != system.n_up:
+                msg = (
+                    "The 'singlet' and 'triplet' excitation types currently assume number of up and down electrons is the same for the reference ground state. Otherwise, one should use 'up' or 'down' types.\n"
+                    f'For your system: Nup={system.n_up} and Ndown={system.n_down}.\n'
+                    'We plan to expand to additional cases in the future.'
+                    )
+                raise NotImplementedError(msg)
             #end if
 
             coeff_sign = ''
@@ -6087,26 +6686,26 @@ def generate_determinantset_old(type           = 'bspline',
             if down_spin:
                 sposet_list = [sposet(name            = 'spo_u',
                                       spindataset     = 0,
-                                      size            = elns.up_electron.count+1,
+                                      size            = system.n_up+1,
                                       occupation      = section(mode='ground'),
                                       coefficient     = section(size=90,spindataset=0),
                                       spos            = ''
-                                     ),
+                                      ),
                                sposet(name            = 'spo_d',
                                       spindataset     = 1,
-                                      size            = elns.up_electron.count+1,
+                                      size            = system.n_up+1,
                                       occupation      = section(mode='ground'),
                                       coefficient     = section(spindataset=1),
                                       spos            = ''
-                                     )]
+                                      )]
             else:
                 sposet_list = [sposet(name            = 'spo_ud',
                                       spindataset     = 0,
-                                      size            = elns.up_electron.count+1,
+                                      size            = system.n_up+1,
                                       occupation      = section(mode='ground'),
                                       coefficient     = section(spindataset=0),
                                       spos            = ''
-                                     )]
+                                      )]
             #end if
 
             dset = determinantset(
@@ -6127,8 +6726,8 @@ def generate_determinantset_old(type           = 'bspline',
                         type = 'CSF',
                         nca  = '0',
                         ncb  = '0',
-                        nea = elns.up_electron.count,
-                        neb = elns.down_electron.count,
+                        nea = system.n_up,
+                        neb = system.n_down,
                         cutoff = '0.001',
                         csf = csf(
                             id          = 'CSF_0',
@@ -6150,10 +6749,10 @@ def generate_determinantset_old(type           = 'bspline',
                         ),
                     )
                 )
-            
-            if exc_type in (exc_types.energy,exc_types.lowest):
 
-                nup = elns.up_electron.count 
+            if exc_type in {exc_types.energy,exc_types.lowest}:
+
+                nup = system.n_up
                 if exc_type==exc_types.lowest:
                     exc_orbs = [nup,nup+1]
                 else:
@@ -6177,10 +6776,12 @@ def generate_determinantset_old(type           = 'bspline',
                 dset.multideterminant.detlist.csf.dets[1].alpha = '1'*nup+'0'*(exc_orbs[1]-nup)
                 dset.multideterminant.detlist.csf.dets[1].beta = '1'*(exc_orbs[0]-1)+'0'+'1'*(nup-exc_orbs[0])+'0'*(exc_orbs[1]-nup-1)+'1'
 
-            elif exc_type == exc_types.kpoint: 
-                QmcpackInput.class_error('{} excitation is not yet available for kpoint type'.format(exc1))
-            else: 
-                QmcpackInput.class_error('{} excitation is not yet available for band type'.format(exc1))
+            elif exc_type == exc_types.kpoint:
+                msg = f'{exc1} excitation is not yet available for kpoint type'
+                raise NotImplementedError(msg)
+            else:
+                msg = f'{exc1} excitation is not yet available for band type'
+                raise NotImplementedError(msg)
             #end if
 
             return dset
@@ -6198,9 +6799,10 @@ def generate_determinantset_old(type           = 'bspline',
             if len(excitation) == 4:
                 k_1, band_1, k_2, band_2 = excitation
             else:
-                QmcpackInput.class_error('excitation with vb-cb band format works only with special k-points')
+                msg = 'excitation with vb-cb band format works only with special k-points'
+                raise ValueError(msg)
             #end if
-            
+
             vb = int(sdet.size / np.abs(np.linalg.det(tilematrix))) -1  # Separate for each spin channel
             cb = vb+1
             # Convert band_1, band_2 to band indexes
@@ -6228,21 +6830,22 @@ def generate_determinantset_old(type           = 'bspline',
                         bands[bnum] = vb
                     #end if
                 else:
-                    QmcpackInput.class_error('{0} in excitation has the wrong formatting'.format(b))
+                    msg = f'{b} in excitation has the wrong formatting'
+                    raise FileFormatError(msg)
                 #end if
             #end for
             band_1, band_2 = bands
-            
+
             # Convert k_1 k_2 to wavevector indexes
-            structure = system.structure.get_smallest().copy()
+            structure = deepcopy(system.structure.get_smallest())
             structure.change_units('A')
             kpath       = get_kpath(structure=structure)
             kpath_label = np.array(kpath['explicit_kpoints_labels'])
             kpath_rel   = kpath['explicit_kpoints_rel']
-            
+
             k1_in = k_1
             k2_in = k_2
-            if k_1 in kpath_label and k_2 in kpath_label:   
+            if k_1 in kpath_label and k_2 in kpath_label:
                 k_1 = kpath_rel[np.where(kpath_label == k_1)][0]
                 k_2 = kpath_rel[np.where(kpath_label == k_2)][0]
 
@@ -6261,27 +6864,38 @@ def generate_determinantset_old(type           = 'bspline',
                     #end if
                 #end for
                 if not found_k1 or not found_k2:
-                    QmcpackInput.class_error('Requested special kpoint is not in the tiled cell\nRequested "{}", present={}\nRequested "{}", present={}\nAvailable kpoints: {}'.format(k1_in,found_k1,k2_in,found_k2,sorted(set(kpath_label))))
+                    msg = (
+                        'Requested special kpoint is not in the tiled cell\n'
+                        f'Requested "{k1_in}", present={found_k1}\n'
+                        f'Requested "{k2_in}", present={found_k2}\n'
+                        f'Available kpoints: {sorted(set(kpath_label))}'
+                        )
+                    raise ValueError(msg)
                 #end if
             else:
-                QmcpackInput.class_error('Excitation wavevectors are not found in the kpath\nlabels requested: {} {}\nlabels present: {}'.format(k_1,k_2,sorted(set(kpath_label))))
+                msg = (
+                    'Excitation wavevectors are not found in the kpath\n'
+                    f'labels requested: {k_1} {k_2}\n'
+                    f'labels present: {sorted(set(kpath_label))}'
+                    )
+                raise KeyError(msg)
             #end if
 
             #Write everything in band (ti,bi) format
             occ.contents = '\n'+str(k_1)+' '+str(band_1)+' '+str(k_2)+' '+str(band_2)+'\n'
             occ.format = 'band'
-            
+
         elif exc_type == exc_types.energy:
             # assume excitation of form '-216 +217'
             occ.format = 'energy'
         elif exc_type == exc_types.lowest: # Type 4
             occ.format = 'energy'
             if exc_spin == exc_spins.up:
-                nel = elns.up_electron.count 
+                nel = system.n_up
             else:
-                nel = elns.down_electron.count 
+                nel = system.n_down
             #end if
-            excitation = '-{} +{}'.format(nel,nel+1) 
+            excitation = f'-{nel} +{nel+1}'
             occ.contents = '\n'+excitation+'\n'
         else: #Type 1
             # assume excitation of form '6 36 6 37'
@@ -6305,36 +6919,102 @@ def generate_hamiltonian(name         = 'h0',
                          system       = None,
                          wf_elem      = None,
                          interactions = 'default',
+                         nrule        = None,
                          ):
     if system is None:
-        QmcpackInput.class_error('generate_hamiltonian argument system must not be None')
+        msg = 'generate_hamiltonian argument system must not be None'
+        raise ValueError(msg)
+    #end if
+    nrule_types = (dict,dotdict,obj)
+    nrule_is_int = isinstance(nrule,int) and not isinstance(nrule,bool)
+    nrule_is_map = nrule.__class__ in nrule_types if nrule is not None else False
+    if nrule is not None and not nrule_is_int and not nrule_is_map:
+        msg = (
+            'generate_hamiltonian argument nrule must be an integer, dict, dotdict, obj, or None\n'
+            f'  nrule provided: {nrule}\n'
+            f'  provided type: {nrule.__class__.__name__}'
+            )
+        raise TypeError(msg)
+    #end if
+    if nrule_is_int and nrule not in range(1,9):
+        msg = (
+            'generate_hamiltonian argument nrule must be one of the integers 1 through 8\n'
+            f'  nrule provided: {nrule}'
+            )
+        raise ValueError(msg)
+    #end if
+    if nrule_is_map:
+        ion_labels = set(system.ion_labels)
+        nrule_labels = set(nrule.keys())
+        missing_labels = ion_labels-nrule_labels
+        extra_labels = nrule_labels-ion_labels
+        if len(missing_labels)>0 or len(extra_labels)>0:
+            msg = (
+                'generate_hamiltonian nrule mapping keys must match the atomic species labels\n'
+                f'  expected labels: {sorted(ion_labels,key=str)}\n'
+                f'  provided labels: {sorted(nrule_labels,key=str)}\n'
+                f'  missing labels: {sorted(missing_labels,key=str)}\n'
+                f'  unrecognized labels: {sorted(extra_labels,key=str)}'
+                )
+            raise ValueError(msg)
+        #end if
+        for ion_label,ion_nrule in nrule.items():
+            if not isinstance(ion_nrule,int) or isinstance(ion_nrule,bool):
+                msg = (
+                    'generate_hamiltonian nrule mapping values must be integers\n'
+                    f'  atomic species label: {ion_label}\n'
+                    f'  nrule provided: {ion_nrule}\n'
+                    f'  provided type: {ion_nrule.__class__.__name__}'
+                    )
+                raise TypeError(msg)
+            #end if
+            if ion_nrule not in range(1,9):
+                msg = (
+                    'generate_hamiltonian nrule mapping values must be integers from 1 through 8\n'
+                    f'  atomic species label: {ion_label}\n'
+                    f'  nrule provided: {ion_nrule}'
+                    )
+                raise ValueError(msg)
+            #end if
+        #end for
     #end if
 
     ename   = electrons
     iname   = ions
     wfname  = wavefunction
     ppfiles = pseudos
+    ppfiles = PseudoSet.get_pseudos(
+        pseudos = ppfiles,
+        system = system,
+        code = 'qmcpack',
+        )
+    ppfiles = obj((pp_elem_label(f,guard=True)[1],f) for f in ppfiles)
     del electrons
     del ions
     del pseudos
     del wavefunction
 
-    particles = system.particles
-    if particles.count_electrons()==0:
-        QmcpackInput.class_error('cannot generate hamiltonian, no electrons present')
+    if system.n_elec==0:
+        msg = 'cannot generate hamiltonian, no electrons present'
+        raise ValueError(msg)
     #end if
 
     pairpots = []
     if interactions is not None:
         pairpots.append(coulomb(name='ElecElec',type='coulomb',source=ename,target=ename))
-        if particles.count_ions()>0:
+        if system.n_ions>0:
             pairpots.append(coulomb(name='IonIon',type='coulomb',source=iname,target=iname))
-            ions = particles.get_ions()
+            ions = system.ion_labels
             if not system.pseudized:
                 pairpots.append(coulomb(name='ElecIon',type='coulomb',source=iname,target=ename))
             else:
                 if ppfiles is None or len(ppfiles)==0:
-                    QmcpackInput.class_error('cannot generate hamiltonian\n  system is pseudized, but no pseudopotentials have been provided\n  please provide pseudopotential files via the pseudos keyword')
+                    msg = (
+                        'cannot generate hamiltonian\n'
+                        '  system is pseudized, but no pseudopotentials have been provided\n'
+                        '  please provide pseudopotential files via the pseudos keyword'
+                        )
+                    raise ValueError(msg)
                 #end if
                 if isinstance(ppfiles,list):
                     pplist = ppfiles
@@ -6354,16 +7034,27 @@ def generate_hamiltonian(name         = 'h0',
                 #end if
                 pseudos = collection()
                 for ion in ions:
-                    label = ion.name
-                    iselem, element = Elements.is_element(ion.name, return_element=True)
-                    if label in ppfiles:
-                        ppfile = ppfiles[label]
+                    iselem, element = Elements.is_element(ion, return_element=True)
+                    if ion in ppfiles:
+                        ppfile = ppfiles[ion]
                     elif element.symbol in ppfiles:
                         ppfile = ppfiles[element.symbol]
                     else:
-                        QmcpackInput.class_error('pseudos provided to generate_hamiltonian are incomplete\n  a pseudopotential for ion of type {0} is missing\n  pseudos provided:\n{1}'.format(ion.name,str(ppfiles)))
+                        msg = (
+                            'pseudos provided to generate_hamiltonian are incomplete\n'
+                            f'  a pseudopotential for ion of type {ion.name} is missing\n'
+                            '  pseudos provided:\n'
+                            f'{str(ppfiles)}'
+                            )
+                        raise ValueError(msg)
                     #end if
-                    pseudos.add(pseudo(elementtype=label,href=ppfile))
+                    pp_input = obj(elementtype=ion,href=ppfile)
+                    if nrule_is_map:
+                        pp_input.nrule = nrule[ion]
+                    elif nrule_is_int:
+                        pp_input.nrule = nrule
+                    #end if
+                    pseudos.add(pseudo(**pp_input))
                 #end for
                 pp = pseudopotential(name='PseudoPot',type='pseudo',source=iname,wavefunction=wfname,format=format,pseudos=pseudos)
                 if algorithm is not None:
@@ -6381,7 +7072,7 @@ def generate_hamiltonian(name         = 'h0',
     if estimators is not None:
         for estimator in estimators:
             if isinstance(estimator,QIxml):
-                estimator = estimator.copy()
+                estimator = deepcopy(estimator)
             #end if
             est=estimator
             if isinstance(estimator,str):
@@ -6403,16 +7094,23 @@ def generate_hamiltonian(name         = 'h0',
                 elif estname=='pressure':
                     est = pressure(type='Pressure')
                 else:
-                    QmcpackInput.class_error('estimator '+estimator+' has not yet been enabled in generate_basic_input')
+                    msg = 'estimator '+estimator+' has not yet been enabled in generate_basic_input'
+                    raise NotImplementedError(msg)
                 #end if
             elif not isinstance(estimator,QIxml):
-                QmcpackInput.class_error('generate_hamiltonian received an invalid estimator\n  an estimator must either be a name or a QIxml object\n  inputted estimator type: {0}\n  inputted estimator contents: {1}'.format(estimator.__class__.__name__,estimator))
+                msg = (
+                    'generate_hamiltonian received an invalid estimator\n'
+                    '  an estimator must either be a name or a QIxml object\n'
+                    f'  inputted estimator type: {estimator.__class__.__name__}\n'
+                    f'  inputted estimator contents: {estimator}'
+                    )
+                raise TypeError(msg)
             elif isinstance(estimator,energydensity):
-                est.set_optional(
+                set_optional(est,dict(
                     type = 'EnergyDensity',
                     dynamic = ename,
                     static  = iname,
-                    )
+                    ))
             elif isinstance(estimator,dm1b):
                 est = process_dm1b_estimator(estimator,wfname,wf_elem=wf_elem)
             #end if
@@ -6457,7 +7155,7 @@ def generate_estimators_batched(estimators,
     ests = []
     for estimator in estimators:
         if isinstance(estimator,QIxml):
-            estimator = estimator.copy()
+            estimator = deepcopy(estimator)
         #end if
         est = estimator
         if isinstance(estimator,str):
@@ -6465,10 +7163,17 @@ def generate_estimators_batched(estimators,
             #if estname=='chiesa':
             #    est = chiesa(name='KEcorr',type='chiesa',source=ename,psi=wfname)
             #else:
-            QmcpackInput.class_error('estimator '+estimator+' has not yet been enabled in generate_estimators')
+            msg = 'estimator '+estimator+' has not yet been enabled in generate_estimators'
+            raise NotImplementedError(msg)
             ##end if
         elif not isinstance(estimator,QIxml):
-                QmcpackInput.class_error('generate_estimators received an invalid estimator\n  an estimator must either be a name or a QIxml object\n  inputted estimator type: {0}\n  inputted estimator contents: {1}'.format(estimator.__class__.__name__,estimator))
+            msg = (
+                'generate_estimators received an invalid estimator\n'
+                '  an estimator must either be a name or a QIxml object\n'
+                f'  inputted estimator type: {estimator.__class__.__name__}\n'
+                f'  inputted estimator contents: {estimator}'
+                )
+            raise TypeError(msg)
         elif isinstance(estimator,momentum):
             estimator.type = 'MomentumDistribution'
         elif isinstance(estimator,onebodydensitymatrices):
@@ -6503,7 +7208,11 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
             size = spo.index_max
             del spo.index_max
         else:
-            QmcpackInput.class_error('cannot generate estimator dm1b\n  basis sposet provided does not have a "size" attribute')
+            msg = (
+                'cannot generate estimator dm1b\n'
+                '  basis sposet provided does not have a "size" attribute'
+                )
+            raise AttributeError(msg)
         #end if
         try:
             # get sposet from wavefunction
@@ -6534,15 +7243,24 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
         except Exception as e:
             msg = 'cannot generate estimator dm1b\n  '
             if wf is None:
-                QmcpackInput.class_error(msg+'wavefunction {0} not found'.format(wfname))
+                msg += f'wavefunction {wfname} not found'
+                raise ValueError(msg)
             elif dets is None or det is None:
-                QmcpackInput.class_error(msg+'determinant not found')
+                msg += 'determinant not found'
+                raise ValueError(msg)
             elif builders is None:
-                QmcpackInput.class_error(msg+'sposet_builders not found')
+                msg += 'sposet_builders not found'
+                raise ValueError(msg)
             elif rspo is None:
-                QmcpackInput.class_error(msg+'sposet {0} not found'.format(rsponame))
+                msg += f'sposet {rsponame} not found'
+                raise ValueError(msg)
             else:
-                QmcpackInput.class_error(msg+'cause of failure could not be determined\n  see the following error message:\n{0}'.format(e))
+                msg = (
+                    msg+'cause of failure could not be determined\n'
+                    '  see the following error message:\n'
+                    f'{e}'
+                    )
+                raise RuntimeError(msg)
             #end if
         #end if
     #end if
@@ -6551,7 +7269,11 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
         spo = dm.basis
         del dm.basis
         if 'type' not in spo:
-            QmcpackInput.class_error('cannot generate estimator dm1b\n  basis sposet provided does not have a "type" attribute')
+            msg = (
+                'cannot generate estimator dm1b\n'
+                '  basis sposet provided does not have a "type" attribute'
+                )
+            raise AttributeError(msg)
         #end if
         if 'name' not in spo:
             spo.name = 'spo_dm'
@@ -6573,11 +7295,11 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
 
 
 
-def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
+def generate_jastrows(jastrows,system=None,*,return_list=False,check_ions=False):
     jin = []
     have_ions = True
     if check_ions and system is not None:
-        have_ions = system.particles.count_ions()>0
+        have_ions = system.n_ions>0
     #end if
     if isinstance(jastrows,str):
         jorders = set(jastrows.replace('generate',''))
@@ -6591,27 +7313,38 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
             jterm = generate_jastrow('J3','polynomial',3,3,4.0,system=system)
         #end if
         if 'k' in jorders:
-            kcut = max(system.rpa_kf())
+            kcut = max(system.kf_rpa())
             nksh = system.structure.count_kshells(kcut)
             jterm = generate_kspace_jastrow(kc1=0, kc2=kcut, nk1=0, nk2=nksh)
         #end if
         jin.append(jterm)
         if len(jin)==0:
-            QmcpackInput.class_error('jastrow generation requested but no orders specified (1,2,and/or 3)')
+            msg = 'jastrow generation requested but no orders specified (1,2,and/or 3)'
+            raise ValueError(msg)
         #end if
     else:
-        jset = set(['J1','J2','J3'])
+        jset = {'J1','J2','J3'}
         for jastrow in jastrows:
             if isinstance(jastrow,QIxml):
                 jin.append(jastrow)
             elif isinstance(jastrow,dict) or isinstance(jastrow,obj):
                 jdict = dict(**jastrow)
                 if 'type' not in jastrow:
-                    QmcpackInput.class_error("could not determine jastrow type from input\n  field 'type' must be 'J1', 'J2', or 'J3'\n  object you provided: "+str(jastrow))
+                    msg = (
+                        "could not determine jastrow type from input\n"
+                        "  field 'type' must be 'J1', 'J2', or 'J3'\n"
+                        "  object you provided: "+str(jastrow)
+                        )
+                    raise ValueError(msg)
                 #end if
                 jtype = jdict['type']
                 if jtype not in jset:
-                    QmcpackInput.class_error("invalid jastrow type provided\n  field 'type' must be 'J1', 'J2', or 'J3'\n  object you provided: "+str(jdict))
+                    msg = (
+                        "invalid jastrow type provided\n"
+                        "  field 'type' must be 'J1', 'J2', or 'J3'\n"
+                        "  object you provided: "+str(jdict)
+                        )
+                    raise ValueError(msg)
                 #end if
                 del jdict['type']
                 if 'system' in jdict:
@@ -6629,7 +7362,11 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
             elif jastrow[0] in jset:
                 jin.append(generate_jastrow(jastrow,system=system))
             else:
-                QmcpackInput.class_error('starting jastrow unrecognized:\n  '+str(jastrow))
+                msg = (
+                    'starting jastrow unrecognized:\n'
+                    '  '+str(jastrow)
+                    )
+                raise ValueError(msg)
             #end if
         #end for
     #end if
@@ -6645,6 +7382,7 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
 
 
 def generate_jastrows_alt(
+        *,
         J1           = False,
         J2           = False,
         J3           = False,
@@ -6674,16 +7412,17 @@ def generate_jastrows_alt(
         system       = None,
         ):
     if system is None:
-        QmcpackInput.class_error('input variable "system" is required to generate jastrows','generate_jastrows_alt')
+        msg = 'input variable "system" is required to generate jastrows'
+        raise ValueError(msg)
     elif system.structure.units!='B':
-        system = system.copy()
+        system = deepcopy(system)
         system.structure.change_units('B')
     #end if
 
     openbc = system.structure.is_open()
 
-    natoms = system.particles.count_ions()
-    nelec  = system.particles.count_electrons()
+    natoms = system.n_ions
+    nelec  = system.n_elec
 
     jastrows = []
     J2 |= J3
@@ -6695,7 +7434,8 @@ def generate_jastrows_alt(
     rwigner = None
     if J1:
         if natoms<1:
-            QmcpackInput.class_error('One-body Jastrow (J1) requested, but no atoms are present','generate_jastrows_alt')
+            msg = 'One-body Jastrow (J1) requested, but no atoms are present'
+            raise ValueError(msg)
         #end if
         if J1_rcut is None:
             if openbc:
@@ -6704,7 +7444,7 @@ def generate_jastrows_alt(
                 if rwigner is None:
                     rwigner = system.structure.rwigner(1)
                 #end if
-                J1_rcut = rwigner 
+                J1_rcut = rwigner
             #end if
         #end if
         if J1_size is None:
@@ -6718,7 +7458,12 @@ def generate_jastrows_alt(
     #end if
     if J2:
         if nelec<2:
-            QmcpackInput.class_error('Two-body Jastrow (J2) requested, but not enough electrons are present.\nElectrons required: 2 or more\nElectrons present: {}'.format(nelec),'generate_jastrows_alt')
+            msg = (
+                'Two-body Jastrow (J2) requested, but not enough electrons are present.\n'
+                'Electrons required: 2 or more\n'
+                f'Electrons present: {nelec}'
+                )
+            raise ValueError(msg)
         #end if
         if J2_rcut is None:
             if openbc:
@@ -6741,7 +7486,14 @@ def generate_jastrows_alt(
     #end if
     if J3:
         if natoms<1 or nelec<2:
-            QmcpackInput.class_error('Three-body Jastrow (J3) requested, but not enough particles are present.\nAtoms required: 1 or more\nElectrons required: 2 or more\nAtoms present: {}\nElectrons present: {}'.format(natoms,nelec),'generate_jastrows_alt')
+            msg = (
+                'Three-body Jastrow (J3) requested, but not enough particles are present.\n'
+                'Atoms required: 1 or more\n'
+                'Electrons required: 2 or more\n'
+                f'Atoms present: {natoms}\n'
+                f'Electrons present: {nelec}'
+                )
+            raise ValueError(msg)
         #end if
         if not openbc:
             if rwigner is None:
@@ -6777,8 +7529,8 @@ def generate_jastrows_alt(
 
 
 def generate_jastrow(descriptor,*args,**kwargs):
-    keywords = set(['function','size','rcut','elements','coeff','cusp','ename',
-                    'iname','spins','density','Buu','Bud','opt','system','isize','esize','init'])
+    keywords = {'function','size','rcut','elements','coeff','cusp','ename',
+                'iname','spins','density','Buu','Bud','opt','system','isize','esize','init'}
     if not 'system' in kwargs:
         kwargs['system'] = None
     #end if
@@ -6807,7 +7559,11 @@ def generate_jastrow(descriptor,*args,**kwargs):
             if d in keywords:
                 kwargs[d] = descriptor[i+1]
             else:
-                QmcpackInput.class_error('keyword {0} is unrecognized\n  valid options are: {1}'.format(d,str(keywords)),'generate_jastrow')
+                msg = (
+                    f'keyword {d} is unrecognized\n'
+                    f'  valid options are: {str(keywords)}'
+                    )
+                raise ValueError(msg)
             #end if
         #end if
     #end for
@@ -6820,7 +7576,8 @@ def generate_jastrow(descriptor,*args,**kwargs):
     elif jtype=='J3':
         jastrow = generate_jastrow3(*args,**kwargs)
     else:
-        QmcpackInput.class_error('jastrow type unrecognized: '+jtype)
+        msg = 'jastrow type unrecognized: '+jtype
+        raise ValueError(msg)
     #end if
     return jastrow
 #end def generate_jastrow
@@ -6835,7 +7592,8 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
     isperiodic = False
     rwigner = 1e99
     if noelements and nosystem and noelemargs:
-        QmcpackInput.class_error('must specify elements or system','generate_jastrow1')
+        msg = 'must specify elements or system'
+        raise ValueError(msg)
     #end if
     if noelements:
         elements = []
@@ -6853,12 +7611,13 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
     #end if
     # remove duplicate elements
     eset = set()
-    elements = [ e for e in elements if e not in eset and not eset.add(e) ]     
+    elements = [ e for e in elements if e not in eset and not eset.add(e) ]
     corrs = []
     for i in range(len(elements)):
         element = elements[i]
         if cusp == 'Z':
-            QmcpackInput.class_error('need to implement Z cusp','generate_jastrow1')
+            msg = 'need to implement Z cusp'
+            raise NotImplementedError(msg)
         else:
             lcusp  = cusp
         #end if
@@ -6894,17 +7653,23 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
                 id       = ename+element,
                 type     = 'Array',
                 coeff    = lcoeff,
-                )         
-            )    
+                )
+            )
         if opt is not None:
             corr.coefficients.optimize = bool(opt)
         if lrcut!=None:
             if isperiodic and lrcut>rwigner:
-                QmcpackInput.class_error('rcut must not be greater than the simulation cell wigner radius\nyou provided: {0}\nwigner radius: {1}'.format(lrcut,rwigner),'generate_jastrow1')
-                
+                msg = (
+                    'rcut must not be greater than the simulation cell wigner radius\n'
+                    f'you provided: {lrcut}\n'
+                    f'wigner radius: {rwigner}'
+                    )
+                raise ValueError(msg)
+
             corr.rcut = lrcut
         elif isopen:
-            QmcpackInput.class_error('rcut must be provided for an open system','generate_jastrow1')
+            msg = 'rcut must be provided for an open system'
+            raise ValueError(msg)
         elif isperiodic:
             corr.rcut = rwigner
         #end if
@@ -6925,7 +7690,8 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
 
 def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),density=None,system=None,init='rpa',opt=None):
     if coeff is None and system is None and (init=='rpa' and density is None or rcut is None):
-        QmcpackInput.class_error('rcut and density or system must be specified','generate_bspline_jastrow2')
+        msg = 'rcut and density or system must be specified'
+        raise ValueError(msg)
     #end if
     isopen      = False
     isperiodic  = False
@@ -6939,9 +7705,10 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
             rwigner = system.structure.rwigner()
         #end if
         volume = system.structure.volume()
-        if isopen: 
+        if isopen:
             if rcut is None:
-                QmcpackInput.class_error('rcut must be provided for an open system','generate_bspline_jastrow2')
+                msg = 'rcut must be provided for an open system'
+                raise ValueError(msg)
             #end if
             if init=='rpa':
                 init = 'zero'
@@ -6950,7 +7717,7 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
             if rcut is None and isperiodic:
                 rcut = rwigner
             #end if
-            nelectrons = system.particles.count_electrons()
+            nelectrons = system.n_elec
             density = nelectrons/volume
         #end if
     elif init=='rpa':
@@ -6959,7 +7726,8 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
     if coeff is None:
         if init=='rpa':
             if not allperiodic:
-                QmcpackInput.class_error('rpa initialization can only be used for fully periodic systems','generate_bspline_jastrow2')
+                msg = 'rpa initialization can only be used for fully periodic systems'
+                raise ValueError(msg)
             #end if
             wp = np.sqrt(4*np.pi*density)
             dr = rcut/size
@@ -6970,10 +7738,15 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
         elif init=='zero' or init==0:
             coeff = [size*[0],size*[0]]
         else:
-            QmcpackInput.class_error(str(init)+' is not a valid value for parameter init\n  valid options are: rpa, zero','generate_bspline_jastrow2')
+            msg = (
+                str(init)+' is not a valid value for parameter init\n'
+                '  valid options are: rpa, zero'
+                )
+            raise ValueError(msg)
         #end if
     elif len(coeff)!=2:
-        QmcpackInput.class_error('must provide 2 sets of coefficients (uu,ud)','generate_bspline_jastrow2')
+        msg = 'must provide 2 sets of coefficients (uu,ud)'
+        raise ValueError(msg)
     #end if
     size = len(coeff[0])
     uname,dname = spins
@@ -6990,7 +7763,12 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
             corr.coefficients.optimize = bool(opt)
     if rcut!=None:
         if isperiodic and rcut>rwigner:
-            QmcpackInput.class_error('rcut must not be greater than the simulation cell wigner radius\nyou provided: {0}\nwigner radius: {1}'.format(rcut,rwigner),'generate_jastrow2')
+            msg = (
+                'rcut must not be greater than the simulation cell wigner radius\n'
+                f'you provided: {rcut}\n'
+                f'wigner radius: {rwigner}'
+                )
+            raise ValueError(msg)
         #end if
         for corr in corrs:
             corr.rcut=rcut
@@ -7037,23 +7815,41 @@ def generate_jastrow2(function='bspline',*args,**kwargs):
     #end if
     spins = kwargs['spins']
     if not isinstance(spins,tuple) and not isinstance(spins,list):
-        QmcpackInput.class_error('spins must be a list or tuple of u/d spin names\n  you provided: '+str(spins))
+        msg = (
+            'spins must be a list or tuple of u/d spin names\n'
+            '  you provided: '+str(spins)
+            )
+        raise TypeError(msg)
     #end if
     if len(spins)!=2:
-        QmcpackInput.class_error('name for up and down spins must be specified\n  you provided: '+str(spins))
+        msg = (
+            'name for up and down spins must be specified\n'
+            '  you provided: '+str(spins)
+            )
+        raise ValueError(msg)
     #end if
     if not isinstance(function,str):
-        QmcpackInput.class_error('function must be a string\n  you provided: '+str(function),'generate_jastrow2')
+        msg = (
+            'function must be a string\n'
+            '  you provided: '+str(function)
+            )
+        raise TypeError(msg)
     #end if
     if function=='bspline':
         j2 = generate_bspline_jastrow2(*args,**kwargs)
     elif function=='pade':
         j2 = generate_pade_jastrow2(*args,**kwargs)
     else:
-        QmcpackInput.class_error('function is invalid\n  you provided: {0}\n  valid options are: bspline or pade'.format(function),'generate_jastrow2')
+        msg = (
+            'function is invalid\n'
+            f'  you provided: {function}\n'
+            '  valid options are: bspline or pade'
+            )
+        raise ValueError(msg)
     #end if
     if 'system' in kwargs and kwargs['system'] is not None:
-        nup,ndn = kwargs['system'].particles.electron_counts()
+        system = kwargs['system']
+        nup,ndn = system.n_up, system.n_down
         if nup<2:
             del j2.correlations.uu
         #end if
@@ -7071,23 +7867,35 @@ def generate_jastrow2(function='bspline',*args,**kwargs):
 
 def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,iname='ion0',spins=('u','d'),elements=None,system=None,opt=None):
     if elements is None and system is None:
-        QmcpackInput.class_error('must specify elements or system','generate_jastrow3')
+        msg = 'must specify elements or system'
+        raise ValueError(msg)
     elif elements is None:
         elements = list(set(system.structure.elem))
     #end if
     if coeff is not None:
-        QmcpackInput.class_error('handling coeff is not yet implemented for generate jastrow3')
+        msg = 'handling coeff is not yet implemented for generate jastrow3'
+        raise NotImplementedError(msg)
     #end if
     if len(spins)!=2:
-        QmcpackInput.class_error('must specify name for up and down spins\n  provided: '+str(spins),'generate_jastrow3')
+        msg = (
+            'must specify name for up and down spins\n'
+            '  provided: '+str(spins)
+            )
+        raise ValueError(msg)
     #end if
     if rcut is None:
-        QmcpackInput.class_error('must specify rcut','generate_jastrow3')
+        msg = 'must specify rcut'
+        raise ValueError(msg)
     #end if
     if system is not None and system.structure.is_periodic():
         rwigner = system.structure.rwigner()
         if rcut>rwigner:
-            QmcpackInput.class_error('rcut must not be greater than the simulation cell wigner radius\nyou provided: {0}\nwigner radius: {1}'.format(rcut,rwigner),'generate_jastrow3')
+            msg = (
+                'rcut must not be greater than the simulation cell wigner radius\n'
+                f'you provided: {rcut}\n'
+                f'wigner radius: {rwigner}'
+                )
+            raise ValueError(msg)
         #end if
     #end if
     uname,dname = spins
@@ -7120,13 +7928,14 @@ def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,i
 
 
 def generate_kspace_jastrow(
-        kc1:    float | None = None, 
-        kc2:    float | None = None, 
-        nk1:    int          = 0, 
+        kc1:    float | None = None,
+        kc2:    float | None = None,
+        nk1:    int          = 0,
         nk2:    int          = 0,
-        symm1:  str          = 'isotropic', 
-        symm2:  str          = 'isotropic', 
-        coeff1: list         = None, 
+        *,
+        symm1:  str          = 'isotropic',
+        symm2:  str          = 'isotropic',
+        coeff1: list         = None,
         coeff2: list         = None,
         opt1:   bool | None  = None,
         opt2:   bool | None  = None,
@@ -7189,18 +7998,21 @@ def generate_kspace_jastrow(
     J1k = kc1 is not None
     J2k = kc2 is not None
     if not J1k and not J2k:
-        QmcpackInput.class_error('must have at least one term', 'generate_kspace_jastrow')
-    #end if      
+        msg = 'must have at least one term'
+        raise ValueError(msg)
+    #end if
     if coeff1 is None:
         coeff1 = [0]*nk1
     if coeff2 is None:
         coeff2 = [0]*nk2
 
     if len(coeff1) != nk1:
-        QmcpackInput.class_error('coeff1 mismatch', 'generate_kspace_jastrow')
+        msg = 'coeff1 mismatch'
+        raise ValueError(msg)
     #end if
     if len(coeff2) != nk2:
-        QmcpackInput.class_error('coeff2 mismatch', 'generate_kspace_jastrow')
+        msg = 'coeff2 mismatch'
+        raise ValueError(msg)
     #end if
 
     corrs = []
@@ -7277,7 +8089,7 @@ def generate_energydensity(
     scale     = None,
     ion_grids = None,
     system    = None,
-):
+    ):
     if dynamic is None:
         dynamic = 'e'
     #end if
@@ -7287,7 +8099,8 @@ def generate_energydensity(
     refp = None
     sg = []
     if coord is None:
-        QmcpackInput.class_error('coord must be provided','generate_energydensity')
+        msg = 'coord must be provided'
+        raise ValueError(msg)
     elif coord=='voronoi':
         if name is None:
             name = 'EDvoronoi'
@@ -7298,7 +8111,8 @@ def generate_energydensity(
             name = 'EDcell'
         #end if
         if grid is None:
-            QmcpackInput.class_error('grid must be provided for cartesian coordinates','generate_energydensity')
+            msg = 'grid must be provided for cartesian coordinates'
+            raise ValueError(msg)
         #end if
         axes = [
             axis(p1='a1',scale='.5',label='x'),
@@ -7307,7 +8121,7 @@ def generate_energydensity(
             ]
         n=0
         for ax in axes:
-           ax.grid = '-1 ({0}) 1'.format(grid[n])
+           ax.grid = f'-1 ({grid[n]}) 1'
            n+=1
         #end for
         sg.append(spacegrid(coord=coord,origin=origin(p1='zero'),axes=axes))
@@ -7316,7 +8130,8 @@ def generate_energydensity(
             name = 'EDatom'
         #end if
         if ion_grids is None:
-            QmcpackInput.class_error('ion_grids must be provided for spherical coordinates','generate_energydensity')
+            msg = 'ion_grids must be provided for spherical coordinates'
+            raise ValueError(msg)
         #end if
         refp = reference_points(coord='cartesian',points='\nr1 1 0 0\nr2 0 1 0\nr3 0 0 1\n')
         if system is None:
@@ -7330,7 +8145,7 @@ def generate_energydensity(
                     ]
                 n=0
                 for ax in axes:
-                    ax.grid = '0 ({0}) 1'.format(grid[n])
+                    ax.grid = f'0 ({grid[n]}) 1'
                     n+=1
                 #end for
                 sg.append(spacegrid(coord=coord,origin=origin(p1=static+str(i)),axes=axes))
@@ -7354,7 +8169,7 @@ def generate_energydensity(
                         ]
                     n=0
                     for ax in axes:
-                        ax.grid = '0 ({0}) 1'.format(grid[n])
+                        ax.grid = f'0 ({grid[n]}) 1'
                         n+=1
                     #end for
                     sg.append(spacegrid(coord=coord,origin=origin(p1=static+str(i)),axes=axes))
@@ -7365,11 +8180,21 @@ def generate_energydensity(
                 i+=1
             #end for
             if len(missing)>0:
-                QmcpackInput.class_error('ion species not found for spherical grid\nspecies not found: {0}\nspecies present: {1}'.format(sorted(missing),sorted(set(list(system.structure.elem)))),'generate_energydensity')
+                msg = (
+                    'ion species not found for spherical grid\n'
+                    f'species not found: {sorted(missing)}\n'
+                    f'species present: {sorted(set(system.structure.elem))}'
+                    )
+                raise ValueError(msg)
             #end if
         #end if
     else:
-        QmcpackInput.class_error('unsupported coord type\ncoord type provided: {0}\nsupported coord types: voronoi, cartesian, spherical'.format(coord),'generate_energydensity')
+        msg = (
+            'unsupported coord type\n'
+            f'coord type provided: {coord}\n'
+            'supported coord types: voronoi, cartesian, spherical'
+            )
+        raise ValueError(msg)
     #end if
     ed = energydensity(
         type       = 'EnergyDensity',
@@ -7387,6 +8212,7 @@ def generate_energydensity(
 
 opt_map = dict(linear=linear,cslinear=cslinear,linear_batch=linear_batch)
 def generate_opt(method,
+                 *,
                  repeat           = 1,
                  energy           = None,
                  rw_variance      = None,
@@ -7404,18 +8230,26 @@ def generate_opt(method,
                  nonlocalpp       = False,
                  sample_factor    = 1.0):
     if method not in opt_map:
-        QmcpackInput.class_error('section cannot be generated for optimization method '+method)
+        msg = 'section cannot be generated for optimization method '+method
+        raise ValueError(msg)
     #end if
     if energy is None and rw_variance is None and urw_variance is None:
-        QmcpackInput.class_error('at least one cost parameter must be specified\n options are: energy, rw_variance, urw_variance')
+        msg = (
+            'at least one cost parameter must be specified\n'
+            ' options are: energy, rw_variance, urw_variance'
+            )
+        raise ValueError(msg)
     #end if
     if params is None and jastrows is None:
-        QmcpackInput.class_error('must provide either number of opt parameters (params) or a list of jastrow objects (jastrows)')
+        msg = 'must provide either number of opt parameters (params) or a list of jastrow objects (jastrows)'
+        raise ValueError(msg)
     #end if
     if processes is None:
-        QmcpackInput.class_error('must specify total number of processes')
+        msg = 'must specify total number of processes'
+        raise ValueError(msg)
     elif walkers_per_proc is None and threads is None:
-        QmcpackInput.class_error('must specify walkers_per_proc or threads')
+        msg = 'must specify walkers_per_proc or threads'
+        raise ValueError(msg)
     #end if
 
     if params is None:
@@ -7443,8 +8277,8 @@ def generate_opt(method,
     blocks = min(blocks,samples_per_proc*decorr)
 
     opt = opt_map[method]()
- 
-    opt.set(
+
+    opt.update(
         walkers    = walkers,
         blocks     = blocks,
         #steps      = steps,
@@ -7463,7 +8297,7 @@ def generate_opt(method,
     if urw_variance is not None:
         opt.unreweightedvariance = urw_variance
     #end if
-    
+
     opt.incorporate_defaults(elements=True)
 
     if repeat>1:
@@ -7486,6 +8320,10 @@ def generate_opts(opt_reqs,**kwargs):
 
 
 # legacy driver defaults
+def set_optional(d,d2):
+    for k,v in d2.items():
+        if k not in d:
+            d[k] = v
 
 opt_legacy_defaults = obj(
     method          = 'linear',
@@ -7503,12 +8341,12 @@ shared_opt_legacy_defaults = obj(
     samples              = 204800,
     nonlocalpp           = True,
     use_nonlocalpp_deriv = True,
-    warmupsteps          = 300,                
-    blocks               = 100,                
-    steps                = 1,                  
-    substeps             = 10,                 
+    warmupsteps          = 300,
+    blocks               = 100,
+    steps                = 1,
+    substeps             = 10,
     timestep             = 0.3,
-    usedrift             = False,  
+    usedrift             = False,
     max_seconds          = None,
     spin_mass            = None,
     )
@@ -7573,12 +8411,15 @@ vmc_test_legacy_defaults = obj(
     warmupsteps = 10,
     blocks      = 20,
     steps       =  4,
-    ).set_optional(**vmc_legacy_defaults)
+    )
+set_optional(vmc_test_legacy_defaults,vmc_legacy_defaults)
+
 vmc_noJ_legacy_defaults = obj(
     warmupsteps = 200,
     blocks      = 800,
     steps       = 100,
-    ).set_optional(**vmc_legacy_defaults)
+    )
+set_optional(vmc_noJ_legacy_defaults,vmc_legacy_defaults)
 
 dmc_legacy_defaults = obj(
     warmupsteps             = 20,
@@ -7587,7 +8428,7 @@ dmc_legacy_defaults = obj(
     timestep                = 0.01,
     checkpoint              = -1,
     vmc_samples             = 2048,
-    vmc_samplesperthread    = None, 
+    vmc_samplesperthread    = None,
     vmc_walkers             = None,
     vmc_warmupsteps         = 30,
     vmc_blocks              = 40,
@@ -7604,7 +8445,7 @@ dmc_legacy_defaults = obj(
     eq_timestep             = 0.02,
     eq_checkpoint           = -1,
     ntimesteps              = 1,
-    timestep_factor         = 0.5,    
+    timestep_factor         = 0.5,
     nonlocalmoves           = None,
     branching_cutoff_scheme = None,
     maxage                  = None,
@@ -7623,12 +8464,15 @@ dmc_test_legacy_defaults = obj(
     warmupsteps     =  2,
     blocks          = 10,
     steps           =  2,
-    ).set_optional(**dmc_legacy_defaults)
+    )
+set_optional(dmc_test_legacy_defaults,dmc_legacy_defaults)
+
 dmc_noJ_legacy_defaults = obj(
     warmupsteps     =  40,
     blocks          = 400,
     steps           =  20,
-    ).set_optional(**dmc_legacy_defaults)
+    )
+set_optional(dmc_noJ_legacy_defaults,dmc_legacy_defaults)
 
 
 # batched driver defaults
@@ -7652,10 +8496,10 @@ shared_opt_batched_defaults = obj(
     samples              = None, # 204800 if steps is None
     #nonlocalpp           = True,
     #use_nonlocalpp_deriv = True,
-    warmupsteps          = 300,                
-    blocks               = 100,                
-    steps                = None,                 
-    substeps             = 10,                 
+    warmupsteps          = 300,
+    blocks               = 100,
+    steps                = None,
+    substeps             = 10,
     timestep             = 0.3,
     usedrift             = False,
     spin_mass            = None,
@@ -7691,7 +8535,7 @@ linear_sr_cg_batched_defaults = obj(
     sr_tau            = None,  # projector: 1-tau*H  (0.01/0.1 if line_search=no/yes)
     sr_tolerance      = 0.001, # conjugate gradient convergence tolerance
     sr_regularization = 0.01,  # ~diagonal shift to overlap matrix
-    line_search       = False, # corr samp line search on cost along sr param direction 
+    line_search       = False, # corr samp line search on cost along sr param direction
     **shared_opt_batched_defaults
     )
 
@@ -7734,12 +8578,15 @@ vmc_test_batched_defaults = obj(
     warmupsteps = 10,
     blocks      = 20,
     steps       =  4,
-    ).set_optional(**vmc_batched_defaults)
+    )
+set_optional(vmc_test_batched_defaults,vmc_batched_defaults)
+
 vmc_noJ_batched_defaults = obj(
     warmupsteps = 200,
     blocks      = 800,
     steps       = 100,
-    ).set_optional(**vmc_batched_defaults)
+    )
+set_optional(vmc_noJ_batched_defaults,vmc_batched_defaults)
 
 dmc_batched_defaults = obj(
     total_walkers           = None,
@@ -7765,7 +8612,7 @@ dmc_batched_defaults = obj(
     eq_timestep             = 0.02,
     eq_checkpoint           = None,
     ntimesteps              = 1,
-    timestep_factor         = 0.5,    
+    timestep_factor         = 0.5,
     nonlocalmoves           = None,
     branching_cutoff_scheme = None,
     crowd_serialize_walkers = None,
@@ -7786,12 +8633,15 @@ dmc_test_batched_defaults = obj(
     warmupsteps     =  2,
     blocks          = 10,
     steps           =  2,
-    ).set_optional(**dmc_batched_defaults)
+    )
+set_optional(dmc_test_batched_defaults,dmc_batched_defaults)
+
 dmc_noJ_batched_defaults = obj(
     warmupsteps     =  40,
     blocks          = 400,
     steps           =  20,
-    ).set_optional(**dmc_batched_defaults)
+    )
+set_optional(dmc_noJ_batched_defaults,dmc_batched_defaults)
 
 
 
@@ -7850,7 +8700,11 @@ def generate_opt_calculations(driver,**kwargs):
     elif driver=='batched':
         calcs = generate_batched_opt_calculations(**kwargs)
     else:
-        error('Cannot generate calculations for unrecognized driver.\nUnrecognized driver: {}'.format(driver))
+        msg = (
+            'Cannot generate calculations for unrecognized driver.\n'
+            f'Unrecognized driver: {driver}'
+            )
+        raise ValueError(msg)
     #end if
     return calcs
 #end def generate_opt_calculations
@@ -7862,7 +8716,11 @@ def generate_vmc_calculations(driver,**kwargs):
     elif driver=='batched':
         calcs = generate_batched_vmc_calculations(**kwargs)
     else:
-        error('Cannot generate calculations for unrecognized driver.\nUnrecognized driver: {}'.format(driver))
+        msg = (
+            'Cannot generate calculations for unrecognized driver.\n'
+            f'Unrecognized driver: {driver}'
+            )
+        raise ValueError(msg)
     #end if
     return calcs
 #end def generate_vmc_calculations
@@ -7874,7 +8732,11 @@ def generate_dmc_calculations(driver,**kwargs):
     elif driver=='batched':
         calcs = generate_batched_dmc_calculations(**kwargs)
     else:
-        error('Cannot generate calculations for unrecognized driver.\nUnrecognized driver: {}'.format(driver))
+        msg = (
+            'Cannot generate calculations for unrecognized driver.\n'
+            f'Unrecognized driver: {driver}'
+            )
+        raise ValueError(msg)
     #end if
     return calcs
 #end def generate_dmc_calculations
@@ -7890,13 +8752,17 @@ def generate_legacy_opt_calculations(
     init_cycles,
     init_samples,
     init_minwalkers,
-    loc        = 'generate_opt_calculations',
     **opt_inputs
     ):
 
     methods = obj(linear=linear,cslinear=cslinear)
     if method not in methods:
-        error('invalid optimization method requested\ninvalid method: {0}\nvalid options are: {1}'.format(method,sorted(methods.keys())),loc)
+        msg = (
+            'invalid optimization method requested\n'
+            f'invalid method: {method}\n'
+            f'valid options are: {sorted(methods.keys())}'
+            )
+        raise ValueError(msg)
     #end if
     opt = methods[method]
 
@@ -7904,7 +8770,12 @@ def generate_legacy_opt_calculations(
     invalid = set(opt_inputs.keys())-allowed_opt_method_legacy_inputs
     oneshift = False
     if len(invalid)>0:
-        error('invalid optimization inputs provided\ninvalid inputs: {}\nvalid options are: {}'.format(sorted(invalid),sorted(allowed_opt_method_legacy_inputs)))
+        msg = (
+            'invalid optimization inputs provided\n'
+            f'invalid inputs: {sorted(invalid)}\n'
+            f'valid options are: {sorted(allowed_opt_method_legacy_inputs)}'
+            )
+        raise ValueError(msg)
     #end if
     for k in list(opt_inputs.keys()):
         if opt_inputs[k] is None:
@@ -7925,7 +8796,12 @@ def generate_legacy_opt_calculations(
             cost = (cost[0],0.0,cost[1])
         #end if
     else:
-        error('invalid optimization cost function encountered\ninvalid cost fuction: {0}\nvalid options are: variance, energy, (0.95,0.05), etc'.format(cost),loc)
+        msg = (
+            'invalid optimization cost function encountered\n'
+            f'invalid cost fuction: {cost}\n'
+            'valid options are: variance, energy, (0.95,0.05), etc'
+            )
+        raise ValueError(msg)
     #end if
     opt_calcs = []
     if var_cycles>0:
@@ -7977,7 +8853,7 @@ def generate_legacy_vmc_calculations(
         checkpoint ,
         usedrift   ,
         max_seconds,
-        spin_mass,    
+        spin_mass,
         loc        = 'generate_vmc_calculations',
         ):
 
@@ -8015,7 +8891,7 @@ def generate_legacy_dmc_calculations(
         timestep               ,
         checkpoint             ,
         vmc_samples            ,
-        vmc_samplesperthread   , 
+        vmc_samplesperthread   ,
         vmc_walkers            ,
         vmc_warmupsteps        ,
         vmc_blocks             ,
@@ -8032,7 +8908,7 @@ def generate_legacy_dmc_calculations(
         eq_timestep            ,
         eq_checkpoint          ,
         ntimesteps             ,
-        timestep_factor        ,    
+        timestep_factor        ,
         nonlocalmoves          ,
         branching_cutoff_scheme,
         maxage                 ,
@@ -8040,11 +8916,14 @@ def generate_legacy_dmc_calculations(
         sigmabound             ,
         max_seconds            ,
         spin_mass              ,
-        loc                 = 'generate_dmc_calculations',
         ):
 
     if vmc_samples is None and vmc_samplesperthread is None and vmc_walkers is None:
-        error('vmc samples (dmc walkers) not specified\nplease provide one of the following keywords: vmc_samples, vmc_samplesperthread, vmc_walkers',loc)
+        msg = (
+            'vmc samples (dmc walkers) not specified\n'
+            'please provide one of the following keywords: vmc_samples, vmc_samplesperthread, vmc_walkers'
+            )
+        raise ValueError(msg)
     #end if
     if vmc_walkers is None:
         vmc_walkers = 1
@@ -8087,7 +8966,7 @@ def generate_legacy_dmc_calculations(
             )
     #end if
     tfac = 1.0
-    for n in range(ntimesteps):
+    for n in range(ntimesteps):  # noqa: B007
         sfac = 1.0/tfac
         dmc_calcs.append(
             dmc(
@@ -8119,7 +8998,7 @@ def generate_legacy_dmc_calculations(
             #end for
         #end if
     #end for
-    
+
     return dmc_calcs
 #end def generate_legacy_dmc_calculations
 
@@ -8137,7 +9016,6 @@ def generate_batched_opt_calculations(
         init_minwalkers,
         init_line_search,
         init_sr_tau,
-        loc        = 'generate_opt_calculations',
         **opt_inputs
         ):
 
@@ -8165,13 +9043,14 @@ def generate_batched_opt_calculations(
     if init_samples is None and init_steps is None and not has.steps:
         init_samples = 204800
     #end if
-    if not has.sr_tau:
-        if has.linesearch and opt_inputs.line_search:
-            opt_inputs.sr_tau = 0.1
-        else:
-            opt_inputs.sr_tau = 0.01
+    if has.minmethod and opt_inputs.minmethod=='sr_cg':
+        if not has.sr_tau:
+            if has.linesearch and opt_inputs.line_search:
+                opt_inputs.sr_tau = 0.1
+            else:
+                opt_inputs.sr_tau = 0.01
+            #end if
         #end if
-    #end if
     for k in list(opt_inputs.keys()):
         if opt_inputs[k] is None:
             del opt_inputs[k]
@@ -8180,7 +9059,12 @@ def generate_batched_opt_calculations(
 
     methods = obj(linear=linear)
     if method not in methods:
-        error('invalid optimization method requested\ninvalid method: {0}\nvalid options are: {1}'.format(method,sorted(methods.keys())),loc)
+        msg = (
+            'invalid optimization method requested\n'
+            f'invalid method: {method}\n'
+            f'valid options are: {sorted(methods.keys())}'
+            )
+        raise ValueError(msg)
     #end if
     opt = methods[method]
 
@@ -8189,7 +9073,12 @@ def generate_batched_opt_calculations(
     oneshift = False
     sr_cg    = False
     if len(invalid)>0:
-        error('invalid optimization inputs provided\ninvalid inputs: {}\nvalid options are: {}'.format(sorted(invalid),sorted(allowed_opt_method_batched_inputs)))
+        msg = (
+            'invalid optimization inputs provided\n'
+            f'invalid inputs: {sorted(invalid)}\n'
+            f'valid options are: {sorted(allowed_opt_method_batched_inputs)}'
+            )
+        raise ValueError(msg)
     #end if
     if has.minmethod:
         if opt_inputs.minmethod.lower().startswith('oneshift'):
@@ -8209,7 +9098,12 @@ def generate_batched_opt_calculations(
             cost = (cost[0],0.0,cost[1])
         #end if
     else:
-        error('invalid optimization cost function encountered\ninvalid cost fuction: {0}\nvalid options are: variance, energy, (0.95,0.05), etc'.format(cost),loc)
+        msg = (
+            'invalid optimization cost function encountered\n'
+            f'invalid cost fuction: {cost}\n'
+            'valid options are: variance, energy, (0.95,0.05), etc'
+            )
+        raise ValueError(msg)
     #end if
     opt_calcs = []
     if var_cycles>0:
@@ -8232,11 +9126,12 @@ def generate_batched_opt_calculations(
         if init_steps is not None:
             init_opt.steps = init_steps
         #end if
-        if init_sr_tau is not None:
-            init_opt.sr_tau = init_sr_tau
-        #end if
-        if init_line_search is not None:
-            init_opt.line_search = init_line_search
+        if sr_cg:
+            if init_sr_tau is not None:
+                init_opt.sr_tau = init_sr_tau
+            #end if
+            if init_line_search is not None:
+                init_opt.line_search = init_line_search
         if not sr_cg:
             init_opt.minwalkers = init_minwalkers
         #end if
@@ -8256,6 +9151,7 @@ def generate_batched_opt_calculations(
     #end if
 
     opt_calcs.append(loop(max=cycles,qmc=cost_opt))
+
     return opt_calcs
 #end def generate_batched_opt_calculations
 
@@ -8263,7 +9159,7 @@ def generate_batched_opt_calculations(
 
 def generate_batched_vmc_calculations(
         total_walkers    ,
-        walkers_per_rank ,     
+        walkers_per_rank ,
         warmupsteps      ,
         blocks           ,
         steps            ,
@@ -8274,11 +9170,11 @@ def generate_batched_vmc_calculations(
         maxcpusecs       ,
         crowds           ,
         spin_mass        ,
-        loc              = 'generate_vmc_calculations',
         ):
-    
+
     if total_walkers is not None and walkers_per_rank is not None:
-        error('Only one of "total_walkers" and "walkers_per_rank" may be provided.',loc)
+        msg = 'Only one of "total_walkers" and "walkers_per_rank" may be provided.'
+        raise ValueError(msg)
     #end if
 
     vmc_inputs = obj(
@@ -8334,7 +9230,7 @@ def generate_batched_dmc_calculations(
         eq_timestep            ,
         eq_checkpoint          ,
         ntimesteps             ,
-        timestep_factor        ,    
+        timestep_factor        ,
         nonlocalmoves          ,
         branching_cutoff_scheme,
         crowd_serialize_walkers,
@@ -8344,14 +9240,14 @@ def generate_batched_dmc_calculations(
         feedback               ,
         sigmabound             ,
         spin_mass              ,
-        loc                 = 'generate_dmc_calculations',
         ):
 
     if total_walkers is None and walkers_per_rank is None:
         total_walkers = 2048
         #error('DMC walker count not specified via "total_walkers" or "walkers_per_rank".\nPlease provide at least one of these.\n\nWarning: use care in the selection of these parameters.\nPerformance critically depends on the walker count and the batched QMCPACK \ndrivers make no effort to prevent substantial under-utilization.',loc)
     elif total_walkers is not None and walkers_per_rank is not None:
-        error('Only one of "total_walkers" and "walkers_per_rank" may be provided.',loc)
+        msg = 'Only one of "total_walkers" and "walkers_per_rank" may be provided.'
+        raise ValueError(msg)
     #end if
 
     vmc_inputs = obj(
@@ -8389,7 +9285,7 @@ def generate_batched_dmc_calculations(
             )
     #end if
     tfac = 1.0
-    for n in range(ntimesteps):
+    for n in range(ntimesteps):  # noqa: B007
         sfac = 1.0/tfac
         dmc_calcs.append(
             dmc(
@@ -8426,7 +9322,7 @@ def generate_batched_dmc_calculations(
             #end for
         #end if
     #end for
-    
+
     return dmc_calcs
 #end def generate_batched_dmc_calculations
 
@@ -8434,10 +9330,6 @@ def generate_batched_dmc_calculations(
 
 def generate_qmcpack_input(**kwargs):
     QIcollections.clear()
-    system = kwargs.get('system',None)
-    if isinstance(system,PhysicalSystem):
-        system.update_particles()
-    #end if
     selector = kwargs.pop('input_type','basic')
     if selector=='basic':
         inp = generate_basic_input(**kwargs)
@@ -8446,7 +9338,8 @@ def generate_qmcpack_input(**kwargs):
     elif selector=='opt_jastrow':
         inp = generate_opt_jastrow_input(**kwargs)
     else:
-        QmcpackInput.class_error('selection '+str(selector)+' has not been implemented for qmcpack input generation')
+        msg = 'selection '+str(selector)+' has not been implemented for qmcpack input generation'
+        raise ValueError(msg)
     #end if
     return inp
 #end def generate_qmcpack_input
@@ -8462,40 +9355,42 @@ def read_jastrows(filepath):
 
 
 
+
 gen_basic_input_defaults = obj(
-    id               = 'qmc',            
-    series           = 0,                
-    purpose          = '',     
+    id               = 'qmc',
+    series           = 0,
+    purpose          = '',
     maxcpusecs       = None,
     max_seconds      = None,
-    seed             = None,             
-    bconds           = None,             
-    truncate         = False,            
-    buffer           = None,             
-    lr_dim_cutoff    = 15,               
-    lr_tol           = None,               
-    lr_handler       = None,               
-    remove_cell      = False,            
-    randomsrc        = True,            
-    meshfactor       = 1.0,              
-    orbspline        = None,             
-    precision        = 'float',          
-    twistnum         = None,             
-    twist            = None,             
+    seed             = None,
+    bconds           = None,
+    truncate         = False,
+    buffer           = None,
+    lr_dim_cutoff    = 15,
+    lr_tol           = None,
+    lr_handler       = None,
+    remove_cell      = False,
+    randomsrc        = True,
+    meshfactor       = 1.0,
+    orbspline        = None,
+    precision        = 'float',
+    twistnum         = None,
+    twist            = None,
     gcta             = None,
-    spin_polarized   = None,             
-    partition        = None,             
-    partition_mf     = None,             
-    hybridrep        = None,             
-    hybrid_rcut      = None,             
-    hybrid_lmax      = None,             
+    spin_polarized   = None,
+    partition        = None,
+    partition_mf     = None,
+    hybridrep        = None,
+    hybrid_rcut      = None,
+    hybrid_lmax      = None,
     orbitals_h5      = 'MISSING.h5',
     rotated_orbitals = False,
     run_path         = None,
     check_paths      = True,
-    excitation       = None,             
-    system           = 'missing',        
+    excitation       = None,
+    system           = 'missing',
     pseudos          = None,
+    nrule            = None,
     pseudo_algorithm = None,
     spinor           = None,
     dla              = None,
@@ -8503,31 +9398,31 @@ gen_basic_input_defaults = obj(
     det_batch        = None,
     jastrows         = 'generateJ12',
     opt_params       = None,
-    interactions     = 'all',            
-    corrections      = 'default',        
-    observables      = None,             
+    interactions     = 'all',
+    corrections      = 'default',
+    observables      = None,
     estimators       = None,
     estimator_period = None,
-    traces           = None,             
-    calculations     = None,             
-    det_format       = 'new',            
-    J1               = False,            
-    J2               = False,            
-    J3               = False,            
-    J1_size          = None,             
-    J1_rcut          = None,             
+    traces           = None,
+    calculations     = None,
+    det_format       = 'new',
+    J1               = False,
+    J2               = False,
+    J3               = False,
+    J1_size          = None,
+    J1_rcut          = None,
     J1_dr            = 0.5,
     J1_opt           = None,
-    J2_size          = None,             
-    J2_rcut          = None,             
-    J2_dr            = 0.5, 
+    J2_size          = None,
+    J2_rcut          = None,
+    J2_dr            = 0.5,
     J2_init          = 'zero',
     J2_opt           = None,
-    J3_isize         = 3,                
-    J3_esize         = 3,                
-    J3_rcut          = 5.0, 
+    J3_isize         = 3,
+    J3_esize         = 3,
+    J3_rcut          = 5.0,
     J3_opt           = None,
-    J1_rcut_open     = 5.0,              
+    J1_rcut_open     = 5.0,
     J2_rcut_open     = 10.0,
     J1k              = False,
     J1k_kcut         = 5.0,
@@ -8550,27 +9445,42 @@ def generate_basic_input(**kwargs):
     # capture inputs
     kw = obj(kwargs)
     # apply general defaults
-    kw.set_optional(**gen_basic_input_defaults)
+    set_optional(kw,gen_basic_input_defaults)
     valid = set(gen_basic_input_defaults.keys())
     # apply method specific defaults
     if kw.qmc is not None:
         if kw.driver not in qmc_defaults:
-            QmcpackInput.class_error('Invalid input for argument "driver".\nInvalid input: {}\nValid options are: {}'.format(kw.driver,sorted(qmc_defaults.keys())),'generate_qmcpack_input')
+            msg = (
+                'Invalid input for argument "driver".\n'
+                f'Invalid input: {kw.driver}\n'
+                f'Valid options are: {sorted(qmc_defaults.keys())}'
+                )
+            raise ValueError(msg)
         #end if
         qmc_driver_defaults = qmc_defaults[kw.driver]
         if kw.qmc not in qmc_driver_defaults:
-            QmcpackInput.class_error('Invalid input for argument "qmc".\nInvalid input: {}\nValid options are: {}'.format(kw.qmc,sorted(qmc_driver_defaults.keys())),'generate_qmcpack_input')
+            msg = (
+                'Invalid input for argument "qmc".\n'
+                f'Invalid input: {kw.qmc}\n'
+                f'Valid options are: {sorted(qmc_driver_defaults.keys())}'
+                )
+            raise ValueError(msg)
         #end if
         qmc_keys = ['driver']
-        kw.set_optional(**qmc_driver_defaults[kw.qmc])
+        set_optional(kw,qmc_driver_defaults[kw.qmc])
         qmc_keys += list(qmc_driver_defaults[kw.qmc].keys())
         if kw.qmc=='opt':
             opt_method_driver_defaults = opt_method_defaults[kw.driver]
             key = (kw.method,kw.minmethod.lower())
             if key not in opt_method_driver_defaults:
-                QmcpackInput.class_error('invalid input for arguments "method,minmethod".\nInvalid input: {}\nValid options are: {}'.format(key,sorted(opt_method_driver_defaults.keys())),'generate_qmcpack_input')
+                msg = (
+                    'invalid input for arguments "method,minmethod".\n'
+                    f'Invalid input: {key}\n'
+                    f'Valid options are: {sorted(opt_method_driver_defaults.keys())}'
+                    )
+                raise ValueError(msg)
             #end if
-            kw.set_optional(**opt_method_driver_defaults[key])
+            set_optional(kw,opt_method_driver_defaults[key])
             qmc_keys += list(opt_method_driver_defaults[key].keys())
             del key
         #end if
@@ -8579,14 +9489,23 @@ def generate_basic_input(**kwargs):
     # screen for invalid keywords
     invalid_kwargs = set(kw.keys())-valid
     if len(invalid_kwargs)>0:
-        QmcpackInput.class_error('invalid input parameters encountered.\nInvalid input parameters: {0}\nValid options are: {1}'.format(sorted(invalid_kwargs),sorted(valid)),'generate_qmcpack_input')
+        msg = (
+            'invalid input parameters encountered.\n'
+            f'Invalid input parameters: {sorted(invalid_kwargs)}\n'
+            f'Valid options are: {sorted(valid)}'
+            )
+        raise ValueError(msg)
     #end if
 
     batched = kw.driver=='batched'
     legacy  = kw.driver=='legacy'
 
     if kw.system=='missing':
-        QmcpackInput.class_error('argument "system" is missing.\nIf you really do not want particlesets to be generated, set system to None.','generate_qmcpack_input')
+        msg = (
+            'argument "system" is missing.\n'
+            'If you really do not want particlesets to be generated, set system to None.'
+            )
+        raise ValueError(msg)
     #end if
     if kw.bconds is None:
         if kw.system is not None:
@@ -8606,7 +9525,7 @@ def generate_basic_input(**kwargs):
             kw.corrections = ['mpc']
         #end if
     elif isinstance(kw.corrections,(list,tuple)):
-        None
+        pass
     else:
         kw.corrections = []
     #end if
@@ -8631,7 +9550,7 @@ def generate_basic_input(**kwargs):
         kw.hybridrep = True
     #end if
 
-    metadata = QmcpackInput.default_metadata.copy()
+    metadata = deepcopy(QmcpackInput.default_metadata)
 
     proj = project(
         id             = kw.id,
@@ -8670,7 +9589,11 @@ def generate_basic_input(**kwargs):
 
     if kw.det_format=='new':
         if kw.excitation is not None:
-            QmcpackInput.class_error('user provided "excitation" input argument with new style determinant format.\nPlease add det_format="old" and try again','generate_qmcpack_input')
+            msg = (
+                'user provided "excitation" input argument with new style determinant format.\n'
+                'Please add det_format="old" and try again'
+                )
+            raise ValueError(msg)
         #end if
         if kw.system is not None and isinstance(kw.system.structure,Jellium):
             ssb = generate_sposet_builder(
@@ -8686,7 +9609,12 @@ def generate_basic_input(**kwargs):
             if kw.orbitals_h5!='MISSING.h5':
                 orbfile_exists = os.path.exists(kw.orbitals_h5)
                 if kw.check_paths and not orbfile_exists:
-                    QmcpackInput.class_error('user provided "orbitals_h5" path does not exist\nPath provided: {}\nTo disable this check, set check_paths=False'.format(kw.orbitals_h5),'generate_qmcpack_input')
+                    msg = (
+                        'user provided "orbitals_h5" path does not exist\n'
+                        f'Path provided: {kw.orbitals_h5}\n'
+                        'To disable this check, set check_paths=False'
+                        )
+                    raise FileNotFoundError(msg)
                 #end if
                 if kw.run_path is not None:
                     kw.orbitals_h5 = os.path.relpath(kw.orbitals_h5,kw.run_path)
@@ -8749,11 +9677,16 @@ def generate_basic_input(**kwargs):
             spinor         = kw.spinor,
             )
     else:
-        QmcpackInput.class_error('argument "det_format" is invalid.\nReceived: {0}\nValid options are: new, old'.format(det_format),'generate_qmcpack_input')
+        msg = (
+            'argument "det_format" is invalid.\n'
+            f'Received: {kw.det_format}\n'
+            'Valid options are: new, old'
+            )
+        raise ValueError(msg)
     #end if
 
 
-    wfn = wavefunction(        
+    wfn = wavefunction(
         name           = 'psi0',
         target         = 'e',
         determinantset = dset,
@@ -8761,11 +9694,19 @@ def generate_basic_input(**kwargs):
 
     if isinstance(kw.jastrows,str) and kw.jastrows.endswith('.xml'):
         if not os.path.exists(kw.jastrows):
-            QmcpackInput.class_error('user provided "jastrows" file path does not exist\nFile path provided: {}'.format(kw.jastrows),'generate_qmcpack_input')
+            msg = (
+                'user provided "jastrows" file path does not exist\n'
+                f'File path provided: {kw.jastrows}'
+                )
+            raise FileNotFoundError(msg)
         #end if
         jastrows = read_jastrows(kw.jastrows)
         if jastrows is None:
-            QmcpackInput.class_error('no jastrows found at user provided "jastrows" file.\nFile path provided: {}'.format(kw.jastrows),'generate_qmcpack_input')
+            msg = (
+                'no jastrows found at user provided "jastrows" file.\n'
+                f'File path provided: {kw.jastrows}'
+                )
+            raise ValueError(msg)
         #end if
         kw.jastrows = jastrows
     elif kw.J1 or kw.J2 or kw.J3:
@@ -8804,7 +9745,7 @@ def generate_basic_input(**kwargs):
     #end if
 
     if kw.spinor is not None and kw.spinor:
-        # remove u-d 
+        # remove u-d
         # also set correct cusp
         J2 = wfn.jastrows.get('J2')
         if J2 is not None:
@@ -8838,13 +9779,26 @@ def generate_basic_input(**kwargs):
 
     if kw.opt_params is not None:
         if not isinstance(kw.opt_params,str):
-            QmcpackInput.class_error('opt_params must be a file path.\nYou provided: {}'.format(kw.opt_params),'generate_qmcpack_input')
+            msg = (
+                'opt_params must be a file path.\n'
+                f'You provided: {kw.opt_params}'
+                )
+            raise TypeError(msg)
         #end if
         if not kw.opt_params.endswith('vp.h5'):
-            QmcpackInput.class_error('opt_params must a vp.h5 file.\nYou provided: {}'.format(kw.opt_params),'generate_qmcpack_input')
+            msg = (
+                'opt_params must a vp.h5 file.\n'
+                f'You provided: {kw.opt_params}'
+                )
+            raise ValueError(msg)
         #end if
         if kw.check_paths and not os.path.exists(kw.opt_params):
-            QmcpackInput.class_error('opt_params file does not exist.\nFile path provided: {}\nTo disable this check, set check_paths=False'.format(kw.opt_params),'generate_qmcpack_input')
+            msg = (
+                'opt_params file does not exist.\n'
+                f'File path provided: {kw.opt_params}\n'
+                'To disable this check, set check_paths=False'
+                )
+            raise FileNotFoundError(msg)
         #end if
         wfn.override_variational_parameters = override_variational_parameters(
             href = os.path.abspath(kw.opt_params)
@@ -8871,6 +9825,7 @@ def generate_basic_input(**kwargs):
     hmltn = generate_hamiltonian(
         system       = kw.system,
         pseudos      = kw.pseudos,
+        nrule         = kw.nrule,
         algorithm    = kw.pseudo_algorithm,
         dla          = kw.dla,
         interactions = kw.interactions,
@@ -8902,7 +9857,9 @@ def generate_basic_input(**kwargs):
     #end if
 
     if len(kw.calculations)==0 and kw.qmc is not None:
-        qmc_inputs = kw.obj(*qmc_keys)
+        qmc_inputs = obj()
+        for k in qmc_keys:
+            qmc_inputs[k] = kw[k]
         if kw.qmc=='opt':
             kw.calculations = generate_opt_calculations(**qmc_inputs)
         elif 'vmc' in kw.qmc:
@@ -8924,7 +9881,7 @@ def generate_basic_input(**kwargs):
             #end if
         #end for
     #end if
-    sim.calculations = make_collection(kw.calculations).copy()
+    sim.calculations = deepcopy(make_collection(kw.calculations))
 
     qi = QmcpackInput(metadata,sim)
 
@@ -8950,8 +9907,8 @@ def generate_basic_input(**kwargs):
 
 
 gen_basic_afqmc_input_defaults = obj(
-    id          = 'qmc',            
-    series      = 0,   
+    id          = 'qmc',
+    series      = 0,
     seed        = None,
     nmo         = None,
     naea        = None,
@@ -8988,16 +9945,21 @@ def generate_basic_afqmc_input(**kwargs):
         #end if
     #end for
     # apply general defaults
-    kw.set_optional(**gen_basic_afqmc_input_defaults)
+    set_optional(kw,gen_basic_afqmc_input_defaults)
     valid = set(gen_basic_afqmc_input_defaults.keys())
     # screen for invalid keywords
     invalid_kwargs = set(kw.keys())-valid
     if len(invalid_kwargs)>0:
-        QmcpackInput.class_error('invalid input parameters encountered\ninvalid input parameters: {0}\nvalid options are: {1}'.format(sorted(invalid_kwargs),sorted(valid)),'generate_qmcpack_input')
+        msg = (
+            'invalid input parameters encountered\n'
+            f'invalid input parameters: {sorted(invalid_kwargs)}\n'
+            f'valid options are: {sorted(valid)}'
+            )
+        raise ValueError(msg)
     #end if
 
     metadata = meta(
-        generation_info = gen_info.copy(),
+        generation_info = deepcopy(gen_info),
         )
 
     sim = simulation(
@@ -9039,11 +10001,15 @@ def generate_basic_afqmc_input(**kwargs):
         if filename.endswith('.h5'):
             filetype = 'hdf5'
         else:
-            QmcpackInput.class_error('Type of {} file "{}" is unrecognized.\n The following file extensions are allowed: .h5'.format(loc,filename))
+            msg = (
+                f'Type of {loc} file "{filename}" is unrecognized.\n'
+                ' The following file extensions are allowed: .h5'
+                )
+            raise ValueError(msg)
         #end if
         return filetype
     #end def get_filetype
-    
+
     ham = hamiltonian(
         name     = kw.ham_name,
         info     = info.name,
@@ -9104,14 +10070,20 @@ def generate_basic_afqmc_input(**kwargs):
         for est in kw.estimators:
             invalid = False
             if isinstance(est,QIxml):
-                est = est.copy()
+                est = deepcopy(est)
             else:
                 invalid = True
             #end if
             invalid |= not isinstance(est,valid_estimators)
             if invalid:
                 valid_names = [e.__class__.__name__ for e in valid_estimators]
-                QmcpackInput.class_error('invalid estimator input encountered\nexpected one of the following: {}\ninputted type: {}\ninputted value: {}'.format(valid_names,est.__class__.__name__,est))
+                msg = (
+                    'invalid estimator input encountered\n'
+                    f'expected one of the following: {valid_names}\n'
+                    f'inputted type: {est.__class__.__name__}\n'
+                    f'inputted value: {est}'
+                    )
+                raise TypeError(msg)
             #end if
             est.incorporate_defaults()
             estimators.append(est)
@@ -9121,7 +10093,7 @@ def generate_basic_afqmc_input(**kwargs):
         exe.estimators = make_collection(estimators)
     #end if
     sim.execute = exe
-    
+
     qi = QmcpackInput(metadata,sim)
 
     return qi
@@ -9130,6 +10102,7 @@ def generate_basic_afqmc_input(**kwargs):
 
 
 def generate_opt_jastrow_input(id  = 'qmc',
+                               *,
                                series           = 0,
                                purpose          = '',
                                seed             = None,
@@ -9137,7 +10110,7 @@ def generate_opt_jastrow_input(id  = 'qmc',
                                remove_cell      = False,
                                meshfactor       = 1.0,
                                precision        = 'float',
-                               twistnum         = None, 
+                               twistnum         = None,
                                twist            = None,
                                spin_polarized   = False,
                                orbitals_h5      = 'MISSING.h5',
@@ -9155,7 +10128,8 @@ def generate_opt_jastrow_input(id  = 'qmc',
                                nonlocalpp       = False,
                                sample_factor    = 1.0,
                                opt_calcs        = None,
-                               det_format       = 'new'):
+                               det_format       = 'new',
+                               nrule            = None):
     jastrows = generate_jastrows(jastrows,system)
 
     if opt_calcs is None:
@@ -9185,10 +10159,16 @@ def generate_opt_jastrow_input(id  = 'qmc',
                          )
                     )
             else:
-                QmcpackInput.class_error('optimization method '+opt_calc[0]+' has not yet been implemented')
+                msg = 'optimization method '+opt_calc[0]+' has not yet been implemented'
+                raise NotImplementedError(msg)
             #end if
         else:
-            QmcpackInput.class_error('optimization calculation is ill formatted\n  opt calc provided: \n'+str(opt_calc))
+            msg = (
+                'optimization calculation is ill formatted\n'
+                '  opt calc provided: \n'
+                +str(opt_calc)
+                )
+            raise ValueError(msg)
         #end if
     #end if
 
@@ -9207,6 +10187,7 @@ def generate_opt_jastrow_input(id  = 'qmc',
         orbitals_h5    = orbitals_h5    ,
         system         = system         ,
         pseudos        = pseudos        ,
+        nrule          = nrule          ,
         jastrows       = jastrows       ,
         corrections    = corrections    ,
         observables    = observables    ,
@@ -9229,7 +10210,12 @@ if __name__=='__main__':
 
     element_joins=['qmcsystem']
     element_aliases=dict(loop='qmc')
-    xml = XMLreader(filepath,element_joins,element_aliases,warn=False).obj
+    xml = XMLreader(
+        filepath,
+        element_joins   = element_joins,
+        element_aliases = element_aliases,
+        warn            = False,
+        ).obj
     xml.condense()
 
     qi = QmcpackInput()
@@ -9264,16 +10250,16 @@ if __name__=='__main__':
     if test_ret_system:
         from .structure import generate_structure
         from .physical_system import PhysicalSystem
-        
+
         system = PhysicalSystem(
             structure = generate_structure('diamond','fcc','Ge',(2,2,2),scale=5.639,units='A'),
             net_charge = 1,
             net_spin   = 1,
             Ge = 4
-        )
+            )
 
         gi = generate_qmcpack_input('basic',system=system)
-        
+
         rsys = gi.return_system()
 
         print(rsys)
@@ -9284,16 +10270,16 @@ if __name__=='__main__':
     if test_gen_input:
         from .structure import generate_structure
         from .physical_system import PhysicalSystem
-        
+
         system = PhysicalSystem(
             structure = generate_structure('diamond','fcc','Ge',(2,2,2),scale=5.639,units='A'),
             net_charge = 1,
             net_spin   = 1,
             Ge = 4
-        )
+            )
 
         gi = generate_qmcpack_input('basic',system=system)
-        
+
         print(gi)
 
         print(gi.write())
@@ -9307,7 +10293,7 @@ if __name__=='__main__':
 
         different,diff,d1,d2 = tstep.difference(tstep)
         different,diff,d1,d2 = tstep.difference(opt)
-        
+
     #end if
 
 
@@ -9337,14 +10323,14 @@ if __name__=='__main__':
                 qmcsystem=section(
                     simulationcell = section(),
                     wavefunction = section(),
-                    hamiltonian = section()             
+                    hamiltonian = section()
                     ),
                 calculations = [
                     cslinear(),
                     vmc(),
                     dmc()
                     ]
-                )            
+                )
             )
 
         #q.simulation = simulation()
@@ -9356,7 +10342,7 @@ if __name__=='__main__':
 
 
     if test_substitution:
-        q = qi.copy()
+        q = deepcopy(qi)
 
         q.remove('simulationcell','particleset','wavefunction')
         q.write('./output/qmcpack.remove.xml')
@@ -9371,7 +10357,7 @@ if __name__=='__main__':
         qnj.write('./output/jastrow_gen.in.xml')
 
     #end if
-    
+
 
 
     if test_generation:
@@ -9404,7 +10390,7 @@ if __name__=='__main__':
                         lattice = np.array([[1,1,0],[1,0,1],[0,1,1]]),
                         reciprocal = np.array([[1,1,-1],[1,-1,1],[-1,1,1]]),
                         bconds = 'p p p',
-                        LR_dim_cutoff = 15            
+                        LR_dim_cutoff = 15
                         ),
                     particlesets = [
                         particleset(
@@ -9449,7 +10435,7 @@ if __name__=='__main__':
                                     name='d',
                                     size=63,
                                     charge=-1
-                                    )                    
+                                    )
                                 ]
                             ),
                         ],
@@ -9659,7 +10645,7 @@ if __name__=='__main__':
                                     )
                                 ]
                             )
-                        ),
+                         ),
                     qmc(
                         method = 'vmc',
                         multiple = 'no',
@@ -9691,7 +10677,7 @@ if __name__=='__main__':
                                 name='LocalEnergy',
                                 hdf5='no'
                                 )
-                            ]            
+                            ]
                         )
                     ]
                 )
@@ -9704,7 +10690,7 @@ if __name__=='__main__':
 
 
         #something broke this, check later
-        exit()
+        sys.exit()
         qs=QmcpackInput(
             simulation = section(
                 project = section(
@@ -9851,7 +10837,7 @@ if __name__=='__main__':
                             reweightedvariance   = 0.,
                             estimator = localenergy(hdf5='no')
                             )
-                        ),
+                         ),
                     vmc(multiple='no',warp='no',move='pbyp',
                         walkers  =  1,
                         blocks   =  2,
@@ -9880,7 +10866,7 @@ if __name__=='__main__':
         sg = est.edcell.spacegrid
         print(repr(est))
 
-        exit()
+        sys.exit()
 
 
 
@@ -9914,7 +10900,7 @@ if __name__=='__main__':
                     units = 'bohr',
                     lattice = np.array([[1,1,0],[1,0,1],[0,1,1]]),
                     bconds = 'p p p',
-                    LR_dim_cutoff = 15            
+                    LR_dim_cutoff = 15
                     ),
                 particlesets = [
                     particleset('ion0', ('C',4), ('B',3),
@@ -9967,7 +10953,7 @@ if __name__=='__main__':
                                     ('u','u',3.9,[0,0,0,0,0,0]),
                                     ('u','d',3.9,[0,0,0,0,0,0])),
                             onebody('J1','bspline','ion0',
-                                    ('C',3.9,[0,0,0,0,0,0]),                            
+                                    ('C',3.9,[0,0,0,0,0,0]),
                                     ('B',3.9,[0,0,0,0,0,0]))
                             ]
                         )
@@ -9993,7 +10979,7 @@ if __name__=='__main__':
                         energy = 0.,
                         unreweightedvariance = 0.,
                         reweightedvariance = 0.,
-                        estimator = localenergy(hdf5='no') 
+                        estimator = localenergy(hdf5='no')
                         )
                     ),
                 vmc(
@@ -10001,7 +10987,7 @@ if __name__=='__main__':
                     steps = 500,
                     substeps = 3,
                     timestep = .5,
-                    estimator = localenergy(hdf5='yes') 
+                    estimator = localenergy(hdf5='yes')
                     ),
                 dmc(
                     walkers = 72,
@@ -10009,7 +10995,7 @@ if __name__=='__main__':
                     steps = 50,
                     timestep = .01,
                     nonlocalmove = 'yes',
-                    estimator = localenergy(hdf5='no') 
+                    estimator = localenergy(hdf5='no')
                     )
                 ]
             )

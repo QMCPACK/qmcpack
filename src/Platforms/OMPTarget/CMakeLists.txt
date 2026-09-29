@@ -9,7 +9,7 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(OMP_RT_SRCS OMPallocator.cpp)
+set(OMP_RT_SRCS OMPTargetUsage.cpp)
 if(ENABLE_OFFLOAD)
   set(OMP_RT_SRCS ${OMP_RT_SRCS} OMPDeviceManager.cpp)
 endif(ENABLE_OFFLOAD)
@@ -37,7 +37,7 @@ else()
   # Test if C++ compiler supports OpenMP user defined reduction on complex type
   try_compile(
     OMP_UDR_COMPLEX_OKAY ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test_user_defined_reduction_complex.cpp
-    CMAKE_FLAGS "${CMAKE_CXX_FLAGS}"
+    CMAKE_FLAGS "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
     OUTPUT_VARIABLE COMPILE_OUTPUT)
 
   if(NOT OMP_UDR_COMPLEX_OKAY)
@@ -50,7 +50,7 @@ else()
     try_compile(
       OMP_IMPLICIT_REDUCTION_COMPLEX_OKAY ${CMAKE_CURRENT_BINARY_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/test_user_defined_reduction_complex.cpp
-      CMAKE_FLAGS "${CMAKE_CXX_FLAGS}"
+      CMAKE_FLAGS "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
       COMPILE_DEFINITIONS "-DOPENMP_NO_UDR"
       OUTPUT_VARIABLE COMPILE_OUTPUT)
 

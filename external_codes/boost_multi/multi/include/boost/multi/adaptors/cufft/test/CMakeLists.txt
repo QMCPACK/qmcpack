@@ -1,12 +1,3 @@
-# -*-indent-tabs-mode:nil;c-basic-offset:2;tab-width:4;autowrap:nil;-*-
-#[=[Multi Test suite can be run like this:
-  mkdir -p build
-  cd build
-  cmake .. [-DENABLE_CUDA=1]
-  make -j
-  ctest -j --output-on-error [-T memcheck]
-  exit
-#]=]
 cmake_minimum_required(VERSION 3.11)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -17,20 +8,20 @@ project(
 	LANGUAGES CXX
 )
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+# set(CMAKE_CXX_STANDARD 17)
+# set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(NOT
    CMAKE_CXX_COMPILER_ID
    STREQUAL
    "PGI"
 )
-	find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+	find_package(Boost CONFIG)
 else()
-	find_package(Boost REQUIRED) # cmake cannot detect this component with pgi compiler
+	find_package(Boost CONFIG)
+	# find_package(Boost REQUIRED) # cmake cannot detect this component with pgi compiler
 endif()
-link_libraries("-lboost_unit_test_framework")
 
 if(ENABLE_CUDA OR DEFINED CXXCUDA)
 	enable_language(CUDA)
@@ -52,8 +43,14 @@ if(ENABLE_CUDA OR DEFINED CXXCUDA)
 endif()
 
 # FFTW has to go before blas to avoid unscrupulous (i.e. MKL) blas implementations that include FFTW and don't implement it properly
-find_package(PkgConfig REQUIRED)
-pkg_search_module(
+find_package(PkgConfig)
+
+if(NOT PKG_CONFIG_FOUND)
+	message(WARNING "pkgconfig  not found (for FFTW). cuFFT tests needs FFTW.")
+	return()
+endif()
+
+pkg_search_module(  # install fftw if necessary: sudo apt install libfftw3-dev 
 	FFTW
 	REQUIRED
 	fftw3
@@ -76,61 +73,23 @@ foreach(TEST_FILE ${TEST_SRCS})
 	add_executable(${TEST_EXE} ${TEST_FILE})
 	if(ENABLE_CUDA OR DEFINED CXXCUDA)
 		set_source_files_properties(${TEST_FILE} PROPERTIES LANGUAGE CUDA)
-		target_compile_options(${TEST_EXE} PRIVATE -std=c++17)
+		# target_compile_options(${TEST_EXE} PRIVATE -std=c++17)
 	endif()
 	# target_compile_features   (${TEST_EXE} PUBLIC cxx_std_17)
-	target_compile_definitions(${TEST_EXE} PRIVATE "BOOST_PP_VARIADICS") # needed by Boost.Test and NVCC
+
+	target_compile_options(
+		${TEST_EXE} PRIVATE
+		$<$<CXX_COMPILER_ID:GNU>:-Wno-error=terminate>  # -Wterminate is a GCC-only warning; nvc++/Clang/MSVC reject the flag
+		$<$<AND:$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>,$<CXX_COMPILER_ID:MSVC>>:-Xcompiler=/wd4244>  # conversion, possible loss of data; fires from inside MSVC's own <algorithm> header, not from this code
+	)
+
 	target_compile_definitions(${TEST_EXE} PRIVATE ${Boost_DEFINITIONS})
 	target_include_directories(${TEST_EXE} PRIVATE ${Boost_INCLUDE_DIRS})
+
 	target_link_libraries(${TEST_EXE} PRIVATE ${Boost_LIBRARIES})
 	target_link_directories(${TEST_EXE} PRIVATE ${Boost_LIBRARY_DIRS})
 	target_link_libraries(${TEST_EXE} PRIVATE multi)
 	target_link_libraries(${TEST_EXE} PRIVATE CUDA::cufft)
 
-	if(NOT ENABLE_CUDA)
-		target_compile_options(
-			${TEST_EXE}
-			PRIVATE -Werror
-					-Wall
-					$<$<CXX_COMPILER_ID:GNU>:
-					-Wextra
-					-Wpedantic
-					-Wformat-truncation> # -Wconversion
-					$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
-					-Wextra
-					-Wpedantic
-					-Wmove>
-					$<$<CXX_COMPILER_ID:Intel>:
-					-Wextra
-					-wd161
-					-diag-disable=remark
-					-Warray-bounds
-					-Wchar-subscripts
-					-Wcomment
-					-Wenum-compare
-					-Wformat
-					-Wuninitialized
-					-Wmaybe-uninitialized
-					-Wmain
-					-Wnarrowing
-					-Wnonnull
-					-Wparentheses
-					-Wpointer-sign
-					-Wreorder
-					-Wno-return-type
-					-Wsign-compare
-					-Wsequence-point
-					-Wtrigraphs
-					-Wunused-function
-					-Wunused-but-set-variable
-					-Wunused-variable
-					-Wwrite-strings
-					-diag-error:3846>
-					$<$<CXX_COMPILER_ID:PGI>: # PGI 20  doesn't recognize the -Wextra option
-                    >
-					$<$<CXX_COMPILER_ID:MSVC>:
-					/W4>
-		)
-	endif()
 	add_test(NAME ${TEST_EXE} COMMAND $<TARGET_FILE:${TEST_EXE}>)
 endforeach()

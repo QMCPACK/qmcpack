@@ -259,9 +259,7 @@ public:
   }
 
   inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradVector& Bmat, HessMatrix& Amat)
-  {
-    APP_ABORT("This shouldn't be called: Backflow_ee_kSpace::evaluate(Bmat)");
-  }
+  { APP_ABORT("This shouldn't be called: Backflow_ee_kSpace::evaluate(Bmat)"); }
 
 
   /** calculate quasi-particle coordinates, Bmat and Amat

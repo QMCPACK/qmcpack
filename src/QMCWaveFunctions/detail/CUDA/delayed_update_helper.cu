@@ -122,27 +122,19 @@ void applyW_stageV_cuda(const int* delay_list_gpu,
  */
 template<typename T>
 __host__ __device__ __inline__ T makeZero()
-{
-  return T(0);
-}
+{ return T(0); }
 
 template<>
 __host__ __device__ __inline__ cuDoubleComplex makeZero<cuDoubleComplex>()
-{
-  return make_cuDoubleComplex(0.0, 0.0);
-}
+{ return make_cuDoubleComplex(0.0, 0.0); }
 
 template<typename T>
 __host__ __device__ __inline__ T makeOne()
-{
-  return T(1);
-}
+{ return T(1); }
 
 template<>
 __host__ __device__ __inline__ cuDoubleComplex makeOne<cuDoubleComplex>()
-{
-  return make_cuDoubleComplex(1.0, 0.0);
-}
+{ return make_cuDoubleComplex(1.0, 0.0); }
 
 template<typename T, int BS>
 __global__ void make_identity_matrix_kernel(const int nrows, T* restrict mat, const int lda)

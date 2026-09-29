@@ -7,12 +7,21 @@
 // #endif
 // Copyright 2018-2022 Alfredo A. Correa
 
-#include "../../mpi3/communicator.hpp"
-#include "../../mpi3/main.hpp"
+#include <mpi3/communicator.hpp>
+#include <mpi3/environment.hpp>
+
+#include <boost/core/lightweight_test.hpp>
 
 namespace mpi3 = boost::mpi3;
 
-auto mpi3::main(int /*argv*/, char** /*argc*/, mpi3::communicator world) -> int try {
-	assert( world.size() == 3 );
-	return 0;
-} catch(...) {return 1;}
+auto main(int argc, char** argv) -> int try {
+	mpi3::environment env(argc, argv);
+
+	auto world = env.world();
+
+	BOOST_TEST( world.size() == 3 );
+
+	return boost::report_errors();
+} catch(...) {
+	return 1;
+}

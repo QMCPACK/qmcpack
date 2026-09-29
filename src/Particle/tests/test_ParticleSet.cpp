@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/TinyVector.h"
@@ -27,6 +26,9 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell);
   ParticleSet elecs(simulation_cell);
+
+  CHECK(ions.current_step == 0);
+  ions.current_step = 13;
 
   ions.setName("ions");
   elecs.setName("electrons");
@@ -60,6 +62,9 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
   ParticleSet elecs_copy(elecs);
   REQUIRE(elecs_copy.getDistTable(ei_table_id2).get_origin().getName() == "ions");
   REQUIRE(elecs_copy.getDistTable(ee_table_id2).get_origin().getName() == "electrons");
+
+  ParticleSet ions_copy(ions);
+  CHECK(ions_copy.current_step == 13);
 }
 
 TEST_CASE("symmetric_distance_table OpenBC", "[particle]")

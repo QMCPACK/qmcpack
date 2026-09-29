@@ -25,9 +25,7 @@ OhmmsXPathObject::OhmmsXPathObject() : NumObjects(0), result(NULL), m_context(NU
 
 OhmmsXPathObject::OhmmsXPathObject(const char* expression, xmlXPathContextPtr context)
     : NumObjects(0), result(NULL), m_context(NULL)
-{
-  put(expression, context);
-}
+{ put(expression, context); }
 
 OhmmsXPathObject::OhmmsXPathObject(const char* expression, xmlNodePtr cur)
     : NumObjects(0), result(NULL), m_context(NULL)
@@ -80,7 +78,8 @@ void OhmmsXPathObject::put(const char* expression, xmlXPathContextPtr context)
 
 Libxml2Document::Libxml2Document() : m_doc(NULL), m_root(NULL), m_context(NULL) {}
 
-Libxml2Document::Libxml2Document(const std::string& xmlfile) : m_doc(NULL), m_root(NULL), m_context(NULL) { parse(xmlfile); }
+Libxml2Document::Libxml2Document(const std::string& xmlfile) : m_doc(NULL), m_root(NULL), m_context(NULL)
+{ parse(xmlfile); }
 
 Libxml2Document::~Libxml2Document()
 {
@@ -138,7 +137,7 @@ bool Libxml2Document::parse(const std::string& xmlfile)
   if (m_doc != NULL)
     xmlFreeDoc(m_doc);
   qmcplusplus::Timer aClock;
-  int length   = 0;
+  int length = 0;
   std::string buffer;
   aClock.restart();
   if (OHMMS::Controller->master())
@@ -234,7 +233,7 @@ bool Libxml2Document::parseFromString(const std::string_view data)
 //    if(OHMMS::Controler()->master()) {
 //      m_doc = xmlParseFile(infile.c_str());
 //      if (m_doc == NULL) {
-//        ERRORMSG("File " << infile << " is invalid")
+//        app_error() << "File " << infile << " is invalid" << std::endl;
 //        return false;
 //      }
 //      xmlDocDumpFormatMemory(m_doc,&xmlbuff,&buffersize,1);

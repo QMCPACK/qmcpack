@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -182,8 +181,6 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   RadialJastrowBuilder jastrow1bdy(c, elec, ions);
   psi.addComponent(jastrow1bdy.buildComponent(jas1));
 
-  const char* kexml = R"(<tmp></tmp>)";
-
   root = doc.getRoot();
 
   xmlNodePtr h1 = xmlFirstElementChild(root);
@@ -195,7 +192,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   ions.update();
   elec.update();
 
-  RealType logpsi = psi.evaluateLog(elec);
+  psi.evaluateLog(elec);
 
   RealType keval = bare_ke.evaluate(psi, elec);
   //This is validated against an alternate code path (waveefunction tester for local energy).

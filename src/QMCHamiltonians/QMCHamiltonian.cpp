@@ -17,12 +17,14 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <config.h>
 #include "QMCHamiltonian.h"
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 #include "Utilities/TimerManager.h"
 #include "BareKineticEnergy.h"
+#include "NonLocalECPotential.h"
 #include "Containers/MinimalContainers/RecordArray.hpp"
 #include "type_traits/ConvertToReal.h"
 #include "CPU/math.hpp"
@@ -948,6 +950,30 @@ int QMCHamiltonian::makeNonLocalMoves(TrialWaveFunction& psi, ParticleSet& P, No
   return num_moves;
 }
 
+void QMCHamiltonian::mw_computeL2DK(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
+                                    int iel,
+                                    std::vector<TensorType>& diffusion_tensors,
+                                    std::vector<PosType>& drift_corrections)
+{
+  assert(ham_list.size() == p_list.size());
+  assert(ham_list.size() == diffusion_tensors.size());
+  assert(ham_list.size() == drift_corrections.size());
+  for (size_t iw = 0; iw < ham_list.size(); ++iw)
+    ham_list[iw].computeL2DK(p_list[iw], iel, diffusion_tensors[iw], drift_corrections[iw]);
+}
+
+void QMCHamiltonian::mw_computeL2D(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                   int iel,
+                                   std::vector<TensorType>& diffusion_tensors)
+{
+  assert(ham_list.size() == p_list.size());
+  assert(ham_list.size() == diffusion_tensors.size());
+  for (size_t iw = 0; iw < ham_list.size(); ++iw)
+    ham_list[iw].computeL2D(p_list[iw], iel, diffusion_tensors[iw]);
+}
+
 
 std::vector<int> QMCHamiltonian::mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
                                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -955,8 +981,29 @@ std::vector<int> QMCHamiltonian::mw_makeNonLocalMoves(const RefVectorWithLeader<
                                                       NonLocalTOperator& move_op)
 {
   std::vector<int> num_accepts(ham_list.size(), 0);
+#if defined(ENABLE_OFFLOAD)
+  // The batched sweep trades per-call latency for wide calls, which pays
+  // off only where evaluations carry kernel-launch latency; host builds
+  // keep the per-walker sweep below.
+  auto& ham_leader = ham_list.getLeader();
+  for (int i = 0; i < ham_leader.H.size(); ++i)
+    if (dynamic_cast<NonLocalECPotential*>(ham_leader.H[i].get()))
+    {
+      RefVectorWithLeader<OperatorBase> o_list(*ham_leader.H[i]);
+      o_list.reserve(ham_list.size());
+      for (int iw = 0; iw < ham_list.size(); ++iw)
+        o_list.push_back(*ham_list[iw].H[i]);
+      const auto counts = NonLocalECPotential::mw_makeNonLocalMovesPbyP(o_list, wf_list, p_list, move_op);
+      for (int iw = 0; iw < ham_list.size(); ++iw)
+        num_accepts[iw] += counts[iw];
+    }
+    else
+      for (int iw = 0; iw < ham_list.size(); ++iw)
+        num_accepts[iw] += ham_list[iw].H[i]->makeNonLocalMovesPbyP(wf_list[iw], p_list[iw], move_op);
+#else
   for (int iw = 0; iw < ham_list.size(); ++iw)
     num_accepts[iw] = ham_list[iw].makeNonLocalMoves(wf_list[iw], p_list[iw], move_op);
+#endif
   return num_accepts;
 }
 
@@ -1170,7 +1217,7 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
   // same order as Dets in msd; index of associated SPOset in psi_wrapper_in.sposets_
   std::vector<int> mdd_spo_ids;
-  std::vector<const WaveFunctionComponent*> mdd_list;
+  std::vector<const MultiDiracDeterminant*> mdd_list;
 
   if (psi_wrapper_in.hasMultiSlaterDet())
   {
@@ -1184,7 +1231,7 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
     for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
     {
       const MultiDiracDeterminant& multidiracdet_i = msd.getDet(i_mdd);
-      mdd_list.push_back(static_cast<const WaveFunctionComponent*>(&multidiracdet_i));
+      mdd_list.push_back(&multidiracdet_i);
       // particle group id for this multidiracdet
       const int gid = P.getGroupID(multidiracdet_i.getFirstIndex());
       // SPOSet location in psi_wrapper_in.sposets_ for this particle group

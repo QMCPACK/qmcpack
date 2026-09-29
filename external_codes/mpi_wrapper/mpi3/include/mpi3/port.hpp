@@ -1,9 +1,9 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #ifndef BMPI3_PORT_HPP
 #define BMPI3_PORT_HPP
 
-#include<mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
 #include<stdexcept>
 #include<string>
@@ -11,7 +11,7 @@
 namespace boost {
 namespace mpi3 {
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 struct port {
 	// NOLINTNEXTLINE(misc-non-private-member-variables-in-classes) TODO(correaa)
 	std::string name_;  // typically this will be something like tag#0$description#inspiron$port#47425$ifname#172.17.5.240$
@@ -25,7 +25,7 @@ struct port {
 
 	explicit port(std::string name) : name_{std::move(name)} {};
 
-	~port() noexcept{ try{if(is_open()) {close();}}catch(...){} }
+	~port() noexcept{ try{if(is_open()) {close();}}catch(...){} }  // NOLINT(bugprone-empty-catch)
 
 	void open() {
 		name_.resize(MPI_MAX_PORT_NAME, '\0');

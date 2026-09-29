@@ -102,13 +102,9 @@ public:
   void addVGL(const ParticleSet& P, int iat, VGLVector& vgl) { evaluateVGL(P, iat, vgl); }
   void addV(const ParticleSet& P, int iat, ValueVector& psi) { evaluateV(P, iat, psi); }
   void add_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix& vals, GradMatrix& dpsi, ValueMatrix& d2psi)
-  {
-    evaluate_vgl(P, iat, idx, vals, dpsi, d2psi);
-  }
+  { evaluate_vgl(P, iat, idx, vals, dpsi, d2psi); }
   void add_vector_vgl(const ParticleSet& P, int iat, ValueVector& vals, GradVector& dpsi, ValueVector& d2psi)
-  {
-    evaluate_vgl(P, iat, vals, dpsi, d2psi);
-  }
+  { evaluate_vgl(P, iat, vals, dpsi, d2psi); }
 };
 } // namespace qmcplusplus
 #endif

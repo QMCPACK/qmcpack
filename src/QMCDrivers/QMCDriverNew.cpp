@@ -75,14 +75,6 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
   drift_modifier_.reset(
       createDriftModifier(qmcdriver_input_.get_drift_modifier(), qmcdriver_input_.get_drift_modifier_unr_a()));
 
-  // This needs to be done here to keep dependency on CrystalLattice out of the QMCDriverInput.
-  max_disp_sq_ = input.get_max_disp_sq();
-  if (max_disp_sq_ < 0)
-  {
-    auto& lattice = population.get_golden_electrons().getLattice();
-    max_disp_sq_  = lattice.LR_rc * lattice.LR_rc;
-  }
-
   wOut = std::make_unique<HDFWalkerOutput>(population.get_golden_electrons().getTotalNum(), get_root_name(), myComm);
 }
 
@@ -205,7 +197,7 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
 
 void QMCDriverNew::recordBlock(int block)
 {
-  if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
+  if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period() == 0)
   {
     ScopedTimer local_timer(timers_.checkpoint_timer);
     population_.saveWalkerConfigurations(walker_configs_ref_);
@@ -214,7 +206,7 @@ void QMCDriverNew::recordBlock(int block)
   }
 }
 
-bool QMCDriverNew::finalize(int block, bool dumpwalkers)
+void QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
   population_.saveWalkerConfigurations(walker_configs_ref_);
   setWalkerOffsets(walker_configs_ref_, myComm);
@@ -230,8 +222,6 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 
   if (DumpConfig)
     RandomNumberControl::write(rngs_, get_root_name(), myComm);
-
-  return true;
 }
 
 void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)

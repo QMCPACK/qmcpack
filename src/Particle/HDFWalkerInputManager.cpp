@@ -34,13 +34,11 @@ bool HDFWalkerInputManager::put(xmlNodePtr cur)
   int pid = myComm->rank();
   std::string froot("0"), cfile("0");
   //string  target("e"), collect("no");
-  int anode = -1, nprocs = 1;
+  int nprocs = 1;
   HDFVersion in_version(0, 4); //set to be old version
   OhmmsAttributeSet pAttrib;
   pAttrib.add(cfile, "href");
-  pAttrib.add(cfile, "file");
   pAttrib.add(froot, "fileroot");
-  pAttrib.add(anode, "node");
   pAttrib.add(nprocs, "nprocs");
   //pAttrib.add(collect,"collected");
   pAttrib.add(in_version, "version");

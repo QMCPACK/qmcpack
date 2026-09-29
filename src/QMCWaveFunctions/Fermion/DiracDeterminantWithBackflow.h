@@ -124,9 +124,7 @@ public:
   std::unique_ptr<DiracDeterminantWithBackflow> makeCopyWithBF(SPOSet& phi, BackflowTransformation& BF) const;
 
   [[noreturn]] std::unique_ptr<DiracDeterminantBase> makeCopy(SPOSet& phi) const override
-  {
-    throw std::runtime_error("makeCopy spo should not be called.");
-  }
+  { throw std::runtime_error("makeCopy spo should not be called."); }
 
   void testDerivFjj(ParticleSet& P, int pa);
   void testGGG(ParticleSet& P);

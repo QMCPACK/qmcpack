@@ -34,7 +34,7 @@ from .simulation import Simulation,SimulationInput,SimulationAnalyzer
 
 
 # PLEASE READ THIS
-#   
+#
 #   depending on what you want to do with a simulation
 #     you will have to implement different functions below
 #     here are a few use cases and the functions required
@@ -44,13 +44,13 @@ from .simulation import Simulation,SimulationInput,SimulationAnalyzer
 #     1) standalone simulation
 #         nexus drives this simulation in isolation of others
 #           i.e., one performs parameter scans to drive several independent template_simulation runs
-#         in this setting, a template_simulation simulation does not provide information to 
-#           other simulations (e.g. orbitals to qmcpack) and does not accept 
+#         in this setting, a template_simulation simulation does not provide information to
+#           other simulations (e.g. orbitals to qmcpack) and does not accept
 #           information from prior simulations (e.g. structure from pwscf or template_simulation)
-#      
+#
 #         the input file will be read from a template file
 #           and modified to obtain the desired inputs
-#         one could also provide the input longhand in python 
+#         one could also provide the input longhand in python
 #           in a form TemplateSimulationInput understands (this depends on your implementation)
 #
 #         required functions to be implemented:
@@ -60,24 +60,24 @@ from .simulation import Simulation,SimulationInput,SimulationAnalyzer
 #     2) generated standalone simulation
 #          as above, but with fully generated input files
 #            generate functions provide a short-hand of minimal vars for input
-#            structure information for the input is extracted from 
+#            structure information for the input is extracted from
 #              a standard PhysicalSystem object
 #
 #          required functions to be implemented:
 #           TemplateSimulationInput: read_text, write_text, incorporate_system
 #           TemplateSimulation:      app_command, check_sim_status
 #           generate_template_simulation_input
-#           
+#
 #     3) simulation that provides information to subsequent chained simulations
 #          as above (with or without #2)
-#            other simulations can request and get information about 
+#            other simulations can request and get information about
 #              results produced by this simulation
 #            (e.g. relaxed structure data, location of orbital files, etc.)
 #            this information is used by the others to populate input files
 #
 #         required functions to be implemented:
 #           TemplateSimulationInput: read_text, write_text
-#           TemplateSimulation:      app_command,check_sim_status, 
+#           TemplateSimulation:      app_command,check_sim_status,
 #                        check_result, get_result
 #
 #           if required to get needed output information:
@@ -85,18 +85,18 @@ from .simulation import Simulation,SimulationInput,SimulationAnalyzer
 #
 #     3) simulation that provides/receives info to/from other simulations
 #          as above (with or without #2)
-#            this simulation can request info from other sims 
+#            this simulation can request info from other sims
 #            info is used to populate own input file
 #
 #         required functions to be implemented:
 #           TemplateSimulationInput: read_text, write_text
-#           TemplateSimulation:      app_command,check_sim_status, 
+#           TemplateSimulation:      app_command,check_sim_status,
 #                        check_result, get_result,
 #                        incorporate_result
 #
 #           if required to get needed output information:
 #           TemplateSimulationAnalyzer: analyze
-# 
+#
 
 
 
@@ -140,7 +140,7 @@ class TemplateSimulationInput(SimulationInput):
         #    >>> input
         #      section_a             obj
         #      section_b             obj
-        #    
+        #
         #    >>> print input
         #      section_a
         #        var_a           = 1
@@ -150,9 +150,9 @@ class TemplateSimulationInput(SimulationInput):
         #        var_c           = 10000.0
         #        var_d           = True
         #      end section_b
-        #    
+        #
         #    >>> input.section_b.var_c = 25.0
-        None
+        pass
     #end def read_text
 
 
@@ -177,7 +177,7 @@ class TemplateSimulationInput(SimulationInput):
         #  only necessary if you want to populate atomic positions, etc
         #  from a PhysicalSystem object
         # if you don't want to implement it, no action is required
-        self.not_implemented()
+        raise NotImplementedError
     #end def incorporate_system
 #end class TemplateSimulationInput
 
@@ -245,7 +245,7 @@ class TemplateSimulationAnalyzer(SimulationAnalyzer):
         #   or if you want to have a general purpose class to scrape
         #   and process simulation data
         # if you don't want to implement it, no action is required
-        None
+        pass
     #end def analyze
 #end class TemplateSimulationAnalyzer
 
@@ -256,8 +256,8 @@ class TemplateSimulation(Simulation):
     analyzer_type      = TemplateSimulationAnalyzer
     generic_identifier = 'template_simulation'
     application        = 'template_simulation_exe' #replace with default name of template_simulation executable
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['orbitals']) #what template_simulation produces that other simulations can use
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'orbitals'}) #what template_simulation produces that other simulations can use
 
     def check_result(self,result_name,sim):
         # optional
@@ -280,14 +280,14 @@ class TemplateSimulation(Simulation):
         #  e.g.
         #  other_sim.depends(template_simulation_sim,'orbitals')  or similar
         # if you don't want to implement it, uncomment the line below
-        #self.not_implemented()
+        #raise NotImplementedError
 
         result = obj()
         input    = self.input
         #analyzer = self.load_analyzer_image()
 
         # package information about a result/product in the result object
-        # for example, if orbitals are requested, 
+        # for example, if orbitals are requested,
         # the path to the orbital file might be provided:
         # result.orbital_file = '/path/to/orbital/file'
         return result
@@ -300,7 +300,7 @@ class TemplateSimulation(Simulation):
         #  e.g.
         #  template_simulation_sim.depends(other_sim,'structure')  or similar
         # if you don't want to implement it no action is required
-        self.not_implemented()
+        raise NotImplementedError
     #end def incorporate_result
 
 
@@ -323,7 +323,7 @@ class TemplateSimulation(Simulation):
 
         with open(os.path.join(self.locdir,self.errfile), "r") as err:
             errors = err.read()
-        
+
         success = False
         # check output and errors
         #  set success=True if run completed successfully

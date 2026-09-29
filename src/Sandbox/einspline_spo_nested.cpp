@@ -17,7 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "random.hpp"
-#include "mpi/collectives.h"
+#include "Message/CommOperators.h"
 #include "Sandbox/input.hpp"
 #include "Sandbox/pseudo.hpp"
 #include "Utilities/Timer.h"
@@ -141,7 +141,11 @@ int main(int argc, char** argv)
     const int nels  = count_electrons(ions);
     const int nels3 = 3 * nels;
 
+#if _OPENMP >= 202011
+#pragma omp masked
+#else
 #pragma omp master
+#endif
     {
       nptcl  = nels;
       ncrews = omp_get_max_threads();
@@ -212,7 +216,11 @@ int main(int argc, char** argv)
           spo.evaluate_vgh_pfor(els.R[iel]); //internally using omp for over the blocks
           vgh_t_loc2 += clock.elapsed();
 
+#if _OPENMP >= 202011
+#pragma omp masked
+#else
 #pragma omp master
+#endif
           if (ur[iel] > accept)
           {
             els.R[iel] = pos;
@@ -241,14 +249,18 @@ int main(int argc, char** argv)
               v_t_loc2 += clock.elapsed();
             }
           } // els
-        }   //ions
-      }     // steps.
+        } //ions
+      } // steps.
 
       vgh_t_loc += vgh_t_loc2;
       v_t_loc += v_t_loc2;
       my_vals += my_vals2;
 
+#if _OPENMP >= 202011
+#pragma omp masked
+#else
 #pragma omp master
+#endif
       nknots_copy = nknots;
 
     } //parallel region
@@ -280,8 +292,8 @@ int main(int argc, char** argv)
   timer_type global_t(t0, vgh_t, val_t, 0.0);
   timer_type global_t_1(tInit, tBigClock, 0.0, 0.0);
 
-  mpi::reduce(*myComm, global_t);
-  mpi::reduce(*myComm, global_t_1);
+  myComm->reduce(global_t);
+  myComm->reduce(global_t_1);
 
   const int nmpi = myComm->size();
   t0             = global_t[0] / nmpi;

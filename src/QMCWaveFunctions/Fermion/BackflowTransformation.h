@@ -127,9 +127,6 @@ public:
 
   std::vector<std::unique_ptr<BackflowFunctionBase>> bfFuns;
 
-  std::map<std::string, int> sources;
-  std::vector<std::string> names;
-
   /// new qp coordinates for pbyp moves.
   ParticleSet::ParticlePos newQP;
   ParticleSet::ParticlePos oldQP;

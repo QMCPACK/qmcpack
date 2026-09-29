@@ -8,11 +8,9 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/Jastrow/UserFunctor.h"
@@ -22,8 +20,6 @@ namespace qmcplusplus
 TEST_CASE("UserJastrowFunctor", "[wavefunction]")
 {
   using RealType = OptimizableFunctorBase::real_type;
-
-  Communicate* c = OHMMS::Controller;
 
   UserFunctor<RealType> uf("test_functor");
 

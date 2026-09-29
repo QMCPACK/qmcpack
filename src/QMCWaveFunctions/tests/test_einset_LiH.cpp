@@ -8,9 +8,8 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -101,34 +100,36 @@ void test_einset_LiH_x(bool use_offload)
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
   // value
-  CHECK(std::real(psiM[0][0]) == Approx(12.3543100357));
-  CHECK(std::real(psiM[0][1]) == Approx(0.0));
 #if defined(QMC_COMPLEX)
-  CHECK(std::real(psiM[1][0]) == Approx(1.1857329607));
-  CHECK(std::real(psiM[1][1]) == Approx(-0.4717386365));
+  CHECK(psiM[0][0] == ComplexApprox(std::complex<double>(12.3543100357, 12.3543100357)));
+  CHECK(psiM[0][1] == ComplexApprox(std::complex<double>(0.0, 0.0)));
+  CHECK(psiM[1][0] == ComplexApprox(std::complex<double>(1.1857329607, 1.1857291460)));
+  CHECK(psiM[1][1] == ComplexApprox(std::complex<double>(-0.4717386365, 0.4717381299)));
   // grad
-  CHECK(std::real(dpsiM[1][0][0]) == Approx(-0.00828881));
-  CHECK(std::real(dpsiM[1][0][1]) == Approx(-2.8782308102));
-  CHECK(std::real(dpsiM[1][0][2]) == Approx(0.0082882112));
-  CHECK(std::real(dpsiM[1][1][0]) == Approx(-0.4088457525));
-  CHECK(std::real(dpsiM[1][1][1]) == Approx(-0.2475463897));
-  CHECK(std::real(dpsiM[1][1][2]) == Approx(0.4088463187));
+  CHECK(dpsiM[1][0][0] == ComplexApprox(std::complex<double>(-0.00828881, -0.0082774563)));
+  CHECK(dpsiM[1][0][1] == ComplexApprox(std::complex<double>(-2.8782308102, -2.8782112598)));
+  CHECK(dpsiM[1][0][2] == ComplexApprox(std::complex<double>(0.0082882112, 0.0082776379)));
+  CHECK(dpsiM[1][1][0] == ComplexApprox(std::complex<double>(-0.4088457525, 0.4088515341)));
+  CHECK(dpsiM[1][1][1] == ComplexApprox(std::complex<double>(-0.2475463897, 0.2475528419)));
+  CHECK(dpsiM[1][1][2] == ComplexApprox(std::complex<double>(0.4088463187, -0.4088519514)));
   // lapl
-  CHECK(std::real(d2psiM[1][0]) == Approx(1.7295608521).epsilon(4e-5));
-  CHECK(std::real(d2psiM[1][1]) == Approx(0.7432643771).epsilon(2e-5));
+  CHECK(d2psiM[1][0] == ComplexApprox(std::complex<double>(1.7295608521, 1.7284075022)).epsilon(4e-5));
+  CHECK(d2psiM[1][1] == ComplexApprox(std::complex<double>(0.7432643771, -0.7408550978)).epsilon(2e-5));
 #else
-  CHECK(std::real(psiM[1][0]) == Approx(-1.1857329607));
-  CHECK(std::real(psiM[1][1]) == Approx(0.4717386365));
+  CHECK(psiM[0][0] == Approx(12.3543100357));
+  CHECK(psiM[0][1] == Approx(0.0));
+  CHECK(psiM[1][0] == Approx(-1.1857329607));
+  CHECK(psiM[1][1] == Approx(0.4717386365));
   // grad
-  CHECK(std::real(dpsiM[1][0][0]) == Approx(0.0083514443));
-  CHECK(std::real(dpsiM[1][0][1]) == Approx(2.8783009052));
-  CHECK(std::real(dpsiM[1][0][2]) == Approx(-0.0083516147));
-  CHECK(std::real(dpsiM[1][1][0]) == Approx(0.4088440537));
-  CHECK(std::real(dpsiM[1][1][1]) == Approx(0.2475452274));
-  CHECK(std::real(dpsiM[1][1][2]) == Approx(-0.408844173));
+  CHECK(dpsiM[1][0][0] == Approx(0.0083514443));
+  CHECK(dpsiM[1][0][1] == Approx(2.8783009052));
+  CHECK(dpsiM[1][0][2] == Approx(-0.0083516147));
+  CHECK(dpsiM[1][1][0] == Approx(0.4088440537));
+  CHECK(dpsiM[1][1][1] == Approx(0.2475452274));
+  CHECK(dpsiM[1][1][2] == Approx(-0.408844173));
   // lapl
-  CHECK(std::real(d2psiM[1][0]) == Approx(-1.7209997177));
-  CHECK(std::real(d2psiM[1][1]) == Approx(-0.7427335978));
+  CHECK(d2psiM[1][0] == Approx(-1.7209997177));
+  CHECK(d2psiM[1][1] == Approx(-0.7427335978));
 #endif
   // Test the batched interface
   const size_t nw = 2;
@@ -178,17 +179,19 @@ void test_einset_LiH_x(bool use_offload)
     d2psi_v_list.push_back(d2psi_2);
     spo->mw_evaluate_notranspose(spo_list, p_list, 0, elec_.R.size(), psi_v_list, dpsi_v_list, d2psi_v_list);
 
-    CHECK(std::real(psi_v_list[0].get()[0][0]) == Approx(12.3543100357));
 #if defined(QMC_COMPLEX)
-    CHECK(std::real(psi_v_list[0].get()[1][0]) == Approx(1.1857329607));
+    CHECK(psi_v_list[0].get()[0][0] == ComplexApprox(std::complex<double>(12.3543100357, 12.3543100357)));
+    CHECK(psi_v_list[0].get()[1][0] == ComplexApprox(std::complex<double>(1.1857329607, 1.1857291460)));
     // Second particle set had particle positions flipped
-    CHECK(std::real(psi_v_list[1].get()[0][0]) == Approx(1.1857329607));
+    CHECK(psi_v_list[1].get()[0][0] == ComplexApprox(std::complex<double>(1.1857329607, 1.1857291460)));
+    CHECK(psi_v_list[1].get()[1][0] == ComplexApprox(std::complex<double>(12.3543100357, 12.3543100357)));
 #else
-    CHECK(std::real(psi_v_list[0].get()[1][0]) == Approx(-1.1857329607));
+    CHECK(psi_v_list[0].get()[0][0] == Approx(12.3543100357));
+    CHECK(psi_v_list[0].get()[1][0] == Approx(-1.1857329607));
     // Second particle set had particle positions flipped
-    CHECK(std::real(psi_v_list[1].get()[0][0]) == Approx(-1.1857329607));
+    CHECK(psi_v_list[1].get()[0][0] == Approx(-1.1857329607));
+    CHECK(psi_v_list[1].get()[1][0] == Approx(12.3543100357));
 #endif
-    CHECK(std::real(psi_v_list[1].get()[1][0]) == Approx(12.3543100357));
   }
   //Test SplineR2R/C2C::mw_evaluateVGLandDetRatioGrads
   {
@@ -214,14 +217,14 @@ void test_einset_LiH_x(bool use_offload)
     CHECK(grads_v[1][1] == ComplexApprox(std::complex{0.24621, -0.28615}));
     CHECK(grads_v[1][2] == ComplexApprox(std::complex{0.147884, 0.67006}));
 #else
-    CHECK(std::real(ratio_v[0]) == Approx(0.1116431436));
-    CHECK(std::real(grads_v[0][0]) == Approx(-8.4771142931));
-    CHECK(std::real(grads_v[0][1]) == Approx(-45.2452890181));
-    CHECK(std::real(grads_v[0][2]) == Approx(15.7149783314));
-    CHECK(std::real(ratio_v[1]) == Approx(0.4948832706));
-    CHECK(std::real(grads_v[1][0]) == Approx(-1.1981267596));
-    CHECK(std::real(grads_v[1][1]) == Approx(0.0360827888));
-    CHECK(std::real(grads_v[1][2]) == Approx(0.639729227));
+    CHECK(ratio_v[0] == Approx(0.1116431436));
+    CHECK(grads_v[0][0] == Approx(-8.4771142931));
+    CHECK(grads_v[0][1] == Approx(-45.2452890181));
+    CHECK(grads_v[0][2] == Approx(15.7149783314));
+    CHECK(ratio_v[1] == Approx(0.4948832706));
+    CHECK(grads_v[1][0] == Approx(-1.1981267596));
+    CHECK(grads_v[1][1] == Approx(0.0360827888));
+    CHECK(grads_v[1][2] == Approx(0.639729227));
 #endif
   }
 
@@ -300,13 +303,9 @@ void test_einset_LiH_x(bool use_offload)
     spo_2->evaluateDetRatios(VP_2, tmp_psi1, psiMinv_ref_1, ratios_ref_1);
 
     for (int ivp = 0; ivp < nvp_; ivp++)
-      CHECK(Approx(std::real(ratios_list[0][ivp])) == std::real(ratios_ref_0[ivp]));
+      CHECK(ratios_list[0][ivp] == ValueApprox(ratios_ref_0[ivp]));
     for (int ivp = 0; ivp < nvp_2; ivp++)
-      CHECK(Approx(std::real(ratios_list[1][ivp])) == std::real(ratios_ref_1[ivp]));
-    for (int ivp = 0; ivp < nvp_; ivp++)
-      CHECK(Approx(std::imag(ratios_list[0][ivp])) == std::imag(ratios_ref_0[ivp]));
-    for (int ivp = 0; ivp < nvp_2; ivp++)
-      CHECK(Approx(std::imag(ratios_list[1][ivp])) == std::imag(ratios_ref_1[ivp]));
+      CHECK(ratios_list[1][ivp] == ValueApprox(ratios_ref_1[ivp]));
 
 #if defined(QMC_COMPLEX)
     CHECK(ComplexApprox(ratios_ref_0[0]) == std::complex{-0.749192, -0.749192});

@@ -66,9 +66,7 @@ public:
   void registerData(ParticleSet& P, WFBufferType& buf) override {}
 
   LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
-  {
-    return evaluateLog(P, P.G, P.L);
-  }
+  { return evaluateLog(P, P.G, P.L); }
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
 

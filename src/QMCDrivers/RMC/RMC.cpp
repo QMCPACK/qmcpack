@@ -65,7 +65,7 @@ RMC::RMC(const ProjectData& project_data,
   TransProb[1] = w.addProperty("TransProbForward");
 }
 
-bool RMC::run()
+void RMC::run()
 {
   resetRun();
   //start the main estimator
@@ -137,7 +137,7 @@ bool RMC::run()
     RandomNumberControl::Children[ip] = Rng[ip]->makeClone();
   //return nbeads and stuff to its original unset state;
   resetVars();
-  return finalize(nBlocks);
+  finalize(nBlocks);
 }
 
 void RMC::resetRun()

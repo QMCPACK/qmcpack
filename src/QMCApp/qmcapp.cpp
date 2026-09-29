@@ -28,6 +28,7 @@
 #include "ProjectData.h"
 #include "QMCApp/QMCMain.h"
 #include "Utilities/qmc_common.h"
+#include "Concurrency/OpenMP.h"
 
 #include <array>
 

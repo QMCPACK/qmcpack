@@ -37,6 +37,7 @@ set(QMCDRIVERS
     WFOpt/Eigensolver.cpp
     WFOpt/QMCFixedSampleLinearOptimize.cpp
     WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
+    WFOpt/NRCOptimization.cpp
     WFOpt/OutputMatrix.cpp
     WFOpt/WFOptDriverInput.cpp
     WFOpt/GradientTestInput.cpp
@@ -64,6 +65,7 @@ set(QMCDRIVERS
     DMC/DMCUpdatePbyPL2.cpp
     DMC/DMCFactory.cpp
     DMC/DMCBatched.cpp
+    DMC/L2Diffusion.cpp
     DMC/DMCDriverInput.cpp
     DMC/DMCRefEnergy.cpp
     DMC/WalkerControlFactory.cpp

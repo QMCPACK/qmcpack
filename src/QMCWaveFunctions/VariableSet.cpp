@@ -73,7 +73,7 @@ void VariableSet::getIndex(const VariableSet& selected)
 /// find the index of the first parameter of *this set in the selection
 int VariableSet::findIndexOfFirstParam(const VariableSet& selected) const
 {
-  if(NameAndValue.size())
+  if (NameAndValue.size())
     return selected.getIndex(NameAndValue[0].first);
   return -1;
 }

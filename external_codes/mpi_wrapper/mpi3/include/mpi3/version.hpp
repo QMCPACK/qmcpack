@@ -1,9 +1,9 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_VERSION_HPP
 #define BOOST_MPI3_VERSION_HPP
 
-#include <mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
 #include "detail/call.hpp"
 
@@ -11,9 +11,9 @@
 #include <iostream>
 #include <tuple>  // tie
 
-#define BOOST_MPI3_MAJOR_VERSION 0   // NOLINT(cppcoreguidelines-macro-usage,modernize-macro-to-enum)
-#define BOOST_MPI3_MINOR_VERSION 81  // NOLINT(cppcoreguidelines-macro-usage,modernize-macro-to-enum)
-#define BOOST_MPI3_PATCH_VERSION 0   // NOLINT(cppcoreguidelines-macro-usage,modernize-macro-to-enum)
+#define BOOST_MPI3_MAJOR_VERSION 0   // NOLINT(cppcoreguidelines-macro-usage,cppcoreguidelines-macro-to-enum,modernize-macro-to-enum)
+#define BOOST_MPI3_MINOR_VERSION 81  // NOLINT(cppcoreguidelines-macro-usage,cppcoreguidelines-macro-to-enum,modernize-macro-to-enum)
+#define BOOST_MPI3_PATCH_VERSION 0   // NOLINT(cppcoreguidelines-macro-usage,cppcoreguidelines-macro-to-enum,modernize-macro-to-enum)
 
 #define BOOST_MPI3_VERSION_STRING "Boost.MPI3/0.81"  // NOLINT(cppcoreguidelines-macro-usage)
 
@@ -42,8 +42,8 @@ struct version_t {
 	constexpr bool operator<=(version_t const& o) const { return operator<(o) or operator==(o); }
 };
 
-inline constexpr auto Version() -> version_t { return {MPI_VERSION, MPI_SUBVERSION}; }  // NOLINT(readability-identifier-naming)
-static constexpr auto VERSION = version_t{MPI_VERSION, MPI_SUBVERSION};
+static constexpr auto Version() { return version_t{MPI_VERSION, MPI_SUBVERSION}; }  // NOLINT(readability-identifier-naming,modernize-use-designated-initializers) for C++20
+static constexpr auto VERSION = version_t{MPI_VERSION, MPI_SUBVERSION};  // NOLINT(modernize-use-designated-initializers) for c++20
 
 inline auto version() {
 	version_t ret{};

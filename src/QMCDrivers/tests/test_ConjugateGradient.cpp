@@ -8,8 +8,8 @@
 //
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "QMCDrivers/WFOpt/ConjugateGradient.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 
@@ -117,7 +117,7 @@ TEST_CASE("ConjugateGradient", "[drivers]")
 
   ConjugateGradient cg;
   std::vector<Real> soln(np, 0);
-  int niterations = cg.run(ls, b, soln);
+  cg.run(ls, b, soln);
   for (int i = 0; i < np; i++)
     CHECK(soln[i] == Approx(x[i]).epsilon(0.001));
 }

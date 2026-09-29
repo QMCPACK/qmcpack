@@ -379,9 +379,7 @@ struct J1Spin : public WaveFunctionComponent
                              ParticleSet::ParticleGradient& G,
                              ParticleSet::ParticleLaplacian& L,
                              bool fromscratch = false) override
-  {
-    return log_value_ = computeGL(G, L);
-  }
+  { return log_value_ = computeGL(G, L); }
 
   /** compute gradient and lap
    * @return lap

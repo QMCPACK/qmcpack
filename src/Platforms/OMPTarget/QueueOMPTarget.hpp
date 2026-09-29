@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_QUEUE_OMPTARGET_H
 
 #include "Common/Queue.hpp"
+#include "OMPrequires.hpp"
 
 namespace qmcplusplus
 {

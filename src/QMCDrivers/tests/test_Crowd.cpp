@@ -8,10 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
 
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "QMCDrivers/Crowd.h"
 #include "type_traits/template_types.hpp"

@@ -61,9 +61,7 @@ struct FakeFunctor : public OptimizableFunctorBase
                              const int iEnd,
                              const T* restrict _distArray,
                              T* restrict distArrayCompressed) const
-  {
-    return 0.0;
-  }
+  { return 0.0; }
 
   static void mw_evaluateV(const int num_groups,
                            const FakeFunctor* const functors[],

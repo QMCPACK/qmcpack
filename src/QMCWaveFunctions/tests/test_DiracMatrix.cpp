@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -28,10 +27,10 @@ using std::string;
 
 namespace qmcplusplus
 {
-using RealType         = QMCTraits::RealType;
-using ValueType        = QMCTraits::ValueType;
-using LogValue         = std::complex<QMCTraits::QTFull::RealType>;
-using LogComplexApprox = Catch::Detail::LogComplexApprox;
+using RealType  = QMCTraits::RealType;
+using ValueType = QMCTraits::ValueType;
+using LogValue  = std::complex<QMCTraits::QTFull::RealType>;
+using ::LogComplexApprox;
 
 TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
 {

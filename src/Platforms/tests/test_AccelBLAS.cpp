@@ -8,14 +8,16 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
+#include "Platforms/Host/OutputManager.h"
 
 #include <DualAllocatorAliases.hpp>
 #include <AccelBLAS.hpp>
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <CPU/BLAS.hpp>
+#include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
 {
@@ -143,28 +145,28 @@ void test_gemm_cases()
   const int K = 23;
 
   // Non-batched test
-  std::cout << "Testing NN gemm" << std::endl;
+  app_log() << "Testing NN gemm" << std::endl;
   test_one_gemm<PL, float>(M, N, K, 'N', 'N');
   test_one_gemm<PL, double>(M, N, K, 'N', 'N');
 #if defined(QMC_COMPLEX)
   test_one_gemm<PL, std::complex<float>>(N, M, K, 'N', 'N');
   test_one_gemm<PL, std::complex<double>>(N, M, K, 'N', 'N');
 #endif
-  std::cout << "Testing NT gemm" << std::endl;
+  app_log() << "Testing NT gemm" << std::endl;
   test_one_gemm<PL, float>(M, N, K, 'N', 'T');
   test_one_gemm<PL, double>(M, N, K, 'N', 'T');
 #if defined(QMC_COMPLEX)
   test_one_gemm<PL, std::complex<float>>(N, M, K, 'N', 'T');
   test_one_gemm<PL, std::complex<double>>(N, M, K, 'N', 'T');
 #endif
-  std::cout << "Testing TN gemm" << std::endl;
+  app_log() << "Testing TN gemm" << std::endl;
   test_one_gemm<PL, float>(M, N, K, 'T', 'N');
   test_one_gemm<PL, double>(M, N, K, 'T', 'N');
 #if defined(QMC_COMPLEX)
   test_one_gemm<PL, std::complex<float>>(N, M, K, 'T', 'N');
   test_one_gemm<PL, std::complex<double>>(N, M, K, 'T', 'N');
 #endif
-  std::cout << "Testing TT gemm" << std::endl;
+  app_log() << "Testing TT gemm" << std::endl;
   test_one_gemm<PL, float>(M, N, K, 'T', 'T');
   test_one_gemm<PL, double>(M, N, K, 'T', 'T');
 #if defined(QMC_COMPLEX)
@@ -297,20 +299,35 @@ void test_gemv_cases()
   const int M = 137;
   const int N = 79;
 
-  std::cout << "Testing NOTRANS gemv" << std::endl;
+  app_log() << "Testing NOTRANS gemv" << std::endl;
   test_one_gemv<PL, float>(M, N, 'N');
   test_one_gemv<PL, double>(M, N, 'N');
 #if defined(QMC_COMPLEX)
   test_one_gemv<PL, std::complex<float>>(N, M, 'N');
   test_one_gemv<PL, std::complex<double>>(N, M, 'N');
 #endif
-  std::cout << "Testing TRANS gemv" << std::endl;
+  app_log() << "Testing TRANS gemv" << std::endl;
   test_one_gemv<PL, float>(M, N, 'T');
   test_one_gemv<PL, double>(M, N, 'T');
 #if defined(QMC_COMPLEX)
   test_one_gemv<PL, std::complex<float>>(N, M, 'T');
   test_one_gemv<PL, std::complex<double>>(N, M, 'T');
 #endif
+}
+
+/** value with an imaginary part when T is complex, real value otherwise.
+ *
+ * ger computes A += alpha * x * y^T and must not conjugate y. Filling y with real
+ * values only, as the rest of this file does, makes geru and gerc indistinguishable
+ * and leaves the choice untested.
+ */
+template<typename T>
+T testValue(const double re, const double im)
+{
+  if constexpr (IsComplex_t<T>::value)
+    return T(re, im);
+  else
+    return T(re);
 }
 
 template<PlatformKind PL, typename T>
@@ -328,7 +345,7 @@ void test_one_ger(const int M, const int N)
   for (int i = 0; i < M; i++)
     x[i] = i;
   for (int i = 0; i < N; i++)
-    y[i] = N - i;
+    y[i] = testValue<T>(N - i, i + 1);
 
   for (int j = 0; j < M; j++)
     for (int i = 0; i < N; i++)
@@ -365,7 +382,7 @@ void test_one_ger(const int M, const int N)
   for (int i = 0; i < M; i++)
     x2[i] = i - 1;
   for (int i = 0; i < N; i++)
-    y2[i] = N + i;
+    y2[i] = testValue<T>(N + i, -(i + 1));
 
   for (int j = 0; j < M; j++)
     for (int i = 0; i < N; i++)
@@ -422,7 +439,7 @@ void test_ger_cases()
   const int N = 79;
 
   // Batched Test
-  std::cout << "Testing ger_batched" << std::endl;
+  app_log() << "Testing ger_batched" << std::endl;
   test_one_ger<PL, float>(M, N);
   test_one_ger<PL, double>(M, N);
 #if defined(QMC_COMPLEX)
@@ -431,20 +448,81 @@ void test_ger_cases()
 #endif
 }
 
+template<PlatformKind PL, typename T>
+void test_one_copy(const int n)
+{
+  using vec_t = Vector<T, PinnedDualAllocator<T>>;
+
+  vec_t in1(n), in2(n);   // Input vectors
+  vec_t out1(n), out2(n); // Output vectors
+
+  // Fill data
+  for (int i = 0; i < n; i++)
+  {
+    in1[i]  = testValue<T>(i, i + 1);
+    in2[i]  = testValue<T>(n - i, -(i + 1));
+    out1[i] = T(-1);
+    out2[i] = T(-1);
+  }
+
+  in1.updateTo();
+  in2.updateTo();
+  out1.updateTo();
+  out2.updateTo();
+
+  Vector<const T*, PinnedDualAllocator<const T*>> in_arr(2);
+  Vector<T*, PinnedDualAllocator<T*>> out_arr(2);
+
+  in_arr[0]  = in1.device_data();
+  in_arr[1]  = in2.device_data();
+  out_arr[0] = out1.device_data();
+  out_arr[1] = out2.device_data();
+
+  in_arr.updateTo();
+  out_arr.updateTo();
+
+  compute::Queue<PL> queue;
+  compute::BLASHandle<PL> h_blas(queue);
+  compute::BLAS::copy_batched(h_blas, n, in_arr.device_data(), 1, out_arr.device_data(), 1, 2);
+  queue.sync();
+  out1.updateFrom();
+  out2.updateFrom();
+
+  for (int i = 0; i < n; i++)
+  {
+    CHECK(out1[i] == in1[i]);
+    CHECK(out2[i] == in2[i]);
+  }
+}
+
+template<PlatformKind PL>
+void test_copy_cases()
+{
+  const int n = 137;
+
+  app_log() << "Testing copy_batched" << std::endl;
+  test_one_copy<PL, float>(n);
+  test_one_copy<PL, double>(n);
+#if defined(QMC_COMPLEX)
+  test_one_copy<PL, std::complex<float>>(n);
+  test_one_copy<PL, std::complex<double>>(n);
+#endif
+}
+
 TEST_CASE("AccelBLAS", "[BLAS]")
 {
   SECTION("gemm")
   {
 #if defined(ENABLE_CUDA)
-    std::cout << "Testing gemm<PlatformKind::CUDA>" << std::endl;
+    app_log() << "Testing gemm<PlatformKind::CUDA>" << std::endl;
     test_gemm_cases<PlatformKind::CUDA>();
 #endif
 #if defined(ENABLE_SYCL)
-    std::cout << "Testing gemm<PlatformKind::SYCL>" << std::endl;
+    app_log() << "Testing gemm<PlatformKind::SYCL>" << std::endl;
     test_gemm_cases<PlatformKind::SYCL>();
 #endif
 #if defined(ENABLE_OFFLOAD)
-    std::cout << "Testing gemm<PlatformKind::OMPTARGET>" << std::endl;
+    app_log() << "Testing gemm<PlatformKind::OMPTARGET>" << std::endl;
     test_gemm_cases<PlatformKind::OMPTARGET>();
 #endif
   }
@@ -452,15 +530,15 @@ TEST_CASE("AccelBLAS", "[BLAS]")
   SECTION("gemv")
   {
 #if defined(ENABLE_CUDA)
-    std::cout << "Testing gemm<PlatformKind::CUDA>" << std::endl;
+    app_log() << "Testing gemm<PlatformKind::CUDA>" << std::endl;
     test_gemv_cases<PlatformKind::CUDA>();
 #endif
 #if defined(ENABLE_SYCL)
-    std::cout << "Testing gemm<PlatformKind::SYCL>" << std::endl;
+    app_log() << "Testing gemm<PlatformKind::SYCL>" << std::endl;
     test_gemv_cases<PlatformKind::SYCL>();
 #endif
 #if defined(ENABLE_OFFLOAD)
-    std::cout << "Testing gemm<PlatformKind::OMPTARGET>" << std::endl;
+    app_log() << "Testing gemm<PlatformKind::OMPTARGET>" << std::endl;
     test_gemv_cases<PlatformKind::OMPTARGET>();
 #endif
   }
@@ -468,16 +546,32 @@ TEST_CASE("AccelBLAS", "[BLAS]")
   SECTION("ger")
   {
 #if defined(ENABLE_CUDA)
-    std::cout << "Testing ger<PlatformKind::CUDA>" << std::endl;
+    app_log() << "Testing ger<PlatformKind::CUDA>" << std::endl;
     test_ger_cases<PlatformKind::CUDA>();
 #endif
 #if defined(ENABLE_SYCL)
-    std::cout << "Testing ger<PlatformKind::SYCL>" << std::endl;
+    app_log() << "Testing ger<PlatformKind::SYCL>" << std::endl;
     test_ger_cases<PlatformKind::SYCL>();
 #endif
 #if defined(ENABLE_OFFLOAD)
-    std::cout << "Testing ger<PlatformKind::OMPTARGET>" << std::endl;
+    app_log() << "Testing ger<PlatformKind::OMPTARGET>" << std::endl;
     test_ger_cases<PlatformKind::OMPTARGET>();
+#endif
+  }
+
+  SECTION("copy")
+  {
+#if defined(ENABLE_CUDA)
+    app_log() << "Testing copy<PlatformKind::CUDA>" << std::endl;
+    test_copy_cases<PlatformKind::CUDA>();
+#endif
+#if defined(ENABLE_SYCL)
+    app_log() << "Testing copy<PlatformKind::SYCL>" << std::endl;
+    test_copy_cases<PlatformKind::SYCL>();
+#endif
+#if defined(ENABLE_OFFLOAD)
+    app_log() << "Testing copy<PlatformKind::OMPTARGET>" << std::endl;
+    test_copy_cases<PlatformKind::OMPTARGET>();
 #endif
   }
 }

@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
-
-import numpy as np
+"""RMG Example with both manual and automatic specification of system to be simulated."""
 
 from nexus.unit_converter import convert
 

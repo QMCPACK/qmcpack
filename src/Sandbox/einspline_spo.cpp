@@ -17,7 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "random.hpp"
-#include "mpi/collectives.h"
+#include "Message/CommOperators.h"
 #include "Sandbox/input.hpp"
 #include "Sandbox/pseudo.hpp"
 #include "Utilities/Timer.h"
@@ -163,7 +163,11 @@ int main(int argc, char** argv)
     const int nels  = count_electrons(ions);
     const int nels3 = 3 * nels;
 
+#if _OPENMP >= 202011
+#pragma omp masked
+#else
 #pragma omp master
+#endif
     nptcl = nels;
 
     { //create up/down electrons
@@ -193,7 +197,11 @@ int main(int argc, char** argv)
     ParticlePos delta(nels);
     ParticlePos rOnSphere(nknots);
 
+#if _OPENMP >= 202011
+#pragma omp masked
+#else
 #pragma omp master
+#endif
     nknots_copy = nknots;
 
     RealType sqrttau = 2.0;
@@ -260,7 +268,7 @@ int main(int argc, char** argv)
             v_t_loc += clock.elapsed();
           }
         } // els
-      }   //ions
+      } //ions
 
       for (int p = 0; p < time_array_size; p++)
       {
@@ -312,8 +320,8 @@ int main(int argc, char** argv)
   timer_type global_t(t0, vgh_t, val_t, 0.0);
   timer_type global_t_1(tInit, tBigClock, 0.0, 0.0);
 
-  mpi::reduce(*myComm, global_t);
-  mpi::reduce(*myComm, global_t_1);
+  myComm->reduce(global_t);
+  myComm->reduce(global_t_1);
 
   const int nmpi = myComm->size();
   t0             = global_t[0] / nmpi;

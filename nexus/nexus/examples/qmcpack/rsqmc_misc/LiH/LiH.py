@@ -1,4 +1,6 @@
 #! /usr/bin/env python3
+
+from copy import deepcopy
 # LiH crystal with Quantum ESPRESSO orbitals
 
 from nexus import settings,job,run_project
@@ -120,7 +122,7 @@ linopt1 = linear(
     )
 
 # QMC Optimization Parameters - Finer Sampling Set
-linopt2 = linopt1.copy()
+linopt2 = deepcopy(linopt1)
 linopt2.samples = 16384
 
 # QMC Optimization
@@ -141,14 +143,14 @@ opt = generate_qmcpack(
     dependencies    = (p2q,'orbitals'),
     )
 pp = opt.input.get('pseudos')
-pp.Li.set(
+pp.Li.update(
     format  = 'casino',
     l_local = 's',
     nrule   = 2,
     lmax    = 2,
     cutoff  = 2.19,
     )
-pp.H.set(
+pp.H.update(
     format  = 'casino',
     l_local = 's',
     nrule   = 2,
@@ -177,7 +179,7 @@ qmc = generate_qmcpack(
             blocks               = 1,
             timestep             = 1.0,
             usedrift             = False,
-           ),
+            ),
         dmc(
             minimumtargetwalkers = 128,
             reconfiguration      = 'no',
@@ -186,19 +188,19 @@ qmc = generate_qmcpack(
             steps                = 10,
             blocks               = 200,
             nonlocalmoves        = True,
-           )
+            )
         ],
     dependencies   = [(p2q,'orbitals'),(opt,'jastrow')],
     )
 pp = qmc.input.get('pseudos')
-pp.Li.set(
+pp.Li.update(
     format  = 'casino',
     l_local = 's',
     nrule   = 2,
     lmax    = 2,
     cutoff  = 2.37,
     )
-pp.H.set(
+pp.H.update(
     format  = 'casino',
     l_local = 's',
     nrule   = 2,

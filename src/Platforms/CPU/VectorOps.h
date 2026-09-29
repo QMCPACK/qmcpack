@@ -34,6 +34,9 @@
 #ifndef OHMMS_PARTICLEATTRIB_OPS_H
 #define OHMMS_PARTICLEATTRIB_OPS_H
 
+#include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/OhmmsVector.h"
+
 namespace qmcplusplus
 {
 template<class T1, class T2, unsigned D>
@@ -291,65 +294,6 @@ struct PAOps<T, 3, T1>
       py[i][0] = px[i][0].real();
       py[i][1] = px[i][1].real();
       py[i][2] = px[i][2].real();
-    }
-  }
-};
-
-///specialization for 2-dimension
-template<class T, class T1>
-struct PAOps<T, 2, T1>
-{
-  using real_type    = T;
-  using complex_type = std::complex<T>;
-  using rpos_type    = TinyVector<T, 2>;
-  using ipos_type    = TinyVector<T1, 2>;
-  using cpos_type    = TinyVector<std::complex<T1>, 2>;
-
-  static inline void scale(T a, const Vector<cpos_type>& pa, Vector<rpos_type>& pb)
-  {
-    for (int i = 0; i < pa.size(); i++)
-    {
-      pb[i][0] = a * pa[i][0].real();
-      pb[i][1] = a * pa[i][1].real();
-    }
-  }
-
-  static inline void scale(T a, const Vector<ipos_type>& pa, Vector<rpos_type>& pb) { pb = a * pa; }
-
-
-  static inline void axpy(T a, const Vector<cpos_type>& pa, Vector<rpos_type>& pb)
-  {
-    for (int i = 0; i < pa.size(); i++)
-    {
-      pb[i][0] += a * pa[i][0].real();
-      pb[i][1] += a * pa[i][1].real();
-    }
-  }
-
-  static inline void axpy(T a, const Vector<ipos_type>& pa, Vector<rpos_type>& pb)
-  {
-    for (int i = 0; i < pa.size(); i++)
-    {
-      pb[i][0] += a * pa[i][0];
-      pb[i][1] += a * pa[i][1];
-    }
-  }
-
-  static inline void axpy(T a, const Vector<cpos_type>& pa, const Vector<ipos_type>& pb, Vector<rpos_type>& py)
-  {
-    for (int i = 0; i < pa.size(); i++)
-    {
-      py[i][0] = a * pa[i][0].real() + pb[i][0];
-      py[i][1] = a * pa[i][1].real() + pb[i][1];
-    }
-  }
-
-  static inline void axpy(T a, const Vector<ipos_type>& pa, const Vector<ipos_type>& pb, Vector<rpos_type>& py)
-  {
-    for (int i = 0; i < pa.size(); i++)
-    {
-      py[i][0] = a * pa[i][0] + pb[i][0];
-      py[i][1] = a * pa[i][1] + pb[i][1];
     }
   }
 };

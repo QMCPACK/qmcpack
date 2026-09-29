@@ -32,7 +32,7 @@ bool get_nocc_per_kp(Vector const& nmo_per_kp, CSR const& PsiT, Array&& nocc_per
   assert(M % npol == 0);
   assert(nocc_per_kp.size() == nkpts);
 
-  std::fill_n(to_address(nocc_per_kp.origin()), nkpts, 0);
+  std::fill_n(to_address(nocc_per_kp.base()), nkpts, 0);
   std::vector<int> bounds(npol * nkpts + 1);
   bounds[0] = 0;
   for (int k = 0; k < npol * nkpts; k++)
@@ -43,7 +43,7 @@ bool get_nocc_per_kp(Vector const& nmo_per_kp, CSR const& PsiT, Array&& nocc_per
     auto nt = PsiT.num_non_zero_elements(i);
     if (nt == 0)
     {
-      std::fill_n(to_address(nocc_per_kp.origin()), nkpts, 0);
+      std::fill_n(to_address(nocc_per_kp.base()), nkpts, 0);
       return false;
     }
     auto col = PsiT.non_zero_indices2_data(i);
@@ -56,7 +56,7 @@ bool get_nocc_per_kp(Vector const& nmo_per_kp, CSR const& PsiT, Array&& nocc_per
     assert(pol_ == 0 || pol_ == 1);
     if (Q_ < Q)
     {
-      std::fill_n(to_address(nocc_per_kp.origin()), nkpts, 0);
+      std::fill_n(to_address(nocc_per_kp.base()), nkpts, 0);
       return false;
     }
     Q = Q_;
@@ -65,7 +65,7 @@ bool get_nocc_per_kp(Vector const& nmo_per_kp, CSR const& PsiT, Array&& nocc_per
       if ((*col < bounds[Q] || *col >= bounds[Q + 1]) &&
           (*col < bounds[(npol - 1) * nkpts + Q] || *col >= bounds[(npol - 1) * nkpts + Q + 1]))
       {
-        std::fill_n(to_address(nocc_per_kp.origin()), nkpts, 0);
+        std::fill_n(to_address(nocc_per_kp.base()), nkpts, 0);
         return false;
       }
     }
@@ -115,7 +115,7 @@ Array get_PsiK(Vector const& nmo_per_kp, CSR const& PsiT, int K, bool noncolin =
   using element = typename std::decay<Array>::type::element;
   Array A({nel, npol * nmo_per_kp[K]});
   using std::fill_n;
-  fill_n(A.origin(), A.num_elements(), element(0));
+  fill_n(A.base(), A.num_elements(), element(0));
   nel = 0;
   for (int i = 0; i < N; i++)
   {
@@ -222,18 +222,18 @@ bool check_cholesky_symmetry(T1 const& LQKikn,
         int nj = nmo_per_kp[KJ];
         int nk = nmo_per_kp[KK];
         int nl = nmo_per_kp[KL];
-        boost::multi::array_ref<ComplexType, 2, const ComplexType*> LKI(std::addressof(*LQKikn[Q][KI].origin()),
+        boost::multi::array_ref<ComplexType, 2, const ComplexType*> LKI(std::addressof(*LQKikn[Q][KI].base()),
                                                                         {ni * nk, nchol_per_kp[Q]});
-        boost::multi::array_ref<ComplexType, 2, const ComplexType*> LKL(std::addressof(*LQKikn[Q][KL].origin()),
+        boost::multi::array_ref<ComplexType, 2, const ComplexType*> LKL(std::addressof(*LQKikn[Q][KL].base()),
                                                                         {nl * nj, nchol_per_kp[Q]});
-        boost::multi::array_ref<ComplexType, 2> IJKL(std::addressof(*IJKL_.origin()), {ni * nk, nl * nj});
-        boost::multi::array_ref<ComplexType, 4> IJKL_4D(std::addressof(*IJKL_.origin()), {ni, nk, nl, nj});
+        boost::multi::array_ref<ComplexType, 2> IJKL(std::addressof(*IJKL_.base()), {ni * nk, nl * nj});
+        boost::multi::array_ref<ComplexType, 4> IJKL_4D(std::addressof(*IJKL_.base()), {ni, nk, nl, nj});
         ma::product(LKI, ma::H(LKL), IJKL);
 
-        boost::multi::array_ref<ComplexType, 2, const ComplexType*> LKJ(std::addressof(*LQKikn[Q][KJ].origin()),
+        boost::multi::array_ref<ComplexType, 2, const ComplexType*> LKJ(std::addressof(*LQKikn[Q][KJ].base()),
                                                                         {nj * nl, nchol_per_kp[Q]});
-        boost::multi::array_ref<ComplexType, 2> IJKL2(std::addressof(*IJKL2_.origin()), {ni * nk, nj * nl});
-        boost::multi::array_ref<ComplexType, 4> IJKL2_4D(std::addressof(*IJKL2_.origin()), {ni, nk, nj, nl});
+        boost::multi::array_ref<ComplexType, 2> IJKL2(std::addressof(*IJKL2_.base()), {ni * nk, nj * nl});
+        boost::multi::array_ref<ComplexType, 4> IJKL2_4D(std::addressof(*IJKL2_.base()), {ni, nk, nj, nl});
         ma::product(LKI, ma::T(LKJ), IJKL2);
         double mx(0.0);
         for (int i = 0; i < ni; i++)

@@ -33,7 +33,6 @@ template<>
 struct bspline_traits<float, 3>
 {
   using SplineType                       = multi_UBspline_3d_s;
-  using SingleSplineType                 = UBspline_3d_s;
   using BCType                           = BCtype_s;
   using real_type                        = float;
   using value_type                       = float;
@@ -46,7 +45,6 @@ template<>
 struct bspline_traits<double, 3>
 {
   using SplineType                       = multi_UBspline_3d_d;
-  using SingleSplineType                 = UBspline_3d_d;
   using BCType                           = BCtype_d;
   using real_type                        = double;
   using value_type                       = double;
@@ -60,7 +58,6 @@ template<>
 struct bspline_traits<float, 1>
 {
   using SplineType       = multi_UBspline_1d_s;
-  using SingleSplineType = UBspline_1d_s;
   using BCType           = BCtype_s;
   using DataType         = float;
   using real_type        = float;
@@ -72,42 +69,11 @@ template<>
 struct bspline_traits<double, 1>
 {
   using SplineType       = multi_UBspline_1d_d;
-  using SingleSplineType = UBspline_1d_d;
   using BCType           = BCtype_d;
   using DataType         = double;
   using real_type        = double;
   using value_type       = double;
 };
 
-
-/** helper class to determine the value_type of einspline objects
-   */
-template<typename ST>
-struct bspline_type
-{};
-
-template<>
-struct bspline_type<multi_UBspline_3d_s>
-{
-  using value_type = float;
-};
-
-template<>
-struct bspline_type<multi_UBspline_3d_d>
-{
-  using value_type = double;
-};
-
-template<>
-struct bspline_type<UBspline_3d_s>
-{
-  using value_type = float;
-};
-
-template<>
-struct bspline_type<UBspline_3d_d>
-{
-  using value_type = double;
-};
 } // namespace qmcplusplus
 #endif

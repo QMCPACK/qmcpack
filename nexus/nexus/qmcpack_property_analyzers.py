@@ -38,14 +38,7 @@ import os
 import numpy as np
 from .qmcpack_input import QmcpackInput
 from .qmcpack_analyzer_base import QAobject,QAanalyzer
-from .developer import unavailable
 from . import numpy_extensions as npe
-
-try:
-    from matplotlib.pyplot import plot,show,figure,xlabel,ylabel,title,legend
-except:
-    plot,show,figure,xlabel,ylabel,title,legend = unavailable('matplotlib.pyplot','plot','show','figure','xlabel','ylabel','title','legend')
-#end try
 
 
 class Bspline(QAobject):
@@ -80,13 +73,13 @@ class Bspline(QAobject):
         for i in range(2,len(p)):
             c[0,i+1] = p[i]
         #end for
-           
-        self.p      = p      
-        self.rcut   = rcut   
-        self.cusp   = cusp   
-        self.c      = c      
-        self.nintervals = nintervals 
-        self.dr     = dr     
+
+        self.p      = p
+        self.rcut   = rcut
+        self.cusp   = cusp
+        self.c      = c
+        self.nintervals = nintervals
+        self.dr     = dr
         self.odr    = odr
         self.default_range = 0.,rcut
     #end def __init__
@@ -102,7 +95,7 @@ class Bspline(QAobject):
         v   = np.zeros(r.shape)
         dv  = np.zeros(r.shape)
         d2v = np.zeros(r.shape)
-        for p in range(len(r)):               
+        for p in range(len(r)):
             ri = r[p]*odr
             i = int(np.floor(ri))
             if i<ni:
@@ -150,7 +143,10 @@ class RadialJastrow(QAobject):
         return r,d0,d1,d2
     #end def interpolate
 
-    def plot(self,r1=None,r2=None,color='b',ptype=plot):
+    def plot(self,r1=None,r2=None,color='b',ptype=None):
+        import matplotlib.pyplot as plt
+        if ptype is None:
+            ptype = plt.plot
         r,d0,d1,d2 = self.interpolate(r1,r2)
         c = color
         ptype(r,d0,ls='-' ,c=c,label='value')
@@ -180,15 +176,15 @@ class Jastrow2B(RadialJastrow):
 
 
 class PropertyAnalyzer(QAanalyzer):
-    None
+    pass
 #end class PropertyAnalyzer
 
 
 class WavefunctionAnalyzer(PropertyAnalyzer):
 
-    jastrow_types = ['J1','J2','J3']
+    jastrow_types = ('J1','J2','J3')
 
-    def __init__(self,arg0=None,load_jastrow=False,nindent=0):
+    def __init__(self,arg0=None,*,load_jastrow=False,nindent=0):
         QAanalyzer.__init__(self,nindent=nindent)
         self.info.load_jastrow = load_jastrow
 
@@ -200,8 +196,8 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
 
         self.info.fail = False
     #end def __init__
-            
-            
+
+
     def load_data_local(self):
         info = self.info
         if info.load_jastrow:
@@ -228,7 +224,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
 
         jnames = {'One-Body':'J1','Two-Body':'J2','Three-Body':'J3'}
         jastrows = QAobject()
-        for jt,jn in jnames.items():
+        for jn in jnames.values():
             jastrows[jn] = QAobject()
         #end for
         del jastrows.J3
@@ -277,14 +273,14 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
             self.warn('Jastrow read failed, some data will not be available')
             self.info.fail = True
         #end try
-        self._transfer_from(jastrows)
+        self.update(**jastrows)
     #end def analyze_local
 
 
     def load_jastrow_data(self):
         ext = '.g'+str(self.batch_index).zfill(3)+'.dat'
         for jt in self.jastrow_types:
-            for jn,je in self[jt].items():
+            for jn in self[jt].keys():
                 J = self[jt][jn]
                 data = np.loadtxt(os.path.join(self.sourcepath,jt+'.'+jn+ext))
                 J.r  = data[:,0]
@@ -297,6 +293,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
 
 
     def plot_jastrow_data(self):
+        import matplotlib.pyplot as plt
         for jt in self.jastrow_types:
             if len(self[jt])!=0:
                 for jn,je in self[jt].items():
@@ -304,43 +301,45 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
                     bs = Bspline(je.coefficients,r.max())
                     d0,d1,d2 = bs.evaluate(r)
 
-                    figure()
-                    plot(je.r,je.d0,'b-' ,label='value')
-                    plot(je.r,je.d1,'b-.',label='first derivative')
-                    plot(je.r,je.d2,'b:' ,label='second derivative')
-                    plot(r,d0,'r-' )
-                    plot(r,d1,'r-.')
-                    plot(r,d2,'r:' )
-                    plot(je.r,0*je.r,'k-')
-                    xlabel('r (Bohr)')
-                    title(jt+' '+jn)
-                    legend()
+                    plt.figure()
+                    plt.plot(je.r,je.d0,'b-' ,label='value')
+                    plt.plot(je.r,je.d1,'b-.',label='first derivative')
+                    plt.plot(je.r,je.d2,'b:' ,label='second derivative')
+                    plt.plot(r,d0,'r-' )
+                    plt.plot(r,d1,'r-.')
+                    plt.plot(r,d2,'r:' )
+                    plt.plot(je.r,0*je.r,'k-')
+                    plt.xlabel('r (Bohr)')
+                    plt.title(jt+' '+jn)
+                    plt.legend()
                 #end for
             #end if
         #end for
-        show()
+        plt.show()
     #end def plot_jastrow_data
 
 
-    def plot_jastrows(self,ptype=plot):
+    def plot_jastrows(self,ptype=None):
+        import matplotlib.pyplot as plt
+        if ptype is None:
+            ptype = plt.plot
         for name,value in self.items():
             if name in self.jastrow_types:
                 for label,jastrow in value.items():
                     jtype = jastrow.__class__.__name__
-                    figure()
+                    plt.figure()
                     jastrow.plot(ptype=ptype)
-                    xlabel('r (Bohr)')
-                    ylabel(jtype+' ('+label+')')
-                    title(jtype+' for '+label)
-                    legend()
+                    plt.xlabel('r (Bohr)')
+                    plt.ylabel(jtype+' ('+label+')')
+                    plt.title(jtype+' for '+label)
+                    plt.legend()
                 #end for
             #end if
         #end for
-        show()
+        plt.show()
     #end def plot_jastrows
 
 #end class WavefunctionAnalyzer
-
 
 
 

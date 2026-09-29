@@ -8,9 +8,9 @@ def collectValuesFromAtomicProj(xmlfile):
 
     tree = ET.parse(xmlfile)
     root = tree.getroot()
-    
+
     header = root.find('.//HEADER')
-    
+
     # Find number of bands
     nBands = int(header.attrib['NUMBER_OF_BANDS'])
     # Find number of kpoints
@@ -111,14 +111,13 @@ def matprint(m):
 
 if __name__ == '__main__':
 
-    from nexus.developer import ci
     from nexus.qmcpack_analyzer import QmcpackAnalyzer
-    from uncertainties import ufloat,unumpy
+    from uncertainties import unumpy
 
     # Exit if atomic_proj.xml and outdir locations not given
     if(len(sys.argv)<5):
         print("Usage: lowdin.py <pw_prefix> <pw_outdir> <qmc_directory> <qmc_identifier> <spin>")
-        quit()
+        sys.exit()
     #end if
 
     pw_prefix = sys.argv[1]
@@ -130,10 +129,10 @@ if __name__ == '__main__':
     # spin (up=0,down=1)
     sp = int(sys.argv[5])
 
-    if not sp in (0,1):
-        print('Invalid spin specfied: {}'.format(sp))
+    if not sp in {0,1}:
+        print(f'Invalid spin specfied: {sp}')
         print('Must be either 0 (up) or 1 (down)')
-        quit()
+        sys.exit()
     #end if
 
     # Collect parameters from atomic_proj.xml.
@@ -144,14 +143,14 @@ if __name__ == '__main__':
     # Collect parameters from <prefix>.xml
     nAtom,nElec,nOccUp,nOccDown = collectValuesFromXML(pw_outdir+"/"+pw_prefix+".xml")
 
-    print('\nNumber of up electrons: {}'.format(nOccUp))
-    print('Number of down electrons: {}'.format(nOccDown))
+    print(f'\nNumber of up electrons: {nOccUp}')
+    print(f'Number of down electrons: {nOccDown}')
 
     # Analyze QMC data
     qa = [] # qmcpack_analyzer instance
     nm = [] # number matrix
     for tn in range(nKpoints):
-        qa_tmp = QmcpackAnalyzer('{}/{}.g{:03d}.twistnum_{}.in.xml'.format(qmc_directory,qmc_identifier,tn,tn),verbose=False)
+        qa_tmp = QmcpackAnalyzer(f'{qmc_directory}/{qmc_identifier}.g{tn:03d}.twistnum_{tn}.in.xml',verbose=False)
         qa_tmp.analyze()
         qa.append(qa_tmp)
 

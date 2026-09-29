@@ -73,7 +73,13 @@ void hdf_archive::create_basic_plist()
     H5Pclose(file_cpl_);
     throw std::runtime_error("hdf_archive failed to create link create properties!");
   }
-  H5Pset_create_intermediate_group(lcpl_id, true);
+  if (H5Pset_create_intermediate_group(lcpl_id, true) < 0)
+  {
+    H5Pclose(file_apl_);
+    H5Pclose(file_cpl_);
+    H5Pclose(lcpl_id);
+    throw std::runtime_error("hdf_archive failed to set link create properties!");
+  }
   xfer_plist = H5Pcreate(H5P_DATASET_XFER);
   if (xfer_plist == H5I_INVALID_HID)
   {
@@ -98,11 +104,16 @@ void hdf_archive::set_access_plist(Communicate* comm, bool request_pio)
       // This in needed as well other resulting logic to support the unlikely
       // optimization of using the global H5P_DEFAULT instead of just
       // having hdf_archive own its access plist.
-      H5Pset_all_coll_metadata_ops(file_apl_, true);
-      H5Pset_coll_metadata_write(file_apl_, true);
-      H5Pset_fapl_mpio(file_apl_, comm->getMPI(), info);
-      // enable parallel collective I/O
-      H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
+      if (H5Pset_all_coll_metadata_ops(file_apl_, true) < 0 || H5Pset_coll_metadata_write(file_apl_, true) < 0 ||
+          H5Pset_fapl_mpio(file_apl_, comm->getMPI(), info) < 0 ||
+          H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE) < 0)
+      {
+        H5Pclose(file_apl_);
+        H5Pclose(file_cpl_);
+        H5Pclose(lcpl_id);
+        H5Pclose(xfer_plist);
+        throw std::runtime_error("hdf_archive failed to set parallel HDF5 properties!");
+      }
       use_phdf5 = true;
     }
 #endif
@@ -133,11 +144,15 @@ void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request
 #if defined(ENABLE_PHDF5)
       // enable parallel I/O
       MPI_Info info = MPI_INFO_NULL;
-      H5Pset_all_coll_metadata_ops(file_apl_, true);
-      H5Pset_coll_metadata_write(file_apl_, true);
-      H5Pset_fapl_mpio(file_apl_, comm.get(), info);
-      // enable parallel collective I/O
-      H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
+      if (H5Pset_all_coll_metadata_ops(file_apl_, true) < 0 || H5Pset_coll_metadata_write(file_apl_, true) < 0 ||
+          H5Pset_fapl_mpio(file_apl_, comm.get(), info) < 0 || H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE) < 0)
+      {
+        H5Pclose(file_apl_);
+        H5Pclose(file_cpl_);
+        H5Pclose(lcpl_id);
+        H5Pclose(xfer_plist);
+        throw std::runtime_error("hdf_archive failed to set parallel HDF5 properties!");
+      }
       use_phdf5 = true;
 #else
       use_phdf5 = false;
@@ -198,13 +213,14 @@ bool hdf_archive::is_group(const std::string& aname)
     H5O_info_t oinfo;
 #endif
     oinfo.type = H5O_TYPE_UNKNOWN;
+    herr_t status;
 #if H5_VERSION_GE(1, 12, 0)
-    H5Oget_info_by_name3(p, aname.c_str(), &oinfo, H5O_INFO_BASIC, H5P_DEFAULT);
+    status = H5Oget_info_by_name3(p, aname.c_str(), &oinfo, H5O_INFO_BASIC, H5P_DEFAULT);
 #else
-    H5Oget_info_by_name(p, aname.c_str(), &oinfo, H5P_DEFAULT);
+    status = H5Oget_info_by_name(p, aname.c_str(), &oinfo, H5P_DEFAULT);
 #endif
 
-    if (oinfo.type != H5O_TYPE_GROUP)
+    if (status < 0 || oinfo.type != H5O_TYPE_GROUP)
       return false;
     return true;
   }
@@ -234,11 +250,14 @@ void hdf_archive::push(const std::string& gname, bool createit)
   oinfo.type = H5O_TYPE_UNKNOWN;
   if (H5Lexists(p, gname.c_str(), H5P_DEFAULT) > 0)
   {
+    herr_t status;
 #if H5_VERSION_GE(1, 12, 0)
-    H5Oget_info_by_name3(p, gname.c_str(), &oinfo, H5O_INFO_BASIC, H5P_DEFAULT);
+    status = H5Oget_info_by_name3(p, gname.c_str(), &oinfo, H5O_INFO_BASIC, H5P_DEFAULT);
 #else
-    H5Oget_info_by_name(p, gname.c_str(), &oinfo, H5P_DEFAULT);
+    status = H5Oget_info_by_name(p, gname.c_str(), &oinfo, H5P_DEFAULT);
 #endif
+    if (status < 0)
+      oinfo.type = H5O_TYPE_UNKNOWN;
   }
 
   if ((oinfo.type != H5O_TYPE_GROUP) && createit)

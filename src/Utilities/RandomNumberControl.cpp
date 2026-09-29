@@ -21,7 +21,7 @@
 #include "Utilities/Timer.h"
 #include "hdf/HDFVersion.h"
 #include "hdf/hdf_archive.h"
-#include "mpi/collectives.h"
+#include "Message/CommOperators.h"
 #include "Utilities/SimpleParser.h"
 #include "OhmmsData/Libxml2Doc.h"
 
@@ -52,7 +52,7 @@ RefVector<RandomNumberControl::Generator> RandomNumberControl::getChildrenRefs()
 {
   auto& rngs_children = getChildren();
   RefVector<Generator> rng_refs;
-  for (auto& child: rngs_children)
+  for (auto& child : rngs_children)
     rng_refs.push_back(*child);
   return rng_refs;
 }
@@ -87,7 +87,7 @@ void RandomNumberControl::make_seeds()
   int pid         = OHMMS::Controller->rank();
   int nprocs      = OHMMS::Controller->size();
   uint_type iseed = static_cast<uint_type>(std::time(0)) % 1024;
-  mpi::bcast(*OHMMS::Controller, iseed);
+  OHMMS::Controller->bcast(iseed);
   //OHMMS::Controller->bcast(iseed);//broadcast the seed
   Offset = iseed;
   std::vector<uint_type> mySeeds;
@@ -153,7 +153,7 @@ bool RandomNumberControl::put(xmlNodePtr cur)
     {
       offset_in = static_cast<int>(static_cast<uint_type>(std::time(0)) % 1024);
       app_summary() << "  Offset for the random number seeds based on time: " << offset_in << std::endl;
-      mpi::bcast(*OHMMS::Controller, offset_in);
+      OHMMS::Controller->bcast(offset_in);
     }
     else
     {
@@ -192,9 +192,7 @@ void RandomNumberControl::read(const std::string& fname, Communicate* comm)
 }
 
 void RandomNumberControl::write(const std::string& fname, Communicate* comm)
-{
-  write(convertUPtrToRefVector(Children), fname, comm);
-}
+{ write(convertUPtrToRefVector(Children), fname, comm); }
 
 //switch between write functions
 void RandomNumberControl::write(const RefVector<Generator>& rng, const std::string& fname, Communicate* comm)
@@ -327,7 +325,7 @@ void RandomNumberControl::read_rank_0(hdf_archive& hin, Communicate* comm)
     hin.read(shape_hdf5, "nprocs_nthreads_statesize");
   }
 
-  mpi::bcast(*comm, shape_hdf5);
+  comm->bcast(shape_hdf5);
 
   //if hdf5 file's configuration and current configuration don't match, abort read
   if (shape_hdf5[0] != shape_now[0] || shape_hdf5[1] != shape_now[1] || shape_hdf5[2] != shape_now[2])
@@ -360,8 +358,8 @@ void RandomNumberControl::read_rank_0(hdf_archive& hin, Communicate* comm)
 
   if (comm->size() > 1)
   {
-    mpi::scatter(*comm, vt_tot, vt); //divide big buffer into on for each proc
-    mpi::scatter(*comm, mt_tot, mt);
+    comm->scatter(vt_tot, vt); //divide big buffer into on for each proc
+    comm->scatter(mt_tot, mt);
   }
   else
   {
@@ -404,8 +402,8 @@ void RandomNumberControl::write_rank_0(const RefVector<Generator>& rng, hdf_arch
   {
     vt_tot.resize(vt.size() * comm->size());
     mt_tot.resize(mt.size() * comm->size());
-    mpi::gather(*comm, vt, vt_tot); //gather into one big buffer for master write
-    mpi::gather(*comm, mt, mt_tot);
+    comm->gather(vt, vt_tot); //gather into one big buffer for master write
+    comm->gather(mt, mt_tot);
   }
   else
   {

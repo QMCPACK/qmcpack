@@ -85,9 +85,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
   ///constructor
   BsplineFunctor(const std::string& my_name, Real cusp = 0.0)
       : OptimizableFunctorBase(my_name), NumParams(0), CuspValue(cusp), notOpt(false), periodic(true)
-  {
-    cutoff_radius = 0.0;
-  }
+  { cutoff_radius = 0.0; }
 
   OptimizableFunctorBase* makeClone() const override { return new BsplineFunctor(*this); }
 

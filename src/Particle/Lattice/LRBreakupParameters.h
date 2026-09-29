@@ -16,6 +16,7 @@
 #include <iostream>
 #include "config.h"
 #include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/Tensor.h"
 
 namespace qmcplusplus
 {

@@ -18,7 +18,7 @@ endif()
 ######################################################################
 project(
   qmcpack
-  VERSION 4.3.9
+  VERSION 4.4.9
   LANGUAGES C CXX)
 
 #--------------------------------------------------------------------
@@ -38,15 +38,26 @@ include(AddRPATH)
 ######################################################################
 
 #--------------------------------------------------------------------
-# Set C++ standard
+# Set C++ standard and run basic checks
 #--------------------------------------------------------------------
+include(InspectCompilerCXXDefaultSTD)
 set(QMC_CXX_STANDARD
-    17
+    ${COMPILER_CXX_STANDARD_DEFAULT}
     CACHE STRING "QMCPACK C++ language standard")
-if(NOT QMC_CXX_STANDARD EQUAL 17)
-  message(WARNING "C++17 is the only language standard officially supported by this QMCPACK version. "
+message(STATUS "Compiling with C++${QMC_CXX_STANDARD} language standard")
+if(NOT (QMC_CXX_STANDARD EQUAL 17 OR QMC_CXX_STANDARD EQUAL 20))
+  message(WARNING "C++17 and C++20 are the only versions of language standard officially supported by this QMCPACK version. "
                   "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
 endif()
+
+set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Check that a C++ compiler is compatible with the underlying libstdc++
+include(Testlibstdc++)
+# Check that a C++ standard library is configured properly
+include(TestCxx17Library)
 
 #--------------------------------------------------------------------
 # Programmind model related build options
@@ -69,6 +80,7 @@ include(DetermineGPUFeatures)
 # CMake does not propagate indirect object files by design.
 # So the dependency must be explicitly specified with USE_OBJECT_TARGET.
 cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
+cmake_dependent_option(QMC_OFFLOAD_USM "Require OpenMP unified shared memory" OFF "ENABLE_OFFLOAD" OFF)
 
 include(DetermineDeviceArchitectures)
 
@@ -129,6 +141,7 @@ endif()
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE)
 message(STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 
+option(VPL_OMP "Use OpenMP threading for Vendor Performance Libraries" ${QMC_OMP})
 option(QMC_BUILD_SANDBOX_ONLY "Build only applications in Sandbox directory" OFF)
 option(ENABLE_GCOV "Enable code coverage" OFF)
 option(ENABLE_PYCOV "Enable python code coverage" OFF)
@@ -142,6 +155,10 @@ else()
   message(STATUS "LMY engine enabled for widest range of wavefunction optimization methods.")
 endif()
 option(BUILD_AFQMC "Build with AFQMC" OFF)
+option(ENABLE_DEEPQMC_INFERENCE "Enable experimental DeepQMC wavefunction inference support" OFF)
+if(ENABLE_DEEPQMC_INFERENCE)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+endif()
 # explicit HIP source codes only exist in AFQMC.
 cmake_dependent_option(BUILD_AFQMC_HIP "Build with with GPU support in AFQMC through explicit HIP source code" OFF "BUILD_AFQMC" OFF)
 if(BUILD_AFQMC_HIP)
@@ -216,19 +233,6 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL CMAKE_C_COMPILER_ID)
   message(FATAL_ERROR "Mixing C and C++ compilers from different vendors is not permitted. Current "
                       "C compiler is ${CMAKE_C_COMPILER_ID} but C++ compiler is ${CMAKE_CXX_COMPILER_ID}.")
 endif()
-
-#-----------------------------------------------------------------------
-# Set C++ minimum standard and run basic checks
-#-----------------------------------------------------------------------
-set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Check that a C++ compiler is compatible with the underlying libstdc++
-include(Testlibstdc++)
-
-# Check that a C++ standard library is configured properly
-include(TestCxx17Library)
 
 #-----------------------------------------------------------------------
 # SETUP SANITIZERS FLAGS
@@ -449,48 +453,10 @@ check_function_exists(posix_memalign HAVE_POSIX_MEMALIGN)
 # Add Math::BLAS_LAPACK target
 add_library(Math::BLAS_LAPACK INTERFACE IMPORTED)
 
-foreach(MKL_LIB_PATH IN ITEMS ${MKL_ROOT} $ENV{MKL_ROOT} $ENV{MKLROOT} $ENV{MKL_HOME})
-  set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${MKL_LIB_PATH}/lib/intel64)
-endforeach()
-if(NOT BLA_VENDOR)
-  message(STATUS "Trying to find LAPACK from Intel MKL")
-  if(QMC_OMP AND COMPILER STREQUAL "Intel")
-    set(BLA_VENDOR Intel10_64lp)
-  else()
-    set(BLA_VENDOR Intel10_64lp_seq)
-  endif()
-  find_package(LAPACK)
-  if(NOT LAPACK_FOUND)
-    message(STATUS "Intel MKL library files not found via FindLAPACK.")
-    message(STATUS "Trying to find alternative LAPACK libraries")
-    set(BLA_VENDOR All)
-    find_package(LAPACK REQUIRED)
-  endif()
-else()
-  message(STATUS "Trying to find LAPACK library as requested BLA_VENDOR=${BLA_VENDOR}")
-  find_package(LAPACK REQUIRED)
-endif()
-
-message(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
-message(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
-target_link_libraries(Math::BLAS_LAPACK INTERFACE "${LAPACK_LINKER_FLAGS};${LAPACK_LIBRARIES}")
-
-# Detects MKL header files and other components.
-if(LAPACK_LIBRARIES MATCHES "mkl_core")
-  include(FindMKL)
-endif()
-
-if(MKL_FOUND)
-  target_link_libraries(Math::BLAS_LAPACK INTERFACE MKL::BLAS_LAPACK)
-  set(MATH_VENDOR_GUESS "INTEL_VML")
-endif()
-
-# AFQMC requires MKL sparse for good performance (roughly a factor of 2x)
-if(BUILD_AFQMC AND NOT MKL_FOUND)
-  message(
-    WARNING
-      "AFQMC - MKL not found, using simple sparse matrix routines.  Link with MKL sparse libraries for better performance."
-  )
+find_package(VendorPerfLibs REQUIRED COMPONENTS lapack)
+target_link_libraries(Math::BLAS_LAPACK INTERFACE VPL::lapack)
+if(VPL_lapack_ID STREQUAL "IntelMKL")
+  target_compile_definitions(Math::BLAS_LAPACK INTERFACE "HAVE_MKL")
 endif()
 
 #-------------------------------------------------------------------
@@ -499,51 +465,42 @@ endif()
 add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
 
 set(VALID_MATH_VENDORS "GENERIC" "INTEL_VML" "IBM_MASS" "AMD_LIBM")
-if(NOT DEFINED MATH_VENDOR_GUESS)
-  set(MATH_VENDOR_GUESS "GENERIC")
-endif()
 set(QMC_MATH_VENDOR
-    ${MATH_VENDOR_GUESS}
+    "GENERIC"
     CACHE STRING "Vendor optimized libraries for scalar and vector math functions")
 
 # Perform math vendor option check
 if(NOT QMC_MATH_VENDOR IN_LIST VALID_MATH_VENDORS)
   message(FATAL_ERROR "Invalid vendor math library ${QMC_MATH_VENDOR}, value must be one of ${VALID_MATH_VENDORS}")
+endif()
+
+find_package(VendorPerfLibs QUIET COMPONENTS vml)
+if(VendorPerfLibs_FOUND)
+  if(VPL_vml_ID STREQUAL "IntelMKL")
+    target_compile_definitions(Math::scalar_vector_functions INTERFACE "HAVE_MKL;HAVE_MKL_VML")
+  elseif(VPL_vml_ID STREQUAL "AOCL")
+    target_compile_definitions(Math::scalar_vector_functions INTERFACE "HAVE_AMD_LIBM")
+  endif()
+  target_link_libraries(Math::scalar_vector_functions INTERFACE VPL::vml)
 else()
   message(STATUS "Selected vendor math library ${QMC_MATH_VENDOR}")
-endif()
-
-# This needs to go before HAVE_SINCOS
-if(QMC_MATH_VENDOR STREQUAL "INTEL_VML")
-  include(FindMKLVML)
-elseif(QMC_MATH_VENDOR STREQUAL "IBM_MASS")
-  include(FindIBMMASS)
-elseif(QMC_MATH_VENDOR STREQUAL "AMD_LIBM")
-  include(FindAMDLibM)
-endif()
-
-# CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
-if(NOT SINCOS_INCLUDE)
+  # This needs to go before HAVE_SINCOS check
   set(SINCOS_INCLUDE cmath)
-endif(NOT SINCOS_INCLUDE)
-message(STATUS "SINCOS_INCLUDE : ${SINCOS_INCLUDE}")
-include(CheckSincos)
+  if(QMC_MATH_VENDOR STREQUAL "IBM_MASS")
+    include(FindIBMMASS)
+  endif()
+
+  # CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
+  message(STATUS "SINCOS_INCLUDE : ${SINCOS_INCLUDE}")
+  include(CheckSincos)
+endif()
 
 #-------------------------------------------------------------------
 #  set up FFTW3 library
 #-------------------------------------------------------------------
 add_library(Math::FFTW3 INTERFACE IMPORTED)
-set(FFTW_FOUND 0)
-if(HAVE_MKL)
-  if(HAVE_MKL_FFTW3)
-    set(FFTW_FOUND 1)
-    target_link_libraries(Math::FFTW3 INTERFACE MKL::FFTW3)
-  endif()
-endif()
-if(NOT FFTW_FOUND)
-  find_package(FFTW REQUIRED)
-  target_link_libraries(Math::FFTW3 INTERFACE FFTW::FFTW3)
-endif()
+find_package(VendorPerfLibs REQUIRED COMPONENTS fft)
+target_link_libraries(Math::FFTW3 INTERFACE VPL::fft)
 
 set(HAVE_LIBFFTW 1)
 target_compile_definitions(Math::FFTW3 INTERFACE "HAVE_LIBFFTW")
@@ -676,11 +633,6 @@ if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --allow-unsupported-compiler")
   endif()
 
-  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-    string(REPLACE "sm_" "" CUDA_ARCH_NUMBERS "${QMC_GPU_ARCHS}")
-    set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH_NUMBERS})
-  endif()
-
   enable_language(CUDA)
   if(ENABLE_CUDA)
     include(TestCUDAHostCompatibility)
@@ -730,6 +682,33 @@ if(ENABLE_ROCM)
   # Check for minimum required rocBLAS version
   if(hipblas_VERSION VERSION_LESS "2.0.0")
     message(FATAL_ERROR "QMCPACK requires hipBLAS minimum version 2.0.0 from ROCm 6.0. Detected ${hipblas_VERSION}.")
+  endif()
+
+  # rocBLAS is used directly, not through hipBLAS, for the batched BLAS1/2 calls in
+  # Platforms/ROCm/rocBLAS.cpp that hipBLAS does not re-export. rocSOLVER pulls rocBLAS
+  # in as a PUBLIC dependency, which links the library but leaves rocblas_VERSION unset,
+  # so this call is what makes the version check below possible.
+  find_package(rocblas CONFIG REQUIRED)
+
+  # Opt-in. QMCPACK's own batched gemv and ger kernels remain the default.
+  # (copy_batched needs no alpha and is used unconditionally.)
+  option(QMC_ROCBLAS_ALPHA_BETA_ARRAYS "Use rocBLAS batched gemv/ger with alpha/beta arrays" OFF)
+
+  if(QMC_ROCBLAS_ALPHA_BETA_ARRAYS)
+    # rocBLAS 5.5.0 added alpha/beta arrays via rocblas_set_batch_alpha_stride and
+    # rocblas_set_batch_beta_stride, absent from rocBLAS 5.2 (ROCm 7.2) and earlier.
+    # 5.3 and 5.4 were never publicly released.
+    if(rocblas_VERSION VERSION_LESS "5.5.0")
+      message(FATAL_ERROR "QMC_ROCBLAS_ALPHA_BETA_ARRAYS=ON requires rocBLAS 5.5.0 or newer, "
+                          "found ${rocblas_VERSION}. rocblas_set_batch_alpha_stride is absent, "
+                          "so the build would fail to link.")
+    endif()
+    message(STATUS "Using rocBLAS batched gemv and ger with alpha/beta arrays "
+                   "(rocBLAS ${rocblas_VERSION})")
+  else()
+    message(STATUS "Using QMCPACK's own batched gemv and ger kernels. Set "
+                   "QMC_ROCBLAS_ALPHA_BETA_ARRAYS=ON for the rocBLAS implementations "
+                   "(requires rocBLAS 5.5.0 or newer, found ${rocblas_VERSION}).")
   endif()
 
   find_package(rocsolver CONFIG REQUIRED)
@@ -815,6 +794,9 @@ if(ENABLE_SYCL)
     NO_DEFAULT_PATH)
   target_link_libraries(SYCL::host INTERFACE OneAPI::DPCPP-host)
   target_link_libraries(SYCL::device INTERFACE OneAPI::DPCPP-device)
+
+  find_package(MKLsycl REQUIRED)
+
   if(TARGET MKL::sycl)
     target_link_libraries(MKL::sycl INTERFACE OneAPI::DPCPP-host)
   endif()
@@ -961,6 +943,16 @@ if(QMC_DATA)
 endif()
 
 #-------------------------------------------------------------------
+# Verify Python3 available
+#-------------------------------------------------------------------
+find_package(Python3)
+if(NOT Python3_FOUND)
+  message(FATAL_ERROR "Could not find required python3")
+endif(NOT Python3_FOUND)
+
+include(python)
+
+#-------------------------------------------------------------------
 # CTest
 #-------------------------------------------------------------------
 set(DROP_METHOD "http")
@@ -973,16 +965,45 @@ set(DART_TESTING_TIMEOUT
     3600
     CACHE STRING "Maximum time for one test")
 enable_testing()
-include(CTest)
 
-#-------------------------------------------------------------------
-# Verify Python3 available
-#-------------------------------------------------------------------
-find_package(Python3)
-if(NOT Python3_FOUND)
-  message(FATAL_ERROR "Could not find required python3")
-endif(NOT Python3_FOUND)
-include(python)
+set(QMC_CTEST_NUM_GPUS 1 CACHE STRING "Number of GPUs available to CTest on the local node")
+if(NOT QMC_CTEST_NUM_GPUS MATCHES "^[1-9][0-9]*$")
+  message(FATAL_ERROR "QMC_CTEST_NUM_GPUS must be a positive integer, but is \"${QMC_CTEST_NUM_GPUS}\"")
+endif()
+
+set(VALID_GPU_VISIBILITY_VARIABLES "CUDA_VISIBLE_DEVICES" "ROCR_VISIBLE_DEVICES" "ZE_AFFINITY_MASK")
+set(QMC_GPU_VISIBILITY_VARIABLE ${QMC_GPU_VISIBILITY_VARIABLE_DEFAULT} CACHE STRING "GPU visibility environment variable name. Valid input ${VALID_GPU_VISIBILITY_VARIABLES}")
+if(QMC_GPU_VISIBILITY_VARIABLE)
+  if(NOT QMC_GPU_VISIBILITY_VARIABLE IN_LIST VALID_GPU_VISIBILITY_VARIABLES)
+    message(FATAL_ERROR "Invalid QMC_GPU_VISIBILITY_VARIABLE input, value must be one of ${VALID_GPU_VISIBILITY_VARIABLES}")
+  endif()
+  math(EXPR QMC_LAST_GPU_ID "${QMC_CTEST_NUM_GPUS} - 1")
+  set(QMC_CTEST_GPU_RESOURCES "")
+  foreach(QMC_GPU_ID RANGE 0 ${QMC_LAST_GPU_ID})
+    if(QMC_CTEST_GPU_RESOURCES)
+      string(APPEND QMC_CTEST_GPU_RESOURCES ",\n")
+    endif()
+    string(APPEND QMC_CTEST_GPU_RESOURCES "        { \"id\": \"${QMC_GPU_ID}\", \"slots\": 1 }")
+  endforeach()
+
+  set(CTEST_RESOURCE_SPEC_FILE "${qmcpack_BINARY_DIR}/CTestGPUResourceSpec.json")
+  file(
+    GENERATE
+    OUTPUT "${CTEST_RESOURCE_SPEC_FILE}"
+    CONTENT
+      "{\n  \"version\": { \"major\": 1, \"minor\": 0 },\n  \"local\": [\n    {\n      \"gpus\": [\n${QMC_CTEST_GPU_RESOURCES}\n      ]\n    }\n  ]\n}\n"
+  )
+  message(STATUS "CTest GPU resources: ${QMC_CTEST_NUM_GPUS}")
+  message(STATUS "CTest GPU visibility environment variable: ${QMC_GPU_VISIBILITY_VARIABLE}")
+  set(QMC_GPU_TEST_LAUNCHER ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/gpu_test_resource_launcher.py
+                            ${QMC_GPU_VISIBILITY_VARIABLE})
+elseif(QMC_GPU)
+  message(WARNING "QMC_GPU_VISIBILITY_VARIABLE is empty. CTest GPU resource management feature cannot be used. "
+                  "CTest may show slow or failing tests due to GPU oversubscription when running concurrent tests. "
+                  "Set QMC_GPU_VISIBILITY_VARIABLE to the GPU visibility environment variable name based on your GPU. "
+                  "Candidates are ${VALID_GPU_VISIBILITY_VARIABLES}.")
+endif()
+include(CTest)
 
 #-------------------------------------------------------------------
 # Check if PySCF is available

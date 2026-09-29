@@ -270,6 +270,7 @@ void read_general_wavefunction(std::ifstream& in,
                                std::vector<PsiT_Matrix>& PsiT,
                                std::vector<ComplexType>& ci)
 {
+  using std::get;
   in.clear();
   in.seekg(0, std::ios::beg);
 
@@ -348,7 +349,7 @@ void read_general_wavefunction(std::ifstream& in,
         {
           PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat, 1e-8, 'H', comm));
           PsiT.emplace_back(
-              csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(OrbMat.extension(0), {0, NAEB}), 1e-8,
+              csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(get<0>(OrbMat.extents()), {0, NAEB}), 1e-8,
                                                                        'H', comm));
         }
         else if (walker_type == NONCOLLINEAR)
@@ -357,7 +358,7 @@ void read_general_wavefunction(std::ifstream& in,
           /*
           boost::multi::array<ComplexType,2> Mat({2*NMO,NAEA+NAEB});
           if(comm.rank()==0) {
-            std::fill_n(Mat.origin(),2*NMO*(NAEA+NAEB),ComplexType(0.0));
+            std::fill_n(Mat.base(),2*NMO*(NAEA+NAEB),ComplexType(0.0));
             Mat({0,NMO},{0,NAEA}) = OrbMat;
             Mat({NMO,2*NMO},{NAEA,NAEA+NAEB}) = OrbMat({0,NMO},{0,NAEB});
           }  
@@ -384,9 +385,9 @@ void read_general_wavefunction(std::ifstream& in,
 
         PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat, 1e-8, 'H', comm));
         if (comm.rank() == 0)
-          read_mat(in, OrbMat(OrbMat.extension(0), {0, NAEB}), Cstyle, fullMOMat, NMO, NAEB);
+          read_mat(in, OrbMat(get<0>(OrbMat.extents()), {0, NAEB}), Cstyle, fullMOMat, NMO, NAEB);
         PsiT.emplace_back(
-            csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(OrbMat.extension(0), {0, NAEB}), 1e-8, 'H',
+            csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(get<0>(OrbMat.extents()), {0, NAEB}), 1e-8, 'H',
                                                                      comm));
       }
     }

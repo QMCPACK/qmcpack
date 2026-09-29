@@ -11,7 +11,8 @@
 
 
 #include <functional>
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "test_WalkerControl.h"
 #include "Message/Communicate.h"
@@ -21,7 +22,6 @@
 #include "QMCDrivers/MCPopulation.h"
 #include "Utilities/MPIExceptionWrapper.hpp"
 #include "Utilities/for_testing/NativeInitializerPrint.hpp"
-#include "Platforms/Host/OutputManager.h"
 
 
 //#include "Concurrency/Info.hpp"
@@ -61,14 +61,39 @@ void UnifiedDriverWalkerControlMPITest::testNewDistribution(std::vector<int>& in
                                                             std::vector<int>& minus,
                                                             std::vector<int>& plus)
 {
-  int num_ranks = dpools_.comm->size();
-  assert(initial_num_per_rank.size() == num_ranks);
+  assert(initial_num_per_rank.size() == dpools_.comm->size());
   std::vector<int> num_per_rank = initial_num_per_rank;
   std::vector<int> fair_offset;
   wc_.determineNewWalkerPopulation(num_per_rank, fair_offset, minus, plus);
 }
 
+void UnifiedDriverWalkerControlMPITest::testInput()
+{
+  Libxml2Document omitted_doc;
+  REQUIRE(omitted_doc.parseFromString(R"(<qmc method="dmc_batch"/>)"));
+  REQUIRE(wc_.put(omitted_doc.getRoot()));
+  CHECK(wc_.use_nonblocking_);
+  CHECK_FALSE(wc_.debug_disable_branching_);
+
+  const char* const configured_input = R"(
+  <qmc method="dmc_batch">
+    <parameter name="use_nonblocking">false</parameter>
+    <parameter name="debug_disable_branching">true</parameter>
+  </qmc>)";
+  Libxml2Document configured_doc;
+  REQUIRE(configured_doc.parseFromString(configured_input));
+  REQUIRE(wc_.put(configured_doc.getRoot()));
+  CHECK_FALSE(wc_.use_nonblocking_);
+  CHECK(wc_.debug_disable_branching_);
+}
+
 } // namespace testing
+
+TEST_CASE("WalkerControl input", "[drivers][walker_control][input]")
+{
+  testing::UnifiedDriverWalkerControlMPITest test;
+  test.testInput();
+}
 
 TEST_CASE("WalkerControl::determineNewWalkerPopulation", "[drivers][walker_control]")
 {
@@ -83,7 +108,7 @@ TEST_CASE("WalkerControl::determineNewWalkerPopulation", "[drivers][walker_contr
   int rank = test.getRank();
   app_log() << "rank:" << rank << " minus: " << NativePrint(minus) << std::endl;
 
-  std::cout << "rank:" << rank << " plus: " << NativePrint(plus) << std::endl;
+  app_log() << "rank:" << rank << " plus: " << NativePrint(plus) << std::endl;
   CHECK(minus.size() == num_ranks - 1);
   CHECK(plus.size() == num_ranks - 1);
   app_log() << "rank:" << rank << " plus: " << NativePrint(num_per_rank) << std::endl;
@@ -130,7 +155,7 @@ void testing::UnifiedDriverWalkerControlMPITest::testWalkerIDs(std::vector<std::
     walker_ids.push_back(pop_->get_walkers()[iw]->getWalkerID());
     parent_ids.push_back(pop_->get_walkers()[iw]->getParentID());
   }
-  std::cout << "rank: " << rank << "  walker ids: " << NativePrint(walker_ids)
+  app_log() << "rank: " << rank << "  walker ids: " << NativePrint(walker_ids)
             << " parent ids: " << NativePrint(parent_ids) << std::endl;
 #endif
   for (int iw = 0; iw < walker_ids_after[rank].size(); ++iw)

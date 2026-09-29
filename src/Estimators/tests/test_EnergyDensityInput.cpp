@@ -8,9 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "EnergyDensityInput.h"
 #include "EstimatorTesting.h"
@@ -28,7 +27,7 @@ TEST_CASE("EnergyDensityInput::parseXML::valid", "[estimators]")
   int test_num = 0;
   for (auto input_xml : input)
   {
-    std::cout << "input number: " << test_num++ << '\n';
+    app_log() << "input number: " << test_num++ << '\n';
     Libxml2Document doc;
     REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();

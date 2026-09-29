@@ -1,62 +1,66 @@
 #ifdef COMPILATION_INSTRUCTIONS
-clang++ --cuda-gpu-arch=sm_52`#nvcc --expt-relaxed-constexpr` -std=c++14 $0 -o $0x -lcudart&& $0x && rm $0x; exit
+clang++ --cuda - gpu - arch = sm_52`#nvcc-- expt - relaxed - constexpr` - std = c++ 14 $0 - o $0x - lcudart && $0x && rm $0x;
+exit
 #endif
 
-#include "../adaptors/thrust/allocator_traits.hpp"
 #include "../adaptors/thrust/algorithms.hpp"
+#include "../adaptors/thrust/allocator_traits.hpp"
 #include "../array.hpp"
 
-#include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 #include <thrust/uninitialized_copy.h>
 
-#include<numeric> // iota
-#include<complex>
+#include <complex>
+#include <numeric>  // iota
 
 namespace multi = boost::multi;
 
 template<class T, multi::dimensionality_type D>
 using thrust_array = multi::array<T, D, thrust::device_allocator<T>>;
 
-
-
-int main(){
-//	using Alloc = thrust::device_allocator<double>;
+auto main() -> int {
+	//	using Alloc = thrust::device_allocator<double>;
 	using Alloc = std::allocator<double>;
 	{
 		Alloc all;
-		auto p = all.allocate(10);
+		auto  p = all.allocate(10);
 		all.deallocate(p, 10);
 		auto&& v = p[2];
-		v = 45.;
-		assert( v == 45. );
-		assert( p[2] == 45. );
+		v        = 45.;
+		assert(v == 45.);
+		assert(p[2] == 45.);
 	}
-	multi::array<double, 1, Alloc> A(100, 11.); 
-	assert(A[20]==11.);
-	A[20] = 44.;
+	multi::array<double, 1, Alloc> A(100, 11.);
+	assert(A[20] == 11.);
+	A[20] = 44.0;
 	multi::array<double, 1, thrust::device_allocator<double>> BB(10, 99.);
 
-	multi::array<std::complex<double>, 1, thrust::device_allocator<std::complex<double> >> BBB(10, 99.);
-	multi::array<std::complex<double>, 1, thrust::device_allocator<std::complex<double> >> BBB_cpy = BBB;
+	multi::array<std::complex<double>, 1, thrust::device_allocator<std::complex<double>>> BBB(10, 99.);
+	multi::array<std::complex<double>, 1, thrust::device_allocator<std::complex<double>>> BBB_cpy = BBB;
 
-	assert( static_cast<std::complex<double>>(BBB[0]) == std::complex<double>(99.) );
-	
-//	assert( B[2] == 99. );
-	thrust_array<double, 1> B(100, 11.); 
-	B[20] = 11.;
+	assert(static_cast<std::complex<double>>(BBB[0]) == std::complex<double>(99.));
+
+	//	assert( B[2] == 99. );
+	thrust_array<double, 1> B(100, 11.);
+	B[20] = 11.0;
 	std::cout << B[20] << std::endl;
-	assert( B[20] == 11. );
+	assert(B[20] == 11.);
 	thrust_array<double, 1> C(100);
 	thrust::copy(begin(B), end(B), begin(C));
-	assert(C[20]==11.);
+	assert(C[20] == 11.);
 
-	multi::array<double, 2, thrust::device_allocator<double>> A2({10,10});
-	multi::array<double, 2, thrust::device_allocator<double>> B2({10,10});
+	multi::array<double, 2, thrust::device_allocator<double>> A2({10, 10});
+	multi::array<double, 2, thrust::device_allocator<double>> B2({10, 10});
 
 	A2[5][0] = 50.;
 	thrust::copy(begin(rotated(A2)[0]), end(rotated(A2)[0]), begin(rotated(B2)[0]));
-	assert(B2[5][0] == 50. );
+	assert(B2[5][0] == 50.0);
+
+	static_assert( std::is_same_v<multi::array<double, 2, thrust::device_allocator<double> >, multi::thrust::device_array<double, 2>> );
+
+	multi::thrust::device_array<double, 2> darr = [](multi::index i, multi::index j) __device__ { return i + j; } ^ multi::extents_t<2>(10, 10);
+dssas
 
 #if 0
 	multi::array<double, 1> A_host({100}, 99.);
@@ -94,15 +98,15 @@ int main(){
 	std::cout << A_host[20] << std::endl;
 	assert(A_host[20] == 44. );
 
-    // H has storage for 4 integers
-    thrust::host_vector<int> H(4);
+	// H has storage for 4 integers
+	thrust::host_vector<int> H(4);
 
-    // initialize individual elements
-    H[0] = 14;
-    H[1] = 20;
-    H[2] = 38;
-    H[3] = 46;
-  
+	// initialize individual elements
+	H[0] = 14;
+	H[1] = 20;
+	H[2] = 38;
+	H[3] = 46;
+
 	multi::array<int, 1, thrust::device_allocator<int>> H2(4, 99); assert(size(H2) == 4);
 	assert( H2[2] == 99 );
 	copy( begin(H), end(H), begin(H2) );
@@ -134,5 +138,3 @@ int main(){
     // H and D are automatically deleted when the function returns
 #endif
 }
-
-

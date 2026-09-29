@@ -178,9 +178,7 @@ struct UserFunctor : public OptimizableFunctorBase
                              const T* mw_dist, // [nw][DIM+1][n_padded]
                              T* mw_cur_allu,   // [nw][3][n_padded]
                              Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
-  {
-    throw std::runtime_error("UserFunctor mw_evaluateVGL not implemented!");
-  }
+  { throw std::runtime_error("UserFunctor mw_evaluateVGL not implemented!"); }
 
   inline real_type f(real_type r) override { return evaluate(r); }
 
@@ -204,9 +202,7 @@ struct UserFunctor : public OptimizableFunctorBase
                            T* mw_allUat,     // [nw][DIM+2][n_padded]
                            T* mw_cur_allu,   // [nw][3][n_padded]
                            Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
-  {
-    throw std::runtime_error("UserFunctor mw_updateVGL not implemented!");
-  }
+  { throw std::runtime_error("UserFunctor mw_updateVGL not implemented!"); }
 
   // inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs)
 

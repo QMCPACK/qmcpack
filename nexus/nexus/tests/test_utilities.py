@@ -24,7 +24,7 @@ def test_is_valid_path():
         'periods.produce.paradise',
         'underscores_unlock_understanding',
         'pi_is_about_3.14159265358979323846264338327950'
-        # Unsettling that prose can be paths, 
+        # Unsettling that prose can be paths,
         # but ' ' must be accomodated
         'spaces are sinister',
         ]
@@ -105,7 +105,7 @@ def test_path_string():
 
     # path_string for str paths
     in_out_paths = [
-        # in         out ps(str) out ps(Path)    
+        # in         out ps(str) out ps(Path)
         ( ''        , ''        , '.'       ),
         ( '.'       , '.'       , '.'       ),
         ( './'      , './'      , '.'       ),
@@ -137,7 +137,7 @@ def test_path_string():
 
     # test bytes
     in_out_paths = [
-        # in         out ps(str))    
+        # in         out ps(str))
         ( b''        , ''        ),
         ( b'.'       , '.'       ),
         ( b'./'      , './'      ),
@@ -192,7 +192,7 @@ def test_path_string():
     except ValueError:
         expected = True
     assert expected
-    
+
 #end def test_path_string
 
 
@@ -237,7 +237,7 @@ def test_is_relative_path():
 def test_path_dual_typing():
     '''Illustrate issues w/ mixing pathlib.Path with os.path'''
 
-    # joining paths 
+    # joining paths
     #   os.system('ls') and os.system('./ls') are very different!
     assert os.path.join('','ls')                       == 'ls'   # right
     assert str(Path('')/Path('ls'))                    == 'ls'   # right
@@ -264,10 +264,10 @@ def test_path_dual_typing():
     #   or in short
     assert os.path.dirname( 'dir/name') == str(Path('dir/name').parent)
     assert os.path.basename('dir/name') ==     Path('dir/name').name
-    
+
     assert os.path.dirname( 'name'    ) != str(Path('name').parent)
     assert os.path.basename('name'    ) ==     Path('name').name
-    
+
     assert os.path.dirname( 'dir/'    ) != str(Path('dir/').parent)
     assert os.path.basename('dir/'    ) !=     Path('dir/').name
 

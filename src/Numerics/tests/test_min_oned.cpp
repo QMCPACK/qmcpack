@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, mewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <iostream>
 
@@ -35,10 +34,10 @@ public:
     RealType xa = bracket.a;
     RealType xb = bracket.b;
     RealType xc = bracket.c;
-    //std::cout << " xa = " << xa;
-    //std::cout << " xb = " << xb;
-    //std::cout << " xc = " << xc;
-    //std::cout << std::endl;
+    //app_log() << " xa = " << xa;
+    //app_log() << " xb = " << xb;
+    //app_log() << " xc = " << xc;
+    //app_log() << std::endl;
 
     REQUIRE(xa < xb);
     REQUIRE(xb < xc);

@@ -21,6 +21,7 @@ set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 add_executable(
   ${UTEST_EXE}
   test_ParticleSet.cpp
+  test_ParticleSetAllParticleMoves.cpp
   test_VirtualParticleSet.cpp
   test_walker.cpp
   test_particle_pool.cpp
@@ -47,3 +48,6 @@ if(USE_OBJECT_TARGET)
 endif()
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

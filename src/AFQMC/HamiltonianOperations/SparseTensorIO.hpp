@@ -133,15 +133,15 @@ SparseTensor<T1, T2> loadSparseTensor(hdf_archive& dump,
       app_error() << " Error in loadSparseTensor: Problems reading dataset. \n";
       APP_ABORT("");
     }
-    copy_n_cast(H1_.origin(), NMO * NMO, to_address(H1.origin()));
+    copy_n_cast(H1_.base(), NMO * NMO, to_address(H1.base()));
     if (!dump.readEntry(v0, "v0"))
     {
       app_error() << " Error in loadSparseTensor: Problems reading dataset. \n";
       APP_ABORT("");
     }
   }
-  TGwfn.Global().broadcast_n(H1.origin(), H1.num_elements());
-  TGwfn.Global().broadcast_n(v0.origin(), v0.num_elements());
+  TGwfn.Global().broadcast_n(H1.base(), H1.num_elements());
+  TGwfn.Global().broadcast_n(v0.base(), v0.num_elements());
 
   // read half-rotated exchange matrix
   std::vector<T1_shm_csr_matrix> V2;

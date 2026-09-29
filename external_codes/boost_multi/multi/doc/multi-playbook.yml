@@ -1,0 +1,23 @@
+site:
+  title: Boost.Multi
+  start_page: multi::intro.adoc
+content:
+  edit_url: '{web_url}/-/edit/develop/{path}'  # GitLab uses /-/edit/; pin to develop since CI builds at a detached HEAD ({refname} would be "HEAD")
+  sources:
+    - url: ..
+      start_path: doc
+      branches: HEAD
+output:
+  dir: html
+ui:
+  bundle:
+    url: https://github.com/boostorg/website-v2-docs/releases/download/ui-develop/ui-bundle.zip
+  output_dir: multi/_
+antora:
+  extensions:
+    - require: '@cppalliance/antora-downloads-extension'
+    - require: '@antora/lunr-extension'
+
+asciidoc:
+  extensions:
+    - '@djencks/asciidoctor-mathjax'

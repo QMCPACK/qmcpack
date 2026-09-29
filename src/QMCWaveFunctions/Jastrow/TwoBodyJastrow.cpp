@@ -49,9 +49,7 @@ struct TwoBodyJastrowMultiWalkerMem : public Resource
 
 template<typename FT>
 void TwoBodyJastrow<FT>::createResource(ResourceCollection& collection) const
-{
-  collection.addResource(std::make_unique<TwoBodyJastrowMultiWalkerMem<RealType>>());
-}
+{ collection.addResource(std::make_unique<TwoBodyJastrowMultiWalkerMem<RealType>>()); }
 
 template<typename FT>
 void TwoBodyJastrow<FT>::acquireResource(ResourceCollection& collection,
@@ -522,9 +520,7 @@ void TwoBodyJastrow<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Valu
 
 template<typename FT>
 typename TwoBodyJastrow<FT>::GradType TwoBodyJastrow<FT>::evalGrad(ParticleSet& P, int iat)
-{
-  return GradType(dUat[iat]);
-}
+{ return GradType(dUat[iat]); }
 
 template<typename FT>
 typename TwoBodyJastrow<FT>::PsiValue TwoBodyJastrow<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
@@ -782,9 +778,7 @@ WaveFunctionComponent::LogValue TwoBodyJastrow<FT>::evaluateGL(const ParticleSet
                                                                ParticleSet::ParticleGradient& G,
                                                                ParticleSet::ParticleLaplacian& L,
                                                                bool fromscratch)
-{
-  return log_value_ = computeGL(G, L);
-}
+{ return log_value_ = computeGL(G, L); }
 
 template<typename FT>
 void TwoBodyJastrow<FT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,

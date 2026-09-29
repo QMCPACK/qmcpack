@@ -414,14 +414,14 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container& Q,
   Timer.start("G0");
 
   boost::multi::array<long, 2> counts_per_core({nnodes_per_TG, ncores});
-  std::fill_n(counts_per_core.origin(), ncores * nnodes_per_TG, long(0));
+  std::fill_n(counts_per_core.base(), ncores * nnodes_per_TG, long(0));
   counts_per_core[node_number][coreid] = nterms_in_local_core;
-  eq_node_group.all_reduce_in_place_n(counts_per_core.origin(), ncores * nnodes_per_TG, std::plus<>());
+  eq_node_group.all_reduce_in_place_n(counts_per_core.base(), ncores * nnodes_per_TG, std::plus<>());
 
   // calculate how many terms each core is potentially sending
   // when algorithm works, make nplus a vector of pairs to save space, no need to store mostly zeros
   boost::multi::array<long, 2> nplus({nnodes_per_TG, ncores});
-  std::fill_n(nplus.origin(), ncores * nnodes_per_TG, long(0));
+  std::fill_n(nplus.base(), ncores * nnodes_per_TG, long(0));
   auto tgrank = eq_node_group.rank();
   // number of terms I'm sending
   long deltaN = 0;
@@ -450,7 +450,7 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container& Q,
   for (int i = 0; i < nnodes_per_TG; i++)
   {
     long dn = (bounds[i + 1] - bounds[i]) -
-        std::accumulate(counts_per_core[i].origin(), counts_per_core[i].origin() + ncores, long(0));
+        std::accumulate(counts_per_core[i].base(), counts_per_core[i].base() + ncores, long(0));
     if (dn > 0)
       nminus[i] = long(dn);
   }

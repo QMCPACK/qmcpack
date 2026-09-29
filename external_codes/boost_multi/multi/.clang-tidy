@@ -1,56 +1,68 @@
-# -*-indent-tabs-mode:nil;c-basic-offset:2;tab-width:2;autowrap:nil;-*-
+---
+# Copyright 2020-2026 Alfredo A. Correa
 
+# Global Settings
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.'
 FormatStyle: file
 
-CheckOptions:
-  - { key: readability-identifier-naming.ClassCase                         , value: lower_case }
-  - { key: readability-identifier-naming.FunctionCase                      , value: lower_case }
-  - { key: readability-identifier-naming.GlobalConstantCase                , value: aNy_CasE   }
-  - { key: readability-identifier-length.IgnoredLoopCounterNames           , value: "^[ijk_]$" }
-  - { key: readability-identifier-length.IgnoredVariableNames              , value: "^[ijk_]$" }
-  - { key: readability-identifier-length.MethodCase                        , value: lower_case }
-  - { key: readability-identifier-length.MinimumLoopCounterNameLength      , value: 2          }
-  - { key: readability-identifier-length.MinimumParameterNameLength        , value: 2          }
-  - { key: readability-identifier-length.MinimumVariableNameLength         , value: 2          }
-  - { key: readability-identifier-naming.MacroDefinitionCase               , value: UPPER_CASE }
-  - { key: readability-identifier-naming.MacroDefinitionPrefix,            , value: BOOST_MULTI_ }
-  - { key: readability-identifier-naming.MacroDefinitionSuffix,            , value: *          }
-  - { key: readability-identifier-naming.NamespaceCase                     , value: lower_case }
-  - { key: readability-identifier-naming.PrivateMemberPrefix               , value: ''         }
-  - { key: readability-identifier-naming.PrivateMemberSuffix               , value: _          }
-  - { key: readability-identifier-naming.PrivateMethodSuffix               , value: _          }
-  - { key: readability-identifier-naming.StructCase                        , value: lower_case }
-  - { key: readability-identifier-naming.TemplateParameterCase             , value: CamelCase  }
-  - { key: readability-identifier-naming.TypeTemplateParameterIgnoredRegexp, value: expr-type}
-  - { key: readability-operators-representation.BinaryOperators            , value: '&&;&=;&;|;~;!;!=;||;|=;^;^='}
-# value: expr-type , bug in clang 16 in c++20 mode https://stackoverflow.com/a/75157215/225186
-
-# for range-for loops, e.g. `for(auto i : is) ...`
-#  - { key: readability-identifier-length.IgnoredVariableNames        , value: "^[ijk]$"  }
-
-Checks: '*,
+# Enabled/Disabled Diagnostic Checks
+Checks: >
+  *,
   -altera-struct-pack-align,
-  -clang-diagnostic-deprecated-declarations,
+  -boost-use-ranges,
+  -cert-dcl21-cpp,
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-macro-usage,
-  -fuchsia-overloaded-operator,
-  -fuchsia-trailing-return,
+  -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,
+  -fuchsia-*,
+  -hicpp-no-array-decay,
+  -llvm-prefer-static-over-anonymous-namespace,
+  -llvm-use-ranges,
   -llvmlibc-*,
-  -misc-include-cleaner,
   -modernize-use-nodiscard,
-  -readability-magic-numbers
-'
-## explanation of the suppressed rules above:
-#  -altera-struct-pack-align,                             // this asks to use non-standard pragmas such as __attribute__((aligned(0))) and _attribute__((packed)), may interfeere with gcc/nvcc compatibility?
-#  -clang-diagnostic-deprecated-declarations              // some test run deprecated functions on purposes
-#  -cppcoreguidelines-avoid-magic-numbers,                // all tests use magic numbers
-#  -cppcoreguidelines-macro-usage,                        // BLAS adaptors uses a lot of macros
-#  -fuchsia-overloaded-operator,                          // this library overloads operators (==, <, +, &)
-#  -fuchsia-trailing-return,                              // to allow any '-> decltype(auto)', contradicts modernize trailing
-#  -llvmlibc-*,                                           // nonsense warnings, for llvm developers
-#  -misc-include-cleaner,                                 // using Boost.Test
-#  -modernize-use-nodiscard,                              // this would add [[nodiscard]] to almost all functions, adding a lot of noise
-#  -readability-magic-numbers,                            // all tests use magic numbers
+  -readability-magic-numbers,
+  -readability-simplify-boolean-expr
 
+# Check Configuration Overrides
+CheckOptions:
+  modernize-use-trailing-return-type.TransformLambdas: 'none'
+  readability-identifier-length.IgnoredLoopCounterNames: '^[ijk_]$'
+  readability-identifier-length.IgnoredParameterNames: '^[abcdemnprstuvwxyz_]$'
+  readability-identifier-length.IgnoredVariableNames: '^[ijk_]$'
+  readability-identifier-length.MethodCase: 'lower_case'
+  readability-identifier-length.MinimumLoopCounterNameLength: '2'
+  readability-identifier-length.MinimumParameterNameLength: '2'
+  readability-identifier-length.MinimumVariableNameLength: '2'
+  readability-identifier-naming.ClassCase: 'lower_case'
+  readability-identifier-naming.FunctionCase: 'lower_case'
+  readability-identifier-naming.GlobalConstantCase: 'aNy_CasE'
+  readability-identifier-naming.NamespaceCase: 'lower_case'
+  readability-identifier-naming.PrivateMemberPrefix: ''
+  readability-identifier-naming.PrivateMemberSuffix: '_'
+  readability-identifier-naming.PrivateMethodSuffix: '_'
+  readability-identifier-naming.PrivateTypedefSuffix: '_'
+  readability-identifier-naming.StructCase: 'lower_case'
+  readability-identifier-naming.TemplateParameterCase: 'CamelCase'
+  readability-identifier-naming.TypeTemplateParameterIgnoredRegexp: 'expr-type'
+  readability-operators-representation.BinaryOperators: '&&;&=;&;|;~;!;!=;||;|=;^;^='
+  # TODO(correaa) - readability-identifier-naming.PrivateTypeAliasSuffix: '_'
+
+## Explanation of the suppressed rules above:
+#  -altera-struct-pack-align: Needs non-standard pragmas like __attribute__((packed)); interferes with gcc/nvcc.
+#  -boost-use-ranges: Avoids introducing a hard dependency on Boost Ranges.
+#  -cert-dcl21-cpp: Asks postfix operator++ to return a const value.
+#  -cppcoreguidelines-avoid-magic-numbers: Suppressed because test suites heavily utilize magic numbers.
+#  -cppcoreguidelines-macro-usage: BLAS adaptors use extensive macros.
+#  -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access: Prevent failures on magic-number test parameters.
+#  -fuchsia-statically-constructed-objects: Used widely for traits, like is_const_subarray.
+#  -fuchsia-default-arguments-calls: Library relies on STL functions which utilize default arguments.
+#  -fuchsia-overloaded-operator: This library deliberately overloads math/comparison operators (==, <, +, &).
+#  -hicpp-no-array-decay: Required compatibility for Boost Lightweight Test framework.
+#  -llvm-prefer-static-over-anonymous-namespace: Contradicts alternative internal namespace layout rules.
+#  -llvm-use-ranges: Asks to use things like llvm::filld1D
+#  -llvmlibc-*: Suppresses noise; target rules are strictly for internal LLVM implementation developers.
+#  -modernize-use-nodiscard: Avoids flooding the API surface with noisy [[nodiscard]] attributes everywhere.
+#  -readability-magic-numbers: Suppressed because test suites heavily utilize magic numbers.
+#  -readability-simplify-boolean-expr: Fixes interference with Boost Lightweight Test's BOOST_TEST macros.
+...

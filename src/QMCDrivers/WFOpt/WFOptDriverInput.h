@@ -37,7 +37,7 @@ public:
 
   const std::string& get_opt_method() const { return opt_method_; }
 
-  xmlNodePtr get_opt_xml_node() const { return opt_xml_node_; }
+
 };
 
 

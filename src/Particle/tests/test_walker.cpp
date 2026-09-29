@@ -9,12 +9,11 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <cstring>
 #include "QMCDrivers/WalkerProperties.h"
-#include "Configuration.h"
 #include "Particle/WalkerConfigurations.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/HDFWalkerInput_0_4.h"
@@ -49,6 +48,20 @@ TEST_CASE("walker assumptions", "[particle]")
   using WP = WalkerProperties::Indexes;
   MCPWalker w1(1);
   REQUIRE(w1.Properties.cols() == WP::NUMPROPERTIES);
+}
+
+TEST_CASE("MCDataType default initialization", "[particle]")
+{
+  MCDataType<double> data;
+  CHECK(data.NumSamples == 0.0);
+  CHECK(data.RNSamples == 0.0);
+  CHECK(data.Weight == 0.0);
+  CHECK(data.Energy == 0.0);
+  CHECK(data.AlternateEnergy == 0.0);
+  CHECK(data.Variance == 0.0);
+  CHECK(data.R2Accepted == 0.0);
+  CHECK(data.R2Proposed == 0.0);
+  CHECK(data.LivingFraction == 0.0);
 }
 
 TEST_CASE("walker HDF read and write", "[particle]")

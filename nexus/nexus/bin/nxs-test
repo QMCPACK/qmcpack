@@ -11,6 +11,7 @@ for development.
 """
 
 import sys
+from pathlib import Path
 
 if sys.version_info[0:3] < (3, 10, 0):
     v = sys.version_info[0:3]
@@ -39,7 +40,6 @@ except ImportError:
 if __name__ == "__main__":
 
     import os
-    from pathlib import Path
 
     test_dir = Path(__file__).resolve().parent.parent / "tests"
 

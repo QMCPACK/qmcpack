@@ -42,9 +42,7 @@ struct SplineOMPTargetMultiWalkerMem : public Resource
   SplineOMPTargetMultiWalkerMem(const SplineOMPTargetMultiWalkerMem&) : SplineOMPTargetMultiWalkerMem() {}
 
   std::unique_ptr<Resource> makeClone() const override
-  {
-    return std::make_unique<SplineOMPTargetMultiWalkerMem>(*this);
-  }
+  { return std::make_unique<SplineOMPTargetMultiWalkerMem>(*this); }
 };
 } // namespace qmcplusplus
 #endif

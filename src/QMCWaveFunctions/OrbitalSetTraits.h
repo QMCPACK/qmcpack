@@ -83,15 +83,11 @@ struct OrbitalSetTraits //: public OrbitalTraits<T>
  */
 template<typename T>
 inline std::complex<T> convertValueToLog(const std::complex<T>& logpsi)
-{
-  return std::log(logpsi);
-}
+{ return std::log(logpsi); }
 
 template<typename T>
 inline std::complex<T> convertValueToLog(const T logpsi)
-{
-  return std::log(std::complex<T>(logpsi));
-}
+{ return std::log(std::complex<T>(logpsi)); }
 
 /** evaluate psi based on log(psi)
  * @param logpsi complex value
@@ -104,9 +100,7 @@ struct LogToValue
 {
   template<typename T1>
   inline static T convert(const std::complex<T1>& logpsi)
-  {
-    return std::real(std::exp(logpsi));
-  }
+  { return std::real(std::exp(logpsi)); }
 };
 
 template<typename T>

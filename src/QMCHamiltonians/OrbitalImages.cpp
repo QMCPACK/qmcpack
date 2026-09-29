@@ -306,7 +306,12 @@ void OrbitalImages::report(const std::string& pad)
 OrbitalImages::Return_t OrbitalImages::evaluate(TrialWaveFunction& psi, ParticleSet& P)
 {
   //only the first thread of the master task writes the orbitals
-  if (comm->rank() == 0 && omp_get_thread_num() == 0)
+#if _OPENMP >= 202011
+  #pragma omp masked
+#else
+  #pragma omp master
+#endif
+  if (comm->rank() == 0)
   {
     app_log() << std::endl;
     app_log() << "OrbitalImages::evaluate  writing orbital images" << std::endl;

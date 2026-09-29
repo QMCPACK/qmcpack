@@ -67,7 +67,11 @@ int main()
         int L1_num_thread = omp_get_num_threads();
 #pragma omp parallel
         {
+#if _OPENMP >= 202011
+#pragma omp masked
+#else
 #pragma omp master
+#endif
           if (L1_thread_id == 0 and l_rank == 0)
             std::cout << "OpenMP enables " << L1_num_thread << " 1st level threads, "
                       << "and " << omp_get_num_threads() << " 2nd level threads." << std::endl

@@ -1,4 +1,4 @@
-// Copyright 2019-2024 Alfredo A. Correa
+// Copyright 2019-2025 Alfredo A. Correa
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
@@ -6,7 +6,7 @@
 #define BOOST_MULTI_ADAPTORS_BLAS_ASUM_HPP
 #pragma once
 
-#include "../blas/core.hpp"
+#include "boost/multi/adaptors/blas/core.hpp"
 
 namespace boost::multi::blas {
 

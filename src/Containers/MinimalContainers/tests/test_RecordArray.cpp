@@ -11,8 +11,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "MinimalContainers/RecordArray.hpp"
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 
 namespace qmcplusplus

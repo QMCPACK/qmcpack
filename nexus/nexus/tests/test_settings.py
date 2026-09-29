@@ -1,32 +1,27 @@
-import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.SETTINGS_OPERATION)
-
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
+import os
+import sys
 from pathlib import Path
-from . import isolate_nexus_core
-from .. import testing
-from ..testing import object_eq
+
+import pytest
+
+from .. import Settings, settings, testing
+from ..basisset import BasisSets
+from ..developer import obj
+from ..gamess import Gamess
+from ..generic import NexusUserWarning
+from ..machines import Job, Workstation
+from ..nexus_base import nexus_config, ShowStatusMode, SimStage
+from ..project_manager import ProjectManager
+from ..pseudoset import PseudoSet
+from ..pwscf import Pwscf
+from ..quantum_package import QuantumPackage
+from . import NexusTestOrder, isolate_nexus_core
+
+pytestmark = pytest.mark.order(NexusTestOrder.SETTINGS_OPERATION)
 
 
 @isolate_nexus_core
 def test_settings(tmp_path):
-    # test full imports
-    import os
-    from nexus import settings,Settings,obj
-    from ..nexus_base import nexus_core,nexus_core_defaults
-    from ..nexus_base import nexus_noncore,nexus_noncore_defaults
-    from ..nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
-    from ..pseudopotential import Pseudopotentials
-    from ..basisset import BasisSets
-    from ..machines import Job,Workstation
-    from ..project_manager import ProjectManager
-    from ..gamess import Gamess
-    from ..pwscf import Pwscf
-    from ..quantum_package import QuantumPackage
-
     testing.check_final_state()
 
     def aux_defaults():
@@ -42,89 +37,91 @@ def test_settings(tmp_path):
     #end def aux_defaults
 
     def check_settings_core_noncore():
-        nckeys_check = set([
-                'command_line','debug', 'dependent_modes', 'emulate',
-                'file_locations', 'generate_only', 'graph_sims', 'indent',
-                'load_images', 'local_directory', 'mode', 'modes', 'monitor',
-                'primary_modes', 'progress_tty', 'pseudo_dir',
-                'pseudopotentials', 'remote_directory', 'results', 'runs',
-                'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
-                'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
-                ])
-        nnckeys_check = set([
-                'basis_dir', 'basissets', 'pseudo_dir', 'pseudopotentials'
-                ])
-        setkeys_check = set([
-                'command_line','basis_dir', 'basissets', 'debug',
-                'dependent_modes', 'emulate', 'file_locations', 'generate_only',
-                'graph_sims', 'indent', 'load_images', 'local_directory', 'mode',
-                'modes', 'monitor', 'primary_modes', 'progress_tty',
-                'pseudo_dir', 'pseudopotentials', 'remote_directory', 'results',
-                'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
-                'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
-                ])
+        nckeys_check = {
+            'command_line',
+            'dependent_modes',
+            'file_locations',
+            'generate_only',
+            'graph_sims',
+            'indent',
+            'load_images',
+            'local_directory',
+            'monitor',
+            'progress_tty',
+            'pseudo_dir',
+            'quiet',
+            'remote_directory',
+            'results',
+            'runs',
+            'skip_submit',
+            'sleep',
+            'stages',
+            'status',
+            'timeout',
+            'status_only',
+            'dynamic',
+            'basis_dir',
+            'basissets',
+            }
+        setkeys_check = {
+            'command_line',
+            'dependent_modes',
+            'file_locations',
+            'generate_only',
+            'graph_sims',
+            'indent',
+            'load_images',
+            'local_directory',
+            'monitor',
+            'progress_tty',
+            'pseudo_dir',
+            'quiet',
+            'remote_directory',
+            'results',
+            'runs',
+            'skip_submit',
+            'sleep',
+            'stages',
+            'status',
+            'timeout',
+            'status_only',
+            'dynamic',
+            'basis_dir',
+            'basissets',
+            }
         setkeys_allowed = setkeys_check | Settings.allowed_vars
 
-        nckeys  = set(nexus_core.keys())
-        nnckeys = set(nexus_noncore.keys())
+        nckeys  = set(nexus_config.__slots__)
         setkeys = set(settings.keys())
-        
+
         assert(nckeys==nckeys_check)
-        assert(nnckeys==nnckeys_check)
         assert(setkeys>=setkeys_check)
         assert(setkeys<=setkeys_allowed)
 
-        pairs = [(settings,nexus_core),
-                 (settings,nexus_noncore),
-                 (nexus_core,nexus_noncore)
-                 ]
-        for o1,o2 in pairs:
-            shared_keys = set(o1.keys()) & set(o2.keys())
-            for k in shared_keys:
-                v1 = o1[k]
-                v2 = o2[k]
-                if isinstance(v1,obj):
-                    assert(object_eq(v1,v2))
-                else:
-                    assert(v1 == v2)
-                #end if
-            #end for
-        #end for
+        for s in nexus_config.__slots__:
+            assert(settings[s] == getattr(nexus_config, s))
     #end check_settings_core_noncore
 
     def check_empty_settings():
-        settings(
-            command_line = False,
-            )
-        settings.command_line   = True
-        nexus_core.command_line = True
+        settings(command_line = False)
+        settings.command_line     = True
+        nexus_config.command_line = True
         check_settings_core_noncore()
-        # nexus core sets basic run stages and Pseudopotentials object
-        assert(nexus_core.stages_set==set(nexus_core_defaults.primary_modes))
-        assert(isinstance(nexus_core.pseudopotentials,Pseudopotentials))
-        assert(len(nexus_core.pseudopotentials)==0)
-        nexus_core.stages_set       = set()
-        nexus_core.stages           = []
-        nexus_core.pseudopotentials = None
-        assert(object_eq(nexus_core,nexus_core_defaults))
-        # nexus noncore sets Pseudopotentials and BasisSets objects
-        assert(isinstance(nexus_noncore.pseudopotentials,Pseudopotentials))
-        assert(len(nexus_noncore.pseudopotentials)==0)
-        assert(isinstance(nexus_noncore.basissets,BasisSets))
-        assert(len(nexus_noncore.basissets)==0)
-        nnc_defaults = obj(nexus_noncore_defaults,nexus_core_noncore_defaults)
-        nexus_noncore.pseudopotentials = None
-        nexus_noncore.basissets        = None
-        assert(object_eq(nexus_noncore,nnc_defaults))
+        # nexus config has basic run stages and PseudoSet registries are empty
+        assert(nexus_config.stages is SimStage.all)
+
+        assert(len(PseudoSet.pseudo_files)==0)
+        assert(len(PseudoSet.labeled_pseudosets)==0)
+        assert(isinstance(nexus_config.basissets,BasisSets))
+        assert(len(nexus_config.basissets)==0)
+        nexus_config.restore_defaults()
+        assert(nexus_config.basissets is None)
         # other settings objects should be at default also
         aux_defaults()
     #end def_check_empty_settings
-    
-    
-    # check that core settings are at default values
-    assert(object_eq(nexus_core,nexus_core_defaults))
-    assert(object_eq(nexus_noncore,nexus_noncore_defaults))
-    assert(object_eq(nexus_core_noncore,nexus_core_noncore_defaults))
+
+    nexus_config.restore_defaults()
+    assert(nexus_config.timeout==5*60)
     aux_defaults()
 
     # core settings remain almost at default with empty settings
@@ -150,15 +147,20 @@ def test_settings(tmp_path):
         pseudo_dir    = pseudo_path,
         status_only   = 0,
         generate_only = 1,
+        timeout       = 10,
         machine       = 'ws16',
         command_line  = False,
         )
     check_settings_core_noncore()
-    assert(nexus_core.status_only==0)
-    assert(nexus_core.generate_only==1)
-    assert(nexus_core.pseudo_dir=='./pseudopotentials')
-    assert(len(nexus_core.pseudopotentials)==4)
-    assert(set(nexus_core.pseudopotentials.keys())==set(pseudos))
+    assert(nexus_config.status_only==0)
+    assert(nexus_config.generate_only==1)
+    assert(nexus_config.timeout==10)
+    pseudo_path = str((tmp_path / 'pseudopotentials').resolve())
+    assert(nexus_config.pseudo_dir==pseudo_path)
+    assert(PseudoSet.pseudo_files=={
+        pseudo:str((Path(pseudo_path)/pseudo).resolve()) for pseudo in pseudos
+        })
+    assert(len(PseudoSet.labeled_pseudosets)==0)
     assert(settings.machine=='ws16')
     assert(Job.machine=='ws16')
     assert(isinstance(ProjectManager.machine,Workstation))
@@ -168,3 +170,88 @@ def test_settings(tmp_path):
     # check that a new empty settings works following basic
     check_empty_settings()
 #end def test_settings
+
+
+@isolate_nexus_core
+def test_command_line_timeout():
+    argv = sys.argv
+    try:
+        sys.argv = ['nexus_script.py','--timeout=12.5']
+        script_settings = obj()
+        settings.process_command_line_settings(script_settings)
+    finally:
+        sys.argv = argv
+    #end try
+
+    assert(script_settings.timeout==12.5)
+#end def test_command_line_timeout
+
+
+@isolate_nexus_core
+def test_legacy_and_path_settings(tmp_path):
+    local_dir = tmp_path / "local"
+    basis_dir = tmp_path / "basis"
+    basis_dir.mkdir()
+
+    with pytest.warns(NexusUserWarning, match="verbose"):
+        settings(command_line=False, verbose=False)
+
+    settings(
+        command_line=False,
+        status="standard",
+        local_directory=local_dir,
+        basis_dir=basis_dir,
+        )
+
+    assert(nexus_config.status is ShowStatusMode.all)
+    assert(nexus_config.local_directory == str(local_dir))
+    assert(nexus_config.basis_dir == str(basis_dir))
+    assert(settings.local_directory == str(local_dir))
+    assert(settings.basis_dir == str(basis_dir))
+
+
+@isolate_nexus_core
+def test_legacy_settings_preserve_runtime_behavior():
+    with pytest.warns(NexusUserWarning, match="verbose"):
+        settings(command_line=False, verbose=False)
+    assert(nexus_config.quiet)
+
+    with (
+        pytest.warns(NexusUserWarning, match="debug"),
+        # pytest.warns(NexusUserWarning, match="verbose")
+        # Adding the second filter breaks with Pytest 7.4.4
+        # See PR #6207
+        ):
+        settings(command_line=False, verbose=False, debug=True)
+    assert(not nexus_config.quiet)
+
+    expected_modes = {
+        "none": SimStage(0),
+        "setup": SimStage.write_input,
+        "send_files": SimStage.send_files,
+        "submit": SimStage.submit,
+        "get_output": SimStage.get_output,
+        "analyze": SimStage.analyze,
+        "all": SimStage.all,
+        }
+    for mode, expected in expected_modes.items():
+        with pytest.warns(NexusUserWarning, match="mode"):
+            settings(command_line=False, mode=mode)
+        assert(nexus_config.stages is expected)
+
+    with pytest.warns(NexusUserWarning, match="mode"):
+        settings(command_line=False, mode="submit", stages=["analyze"])
+    assert(nexus_config.stages is SimStage.submit)
+
+    settings(command_line=False, stages=[])
+    assert(nexus_config.stages is SimStage.all)
+    settings(command_line=False, stages="setup")
+    assert(nexus_config.stages is SimStage.write_input)
+
+    settings(command_line=False, stages=["submit"], generate_only=True)
+    assert(nexus_config.stages is SimStage.submit)
+    assert(nexus_config.generate_only)
+
+    settings(command_line=False, sleep=0, timeout=0)
+    assert(nexus_config.sleep == 0)
+    assert(nexus_config.timeout == 0)

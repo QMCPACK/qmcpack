@@ -228,7 +228,8 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       }
 
       app_summary() << "    Using table method for multideterminant evaluation" << std::endl
-                    << "    See B. K. Clark et al. J. Chem. Phys. 135 244105 (2011) https://doi.org/10.1063/1.3665391" << std::endl;
+                    << "    See B. K. Clark et al. J. Chem. Phys. 135 244105 (2011) https://doi.org/10.1063/1.3665391"
+                    << std::endl;
       if (BFTrans)
         myComm->barrier_and_abort("Backflow is not supported by Multi-Slater determinants using the table method!");
 
@@ -281,30 +282,15 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   std::string spin_name = target_species.speciesName[spin_group];
   std::string sposet_name;
   std::string basisName("invalid");
-  std::string detname("0"), refname("0");
-  std::string s_detSize("0");
+  std::string detname("0");
 
   OhmmsAttributeSet aAttrib;
   aAttrib.add(basisName, "basisset");
   aAttrib.add(detname, "id");
   aAttrib.add(sposet_name, "sposet");
-  aAttrib.add(refname, "ref");
-  aAttrib.add(s_detSize, "DetSize");
-
-  std::string s_cutoff("0.0");
-  std::string s_radius("0.0");
-  int s_smallnumber(-999999);
-  int rntype(0);
-  aAttrib.add(s_cutoff, "Cutoff");
-  aAttrib.add(s_radius, "Radius");
-  aAttrib.add(s_smallnumber, "smallnumber");
-  aAttrib.add(s_smallnumber, "eps");
-  aAttrib.add(rntype, "primary");
   aAttrib.add(spin_name, "group");
   aAttrib.put(cur);
 
-  // whether to use an optimizable slater determinant
-  std::string optimize;
   std::string matrix_inverter;
   std::string use_batch;
   std::string useGPU;
@@ -312,7 +298,6 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 
   OhmmsAttributeSet sdAttrib;
   sdAttrib.add(delay_rank, "delay_rank");
-  sdAttrib.add(optimize, "optimize", {"no", "yes"});
   sdAttrib.add(matrix_inverter, "matrix_inverter", {"gpu", "host"});
 #if defined(ENABLE_OFFLOAD)
   sdAttrib.add(use_batch, "batch", {"yes", "no"});
@@ -409,11 +394,14 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   }
 
   if (delay_rank > 1)
-    app_summary() << "      Using rank-" << delay_rank << " delayed update" << std::endl
-                  << "      See Y. Luo et al. J. Chem. Theory Comput. 21 12064 (2025) https://doi.org/10.1021/acs.jctc.5c01541" << std::endl;
+    app_summary()
+        << "      Using rank-" << delay_rank << " delayed update" << std::endl
+        << "      See Y. Luo et al. J. Chem. Theory Comput. 21 12064 (2025) https://doi.org/10.1021/acs.jctc.5c01541"
+        << std::endl;
   else
     app_summary() << "      Using rank-1 Sherman-Morrison Fahy update (SM1)" << std::endl
-                  << "      See S. Fahy et al. Phys. Rev. B 42 3503 (1990) https://doi.org/10.1103/PhysRevB.42.3503" << std::endl;
+                  << "      See S. Fahy et al. Phys. Rev. B 42 3503 (1990) https://doi.org/10.1103/PhysRevB.42.3503"
+                  << std::endl;
 
   std::unique_ptr<DiracDeterminantBase> adet;
 

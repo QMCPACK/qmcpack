@@ -1,0 +1,10 @@
+try_compile(
+  DEFAULT_IS_OLDER_THAN_CXX20
+  ${CMAKE_BINARY_DIR}
+  ${PROJECT_CMAKE}/try_compile_sources/trap_cxx20.cpp)
+
+if(DEFAULT_IS_OLDER_THAN_CXX20)
+  set(COMPILER_CXX_STANDARD_DEFAULT 17)
+else()
+  set(COMPILER_CXX_STANDARD_DEFAULT 20)
+endif()

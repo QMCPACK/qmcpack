@@ -29,7 +29,7 @@ class QEXML(DevBase):
         self._value = []
     #end def __init__
 
-    array_keys = set('type size columns len _value'.split())
+    array_keys = frozenset({'size', 'type', 'columns', '_value', 'len'})
     def finalize(self):
         keys = list(self.keys())
         enums = obj()
@@ -116,8 +116,8 @@ def readval(s):
     #end if
     return v
 #end readval
-                    
-        
+
+
 
 
 def read_qexml(inp):
@@ -168,7 +168,7 @@ def read_qexml(inp):
                     ls = ls[0:-1]
                 #end if
                 instr=False
-                lsl = list(tuple(ls))
+                lsl = list(ls)
                 ls = ''
                 for i in range(len(lsl)):
                     c = lsl[i]
@@ -181,7 +181,7 @@ def read_qexml(inp):
                 #end for
                 tokens = ls.split()
                 name = tokens[0].lower().replace('-','_')
-                attrs = tokens[1:]                
+                attrs = tokens[1:]
                 cur = QEXML()
                 base[name] = cur
                 for attr in attrs:

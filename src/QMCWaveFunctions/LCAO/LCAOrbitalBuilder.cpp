@@ -601,11 +601,9 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
 
   //initialize the number of orbital by the basis set size
   std::string debugc("no");
-  double orbital_mix_magnitude = 0.0;
   bool PBC                     = false;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(debugc, "debug");
-  aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
   aAttrib.put(cur);
   xmlNodePtr occ_ptr   = NULL;
   xmlNodePtr coeff_ptr = NULL;
@@ -775,7 +773,7 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       n++;
     }
   }
-  myComm->bcast(spo.C->data(), spo.C->size());
+  myComm->bcast(*spo.C);
   return true;
 }
 
@@ -867,9 +865,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 
     hin.close();
   }
-#ifdef HAVE_MPI
-  myComm->comm.broadcast_n(spo.C->data(), spo.C->size());
-#endif
+  myComm->bcast(*spo.C);
   return true;
 }
 

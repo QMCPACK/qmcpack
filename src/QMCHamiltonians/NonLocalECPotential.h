@@ -102,6 +102,22 @@ public:
    */
   int makeNonLocalMovesPbyP(TrialWaveFunction& psi, ParticleSet& P, NonLocalTOperator& move_op) override;
 
+  /** make non local moves for a batch of walkers
+   *
+   * For TmoveKind::V1 the candidate-ratio evaluations of each electron are
+   * batched across walkers through NonLocalECPComponent::mw_evaluateOne,
+   * synchronizing walkers at electron-index granularity; move selection and
+   * the (rare) accepts stay per walker, so each walker reproduces the
+   * sequential single-walker v1 sweep, including its RNG draw order. Other
+   * T-move kinds fall back to the per-walker implementation.
+   *
+   * @return the number of accepted moves per walker
+   */
+  static std::vector<int> mw_makeNonLocalMovesPbyP(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                                   NonLocalTOperator& move_op);
+
   Return_t evaluateValueAndDerivatives(TrialWaveFunction& psi,
                                        ParticleSet& P,
                                        const OptVariables& optvars,

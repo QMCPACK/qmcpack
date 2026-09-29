@@ -8,8 +8,8 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <memory>
 #include "Jastrow/TwoBodyJastrow.h"
@@ -68,8 +68,8 @@ ParticleSet get_two_species_particleset(const SimulationCell& simulation_cell)
   elec.R[3] = {0.9, 0.5, 1.1};
 
   SpeciesSet& tspecies = elec.getSpeciesSet();
-  int upIdx            = tspecies.addSpecies("u");
-  int downIdx          = tspecies.addSpecies("d");
+  tspecies.addSpecies("u");
+  tspecies.addSpecies("d");
   elec.resetGroups();
 
   elec.addTable(elec);

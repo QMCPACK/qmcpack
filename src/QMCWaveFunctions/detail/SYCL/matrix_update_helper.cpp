@@ -34,38 +34,37 @@ sycl::event copyAinvRow_saveGL_batched(sycl::queue& aq,
 {
   constexpr int COLBS = 128;
 
-  return aq
-      .parallel_for(sycl::nd_range<1>{{static_cast<size_t>(batch_count * COLBS)}, {static_cast<size_t>(COLBS)}},
-                    dependencies, [=](sycl::nd_item<1> item) {
-                      const int iw                    = item.get_group(0); //blockIdx.x;
-                      const T* __restrict__ Ainv_iw   = Ainv[iw];
-                      T* __restrict__ temp_iw         = temp[iw];
-                      T* __restrict__ rcopy_iw        = rcopy[iw];
-                      const T* __restrict__ phi_in_iw = phi_vgl_in[iw];
-                      T* __restrict__ dphi_out_iw     = dphi_out[iw];
-                      T* __restrict__ d2phi_out_iw    = d2phi_out[iw];
+  return aq.parallel_for(sycl::nd_range<1>{{static_cast<size_t>(batch_count * COLBS)}, {static_cast<size_t>(COLBS)}},
+                         dependencies, [=](sycl::nd_item<1> item) {
+                           const int iw                    = item.get_group(0); //blockIdx.x;
+                           const T* __restrict__ Ainv_iw   = Ainv[iw];
+                           T* __restrict__ temp_iw         = temp[iw];
+                           T* __restrict__ rcopy_iw        = rcopy[iw];
+                           const T* __restrict__ phi_in_iw = phi_vgl_in[iw];
+                           T* __restrict__ dphi_out_iw     = dphi_out[iw];
+                           T* __restrict__ d2phi_out_iw    = d2phi_out[iw];
 
-                      const int tid = item.get_local_id(0); //threadIdx.x;
-                      if (tid == 0)
-                        temp_iw[rowchanged] -= T(1); //temp_iw[rowchanged] = subtractOne<T>(temp_iw[rowchanged]);
+                           const int tid = item.get_local_id(0); //threadIdx.x;
+                           if (tid == 0)
+                             temp_iw[rowchanged] -= T(1); //temp_iw[rowchanged] = subtractOne<T>(temp_iw[rowchanged]);
 
-                      const int num_col_blocks = (n + COLBS - 1) / COLBS;
-                      for (int ib = 0; ib < num_col_blocks; ib++)
-                      {
-                        const int col_id = ib * COLBS + tid; //threadIdx.x;
-                        if (col_id < n)
-                        {
-                          rcopy_iw[col_id] = Ainv_iw[rowchanged * lda + col_id];
+                           const int num_col_blocks = (n + COLBS - 1) / COLBS;
+                           for (int ib = 0; ib < num_col_blocks; ib++)
+                           {
+                             const int col_id = ib * COLBS + tid; //threadIdx.x;
+                             if (col_id < n)
+                             {
+                               rcopy_iw[col_id] = Ainv_iw[rowchanged * lda + col_id];
 
-                          // the following copying data on the device is not part of SM-1
-                          // it is intended to copy dphiV and d2phiV from temporary to final without a separate kernel.
-                          dphi_out_iw[col_id * 3]     = phi_in_iw[col_id + phi_vgl_stride];
-                          dphi_out_iw[col_id * 3 + 1] = phi_in_iw[col_id + phi_vgl_stride * 2];
-                          dphi_out_iw[col_id * 3 + 2] = phi_in_iw[col_id + phi_vgl_stride * 3];
-                          d2phi_out_iw[col_id]        = phi_in_iw[col_id + phi_vgl_stride * 4];
-                        }
-                      }
-                    });
+                               // the following copying data on the device is not part of SM-1
+                               // it is intended to copy dphiV and d2phiV from temporary to final without a separate kernel.
+                               dphi_out_iw[col_id * 3]     = phi_in_iw[col_id + phi_vgl_stride];
+                               dphi_out_iw[col_id * 3 + 1] = phi_in_iw[col_id + phi_vgl_stride * 2];
+                               dphi_out_iw[col_id * 3 + 2] = phi_in_iw[col_id + phi_vgl_stride * 3];
+                               d2phi_out_iw[col_id]        = phi_in_iw[col_id + phi_vgl_stride * 4];
+                             }
+                           }
+                         });
 }
 
 template sycl::event copyAinvRow_saveGL_batched(sycl::queue& aq,

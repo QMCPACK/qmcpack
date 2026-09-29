@@ -89,7 +89,7 @@ public:
 
   void process(xmlNodePtr node) override;
 
-  bool run() override;
+  void run() override;
 
   /** transitional interface on the way to better walker count adjustment handling.
    *  returns a closure taking walkers per rank and accomplishing what calc_default_local_walkers does.

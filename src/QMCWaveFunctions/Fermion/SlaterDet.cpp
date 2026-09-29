@@ -59,14 +59,10 @@ void SlaterDet::checkOutVariables(const OptVariables& active)
 }
 
 PsiValue SlaterDet::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-{
-  return Dets[getDetID(iat)]->ratioGrad(P, iat, grad_iat);
-}
+{ return Dets[getDetID(iat)]->ratioGrad(P, iat, grad_iat); }
 
 PsiValue SlaterDet::ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat)
-{
-  return Dets[getDetID(iat)]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat);
-}
+{ return Dets[getDetID(iat)]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat); }
 
 void SlaterDet::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                              const RefVectorWithLeader<ParticleSet>& p_list,
@@ -111,18 +107,14 @@ void SlaterDet::evaluateDerivRatios(const VirtualParticleSet& VP,
                                     const OptVariables& optvars,
                                     std::vector<ValueType>& ratios,
                                     Matrix<ValueType>& dratios)
-{
-  return Dets[getDetID(VP.refPtcl)]->evaluateDerivRatios(VP, optvars, ratios, dratios);
-}
+{ return Dets[getDetID(VP.refPtcl)]->evaluateDerivRatios(VP, optvars, ratios, dratios); }
 
 void SlaterDet::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
                                           const std::pair<ValueVector, ValueVector>& spinor_multiplier,
                                           const OptVariables& optvars,
                                           std::vector<ValueType>& ratios,
                                           Matrix<ValueType>& dratios)
-{
-  return Dets[getDetID(VP.refPtcl)]->evaluateSpinorDerivRatios(VP, spinor_multiplier, optvars, ratios, dratios);
-}
+{ return Dets[getDetID(VP.refPtcl)]->evaluateSpinorDerivRatios(VP, spinor_multiplier, optvars, ratios, dratios); }
 
 SlaterDet::LogValue SlaterDet::evaluateLog(const ParticleSet& P,
                                            ParticleSet::ParticleGradient& G,

@@ -8,9 +8,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include <string>
@@ -114,7 +113,6 @@ TEST_CASE("putContent", "[xml]")
   putContent(e, item);
   REQUIRE(e.size() == 2);
 
-  vector<double> f;
   item = xmlNextElementSibling(item);
   REQUIRE(string((char*)item->name) == "item5");
   // Will hang, don't test for now

@@ -31,9 +31,7 @@ struct MultiSlaterDetTableMethod::MultiSlaterDetTableMethodMultiWalkerResource :
   {}
 
   std::unique_ptr<Resource> makeClone() const override
-  {
-    return std::make_unique<MultiSlaterDetTableMethodMultiWalkerResource>(*this);
-  }
+  { return std::make_unique<MultiSlaterDetTableMethodMultiWalkerResource>(*this); }
 
   /// grads of each unique determinants for multiple walkers
   Matrix<ValueType, OffloadAllocator<ValueType>> mw_grads;

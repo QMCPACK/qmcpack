@@ -1,5 +1,6 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2020-2023 Alfredo A. Correa
+// Copyright 2020-2026 Alfredo A. Correa
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
 #ifndef MULTI_ADAPTORS_THRUST_CUDA_MANAGED_HPP_
 #define MULTI_ADAPTORS_THRUST_CUDA_MANAGED_HPP_
@@ -137,21 +138,4 @@ public:
 
 }}
 
-#if 0
-
-#include<memory>
-#include<iostream>
-#include "../../../../array.hpp"
-
-namespace multi = boost::multi;
-namespace cuda = multi::memory::cuda;
-
-int main(){
-
-	multi::array<double, 1, multi::memory::cuda::managed::allocator<double> > A(32);
-	A[17] = 3.;
-	assert( A[17] == 3. );
-
-}
-#endif
 #endif

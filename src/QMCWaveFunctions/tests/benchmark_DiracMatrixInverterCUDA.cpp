@@ -15,8 +15,9 @@
  *  Currently it also benchmarks the same size matrix's and batch sizes
  *  using the Legacy DiracMatrix serially.
  */
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/benchmark/catch_benchmark.hpp>
+#include <catch2/benchmark/catch_chronometer.hpp>
 
 #include <algorithm>
 #include "Configuration.h"

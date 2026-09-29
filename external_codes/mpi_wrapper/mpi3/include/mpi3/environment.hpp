@@ -1,29 +1,31 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_ENVIRONMENT_HPP
 #define BOOST_MPI3_ENVIRONMENT_HPP
 
-#pragma once
+#ifdef _MSC_VER
+#pragma warning(disable: 4996)  // error C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead  TODO(correaa) do not use std::getenv
+#endif
 
-#include "./communicator.hpp"
-#include "./core.hpp"
-#include "./wall_clock.hpp"
+#include <mpi3/communicator.hpp>
+#include <mpi3/core.hpp>
+#include <mpi3/wall_clock.hpp>
 
-#include "./detail/call.hpp"
-#include "./version.hpp"
+#include <mpi3/detail/call.hpp>
+#include <mpi3/version.hpp>
 
-#include <mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
 #include <string>
 
 namespace boost {
 namespace mpi3 {
 
-enum class thread_level : int {
+enum class thread_level : std::uint8_t {
 	single     = MPI_THREAD_SINGLE,
 	funneled   = MPI_THREAD_FUNNELED,
 	serialized = MPI_THREAD_SERIALIZED,
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	multiple   = MPI_THREAD_MULTIPLE
 #endif
 };
@@ -51,9 +53,9 @@ inline void myterminate() {
 }
 
 inline void initialize(int& argc, char**& argv) {
-	assert(not initialized());  // avoid double initialization`
-#if not defined(EXAMPI)
-	assert(not finalized());
+	assert(!initialized());  // avoid double initialization`
+#ifndef EXAMPI
+	assert(!finalized());
 #endif
 
 	if(mpi3::version() != mpi3::Version()) {
@@ -75,9 +77,8 @@ inline void initialize(int& argc, char**& argv) {
 		using namespace std::chrono_literals;
 		std::this_thread::sleep_for(1s);
 	}
-#endif
-#ifndef MPICH_VERSION
-	if(char const* pmi_size_cstr = std::getenv("PMI_SIZE")) {  // NOLINT(concurrency-mt-unsafe)
+#elif !defined(MPICH_VERSION)
+	if(char const* pmi_size_cstr = std::getenv("PMI_SIZE")) {      // NOLINT(concurrency-mt-unsafe)
 		if(char const* pmi_rank_cstr = std::getenv("PMI_RANK")) {  // NOLINT(concurrency-mt-unsafe)
 			if(std::string{pmi_rank_cstr} == "0") {
 				std::cerr << "WARNING: MPI environment inconsistency?\n";
@@ -156,7 +157,7 @@ inline thread_level initialize_thread(
 	return static_cast<thread_level>(ret);
 }
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 inline thread_level thread_support() {
 	return static_cast<thread_level>(MPI_(Query_thread)());
 }
@@ -185,7 +186,7 @@ inline std::string get_processor_name() { return detail::call<&MPI_Get_processor
 class environment {
  public:
 	environment() {
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 		initialize_thread(thread_level::multiple);
 		named_attributes_key_f() = std::make_unique<communicator::keyval<std::map<std::string, mpi3::any>>>();
 #else
@@ -194,19 +195,19 @@ class environment {
 	}
 	explicit environment(thread_level required) {
 		initialize_thread(required);
-	#if not defined(EXAMPI)
+	#ifndef EXAMPI
 		named_attributes_key_f() = std::make_unique<communicator::keyval<std::map<std::string, mpi3::any>>>();
 	#endif
 	}
 	explicit environment(int& argc, char**& argv) {  // cppcheck-suppress [constParameter, constParameterReference] ; bug in cppcheck 2.3 and 2.9 or it can't see through the MPI C-API
 		initialize(argc, argv);  // initialize(argc, argv); // TODO have an environment_mt/st version?
-	#if not defined(EXAMPI)
+	#ifndef EXAMPI
 		named_attributes_key_f() = std::make_unique<communicator::keyval<std::map<std::string, mpi3::any>>>();
 	#endif
 	}
 	explicit environment(int& argc, char**& argv, thread_level required) {  // cppcheck-suppress [constParameter, constParameterReference] ; bug in cppcheck 2.3 and 2.9 or it can't see through the MPI C-API
 		initialize(argc, argv, required);
-	#if not defined(EXAMPI)
+	#ifndef EXAMPI
 		named_attributes_key_f() = std::make_unique<communicator::keyval<std::map<std::string, mpi3::any>>>();
 	#endif
 	}
@@ -218,20 +219,20 @@ class environment {
 	environment& operator=(environment&&)      = delete;
 
 	~environment() noexcept {  // NOLINT(bugprone-exception-escape) finalizes throws as an instance of UB
-	#if not defined(EXAMPI)
+	#ifndef EXAMPI
 		named_attributes_key_f().reset();
 	#endif
 		finalize();  // cppcheck-suppress throwInNoexceptFunction ; finalizes throws as an instance of UB
 	}
 
-#if not defined(EXAMPI)
-	inline static thread_level thread_support() { return mpi3::thread_support(); }
+#ifndef EXAMPI
+	static thread_level thread_support() { return mpi3::thread_support(); }
 #endif
 	//  static /*inline*/ communicator::keyval<int> const* color_key_p;
 	//  static communicator::keyval<int> const& color_key(){return *color_key_p;}
 	//  static /*inline*/ communicator::keyval<std::map<std::string, mpi3::any>> const* named_attributes_key_p;
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	static std::unique_ptr<communicator::keyval<std::map<std::string, mpi3::any>> const>& named_attributes_key_f() {
 		static std::unique_ptr<communicator::keyval<std::map<std::string, mpi3::any>> const> named_attributes_key_p;
 		return named_attributes_key_p;
@@ -244,23 +245,23 @@ class environment {
 #endif
 	static bool cuda_support() { return mpi3::cuda_support(); }  // cppcheck-suppress knownConditionTrueFalse ; might be known at compile time
 
-	static inline void initialize() { mpi3::initialize(); }
-	static inline void initialize(int argc, char** argv) { mpi3::initialize(argc, argv); }
+	static void initialize() { mpi3::initialize(); }
+	static void initialize(int argc, char** argv) { mpi3::initialize(argc, argv); }
 
-	static inline thread_level initialize(thread_level required) { return mpi3::initialize_thread(required); }
-	static inline thread_level initialize(int argc, char** argv, thread_level req) { return mpi3::initialize_thread(argc, argv, req); }
+	static thread_level initialize(thread_level required) { return mpi3::initialize_thread(required); }
+	static thread_level initialize(int argc, char** argv, thread_level req) { return mpi3::initialize_thread(argc, argv, req); }
 
-	static inline void finalize() { mpi3::finalize(); }
+	static void finalize() { mpi3::finalize(); }
 
-	static inline bool is_initialized() { return mpi3::initialized(); }
-	static inline bool is_finalized() { return mpi3::finalized(); }
+	static bool is_initialized() { return mpi3::initialized(); }
+	static bool is_finalized() { return mpi3::finalized(); }
 
 	using wall_clock = mpi3::wall_clock;
 	explicit operator bool() const { return initialized(); }
 
 	static bool is_thread_main() { return mpi3::is_thread_main(); }
 
-	static inline communicator& get_self_instance() {
+	static communicator& get_self_instance() {
 		assert(initialized());
 		static communicator instance = [] {
 			//  MPI_Comm_create_errhandler(&throw_error_fn, &throw_error_);
@@ -276,7 +277,7 @@ class environment {
 		MPI_Comm_set_errhandler(MPI_COMM_SELF, MPI_ERRORS_RETURN);
 		return communicator{MPI_COMM_SELF};
 	}
-	static inline communicator& get_world_instance() {
+	static communicator& get_world_instance() {
 		assert(initialized());
 		static communicator instance = [] {
 			//  MPI_Comm_create_errhandler(&throw_error_fn, &throw_error_);
@@ -297,17 +298,24 @@ class environment {
 	static std::string processor_name() { return get_processor_name(); }
 	static std::string get_processor_name() { return mpi3::get_processor_name(); }
 
-	inline static auto wall_time() { return mpi3::wall_time(); }
-	inline static auto wall_tick() { return mpi3::wall_tick(); }
+	static auto wall_time() { return mpi3::wall_time(); }
+	static auto wall_tick() { return mpi3::wall_tick(); }
 
 	template<class Duration = wall_clock::duration>
 	static auto wall_sleep_for(Duration d) { return mpi3::wall_sleep_for(d); }
 };
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"  // false positive in std::map::operator[] inlining, GCC 12/13
+#endif
 inline mpi3::any& communicator::attribute(std::string const& s) {
 	return attribute(environment::named_attributes_key())[s];
 }
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #endif
 
 }  // end namespace mpi3

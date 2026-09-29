@@ -2,12 +2,18 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PYSCF_SIMULATION)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
+from ..developer import obj
 
-from . import isolate_nexus_core
+from pathlib import Path
+from . import isolate_nexus_core, TEST_DIR
+from nexus.nexus_base import nexus_config
+from nexus.physical_system import generate_physical_system
+from nexus.structure import generate_trimer_structure
 from ..testing import clear_all_sims
-from ..testing import failed,FailedTest
+
+TEST_FILES = {
+    "scf_template.py": TEST_DIR / "test_pyscf_simulation_files/scf_template.py",
+    }
 
 
 def get_pyscf_sim(**kwargs):
@@ -43,7 +49,7 @@ def test_minimal_init():
 
 def test_check_result():
     sim = get_pyscf_sim()
-    
+
     assert(not sim.check_result('unknown',None))
     assert(not sim.check_result('orbitals',None))
     assert(not sim.check_result('wavefunction',None))
@@ -67,14 +73,13 @@ def test_check_result():
 
 @isolate_nexus_core
 def test_get_result(tmp_path):
-    from ..developer import NexusError
-    from ..nexus_base import nexus_core
+    from ..nexus_base import nexus_config
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
-    nexus_core.runs = ''
+    nexus_config.runs = ''
 
     template_file = 'scf_template.py'
     template_text = 'template $chkfile'
@@ -86,17 +91,12 @@ def test_get_result(tmp_path):
         checkpoint = 'scf.chk',
         template   = template_filepath,
         )
-    
-    try:
+
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented"
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     result = sim.get_result('orbitals',None)
 
@@ -111,11 +111,68 @@ def test_get_result(tmp_path):
 
 
 
-def test_check_sim_status():
-    sim = get_pyscf_sim()
+@isolate_nexus_core
+def test_check_sim_status(tmp_path):
+    """Check that ``check_sim_status`` catches failures.
+
+    This tests the case that a user has installed PySCF, but has not
+    installed ``pyscf-dispersion`` with it, then tries to import it.
+    """
+
+    nexus_config.runs = ''
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
+
+    # Water
+    structure = generate_trimer_structure(
+        trimer     = ["O", "H", "H"],
+        units      = "A",
+        separation = [1.0, 1.0],
+        angle      = 104.5,
+        )
+
+    system = generate_physical_system(
+        structure = structure,
+        )
+
+    sim = get_pyscf_sim(
+        identifier = 'scf',
+        path       = 'scf',
+        template   = TEST_FILES["scf_template.py"],
+        mole       = obj(
+            verbose  = 5,
+            basis    = 'ccpvtz',
+            symmetry = True,
+            ),
+        save_qmc   = True,
+        system     = system,
+        )
+
+    sim_dir = Path(sim.locdir).resolve()
+    assert(sim_dir == (tmp_path / 'scf').resolve())
+    sim_dir.mkdir()
 
     assert(not sim.failed)
     assert(not sim.finished)
+
+    try:
+        sim.check_sim_status()
+    except IOError:
+        pass
+    except Exception as e:
+        raise e
+
+    assert(not sim.failed)
+    assert(not sim.finished)
+
+    out_path = sim_dir / sim.outfile
+    out_path.touch()
+    assert(out_path.exists())
+
+    err_path = sim_dir / sim.errfile
+    err_path.touch()
+    assert(err_path.exists())
 
     sim.check_sim_status()
 
@@ -128,6 +185,20 @@ def test_check_sim_status():
 
     assert(not sim.failed)
     assert(sim.finished)
+
+    err_text = """
+Traceback (most recent call last):
+  File "/home/runs/scf/scf.py", line 2, in <module>
+    from pyscf import dispersion
+ImportError: cannot import name 'dispersion' from 'pyscf' (/home/.venv/lib/python3.14/site-packages/pyscf/__init__.py)
+"""
+    err_path.write_text(err_text)
+    assert(err_text in err_path.read_text())
+
+    sim.check_sim_status()
+
+    assert(sim.finished)
+    assert(sim.failed)
 
     clear_all_sims()
 #end def test_check_sim_status

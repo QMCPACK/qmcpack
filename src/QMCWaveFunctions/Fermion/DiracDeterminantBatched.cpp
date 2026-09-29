@@ -53,9 +53,7 @@ struct DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatchedMultiWalker
   {}
 
   std::unique_ptr<Resource> makeClone() const override
-  {
-    return std::make_unique<DiracDeterminantBatchedMultiWalkerResource>(*this);
-  }
+  { return std::make_unique<DiracDeterminantBatchedMultiWalkerResource>(*this); }
   DualVector<LogValue> log_values;
   /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw][norb]
   OffloadMWVGLArray phi_vgl_v;
@@ -524,9 +522,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_accept_rejectMove(
 */
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::restore(int iat)
-{
-  curRatio = 1.0;
-}
+{ curRatio = 1.0; }
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::completeUpdates()
@@ -1202,24 +1198,18 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateDerivatives(ParticleSet& P,
                                                                 const OptVariables& active,
                                                                 Vector<Value>& dlogpsi,
                                                                 Vector<Value>& dhpsioverpsi)
-{
-  phi_.evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
-}
+{ phi_.evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex); }
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::evaluateDerivativesWF(ParticleSet& P,
                                                                   const OptVariables& active,
                                                                   Vector<ValueType>& dlogpsi)
-{
-  phi_.evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex);
-}
+{ phi_.evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex); }
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::registerTWFFastDerivWrapper(const ParticleSet& P,
                                                                         TWFFastDerivWrapper& twf) const
-{
-  twf.addGroup(P, P.getGroupID(FirstIndex), &phi_);
-}
+{ twf.addGroup(P, P.getGroupID(FirstIndex), &phi_); }
 
 template<PlatformKind PL, typename VT, typename FPVT>
 std::unique_ptr<DiracDeterminantBase> DiracDeterminantBatched<PL, VT, FPVT>::makeCopy(SPOSet& phi) const

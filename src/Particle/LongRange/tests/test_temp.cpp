@@ -8,10 +8,9 @@
 //
 // File created by: Yubo "Paul" Yang, yubo.paul.yang@gmail.com, University of Illinois Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "Lattice/CrystalLattice.h"
 #include "Particle/ParticleSet.h"
 #include "LongRange/LRHandlerTemp.h"
@@ -54,7 +53,7 @@ TEST_CASE("temp3d", "[lrhandler]")
 
   handler.initBreakup(ref);
 
-  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  app_log() << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
   CHECK( handler.MaxKshell == 78);
   CHECK(Approx(handler.LR_rc) == 2.5);
   CHECK(Approx(handler.LR_kc) == 12);

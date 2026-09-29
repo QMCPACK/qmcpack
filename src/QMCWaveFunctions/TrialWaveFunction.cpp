@@ -174,7 +174,7 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
   // to be compatible with legacy use pattern.
   const int num_particles = p_leader.getTotalNum();
   auto initGandL          = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient& grad,
-                                          ParticleSet::ParticleLaplacian& lapl) {
+                                                   ParticleSet::ParticleLaplacian& lapl) {
     grad.resize(num_particles);
     lapl.resize(num_particles);
     grad           = czero;

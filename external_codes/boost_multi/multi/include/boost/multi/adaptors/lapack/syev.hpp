@@ -1,14 +1,12 @@
-// Copyright 2020-2024 Alfredo A. Correa
+// Copyright 2020-2026 Alfredo A. Correa
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
 #ifndef BOOST_MULTI_ADAPTORS_LAPACK_SYEV_HPP
 #define BOOST_MULTI_ADAPTORS_LAPACK_SYEV_HPP
 
-#include <boost/multi/adaptors/blas/filling.hpp"
-#include <boost/multi/adaptors/lapack/core.hpp"
-
-#include <boost/multi/config/NODISCARD.hpp"
+#include "boost/multi/adaptors/blas/filling.hpp"
+#include "boost/multi/adaptors/lapack/core.hpp"
 
 #include <cassert>
 
@@ -55,7 +53,7 @@ auto syev(blas::filling uplo, Array2D&& a, Array1D&& w)
 }  // TODO(correaa) obtain automatic size from lapack info routine
 
 template<class Array2D, class Array1D>
-NODISCARD("because input array is const, output gives eigenvectors")
+[[nodiscard]]  // "because input array is const, output gives eigenvectors"
 typename Array2D::decay_type syev(blas::filling uplo, Array2D const& a, Array1D&& w) {
 	auto ret = a.decay();
 	auto l   = syev(uplo, ret, std::forward<Array1D>(w));
@@ -65,15 +63,15 @@ typename Array2D::decay_type syev(blas::filling uplo, Array2D const& a, Array1D&
 }
 
 template<class Array2D>
-NODISCARD("because input array is const, output gives eigenvalues")
+[[nodiscard]]  // "because input array is const, output gives eigenvalues"
 auto syev(blas::filling uplo, Array2D&& a) {
-	multi::array<typename std::decay_t<Array2D>::element_type, 1, decltype(get_allocator(a))> eigenvalues(size(a), get_allocator(a));
+	multi::array<typename std::decay_t<Array2D>::element, 1, decltype(get_allocator(a))> eigenvalues(size(a), get_allocator(a));
 	syev(uplo, std::forward<Array2D>(a), eigenvalues);
 	return eigenvalues;
 }
 
 template<class Array2D>
-NODISCARD("because input array is const, output gives a structured binding of eigenvectors and eigenvactor")
+[[nodiscard]]  // "because input array is const, output gives a structured binding of eigenvectors and eigenvactor"
 auto syev(blas::filling uplo, Array2D const& a) {
 	struct {
 		typename Array2D::decay_type eigenvectors;
