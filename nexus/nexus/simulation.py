@@ -1422,7 +1422,8 @@ class Simulation(NexusCore):
         if progress and not (self.block_subcascade or self.failed):
             for sim in self.dependents.values():
                 if not sim.bundled:
-                    sim.progress(self.simid)
+                    with sim_err_handler(sim), sim_log_handler(sim):
+                        sim.progress(self.simid)
     #end def progress
 
 
@@ -2451,8 +2452,12 @@ class sim_log_handler:
     def __init__(self, sim: Simulation):
         self.sim = sim
         self.logger = sim.logger
+        self.null_handler = logging.NullHandler()
 
-        if sim.created_directories:
+        if not hasattr(self, "initialized"):
+            self.initialized = False
+
+        if sim.created_directories and not self.initialized:
             self.logfile = Path(sim.remdir).resolve() / sim.nexus_logfile
             if not self.logfile.exists():
                 self.logfile.touch()
@@ -2481,12 +2486,16 @@ class sim_log_handler:
         for handler in self.original_log_handlers:
             self.logger.removeHandler(handler)
 
-        if nexus_core.debug:
+        if nexus_config.disable_logging:
+            self.logger.addHandler(self.null_handler)
+            return
+
+        if nexus_config.debug:
             self.logger.setLevel(logging.DEBUG)
             self.stream_handler.setLevel(logging.DEBUG)
             self.file_handler.setLevel(logging.DEBUG)
-        # Disabled since currently Nexus's default is verbose=True
-        # elif nexus_core.verbose:
+        # Disabled since currently Nexus does not have a proper verbose setting
+        # elif nexus_config.verbose:
         #     self.logger.setLevel(logging.INFO)
         #     self.stream_handler.setLevel(logging.INFO)
         #     self.file_handler.setLevel(logging.INFO)
@@ -2497,6 +2506,7 @@ class sim_log_handler:
 
         self.logger.addHandler(self.stream_handler)
         self.logger.addHandler(self.file_handler)
+        self.logger.addHandler(nexus_config.main_log_handler)
 
     def __exit__(self, *exc_details):
         if not self.initialized:
