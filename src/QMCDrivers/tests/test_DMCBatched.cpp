@@ -8,12 +8,17 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+#include <string>
+
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Message/Communicate.h"
+#include "Message/UniformCommunicateError.h"
 #include "QMCDrivers/DMC/DMCDriverInput.h"
 #include "QMCDrivers/DMC/DMCBatched.h"
+#include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
 #include "QMCDrivers/tests/SetupDMCTest.h"
 #include "EstimatorInputDelegates.h"
@@ -35,6 +40,53 @@ private:
   UPtr<SetupDMCTest> up_dtest_;
 };
 } // namespace testing
+
+TEST_CASE("DMCDriverInput L2 diffusion", "[drivers]")
+{
+  DMCDriverInput dmcdriver_input;
+  CHECK_FALSE(dmcdriver_input.get_l2_diffusion());
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<qmc method="dmc"><parameter name="L2_diffusion">yes</parameter></qmc>)"));
+  dmcdriver_input.readXML(doc.getRoot());
+  CHECK(dmcdriver_input.get_l2_diffusion());
+}
+
+TEST_CASE("QMCDriverFactory rejects invalid L2 diffusion configurations for DMCBatched", "[drivers]")
+{
+  using namespace testing;
+  RandomNumberGeneratorPool rng_pool(1);
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  Communicate* comm = OHMMS::Controller;
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<qmc method="dmc"><parameter name="L2_diffusion">yes</parameter></qmc>)"));
+  xmlNodePtr node = doc.getRoot();
+
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+
+  std::string expected_error;
+  SECTION("spinor ParticleSet")
+  {
+    particle_pool.getParticleSet("e")->setSpinor(true);
+    expected_error = "L2 diffusion is not supported for spinor particle sets.";
+  }
+  SECTION("Hamiltonian without L2 potential")
+  { expected_error = "L2 diffusion was requested, but the Hamiltonian has no L2 potential."; }
+
+  QMCDriverFactory driver_factory(test_project);
+  auto das = driver_factory.readSection(node);
+
+  auto construct_driver = [&]() {
+    driver_factory.createQMCDriver(node, das, std::nullopt, *particle_pool.getWalkerSet("e"), particle_pool,
+                                   wavefunction_pool, hamiltonian_pool, comm);
+  };
+
+  CHECK_THROWS_MATCHES(construct_driver(), UniformCommunicateError, Catch::Matchers::Message(expected_error));
+}
 
 /** Since we check the DMC only feature of reserve walkers perhaps this should be
  *  a DMC integration test.
