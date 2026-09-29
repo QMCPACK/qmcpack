@@ -299,69 +299,6 @@ class Simulation(NexusCore):
     sim_directories: ClassVar[dict] = dict()
     all_sims: ClassVar[list] = []
 
-    job: Job
-    identifier: str
-    path: StrPath
-    infile: StrPath
-    outfile: StrPath
-    errfile: StrPath
-    nexus_logfile: StrPath
-    imagefile: StrPath
-    input: SimulationInput
-    files: Collection[StrPath]
-    analysis_request: QmcpackAnalysisRequest | Unset
-    block: bool
-    block_subcascade: bool
-    app_name: str | StrPath
-    app_props: Collection[str]
-    system: PhysicalSystem | None
-    skip_submit: bool
-    force_write: bool
-    simlabel: str | None
-    fake_sim: bool
-    restartable: bool
-    force_restart: bool
-    simid: int
-    sim_image: StrPath
-    input_image: StrPath
-    analyzer_image: StrPath
-    image_dir: StrPath
-    created_directories: bool
-    got_dependencies: bool
-    setup: bool
-    sent_files: bool
-    submitted: bool
-    finished: bool
-    failed: bool
-    got_output: bool
-    analyzed: bool
-    timestamps: obj
-    subcascade_finished: bool
-    loaded: bool
-    process_id: int | None
-    bundleable: bool
-    bundled: bool
-    bundler: SimulationBundle
-    dependencies: obj
-    wait_ids: set[int]
-    dependents: obj
-    dependency_ids: set[int]
-    ordered_dependencies: list[Simulation]
-    locdir: StrPath
-    remdir: StrPath
-    resdir: StrPath
-    imlocdir: StrPath
-    imremdir: StrPath
-    imresdir: StrPath
-
-    # Dynamic workflows only
-    produces: set | Unset
-    products: obj | Unset
-    filled_products: bool | Unset
-
-    # Unknown purpose
-    outputs: Any
-
     @classmethod
     def clear_all_sims(cls):
         cls.sim_directories.clear()
@@ -376,43 +313,43 @@ class Simulation(NexusCore):
 
     # test needed
     @classmethod
-    def separate_inputs(cls,kwargs,overlapping_kw=-1,sim_kw=None):
-        if overlapping_kw==-1:
-            overlapping_kw = {'system'}
-        elif overlapping_kw is None:
+    def separate_inputs(
+        cls,
+        kwargs: Mapping,
+        overlapping_kw: set[str] | None = frozenset({'system'}),
+        sim_kw: Collection[str] | None = None,
+        ) -> tuple[obj, obj]:
+        if overlapping_kw is None:
             overlapping_kw = set()
-        #end if
+
+        sim_inputs = Simulation.allowed_inputs
         if sim_kw is None:
-            sim_kw = set()
+            sim_kw = sim_inputs
         else:
-            sim_kw = set(sim_kw)
-        #end if
+            sim_kw = sim_inputs.union(set(sim_kw))
+
         kw       = set(kwargs.keys())
-        sim_kw   = kw & (Simulation.allowed_inputs | sim_kw)
-        inp_kw   = (kw - sim_kw) | (kw & overlapping_kw)
-        sim_args = obj()
-        inp_args = obj()
+        sim_kw   = kw.intersection(sim_kw)
+        inp_kw   = kw - sim_kw # Get all non-simulation keywords
+        inp_kw  |= kw.intersection(overlapping_kw) # Get any overlapping keywords too
+        sim_args = {}
+        inp_args = {}
         for k in sim_kw:
             sim_args[k] = kwargs[k]
+
         for k in inp_kw:
             inp_args[k] = kwargs[k]
-        system = inp_args.get('system',None)
-        if system is not None:
-            if not isinstance(system,PhysicalSystem):
-                extra=''
-                if not isinstance(extra,obj):
-                    extra = f'\nwith value: {system}'
-                #end if
-                msg = (
-                    'invalid input for variable "system"\n'
-                    'system object must be of type PhysicalSystem\n'
-                    f'you provided type: {system.__class__.__name__}'
-                    +extra
-                    )
-                raise TypeError(msg)
-            #end if
-        #end if
-        return sim_args,inp_args
+
+        system = inp_args.get('system')
+        if system is not None and not isinstance(system, PhysicalSystem):
+            msg = (
+                "Invalid input for variable 'system'\n"
+                "System object must be of type PhysicalSystem\n"
+                f"You provided type: {type(system).__name__}"
+                )
+            raise TypeError(msg)
+
+        return obj(sim_args), obj(inp_args)
     #end def separate_inputs
 
 
@@ -534,11 +471,17 @@ class Simulation(NexusCore):
         self.loaded         = False
         self.process_id     = None
 
-        self.infile = infile
-        self.outfile = outfile
-        self.errfile = errfile
-        self.nexus_logfile = nexus_logfile
-        self.set_files()
+        if infile is None:
+            self.infile  = self.identifier + self.infile_extension
+
+        if outfile is None:
+            self.outfile = self.identifier + self.outfile_extension
+
+        if errfile is None:
+            self.errfile = self.identifier + self.errfile_extension
+
+        if nexus_logfile is None:
+            self.nexus_logfile = self.identifier + ".nexus.log"
 
         self.bundleable     = True
         self.bundled        = False
@@ -560,11 +503,43 @@ class Simulation(NexusCore):
         if dependencies is not None:
             self.depends(*dependencies)
 
+        nc_locdir = nexus_config.local_directory
+        nc_remdir = nexus_config.remote_directory
+        nc_rundir = nexus_config.runs
+        nc_resdir = nexus_config.results
+        self.locdir = os.path.join(nc_locdir, nc_rundir, self.path)
+        self.remdir = os.path.join(nc_remdir, nc_rundir, self.path)
+        self.resdir = os.path.join(nc_locdir, nc_resdir, nc_rundir, self.path)
+
+        if not self.fake():
+            if self.locdir not in self.sim_directories:
+                self.sim_directories[self.locdir] = {self.identifier}
+            else:
+                idset = self.sim_directories[self.locdir]
+                if self.identifier not in idset:
+                    idset.add(self.identifier)
+                else:
+                    msg = (
+                        'Multiple simulations in a single directory have the same identifier\n'
+                        'Please assign unique identifiers to each simulation\n'
+                        f'Simulation directory: {self.locdir}\n'
+                        f'Repeated identifier: {self.identifier}\n'
+                        f'Other identifiers: {sorted(idset)}\n'
+                        'Between the directory shown and the identifiers listed, it should be clear which simulations are involved\n'
+                        f'Most likely, you described two simulations with identifier {self.identifier}'
+                        )
+                    raise ValueError(msg)
+                #end if
+            #end if
+        #end if
 
         self.input_image = self.input_imagefile
         self.analyzer_image = self.analyzer_imagefile
         self.image_dir = self.image_directory
-        self.set_directories()
+        self.image_dir = self.image_dir+'_'+self.identifier
+        self.imlocdir = os.path.join(self.locdir,self.image_dir)
+        self.imremdir = os.path.join(self.remdir,self.image_dir)
+        self.imresdir = os.path.join(self.resdir,self.image_dir)
         self.propagate_identifier()
 
         if not isinstance(job, Job): # Job object for machine
@@ -654,21 +629,6 @@ class Simulation(NexusCore):
         self.imremdir = os.path.join(self.remdir,self.image_dir)
         self.imresdir = os.path.join(self.resdir,self.image_dir)
     #end def set_directories
-
-
-    def set_files(self):
-        if self.infile is None:
-            self.infile  = self.identifier + self.infile_extension
-        #end if
-        if self.outfile is None:
-            self.outfile = self.identifier + self.outfile_extension
-        #end if
-        if self.errfile is None:
-            self.errfile = self.identifier + self.errfile_extension
-        #end if
-        if self.nexus_logfile is None:
-            self.nexus_logfile = self.identifier + ".nexus.log"
-    #end def set_files
 
 
     def reset_indicators(self):
