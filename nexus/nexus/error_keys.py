@@ -8,21 +8,21 @@ process.
 The ``*_errors`` tuples show readable examples of the diagnostic forms that
 the corresponding regular expressions are intended to recognize.  Commented
 examples are explicitly excluded because they are not sufficiently reliable
-failure indicators.  
+failure indicators.
 
 The ``*_error_patterns`` tuples provide the regular
 expressions used by :func:`find_error_keys` for its explicit output search;
 they accommodate variable text and require context that limits false
-positives.  Active examples are kept consistent with these patterns 
+positives.  Active examples are kept consistent with these patterns
 
-Where enabled by an error set, the key lists also participate as literal 
-search expressions, not just the broader regexes. This is accomplished via 
-conversion to literal regexes. Examples: Slurm, MPI, PWSCF, RMG, QMCPACK, 
+Where enabled by an error set, the key lists also participate as literal
+search expressions, not just the broader regexes. This is accomplished via
+conversion to literal regexes. Examples: Slurm, MPI, PWSCF, RMG, QMCPACK,
 VASP, and GAMESS.
 
-Consistency between the keyword lists and the regexes is tested explicitly 
-within the standard testing framework.  This way, if desired search literals 
-are added, it will be immediately known whether or not the corresponding 
+Consistency between the keyword lists and the regexes is tested explicitly
+within the standard testing framework.  This way, if desired search literals
+are added, it will be immediately known whether or not the corresponding
 regex needs updating.
 """
 
