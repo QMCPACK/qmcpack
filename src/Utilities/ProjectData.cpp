@@ -178,10 +178,6 @@ bool ProjectData::put(xmlNodePtr cur)
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));
-    if (cname == "user")
-    {
-      // Removed
-    }
     if (cname == "host")
     {
       host_ = getHostName();

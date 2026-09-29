@@ -65,6 +65,22 @@ public:
   using OffloadMWVArray   = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [walker, Orbs]
   template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
+  template<typename DT>
+  using ValueVectorT      = typename OrbitalSetTraits<DT>::ValueVector;
+  template<typename DT>
+  using ValueMatrixT      = typename OrbitalSetTraits<DT>::ValueMatrix;
+  template<typename DT>
+  using GradVectorT       = typename OrbitalSetTraits<DT>::GradVector;
+  template<typename DT>
+  using GradMatrixT       = typename OrbitalSetTraits<DT>::GradMatrix;
+  template<typename DT>
+  using HessVectorT       = typename OrbitalSetTraits<DT>::HessVector;
+  template<typename DT>
+  using HessMatrixT       = typename OrbitalSetTraits<DT>::HessMatrix;
+  template<typename DT>
+  using GGGVectorT        = typename OrbitalSetTraits<DT>::GradHessVector;
+  template<typename DT>
+  using GGGMatrixT        = typename OrbitalSetTraits<DT>::GradHessMatrix;
 
   /** constructor */
   SPOSetT(const std::string& my_name, size_t size);
@@ -192,7 +208,8 @@ public:
    * @param iat active particle
    * @param psi values of the SPO
    */
-  virtual void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) = 0;
+  virtual void evaluateValue(const ParticleSet& P, int iat, ValueVectorT<ValueAlias<float, ValueType>>& psi);
+  virtual void evaluateValue(const ParticleSet& P, int iat, ValueVectorT<ValueAlias<double, ValueType>>& psi);
 
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
@@ -274,7 +291,17 @@ public:
    * @param dpsi gradients of the SPO
    * @param d2psi laplacians of the SPO
    */
-  virtual void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) = 0;
+  virtual void evaluateVGL(const ParticleSet& P,
+                           int iat,
+                           ValueVectorT<ValueAlias<float, ValueType>>& psi,
+                           GradVectorT<ValueAlias<float, ValueType>>& dpsi,
+                           ValueVectorT<ValueAlias<float, ValueType>>& d2psi);
+
+  virtual void evaluateVGL(const ParticleSet& P,
+                           int iat,
+                           ValueVectorT<ValueAlias<double, ValueType>>& psi,
+                           GradVectorT<ValueAlias<double, ValueType>>& dpsi,
+                           ValueVectorT<ValueAlias<double, ValueType>>& d2psi);
 
   /** evaluate the values, gradients and laplacians and spin gradient of this single-particle orbital set
    * @param P current ParticleSet
@@ -426,9 +453,16 @@ public:
   virtual void evaluate_notranspose(const ParticleSet& P,
                                     int first,
                                     int last,
-                                    ValueMatrix& logdet,
-                                    GradMatrix& dlogdet,
-                                    ValueMatrix& d2logdet) = 0;
+                                    ValueMatrixT<ValueAlias<float, ValueType>>& logdet,
+                                    GradMatrixT<ValueAlias<float, ValueType>>& dlogdet,
+                                    ValueMatrixT<ValueAlias<float, ValueType>>& d2logdet);
+
+  virtual void evaluate_notranspose(const ParticleSet& P,
+                                    int first,
+                                    int last,
+                                    ValueMatrixT<ValueAlias<double, ValueType>>& logdet,
+                                    GradMatrixT<ValueAlias<double, ValueType>>& dlogdet,
+                                    ValueMatrixT<ValueAlias<double, ValueType>>& d2logdet);
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles, including the spin gradient
    * @param P current ParticleSet

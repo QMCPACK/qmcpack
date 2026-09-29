@@ -175,7 +175,7 @@ struct einspline_spo
         einsplines[i] = new spline_type(grid, BC, nSplinesPerBlock);
         if (init_random)
           for (int j = 0; j < nSplinesPerBlock; ++j)
-            einsplines[i]->set_spline(*aspline, j);
+            einsplines[i]->setOneSpline(*aspline, j);
       }
       destroy_Bspline(aspline);
     }

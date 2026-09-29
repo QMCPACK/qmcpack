@@ -17,7 +17,6 @@ Users are recommended to include the corresponding header if a non-STL data cont
 
 `hdf_hyperslab.h` supports hyperslab selection in filespace. In production.
 
-`hdf_double_hyperslab.h` supports hyperslab selection in both filespace and memory space. Not completed yet due to limited demand.
 
 `hdf_hyperslab` reads from  and writes into data containers which requires `../type_traits/container_traits.h`
 to support features like resizing containers.

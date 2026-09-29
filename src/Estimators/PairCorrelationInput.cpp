@@ -23,7 +23,6 @@ PairCorrelationInput::PairCorrelationInput(xmlNodePtr cur)
   explicit_set_nbins_ = setIfInInput(nbins_, "num_bin");
   explicit_set_rmax_  = setIfInInput(rmax_, "rmax");
   explicit_set_delta_ = setIfInInput(delta_, "dr");
-  setIfInInput(debug_, "debug");
   setIfInInput(sources_, "sources");
 }
 
