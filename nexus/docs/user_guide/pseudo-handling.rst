@@ -51,17 +51,22 @@ The most basic way to work with pseudopotentials in Nexus is to use ``settings``
     from nexus import generate_physical_system, generate_pwscf
 
     settings(
-        pseudo_dir="/tmp/ccECP",
+        pseudo_dir = "/tmp/ccECP",
         ...
-    )
+        )
 
-    system = generate_physical_system(...)
+    system = generate_physical_system(
+        structure = ...,
+        C = 4,
+        H = 1,
+        O = 6,
+        )
 
     generate_pwscf(
-        pseudos=["C.ccECP.upf", "H.ccECP.upf", "O.ccECP.upf"],
-        system=system,
+        pseudos = ["C.ccECP.upf", "H.ccECP.upf", "O.ccECP.upf"],
+        system = system,
         ...
-    )
+        )
 
     run_project()
 
@@ -108,25 +113,33 @@ Users familiar with the legacy :py:func:`~.ppset` or that have a custom pseudopo
     from nexus import settings, generate_pseudoset, run_project
     from nexus import generate_physical_system, generate_pwscf
 
-    settings(pseudo_dir="/tmp/ccECP")
+    settings(pseudo_dir = "/tmp/ccECP")
 
     ccECP = generate_pseudoset(
         qe      = ["C.ccECP.upf", "H.ccECP.upf", "O.ccECP.upf"],
         qmcpack = ["C.ccECP.xml", "H.ccECP.xml", "O.ccECP.xml"],
         pyscf   = ["C.ccECP.nwchem", "H.ccECP.nwchem", "O.ccECP.nwchem"],
         gamess  = ["C.ccECP.gamess", "H.ccECP.gamess", "O.ccECP.gamess"],
-    )
+        )
 
     system = generate_physical_system(
-        structure="structure.xsf",
+        structure = "structure.xsf",
+        C = 4,
+        H = 1,
+        O = 6,
+        )
+
+    # You can also grab Zeffs right from the pseudopotential files
+    system = generate_physical_system(
+        structure = "structure.xsf",
         **ccECP["espresso"].get_Zeff({"C", "H", "O"})
-    )
+        )
 
     generate_pwscf(
-        pseudos=pseudos,
-        system=system,
+        pseudos = pseudos,
+        system = system,
         ...,
-    )
+        )
 
     run_project()
 
@@ -165,20 +178,20 @@ If you are using Nexus for just one code, e.g. driving high-throughput Quantum E
             from nexus import settings, generate_pseudoset, run_project
             from nexus import generate_physical_system, generate_pwscf
 
-            settings(pseudo_dir="/tmp/ccECP")
+            settings(pseudo_dir = "/tmp/ccECP")
 
-            pseudos = generate_pseudoset(code="quantum_espresso")
+            pseudos = generate_pseudoset(code = "quantum_espresso")
 
             system = generate_physical_system(
-                structure="structure.xsf",
+                structure = "structure.xsf",
                 **pseudos["espresso"].get_Zeff({"C", "H", "O"})
-            )
+                )
 
             generate_pwscf(
-                pseudos=pseudos,
-                system=system,
+                pseudos = pseudos,
+                system = system,
                 ...,
-            )
+                )
 
             run_project()
 
@@ -191,9 +204,9 @@ If you are using Nexus for just one code, e.g. driving high-throughput Quantum E
             from nexus import generate_physical_system, generate_pwscf
 
             pseudos = PseudoSet.from_dir(
-                pseudo_dir="/tmp/ccECP",
-                code="quantum_espresso",
-            )
+                pseudo_dir = "/tmp/ccECP",
+                code = "quantum_espresso",
+                )
 
             # print(repr(pseudos)) # A single PseudoSet object
             # PseudoSet(
@@ -207,15 +220,15 @@ If you are using Nexus for just one code, e.g. driving high-throughput Quantum E
             # )
 
             system = generate_physical_system(
-                structure="structure.xsf",
+                structure = "structure.xsf",
                 **pseudos.get_Zeff({"C", "H", "O"})
-            )
+                )
 
             generate_pwscf(
-                pseudos=pseudos,
-                system=system,
+                pseudos = pseudos,
+                system = system,
                 ...,
-            )
+                )
 
             run_project()
 
@@ -223,7 +236,7 @@ If you are using Nexus for just one code, e.g. driving high-throughput Quantum E
 Example 3 - Filtering by File Extension
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you are driving multiple codes with Nexus, e.g. running an RMG calculation for initial structure relaxation, Quantum ESPRESSO for a final relaxation calculation and orbital generation for use in a QMCPACK calculation, you can just grab all of the pseudos in the directory. This can cause problems with programs that can read several types of pseudopotentials (for example, RMG can use both ``.upf`` and ``.xml`` files); thus picking which format to use must be done manually. With :py:func:`~.generate_pseudoset`, this is done via the ``extension`` argument.
+If you are driving multiple codes with Nexus, e.g. running an RMG calculation for initial structure relaxation, Quantum ESPRESSO for a final relaxation calculation and orbital generation for use in a QMCPACK calculation, you can just filter for the pseudopotentials in the directory. This can cause problems with programs that can read several types of pseudopotentials (for example, RMG can use both ``.upf`` and ``.xml`` files); thus picking which format to use must be done manually. With :py:func:`~.generate_pseudoset`, this is done via the ``extension`` argument.
 
 .. tab-set::
     :sync-group: func-class-interface
@@ -236,9 +249,9 @@ If you are driving multiple codes with Nexus, e.g. running an RMG calculation fo
             from nexus import generate_pseudoset
 
             pseudos = generate_pseudoset(
-                pseudo_dir="/tmp/ccECP",
-                extension={"rmg": ".xml"},
-            )
+                pseudo_dir = "/tmp/ccECP",
+                extension = {"rmg": ".xml"},
+                )
 
     .. tab-item:: Class Interface
         :sync: class
@@ -248,9 +261,9 @@ If you are driving multiple codes with Nexus, e.g. running an RMG calculation fo
             from nexus import PseudoSet
 
             pseudos = PseudoSet.from_mixed_dir(
-                pseudo_dir="/tmp/ccECP",
-                extensions={"rmg": ".xml"}
-            )
+                pseudo_dir = "/tmp/ccECP",
+                extensions = {"rmg": ".xml"}
+                )
 
 
 Example 4 - Searching by Inclusion Pattern
@@ -301,22 +314,22 @@ Example 4 - Searching by Inclusion Pattern
             from nexus import generate_pseudoset
 
             uspp = generate_pseudoset(
-                pseudo_dir="/tmp/pseudo_dir",
-                code="quantum_espresso",
-                include="*USPP*",
-            )
+                pseudo_dir = "/tmp/pseudo_dir",
+                code = "quantum_espresso",
+                include = "*USPP*",
+                )
 
             ncpp = generate_pseudoset(
-                pseudo_dir="/tmp/pseudo_dir",
-                code="quantum_espresso",
-                include="*NCPP*",
-            )
+                pseudo_dir = "/tmp/pseudo_dir",
+                code = "quantum_espresso",
+                include = "*NCPP*",
+                )
 
             ccECP = generate_pseudoset(
-                pseudo_dir="/tmp/pseudo_dir",
-                code="quantum_espresso",
-                include="*ccECP*",
-            )
+                pseudo_dir = "/tmp/pseudo_dir",
+                code = "quantum_espresso",
+                include = "*ccECP*",
+                )
 
     .. tab-item:: Class Interface
         :sync: class
@@ -326,22 +339,22 @@ Example 4 - Searching by Inclusion Pattern
             from nexus import PseudoSet
 
             uspp = PseudoSet.from_dir(
-                pseudo_dir="/tmp/pseudo_dir",
-                code="quantum_espresso",
-                include="*USPP*",
-            )
+                pseudo_dir = "/tmp/pseudo_dir",
+                code = "quantum_espresso",
+                include = "*USPP*",
+                )
 
             ncpp = PseudoSet.from_dir(
-                pseudo_dir="/tmp/pseudo_dir",
-                code="quantum_espresso",
-                include="*NCPP*",
-            )
+                pseudo_dir = "/tmp/pseudo_dir",
+                code = "quantum_espresso",
+                include = "*NCPP*",
+                )
 
             ccECP = PseudoSet.from_dir(
-                pseudo_dir="/tmp/pseudo_dir",
-                code="quantum_espresso",
-                include="*ccECP*",
-            )
+                pseudo_dir = "/tmp/pseudo_dir",
+                code = "quantum_espresso",
+                include = "*ccECP*",
+                )
 
 
 Example 5 - Searching by Exclusion Pattern
@@ -390,26 +403,26 @@ A more specialized case involving VASP pseudopotentials requires the use of both
             from nexus import generate_pseudoset
 
             pseudos = generate_pseudoset(
-                pseudo_dir="/tmp/vasp_pseudos",
-                code="vasp",
-                exclude="*_*",
-            )
+                pseudo_dir = "/tmp/vasp_pseudos",
+                code = "vasp",
+                exclude = "*_*",
+                )
             sv_pseudos = generate_pseudoset(
-                pseudo_dir="/tmp/vasp_pseudos",
-                code="vasp",
-                include="*_sv", # Leave out trailing asterisk to not match after 'sv'
-            )
+                pseudo_dir = "/tmp/vasp_pseudos",
+                code = "vasp",
+                include = "*_sv", # Leave out trailing asterisk to not match after 'sv'
+                )
             sv_gw_pseudos = generate_pseudoset(
-                pseudo_dir="/tmp/vasp_pseudos",
-                code="vasp",
-                include="*sv_GW",
-            )
+                pseudo_dir = "/tmp/vasp_pseudos",
+                code = "vasp",
+                include = "*sv_GW",
+                )
             gw_pseudos = generate_pseudoset(
-                pseudo_dir="/tmp/vasp_pseudos",
-                code="vasp",
-                include="*_GW",
-                exclude="*sv*",
-            )
+                pseudo_dir = "/tmp/vasp_pseudos",
+                code = "vasp",
+                include = "*_GW",
+                exclude = "*sv*",
+                )
 
     .. tab-item:: Class Interface
         :sync: class
@@ -419,22 +432,22 @@ A more specialized case involving VASP pseudopotentials requires the use of both
             from nexus import PseudoSet
 
             pseudos = PseudoSet.from_dir( # No `code` specified, uses auto-detect
-                pseudo_dir="/tmp/vasp_pseudos",
-                exclude="*_*",
-            )
+                pseudo_dir = "/tmp/vasp_pseudos",
+                exclude = "*_*",
+                )
             sv_pseudos = PseudoSet.from_dir(
-                pseudo_dir="/tmp/vasp_pseudos",
-                include="*_sv", # Leave out trailing asterisk to not match after 'sv'
-            )
+                pseudo_dir = "/tmp/vasp_pseudos",
+                include = "*_sv", # Leave out trailing asterisk to not match after 'sv'
+                )
             sv_gw_pseudos = PseudoSet.from_dir(
-                pseudo_dir="/tmp/vasp_pseudos",
-                include="*_sv_GW",
-            )
+                pseudo_dir = "/tmp/vasp_pseudos",
+                include = "*_sv_GW",
+                )
             gw_pseudos = PseudoSet.from_dir(
-                pseudo_dir="/tmp/vasp_pseudos",
-                include="*_GW", # Include those ending with '_GW'
-                exclude="*sv*", # But not those containing 'sv'
-            )
+                pseudo_dir = "/tmp/vasp_pseudos",
+                include = "*_GW", # Include those ending with '_GW'
+                exclude = "*sv*", # But not those containing 'sv'
+                )
 
 
 It is important to note that the function-style interface does not support code autodetect, and if no codes are provided will create empty :py:class:`~.PseudoSet` objects for all non-VASP codes (in this case).
@@ -463,13 +476,13 @@ For those wishing for a path of least resistance migration, a short example is p
             settings(
                 pseudo_dir = "/path/to/pseudo_dir",
                 ...
-            )
+                )
             # Use a label
             ppset(
                 label   = "ccECP",
                 pwscf   = ["C.ccECP.upf", "H.ccECP.upf", "O.ccECP.upf"],
                 qmcpack = ["C.ccECP.xml", "H.ccECP.xml", "O.ccECP.xml"],
-            )
+                )
 
             system = generate_physical_system(...)
 
@@ -477,13 +490,13 @@ For those wishing for a path of least resistance migration, a short example is p
                 system  = system,
                 pseudos = "ccECP",
                 ...
-            )
+                )
 
             nscf = generate_pwscf(
                 system  = system,
                 pseudos = "ccECP",
                 ...
-            )
+                )
 
             conv = generate_pw2qmcpack(...)
 
@@ -491,13 +504,13 @@ For those wishing for a path of least resistance migration, a short example is p
                 system  = system,
                 pseudos = "ccECP",
                 ...
-            )
+                )
 
             qmc = generate_qmcpack(
                 system  = system,
                 pseudos = "ccECP",
                 ...
-            )
+                )
 
             run_project()
 
@@ -514,13 +527,13 @@ For those wishing for a path of least resistance migration, a short example is p
             settings(
                 pseudo_dir = "/path/to/pseudo_dir",
                 ...
-            )
+                )
             # Assign to variable
             ccECP = generate_pseudoset(
                 # You can also supply `pseudo_dir` here instead of in `settings`
                 pwscf   = ["C.ccECP.upf", "H.ccECP.upf", "O.ccECP.upf"],
                 qmcpack = ["C.ccECP.xml", "H.ccECP.xml", "O.ccECP.xml"],
-            )
+                )
 
             system = generate_physical_system(...)
 
@@ -528,13 +541,13 @@ For those wishing for a path of least resistance migration, a short example is p
                 system  = system,
                 pseudos = ccECP, # Pass variable instead of string
                 ...
-            )
+                )
 
             nscf = generate_pwscf(
                 system  = system,
                 pseudos = ccECP, # Pass variable instead of string
                 ...
-            )
+                )
 
             conv = generate_pw2qmcpack(...)
 
@@ -542,12 +555,12 @@ For those wishing for a path of least resistance migration, a short example is p
                 system  = system,
                 pseudos = ccECP, # Pass variable instead of string
                 ...
-            )
+                )
 
             qmc = generate_qmcpack(
                 system  = system,
                 pseudos = ccECP, # Pass variable instead of string
                 ...
-            )
+                )
 
             run_project()
