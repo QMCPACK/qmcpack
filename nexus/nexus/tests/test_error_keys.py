@@ -236,6 +236,10 @@ def test_operating_system_catches():
         posix=True,
         )
     assert find_error_keys(
+        'fish: pw.x: No such file or directory',
+        posix=True,
+        )
+    assert find_error_keys(
         'fatal error: No space left on device',
         posix=True,
         )

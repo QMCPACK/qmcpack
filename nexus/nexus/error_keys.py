@@ -1,8 +1,29 @@
-"""Error diagnostics commonly printed by scientific applications.
+"""High-confidence failure diagnostics for scientific simulation runs.
 
-The tuples ending in ``_errors`` contain readable examples of diagnostics.
-The tuples ending in ``_error_patterns`` contain regular expressions used to
-match variable portions or to add context that reduces false positives.
+This module vets output from simulation workflows.  Its primary purpose is to
+identify diagnostics that strongly indicate failure of the actual, primary
+simulation run, rather than an error from an unrelated or loosely related
+process.
+
+The ``*_errors`` tuples show readable examples of the diagnostic forms that
+the corresponding regular expressions are intended to recognize.  Commented
+examples are explicitly excluded because they are not sufficiently reliable
+failure indicators.  
+
+The ``*_error_patterns`` tuples provide the regular
+expressions used by :func:`find_error_keys` for its explicit output search;
+they accommodate variable text and require context that limits false
+positives.  Active examples are kept consistent with these patterns 
+
+Where enabled by an error set, the key lists also participate as literal 
+search expressions, not just the broader regexes. This is accomplished via 
+conversion to literal regexes. Examples: Slurm, MPI, PWSCF, RMG, QMCPACK, 
+VASP, and GAMESS.
+
+Consistency between the keyword lists and the regexes is tested explicitly 
+within the standard testing framework.  This way, if desired search literals 
+are added, it will be immediately known whether or not the corresponding 
+regex needs updating.
 """
 
 import os
@@ -10,8 +31,12 @@ import re
 from functools import cache
 
 
+#==========================================================#
 # Operating-system errors
+#==========================================================#
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 shell_errors = (
     'Segmentation fault',
     'Floating point exception',
@@ -36,6 +61,7 @@ shell_errors = (
     'general protection fault',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 shell_error_patterns = (
     r'^.*\b(?:segmentation fault|floating point exception|illegal instruction|bus error|bad system call)(?:\s+\(core dumped\))?\s*$',
     r'^\s*(?:aborted|killed)(?:\s+\(core dumped\))?\s*$',
@@ -50,6 +76,7 @@ shell_error_patterns = (
 
 # Signal names are matched only when termination context is present.  Several
 # other POSIX signals are routinely used for job control and checkpointing.
+# Representative signal names and termination forms requiring contextual matching.
 linux_exit_signals = (
     'SIGHUP',
     'SIGILL',
@@ -68,6 +95,7 @@ linux_exit_signals = (
     'exited on signal 11',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 linux_signal_error_patterns = (
     r'\b(?:terminated|killed|exited|aborted|died|received signal)\b[^\n]*\bSIG(?:HUP|ILL|ABRT|FPE|KILL|SEGV|PIPE|TERM|BUS|SYS|TRAP|XCPU|XFSZ)\b',
     r'\bSIG(?:HUP|ILL|ABRT|FPE|KILL|SEGV|PIPE|TERM|BUS|SYS|TRAP|XCPU|XFSZ)\b[^\n]*\b(?:terminated|killed|exited|aborted|died)\b',
@@ -75,11 +103,14 @@ linux_signal_error_patterns = (
     r'\bexited on signal\s+\d+\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 posix_errors = (
     # Most errno messages can result from handled probes or retryable I/O.
     # Missing executables and explicitly fatal errors provide run-failure
     # context rather than relying on the errno message alone.
     'bash: pw.x: No such file or directory',
+    'fish: pw.x: No such file or directory',
     'bash: ./pw.x: Permission denied',
     'fatal error: No such file or directory',
     'fatal error: Permission denied',
@@ -96,6 +127,7 @@ posix_errors = (
     'fatal error: errno ENOSPC',
     )
 
+# Representative errno names requiring explicit fatal-error context.
 posix_errno_keys = (
     'ENOENT',
     'EACCES',
@@ -121,15 +153,20 @@ posix_errno_keys = (
     'ENOTCONN',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 posix_error_patterns = (
-    r'^\s*(?:bash|sh|zsh|ksh):(?:\s+line\s+\d+:)?\s+[^:\n]+:\s+(?:no such file or directory|permission denied)\s*$',
+    r'^\s*(?:bash|sh|zsh|ksh|fish):(?:\s+line\s+\d+:)?\s+[^:\n]+:\s+(?:no such file or directory|permission denied)\s*$',
     r'\bfatal(?:\s+error)?[^\n]*\b(?:no such file or directory|permission denied|not a directory|is a directory|no space left on device|too many open files|cannot allocate memory|connection refused|connection timed out|network is unreachable|address already in use|broken pipe)\b',
     r'\bfatal[^\n]*\b(?:errno\s+)?(?:ENOENT|EACCES|EISDIR|ENOTDIR|ENOSPC|EMFILE|ENOMEM|ECONNREFUSED|ETIMEDOUT|ENETUNREACH|EADDRINUSE|EPIPE|EIO|ENXIO|EBADF|EBUSY|ENODEV|EROFS|EDQUOT|ECONNRESET|EHOSTUNREACH|ENOTCONN)\b',
     )
 
 
+#==========================================================#
 # HPC environment errors
+#==========================================================#
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 infiniband_errors = (
     # Provider initialization and endpoint errors can be retried or cause a
     # fallback to another transport; none alone establishes run failure.
@@ -143,10 +180,13 @@ infiniband_errors = (
     # 'ofi_endpoint unreachable',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 infiniband_error_patterns = (
     # See infiniband_errors: these require separate termination context.
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 lustre_errors = (
     # Filesystem and network-layer errors can concern another client or be
     # recovered by retry/failover without invalidating this simulation.
@@ -156,10 +196,13 @@ lustre_errors = (
     # 'Lustre client evicted',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 lustre_error_patterns = (
     # See lustre_errors: these require separate termination context.
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 gpfs_errors = (
     # GPFS can retry, renew tokens, or fail over disks; these messages can also
     # describe node-wide events unrelated to the process being inspected.
@@ -171,10 +214,13 @@ gpfs_errors = (
     # 'GPFS token expired',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 gpfs_error_patterns = (
     # See gpfs_errors: these require separate termination context.
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 slurm_errors = (
     # Generic launcher errors can describe non-fatal setup/cleanup issues.
     # 'slurmstepd: error:',
@@ -196,6 +242,7 @@ slurm_errors = (
     'slurmstepd: error: Detected 1 oom-kill event',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 slurm_error_patterns = (
     r'\bsrun:\s*Force term;\s*sending SIGKILL\b',
     r'\bDUE TO TIME LIMIT\b',
@@ -206,6 +253,8 @@ slurm_error_patterns = (
     r'\bslurmstepd:[^\n]*\boom-kill\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 pbs_errors = (
     'PBS: job killed:',
     'ob_init: Unable to read server database',
@@ -214,6 +263,7 @@ pbs_errors = (
     'exit_status=1',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 pbs_error_patterns = (
     r'\bPBS:\s*job killed:',
     r'\bob_init:\s*Unable to read server database\b',
@@ -222,6 +272,8 @@ pbs_error_patterns = (
     r'\bexit_status\s*=\s*(?!0\b)-?\d+\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 mpi_errors = (
     # MPI error-class names are return values that applications may handle.
     # MPI_Abort is also an API name; termination context is required below.
@@ -326,6 +378,7 @@ mpi_errors = (
     'execvp error',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 mpi_error_patterns = (
     r'\b(?:mpirun|orterun|prterun):\s*kill job\b',
     r'\bmpirun noticed that process rank\s+\d+[^\n]*\b(?:non-zero|signal|terminated|aborted|died)\b',
@@ -340,6 +393,8 @@ mpi_error_patterns = (
     r'\bexecvp error\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 openmp_errors = (
     'OMP: Error',
     'libgomp: Thread creation failed',
@@ -347,6 +402,7 @@ openmp_errors = (
     'libiomp5: error',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 openmp_error_patterns = (
     r'\bOMP:\s*Error\b',
     r'\blibgomp:\s*(?:Thread creation failed|Out of memory)\b',
@@ -354,8 +410,12 @@ openmp_error_patterns = (
     )
 
 
+#==========================================================#
 # Compiled-code and language-runtime errors
+#==========================================================#
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 linking_errors = (
     'error while loading shared libraries',
     # These fragments can be emitted while probing an optional plugin.
@@ -369,12 +429,15 @@ linking_errors = (
     "version 'GLIBC_2.34' not found",
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 linking_error_patterns = (
     r'\b(?:error while loading shared libraries|symbol lookup error|relocation error)',
     r'\b(?:GLIBCXX|CXXABI)_[0-9.]+\b[^\n]*\bnot found\b',
     r'\bversion\s+[\'`][^\'`]+[\'`]\s+not found\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 fortran_runtime_errors = (
     'Fortran runtime error:',
     'ERROR STOP',
@@ -384,6 +447,7 @@ fortran_runtime_errors = (
     # 'Stat_Stopped_Image',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 fortran_error_patterns = (
     r'\bFortran runtime error:',
     r'\bERROR STOP\b',
@@ -391,6 +455,8 @@ fortran_error_patterns = (
     r'\bCoarray\s+ERROR STOP\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 cpp_errors = (
     'terminate called after throwing an instance of',
     'terminating with uncaught exception of type',
@@ -413,6 +479,7 @@ cpp_errors = (
     # 'UndefinedBehaviorSanitizer',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 cpp_error_patterns = (
     r'\bterminate called after throwing an instance of\b',
     r'\bterminating with uncaught exception of type\b',
@@ -424,6 +491,8 @@ cpp_error_patterns = (
     # r'^\s*what\(\):\s+.+$',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 cuda_errors = (
     'CUDA error:',
     # CUDA/NCCL return values can be checked and handled, and connection
@@ -458,10 +527,13 @@ cuda_errors = (
     # 'NCCL WARN',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 cuda_error_patterns = (
     r'\bCUDA error:',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 hip_errors = (
     'HIP error:',
     # HIP return values can be handled by a fallback path.
@@ -490,13 +562,18 @@ hip_errors = (
     # 'kfd uncorrectable error',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 hip_error_patterns = (
     r'\bHIP error:',
     )
 
 
-# Python-runtime errors.  Exception names are documented separately for
-# examples, while matching requires traceback/final-exception structure.
+#==========================================================#
+# Python-runtime errors
+#==========================================================#
+# Exception names are documented separately for examples, while matching
+# requires traceback/final-exception structure.
+# Representative exception names requiring explicit traceback context.
 python_exception_names = (
     'IndexError',
     'KeyError',
@@ -522,12 +599,15 @@ python_exception_names = (
     'TimeoutError',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 python_errors = (
     'Traceback (most recent call last):',
     'ExceptionGroup Traceback',
     'Fatal Python error',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 python_error_patterns = (
     r'^\s*Traceback \(most recent call last\):',
     r'^\s*ExceptionGroup Traceback\b',
@@ -538,8 +618,12 @@ python_error_patterns = (
     )
 
 
+#==========================================================#
 # Compiled scientific-library errors
+#==========================================================#
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 blas_errors = (
     'Intel MKL FATAL ERROR:',
     # BLAS argument errors and non-fatal library errors return to the caller,
@@ -549,10 +633,13 @@ blas_errors = (
     # 'on entry to DGEMM parameter number 1 had an illegal value',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 blas_error_patterns = (
     r'\bIntel MKL FATAL ERROR:',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 lapack_errors = (
     # LAPACK reports status to its caller; these conditions can be handled by
     # fallback algorithms and do not establish failure of the simulation.
@@ -566,6 +653,7 @@ lapack_errors = (
     # 'decomposition constraint violation',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 lapack_error_patterns = (
     # Numerical solver conditions can be handled by a fallback algorithm.
     # r'\b(?:LAPACK|[sdcz][a-z0-9_]{3,})[^\n]{0,100}\b(?:matrix is singular|is not positive definite|failed to converge|computational failure)\b',
@@ -573,9 +661,14 @@ lapack_error_patterns = (
 
 # Failure to import FFTW wisdom is recoverable and fftw_execute is merely an
 # API name.  Keep the group present for future confirmed fatal diagnostics.
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 fftw_errors = ()
+# Regular expressions used by find_error_keys during its explicit output search.
 fftw_error_patterns = ()
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 hdf5_errors = (
     # Applications routinely probe optional files and objects and recover from
     # the resulting HDF5 error stack.
@@ -591,12 +684,15 @@ hdf5_errors = (
     # 'data space selection exceeds dataset dimensions',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 hdf5_error_patterns = (
     # HDF5 prints an error stack for failed probes even when the caller recovers.
     # r'HDF5-DIAG:\s*Error\s*detected',
     # r'\b(?:major|minor):\s*(?:file accessibility|unable to open file|unable to create file|write failed|read failed|object not found|bad value)\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 libxml2_errors = (
     # Parsing and validation failures can concern optional XML content and are
     # returned to the caller; termination must be established elsewhere.
@@ -612,13 +708,18 @@ libxml2_errors = (
     # 'XML element is not expected',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 libxml2_error_patterns = (
     # See libxml2_errors: these require separate termination context.
     )
 
 
+#==========================================================#
 # Python-module errors
+#==========================================================#
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 numpy_errors = (
     # NumPy exceptions can be caught and handled by the calling application.
     # 'LinAlgError: calculation failed',
@@ -628,10 +729,13 @@ numpy_errors = (
     # '_ArrayMemoryError: calculation failed',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 numpy_error_patterns = (
     # A surrounding uncaught traceback must establish run failure.
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 scipy_errors = (
     # SciPy exceptions and partial-convergence results can be handled.
     # 'ArpackError: calculation failed',
@@ -645,10 +749,13 @@ scipy_errors = (
     # 'Factor is exactly singular',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 scipy_error_patterns = (
     # A surrounding uncaught traceback must establish run failure.
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 h5py_errors = (
     # h5py exceptions are routinely caught during optional file/object probes.
     # 'CheckWriteEligibilityError: write is not permitted',
@@ -669,13 +776,18 @@ h5py_errors = (
     # 'no write intent',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 h5py_error_patterns = (
     # A surrounding uncaught traceback must establish run failure.
     )
 
 
+#==========================================================#
 # Simulation-code errors
+#==========================================================#
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 pwscf_errors = (
     'Error in routine',
     'Error in routine cdiaghg (1):',
@@ -687,6 +799,7 @@ pwscf_errors = (
     'too many bands are not converged',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 pwscf_error_patterns = (
     r'\bError in routine\b',
     r'\bbfgs failed\b',
@@ -698,6 +811,8 @@ pwscf_error_patterns = (
     r'\bbfgs failed\b[^\n]*\bconvergence not achieved\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 pyscf_errors = (
     'LibxcError: functional is not available',
     'SCF not converged',
@@ -707,11 +822,14 @@ pyscf_errors = (
     'Newton not converged',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 pyscf_error_patterns = (
     r'\b(?:SCF|CASSCF|UCASSCF|CCSD|Newton)[^\n]*\bnot converged\b',
     r'^\s*(?:pyscf[\w.]*\.)?LibxcError\s*:',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 quantum_package_errors = (
     'EZFIO error:',
     'FATAL ERROR:',
@@ -726,11 +844,14 @@ quantum_package_errors = (
     'selection not converged',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 quantum_package_error_patterns = (
     r'(?:\bEZFIO error:|\bFATAL ERROR:|\birp_error\b|\bIRP_FATAL\b|\bqp run:\s*Error\b|\bToo many determinants\b|\bSelection failed\b)',
     r'\b(?:Davidson|CIPSI|SCF|selection)[^\n]*\bnot converged\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 rmg_errors = (
     'FATAL ERROR:',
     'CRITICAL:',
@@ -753,6 +874,7 @@ rmg_errors = (
     'grid decomposition failed',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 rmg_error_patterns = (
     r'^\s*(?:FATAL ERROR|CRITICAL):',
     r'\bRMG(?:DFT)?\s*(?:Error|Fatal|Critical)\s*:',
@@ -762,6 +884,8 @@ rmg_error_patterns = (
     r'\b(?:domain decomposition|grid decomposition)[^\n]*\bfailed\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 qmcpack_errors = (
     'APP_ABORT',
     'Fatal Error',
@@ -772,6 +896,7 @@ qmcpack_errors = (
     'Communicate::abort',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 qmcpack_error_patterns = (
     r'\bAPP_ABORT\b',
     r'\bUniformCommunicateError\b',
@@ -781,6 +906,8 @@ qmcpack_error_patterns = (
     r'\binconsistent input settings\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 vasp_errors = (
     'VERY BAD NEWS! internal error in subroutine',
     'ZBRENT: fatal error in bracketing',
@@ -796,6 +923,7 @@ vasp_errors = (
     'ERROR: there must be 1 or 3 items on line 2 of POSCAR',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 vasp_error_patterns = (
     r'^\s*(?:\|\s*)?(?:VERY BAD NEWS!\s*)?(?:internal\s+)?error in subroutine\b',
     r'^\s*ZBRENT:\s*fatal\s+(?:error|internal)[^\n]*\bbracket',
@@ -808,6 +936,8 @@ vasp_error_patterns = (
     r'^\s*ERROR:\s*there must be 1 or 3 items on line 2 of POSCAR\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 gamess_errors = (
     'EXECUTION OF GAMESS TERMINATED -ABNORMALLY-',
     'SCF IS UNCONVERGED, TOO MANY ITERATIONS',
@@ -825,6 +955,7 @@ gamess_errors = (
     '*** ERROR TERMINATION ***',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 gamess_error_patterns = (
     r'\bEXECUTION OF GAMESS TERMINATED\s+-?ABNORMALLY-?(?!\w)',
     r'\bddikick\.x:\s*application process(?:\s+\d+)?\s+quit unexpectedly\b',
