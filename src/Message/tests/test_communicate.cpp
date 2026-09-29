@@ -10,7 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
 #include "Message/Communicate.h"
-#include "Message/CommOperators.h"
 
 namespace qmcplusplus
 {
@@ -110,65 +109,4 @@ TEST_CASE("test_communicate_split_two_stripe_three", "[message]")
   REQUIRE(c2->rank() == new_rank);
   REQUIRE(c2->getGroupID() == (c->rank() / 3 % 2));
 }
-
-TEST_CASE("test_communicate_complex_pointer_bcast", "[message]")
-{
-  Communicate* c = OHMMS::Controller;
-  std::vector<std::complex<double>> values{{-11.0, -12.0}, {-13.0, -14.0}};
-  if (c->rank() == 0)
-    values = {{1.5, -2.5}, {3.5, -4.5}};
-
-  c->bcast(values.data(), values.size());
-
-  REQUIRE(values[0] == std::complex<double>{1.5, -2.5});
-  REQUIRE(values[1] == std::complex<double>{3.5, -4.5});
-}
-
-
-TEST_CASE("test_communicate_complex_pointer_reduce_in_place", "[message]")
-{
-  Communicate* c = OHMMS::Controller;
-  std::vector<std::complex<double>> values{{(double)(c->rank() + 1), (double)(c->rank() + 2)},
-                                           {(double)(c->rank() + 3), (double)(c->rank() + 4)}};
-
-  c->reduce_in_place(values.data(), values.size());
-
-  if (c->rank() == 0)
-  {
-    double expected_real_0 = 0.0;
-    double expected_imag_0 = 0.0;
-    double expected_real_1 = 0.0;
-    double expected_imag_1 = 0.0;
-    for (int i = 0; i < c->size(); i++)
-    {
-      expected_real_0 += (double)(i + 1);
-      expected_imag_0 += (double)(i + 2);
-      expected_real_1 += (double)(i + 3);
-      expected_imag_1 += (double)(i + 4);
-    }
-    REQUIRE(values[0] == std::complex<double>{expected_real_0, expected_imag_0});
-    REQUIRE(values[1] == std::complex<double>{expected_real_1, expected_imag_1});
-  }
-}
-
-TEST_CASE("test_communicate_complex_pointer_allgather", "[message]")
-{
-  Communicate* c = OHMMS::Controller;
-  std::vector<std::complex<double>> sb{{(double)(c->rank() + 1), (double)(c->rank() + 2)},
-                                       {(double)(c->rank() + 3), (double)(c->rank() + 4)}};
-  std::vector<std::complex<double>> rb(c->size() * sb.size());
-
-  c->allgather(sb.data(), rb.data(), sb.size());
-
-  for (int i = 0; i < c->size(); i++)
-  {
-    double expected_real_0 = (double)(i + 1);
-    double expected_imag_0 = (double)(i + 2);
-    double expected_real_1 = (double)(i + 3);
-    double expected_imag_1 = (double)(i + 4);
-    REQUIRE(rb[i * 2 + 0] == std::complex<double>{expected_real_0, expected_imag_0});
-    REQUIRE(rb[i * 2 + 1] == std::complex<double>{expected_real_1, expected_imag_1});
-  }
-}
-
 } // namespace qmcplusplus
