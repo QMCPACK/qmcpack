@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction>
+    <determinantset>
+      <multideterminant>
+        <detlist>
+          <csf id="CSFcoeff_1" coeff="-5.2096229336900191e-01"/>
+        </detlist>
+      </multideterminant>
+    </determinantset>
+    <jastrow>
+      <correlation>
+        <coefficients id="uu">0.5678239362 0.3722419001 0.2129110687 0.08966535287 0.004443381111 -0.03362768074 -0.02484192107 0.008603360599 0.03763564788 0.029796262</coefficients>
+      </correlation>
+      <correlation>
+        <coefficients id="ud">0.9158843452 0.5785145039 0.3463852171 0.1905138008 0.08649096469 0.03342290668 0.03684464656 0.06355172167 0.07720516493 0.05828842822</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow>
+      <correlation>
+        <coefficients id="eH">0.01499337485 0.0260903996 -0.1110119674 -0.09328732936 -0.1034311936 -0.08213726826 -0.03838216862 -0.004724407866 0.00955961636 0.003531768394</coefficients>
+      </correlation>
+    </jastrow>
+  </wavefunction>
+</qmcsystem>
