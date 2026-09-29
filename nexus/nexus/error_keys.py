@@ -1069,7 +1069,21 @@ _error_set_names = tuple(_error_keys)
 
 
 def _literal_error_pattern(error_key: str) -> str:
-    """Escape a readable key while allowing flexible whitespace."""
+    """Convert a readable diagnostic key into a safe literal regex.
+
+    The resulting expression accepts arbitrary nonempty whitespace between key
+    words and prevents a word-like key from matching inside a larger word.
+
+    Parameters
+    ----------
+    error_key : str
+        Human-readable diagnostic text to match literally.
+
+    Returns
+    -------
+    str
+        Regular-expression source suitable for inclusion in a combined matcher.
+    """
     pattern = r'\s+'.join(re.escape(part) for part in error_key.split())
     if error_key and (error_key[0].isalnum() or error_key[0] == '_'):
         pattern = r'(?<!\w)' + pattern
@@ -1079,7 +1093,25 @@ def _literal_error_pattern(error_key: str) -> str:
 
 
 @cache
-def _combined_error_pattern(enabled_sets: str) -> re.Pattern[str] | None:
+def _combined_error_pattern(
+        enabled_sets: tuple[str, ...],
+        ) -> re.Pattern[str] | None:
+    """Build the cached, case-insensitive matcher for selected error sets.
+
+    Literal expressions derived from the readable keys of enabled sets and their
+    explicit regular expressions are deduplicated and compiled together.
+
+    Parameters
+    ----------
+    enabled_sets : tuple of str
+        Names of the error sets selected for a search.
+
+    Returns
+    -------
+    re.Pattern or None
+        Compiled combined matcher, or ``None`` when no selected set supplies a
+        literal key or regular expression.
+    """
     patterns = []
     seen = set()
     for set_name in enabled_sets:
@@ -1101,6 +1133,24 @@ def _combined_error_pattern(enabled_sets: str) -> re.Pattern[str] | None:
 
 
 def _read_error_text(source: str | PathLike | TextIO) -> str:
+    """Read a supported error-output source as text.
+
+    Parameters
+    ----------
+    source : str, os.PathLike, or text file
+        Text to search, a path-like object, a string naming an existing file,
+        or an open text stream.  Other strings are treated as text.
+
+    Returns
+    -------
+    str
+        Text read from or supplied by ``source``.
+
+    Raises
+    ------
+    TypeError
+        If ``source`` is unsupported or provides binary rather than text data.
+    """
     if hasattr(source, 'read'):
         text = source.read()
     elif isinstance(source, os.PathLike):
@@ -1248,6 +1298,12 @@ def find_error_keys(
     expression.  The patterns favor diagnostics that make failure to produce
     intended simulation output likely; completion and output validity are
     expected to be assessed separately.
+
+    With ``return_lines=False``, one search of the complete text can stop at
+    the first match.  With ``return_lines=True``, the same cached expression is
+    searched against every line to collect all matching lines, which is more
+    work but preserves per-line results.  Caching avoids recompiling the
+    combined expression for either mode when the enabled sets are unchanged.
 
     Examples
     --------
