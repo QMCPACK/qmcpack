@@ -41,254 +41,53 @@ if(NOT QMC_COMPLEX)
     H4_OPT_SCALARS # OPT step 5
   )
 
-  if(BUILD_LMYENGINE_INTERFACE)
-    qmc_run_and_check(
-      short-H4-opt-adaptive
+  if(NOT MIXED_PRECISION)
+    check_python_reqs(h5py deterministic-H4-descent-vp ADD_DESCENT_VP_TESTS)
+
+    set(H4_DETERMINISTIC_BATCHED_DESCENT_TEST deterministic-H4-batched-descent-r1-t4)
+    set(H4_DETERMINISTIC_BATCHED_DESCENT_TEST_ADDED FALSE)
+    run_qmc_app(
+      ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}
       "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-      H4-adaptive
-      optm-adaptive.xml
-      16
       1
-      ${SUCCESS_STATUS_MP}
-      5
-      H4_OPT_SCALARS # OPT step 5
-    )
+      4
+      H4_DETERMINISTIC_BATCHED_DESCENT_TEST_ADDED
+      det-optm-batched-descent.xml)
 
-    qmc_run_and_check(
-      short-H4-opt-adaptive
-      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-      H4-adaptive
-      optm-adaptive.xml
-      1
-      16
-      ${SUCCESS_STATUS_MP}
-      5
-      H4_OPT_SCALARS # OPT step 5
-    )
+    if(H4_DETERMINISTIC_BATCHED_DESCENT_TEST_ADDED)
+      add_test(
+        NAME ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}-energy
+        COMMAND
+          ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series 1 -p
+          det-H4-batched-descent -e 0 --le "-1.2857706733 0.000001"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}")
 
-    #
-    # H4 starting from perturbed orbitals, using optimizable determinants, and the adaptive linear method
-    #
-    list(APPEND H4_ORB_OPT_SCALARS "totenergy" "-2.0889 0.004") # total energy
+      add_test(
+        NAME ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}-coefficients
+        COMMAND
+          ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae/check_h4_descent.py
+          det-H4-batched-descent.s000.opt.xml reference.det-H4-batched-descent.s000.opt.xml
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}")
 
-    qmc_run_and_check(
-      short-H4-RHF-orb-opt
-      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-      H4
-      H4_RHF_orb_opt.xml
-      16
-      1
-      ${SUCCESS_STATUS_MP}
-      14
-      H4_ORB_OPT_SCALARS # Final VMC step
-      TRUE)
+      set_tests_properties(
+        ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}-energy ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}-coefficients
+        PROPERTIES DEPENDS ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST} LABELS
+                   "QMCPACK-checking-results;deterministic")
 
-    qmc_run_and_check(
-      short-H4-orb-opt
-      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-      H4
-      H4_orb_opt.xml
-      16
-      1
-      ${SUCCESS_STATUS_MP}
-      14
-      H4_ORB_OPT_SCALARS # Final VMC step
-      TRUE)
-
-    qmc_run_and_check(
-      short-H4-orb-opt
-      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-      H4
-      H4_orb_opt.xml
-      1
-      16
-      ${SUCCESS_STATUS_MP}
-      14
-      H4_ORB_OPT_SCALARS # Final VMC step
-      TRUE)
-
-    #
-    # H4 starting from converged wave function, doing a quick adaptive linear method run (using the same
-    # spo set for both spin-up and spin-down determinants) and then doing a DMC calculation
-    #
-    list(APPEND H4_ORB_OPT_DMC_SCALARS "totenergy" "-2.191461 0.007") # total energy
-
-    qmc_run_and_check(
-      short-H4-orb-opt-dmc
-      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-      H4
-      H4_orb_opt_dmc.xml
-      16
-      1
-      ${SUCCESS_STATUS_MP}
-      3
-      H4_ORB_OPT_DMC_SCALARS # Test the DMC results
-      TRUE)
-
-    qmc_run_and_check(
-      short-H4-orb-opt-dmc
-      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-      H4
-      H4_orb_opt_dmc.xml
-      1
-      16
-      ${SUCCESS_STATUS_MP}
-      3
-      H4_ORB_OPT_DMC_SCALARS # Test the DMC results
-      TRUE)
-    #
-    # H4 starting from unoptimized CIS coefficients, targeting the first excited state, and using the adaptive linear method
-    #
-
-    list(APPEND H4_CJS_SCALARS "totenergy" "-2.0438 0.0045") # total energy
-
-    qmc_run_and_check(
-      short-H4-cjs
-      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-      H4
-      H4_cjs_vmc.xml
-      16
-      1
-      ${SUCCESS_STATUS_MP}
-      0
-      H4_CJS_SCALARS
-      TRUE)
-
-  else()
-    message(
-      VERBOSE
-      "Skipping H4_ae adaptive optimizer tests because lmyengine interface was not built (BUILD_LMYENGINE_INTERFACE=0)")
-  endif(BUILD_LMYENGINE_INTERFACE)
-
-  list(APPEND H4_DESCENT_SCALARS "totenergy" "-2.047099 0.005")
-
-  qmc_run_and_check(
-    short-H4-descent
-    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-descent
-    optm-descent.xml
-    16
-    1
-    ${SUCCESS_STATUS_MP}
-    9
-    H4_DESCENT_SCALARS
-    TRUE)
-
-  qmc_run_and_check(
-    short-H4-descent
-    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-descent
-    optm-descent.xml
-    1
-    16
-    ${SUCCESS_STATUS_MP}
-    9
-    H4_DESCENT_SCALARS
-    TRUE)
-
-  list(APPEND H4_TARGET_DESCENT_SCALARS "totenergy" "-2.04604154 0.0045")
-
-  qmc_run_and_check(
-    short-H4-target-descent
-    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-target-descent
-    optm-target-descent.xml
-    16
-    1
-    ${SUCCESS_STATUS_MP}
-    9
-    H4_TARGET_DESCENT_SCALARS
-    TRUE)
-
-  qmc_run_and_check(
-    short-H4-target-descent
-    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-target-descent
-    optm-target-descent.xml
-    1
-    16
-    ${SUCCESS_STATUS_MP}
-    9
-    H4_TARGET_DESCENT_SCALARS
-    TRUE)
-
-  list(APPEND H4_HYBRID_SCALARS "totenergy" "-2.140736 0.003")
-
-  qmc_run_and_check(
-    short-H4-hybrid
-    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-hybrid
-    optm-hybrid.xml
-    16
-    1
-    ${SUCCESS_STATUS_MP}
-    9
-    H4_HYBRID_SCALARS
-    TRUE)
-
-  qmc_run_and_check(
-    short-H4-hybrid
-    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-hybrid
-    optm-hybrid.xml
-    1
-    16
-    ${SUCCESS_STATUS_MP}
-    9
-    H4_HYBRID_SCALARS
-    TRUE)
-
-  list(APPEND H4_BATCHED_HYBRID_SCALARS "totenergy" "-2.10456 0.02")
-
-  qmc_run_and_check(
-    short-H4-batched-hybrid
-    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-batched-hybrid
-    optm-batched-hybrid.xml
-    16
-    1
-    ${SUCCESS_STATUS_MP}
-    9
-    H4_BATCHED_HYBRID_SCALARS
-    TRUE)
-
-  qmc_run_and_check(
-    short-H4-batched-hybrid
-    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-batched-hybrid
-    optm-batched-hybrid.xml
-    1
-    16
-    ${SUCCESS_STATUS_MP}
-    9
-    H4_BATCHED_HYBRID_SCALARS
-    TRUE)
-
-  list(APPEND H4_TARGET_HYBRID_SCALARS "totenergy" "-2.13527301 0.003")
-
-  qmc_run_and_check(
-    short-H4-target-hybrid
-    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-target-hybrid
-    optm-target-hybrid.xml
-    16
-    1
-    ${SUCCESS_STATUS_MP}
-    9
-    H4_TARGET_HYBRID_SCALARS
-    TRUE)
-
-  qmc_run_and_check(
-    short-H4-target-hybrid
-    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-target-hybrid
-    optm-target-hybrid.xml
-    1
-    16
-    ${SUCCESS_STATUS_MP}
-    9
-    H4_TARGET_HYBRID_SCALARS
-    TRUE)
+      if(ADD_DESCENT_VP_TESTS)
+        add_test(
+          NAME ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}-vp-h5
+          COMMAND
+            ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/check_vp_h5.py
+            det-H4-batched-descent.s000.vp.h5 det-H4-batched-descent.s000.opt.xml
+          WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}")
+        set_tests_properties(
+          ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}-vp-h5
+          PROPERTIES DEPENDS ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST} LABELS
+                     "QMCPACK-checking-results;deterministic")
+      endif()
+    endif()
+  endif()
 
   qmc_run_and_check(
     short-H4-opt-OneShiftOnly

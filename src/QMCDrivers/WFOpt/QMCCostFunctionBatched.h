@@ -53,10 +53,6 @@ public:
   void getConfigurations(const std::string& aroot) override;
   void checkConfigurations(EngineHandle& handle) override;
   void checkConfigurationsSR(EngineHandle& handle) override;
-#ifdef HAVE_LMY_ENGINE
-  void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                  OptionalRef<DescentEngine> descentEngineObj) override;
-#endif
 
 
   void resetPsi(bool final_reset = false) override;
@@ -90,10 +86,6 @@ protected:
   NewTimer& fill_timer_;
 
 
-#ifdef HAVE_LMY_ENGINE
-  size_t total_samples();
-  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>& EngineObj) override;
-#endif
 
   friend testing::LinearMethodTestSupport;
 };
