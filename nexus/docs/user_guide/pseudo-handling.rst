@@ -64,7 +64,7 @@ The most basic way to work with pseudopotentials in Nexus is to use ``settings``
 
     generate_pwscf(
         pseudos = ["C.ccECP.upf", "H.ccECP.upf", "O.ccECP.upf"],
-        system = system,
+        system  = system,
         ...
         )
 
@@ -137,7 +137,7 @@ Users familiar with the legacy :py:func:`~.ppset` or that have a custom pseudopo
 
     generate_pwscf(
         pseudos = pseudos,
-        system = system,
+        system  = system,
         ...,
         )
 
@@ -189,7 +189,7 @@ If you are using Nexus for just one code, e.g. driving high-throughput Quantum E
 
             generate_pwscf(
                 pseudos = pseudos,
-                system = system,
+                system  = system,
                 ...,
                 )
 
@@ -205,7 +205,7 @@ If you are using Nexus for just one code, e.g. driving high-throughput Quantum E
 
             pseudos = PseudoSet.from_dir(
                 pseudo_dir = "/tmp/ccECP",
-                code = "quantum_espresso",
+                code       = "quantum_espresso",
                 )
 
             # print(repr(pseudos)) # A single PseudoSet object
@@ -226,7 +226,7 @@ If you are using Nexus for just one code, e.g. driving high-throughput Quantum E
 
             generate_pwscf(
                 pseudos = pseudos,
-                system = system,
+                system  = system,
                 ...,
                 )
 
@@ -250,7 +250,7 @@ If you are driving multiple codes with Nexus, e.g. running an RMG calculation fo
 
             pseudos = generate_pseudoset(
                 pseudo_dir = "/tmp/ccECP",
-                extension = {"rmg": ".xml"},
+                extension  = {"rmg": ".xml"},
                 )
 
     .. tab-item:: Class Interface
@@ -315,20 +315,20 @@ Example 4 - Searching by Inclusion Pattern
 
             uspp = generate_pseudoset(
                 pseudo_dir = "/tmp/pseudo_dir",
-                code = "quantum_espresso",
-                include = "*USPP*",
+                code       = "quantum_espresso",
+                include    = "*USPP*",
                 )
 
             ncpp = generate_pseudoset(
                 pseudo_dir = "/tmp/pseudo_dir",
-                code = "quantum_espresso",
-                include = "*NCPP*",
+                code       = "quantum_espresso",
+                include    = "*NCPP*",
                 )
 
             ccECP = generate_pseudoset(
                 pseudo_dir = "/tmp/pseudo_dir",
-                code = "quantum_espresso",
-                include = "*ccECP*",
+                code       = "quantum_espresso",
+                include    = "*ccECP*",
                 )
 
     .. tab-item:: Class Interface
@@ -340,20 +340,20 @@ Example 4 - Searching by Inclusion Pattern
 
             uspp = PseudoSet.from_dir(
                 pseudo_dir = "/tmp/pseudo_dir",
-                code = "quantum_espresso",
-                include = "*USPP*",
+                code       = "quantum_espresso",
+                include    = "*USPP*",
                 )
 
             ncpp = PseudoSet.from_dir(
                 pseudo_dir = "/tmp/pseudo_dir",
-                code = "quantum_espresso",
-                include = "*NCPP*",
+                code       = "quantum_espresso",
+                include    = "*NCPP*",
                 )
 
             ccECP = PseudoSet.from_dir(
                 pseudo_dir = "/tmp/pseudo_dir",
-                code = "quantum_espresso",
-                include = "*ccECP*",
+                code       = "quantum_espresso",
+                include    = "*ccECP*",
                 )
 
 
@@ -404,24 +404,24 @@ A more specialized case involving VASP pseudopotentials requires the use of both
 
             pseudos = generate_pseudoset(
                 pseudo_dir = "/tmp/vasp_pseudos",
-                code = "vasp",
-                exclude = "*_*",
+                code       = "vasp",
+                exclude    = "*_*",
                 )
             sv_pseudos = generate_pseudoset(
                 pseudo_dir = "/tmp/vasp_pseudos",
-                code = "vasp",
-                include = "*_sv", # Leave out trailing asterisk to not match after 'sv'
+                code       = "vasp",
+                include    = "*_sv", # Leave out trailing asterisk to not match after 'sv'
                 )
             sv_gw_pseudos = generate_pseudoset(
                 pseudo_dir = "/tmp/vasp_pseudos",
-                code = "vasp",
-                include = "*sv_GW",
+                code       = "vasp",
+                include    = "*sv_GW",
                 )
             gw_pseudos = generate_pseudoset(
                 pseudo_dir = "/tmp/vasp_pseudos",
-                code = "vasp",
-                include = "*_GW",
-                exclude = "*sv*",
+                code       = "vasp",
+                include    = "*_GW",
+                exclude    = "*sv*",
                 )
 
     .. tab-item:: Class Interface
@@ -433,20 +433,20 @@ A more specialized case involving VASP pseudopotentials requires the use of both
 
             pseudos = PseudoSet.from_dir( # No `code` specified, uses auto-detect
                 pseudo_dir = "/tmp/vasp_pseudos",
-                exclude = "*_*",
+                exclude    = "*_*",
                 )
             sv_pseudos = PseudoSet.from_dir(
                 pseudo_dir = "/tmp/vasp_pseudos",
-                include = "*_sv", # Leave out trailing asterisk to not match after 'sv'
+                include    = "*_sv", # Leave out trailing asterisk to not match after 'sv'
                 )
             sv_gw_pseudos = PseudoSet.from_dir(
                 pseudo_dir = "/tmp/vasp_pseudos",
-                include = "*_sv_GW",
+                include    = "*_sv_GW",
                 )
             gw_pseudos = PseudoSet.from_dir(
                 pseudo_dir = "/tmp/vasp_pseudos",
-                include = "*_GW", # Include those ending with '_GW'
-                exclude = "*sv*", # But not those containing 'sv'
+                include    = "*_GW", # Include those ending with '_GW'
+                exclude    = "*sv*", # But not those containing 'sv'
                 )
 
 
