@@ -62,8 +62,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal, TypeAlias
 
-if sys.version_info[0:3] < (3, 10, 0):
-    msg = "This script must be run with Python 3.10.0 or greater!\n"
+if sys.version_info[0:3] < (3, 12, 0):
+    msg = "This script must be run with Python 3.12.0 or greater!\n"
     raise RuntimeError(msg)
 
 try:
