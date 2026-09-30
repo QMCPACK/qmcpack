@@ -54,6 +54,20 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
       collect_samples_(false)
 {}
 
+void VMCBatched::validateAllParticleMode(const QMCDriverInput& qmcdriver_input,
+                                         const VMCDriverInput& vmcdriver_input,
+                                         bool is_spinor)
+{
+  if (qmcdriver_input.get_update_mode() != "allp")
+    return;
+  if (vmcdriver_input.get_use_drift())
+    throw UniformCommunicateError("VMCBatched all-particle moves do not support drift.");
+  if (qmcdriver_input.areWalkersSerialized())
+    throw UniformCommunicateError("VMCBatched all-particle moves do not support serialized crowd walkers.");
+  if (is_spinor)
+    throw UniformCommunicateError("VMCBatched all-particle moves support position coordinates only.");
+}
+
 template<CoordsType CT>
 void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
@@ -81,6 +95,64 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_LOAD)
     checkLogAndGL(crowd, "checkGL_after_load", sft.serializing_crowd_walkers);
 
+  if (sft.qmcdrv_input.get_update_mode() == "allp")
+  {
+    // All-particle moves are batched POS moves: the dispatcher has no serialized fallback.
+    if constexpr (CT == CoordsType::POS)
+    {
+      ScopedTimer allp_local_timer(timers.movepbyp_timer);
+      const int num_walkers   = crowd.size();
+      auto& walker_leader     = walker_elecs.getLeader();
+      const int num_particles = walker_leader.getTotalNum();
+
+      std::vector<bool> are_valid(num_walkers * num_particles);
+      std::vector<bool> is_accepted(num_walkers);
+      std::vector<RealType> old_logpsi(num_walkers);
+      MCCoords<CT> walker_deltas(num_walkers * num_particles);
+
+      for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); ++sub_step)
+      {
+        // The all-particle dispatcher consumes particle-major displacements: ip * nw + iw.
+        makeGaussRandomWithEngine(walker_deltas, step_context.get_random_gen());
+        for (int ig = 0; ig < walker_leader.groups(); ++ig)
+        {
+          TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), 1.0 / walker_leader.get_mass_by_group()[ig],
+                                       sft.qmcdrv_input.get_spin_mass());
+          for (int iat = walker_leader.first(ig); iat < walker_leader.last(ig); ++iat)
+            for (int iw = 0; iw < num_walkers; ++iw)
+              walker_deltas.positions[iat * num_walkers + iw] *= taus.sqrttau;
+        }
+
+        // Save the log amplitude for this substep before evaluating the proposed configuration.
+        for (int iw = 0; iw < num_walkers; ++iw)
+          old_logpsi[iw] = walker_twfs[iw].getLogPsi();
+
+        ps_dispatcher.flex_makeMoveAllParticles(walker_elecs, walker_deltas, are_valid);
+        twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
+
+        bool any_walker_rejection = false;
+        for (int iw = 0; iw < num_walkers; ++iw)
+        {
+          const RealType probability = std::exp(2.0 * (walker_twfs[iw].getLogPsi() - old_logpsi[iw]));
+          is_accepted[iw]            = step_context.get_random_gen()() < probability;
+          any_walker_rejection |= !is_accepted[iw];
+
+          // Account at particle granularity. Invalid particles remain in place and do not reject their walker.
+          for (int iat = 0; iat < num_particles; ++iat)
+            if (is_accepted[iw] && are_valid[iat * num_walkers + iw])
+              crowd.incAccept();
+            else
+              crowd.incReject();
+        }
+
+        ps_dispatcher.flex_accept_rejectMoveAllParticles(walker_elecs, is_accepted);
+        // Walker rejections restore ParticleSet coordinates, so refresh the wavefunction state after resolution.
+        if (any_walker_rejection)
+          twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
+      }
+    }
+  }
+  else
   {
     ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
     const int num_walkers   = crowd.size();
@@ -273,6 +345,8 @@ void VMCBatched::process(xmlNodePtr node)
 
   try
   {
+    validateAllParticleMode(qmcdriver_input_, vmcdriver_input_, population_.get_golden_electrons().isSpinor());
+
     QMCDriverNew::AdjustedWalkerCounts awc =
         adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), 1.0,
