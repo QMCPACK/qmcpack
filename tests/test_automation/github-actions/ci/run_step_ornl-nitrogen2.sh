@@ -56,6 +56,7 @@ case "$1" in
     cmake -GNinja \
           -DCMAKE_C_COMPILER=amdclang \
           -DCMAKE_CXX_COMPILER=amdclang++ \
+          -DPython3_EXECUTABLE=python3.14 \
           -DQMC_MPI=0 \
           -DQMC_GPU_ARCHS=gfx90a \
           -DQMC_CTEST_NUM_GPUS=2 \
