@@ -426,7 +426,7 @@ class Simulation(NexusCore):
         else:
             msg = (
                 f'input must be of type {self.input_type.__name__}\n'
-                f'received {type(self.input).__name__}\n'
+                f'received {type(input).__name__}\n'
                 f'please provide input appropriate to {type(self).__name__}'
                 )
             raise TypeError(msg)
@@ -473,15 +473,23 @@ class Simulation(NexusCore):
 
         if infile is None:
             self.infile  = self.identifier + self.infile_extension
+        else:
+            self.infile = path_string(infile)
 
         if outfile is None:
             self.outfile = self.identifier + self.outfile_extension
+        else:
+            self.outfile = path_string(outfile)
 
         if errfile is None:
             self.errfile = self.identifier + self.errfile_extension
+        else:
+            self.errfile = path_string(errfile)
 
         if nexus_logfile is None:
             self.nexus_logfile = self.identifier + ".nexus.log"
+        else:
+            self.nexus_logfile = path_string(nexus_logfile)
 
         self.bundleable     = True
         self.bundled        = False
