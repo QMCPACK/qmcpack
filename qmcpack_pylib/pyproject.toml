@@ -55,13 +55,13 @@ docs = [
 nexus = { editable = true, path = "../nexus" }
 
 [tool.ruff]
-line-length = 100
+line-length = 88
 indent-width = 4
 
-target-version = "py314"
+target-version = "py312"
 
 [tool.ruff.lint]
-select = [
+extend-select = [
     "YTT",
     "BLE001",
     "FBT",
