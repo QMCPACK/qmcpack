@@ -18,3 +18,6 @@ add_executable(${UTEST_EXE} ${SRCS})
 target_link_libraries(${UTEST_EXE} catch_main einspline qmcutil)
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

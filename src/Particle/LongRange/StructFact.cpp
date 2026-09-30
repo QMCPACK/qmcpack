@@ -143,7 +143,7 @@ void StructFact::computeRhok(const ParticleSet& P)
   resize(nk, num_species, num_ptcls);
   rhok_r = 0.0;
   rhok_i = 0.0;
-  const auto& kpts_cart = k_lists_.getKptsCartWorking();
+  const auto& kpts_cart = k_lists_.getKptsCart();
   if (StorePerParticle)
   {
     // save per particle and species value

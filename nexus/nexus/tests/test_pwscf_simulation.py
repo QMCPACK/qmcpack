@@ -2,16 +2,14 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_SIMULATION)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from pathlib import Path
 from copy import deepcopy
 
 from . import isolate_nexus_core, create_pseudo_files
-from nexus.nexus_base import nexus_core
+from nexus.nexus_base import nexus_config
 from ..testing import clear_all_sims
-from ..testing import failed,FailedTest
+from ..testing import failed
 from ..testing import value_eq,object_eq
 
 
@@ -37,11 +35,11 @@ def get_system():
 
 
 def get_pwscf_sim(type='scf'):
-    from ..nexus_base import nexus_core
+    from ..nexus_base import nexus_config
     from ..machines import job
     from ..pwscf import Pwscf,generate_pwscf
 
-    nexus_core.runs = ''
+    nexus_config.runs = ''
 
     sim = None
 
@@ -91,9 +89,9 @@ def test_minimal_init():
 @isolate_nexus_core
 def test_check_result(tmp_path):
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
@@ -111,26 +109,21 @@ def test_check_result(tmp_path):
 
 @isolate_nexus_core
 def test_get_result(tmp_path):
-    from ..developer import NexusError
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
     sim = get_pwscf_sim('scf')
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented"
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
+
 
     result  = sim.get_result('charge_density',None)
     result2 = sim.get_result('restart',None)
@@ -170,9 +163,9 @@ def test_get_result(tmp_path):
 def test_incorporate_result(tmp_path):
     from ..developer import obj, to_obj
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
@@ -228,9 +221,9 @@ def test_incorporate_result(tmp_path):
 @isolate_nexus_core
 def test_check_sim_status(tmp_path):
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
@@ -245,7 +238,7 @@ def test_check_sim_status(tmp_path):
     try:
         sim.check_sim_status()
     except IOError:
-        None
+        pass
     except Exception as e:
         failed(str(e))
     #end try

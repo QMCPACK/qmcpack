@@ -4,18 +4,17 @@
 
 #ifndef BOOST_MULTI_ADAPTORS_FFTW_HPP
 #define BOOST_MULTI_ADAPTORS_FFTW_HPP
-#pragma once
 
-#include <boost/multi/array.hpp>
+#include "boost/multi/array.hpp"
 
-#include <boost/multi/adaptors/fftw/memory.hpp>
+#include "boost/multi/adaptors/fftw/memory.hpp"  // IWYU pragma: export
 
 #include <algorithm>  // sort
 #include <chrono>
 #include <complex>
 #include <numeric>  // accumulate
 
-#if HAVE_FFTW3_THREADS
+#ifdef HAVE_FFTW3_THREADS
 #include <thread>
 #endif
 
@@ -272,9 +271,9 @@ constexpr flags preserve_input{FFTW_PRESERVE_INPUT};  // NOLINT(hicpp-signed-bit
 //  return fftw_plan_many_dft(first, last, d_first, sign, fftw::estimate);
 // }
 
-template<class InPtr, class In, class OutPtr, class Out, dimensionality_type D = In::rank_v>
+template<class InPtr, class In, class OutPtr, class Out, dimensionality_type D = In::dimensionality>
 auto fftw_plan_dft(std::array<bool, +D> which, InPtr in_base, In const& in_layout, OutPtr out_base, Out const& out_layout, int sign, fftw::flags /*flags*/) -> fftw_plan {
-	assert(in_layout.extensions() == out_layout.extensions());
+	assert(in_layout.extents() == out_layout.extents());
 
 	auto const sizes_tuple = in_layout.sizes();
 
@@ -292,27 +291,40 @@ auto fftw_plan_dft(std::array<bool, +D> which, InPtr in_base, In const& in_layou
 		},
 		boost::multi::detail::tuple_zip(which, sizes_tuple, istride_tuple, ostride_tuple)
 	);
-	auto const part = std::stable_partition(which_iodims.begin(), which_iodims.end() - 1, [](auto elem) { return std::get<0>(elem); });
+	auto const part = std::stable_partition(which_iodims.begin(), std::prev(which_iodims.end()), [](auto elem) { return std::get<0>(elem); });
 
 	std::array<fftw_iodim64, D> dims{};
 	std::array<fftw_iodim64, D> howmany_dims{};
 
 	auto const dims_end         = std::transform(which_iodims.begin(), part, dims.begin(), [](auto elem) { return elem.second; });
-	auto const howmany_dims_end = std::transform(part, which_iodims.end() - 1, howmany_dims.begin(), [](auto elem) { return elem.second; });
+	auto const howmany_dims_end = std::transform(part, std::prev(which_iodims.end()), howmany_dims.begin(), [](auto elem) { return elem.second; });
 
 	assert(in_base);
 	assert(out_base);
 
 	assert((sign == -1) || (sign == +1));
 
+	decltype(FFTW_ESTIMATE) flags = FFTW_MEASURE;
+	if(out_base || (!std::is_rvalue_reference_v<decltype(*out_base)>)) {
+		flags = FFTW_ESTIMATE;
+	}
+	if(in_base && std::is_rvalue_reference_v<decltype(*in_base)>) {
+		flags |= FFTW_DESTROY_INPUT;
+	} else {
+		flags |= FFTW_PRESERVE_INPUT;
+	}
+
+	// auto* const out_base_digested = [](auto&& ref) { return &ref; }(out_base);  // workaround to take address of out_base when it returns an rvalue
+	auto* const out_base_digested = &out_base;
+
 	fftw_plan ret = fftw_plan_guru64_dft(
-		/*int                 rank         */ dims_end - dims.begin(),
+		/*int                 rank         */ static_cast<int>(dims_end - dims.begin()),
 		/*const fftw_iodim64 *dims         */ dims.data(),
-		/*int                 howmany_rank */ howmany_dims_end - howmany_dims.begin(),
+		/*int                 howmany_rank */ static_cast<int>(howmany_dims_end - howmany_dims.begin()),
 		/*const fftw_iodim   *howmany_dims */ howmany_dims.data(),
-		/*fftw_complex       *in           */ const_cast<fftw_complex*>(reinterpret_cast<fftw_complex const*>(/*static_cast<std::complex<double> const *>*/ (in_base))),  // NOLINT(cppcoreguidelines-pro-type-const-cast,cppcoreguidelines-pro-type-reinterpret-cast) //NOSONAR FFTW is taken as non-const while it is really not touched
-		/*fftw_complex       *out          */ (reinterpret_cast<fftw_complex*>(/*static_cast<std::complex<double>       *>*/ (out_base))),  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-		sign, FFTW_ESTIMATE | FFTW_PRESERVE_INPUT
+		/*fftw_complex       *in           */ const_cast<fftw_complex*>(reinterpret_cast<fftw_complex const*>(/*static_cast<std::complex<double> const *>*/ in_base)),  // NOLINT(cppcoreguidelines-pro-type-const-cast,cppcoreguidelines-pro-type-reinterpret-cast) //NOSONAR FFTW is taken as non-const while it is really not touched
+		/*fftw_complex       *out          */ (reinterpret_cast<fftw_complex*>(/*static_cast<std::complex<double>       *>*/ out_base_digested)),  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+		sign, flags  // FFTW_ESTIMATE | FFTW_PRESERVE_INPUT
 	);
 
 	assert(ret && "fftw lib returned a null plan, if you are using MKL check the limitations of their fftw interface");
@@ -320,7 +332,7 @@ auto fftw_plan_dft(std::array<bool, +D> which, InPtr in_base, In const& in_layou
 	return ret;
 }
 
-template<class In, class Out, dimensionality_type D = In::rank_v, typename = decltype(reinterpret_cast<fftw_complex*>(detail::implicit_cast<std::complex<double>*>(base(std::declval<Out&>()))))>  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) : interact with legacy code
+template<class In, class Out, dimensionality_type D = In::dimensionality, typename = decltype(reinterpret_cast<fftw_complex*>(detail::implicit_cast<std::complex<double>*>(base(std::declval<Out&>()))))>  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) : interact with legacy code
 auto fftw_plan_dft(In const& in, Out&& out, int dir) {
 	return fftw_plan_dft(in, std::forward<Out>(out), dir, fftw::estimate);
 }
@@ -328,35 +340,46 @@ auto fftw_plan_dft(In const& in, Out&& out, int dir) {
 namespace fftw {
 
 inline auto initialize_threads() -> bool {
-#if HAVE_FFTW3_THREADS
+#ifdef HAVE_FFTW3_THREADS
 	return fftw_init_threads();
 #else
 	return false;
 #endif
 }
 
-enum class sign : decltype(FFTW_FORWARD) {  // NOLINT(performance-enum-size)
-	backward = FFTW_BACKWARD,
-	none     = 0,
-	forward  = FFTW_FORWARD,
+// enum class sign : decltype(FFTW_FORWARD) {  // NOLINT(performance-enum-size)
+//  backward = FFTW_BACKWARD,
+//  none     = 0,
+//  forward  = FFTW_FORWARD,
+// };
+
+class sign {
+	decltype(FFTW_FORWARD) value_;
+
+ public:
+	constexpr explicit sign(decltype(FFTW_FORWARD) value) noexcept : value_{value} {}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+
+	static sign const backward;
+	static sign const none    ;
+	static sign const forward ;
+
+	constexpr explicit operator decltype(FFTW_FORWARD)() const noexcept { return value_; }  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 };
 
-#if(__cplusplus >= 202002L)
-using sign::backward;
-using sign::forward;
-using sign::none;
-#else
-constexpr inline auto backward = sign::backward;
-constexpr inline auto none     = sign::none;
-constexpr inline auto forward  = sign::forward;
-#endif
+inline sign const sign::backward{FFTW_BACKWARD};
+inline sign const sign::none    {0};
+inline sign const sign::forward {FFTW_FORWARD};
 
-static_assert(forward != none && none != backward && backward != forward);
+inline auto const backward = sign::backward;
+inline auto const none     = sign::none;
+inline auto const forward  = sign::forward;
+
+// static_assert(forward != none && none != backward && backward != forward);
 
 enum class direction : decltype(FFTW_FORWARD) {  // NOLINT(performance-enum-size)
 	backward = FFTW_BACKWARD,
 	none     = 0,
-	forward  = FFTW_FORWARD,
+	forward  = FFTW_FORWARD
 };
 
 class plan;
@@ -378,9 +401,9 @@ class environment {
 	auto operator=(environment&&) -> environment&      = delete;
 
 	template<class In, class Out>
-	auto make_plan_forward(std::array<bool, +In::rank_v> which, In const& in, Out&& out);
+	auto make_plan_forward(std::array<bool, +In::dimensionality> which, In const& in, Out&& out);
 	template<class In, class Out>
-	auto make_plan_backward(std::array<bool, +In::rank_v> which, In const& in, Out&& out);
+	auto make_plan_backward(std::array<bool, +In::dimensionality> which, In const& in, Out&& out);
 
 	~environment() { cleanup_(); }
 };
@@ -392,12 +415,12 @@ class plan {
 
  public:
 	plan(plan const&) = delete;
-	plan(plan&&)      = delete;
+	plan(plan&&)      = default;
 	~plan()           = default;
 
 	template<class InPtr, class In, class OutPtr, class Out>
 	explicit plan(
-		std::array<bool, In::rank_v> which,
+		std::array<bool, In::dimensionality> which,
 		InPtr in_base, In in_layout,
 		OutPtr out_base, Out out_layout, sign ss
 	) : impl_{fftw_plan_dft(which, in_base, in_layout, out_base, out_layout, static_cast<int>(ss), fftw::estimate), &fftw_destroy_plan} {
@@ -405,16 +428,16 @@ class plan {
 	}
 
 	template<class InPtr, class In, class OutPtr, class Out>
-	static auto forward(std::array<bool, In::rank_v> which, InPtr in_base, In in_layout, OutPtr out_base, Out out_layout) {
+	static auto forward(std::array<bool, In::dimensionality> which, InPtr in_base, In in_layout, OutPtr out_base, Out out_layout) {
 		return plan(which, in_base, in_layout, out_base, out_layout, fftw::forward);
 	}
 	template<class InPtr, class In, class OutPtr, class Out>
-	static auto backward(std::array<bool, In::rank_v> which, InPtr in_base, In in_layout, OutPtr out_base, Out out_layout) {
+	static auto backward(std::array<bool, In::dimensionality> which, InPtr in_base, In in_layout, OutPtr out_base, Out out_layout) {
 		return plan(which, in_base, in_layout, out_base, out_layout, fftw::backward);
 	}
 
-	template<class I, class O>
-	void execute(I* in, O* out) const {
+	template<class In, class Out>
+	void execute(In* in, Out* out) const {  // this is `const` because https://github.com/FFTW/fftw3/pull/314#issuecomment-1712818399
 		static_assert(sizeof(in->imag()) == sizeof(double));
 		static_assert(sizeof(out->imag()) == sizeof(double));
 
@@ -431,22 +454,21 @@ class plan {
 	// template<class I, class O> void execute(I&& in, O&& out) const { execute_dft(std::forward<I>(in), std::forward<O>(out)); }
 	// friend void                     execute(plan const& self) { self.execute(); }
 
-	auto operator=(plan&&) -> plan&      = delete;
+	auto operator=(plan&&) -> plan&      = default;
 	auto operator=(plan const&) -> plan& = delete;
 
 	[[nodiscard]] auto cost() const -> double { return fftw_cost(const_cast<fftw_plan>(impl_.get())); }  // NOLINT(cppcoreguidelines-pro-type-const-cast)
 	[[nodiscard]] auto flops() const {
-		struct /*ret_t&*/ {
-			double add = {};
-			double mul = {};
-			double fma = {};
-			//  explicit operator double() const{return add + mul + 2*fma;}
-		} ret;
-		fftw_flops(const_cast<fftw_plan>(impl_.get()), &ret.add, &ret.mul, &ret.fma);  // NOLINT(cppcoreguidelines-pro-type-const-cast)
-		return ret;
+		double add;  // NOLINT(cppcoreguidelines-init-variables)
+		double mul;  // NOLINT(cppcoreguidelines-init-variables)
+		double fma;  // NOLINT(cppcoreguidelines-init-variables)
+
+		fftw_flops(const_cast<fftw_plan>(impl_.get()), &add, &mul, &fma);
+
+		return add + mul + fma;  // <- if FMA supported, otherwise: add + mul + 2*fma;
 	}
 
-#if HAVE_FFTW3_THREADS
+#ifdef HAVE_FFTW3_THREADS
  public:
 	static void make_thread_safe() {
 		fftw_make_planner_thread_safe();  // needs linking to -lfftw3_threads, requires FFTW-3.3.6 or greater
@@ -475,43 +497,96 @@ class plan {
 #endif
 };
 
+template<class InIt, class OutIt>
+class io_zip_iterator {
+	InIt in_;
+	OutIt out_;
+	std::shared_ptr<plan> planP_;
+
+ public:
+	io_zip_iterator(std::array<bool, InIt::reference::dimensionality> which, InIt in, OutIt out, sign ss)
+	: in_{in}, out_{out}, 
+	planP_{std::make_shared<plan>(
+		which,
+		in_.base(), in_->layout(),
+		out_.base(), out_->layout(),
+		ss
+	)}
+	{}
+
+	auto operator++() -> io_zip_iterator& {
+		++in_;
+		++out_;
+		return *this;
+	}
+
+	auto operator+=(std::ptrdiff_t n) -> io_zip_iterator& {
+		in_ += n;
+		out_ += n;
+		return *this;
+	}
+	auto operator==(io_zip_iterator const& other) const {
+		assert(planP_ == other.planP_);  // provenance
+		return in_ == other.in_ && out_ == other.out_;
+	}
+	auto operator!=(io_zip_iterator const& other) const { return !(*this == other); }
+
+	void execute() const {
+		auto out_base = [](auto&& ref) {return &ref; }(*out_.base());
+		planP_->execute(in_.base(), out_base);
+	}
+	auto operator*() const -> decltype(*out_) { execute(); return *out_; }
+
+	io_zip_iterator(io_zip_iterator const&) = default;
+	io_zip_iterator(io_zip_iterator&&) noexcept = default;
+
+	~io_zip_iterator() = default;
+
+	auto operator=(io_zip_iterator const&) -> io_zip_iterator& = default;
+	auto operator=(io_zip_iterator&&) noexcept -> io_zip_iterator& = default;
+};
+
+template<class InIt, class OutIt>
+io_zip_iterator(std::array<bool, InIt::reference::dimensionality>, InIt, OutIt, sign)
+-> io_zip_iterator<InIt, OutIt>;
+
 template<class In, class Out>
-auto environment::make_plan_forward(std::array<bool, +In::rank_v> which, In const& in, Out&& out) {
+auto environment::make_plan_forward(std::array<bool, +In::dimensionality> which, In const& in, Out&& out) {
 	return plan::forward(which, in, std::forward<Out>(out));
 }
 
 template<class In, class Out>
-auto environment::make_plan_backward(std::array<bool, +In::rank_v> which, In const& in, Out&& out) {
+auto environment::make_plan_backward(std::array<bool, +In::dimensionality> which, In const& in, Out&& out) {
 	return plan::backward(which, in, std::forward<Out>(out));
 }
 
-#if HAVE_FFTW3_THREADS
+#ifdef HAVE_FFTW3_THREADS
 bool plan::is_thread_safe_ = (plan::make_thread_safe(), true);
 int  plan::nthreads_       = (initialize_threads(), with_nthreads());
 #endif
 
 using std::decay_t;
 
-template<class In, class Out, std::size_t D = In::rank_v>
+template<class In, class Out, std::size_t D = In::dimensionality>
 auto dft(std::array<bool, +D> which, In const& in, Out&& out, sign dir)
 	-> decltype(plan{which, in.base(), in.layout(), out.base(), out.layout(), dir}.execute(in.base(), out.base()), std::forward<Out>(out)) {
 	return plan{which, in.base(), in.layout(), out.base(), out.layout(), dir}.execute(in.base(), out.base()), std::forward<Out>(out);
 }
 
-template<typename In, multi::dimensionality_type D = std::decay_t<In>::rank::value,
-         std::enable_if_t<std::is_assignable_v<decltype(*std::declval<In&&>().base()), typename std::decay_t<In>::element>, int> = 0>
+template<typename In, multi::dimensionality_type D = std::decay_t<In>::dimensionality,
+	std::enable_if_t<std::is_assignable_v<decltype(*std::declval<In&&>().base()), typename std::decay_t<In>::element>, int> = 0>  // NOLINT(modernize-use-constraints) for C++20
 auto dft(std::array<bool, +D> which, In&& in, sign dir)
 	-> decltype(dft(which, in, in, dir), std::forward<In>(in)) {
 	return dft(which, in, in, dir), std::forward<In>(in);
 }
 
-template<class A, class O, multi::dimensionality_type D = A::rank_v>
+template<class A, class O, multi::dimensionality_type D = A::dimensionality>
 auto dft_forward(std::array<bool, +D> which, A const& in, O&& out)
 	-> decltype(fftw::dft(which, in, std::forward<O>(out), fftw::forward)) {
 	return fftw::dft(which, in, std::forward<O>(out), fftw::forward);
 }
 
-template<class A, class O, multi::dimensionality_type D = A::rank::value>
+template<class A, class O, multi::dimensionality_type D = A::dimensionality>
 auto dft_backward(std::array<bool, +D> which, A const& in, O&& out)
 	-> decltype(fftw::dft(which, in, std::forward<O>(out), fftw::backward)) {
 	return fftw::dft(which, in, std::forward<O>(out), fftw::backward);
@@ -522,22 +597,8 @@ template<typename... A> auto dft_backward(A&&... args)
 	return dft(std::forward<A>(args)..., fftw::backward);
 }
 
-// template<typename In, class R=typename std::decay_t<In>::decay_type>
-// auto move(In&& in) {
-//  if(in.is_compact()) {
-//      multi::array_ref<typename In::element, In::rank_v, typename In::element_ptr> Ref(
-//          in.base(), extensions(in)
-//      );
-//      copy(in, Ref);
-//      return R(
-//          multi::array_ref<typename In::element, In::rank_v, std::move_iterator<typename In::element_ptr>>(std::make_move_iterator(in.mbase()), ((in.mbase()=0), extensions(Ref)))
-//      );
-//  }
-//  return copy(std::forward<In>(in));
-// }
-
 template<class T, boost::multi::dimensionality_type D>
-using static_array = ::boost::multi::static_array<T, D, fftw::allocator<T>>;
+using dynamic_array = ::boost::multi::dynamic_array<T, D, fftw::allocator<T>>;
 
 template<class T, multi::dimensionality_type D>
 using array = ::boost::multi::array<T, D, fftw::allocator<T>>;
@@ -557,7 +618,7 @@ auto copy(multi::subarray<T, D, multi::move_ptr<T, P>>&& array) -> R {
 template<class Array>
 auto transpose(Array& array)
 	-> decltype(fftw::copy(transposed(array), array.reshape(extensions(layout(array).transpose())))) {
-	multi::array_ref<typename Array::element, Array::rank::value, typename Array::element_ptr> const ref_aux(array.base(), extensions(array));
+	multi::array_ref<typename Array::element, Array::dimensionality, typename Array::element_ptr> const ref_aux(array.base(), extensions(array));
 	return fftw::copy(ref_aux.transposed(), array.reshape(layout(array).transpose().extensions()));
 }
 
@@ -570,7 +631,7 @@ template<class MDIterator>
 class fft_iterator {
 	MDIterator base_;
 
-	std::array<fftw::sign, MDIterator::rank::value> which_ = {};
+	std::array<fftw::sign, MDIterator::rank> which_ = {};
 
  public:
 	using iterator_type = MDIterator;

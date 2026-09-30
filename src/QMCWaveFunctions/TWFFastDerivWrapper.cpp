@@ -278,7 +278,7 @@ TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::computeGSDerivative(const st
 void TWFFastDerivWrapper::computeMDDerivatives_Obs(const std::vector<ValueMatrix>& Minv_Mv,
                                                    const std::vector<ValueMatrix>& Minv_B,
                                                    const std::vector<IndexType>& mdd_spo_ids,
-                                                   const std::vector<const WaveFunctionComponent*>& mdds,
+                                                   const std::vector<const MultiDiracDeterminant*>& mdds,
                                                    std::vector<ValueVector>& dvals_O) const
 {
   // mdd_id is multidiracdet id as ordered in multislaterdet
@@ -287,7 +287,7 @@ void TWFFastDerivWrapper::computeMDDerivatives_Obs(const std::vector<ValueMatrix
     // sid is sposet id as ordered in TWFFastDerivWrapper (index into first dim of M, X, B, etc.)
     IndexType sid = mdd_spo_ids[mdd_id];
 
-    const auto& multidiracdet_i = static_cast<const MultiDiracDeterminant&>(*mdds[mdd_id]);
+    const auto& multidiracdet_i = *mdds[mdd_id];
 
     IndexType ndet     = multidiracdet_i.getNumDets();     // number of DiracDets in this MultiDiracDet
     size_t nelec       = multidiracdet_i.getNumPtcls();    // total occ orbs in refdet (should be same as n_elec)
@@ -451,7 +451,7 @@ void TWFFastDerivWrapper::computeMDDerivatives_dmu(const std::vector<ValueMatrix
                                                    const std::vector<ValueMatrix>& Minv_dM,
                                                    const std::vector<ValueMatrix>& Minv_dB,
                                                    const std::vector<IndexType>& mdd_spo_ids,
-                                                   const std::vector<const WaveFunctionComponent*>& mdds,
+                                                   const std::vector<const MultiDiracDeterminant*>& mdds,
                                                    std::vector<ValueVector>& dvals_dmu_O,
                                                    std::vector<ValueVector>& dvals_dmu) const
 {
@@ -461,7 +461,7 @@ void TWFFastDerivWrapper::computeMDDerivatives_dmu(const std::vector<ValueMatrix
     // sid is sposet id as ordered in TWFFastDerivWrapper (index into first dim of M, X, B, etc.)
     IndexType sid = mdd_spo_ids[mdd_id];
 
-    const auto& multidiracdet_i = static_cast<const MultiDiracDeterminant&>(*mdds[mdd_id]);
+    const auto& multidiracdet_i = *mdds[mdd_id];
 
     IndexType ndet     = multidiracdet_i.getNumDets();     // number of DiracDets in this MultiDiracDet
     size_t nelec       = multidiracdet_i.getNumPtcls();    // total occ orbs in refdet (should be same as n_elec)
@@ -650,7 +650,7 @@ void TWFFastDerivWrapper::computeMDDerivatives_dmu(const std::vector<ValueMatrix
 }
 
 std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType>
-    TWFFastDerivWrapper::computeMDDerivatives_total(const std::vector<const WaveFunctionComponent*>& mdds,
+    TWFFastDerivWrapper::computeMDDerivatives_total(const std::vector<const MultiDiracDeterminant*>& mdds,
                                                     const std::vector<ValueVector>& dvals_dmu_O,
                                                     const std::vector<ValueVector>& dvals_O,
                                                     const std::vector<ValueVector>& dvals_dmu) const

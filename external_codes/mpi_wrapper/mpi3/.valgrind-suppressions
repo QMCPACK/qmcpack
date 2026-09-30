@@ -1,0 +1,157 @@
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+...
+   fun:ucs_init
+...
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+...
+   fun:openaux
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+...
+   fun:dlopen_doit
+...
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+...
+   fun:PMPI_Init
+...
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+...
+   fun:ucs_load_modules
+...
+}
+{
+   <static_defined_mpi_datatypes_leak>
+   Memcheck:Leak
+...
+   fun:*boost*mpi3*struct_*
+...
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+...
+   fun:hwloc_topology_load
+   fun:pmix_hwloc_setup_topology
+   fun:PMIx_Init
+...
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+...
+   fun:hwloc_topology_load
+...
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+...
+   fun:call_init
+   fun:_dl_init
+...
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+...
+   fun:PMIx_Init
+...
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+...
+   fun:ucp_*
+...
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+...
+   fun:dlopen*
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+...
+   fun:pmix_*
+...
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+...
+   fun:__libc_start_main@@GLIBC_2.34
+...
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Addr1
+   obj:*libmpich.so*
+...
+   fun:PMPI_Init*
+...
+}
+{
+   <mpich_init_cond>
+   Memcheck:Cond
+   obj:*libmpich.so*
+...
+   fun:PMPI_Init*
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+...
+   fun:ucp_wireup_init_lanes
+}
+{
+   <ucx_sockaddr_str_value8>
+   Memcheck:Value8
+   fun:_itoa_word
+   ...
+   fun:ucs_snprintf_zero
+   fun:ucs_sockaddr_str
+   obj:*libuct.so*
+   fun:ucp_wireup_is_reachable
+   ...
+   fun:ucp_wireup_select_lanes
+   obj:*libucp.so*
+}
+{
+   <ucx_sockaddr_str_cond>
+   Memcheck:Cond
+   fun:_itoa_word
+   ...
+   fun:ucs_snprintf_zero
+   fun:ucs_sockaddr_str
+   obj:*libuct.so*
+   fun:ucp_wireup_is_reachable
+   ...
+   fun:ucp_wireup_select_lanes
+   obj:*libucp.so*
+}

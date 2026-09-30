@@ -175,9 +175,7 @@ const real unit_values[nunits] =
 
 
 inline real convert(real value, units units_in, units units_out)
-{
-  return value * unit_values[units_in] / unit_values[units_out];
-}
+{ return value * unit_values[units_in] / unit_values[units_out]; }
 
 
 template<typename array>
@@ -190,29 +188,9 @@ inline void convert_array(array& values, units units_in, units units_out)
 }
 
 
-/// convert from std::string to count unit
-units count_unit(const std::string& su);
-
-/// convert from std::string to distance unit
-units distance_unit(const std::string& su);
-
-/// convert from std::string to time unit
-units time_unit(const std::string& su);
-
-/// convert from std::string to mass unit
-units mass_unit(const std::string& su);
-
 /// convert from std::string to energy unit
 units energy_unit(const std::string& su);
 
-/// convert from std::string to charge unit
-units charge_unit(const std::string& su);
-
-/// convert from std::string to pressure unit
-units pressure_unit(const std::string& su);
-
-/// convert from std::string to force unit
-units force_unit(const std::string& su);
 
 } // namespace Units
 

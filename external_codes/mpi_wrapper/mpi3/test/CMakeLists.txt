@@ -1,13 +1,11 @@
 # Use cmake/ctest for building and testing boost mpi3 tests
-cmake_minimum_required(VERSION 3.18.4) # 3.10 for FindMPI, 3.12 for MPI_ROOT, 3.25 for fetchcontent SYSTEM
-project(boostmpi3_tests VERSION 0.1 LANGUAGES CXX)
-
-if(EXISTS "CMakeLists.txt")
-	message(FATAL_ERROR "You probably don't want to run CMake in a directory with CMakeLists.txt")
-endif()
+cmake_minimum_required(VERSION 3.18.4)  # 3.10 for FindMPI, 3.12 for MPI_ROOT, 3.25 for fetchcontent SYSTEM
 
 enable_testing()
 include(CTest)
+
+set(FETCHCONTENT_UPDATES_DISCONNECTED TRUE)
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -21,7 +19,11 @@ set_target_properties(multi PROPERTIES SYSTEM TRUE)
 include(CMakePrintHelpers)
 cmake_print_properties(TARGETS multi PROPERTIES LOCATION INTERFACE_INCLUDE_DIRECTORIES INCLUDE_DIRECTORIES)
 
+if(NOT ${FORCE_NOMPI})
 find_package(MPI REQUIRED)  # install MPI, e.g. `sudo dnf install mpich-devel` or `module load mpi`
+else()
+find_package(MPI)
+endif()
 
 include_directories(SYSTEM ${MPI_CXX_INCLUDE_DIRS})
 link_libraries(${MPI_CXX_LIBRARIES})
@@ -47,7 +49,9 @@ endif()
 
 
 # Set BOOST_ROOT if boost is in a non-standard location
-find_package(Boost REQUIRED)
+find_package(Threads)
+
+find_package(Boost REQUIRED COMPONENTS serialization)
 if(Boost_FOUND)
   set(HAVE_LIBBOOST 1)
 #  include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
@@ -55,6 +59,7 @@ if(Boost_FOUND)
 
   include_directories(SYSTEM ${Boost_INCLUDE_DIR})
   message(STATUS "Setting Boost_INCLUDE_DIR=${Boost_INCLUDE_DIR}")
+  link_libraries(Boost::serialization)
 endif()
 
 if(ENABLE_CUDA)
@@ -72,9 +77,6 @@ set(TEST_SRCS
   all_reduce.cpp
   broadcast.cpp
 	communicator_abort.cpp
-	communicator_all_gather.cpp
-	communicator_all_gatherv.cpp
-	communicator_all_gatherv_output_iterator.cpp
 	communicator_barrier.cpp
 	communicator_divide.cpp
 	datatype.cpp
@@ -124,15 +126,21 @@ if(NOT DEFINED USE_EXAMPI)
     shared_mutex.cpp
     simple_send_receive.cpp
     uniform_abort.cpp
+    window_create.cpp
     window_put_get.cpp
     )
     # List of tests that need to link with boost_serialization
     SET(NEED_BOOST_SERIALIZATION_SRCS
+    all_gather_strings.cpp
+    communicator_all_gather.cpp
+    communicator_all_gatherv.cpp
     communicator_send_class_nonintrusive.cpp
+    communicator_all_gatherv_output_iterator.cpp
     communicator_send_class.cpp
     communicator_send_receive.cpp
     communicator_ireceive.cpp
     communicator_gather.cpp
+    halo.cpp
     process.cpp
     process_vector.cpp
     variant.cpp
@@ -151,23 +159,26 @@ foreach(TEST_FILE ${TEST_SRCS})
   SET(TEST_EXE "${TEST_FILE}.x")
   add_executable(${TEST_EXE} ${TEST_FILE})
   target_compile_features(${TEST_EXE} PRIVATE cxx_std_17)
+  set_target_properties(${TEST_EXE} PROPERTIES CXX_EXTENSIONS OFF)
 
   if(ENABLE_CUDA)
     set_source_files_properties(${TEST_FILE} PROPERTIES LANGUAGE CUDA)
   endif()
 
-  target_compile_options(${TEST_EXE} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -Werror>) # -Wpedantic -Wunused -Wnon-virtual-dtor -Woverloaded-virtual -Wcast-qual -Wformat=2>) #-Wsign-conversion -Wshadow -Wconversion
-  target_compile_options(${TEST_EXE} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Wall -Wextra>)
+  # target_compile_options(${TEST_EXE} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -Werror>) # -Wpedantic -Wunused -Wnon-virtual-dtor -Woverloaded-virtual -Wcast-qual -Wformat=2>) #-Wsign-conversion -Wshadow -Wconversion
+  # target_compile_options(${TEST_EXE} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Wall -Wextra>)
 
   target_compile_options(
     ${TEST_EXE}
     PRIVATE
       $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:
+        -Wall -Wextra
         -Xcompiler=-Werror,-Wall,-Wextra,-Wcast-align,-Wcast-qual,-Wno-deprecated-declarations,-Wno-double-promotion,-Wduplicated-branches,-Wduplicated-cond,-Wformat-truncation,-Wformat=2,-Wlogical-op,-Wmisleading-indentation,-Wno-missing-include-dirs,-Wnon-virtual-dtor,-Wno-missing-declarations,-Wnon-virtual-dtor,-Wnull-dereference,-Woverloaded-virtual,-Wpointer-arith,-Wno-redundant-decls,-Wno-shadow,-Wno-switch-enum,-Wno-unknown-pragmas,-Wtrampolines,-Wuninitialized,-Wunused,-Wunused-but-set-variable,-Wunused-result,-Wno-zero-as-null-pointer-constant
         --expt-relaxed-constexpr --extended-lambda --Werror=cross-execution-space-call -Xcudafe=--display_error_number -Xcudafe=--diag_error=incompatible_assignment_operands -Xcudafe=--diag_error=returning_ptr_to_local_variable -Xcudafe=--diag_error=subscript_out_of_range -Xcudafe=--diag_error=used_before_set -Xcudafe=--diag_error=undefined_preproc_id -Xcudafe=--diag_error=implicit_func_decl -Xcudafe=--diag_error=implicit_return_from_non_void_function -Xcudafe=--diag_error=missing_type_specifier
       >
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<NOT:$<CUDA_COMPILER_ID:NVIDIA>>,$<NOT:$<CUDA_COMPILER_ID:Clang>>>:
         -fmax-errors=2
+        -Wall -Wextra -Werror
         -Wno-error=deprecated-declarations
         -Wno-unknown-pragmas
         # -Wextra-semi (gcc 8, not in gcc 7)
@@ -180,6 +191,7 @@ foreach(TEST_FILE ${TEST_SRCS})
         -Wzero-as-null-pointer-constant
       >
       $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CUDA_COMPILER_ID:Clang>>:
+        -Wall -Wextra -Werror
         -Wfatal-errors
         -Wno-unknown-pragmas
         -Wcast-align
@@ -199,11 +211,11 @@ foreach(TEST_FILE ${TEST_SRCS})
         -Wall
         -Wextra
         -diag-disable=remark
-        -wd161
+        -wd161  # not supported oneapi 2023
         -Wabi
         -Warray-bounds
         -Wcast-qual
-        -Wchar-subscripts
+        -Wchar-subscripts  # not supported oneapi 2023
         -Wunused -Wunused-but-set-variable -Wunused-function -Wunused-parameter -Wunused-variable
         -Wwrite-strings
         -Wno-error=deprecated-declarations
@@ -213,11 +225,11 @@ foreach(TEST_FILE ${TEST_SRCS})
         -Wall
         -Wextra
         -diag-disable=remark
-        -wd161
+        # -wd161  # not supported oneapi 2023
         -Wabi
         -Warray-bounds
         -Wcast-qual
-        -Wchar-subscripts
+        # -Wchar-subscripts  # not supported oneapi 2023
         -Wunused -Wunused-but-set-variable -Wunused-function -Wunused-parameter -Wunused-variable
         -Wwrite-strings
         -Wno-error=deprecated-declarations
@@ -233,6 +245,7 @@ foreach(TEST_FILE ${TEST_SRCS})
         --diag_suppress code_is_unreachable
       >
       $<$<CXX_COMPILER_ID:MSVC>:
+        /EHsc
         /WX
         /W4
       >
@@ -253,7 +266,9 @@ foreach(TEST_FILE ${TEST_SRCS})
 #    target_link_libraries(${TEST_EXE} PRIVATE boost_serialization)
   endif()
 
-  target_link_libraries(${TEST_EXE} PRIVATE pthread)
+  if(Threads_FOUND)
+    target_link_libraries(${TEST_EXE} PRIVATE Threads::Threads)
+  endif()
 
   get_target_property(multi_include_dirs multi INTERFACE_INCLUDE_DIRECTORIES)
   target_include_directories(${TEST_EXE} SYSTEM PRIVATE ${multi_include_dirs})
@@ -290,9 +305,9 @@ foreach(TEST_FILE ${TEST_SRCS})
   endif()
 
   if(DEFINED ENV{VALGRIND_EXE})
-    add_test(NAME ${TEST_EXE} COMMAND ${MPIEXEC} $ENV{MPI_OVERSUBSCRIBE} $ENV{MPI_ALLOW_RUN_AS_ROOT} -n ${NPROC} valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all --error-exitcode=1 ./${TEST_EXE})
+    add_test(NAME ${TEST_EXE} COMMAND ${MPIEXEC} $ENV{MPI_OVERSUBSCRIBE} $ENV{MPI_ALLOW_RUN_AS_ROOT} -n ${NPROC} valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all --gen-suppressions=all --suppressions=${PROJECT_SOURCE_DIR}/.valgrind-suppressions --error-exitcode=1 $<TARGET_FILE:${TEST_EXE}>)
   else()
-    add_test(NAME ${TEST_EXE} COMMAND ${MPIEXEC} $ENV{MPI_OVERSUBSCRIBE} $ENV{MPI_ALLOW_RUN_AS_ROOT} -n ${NPROC} ./${TEST_EXE})
+    add_test(NAME ${TEST_EXE} COMMAND ${MPIEXEC} $ENV{MPI_OVERSUBSCRIBE} $ENV{MPI_ALLOW_RUN_AS_ROOT} -n ${NPROC} $<TARGET_FILE:${TEST_EXE}>)
   endif()
   set_tests_properties(${TEST_EXE} PROPERTIES TIMEOUT 30)
 endforeach()
@@ -301,6 +316,7 @@ set_tests_properties(communicator_abort.cpp.x PROPERTIES WILL_FAIL true)
 
 if(NOT DEFINED USE_EXAMPI)
   set_tests_properties(uniform_abort.cpp.x      PROPERTIES WILL_FAIL true)
+  # target_compile_features(halo.cpp.x PRIVATE cxx_std_20)
 endif()
 
 # Compile-time check for multiply defined symbols

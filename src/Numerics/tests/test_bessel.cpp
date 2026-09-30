@@ -28,4 +28,23 @@ TEST_CASE("Bessel", "[numerics]")
   CHECK(bessel_array[10] == Approx(7.116552640047313024e-11));
 }
 
+TEST_CASE("Bessel edge and invalid inputs", "[numerics]")
+{
+  double zero_array[3];
+  bessel_steed_array_cpu(2, 0.0, zero_array);
+  CHECK(zero_array[0] == Approx(1.0));
+  CHECK(zero_array[1] == Approx(0.0));
+  CHECK(zero_array[2] == Approx(0.0));
+
+  double tiny_array[3];
+  bessel_steed_array_cpu(2, 1.0e-6, tiny_array);
+  CHECK(tiny_array[0] == Approx(1.0).margin(1.0e-12));
+  CHECK(tiny_array[1] == Approx(1.0e-6 / 3.0).margin(1.0e-12));
+  CHECK(tiny_array[2] == Approx(0.0).margin(1.0e-18));
+
+  double invalid_array[1];
+  REQUIRE_THROWS_AS(bessel_steed_array_cpu(-1, 1.0, invalid_array), std::runtime_error);
+  REQUIRE_THROWS_AS(bessel_steed_array_cpu(2, -1.0, invalid_array), std::runtime_error);
+}
+
 } // namespace qmcplusplus

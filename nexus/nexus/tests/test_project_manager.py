@@ -2,23 +2,15 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PROJECT_MANAGER)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
 from . import isolate_nexus_core
-from ..testing import value_eq
 from ..testing import failed,FailedTest
-
+from ..nexus_base import nexus_config, ShowStatusMode, SimStage
 
 def test_init():
     from ..developer import obj
-    from ..nexus_base import nexus_core
     from ..project_manager import ProjectManager
 
     pm = ProjectManager()
-
-    modes = nexus_core.modes
-    assert(pm.persistent_modes==set([modes.submit,modes.all]))
     def check(v):
         assert isinstance(v,obj)
         assert len(v)==0
@@ -85,7 +77,7 @@ def test_traverse_cascades():
     pm.add_simulations(sims)
 
     pm.traverse_cascades()
-    
+
     def count_visits(sim,visit_counts):
         i = sim.simid
         if i not in visit_counts:
@@ -135,7 +127,7 @@ def test_screen_fake_sims():
         pm.screen_fake_sims()
         raise FailedTest
     except NexusError:
-        None
+        pass
     except FailedTest:
         failed()
     except Exception as e:
@@ -148,7 +140,6 @@ def test_screen_fake_sims():
 
 @isolate_nexus_core
 def test_resolve_file_collisions():
-    from ..developer import NexusError
     from ..simulation import Simulation
     from ..project_manager import ProjectManager
 
@@ -171,16 +162,11 @@ def test_resolve_file_collisions():
     s2.locdir  = s1.locdir
     s2.outfile = s1.outfile
 
-    try:
+    with pytest.raises(
+        FileExistsError,
+        match="file collisions found in directory",
+        ):
         pm.resolve_file_collisions()
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     Simulation.clear_all_sims()
 #end def test_resolve_file_collisions
@@ -282,16 +268,11 @@ def test_check_dependencies():
 #end def test_check_dependencies
 
 
-@isolate_nexus_core
-def test_write_simulation_status():
-    from ..generic import generic_settings
-    from ..nexus_base import nexus_core
+def test_write_simulation_status(capsys):
     from ..simulation import Simulation
     from ..project_manager import ProjectManager
 
     from .test_simulation_module import get_test_workflow
-
-    log = generic_settings.devlog
 
     sims = get_test_workflow(3)
     for id,sim in sims.items():
@@ -301,85 +282,123 @@ def test_write_simulation_status():
     pm = ProjectManager()
     pm.add_simulations(list(sims.values()))
 
-    status_modes = nexus_core.status_modes
-
     def status_log():
-        log.reset()
         pm.write_simulation_status()
-        s = log.contents()
-        return s
+        s = capsys.readouterr().out
+
+        return '\n'.join(line.rstrip() for line in s.splitlines())
     #end def status_log
 
-    assert(nexus_core.status==status_modes.none)
+    assert(nexus_config.status is ShowStatusMode.none)
     status_ref = '''
-  cascade status 
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
-    000000  0  ------    test_sim_s11  ./runs/  
-    000000  0  ------    test_sim_s21  ./runs/  
-    000000  0  ------    test_sim_s12  ./runs/  
-    000000  0  ------    test_sim_s22  ./runs/  
-    000000  0  ------    test_sim_s3  ./runs/  
-    000000  0  ------    test_sim_s4  ./runs/  
-    000000  0  ------    test_sim_s5  ./runs/  
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
-    '''
-    assert(status_log().strip()==status_ref.strip())
-
-    nexus_core.status = status_modes.standard
-    assert(status_log().strip()==status_ref.strip())
-
-    nexus_core.status = status_modes.active
-    status_ref = '''
-  cascade status 
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
-    000000  0  ------    test_sim_s11  ./runs/  
-    000000  0  ------    test_sim_s12  ./runs/  
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
-    '''
-    assert(status_log().strip()==status_ref.strip())
-
-    nexus_core.status = status_modes.ready
-    assert(status_log().strip()==status_ref.strip())
-
-    nexus_core.status = status_modes.failed
-    status_ref = '''
-  cascade status 
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
+  cascade status
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    000000           ------    test_sim_s11  ./runs/
+    000000           ------    test_sim_s21  ./runs/
+    000000           ------    test_sim_s12  ./runs/
+    000000           ------    test_sim_s22  ./runs/
+    000000           ------    test_sim_s3  ./runs/
+    000000           ------    test_sim_s4  ./runs/
+    000000           ------    test_sim_s5  ./runs/
     setup, sent_files, submitted, finished, got_output, analyzed, failed
     '''
     assert(status_log().strip()==status_ref.strip())
+
+    nexus_config.status = ShowStatusMode.all
+    assert(status_log().strip()==status_ref.strip())
+
+    nexus_config.status = ShowStatusMode.active
+    status_ref = '''
+  cascade status
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    000000           ------    test_sim_s11  ./runs/
+    000000           ------    test_sim_s12  ./runs/
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    '''
+    assert(status_log().strip()==status_ref.strip())
+
+    nexus_config.status = ShowStatusMode.ready
+    assert(status_log().strip()==status_ref.strip())
+
+    nexus_config.status = ShowStatusMode.failed
+    status_ref = '''
+  cascade status
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    (No simulations present)
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    '''
+    assert(status_log().strip()==status_ref.strip())
+
+    sim = sims.s11
+    sim.setup      = True
+    sim.sent_files = True
+    sim.submitted  = True
+
+    pm.status_line(sim)
+    assert(capsys.readouterr().out.strip()=='111000           ------    test_sim_s11  ./runs/')
+
+    sim.finished  = True
+    sim.got_output = True
+    sim.analyzed   = True
+
+    pm.status_line(sim)
+    assert(capsys.readouterr().out.strip()=='111111  SUCCESS  ------    test_sim_s11  ./runs/')
+
+    sim.failed = True
+
+    pm.status_line(sim)
+    assert(capsys.readouterr().out.strip()=='111111  FAILURE  ------    test_sim_s11  ./runs/')
 
     Simulation.clear_all_sims()
 #end def test_write_simulation_status
 
 
+def test_color_status_result(monkeypatch):
+    from ..project_manager import color_status_result
+
+    class TestLog:
+        def __init__(self,is_tty):
+            self.is_tty = is_tty
+        #end def __init__
+
+        def isatty(self):
+            return self.is_tty
+        #end def isatty
+    #end class TestLog
+
+    tty_log = TestLog(is_tty=True)
+    file_log = TestLog(is_tty=False)
+
+    monkeypatch.delenv('NO_COLOR',raising=False)
+    assert(color_status_result('SUCCESS',tty_log)=='\033[42mSUCCESS\033[0m')
+    assert(color_status_result('FAILURE',tty_log)=='\033[41mFAILURE\033[0m')
+    assert(color_status_result('',tty_log)=='')
+    assert(color_status_result('SUCCESS',file_log)=='SUCCESS')
+    assert(color_status_result('FAILURE',file_log)=='FAILURE')
+
+    monkeypatch.setenv('NO_COLOR','1')
+    assert(color_status_result('SUCCESS',tty_log)=='SUCCESS')
+    assert(color_status_result('FAILURE',tty_log)=='FAILURE')
+
+#end def test_color_status_result
+
+
 @isolate_nexus_core
 def test_run_project(tmp_path):
-    from ..generic import generic_settings
-    from ..nexus_base import nexus_core
+    from ..nexus_base import nexus_config
     from ..simulation import Simulation,input_template
     from ..project_manager import ProjectManager
 
     from .test_simulation_module import get_test_workflow,n_test_workflows
 
     # divert_nexus()
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
-    assert(nexus_core.mode==nexus_core.modes.stages)
-    assert(len(nexus_core.stages)==0)
+    assert(nexus_config.stages is SimStage.all)
 
-    nexus_core.stages     = list(nexus_core.primary_modes)
-    nexus_core.stages_set = set(nexus_core.stages)
-
-    primary_modes = ['setup','send_files','submit','get_output','analyze']
-    assert(value_eq(nexus_core.stages,primary_modes))
-    assert(value_eq(nexus_core.stages_set,set(primary_modes)))
-
-    nexus_core.sleep = 0.1
-
-    log = generic_settings.devlog
+    nexus_config.sleep = 0.1
 
     flags = ['setup','sent_files','submitted','finished','got_output','analyzed']
 

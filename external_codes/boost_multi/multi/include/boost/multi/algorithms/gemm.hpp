@@ -4,8 +4,9 @@
 
 // this header contains a generic gemm algorithm (not the blas one)
 // it is ~3 times slower than blas::gemm but it is more generic in the type and in the operations
-// when compiled using -DCMAKE_CXX_FLAGS_RELEASE="-Ofast -DNDEBUG -mfpmath=sse -march=native -funroll-loops -fargument-noalias"
+// when compiled using -DCMAKE_CXX_FLAGS_RELEASE="-Ofast -DNDEBUG -mfpmath=sse -march=native -funroll-loops"
 
+#pragma once
 #ifndef BOOST_MULTI_ALGORITHM_GEMM_HPP
 #define BOOST_MULTI_ALGORITHM_GEMM_HPP
 
@@ -24,15 +25,15 @@ inline auto naive_gemm(Talpha const& alpha, MatrixA const& A, MatrixB const& B, 
 
 	std::transform(std::execution::par,  // intel (and others?) cannot simd this level
 		begin(A), end(A), begin(C), begin(C),
-		[&](auto const& arowi, auto&& crowi) {
+		[&](auto const& arowi, auto&& crowi) -> decltype(auto) {
 			std::transform(std::execution::unseq,
 				begin(crowi), end(crowi), begin(~B), begin(crowi),
-				[&](auto&& c, auto const& brow) {
+				[&](auto&& c, auto const& brow) -> auto {
 					// cppcheck-suppress cppcheckError  .. internal cppcheck error
 					return sum2(alpha*std::transform_reduce(std::execution::unseq, begin(arowi), end(arowi), begin(brow), decltype(+c){0.}, sum2, prod2), beta*std::forward<decltype(c)>(c));
 				}
 		);
-		return std::move(crowi);  // NOLINT(bugprone-move-forwarding-reference)
+		return std::forward<decltype(crowi)>(crowi);  // NOLINT(bugprone-move-forwarding-reference)
 	});
 	return std::forward<MatrixC>(C);
 }
@@ -56,26 +57,26 @@ auto gemm(Talpha const& alpha, MatrixA const& A, MatrixB const& B, Tbeta const& 
 	assert( (~B).size() % N == 0);
 	assert(   B .size() % N == 0);
 
-	std::transform(std::execution::par, begin(A.chunked(N)), end(A.chunked(N)), begin(C.chunked(N)), begin(C.chunked(N)), [&](auto const& Afatrow, auto&& Cfatrow) {
+	std::transform(std::execution::par, A.chunked(N).begin(), A.chunked(N).end(), C.chunked(N).begin(), C.chunked(N).begin(), [&](auto const& Afatrow, auto&& Cfatrow) -> decltype(Cfatrow) {
 		auto const& BfatcolsT = (~B).chunked(N);
 		auto const& AblocksT = (~Afatrow).chunked(N);
 		auto&& CblocksT = (~Cfatrow).chunked(N);
-		std::transform(std::execution::par, begin(BfatcolsT), end(BfatcolsT), begin(CblocksT), begin(CblocksT), [&](auto const& BfatcolT, auto&& CblockTR) {
+		std::transform(std::execution::par, BfatcolsT.begin(), BfatcolsT.end(), CblocksT.begin(), CblocksT.begin(), [&](auto const& BfatcolT, auto&& CblockTR) -> auto {
 			auto const& Bblocks = (~BfatcolT).chunked(N);
 			auto Cblock = +~CblockTR;
-			std::transform(std::execution::unseq, begin(Cblock.elements()), end(Cblock.elements()), begin(Cblock.elements()), [&](auto&& c) {return beta*std::forward<decltype(c)>(c);});
+			std::transform(std::execution::unseq, begin(Cblock.elements()), end(Cblock.elements()), begin(Cblock.elements()), [&](auto&& c) -> auto { return beta*std::forward<decltype(c)>(c); });
 			return
 				+~std::inner_product(
-					begin(AblocksT), end(AblocksT), begin(Bblocks),
+					AblocksT.begin(), AblocksT.end(), Bblocks.begin(),
 					std::move(Cblock),
-					[&](auto&& ret, auto const& prod) {return prod(std::forward<decltype(ret)>(ret));},
-					[&](auto const& AblockT, auto const& Bblock) {
-						return [&, AbR = +~AblockT, BbTR = +~Bblock](auto&& into) {return detail::naive_gemm(alpha, AbR, ~BbTR, 1., std::forward<decltype(into)>(into), sum2, prod2);};
+					[&](auto&& ret, auto const& prod) -> decltype(auto) { return prod(std::forward<decltype(ret)>(ret)); },
+					[&](auto const& AblockT, auto const& Bblock) -> auto {
+						return [&, AbR = +~AblockT, BbTR = +~Bblock](auto&& into) -> decltype(auto) {return detail::naive_gemm(alpha, AbR, ~BbTR, 1., std::forward<decltype(into)>(into), sum2, prod2);};
 					}
 				)
 			;
 		});
-		return std::move(Cfatrow);  // NOLINT(bugprone-move-forwarding-reference)
+		return std::forward<decltype(Cfatrow)>(Cfatrow);  // NOLINT(bugprone-move-forwarding-reference)
 	});
 	return std::forward<MatrixC>(C);
 }

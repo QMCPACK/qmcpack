@@ -1,13 +1,19 @@
+// Copyright 2020-2025 Alfredo A. Correa
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
+
 #include <boost/multi/array.hpp>
 #include <boost/multi/adaptors/thrust.hpp>
 
 #include <thrust/complex.h>
 #include <thrust/system/cuda/memory.h>
 
+#include <chrono>
+
 namespace multi = boost::multi;
 
 #define CUDA_CHECKED(ans) { cudaAssert((ans), __FILE__, __LINE__); }
-inline void cudaAssert(cudaError_t code, const char *file, int line, bool abort=true) {
+inline void cudaAssert(cudaError_t code, const char *file, int line, bool /*abort*/=true) {
    if (code != cudaSuccess) {
         std::cerr<<"error: "<< cudaGetErrorString(code) <<" "<< file <<":"<< line <<std::endl;
         assert(0);
@@ -15,8 +21,8 @@ inline void cudaAssert(cudaError_t code, const char *file, int line, bool abort=
 }
 
 #define REQUIRE(ans) { require((ans), __FILE__, __LINE__); }
-inline void require(bool code, const char *file, int line, bool abort=true) {
-   if (not code) {
+inline void require(bool code, const char *file, int line, bool /*abort*/=true) {
+   if (!code) {
         std::cerr<<"error: "<< file <<":"<< line <<std::endl;
         exit(666);
     }
@@ -39,11 +45,11 @@ template<class Array2D>
 auto set_identity(Array2D&& arr) -> Array2D&&{
     int xblock_dim = 16;
     auto [m, n] = arr.sizes();
-    int xgrid_dim  = (m + xblock_dim - 1) / xblock_dim;
-    int ygrid_dim  = (n + xblock_dim - 1) / xblock_dim;
+    auto xgrid_dim  = static_cast<int>((m + xblock_dim - 1) / xblock_dim);
+    auto ygrid_dim  = static_cast<int>((n + xblock_dim - 1) / xblock_dim);
     dim3 block_dim(xblock_dim, xblock_dim);
     dim3 grid_dim(xgrid_dim, ygrid_dim);
-    kernel_setIdentity<<<grid_dim, block_dim>>>(arr.home(), m, n);
+    kernel_setIdentity<<<grid_dim, block_dim>>>(arr.home(), static_cast<int>(m), static_cast<int>(n));
     CUDA_CHECKED(cudaGetLastError());
     // CUDA_CHECKED(cudaDeviceSynchronize());
     return std::forward<Array2D>(arr);

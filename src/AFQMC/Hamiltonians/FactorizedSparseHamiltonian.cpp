@@ -63,7 +63,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
       if (i != l)
         vn0[l][i] -= 0.5 * ma::conj(vl);
     }
-  TG.Global().all_reduce_in_place_n(vn0.origin(), vn0.num_elements(), std::plus<>());
+  TG.Global().all_reduce_in_place_n(vn0.base(), vn0.num_elements(), std::plus<>());
 
   if (TG.getNumberOfTGs() > 1)
   {

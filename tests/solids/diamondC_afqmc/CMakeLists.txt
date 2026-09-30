@@ -106,3 +106,6 @@ qmc_run_and_check(
   0
   LONG_HYBRID_SCALARS # AFQMC
 )
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

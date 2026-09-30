@@ -1,41 +1,49 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2022 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #include <mpi3/communicator.hpp>
-#include <mpi3/main.hpp>
+#include <mpi3/environment.hpp>
 
-#include <complex>
+#include <boost/core/lightweight_test.hpp>
+#include <iterator>
 #include <list>
+#include <sstream>
 #include <string>
+#include <vector>
 
 namespace mpi3 = boost::mpi3;
 
-auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int try {
-	assert(world.size() > 1);
+auto main(int argc, char** argv) -> int try {
+	mpi3::environment env(argc, argv);
+
+	auto world = env.world();
+
+	BOOST_TEST(world.size() > 1);
 
 	switch(world.rank()) {
 	case 0: {
-		std::list<int> b = {3, 4, 5};
+		std::list<int> const b = {3, 4, 5};
 		world.send(cbegin(b), cend(b), 1);
 		break;
 	};
 	case 1: {
 		std::vector<int> b2(3);
 		world.receive(begin(b2), end(b2));
-		assert(b2[1] == 4.0);
+		BOOST_TEST(b2[1] == 4.0);
 		break;
 	};
+	default: {
+	}
 	}
 	// switch(world.rank()){
-	// 	case 0: {
-	// 		std::vector<std::string> b = {"hola", "blah", "chau"};
-	// 		world.send(cbegin(b), cend(b), 1);
-	// 	}; break;
-	// 	case 1: {
-	// 		std::list<std::string> b2(3);
-	// 		world.receive(begin(b2), end(b2));  // TODO(correaa) invesigate why it doesn't work
-	// 		assert( *begin(b2) == "hola" and *rbegin(b2) == "chau" );
-	// 	}; break;
+	//  case 0: {
+	//      std::vector<std::string> b = {"hola", "blah", "chau"};
+	//      world.send(cbegin(b), cend(b), 1);
+	//  }; break;
+	//  case 1: {
+	//      std::list<std::string> b2(3);
+	//      world.receive(begin(b2), end(b2));  // TODO(correaa) invesigate why it doesn't work
+	//      BOOST_TEST( *begin(b2) == "hola" and *rbegin(b2) == "chau" );
+	//  }; break;
 	// }
 	switch(world.rank()) {
 	case 0: {
@@ -46,12 +54,14 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	case 1: {
 		std::vector<int> out(3);
 		world.receive(begin(out), end(out));
-		assert((out == std::vector<int>{1, 2, 3}));
+		BOOST_TEST((out == std::vector<int>{1, 2, 3}));
 		break;
+	}
+	default: {
 	}
 	}
 
-	return 0;
+	return boost::report_errors();
 } catch(...) {
 	return 1;
 }

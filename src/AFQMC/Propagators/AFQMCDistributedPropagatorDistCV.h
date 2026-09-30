@@ -58,7 +58,7 @@ public:
                                    CVector&& vmf_,
                                    RandomBase<RealType>& r)
       : base(info, cur, tg_, wfn_, std::move(h1_), std::move(vmf_), r),
-        bpX(iextensions<1u>{1}, shared_allocator<ComplexType>{TG.TG_local()}),
+        bpX(extents_t<1u>{1}, shared_allocator<ComplexType>{TG.TG_local()}),
         req_Gsend(MPI_REQUEST_NULL),
         req_Grecv(MPI_REQUEST_NULL),
         req_vsend(MPI_REQUEST_NULL),

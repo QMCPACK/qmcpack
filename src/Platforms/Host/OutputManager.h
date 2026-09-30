@@ -77,31 +77,6 @@ inline std::ostream& app_debug_stream() { return infoDebug.getStream(); }
   else                                   \
     app_debug_stream
 
-
-// Keep these macros temporarily until all output uses streams
-#define LOGMSG(msg)                             \
-  {                                             \
-    qmcplusplus::app_log() << msg << std::endl; \
-  }
-#define ERRORMSG(msg)                \
-  {                                  \
-    app_error() << msg << std::endl; \
-  }
-#define WARNMSG(msg)                   \
-  {                                    \
-    app_warning() << msg << std::endl; \
-  }
-#ifdef PRINT_DEBUG
-#define DEBUGMSG(msg)                \
-  {                                  \
-    app_debug() << msg << std::endl; \
-  }
-#else
-#define DEBUGMSG(msg)
-#endif
-
-#define XMLReport(msg)
-
 }; // namespace qmcplusplus
 
 #endif

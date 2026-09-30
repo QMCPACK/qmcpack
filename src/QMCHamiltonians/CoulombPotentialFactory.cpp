@@ -81,8 +81,6 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   std::string targetInp(targetPtcl.getName());
   std::string sourceInp(targetPtcl.getName());
   std::string title("ElecElec"), pbc("yes");
-  std::string forces("no");
-  std::string use_gpu;
   bool physical = true;
   OhmmsAttributeSet hAttrib;
   hAttrib.add(title, "id");
@@ -91,11 +89,8 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   hAttrib.add(sourceInp, "source");
   hAttrib.add(pbc, "pbc");
   hAttrib.add(physical, "physical");
-  hAttrib.add(forces, "forces");
-  hAttrib.add(use_gpu, "gpu", CPUOMPTargetSelector::candidate_values);
   hAttrib.put(cur);
   const bool applyPBC = (PBCType && pbc == "yes");
-  const bool doForces = (forces == "yes") || (forces == "true");
 
   app_summary() << std::endl;
   app_summary() << "   Coulomb Potential" << std::endl;
@@ -110,7 +105,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     auto pit(ptclPool.find(sourceInp));
     if (pit == ptclPool.end())
     {
-      ERRORMSG("Missing source ParticleSet" << sourceInp);
+      app_error() << "Missing source ParticleSet" << sourceInp << std::endl;
       APP_ABORT("HamiltonianFactory::addCoulombPotential");
       return;
     }
@@ -119,6 +114,14 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
 
   if (sourceInp == targetInp) // AA type
   {
+    std::string forces("no");
+    std::string use_gpu;
+    OhmmsAttributeSet aaAttrib;
+    aaAttrib.add(forces, "forces");
+    aaAttrib.add(use_gpu, "gpu", CPUOMPTargetSelector::candidate_values);
+    aaAttrib.put(cur);
+    const bool doForces = (forces == "yes") || (forces == "true");
+
     if (!applyPBC && ptclA->getTotalNum() == 1)
     {
       app_log() << "  CoulombAA for " << sourceInp << " is not created.  Number of particles == 1 and nonPeriodic"
@@ -183,14 +186,14 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   auto pit(ptclPool.find(a));
   if (pit == ptclPool.end())
   {
-    ERRORMSG("Missing source ParticleSet" << a)
+    app_error() << "Missing source ParticleSet" << a << std::endl;
     return;
   }
   ParticleSet* source = pit->second.get();
   pit                 = ptclPool.find(targetName);
   if (pit == ptclPool.end())
   {
-    ERRORMSG("Missing target ParticleSet" << targetName)
+    app_error() << "Missing target ParticleSet" << targetName << std::endl;
     return;
   }
   ParticleSet* target = pit->second.get();
@@ -232,7 +235,7 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   }
   else
   {
-    ERRORMSG("Failed to recognize Force mode " << mode);
+    app_error() << "Failed to recognize Force mode " << mode << std::endl;
   }
 #endif
 }
@@ -240,11 +243,10 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
 void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
 {
 #if OHMMS_DIM == 3
-  std::string src("i"), title("PseudoPot"), wfname("invalid"), format("xml");
+  std::string src("i"), title("PseudoPot"), format("xml");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(title, "name");
   pAttrib.add(src, "source");
-  pAttrib.add(wfname, "wavefunction");
   pAttrib.add(format, "format"); //temperary tag to switch between format
   pAttrib.put(cur);
   if (format == "old")
@@ -254,7 +256,7 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   auto pit(ptclPool.find(src));
   if (pit == ptclPool.end())
   {
-    ERRORMSG("Missing source ParticleSet" << src)
+    app_error() << "Missing source ParticleSet" << src << std::endl;
     return;
   }
   ParticleSet* ion = pit->second.get();

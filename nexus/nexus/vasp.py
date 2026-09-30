@@ -27,6 +27,7 @@
 import os
 from copy import deepcopy
 from .developer import obj
+from .pseudoset import PseudoSet
 from .simulation import Simulation
 from .vasp_input import VaspInput,generate_vasp_input,generate_poscar,Poscar
 from .vasp_analyzer import VaspAnalyzer
@@ -37,7 +38,7 @@ class Vasp(Simulation):
     input_type         = VaspInput
     analyzer_type      = VaspAnalyzer
     generic_identifier = 'vasp'
-    application        = 'vasp' 
+    application        = 'vasp'
     application_properties = frozenset({'serial','mpi'})
     application_results    = frozenset({'structure'})
 
@@ -74,7 +75,8 @@ class Vasp(Simulation):
             # get structure from CONTCAR
             ccfile = os.path.join(self.locdir,self.identifier+'.CONTCAR')
             if not os.path.exists(ccfile):
-                self.error('CONTCAR file does not exist for relax simulation at '+self.locdir)
+                msg = 'CONTCAR file does not exist for relax simulation at '+self.locdir
+                raise FileNotFoundError(msg)
             #end if
             contcar = Poscar(ccfile)
             structure = Structure()
@@ -92,7 +94,8 @@ class Vasp(Simulation):
             #end if
             result.structure = structure
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         return result
     #end def get_result
@@ -107,7 +110,11 @@ class Vasp(Simulation):
                 #end if
                 neb_structures = self.neb_structures
                 if len(neb_structures)>1:
-                    self.error('NEB simulation at {0} depends on more than two structures\n  please check your inputs'.format(self.locdir))
+                    msg = (
+                        f'NEB simulation at {self.locdir} depends on more than two structures\n'
+                        '  please check your inputs'
+                        )
+                    raise RuntimeError(msg)
                 #end if
                 neb_structures.append(deepcopy(result.structure))
                 if len(neb_structures)==2:
@@ -117,8 +124,9 @@ class Vasp(Simulation):
                 input.poscar = generate_poscar(result.structure)
             #end if
         else:
-            self.error('ability to incorporate result '+result_name+' has not been implemented')
-        #end if  
+            msg = 'ability to incorporate result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
+        #end if
     #end def incorporate_result
 
 
@@ -164,7 +172,7 @@ class Vasp(Simulation):
             native_file = os.path.join(self.locdir,file)
             save_file   = os.path.join(self.locdir,self.identifier+'.'+file)
             if os.path.exists(native_file):
-                os.system('cp {0} {1}'.format(native_file,save_file))
+                os.system(f'cp {native_file} {save_file}')
                 output_files.append(file)
             #end if
         #end for
@@ -175,11 +183,20 @@ class Vasp(Simulation):
 
 
 def generate_vasp(**kwargs):
-    sim_args,inp_args = Vasp.separate_inputs(kwargs,copy_pseudos=False)
+    pseudos = kwargs.get('pseudos',None)
+    if pseudos is not None:
+        system = kwargs.get('system',None)
+        kwargs['pseudos'] = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'vasp',
+            )
+    #end if
+
+    sim_args,inp_args = Vasp.separate_inputs(kwargs)
 
     sim_args.input = generate_vasp_input(**inp_args)
     vasp = Vasp(**sim_args)
 
     return vasp
 #end def generate_vasp
-

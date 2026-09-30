@@ -18,6 +18,15 @@
 #ifndef MA_OPERATIONS_HPP
 #define MA_OPERATIONS_HPP
 
+// multi::array_ref::origin() is deprecated in favor of .base(), but .base() (const&) miscomputes
+// element_const_ptr when ElementPtr's pointee type differs from T (as with the real/complex
+// reinterpret views used throughout this file for BLAS calls) in boost-multi 0.91.1. Keep .origin()
+// here and suppress the warning until that library issue is fixed.
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #include "ma_blas.hpp"
 #include "ma_lapack.hpp"
 #include "AFQMC/Numerics/detail/sparse.hpp"
@@ -591,7 +600,7 @@ T invert(MultiArray2D&& m, T LogOverlapFactor)
   using element         = typename std::decay<MultiArray2D>::type::element;
   using allocator_type  = typename std::decay<MultiArray2D>::type::allocator_type;
   using iallocator_type = typename allocator_type::template rebind<int>::other;
-  using extensions      = typename boost::multi::layout_t<1u>::extensions_type;
+  using extensions      = boost::multi::extents_t<1u>;
   using qmcplusplus::afqmc::fill2D;
   auto bufferSize(invert_optimal_workspace_size(std::forward<MultiArray2D>(m)));
   boost::multi::array<element, 1, allocator_type> WORK(extensions{bufferSize}, m.get_allocator());
@@ -766,15 +775,15 @@ int main()
     boost::multi::array_ref<double, 2> M(m.data(), {3, 3});
     assert(M.num_elements() == m.size());
     std::vector<double> x = {1., 2., 3.};
-    boost::multi::array_ref<double, 1> X(x.data(), boost::iextensions<1u>{x.size()});
+    boost::multi::array_ref<double, 1> X(x.data(), boost::multi::extents_t<1u>{x.size()});
     std::vector<double> y(3);
-    boost::multi::array_ref<double, 1> Y(y.data(), boost::iextensions<1u>{y.size()});
+    boost::multi::array_ref<double, 1> Y(y.data(), boost::multi::extents_t<1u>{y.size()});
 
     using ma::T;
     ma::product(M, X, Y); // Y := M X
 
     std::vector<double> mx = {147., 60., 154.};
-    boost::multi::array_ref<double, 1> MX(mx.data(), boost::iextensions<1u>{mx.size()});
+    boost::multi::array_ref<double, 1> MX(mx.data(), boost::multi::extents_t<1u>{mx.size()});
     assert(MX == Y);
   }
   {
@@ -782,15 +791,15 @@ int main()
     boost::multi::array_ref<double, 2> M(m.data(), {3, 4});
     assert(M.num_elements() == m.size());
     std::vector<double> x = {1., 2., 3., 4.};
-    boost::multi::array_ref<double, 1> X(x.data(), boost::iextensions<1u>{x.size()});
+    boost::multi::array_ref<double, 1> X(x.data(), boost::multi::extents_t<1u>{x.size()});
     std::vector<double> y(3);
-    boost::multi::array_ref<double, 1> Y(y.data(), boost::iextensions<1u>{y.size()});
+    boost::multi::array_ref<double, 1> Y(y.data(), boost::multi::extents_t<1u>{y.size()});
 
     using ma::T;
     ma::product(M, X, Y); // Y := M X
 
     std::vector<double> mx = {155., 64., 234.};
-    boost::multi::array_ref<double, 1> MX(mx.data(), boost::iextensions<1u>{mx.size()});
+    boost::multi::array_ref<double, 1> MX(mx.data(), boost::multi::extents_t<1u>{mx.size()});
     assert(MX == Y);
   }
   {
@@ -798,28 +807,28 @@ int main()
     boost::multi::array_ref<double, 2> M(m.data(), {3, 4});
     assert(M.num_elements() == m.size());
     std::vector<double> x = {1., 2., 3.};
-    boost::multi::array_ref<double, 1> X(x.data(), boost::iextensions<1u>{x.size()});
+    boost::multi::array_ref<double, 1> X(x.data(), boost::multi::extents_t<1u>{x.size()});
     std::vector<double> y(4);
-    boost::multi::array_ref<double, 1> Y(y.data(), boost::iextensions<1u>{y.size()});
+    boost::multi::array_ref<double, 1> Y(y.data(), boost::multi::extents_t<1u>{y.size()});
 
     using ma::T;
     ma::product(T(M), X, Y); // Y := T(M) X
 
     std::vector<double> mx = {59., 92., 162., 64.};
-    boost::multi::array_ref<double, 1> MX(mx.data(), boost::iextensions<1u>{mx.size()});
+    boost::multi::array_ref<double, 1> MX(mx.data(), boost::multi::extents_t<1u>{mx.size()});
     assert(MX == Y);
   }
   {
     std::vector<double> m = {9., 24., 30., 9., 4., 10., 12., 7., 14., 16., 36., 1.};
     boost::multi::array_ref<double, 2> M(m.data(), {3, 4});
     std::vector<double> x = {1., 2., 3., 4.};
-    boost::multi::array_ref<double, 1> X(x.data(), boost::iextensions<1u>{x.size()});
+    boost::multi::array_ref<double, 1> X(x.data(), boost::multi::extents_t<1u>{x.size()});
     std::vector<double> y = {4., 5., 6.};
-    boost::multi::array_ref<double, 1> Y(y.data(), boost::iextensions<1u>{y.size()});
+    boost::multi::array_ref<double, 1> Y(y.data(), boost::multi::extents_t<1u>{y.size()});
     ma::product(M, X, Y); // y := M x
 
     std::vector<double> y2 = {183., 88., 158.};
-    boost::multi::array_ref<double, 1> Y2(y2.data(), boost::iextensions<1u>{y2.size()});
+    boost::multi::array_ref<double, 1> Y2(y2.data(), boost::multi::extents_t<1u>{y2.size()});
     assert(Y == Y2);
   }
 
@@ -890,6 +899,10 @@ int main()
 
   cout << "test ended" << std::endl;
 }
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
 #endif
 
 #endif

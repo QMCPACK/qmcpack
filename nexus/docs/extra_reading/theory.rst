@@ -123,7 +123,7 @@ level of accuracy (usually far beyond what is required to obtain an
 accurate DFT energy). One criterion to use it to converge the kinetic
 energy of the Kohn-Sham wavefunction with respect to the planewave
 energy cutoff until it is accurate to the energy scale you care about in
-your production QMC calcuation. For systems with a small number of
+your production QMC calculation. For systems with a small number of
 valence electrons, a cutoff of around 200 Ry is often sufficient. To
 obtain the kinetic energy from a PWSCF calculation the ``pw2casino.x``
 post-processing tool can be used. In Nexus one has the option to compute

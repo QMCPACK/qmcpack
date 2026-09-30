@@ -50,6 +50,20 @@ TEST_CASE("walker assumptions", "[particle]")
   REQUIRE(w1.Properties.cols() == WP::NUMPROPERTIES);
 }
 
+TEST_CASE("MCDataType default initialization", "[particle]")
+{
+  MCDataType<double> data;
+  CHECK(data.NumSamples == 0.0);
+  CHECK(data.RNSamples == 0.0);
+  CHECK(data.Weight == 0.0);
+  CHECK(data.Energy == 0.0);
+  CHECK(data.AlternateEnergy == 0.0);
+  CHECK(data.Variance == 0.0);
+  CHECK(data.R2Accepted == 0.0);
+  CHECK(data.R2Proposed == 0.0);
+  CHECK(data.LivingFraction == 0.0);
+}
+
 TEST_CASE("walker HDF read and write", "[particle]")
 {
   Communicate* c = OHMMS::Controller;

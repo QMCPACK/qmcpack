@@ -35,7 +35,7 @@ class QMCDriverInterface
 public:
   using BranchEngineType              = SimpleFixedNodeBranch;
   using FullPrecRealType              = QMCTraits::FullPrecRealType;
-  virtual bool run()                  = 0;
+  virtual void run()                  = 0;
   virtual bool put(xmlNodePtr cur)    = 0;
   virtual void recordBlock(int block) = 0;
 

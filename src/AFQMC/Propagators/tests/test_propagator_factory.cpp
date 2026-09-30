@@ -41,7 +41,6 @@
 
 using std::cerr;
 using std::complex;
-using std::cout;
 using std::endl;
 using std::ifstream;
 using std::setprecision;
@@ -137,7 +136,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     REQUIRE(get<1>(initial_guess.sizes()) == NPOL * NMO);
     REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
-    //                         initial_guess[1](XXX.extension(0),{0,NAEB}));
+    //                         initial_guess[1](get<0>(XXX.extents()),{0,NAEB}));
 
     const char* propg_xml_block = R"(<Propagator name="prop0"></Propagator>)";
     Libxml2Document doc4;
@@ -147,7 +146,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     PropgFac.push(prop_name, doc4.getRoot());
     Propagator& prop = PropgFac.getPropagator(TG, prop_name, wfn, rng);
 
-    std::cout << setprecision(12);
+    app_log() << setprecision(12);
     wfn.Energy(wset);
     {
       ComplexType eav = 0, ov = 0;

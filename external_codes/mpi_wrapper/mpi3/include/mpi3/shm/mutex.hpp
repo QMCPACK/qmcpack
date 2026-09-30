@@ -1,5 +1,4 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2022 Alfredo A. Correa
+// Copyright 2018-2024 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_SHM_MUTEX_HPP
 #define BOOST_MPI3_SHM_MUTEX_HPP
@@ -30,12 +29,10 @@ class mutex {
 		while(f_->test_and_set(std::memory_order_acquire)) {};  // NOLINT(altera-unroll-loops)
 	}
 	void unlock(){f_->clear(std::memory_order_release);}
-	~mutex() {  // noexcept(false) {
-		try {
-			if(scomm_.root()) {std::allocator_traits<allocator_type>::destroy(alloc_, &*f_);}
-			scomm_.barrier();
-			alloc_.deallocate(f_, 1);
-		} catch(...) {}
+	~mutex() noexcept(false) {
+		if(scomm_.root()) {std::allocator_traits<allocator_type>::destroy(alloc_, &*f_);}
+		scomm_.barrier();
+		alloc_.deallocate(f_, 1);
 	}
 };
 

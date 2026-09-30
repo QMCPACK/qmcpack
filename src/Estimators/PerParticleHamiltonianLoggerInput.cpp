@@ -20,6 +20,5 @@ PerParticleHamiltonianLoggerInput::PerParticleHamiltonianLoggerInput(xmlNodePtr 
   auto setIfInInput = LAMBDA_setIfInInput;
   setIfInInput(to_stdout_, "to_stdout");
   setIfInInput(name_, "name");
-  setIfInInput(name_, "type");
 }
 } // namespace qmcplusplus

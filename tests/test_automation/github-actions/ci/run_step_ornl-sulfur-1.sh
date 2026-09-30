@@ -8,11 +8,9 @@ case "$1" in
   # Configure qmcpack using cmake out-of-source builds 
   configure)
   
-    echo "Use recent CMake v3.26.3"
-    export PATH=$HOME/opt/cmake/3.26.3/bin:$PATH
     # Make current environment variables available to subsequent steps, ctest
     echo "PATH=$PATH" >> $GITHUB_ENV
-
+    
     QMC_DATA_DIR=/scratch/ci/QMC_DATA_FULL
 
     if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build-1 ]
@@ -59,7 +57,6 @@ case "$1" in
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
-              -DBLA_VENDOR=Intel10_64lp \
               -DBUILD_AFQMC=ON \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \

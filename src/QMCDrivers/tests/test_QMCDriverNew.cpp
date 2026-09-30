@@ -51,6 +51,12 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
                                                  hamiltonian_pool.getHamiltonian().value()),
                                     rng_pool.getRngRefs(), comm);
 
+  CHECK_FALSE(qmcdriver.allow_walker_logs);
+  qmcdriver.requestWalkerLogs(true);
+  CHECK(qmcdriver.allow_walker_logs);
+  qmcdriver.requestWalkerLogs(false);
+  CHECK_FALSE(qmcdriver.allow_walker_logs);
+
   // setStatus must be called before process
   std::string root_name{"Test"};
   //For later sections this appears to contain important state.

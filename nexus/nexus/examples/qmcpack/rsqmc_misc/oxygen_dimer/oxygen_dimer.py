@@ -19,7 +19,7 @@ settings(
     generate_only = 0,
     sleep         = 3,
     machine       = 'ws16',
-    ) 
+    )
 
 
 # specify optimization parameters
@@ -36,7 +36,7 @@ linopt1 = linear(
     usebuffer            = True,
     walkers              = 1,
     minwalkers           = 0.5,
-    maxweight            = 1e9, 
+    maxweight            = 1e9,
     usedrift             = True,
     minmethod            = 'quartic',
     beta                 = 0.025,
@@ -70,7 +70,7 @@ qmc_calcs = [
         samples     = 2048
         ),
     dmc(
-        warmupsteps   = 100, 
+        warmupsteps   = 100,
         blocks        = 400,
         steps         =  32,
         timestep      = 0.01,
@@ -117,7 +117,7 @@ p2q = generate_pw2qmcpack(
     write_psir   = False,
     dependencies = (scf,'orbitals'),
     )
-    
+
 # describe optimization run
 opt = generate_qmcpack(
     driver = 'legacy',
@@ -144,7 +144,7 @@ qmc = generate_qmcpack(
     input_type   = 'basic',
     pseudos      = ['O.BFD.xml'],
     bconds       = 'nnn',
-    jastrows     = [],            
+    jastrows     = [],
     calculations = qmc_calcs,
     dependencies = [(p2q,'orbitals'),
                     (opt,'jastrow')],

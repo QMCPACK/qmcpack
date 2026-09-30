@@ -14,6 +14,7 @@
 #include "SpinDensityInput.h"
 #include "ValidSpinDensityInput.h"
 #include "EstimatorTesting.h"
+#include "Message/UniformCommunicateError.h"
 #include "ParticleSet.h"
 #include "OhmmsData/Libxml2Doc.h"
 
@@ -24,8 +25,9 @@ namespace qmcplusplus
 {
 TEST_CASE("SpinDensityInput::readXML", "[estimators]")
 {
-  using input = testing::ValidSpinDensityInput;
-  for (auto input_xml : input::xml)
+  using Input = testing::SpinDensityInputs;
+  Input input;
+  for (auto input_xml : input)
   {
     Libxml2Document doc;
     REQUIRE(doc.parseFromString(input_xml));
@@ -46,6 +48,48 @@ TEST_CASE("SpinDensityInput::readXML", "[estimators]")
     CHECK(dev_par.grid == grid);
     TinyVector<int, SpinDensityInput::DIM> gdims(100, 10, 1);
     CHECK(dev_par.gdims == gdims);
+  }
+}
+
+TEST_CASE("SpinDensityInput folding input", "[estimators]")
+{
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"XML(
+<estimator type="spindensity">
+  <parameter name="grid">2 2 2</parameter>
+  <parameter name="corner">0 0 0</parameter>
+  <parameter name="cell">1 0 0 0 1 0 0 0 1</parameter>
+  <parameter name="folding">yes</parameter>
+</estimator>
+)XML"));
+  SpinDensityInput folded_input(doc.getRoot());
+  CHECK(folded_input.hasFolding());
+
+  REQUIRE(doc.parseFromString(R"XML(
+<estimator type="spindensity">
+  <parameter name="grid">2 2 2</parameter>
+</estimator>
+)XML"));
+  SpinDensityInput default_input(doc.getRoot());
+  CHECK_FALSE(default_input.hasFolding());
+
+  REQUIRE(doc.parseFromString(R"XML(
+<estimator type="spindensity">
+  <parameter name="grid">2 2 2</parameter>
+  <parameter name="folding">yes</parameter>
+</estimator>
+)XML"));
+  CHECK_THROWS_AS(SpinDensityInput(doc.getRoot()), UniformCommunicateError);
+}
+
+TEST_CASE("SpinDensityInput invalid input", "[estimators]")
+{
+  testing::InvalidSpinDensityInput input;
+  for (const auto input_xml : input)
+  {
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(input_xml));
+    CHECK_THROWS_AS(SpinDensityInput(doc.getRoot()), UniformCommunicateError);
   }
 }
 

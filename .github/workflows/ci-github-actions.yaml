@@ -14,7 +14,7 @@ jobs:
   ubuntu24:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/qmcpack/ubuntu24-openmpi:latest
+      image: ghcr.io/qmcpack/ci-ubuntu24-openmpi:latest
       options: -u 1001
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
@@ -61,7 +61,7 @@ jobs:
   ubuntu26:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/qmcpack/ubuntu26-openmpi:latest
+      image: ghcr.io/qmcpack/ci-ubuntu26-openmpi:latest
       options: -u 1001
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
@@ -158,7 +158,7 @@ jobs:
   centos10:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/qmcpack/centos10-openmpi:latest
+      image: ghcr.io/qmcpack/ci-centos10-openmpi:latest
       options: -u 1001
     env:
       GH_JOBNAME: ${{ matrix.jobname }}

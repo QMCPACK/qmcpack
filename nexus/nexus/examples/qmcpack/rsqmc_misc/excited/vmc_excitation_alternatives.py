@@ -40,16 +40,16 @@ scf = generate_pwscf(
     input_type   = 'generic',
     calculation  = 'scf',
     nspin        = 2,
-    input_dft    = 'lda', 
-    ecutwfc      = 200,   
-    conv_thr     = 1e-8, 
+    input_dft    = 'lda',
+    ecutwfc      = 200,
+    conv_thr     = 1e-8,
     nosym        = False,
     wf_collect   = False,
     system       = dia,
     tot_magnetization = 0,
     kgrid        = kg,
     kshift       = (0,0,0),
-    pseudos      = ['C.BFD.upf'], 
+    pseudos      = ['C.BFD.upf'],
     )
 
 nscf = generate_pwscf(
@@ -137,7 +137,7 @@ qmc_ground = generate_qmcpack(
 ################################################################################
 
 # In each of the following 4 examples, an optical excitation is performed in the up-channel
-# corresponding to the homo-lumo gap at the gamma k-point. All 4 examples lead to the same 
+# corresponding to the homo-lumo gap at the gamma k-point. All 4 examples lead to the same
 # excitation, but show the various ways that the excitation can be specfified
 
 # up channel, gamma vb gamma cb
@@ -167,7 +167,7 @@ qmc_optical = generate_qmcpack(
                     (opt,'jastrow')],
     )
 
-# up channel, band index 
+# up channel, band index
 qmc_optical = generate_qmcpack(
     driver         = 'legacy',
     det_format     = 'old',
@@ -254,7 +254,7 @@ qmc_optical = generate_qmcpack(
 ################################################################################
 
 # In each of the following 2 examples, an optical excitation is performed for a triplet state
-# corresponding to the homo-lumo gap at the gamma k-point. Both examples lead to the same 
+# corresponding to the homo-lumo gap at the gamma k-point. Both examples lead to the same
 # excitation, but show the various ways that the excitation can be specfified
 
 # triplet, energy index
@@ -316,7 +316,7 @@ qmc_optical = generate_qmcpack(
 ################################################################################
 
 # In each of the following 2 examples, an optical excitation is performed for a singlet state
-# corresponding to the homo-lumo gap at the gamma k-point. Both examples lead to the same 
+# corresponding to the homo-lumo gap at the gamma k-point. Both examples lead to the same
 # excitation, but show the various ways that the excitation can be specfified
 
 # singlet, energy index

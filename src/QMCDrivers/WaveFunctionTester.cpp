@@ -28,7 +28,6 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Numerics/DeterminantOperators.h"
-#include "Numerics/SymmetryOperations.h"
 #include <array>
 #include <sstream>
 
@@ -46,7 +45,6 @@ WaveFunctionTester::WaveFunctionTester(const ProjectData& project_data,
       PtclPool(ptclPool),
       checkRatio("no"),
       checkClone("no"),
-      checkHamPbyP("no"),
       wftricks("no"),
       checkEloc("no"),
       checkBasic("yes"),
@@ -59,7 +57,6 @@ WaveFunctionTester::WaveFunctionTester(const ProjectData& project_data,
 {
   m_param.add(checkRatio, "ratio");
   m_param.add(checkClone, "clone");
-  m_param.add(checkHamPbyP, "hamiltonianpbyp");
   m_param.add(sourceName, "source");
   m_param.add(wftricks, "orbitalutility");
   m_param.add(checkEloc, "printEloc");
@@ -98,7 +95,7 @@ WaveFunctionTester::~WaveFunctionTester() {}
  small displacement for the ith particle.
 */
 
-bool WaveFunctionTester::run()
+void WaveFunctionTester::run()
 {
   std::array<char, 16> fname;
   if (std::snprintf(fname.data(), fname.size(), "wftest.%03d", OHMMS::Controller->rank()) < 0)
@@ -156,7 +153,7 @@ bool WaveFunctionTester::run()
 
   //RealType ene = H.evaluate(W);
   //app_log() << " Energy " << ene << std::endl;
-  return true;
+  return;
 }
 
 void WaveFunctionTester::runCloneTest()
@@ -1084,7 +1081,6 @@ void WaveFunctionTester::runRatioTest()
   int nat = W.getTotalNum();
   ParticleSet::ParticleGradient Gp(nat), dGp(nat);
   ParticleSet::ParticleLaplacian Lp(nat), dLp(nat);
-  bool checkHam=(checkHamPbyP == "yes");
   Tau=0.025;
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
   while (it != it_end)
@@ -1095,11 +1091,7 @@ void WaveFunctionTester::runRatioTest()
     (**it).R=W.R;
     W.update();
     RealType logpsi=Psi.registerData(W,tbuffer);
-    RealType ene;
-    if (checkHam)
-      ene = H.registerData(W,tbuffer);
-    else
-      ene = H.evaluate(Psi, W);
+    RealType ene = H.evaluate(Psi, W);
     (*it)->DataSet=tbuffer;
     //RealType ene = H.evaluate(Psi, W);
     (*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0,1.0);
@@ -2045,10 +2037,6 @@ void WaveFunctionTester::runNodePlot()
 {
   app_log() << " ===== runNodePlot =====\n";
   xmlNodePtr kids = myNode->children;
-  std::string doEnergy("no");
-  ParameterSet aAttrib;
-  aAttrib.add(doEnergy, "energy");
-  aAttrib.put(myNode);
   std::vector<int> Grid;
   while (kids != NULL)
   {

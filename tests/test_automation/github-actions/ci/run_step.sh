@@ -194,6 +194,8 @@ case "$1" in
       ;;
       *"GCC15"*"-Werror"*)
         echo 'Configure for building with gcc -Werror flag enabled'
+        # figure out the actual target used by -march=native
+        gcc-15 -march=native -Q --help=target
         cmake -GNinja $CMAKE_OPTIONS \
               -DCMAKE_C_COMPILER=gcc-15 \
               -DCMAKE_CXX_COMPILER=g++-15 \

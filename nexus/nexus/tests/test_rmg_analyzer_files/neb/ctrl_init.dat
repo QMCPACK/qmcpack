@@ -1,0 +1,17 @@
+spin_polarization = "true"
+calculation_mode = "NEB Relax"
+
+image_per_node = "1"
+num_images = "2"
+max_neb_steps = "1"
+neb_spring_constant = "0.05"
+
+input_file_initial_image = "./image_initial/input"
+input_file_final_image = "./image_final/input"
+totale_initial_image = "-1.73498899"
+totale_final_image = "-1.73498890"
+
+image_infos = "
+./image01/  input  2
+./image02/  input  2
+"

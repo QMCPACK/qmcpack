@@ -50,8 +50,6 @@ CSVMC::CSVMC(const ProjectData& project_data,
   m_param.add(UseDrift, "useDrift");
   m_param.add(UseDrift, "usedrift");
   m_param.add(UseDrift, "use_drift");
-  equilBlocks = -1;
-  m_param.add(equilBlocks, "equilBlocks");
   qmc_driver_mode.set(QMC_MULTIPLE, 1);
 }
 
@@ -145,7 +143,7 @@ bool CSVMC::put(xmlNodePtr q)
  *
  * Similar to VMC::run
  */
-bool CSVMC::run()
+void CSVMC::run()
 {
   resetRun();
   //start the main estimator
@@ -161,8 +159,7 @@ bool CSVMC::run()
   {
 #pragma omp parallel
     {
-      int ip                 = omp_get_thread_num();
-      IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
+      int ip = omp_get_thread_num();
       //assign the iterators and resuse them
       MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
       CSMovers[ip]->startBlock(nSteps);
@@ -209,7 +206,7 @@ bool CSVMC::run()
       app_log() << "  samples are written to the config.h5" << std::endl;
   }
   //finalize a qmc section
-  return finalize(nBlocks, !wrotesamples);
+  finalize(nBlocks, !wrotesamples);
 }
 
 void CSVMC::resetRun()

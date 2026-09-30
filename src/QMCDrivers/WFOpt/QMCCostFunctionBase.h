@@ -22,12 +22,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/MPIObjectBase.h"
 #include "libxml/xpath.h"
-#include "type_traits/OptionalRef.hpp"
 
-#ifdef HAVE_LMY_ENGINE
-#include "formic/utils/matrix.h"
-#include "formic/utils/lmyengine/engine.h"
-#endif
 
 #include "EngineHandle.h"
 
@@ -35,8 +30,6 @@
 
 namespace qmcplusplus
 {
-class DescentEngine;
-
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
  *
@@ -83,11 +76,6 @@ public:
   ///process xml node
   bool put(xmlNodePtr cur);
   void resetCostFunction(std::vector<xmlNodePtr>& cset);
-  /** boolean to indicate if the cost function is valid.
-   *
-   * Can be used by optimizers to stop optimization.
-   */
-  bool IsValid;
   ///Save opt parameters to HDF5
   bool reportH5;
   bool CI_Opt;
@@ -98,13 +86,15 @@ public:
   ///return optimization parameter i
   Return_t Params(int i) const { return opt_vars[i]; }
   int getType(int i) const { return opt_vars.getType(i); }
-  ///return the cost value for CGMinimization
-  Return_rt Cost(bool needGrad = true);
 
   ///return the cost value for CGMinimization
   Return_rt computedCost();
   void printEstimates();
-  ///return the gradient of cost value for CGMinimization
+  /**
+   * @brief compute the derivatives of cost function with respect to parameters
+   * @param[out] PGradient derivatives
+   * @param[in] PM parameters with which derivatives are evaluated
+   */
   virtual void GradCost(std::vector<Return_rt>& PGradient,
                         const std::vector<Return_rt>& PM,
                         Return_rt FiniteDiff = 0) = 0;
@@ -116,17 +106,22 @@ public:
   ///reset the wavefunction
   virtual void resetPsi(bool final_reset = false) = 0;
 
+  /** run correlated sampling
+   * return effective walkers (\sum_i w_i)^2/(Nw * \sum_i w^2_i)
+   */
+  virtual EffectiveWeight correlatedSampling(bool needGrad = true) = 0;
+
+  /// check the validity of the effective weight calculated by correlatedSampling
+  bool isEffectiveWeightValid(EffectiveWeight effective_weight) const;
+
   inline void getParameterTypes(std::vector<int>& types) const { return opt_vars.getParameterTypeList(types); }
 
-  ///dump the current parameters and other report
-  void Report();
+
   ///report  parameters at the end
   void reportParameters();
 
   ///report  parameters in HDF5 at the end
   void reportParametersH5();
-  ///return the counter which keeps track of optimization steps
-  inline int getReportCounter() const { return ReportCounter; }
 
   void setWaveFunctionNode(xmlNodePtr cur) { m_wfPtr = cur; }
 
@@ -147,9 +142,6 @@ public:
   virtual Return_rt fillHamVec(std::vector<Return_rt>& ham);
   virtual void calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec);
 
-#ifdef HAVE_LMY_ENGINE
-  Return_rt LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine<Return_t>& EngineObj);
-#endif
 
   virtual void getConfigurations(const std::string& aroot) = 0;
 
@@ -158,21 +150,13 @@ public:
   virtual void checkConfigurations(EngineHandle& handle) = 0;
   //for SR method
   virtual void checkConfigurationsSR(EngineHandle& handle);
-#ifdef HAVE_LMY_ENGINE
-  /** similar to checkConfigurations. With additioal interaction with the LMY engine.
-   * if descentEngineObj is not nullopt, collect results to the descentEngineObj.
-   */
-  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                          OptionalRef<DescentEngine> descentEngineObj) = 0;
-
-#endif
 
   void setRng(RefVector<RandomBase<FullPrecRealType>> r);
 
   inline bool getneedGrads() const { return needGrads; }
 
   inline void setneedGrads(bool tf) { needGrads = tf; }
-  inline void setDMC() { vmc_or_dmc = 1.0; }
+
 
   inline const OptVariables& getOptVariables() const { return opt_vars; }
 
@@ -193,19 +177,13 @@ protected:
   ///Hamiltonian
   QMCHamiltonian& H;
 
-  ///if true, do not write the *.opt.#.xml
-  bool Write2OneXml;
   /** |E-E_T|^PowerE is used for the cost function
    *
    * default PowerE=1
    */
   int PowerE;
-  ///number of times cost function evaluated
-  int NumCostCalls;
   /// global number of samples to use in correlated sampling
   int NumSamples;
-  ///counter for output
-  int ReportCounter;
   ///weights for energy and variance in the cost function
   Return_rt w_en, w_var, w_abs, w_w;
   ///value of the cost function
@@ -243,13 +221,7 @@ protected:
   OptVariables opt_vars;
   // unchanged initial checked-in variables
   OptVariables InitVariables;
-  /** index mapping for <negate> constraints
-   *
-   * - negateVarMap[i][0] : index in opt_vars
-   * - negateVarMap[i][1] : index in opt_vars
-   */
-  ///index mapping for <negative> constraints
-  std::vector<TinyVector<int, 2>> negateVarMap;
+
   ///stream to which progress is sent
   std::ostream* msg_stream;
   ///xml node to be dumped
@@ -294,35 +266,18 @@ protected:
   std::vector<ParticleGradient*> dLogPsi;
   ///** Fixed  Laplacian , \f$\nabla^2\ln\Psi\f$, components */
   std::vector<ParticleLaplacian*> d2LogPsi;
-  ///stream for debug
-  std::unique_ptr<std::ostream> debug_stream;
 
-  bool checkParameters();
+
   void updateXmlNodes();
 
   /// Flag on whether the variational parameter override is output to the new wavefunction
   bool do_override_output;
-
-  /** run correlated sampling
-   * return effective walkers (\sum_i w_i)^2/(Nw * \sum_i w^2_i)
-   */
-  virtual EffectiveWeight correlatedSampling(bool needGrad = true) = 0;
-
-  /// check the validity of the effective weight calculated by correlatedSampling
-  bool isEffectiveWeightValid(EffectiveWeight effective_weight) const;
 
   /// survey all the optimizable objects
   UniqueOptObjRefs extractOptimizableObjects(TrialWaveFunction& psi) const;
 
   void resetOptimizableObjects(TrialWaveFunction& psi, const OptVariables& opt_variables) const;
 
-#ifdef HAVE_LMY_ENGINE
-  virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>& EngineObj)
-  {
-    APP_ABORT("NOT IMPLEMENTED");
-    return 0;
-  }
-#endif
 };
 } // namespace qmcplusplus
 #endif

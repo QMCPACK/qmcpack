@@ -45,7 +45,7 @@ public:
   using IVector       = typename Base::IVector;
   using TVector       = typename Base::TVector;
   using TMatrix       = typename Base::TMatrix;
-  using TTensor       = boost::multi::static_array<T, 3, buffer_type_T>;
+  using TTensor       = boost::multi::dynamic_array<T, 3, buffer_type_T>;
 
   using Base::MixedDensityMatrix;
   using Base::MixedDensityMatrix_noHerm;
@@ -192,10 +192,10 @@ public:
     if (noncollinear)
     {
       // treat 2 polarizations as separate elements in the batch
-      using TTensor_ref = boost::multi::array_ref<T, 3, decltype(TMN.origin())>;
-      TTensor_ref TMN_(TMN.origin(), {npol * nbatch, M, NAEA});
-      TTensor_ref T1_(T1.origin(), {npol * nbatch, M, NAEA});
-      TTensor_ref T2_(T2.origin(), {npol * nbatch, M, NAEA});
+      using TTensor_ref = boost::multi::array_ref<T, 3, decltype(TMN.base())>;
+      TTensor_ref TMN_(TMN.base(), {npol * nbatch, M, NAEA});
+      TTensor_ref T1_(T1.base(), {npol * nbatch, M, NAEA});
+      TTensor_ref T2_(T2.base(), {npol * nbatch, M, NAEA});
       SlaterDeterminantOperations::batched::apply_expM_noncollinear(V, TMN_, T1_, T2_, order, TA);
     }
     else
@@ -251,7 +251,7 @@ public:
     }
     TTensor TNN3D({nbatch, NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TTensor TNM3D({n1, n2, n3}, buffer_manager.get_generator().template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
+    IVector IWORK(extents_t<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     SlaterDeterminantOperations::batched::MixedDensityMatrix(hermA, Bi, std::forward<MatC>(C), LogOverlapFactor,
                                                              std::forward<TVec>(ovlp), TNN3D, TNM3D, IWORK, compact,
                                                              herm);
@@ -290,7 +290,7 @@ public:
     }
     TTensor TNN3D({nbatch, NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TTensor TNM3D({n1, n2, n3}, buffer_manager.get_generator().template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
+    IVector IWORK(extents_t<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     SlaterDeterminantOperations::batched::DensityMatrices(Left, Right, G, LogOverlapFactor, std::forward<TVec>(ovlp),
                                                           TNN3D, TNM3D, IWORK, compact, herm);
   }
@@ -316,7 +316,7 @@ public:
     int nbatch = Bi.size();
     assert(ovlp.size() == nbatch);
     TTensor TNN3D({nbatch, NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
+    IVector IWORK(extents_t<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     SlaterDeterminantOperations::batched::Overlap(hermA, Bi, LogOverlapFactor, std::forward<TVec>(ovlp), TNN3D, IWORK,
                                                   herm);
   }
@@ -338,22 +338,22 @@ public:
     TMatrix T_({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix scl({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     int sz = ma::gqr_optimal_workspace_size(AT[0]);
-    TVector WORK(iextensions<1u>{nbatch * sz}, buffer_manager.get_generator().template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
+    TVector WORK(extents_t<1u>{nbatch * sz}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(extents_t<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     for (int i = 0; i < nbatch; i++)
       ma::transpose(*Ai[i], AT[i]);
     // careful, expects fortran order
-    geqrfStrided(NMO, NAEA, AT.origin(), NMO, NMO * NAEA, T_.origin(), NMO, IWORK.origin(), nbatch);
+    geqrfStrided(NMO, NAEA, AT.base(), NMO, NMO * NAEA, T_.base(), NMO, IWORK.base(), nbatch);
     using ma::determinant_from_geqrf;
     using ma::scale_columns;
     for (int i = 0; i < nbatch; i++)
-      *(detR + i) = determinant_from_geqrf(NAEA, AT[i].origin(), NMO, scl[i].origin(), LogOverlapFactor);
-    gqrStrided(NMO, NAEA, NAEA, AT.origin(), NMO, NMO * NAEA, T_.origin(), NMO, WORK.origin(), sz, IWORK.origin(),
+      *(detR + i) = determinant_from_geqrf(NAEA, AT[i].base(), NMO, scl[i].base(), LogOverlapFactor);
+    gqrStrided(NMO, NAEA, NAEA, AT.base(), NMO, NMO * NAEA, T_.base(), NMO, WORK.base(), sz, IWORK.base(),
                nbatch);
     for (int i = 0; i < nbatch; i++)
     {
       ma::transpose(AT[i], *Ai[i]);
-      scale_columns(NMO, NAEA, (*Ai[i]).origin(), (*Ai[i]).stride(), scl[i].origin());
+      scale_columns(NMO, NAEA, (*Ai[i]).base(), (*Ai[i]).stride(), scl[i].base());
     }
 #else
     int nw = Ai.size();
@@ -377,22 +377,22 @@ public:
     TMatrix T_({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix scl({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     int sz = ma::gqr_optimal_workspace_size(AT[0]);
-    TVector WORK(iextensions<1u>{nbatch * sz}, buffer_manager.get_generator().template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
+    TVector WORK(extents_t<1u>{nbatch * sz}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(extents_t<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     for (int i = 0; i < nbatch; i++)
       ma::transpose(*Ai[i], AT[i]);
     // careful, expects fortran order
-    geqrfStrided(NMO, NAEA, AT.origin(), NMO, NMO * NAEA, T_.origin(), NMO, IWORK.origin(), nbatch);
+    geqrfStrided(NMO, NAEA, AT.base(), NMO, NMO * NAEA, T_.base(), NMO, IWORK.base(), nbatch);
     using ma::determinant_from_geqrf;
     using ma::scale_columns;
     for (int i = 0; i < nbatch; i++)
-      determinant_from_geqrf(NAEA, AT[i].origin(), NMO, scl[i].origin());
-    gqrStrided(NMO, NAEA, NAEA, AT.origin(), NMO, NMO * NAEA, T_.origin(), NMO, WORK.origin(), sz, IWORK.origin(),
+      determinant_from_geqrf(NAEA, AT[i].base(), NMO, scl[i].base());
+    gqrStrided(NMO, NAEA, NAEA, AT.base(), NMO, NMO * NAEA, T_.base(), NMO, WORK.base(), sz, IWORK.base(),
                nbatch);
     for (int i = 0; i < nbatch; i++)
     {
       ma::transpose(AT[i], *Ai[i]);
-      scale_columns(NMO, NAEA, (*Ai[i]).origin(), (*Ai[i]).stride(), scl[i].origin());
+      scale_columns(NMO, NAEA, (*Ai[i]).base(), (*Ai[i]).stride(), scl[i].base());
     }
 #else
     int nw = Ai.size();

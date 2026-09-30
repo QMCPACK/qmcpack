@@ -103,6 +103,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 # Set extra debug flags
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer")
+# Debug checks of standard library https://libcxx.llvm.org/Hardening.html
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG")
 
 #--------------------------------------
 # Special architectural flags

@@ -9,6 +9,14 @@ summary of sample_inputs
   TiO2_band_structure.in  https://lists.quantum-espresso.org/pipermail/users/2011-February/019373.html
   VO2_M1_afm.in           https://doi.org/10.1103/PhysRevMaterials.1.065408
 
+Nexus-authored run-mode regression inputs
+  nexus_argon_scf.in       self-consistent field calculation
+  nexus_h2_relax.in        ionic relaxation
+  nexus_argon_bands.in     band-structure path calculation
+  nexus_hubbard_e2_e3.in   Hubbard B, E2, and E3 parameters
+
+These four files are original Nexus test fixtures and were not adapted from
+the Quantum ESPRESSO example inputs.
+
 summary of sample_structures
   VO2_M1_afm.xsf  https://doi.org/10.1103/PhysRevMaterials.1.065408
-

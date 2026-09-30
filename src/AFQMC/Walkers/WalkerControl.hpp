@@ -89,7 +89,7 @@ inline int swapWalkersSimple(WlkBucket& wset,
   {
     if (plus[ic] == MyContext)
     {
-      comm.send_n(Wexcess[nsend].origin(), Wexcess[nsend].size(), minus[ic], plus[ic] + 999);
+      comm.send_n(Wexcess[nsend].base(), Wexcess[nsend].size(), minus[ic], plus[ic] + 999);
       ++nsend;
     }
     if (minus[ic] == MyContext)
@@ -165,7 +165,7 @@ inline int swapWalkersAsync(WlkBucket& wset,
       }
       else
       {
-        requests.emplace_back(comm.isend(Wexcess[nsend].origin(), Wexcess[nsend].origin() + countSend * get<1>(Wexcess.sizes()),
+        requests.emplace_back(comm.isend(Wexcess[nsend].base(), Wexcess[nsend].base() + countSend * get<1>(Wexcess.sizes()),
                                          minus[ic], plus[ic] + 1999));
         nsend += countSend;
         countSend = 1;

@@ -22,7 +22,7 @@
 #      Returns a SimulationBundle object.                            #
 #      Syntax:                                                       #
 #        sim_bundle = bundle(sim1,sim2,sim3,...)                     #
-#                                                                    #                                        
+#                                                                    #
 #====================================================================#
 
 
@@ -30,11 +30,11 @@ from .machines import Workstation,Job
 from .simulation import Simulation,NullSimulationInput,NullSimulationAnalyzer
 
 class SimulationBundleInput(NullSimulationInput):
-    None
+    pass
 #end class SimulationBundleInput
 
 class SimulationBundleAnalyzer(NullSimulationAnalyzer):
-    None
+    pass
 #end class SimulationBundleAnalyzer
 
 
@@ -54,13 +54,24 @@ class SimulationBundle(Simulation):
         #end if
         sims = list(sims) # make a copy
         if len(sims)==0:
-            self.error('attempted to bundle 0 simulations\nat least one simulation must be provided to bundle')
+            msg = (
+                'attempted to bundle 0 simulations\n'
+                'at least one simulation must be provided to bundle'
+                )
+            raise ValueError(msg)
         #end if
         for sim in sims:
             if not isinstance(sim,Simulation):
-                self.error('attempted to bundle non-simulation object: '+sim.__class__.__name__)
+                msg = 'attempted to bundle non-simulation object: '+sim.__class__.__name__
+                raise TypeError(msg)
             elif not sim.bundleable:
-                self.error('attempted to bundle simulation that does not support bundling\nsim type: {0}\nsim identifier: {1}\nsim directory: {2}'.format(sim.__class__.__name__,sim.identifier,sim.locdir))
+                msg = (
+                    'attempted to bundle simulation that does not support bundling\n'
+                    f'sim type: {sim.__class__.__name__}\n'
+                    f'sim identifier: {sim.identifier}\n'
+                    f'sim directory: {sim.locdir}'
+                    )
+                raise ValueError(msg)
             #end if
             sim.bundled = True
             sim.bundler = self
@@ -109,7 +120,7 @@ class SimulationBundle(Simulation):
         self.allow_analyze            = False
     #end def __init__
 
-            
+
     #def init_job(self):
     #    None # this is to override the default behavior of Simulation
     ##end def init_job
@@ -133,19 +144,27 @@ class SimulationBundle(Simulation):
             for sim in self.sims:
                 sims[sim.simid]=sim
             #end for
-            msg = 'attempted to bundle simulations that depend on each other\nsimulations can only be bundled if they can be executed simultaneously\nbundle identifier, simid, and directory:\n  {0:<8} {1:>4} {2}\n'.format(self.identifier,self.simid,self.locdir)
+            msg = (
+                'attempted to bundle simulations that depend on each other\n'
+                'simulations can only be bundled if they can be executed simultaneously\n'
+                'bundle identifier, simid, and directory:\n'
+                f'  {self.identifier:<8} {self.simid:>4} {self.locdir}\n'
+                )
             msg+='sims in the bundle that can remain:\n'
             for simid in sorted(sim_ids-internal_deps):
                 sim = sims[simid]
-                msg +='  {0:<8} {1:>4} {2}\n'.format(sim.identifier,sim.simid,sim.locdir)
+                msg +=f'  {sim.identifier:<8} {sim.simid:>4} {sim.locdir}\n'
             #end for
             msg+='sims in the bundle that need to be removed:\n'
             for simid in sorted(internal_deps):
                 sim = sims[simid]
-                msg +='  {0:<8} {1:>4} {2}\n'.format(sim.identifier,sim.simid,sim.locdir)
+                msg +=f'  {sim.identifier:<8} {sim.simid:>4} {sim.locdir}\n'
             #end for
-            msg+='please remove the necessary sims from the bundle and try again\nthe excluded sims can likely be bundled separately'
-            self.error(msg,header='bundle')
+            msg+=(
+                'please remove the necessary sims from the bundle and try again\n'
+                'the excluded sims can likely be bundled separately'
+                )
+            raise ValueError(msg)
         #end if
         self.depends(*deps)
     #end def bundle_dependencies
@@ -181,20 +200,37 @@ class SimulationBundle(Simulation):
             jobs.append(job)
         #end for
         if len(thread_set)>1:
-            self.error('bundling jobs with different numbers of threads is not yet supported\nthread inputs provided: {0}'.format(sorted(thread_set)),trace=False)
+            msg = (
+                'bundling jobs with different numbers of threads is not yet supported\n'
+                f'thread inputs provided: {sorted(thread_set)}'
+                )
+            raise NotImplementedError(msg)
         #end if
         if len(queue_set)>1:
-            self.error('bundling jobs with different queues is not allowed\nqueue inputs provided: {0}'.format(sorted(queue_set)),trace=False)
+            msg = (
+                'bundling jobs with different queues is not allowed\n'
+                f'queue inputs provided: {sorted(queue_set)}'
+                )
+            raise ValueError(msg)
         #end if
         if len(presub_set)>1:
             ps = ''
             for psub in sorted(presub_set):
                 ps+=psub+'\n\n'
             #end for
-            self.error('bundling jobs with different pre-submission commands is not allowed\npresub inputs provided: \n{0}'.format(ps),trace=False)
+            msg = (
+                'bundling jobs with different pre-submission commands is not allowed\n'
+                'presub inputs provided: \n'
+                f'{ps}'
+                )
+            raise ValueError(msg)
         #end if
         if len(machine_set)>1:
-            self.error('attempted to bundle jobs across these machines: {0}\n  jobs may only be bundled on the same machine'.format(sorted(machine_set)),trace=False)
+            msg = (
+                f'attempted to bundle jobs across these machines: {sorted(machine_set)}\n'
+                '  jobs may only be bundled on the same machine'
+                )
+            raise ValueError(msg)
         #end if
         threads = list(thread_set)[0]
         queue   = list(queue_set)[0]
@@ -269,7 +305,7 @@ class SimulationBundle(Simulation):
             if not self.allow_analyze:
                 self.allow_analyze = self.check_allowed('analyzed')
             #end if
-            
+
             # progress the bundle itself
             Simulation.progress(self)
         #end if

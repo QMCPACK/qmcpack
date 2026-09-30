@@ -48,3 +48,6 @@ else()
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
   set_property(TEST ${UTEST_NAME} APPEND PROPERTY LABELS "afqmc")
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

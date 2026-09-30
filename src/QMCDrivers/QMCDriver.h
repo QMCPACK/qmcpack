@@ -94,7 +94,7 @@ public:
   /// whether to allow traces
   bool allow_traces;
   /// traces xml
-  xmlNodePtr traces_xml;
+  xmlNodePtr traces_xml{nullptr};
 
   /// whether to allow traces
   bool allow_walker_logs;
@@ -230,11 +230,6 @@ protected:
    */
   int Period4WalkerDump;
 
-  /** period of recording walker positions and IDs for forward walking afterwards
-   *
-   */
-  int Period4ConfigDump;
-
   ///current step
   IndexType CurrentStep;
 
@@ -337,7 +332,7 @@ protected:
    * Accumulate energy and weight is written to a hdf5 file.
    * Finialize the estimators
    */
-  bool finalize(int block, bool dumpwalkers = true);
+  void finalize(int block, bool dumpwalkers = true);
 
   int rotation;
   std::string getRotationName(std::string RootName);

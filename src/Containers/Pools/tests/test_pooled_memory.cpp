@@ -114,24 +114,24 @@ TEST_CASE("pack scalar", "[utilities]")
       pm_walker.Current = size;
       Timer PoolTimer;
       pm_walker.allocate();
-      std::cout << "PooledMemory Allocate " << pm_walker.byteSize() << " bytes Time " << PoolTimer.elapsed()
+      app_log() << "PooledMemory Allocate " << pm_walker.byteSize() << " bytes Time " << PoolTimer.elapsed()
                 << std::endl;
       PoolTimer.restart();
       PooledMemory<double> pm_walker_copy(pm_walker);
-      std::cout << "PooledMemory Copy Time " << PoolTimer.elapsed() << std::endl;
+      app_log() << "PooledMemory Copy Time " << PoolTimer.elapsed() << std::endl;
     }
 
     {
       PooledData<double> pd_walker;
       Timer PoolTimer;
       pd_walker.resize(size / 8);
-      std::cout << "PooledData Allocate " << pd_walker.byteSize() << " bytes Time " << PoolTimer.elapsed() << std::endl;
+      app_log() << "PooledData Allocate " << pd_walker.byteSize() << " bytes Time " << PoolTimer.elapsed() << std::endl;
       PoolTimer.restart();
       PooledData<double> pd_walker_copy(pd_walker);
-      std::cout << "PooledData Copy Time " << PoolTimer.elapsed() << std::endl;
+      app_log() << "PooledData Copy Time " << PoolTimer.elapsed() << std::endl;
     }
 
-    std::cout << std::endl;
+    app_log() << std::endl;
   }
 #endif
 }

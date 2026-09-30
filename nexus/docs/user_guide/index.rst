@@ -11,8 +11,12 @@ User Guide
     overview
     installation
     examples
+    nexus-behavior
     user-scripts
     nexus-jobs
     qmcpack-input-mod
     qmcpack-input-gen
+    qmcpack-restarts
+    pwscf
+    rmg
     adding-supercomputer-machine

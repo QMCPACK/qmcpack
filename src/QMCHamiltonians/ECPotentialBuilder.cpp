@@ -31,10 +31,7 @@ namespace qmcplusplus
  *\param els the positions of the electrons
  *\param psi trial wavefunction
  */
-ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h,
-                                       ParticleSet& ions,
-                                       ParticleSet& els,
-                                       Communicate* c)
+ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h, ParticleSet& ions, ParticleSet& els, Communicate* c)
     : MPIObjectBase(c),
       hasLocalPot(false),
       hasNonLocalPot(false),
@@ -335,7 +332,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
     std::ifstream fin(fname.c_str(), std::ios_base::in);
     if (!fin)
     {
-      ERRORMSG("Could not open file " << fname)
+      app_error() << "Could not open file " << fname << std::endl;
       exit(-1);
     }
     // Read Number of potentials (local and non) for this atom

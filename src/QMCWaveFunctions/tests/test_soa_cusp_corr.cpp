@@ -36,7 +36,6 @@ TEST_CASE("readCuspInfo", "[wavefunction]")
   REQUIRE(okay);
 
   // N
-  CHECK(info(0, 0).redo == Approx(0.0));                   // redo
   CHECK(info(0, 0).C == Approx(0.0));                      // C
   CHECK(info(0, 0).sg == Approx(1.0));                     // sg
   CHECK(info(0, 0).Rc == Approx(0.0769130700800000));      // rc
@@ -305,7 +304,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
   values = 0.0;
   sposet->evaluateValue(elec, 0, values);
-  //std::cout << "values = " << values << std::endl;
+  //app_log() << "values = " << values << std::endl;
   // Values from gen_cusp_corr.py
   CHECK(values[0] == Approx(9.5150713253));
   CHECK(values[1] == Approx(-0.0086731542));
@@ -319,9 +318,9 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   values = 0.0;
   sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
 
-  //std::cout << "values = " << values << std::endl;
-  //std::cout << "dpsi = " << dpsi << std::endl;
-  //std::cout << "d2psi = " << d2psi << std::endl;
+  //app_log() << "values = " << values << std::endl;
+  //app_log() << "dpsi = " << dpsi << std::endl;
+  //app_log() << "d2psi = " << d2psi << std::endl;
 
   // Values from gen_cusp_corr.py
   CHECK(values[0] == Approx(9.5150713253));
@@ -544,7 +543,6 @@ TEST_CASE("broadcastCuspInfo", "[wavefunction]")
     cp.alpha[2] = 1.3;
     cp.alpha[3] = 1.4;
     cp.alpha[4] = 1.5;
-    cp.redo     = 1;
   }
 
   broadcastCuspInfo(cp, *c, root);
@@ -557,7 +555,6 @@ TEST_CASE("broadcastCuspInfo", "[wavefunction]")
   CHECK(cp.alpha[2] == Approx(1.3));
   CHECK(cp.alpha[3] == Approx(1.4));
   CHECK(cp.alpha[4] == Approx(1.5));
-  REQUIRE(cp.redo == 1);
 }
 
 

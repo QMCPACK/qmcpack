@@ -29,7 +29,6 @@
 #include <Message/UniformCommunicateError.h>
 #include "QMCWaveFunctions/BsplineFactory/BsplineReader.h"
 #include "Particle/DistanceTable.h"
-#include "mpi/collectives.h"
 
 namespace qmcplusplus
 {

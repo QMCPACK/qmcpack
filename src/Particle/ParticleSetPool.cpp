@@ -64,7 +64,7 @@ void ParticleSetPool::addParticleSet(std::unique_ptr<ParticleSet>&& p)
   if (pit == myPool.end())
   {
     auto& pname = p->getName();
-    LOGMSG("  Adding " << pname << " ParticleSet to the pool")
+    qmcplusplus::app_log() << "  Adding " << pname << " ParticleSet to the pool" << std::endl;
     if (&p->getSimulationCell() != simulation_cell_.get())
       throw std::runtime_error("Bug detected! ParticleSetPool::addParticleSet requires p created with the simulation "
                                "cell from ParticleSetPool.");
@@ -102,9 +102,7 @@ bool ParticleSetPool::readSimulationCellXML(xmlNodePtr cur)
 }
 
 void ParticleSetPool::createSimulationCellByLattice(const Lattice& lattice)
-{
-  simulation_cell_ = std::make_unique<SimulationCell>(lattice);
-}
+{ simulation_cell_ = std::make_unique<SimulationCell>(lattice); }
 
 /** process an xml element
  * @param cur current xmlNodePtr
@@ -117,7 +115,6 @@ bool ParticleSetPool::put(xmlNodePtr cur)
 {
   ReportEngine PRE("ParticleSetPool", "put");
   std::string id("e");
-  std::string role("none");
   std::string randomR("no");
   std::string randomsrc;
   std::string useGPU;
@@ -125,16 +122,12 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id, "id");
   pAttrib.add(id, "name");
-  pAttrib.add(role, "role");
   pAttrib.add(randomR, "random");
   pAttrib.add(randomsrc, "randomsrc");
   pAttrib.add(randomsrc, "random_source");
   pAttrib.add(spinor, "spinor", {"no", "yes"});
   pAttrib.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
   pAttrib.put(cur);
-  //backward compatibility
-  if (id == "e" && role == "none")
-    role = "MC";
   ParticleSet* pTemp = getParticleSet(id);
   if (pTemp == 0)
   {

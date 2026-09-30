@@ -76,6 +76,13 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string,
   auto& spo = dynamic_cast<const LCAOrbitalSet&>(twf_ptr->getSPOSet(check_sponame));
   REQUIRE(spo.getOrbitalSetSize() == check_spo_size);
   REQUIRE(spo.getBasisSetSize() == check_basisset_size);
+
+  // These entries are in the latter half of KPTS_0/eigenset_0 in LiH.orbs.h5.
+  // Check every rank: complex raw-pointer broadcasts must transfer both scalar
+  // components of the full coefficient matrix.
+  CHECK((*spo.C)(42, 53) == ValueApprox(0.674748765612011));
+  CHECK((*spo.C)(52, 73) == ValueApprox(5.05678043217509));
+  CHECK((*spo.C)(62, 73) == ValueApprox(5.06863977624421));
 }
 
 TEST_CASE("SPO input spline from xml LiH_msd", "[wavefunction]")

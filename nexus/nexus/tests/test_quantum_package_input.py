@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_INPUT)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from pathlib import Path
 
@@ -44,7 +42,7 @@ def make_serial_reference(qi):
     ref = '    ref = {\n'
     for k in sorted(s.keys()):
         v = s[k]
-        ref +="        '{}' : {},\n".format(k,format_value(v))
+        ref +=f"        '{k}' : {format_value(v)},\n"
     #end for
     ref += '        }\n'
     return ref
@@ -57,7 +55,7 @@ serial_references = dict()
 def generate_serial_references():
     import numpy as np
     from ..developer import obj
-    
+
     # references for read
     serial_references['h2o.ezfio read'] = {
         'ao_basis/ao_basis' : 'cc-pvtz',
@@ -184,6 +182,7 @@ def generate_serial_references():
             [0.0, 0.75716, -0.58626]]),
         'structure/scale' : 1.0,
         'structure/units' : 'A',
+        'structure/vel' : None,
         }
 
     serial_references['o2.ezfio gen'] = {
@@ -214,6 +213,7 @@ def generate_serial_references():
             [1.2074, 0.0, 0.0]]),
         'structure/scale' : 1.0,
         'structure/units' : 'A',
+        'structure/vel' : None,
         }
 
 #end def generate_serial_references
@@ -238,7 +238,7 @@ def check_vs_serial_reference(qi,name):
 
 h2o_xyz = '''3
 
-O  0.000000  0.000000  0.000000 
+O  0.000000  0.000000  0.000000
 H  0.000000  0.757160  0.586260
 H  0.000000  0.757160 -0.586260
 '''
@@ -323,4 +323,4 @@ def test_generate(tmp_path):
     assert(qi.is_valid())
 #end def test_generate
 
-    
+

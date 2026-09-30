@@ -74,7 +74,7 @@ TEST_CASE("Bare Force", "[hamiltonian]")
 
   force.evaluate(elec);
 
-  //std::cout << " Force = " << force.getForces() << std::endl;
+  //app_log() << " Force = " << force.getForces() << std::endl;
   CHECK(force.getForces()[0][0] == Approx(3.2));
   CHECK(force.getForces()[0][1] == Approx(3.4));
   CHECK(force.getForces()[0][2] == Approx(0.0));
@@ -87,13 +87,13 @@ void check_force_copy(ForceChiesaPBCAA& force, ForceChiesaPBCAA& force2)
   REQUIRE(force2.N_basis == force.N_basis);
   REQUIRE(force2.getAddIonIon() == force.getAddIonIon());
   REQUIRE(force2.Sinv.size() == force.Sinv.size());
-  std::cout << force.Sinv << std::endl;
-  std::cout << force2.Sinv << std::endl;
+  app_log() << force.Sinv << std::endl;
+  app_log() << force2.Sinv << std::endl;
   for (int i = 0; i < force2.Sinv.rows(); i++)
   {
     for (int j = 0; j < force2.Sinv.cols(); j++)
     {
-      //std::cout << "Sinv " << i << "  " << j << " " << force2.Sinv(i,j) << " "  << force.Sinv(i,j) << std::endl;
+      //app_log() << "Sinv " << i << "  " << j << " " << force2.Sinv(i,j) << " "  << force.Sinv(i,j) << std::endl;
       CHECK(force2.Sinv(i, j) == Approx(force.Sinv(i, j)));
     }
   }
@@ -173,8 +173,8 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
 
   elec.update();
   force.evaluate(elec);
-  std::cout << " Force = " << force.getForces() << std::endl;
-  std::cout << " Forces_IonIon = " << force.getForcesIonIon() << std::endl;
+  app_log() << " Force = " << force.getForces() << std::endl;
+  app_log() << " Forces_IonIon = " << force.getForcesIonIon() << std::endl;
 
   // Unvalidated externally
   CHECK(force.getForces()[0][0] == Approx(3.186559306));
@@ -194,7 +194,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
 
   CoulombPBCAB elecIonForce(ions, elec, true);
   elecIonForce.evaluate(elec); // Not computed upon construction
-  std::cout << " CoulombElecIon = " << elecIonForce.getForces() << std::endl;
+  app_log() << " CoulombElecIon = " << elecIonForce.getForces() << std::endl;
   CHECK(elecIonForce.getForces()[0][0] == Approx(3.186558296));
   CHECK(elecIonForce.getForces()[0][1] == Approx(3.352572459));
   CHECK(elecIonForce.getForces()[1][0] == Approx(-0.3950094326));
@@ -298,8 +298,8 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
 
   force.setAddIonIon(true); // is true by default
   force.evaluate(elec);
-  std::cout << " Force ionion = " << force.getForcesIonIon() << std::endl;
-  std::cout << " Force = " << force.getForces() << std::endl;
+  app_log() << " Force ionion = " << force.getForcesIonIon() << std::endl;
+  app_log() << " Force = " << force.getForces() << std::endl;
   CHECK(force.getForces()[0][0] == Approx(8.99061106).epsilon(1e-4));
   CHECK(force.getForces()[0][1] == Approx(14.86091659).epsilon(1e-4));
   CHECK(force.getForces()[0][2] == Approx(0.0));
@@ -468,7 +468,7 @@ TEST_CASE("AC Force", "[hamiltonian]")
 
   CHECK(vold == Approx(0));
   CHECK(vnew == Approx(0));
-  REQUIRE(force_old.get(std::cout) == true);
+  REQUIRE(force_old.get(app_log()) == true);
 
   force_old.add2Hamiltonian(elec, psi, qmcHamiltonian);
 

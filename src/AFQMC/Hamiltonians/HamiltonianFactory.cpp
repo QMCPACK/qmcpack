@@ -255,7 +255,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       app_log() << " Shape of one-body Hamiltonian: (" << NMO << ", " << NMO << ")." << std::endl;
     }
   }
-  TG.Global().broadcast_n(to_address(H1.origin()), H1.num_elements(), 0);
+  TG.Global().broadcast_n(to_address(H1.base()), H1.num_elements(), 0);
 
   // now read the integrals
 #ifdef QMC_COMPLEX

@@ -2,49 +2,45 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.VASP_SIMULATION)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from pathlib import Path
 from . import isolate_nexus_core, create_pseudo_files
-from nexus.nexus_base import nexus_core
+from nexus.nexus_base import nexus_config
 from ..testing import clear_all_sims
-from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,check_object_eq
+from ..testing import object_eq,check_object_eq
 
 from .test_vasp_input import c_potcar_text, TEST_FILES
 
 
 def setup_vasp_sim(path,identifier='vasp',*,copy_files=False):
     import shutil
-    from ..nexus_base import nexus_core
     from ..machines import job
     from ..physical_system import generate_physical_system
     from ..vasp import generate_vasp,Vasp
 
-    nexus_core.runs = ''
+    nexus_config.runs = ''
 
     dia16 = generate_physical_system(
         structure = TEST_FILES['d16bulk.POSCAR'],
-        C         = 4                  
+        C         = 4
         )
 
     sim = generate_vasp(
         identifier   = identifier,
         path         = path,
         job          = job(machine='ws1',cores=1),
-        system       = dia16,            
-        pseudos      = ['C.POTCAR'], 
+        system       = dia16,
+        pseudos      = ['C.POTCAR'],
         input_type   = 'generic',
-        istart       = 0, 
+        istart       = 0,
         icharg       = 2,
         encut        = 450,
         nsw          = 5,
         ibrion       = 2,
         isif         = 2,
         kcenter      = 'monkhorst',
-        kgrid        = (2,2,2),                
-        kshift       = (0,0,0),              
+        kgrid        = (2,2,2),
+        kshift       = (0,0,0),
         )
 
     assert(isinstance(sim,Vasp))
@@ -60,7 +56,7 @@ def setup_vasp_sim(path,identifier='vasp',*,copy_files=False):
             shutil.copy2(TEST_FILES[vfile],path)
         #end for
     #end if
-        
+
     return sim
 #end def setup_vasp_sim
 
@@ -83,9 +79,9 @@ def test_minimal_init():
 @isolate_nexus_core
 def test_check_result(tmp_path):
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
     create_pseudo_files(
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],
@@ -106,7 +102,7 @@ def test_check_result(tmp_path):
 def test_get_result(tmp_path):
     import shutil
     from numpy import array
-    from ..developer import obj, NexusError
+    from ..developer import obj
 
     create_pseudo_files(
         tmp_dir=tmp_path,
@@ -116,16 +112,12 @@ def test_get_result(tmp_path):
 
     sim = setup_vasp_sim(tmp_path, identifier='diamond', copy_files=True)
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
+
 
     pcfile = tmp_path / 'diamond_POSCAR'
     ccfile = tmp_path / (sim.identifier+'.CONTCAR')
@@ -181,6 +173,7 @@ def test_get_result(tmp_path):
                                  dtype=float),
               scale           = 1.0,
               units           = 'A',
+              vel             = None,
               ),
           )
 
@@ -196,9 +189,9 @@ def test_incorporate_result(tmp_path):
     from numpy import array
     from ..developer import obj,to_obj
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
     create_pseudo_files(
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],
@@ -267,9 +260,9 @@ def test_incorporate_result(tmp_path):
 @isolate_nexus_core
 def test_check_sim_status(tmp_path):
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
     create_pseudo_files(
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],
@@ -305,9 +298,9 @@ def test_check_sim_status(tmp_path):
 @isolate_nexus_core
 def test_get_output_files(tmp_path):
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
     create_pseudo_files(
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],

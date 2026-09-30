@@ -57,7 +57,7 @@ VMC::VMC(const ProjectData& project_data,
   prevStepsBetweenSamples = nStepsBetweenSamples;
 }
 
-bool VMC::run()
+void VMC::run()
 {
   resetRun();
   //start the main estimator
@@ -79,8 +79,6 @@ bool VMC::run()
 #pragma omp parallel
     {
       int ip = omp_get_thread_num();
-      //IndexType updatePeriod=(qmc_driver_mode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
-      IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
       //assign the iterators and resuse them
       MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
       Movers[ip]->startBlock(nSteps);
@@ -142,7 +140,7 @@ bool VMC::run()
       app_log() << "  samples are written to the config.h5" << std::endl;
   }
   //finalize a qmc section
-  return finalize(nBlocks, !wrotesamples);
+  finalize(nBlocks, !wrotesamples);
 }
 
 void VMC::resetRun()

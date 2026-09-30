@@ -9,7 +9,7 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(OMP_RT_SRCS OMPallocator.cpp)
+set(OMP_RT_SRCS OMPTargetUsage.cpp)
 if(ENABLE_OFFLOAD)
   set(OMP_RT_SRCS ${OMP_RT_SRCS} OMPDeviceManager.cpp)
 endif(ENABLE_OFFLOAD)

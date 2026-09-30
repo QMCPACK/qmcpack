@@ -16,6 +16,17 @@
 
 include(test_labels)
 
+# Reserve one GPU for a test. CTest obtains the available GPU IDs from the
+# resource specification generated in the top-level CMakeLists.txt.
+function(SET_TEST_GPU_RESOURCES TESTNAME)
+  if(ENABLE_CUDA
+     OR ENABLE_ROCM
+     OR ENABLE_SYCL
+     OR ENABLE_OFFLOAD)
+    set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_GROUPS "gpus:1")
+  endif()
+endfunction()
+
 # Function to copy a directory
 function(COPY_DIRECTORY SRC_DIR DST_DIR)
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${DST_DIR}")
@@ -124,7 +135,6 @@ function(
   PROCS
   THREADS
   TEST_ADDED
-  TEST_LABELS
   ${ARGN})
   math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
   set(QMC_APP $<TARGET_FILE:qmcpack>)
@@ -142,8 +152,8 @@ function(
     if(${TOT_PROCS} GREATER ${TEST_MAX_PROCS})
       message(VERBOSE "Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
     else()
-      add_test(NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS}
-                                        ${QMC_APP} ${ARGN})
+      add_test(NAME ${TESTNAME} COMMAND ${QMC_GPU_TEST_LAUNCHER} ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS}
+                                        ${MPIEXEC_PREFLAGS} ${QMC_APP} ${ARGN})
       set_tests_properties(
         ${TESTNAME}
         PROPERTIES FAIL_REGULAR_EXPRESSION
@@ -168,7 +178,7 @@ function(
     endif()
   else()
     if((${PROCS} STREQUAL "1"))
-      add_test(NAME ${TESTNAME} COMMAND ${QMC_APP} ${ARGN})
+      add_test(NAME ${TESTNAME} COMMAND ${QMC_GPU_TEST_LAUNCHER} ${QMC_APP} ${ARGN})
       set_tests_properties(
         ${TESTNAME}
         PROPERTIES FAIL_REGULAR_EXPRESSION
@@ -190,20 +200,13 @@ function(
   endif()
 
   # set additional test properties when the test gets added
-  set(TEST_LABELS_TEMP "")
   if(TEST_ADDED_TEMP)
-    add_test_labels(${TESTNAME} TEST_LABELS_TEMP)
     set_property(
       TEST ${TESTNAME}
       APPEND
       PROPERTY LABELS "QMCPACK")
 
-    if(ENABLE_CUDA
-       OR ENABLE_ROCM
-       OR ENABLE_SYCL
-       OR ENABLE_OFFLOAD)
-      set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
-    endif()
+    set_test_gpu_resources(${TESTNAME})
 
     if(ENABLE_OFFLOAD)
       set_property(TEST ${TESTNAME} APPEND PROPERTY ENVIRONMENT "OMP_TARGET_OFFLOAD=mandatory")
@@ -211,9 +214,6 @@ function(
   endif()
   set(${TEST_ADDED}
       ${TEST_ADDED_TEMP}
-      PARENT_SCOPE)
-  set(${TEST_LABELS}
-      ${TEST_LABELS_TEMP}
       PARENT_SCOPE)
 endfunction()
 
@@ -226,7 +226,6 @@ function(
   PROCS
   THREADS
   TEST_ADDED
-  TEST_LABELS
   ${ARGN})
   # restrict ARGN to only one file or empty
   list(LENGTH ARGN INPUT_FILE_LENGTH)
@@ -236,20 +235,15 @@ function(
 
   copy_directory_maybe_using_symlink("${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" "${ARGN}")
   set(TEST_ADDED_TEMP FALSE)
-  set(TEST_LABELS_TEMP "")
   run_qmc_app_no_copy(
     ${TESTNAME}
     ${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}
     ${PROCS}
     ${THREADS}
     TEST_ADDED_TEMP
-    TEST_LABELS_TEMP
     ${ARGN})
   set(${TEST_ADDED}
       ${TEST_ADDED_TEMP}
-      PARENT_SCOPE)
-  set(${TEST_LABELS}
-      ${TEST_LABELS_TEMP}
       PARENT_SCOPE)
 endfunction()
 
@@ -365,7 +359,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       "--sopp")
 
     set(TEST_ADDED FALSE)
-    set(TEST_LABELS "")
     set(FULL_NAME "${BASE_NAME}-r${PROCS}-t${THREADS}")
     message(VERBOSE "Adding test ${FULL_NAME}")
     run_qmc_app(
@@ -374,7 +367,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       ${PROCS}
       ${THREADS}
       TEST_ADDED
-      TEST_LABELS
       ${INPUT_FILE})
 
     if(TEST_ADDED AND NOT SHOULD_SUCCEED)
@@ -432,7 +424,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
                 WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}")
               set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME})
               set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results")
-              set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS ${TEST_LABELS})
             endif()
           endforeach(SCALAR_CHECK)
           if(NOT SCALAR_VALUE_FOUND)
@@ -497,7 +488,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     endif()
 
     set(TEST_ADDED FALSE)
-    set(TEST_LABELS "")
     set(FULL_NAME "${BASE_NAME}-r${PROCS}-t${THREADS}")
     message(VERBOSE "Adding test ${FULL_NAME}")
     run_qmc_app(
@@ -506,7 +496,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       ${PROCS}
       ${THREADS}
       TEST_ADDED
-      TEST_LABELS
       ${INPUT_FILE})
     if(TEST_ADDED)
       set_property(TEST ${FULL_NAME} APPEND PROPERTY LABELS "QMCPACK")
@@ -560,7 +549,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
           WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}")
         set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME})
         set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results")
-        set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS ${TEST_LABELS})
       endforeach()
     endif()
   endfunction()
@@ -585,14 +573,12 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
     # add run (task 1)
     set(test_added false)
-    set(test_labels "")
     run_qmc_app(
       ${full_name}
       ${base_dir}
       ${procs}
       ${threads}
       test_added
-      test_labels
       ${input_file})
     if(NOT test_added)
       return()
@@ -620,28 +606,10 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
     # make test depend on the run
     set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name})
-    set_property(TEST ${test_name} APPEND PROPERTY LABELS ${test_labels})
 
   endfunction()
 
 endif(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
-
-function(COVERAGE_RUN TESTNAME SRC_DIR PROCS THREADS ${ARGN})
-  set(FULLNAME "coverage-${TESTNAME}")
-  set(TEST_ADDED FALSE)
-  set(TEST_LABELS "")
-  run_qmc_app(
-    ${FULLNAME}
-    ${SRC_DIR}
-    ${PROCS}
-    ${THREADS}
-    TEST_ADDED
-    TEST_LABELS
-    ${ARGN})
-  if(TEST_ADDED)
-    set_property(TEST ${FULLNAME} APPEND PROPERTY LABELS "coverage")
-  endif()
-endfunction()
 
 function(
   CPU_LIMIT_RUN
@@ -653,14 +621,12 @@ function(
   ${ARGN})
   set(FULLNAME "cpu_limit-${TESTNAME}")
   set(TEST_ADDED FALSE)
-  set(TEST_LABELS "")
   run_qmc_app(
     ${FULLNAME}
     ${SRC_DIR}
     ${PROCS}
     ${THREADS}
     TEST_ADDED
-    TEST_LABELS
     ${ARGN})
   if(TEST_ADDED)
     set_property(TEST ${FULLNAME} APPEND PROPERTY TIMEOUT ${TIME})

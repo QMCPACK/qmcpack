@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_POSTPROCESSOR_SIMULATIONS)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
@@ -68,7 +66,7 @@ def test_get_result():
             sim.get_result('anything',None)
             raise FailedTest
         except NotImplementedError:
-            None
+            pass
         except FailedTest:
             failed()
         except Exception as e:
@@ -91,7 +89,7 @@ def test_incorporate_result():
             sim.incorporate_result('anything',None,None)
             raise FailedTest
         except NotImplementedError:
-            None
+            pass
         except FailedTest:
             failed()
         except Exception as e:

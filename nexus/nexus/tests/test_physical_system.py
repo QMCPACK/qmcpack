@@ -4,9 +4,6 @@ from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
 import numpy as np
 from ..testing import value_eq,object_eq
 from nexus.physical_system import generate_physical_system
@@ -269,7 +266,7 @@ def test_physical_system_initialization(tmp_path):
 
     # test load
     for i,sys in enumerate(systems):
-        path = tmp_path / 'system_{}'.format(i)
+        path = tmp_path / f'system_{i}'
         sys.save(path)
         sys2 = PhysicalSystem()
         sys2.load(path)
@@ -288,7 +285,7 @@ def test_physical_system_initialization(tmp_path):
 
 def test_change_units():
     from ..physical_system import generate_physical_system
-    
+
     sys = generate_physical_system(
         units = 'A',
         axes  = [[3.57, 0.00, 0.00],
@@ -311,7 +308,7 @@ def test_change_units():
     assert(value_eq(s.pos[-1],np.array([2.6775,2.6775,0.8925])))
     sys.change_units('B')
     assert(value_eq(s.pos[-1],np.array([5.05974172,5.05974172,1.68658057])))
-#end def test_change_units   
+#end def test_change_units
 
 
 

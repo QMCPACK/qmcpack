@@ -7,7 +7,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 
 //  See http://www.boost.org for updates, documentation, and revision history.
-// NOLINTBEGIN(altera-id-dependent-backward-branch,altera-unroll-loops,hicpp-use-auto,hicpp-use-equals-default,modernize-use-auto,modernize-use-equals-default,misc-const-correctness,cppcoreguidelines-avoid-const-or-ref-data-members,hicpp-use-emplace,modernize-use-emplace)  external code
+// NOLINTBEGIN(altera-id-dependent-backward-branch,altera-unroll-loops,cppcoreguidelines-avoid-const-or-ref-data-members,hicpp-use-auto,hicpp-use-emplace,hicpp-use-equals-default,modernize-use-auto,misc-const-correctness,modernize-use-emplace,modernize-use-equals-default,readability-use-concise-preprocessor-directives)  external code
 #include <boost/config.hpp> // msvc 6.0 needs this to suppress warnings
 
 #include <boost/assert.hpp>
@@ -44,6 +44,11 @@ namespace std{
 #include <boost/archive/detail/decl.hpp>
 
 #include <boost/archive/detail/auto_link_archive.hpp>
+
+#ifdef BOOST_MSVC
+#undef BOOST_ARCHIVE_DECL
+#define BOOST_ARCHIVE_DECL /*comment*/  // for MSVC
+#endif
 
 using namespace boost::serialization;  // NOLINT(google-build-using-namespace,google-global-names-in-headers) external code TODO(correaa) avoid global namespace
 
@@ -87,7 +92,7 @@ class basic_iarchive_impl {
         object_id_type start;  // NOLINT(misc-non-private-member-variables-in-classes) external code
         object_id_type end;  // NOLINT(misc-non-private-member-variables-in-classes) external code
         object_id_type recent;  // NOLINT(misc-non-private-member-variables-in-classes) external code
-        bool is_pointer;  // NOLINT(modernize-use-default-member-init,misc-non-private-member-variables-in-classes) external code
+        bool is_pointer;  // NOLINT(cppcoreguidelines-use-default-member-init,modernize-use-default-member-init,misc-non-private-member-variables-in-classes) external code
         moveable_objects() :
             start(0),
             end(0),
@@ -144,10 +149,10 @@ class basic_iarchive_impl {
             return *this;
         }
         const basic_iserializer * bis_ptr;           // NOLINT(misc-non-private-member-variables-in-classes) third party code
-        const basic_pointer_iserializer * bpis_ptr;  // NOLINT(misc-non-private-member-variables-in-classes,modernize-use-default-member-init) third party code
+        const basic_pointer_iserializer * bpis_ptr;  // NOLINT(cppcoreguidelines-use-default-member-init,misc-non-private-member-variables-in-classes,modernize-use-default-member-init) third party code
         version_type file_version;                   // NOLINT(misc-non-private-member-variables-in-classes) third party code
         tracking_type tracking_level;                // NOLINT(misc-non-private-member-variables-in-classes) third party code
-        bool initialized;                            // NOLINT(misc-non-private-member-variables-in-classes,modernize-use-default-member-init) third party code
+        bool initialized;                            // NOLINT(cppcoreguidelines-use-default-member-init,misc-non-private-member-variables-in-classes,modernize-use-default-member-init) third party code
 
         explicit cobject_id(const basic_iserializer & bis_) :
             bis_ptr(& bis_),
@@ -171,8 +176,8 @@ class basic_iarchive_impl {
     // address of the most recent object serialized as a poiner
     // whose data itself is now pending serialization
     struct pending {
-        void * object;  // NOLINT(misc-non-private-member-variables-in-classes,modernize-use-default-member-init) external code
-        const basic_iserializer * bis;  // NOLINT(misc-non-private-member-variables-in-classes,modernize-use-default-member-init) external code
+        void * object;  // NOLINT(cppcoreguidelines-use-default-member-init,misc-non-private-member-variables-in-classes,modernize-use-default-member-init) external code
+        const basic_iserializer * bis;  // NOLINT(cppcoreguidelines-use-default-member-init,misc-non-private-member-variables-in-classes,modernize-use-default-member-init) external code
         version_type version;  // NOLINT(misc-non-private-member-variables-in-classes) external code
         pending() :
             object(nullptr),
@@ -599,4 +604,4 @@ basic_iarchive::get_flags() const{
 } // namespace detail
 } // namespace archive
 } // namespace boost
-// NOLINTEND(altera-id-dependent-backward-branch,altera-unroll-loops,hicpp-use-auto,hicpp-use-equals-default,modernize-use-auto,modernize-use-equals-default,misc-const-correctness,cppcoreguidelines-avoid-const-or-ref-data-members,hicpp-use-emplace,modernize-use-emplace)  external code
+// NOLINTEND(altera-id-dependent-backward-branch,altera-unroll-loops,cppcoreguidelines-avoid-const-or-ref-data-members,hicpp-use-auto,hicpp-use-emplace,hicpp-use-equals-default,modernize-use-auto,misc-const-correctness,modernize-use-emplace,modernize-use-equals-default,readability-use-concise-preprocessor-directives)  external code

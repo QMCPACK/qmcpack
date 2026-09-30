@@ -232,3 +232,6 @@ else()
     VERBOSE
     "Skipping He_param tests because parameter output is not supported by mixed precison build (QMC_MIXED_PRECISION=1)")
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

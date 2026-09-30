@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from . import TEST_DIR
 from ..testing import value_eq,object_eq
@@ -102,7 +100,7 @@ def test_analyze():
     assert(object_eq(va.info,info))
 
     types = dict(
-        Efermi               = float  ,               
+        Efermi               = float  ,
         core_potential_radii = ndarray,
         core_potentials      = ndarray,
         force                = ndarray,
@@ -289,7 +287,7 @@ def test_analyze():
         )
 
     assert(object_eq(va.ion_steps[10][4],last_data))
-    
+
 
     vxml = va.xmldata
 

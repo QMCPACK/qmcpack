@@ -162,7 +162,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
     // this is not an app_log() because generate_test_data should
     // never be true for merged production code. It is only for
     // developer use when the test data must be regenerated.
-    std::cout << "rng_reals = " << NativePrint(rng_reals) << '\n';
+    app_log() << "rng_reals = " << NativePrint(rng_reals) << '\n';
   }
   else
   {
@@ -276,7 +276,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   };
   // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
-  //std::cout << "kpoint_lists = " << NativePrint(sfe.getKLists().kpts) << '\n';
+  //app_log() << "kpoint_lists = " << NativePrint(sfe.getKLists().kpts) << '\n';
 
   double tolerance = 0.1;
   {
@@ -295,10 +295,10 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 
   if constexpr (generate_test_data)
   {
-    std::cout << "sfk_e_e_expected = ";
-    std::cout << NativePrint(sfk_e_e) << '\n';
-    std::cout << "rhok_e_expected = ";
-    std::cout << NativePrint(rhok_e) << '\n';
+    app_log() << "sfk_e_e_expected = ";
+    app_log() << NativePrint(sfk_e_e) << '\n';
+    app_log() << "rhok_e_expected = ";
+    app_log() << NativePrint(rhok_e) << '\n';
     //    FAIL_CHECK("Test always fails when generating new test reference data.");
   }
 

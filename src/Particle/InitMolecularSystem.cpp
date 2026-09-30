@@ -45,13 +45,13 @@ bool InitMolecularSystem::put(xmlNodePtr cur)
   ParticleSet* els = ptclPool.getParticleSet(target);
   if (els == 0)
   {
-    ERRORMSG("No target particle " << target << " exists.")
+    app_error() << "No target particle " << target << " exists." << std::endl;
     return false;
   }
   ParticleSet* ions = ptclPool.getParticleSet(source);
   if (ions == 0)
   {
-    ERRORMSG("No source particle " << source << " exists.")
+    app_error() << "No source particle " << source << " exists." << std::endl;
     return false;
   }
 
@@ -202,16 +202,12 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
 ///helper function to determine the lower bound of a domain (need to move up)
 template<typename T>
 inline TinyVector<T, 3> lower_bound(const TinyVector<T, 3>& a, const TinyVector<T, 3>& b)
-{
-  return TinyVector<T, 3>(std::min(a[0], b[0]), std::min(a[1], b[1]), std::min(a[2], b[2]));
-}
+{ return TinyVector<T, 3>(std::min(a[0], b[0]), std::min(a[1], b[1]), std::min(a[2], b[2])); }
 
 ///helper function to determine the upper bound of a domain (need to move up)
 template<typename T>
 inline TinyVector<T, 3> upper_bound(const TinyVector<T, 3>& a, const TinyVector<T, 3>& b)
-{
-  return TinyVector<T, 3>(std::max(a[0], b[0]), std::max(a[1], b[1]), std::max(a[2], b[2]));
-}
+{ return TinyVector<T, 3>(std::max(a[0], b[0]), std::max(a[1], b[1]), std::max(a[2], b[2])); }
 
 void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
 {

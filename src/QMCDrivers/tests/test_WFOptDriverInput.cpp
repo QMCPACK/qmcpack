@@ -40,7 +40,7 @@ TEST_CASE("WFOptDriverInput readXML", "[drivers]")
     }
     else
     {
-      std::cout << "Unknown opt method: " << wfoptdriver_input.get_opt_method() << std::endl;
+      app_log() << "Unknown opt method: " << wfoptdriver_input.get_opt_method() << std::endl;
       REQUIRE(false); // optimizer method name not one of the two options
     }
   };

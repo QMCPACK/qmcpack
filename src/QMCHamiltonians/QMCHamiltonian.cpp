@@ -950,6 +950,30 @@ int QMCHamiltonian::makeNonLocalMoves(TrialWaveFunction& psi, ParticleSet& P, No
   return num_moves;
 }
 
+void QMCHamiltonian::mw_computeL2DK(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
+                                    int iel,
+                                    std::vector<TensorType>& diffusion_tensors,
+                                    std::vector<PosType>& drift_corrections)
+{
+  assert(ham_list.size() == p_list.size());
+  assert(ham_list.size() == diffusion_tensors.size());
+  assert(ham_list.size() == drift_corrections.size());
+  for (size_t iw = 0; iw < ham_list.size(); ++iw)
+    ham_list[iw].computeL2DK(p_list[iw], iel, diffusion_tensors[iw], drift_corrections[iw]);
+}
+
+void QMCHamiltonian::mw_computeL2D(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                   int iel,
+                                   std::vector<TensorType>& diffusion_tensors)
+{
+  assert(ham_list.size() == p_list.size());
+  assert(ham_list.size() == diffusion_tensors.size());
+  for (size_t iw = 0; iw < ham_list.size(); ++iw)
+    ham_list[iw].computeL2D(p_list[iw], iel, diffusion_tensors[iw]);
+}
+
 
 std::vector<int> QMCHamiltonian::mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
                                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -1193,7 +1217,7 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
   // same order as Dets in msd; index of associated SPOset in psi_wrapper_in.sposets_
   std::vector<int> mdd_spo_ids;
-  std::vector<const WaveFunctionComponent*> mdd_list;
+  std::vector<const MultiDiracDeterminant*> mdd_list;
 
   if (psi_wrapper_in.hasMultiSlaterDet())
   {
@@ -1207,7 +1231,7 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
     for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
     {
       const MultiDiracDeterminant& multidiracdet_i = msd.getDet(i_mdd);
-      mdd_list.push_back(static_cast<const WaveFunctionComponent*>(&multidiracdet_i));
+      mdd_list.push_back(&multidiracdet_i);
       // particle group id for this multidiracdet
       const int gid = P.getGroupID(multidiracdet_i.getFirstIndex());
       // SPOSet location in psi_wrapper_in.sposets_ for this particle group

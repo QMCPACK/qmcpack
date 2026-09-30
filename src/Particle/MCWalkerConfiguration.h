@@ -98,14 +98,8 @@ public:
   ///make a random move for a walker
   void sample(iterator it, RealType tauinv);
 
-  ///return the number of particles per walker
-  inline int getParticleNum() const { return R.size(); }
   /**@}*/
 
-  /** set LocalEnergy
-   * @param e current average Local Energy
-   */
-  inline void setLocalEnergy(RealType e) { LocalEnergy = e; }
 
   /** return LocalEnergy
    */
@@ -113,11 +107,11 @@ public:
 
   inline MultiChain* getPolymer() { return Polymer; }
 
-  inline void setPolymer(MultiChain* chain) { Polymer = chain; }
+
 
   void resetWalkerProperty(int ncopy = 1);
 
-  inline bool updatePbyP() const { return ReadyForPbyP; }
+
 
   //@{save/load/clear function for optimization
   //

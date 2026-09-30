@@ -65,8 +65,8 @@ namespace qmcplusplus
 {
 TEST_CASE("Pair Correlation", "[hamiltonian]")
 {
-  std::cout << std::fixed;
-  std::cout << std::setprecision(8);
+  app_log() << std::fixed;
+  app_log() << std::setprecision(8);
   using RealType = QMCTraits::RealType;
 
   Communicate* c = OHMMS::Controller;
@@ -74,7 +74,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   // XML parser
   Libxml2Document doc;
 
-  std::cout << "\n\n\ntest_paircorr:: START\n";
+  app_log() << "\n\n\ntest_paircorr:: START\n";
 
   // TEST new idea: ParticlesetPool to make a ParticleSet
   bool lat_okay = doc.parseFromString(lat_xml);
@@ -92,7 +92,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   // Get the (now assembled) ParticleSet, do simple sanity checks, then print info
   ParticleSet* elec = pset_builder.getParticleSet("e");
 
-  std::cout << "cheeeee " << elec->getLattice().R << std::endl;
+  app_log() << "cheeeee " << elec->getLattice().R << std::endl;
   REQUIRE(elec->isSameMass());
   REQUIRE(elec->getName() == "e");
 
@@ -126,7 +126,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   elec->R[7][1] = 1.0;
   elec->R[7][2] = 1.0;
 
-  elec->get(std::cout); // print particleset info to stdout
+  elec->get(app_log()); // print particleset info to stdout
 
   // Set up the distance table, match expected layout
   elec->addTable(*elec);
@@ -153,21 +153,21 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   const RealType deltaR = Rmax / static_cast<RealType>(Nbins);
 
   auto gofr = elec->Collectables;
-  std::cout << "\n";
-  std::cout << "gofr:\n";
-  std::cout << std::fixed;
-  std::cout << std::setprecision(6);
-  std::cout << std::setw(4) << "i"
+  app_log() << "\n";
+  app_log() << "gofr:\n";
+  app_log() << std::fixed;
+  app_log() << std::setprecision(6);
+  app_log() << std::setw(4) << "i"
             << "  " << std::setw(12) << "r"
             << "  " << std::setw(12) << "uu"
             << "  " << std::setw(12) << "ud"
             << "  " << std::setw(12) << "dd"
             << "\n";
-  std::cout << "============================================================\n";
+  app_log() << "============================================================\n";
 
   for (int i = 0; i < Nbins; i++)
   {
-    std::cout << std::setw(4) << i << "  " << std::setw(12) << i * deltaR << "  " << std::setw(12) << gofr[i] << "  "
+    app_log() << std::setw(4) << i << "  " << std::setw(12) << i * deltaR << "  " << std::setw(12) << gofr[i] << "  "
               << std::setw(12) << gofr[i + Nbins] << "  " << std::setw(12) << gofr[i + 2 * Nbins] << "\n";
   }
 
@@ -196,7 +196,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   REQUIRE(std::fabs(gofr[184] - 2.6408410) < eps);
   REQUIRE(std::fabs(gofr[283] - 0.0000000) < eps);
 
-  std::cout << "test_paircorr:: STOP\n";
+  app_log() << "test_paircorr:: STOP\n";
 }
 
 TEST_CASE("Pair Correlation Pair Index", "[hamiltonian]")

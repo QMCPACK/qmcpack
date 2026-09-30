@@ -222,7 +222,7 @@ public:
   }
 
   void dumpData(OneBodyDensityMatrices& obdm)
-  { std::cout << "Here is what is in your OneBodyDensityMatrices:\n" << NativePrint(obdm.data_) << '\n'; }
+  { app_log() << "Here is what is in your OneBodyDensityMatrices:\n" << NativePrint(obdm.data_) << '\n'; }
 
 private:
   Data getEvaluateMatrixData(OBDMI::Integrator integrator);
@@ -474,7 +474,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
 
     std::string integrator_str =
         InputSection::reverseLookupInputEnumMap(obdmi.get_integrator(), testing::OBDMI::lookup_input_enum_value);
-    std::cout << "Test evaluateMatrix for: " << integrator_str << '\n';
+    app_log() << "Test evaluateMatrix for: " << integrator_str << '\n';
 
     auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
     auto wavefunction_pool =
@@ -524,7 +524,7 @@ TEST_CASE("OneBodyDensityMatrices::registerAndWrite", "[estimators]")
 
   std::string integrator_str =
       InputSection::reverseLookupInputEnumMap(obdmi.get_integrator(), testing::OBDMI::lookup_input_enum_value);
-  std::cout << "Test registerAndWrite for: " << integrator_str << '\n';
+  app_log() << "Test registerAndWrite for: " << integrator_str << '\n';
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =

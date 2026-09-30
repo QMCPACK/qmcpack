@@ -20,7 +20,6 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"
-#include "QMCDrivers/Optimizers/DescentEngine.h"
 //#define QMCCOSTFUNCTION_DEBUG
 
 namespace qmcplusplus
@@ -29,7 +28,7 @@ QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& ps
     : QMCCostFunctionBase(w, psi, h, comm),
       fill_timer_(createGlobalTimer("QMCCostFunction::fillOverlapHamiltonianMatrices", timer_level_medium))
 {
-  CSWeight = 1.0;
+
   app_log() << " Using QMCCostFunction::QMCCostFunction" << std::endl;
 }
 
@@ -56,12 +55,10 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
     {
       // + FiniteDiff
       opt_vars[i] = PM[i] + FiniteDiff;
-      resetPsi();
       correlatedSampling(false);
       auto CostPlus = computedCost();
       // - FiniteDiff
       opt_vars[i] = PM[i] - FiniteDiff;
-      resetPsi();
       correlatedSampling(false);
       auto CostMinus = computedCost();
       // calculate gradient
@@ -71,7 +68,6 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
   }
   else
   {
-    resetPsi();
     //evaluate new local energies and derivatives
     EffectiveWeight effective_weight = correlatedSampling(true);
     //Estimators::accumulate has been called by correlatedSampling
@@ -168,8 +164,6 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
       if (std::abs(w_abs) > 1.0e-10)
         PGradient[j] += w_abs * EDtotals[j];
     }
-
-    IsValid = isEffectiveWeightValid(effective_weight);
   }
 }
 
@@ -329,8 +323,7 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
   app_log() << "  Total weights = " << etemp[1] << std::endl;
   app_log().flush();
   setTargetEnergy(Etarget);
-  ReportCounter = 0;
-  IsValid       = true;
+
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];
   SumValue[SUM_WGTSQ]     = etemp[1];
@@ -341,155 +334,6 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
   SumValue[SUM_ABSE_BARE] = 0.0;
 }
 
-#ifdef HAVE_LMY_ENGINE
-/** evaluate everything before optimization
- *In future, both the LM and descent engines should be children of some parent engine base class.
- * */
-void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                                 OptionalRef<DescentEngine> descentEngineObj)
-{
-  const auto num_opt_vars = opt_vars.size();
-  if (descentEngineObj)
-  {
-    DescentEngine& descent_engine(*descentEngineObj);
-    //Reset vectors and scalars from any previous iteration
-    descent_engine.prepareStorage(omp_get_max_threads(), num_opt_vars);
-  }
-  RealType et_tot = 0.0;
-  RealType e2_tot = 0.0;
-#pragma omp parallel reduction(+ : et_tot, e2_tot)
-  {
-    int ip = omp_get_thread_num();
-    MCWalkerConfiguration& wRef(*wClones[ip]);
-    if (RecordsOnNode[ip] == 0)
-    {
-      RecordsOnNode[ip] = new Matrix<Return_rt>;
-      RecordsOnNode[ip]->resize(wRef.numSamples(), SUM_INDEX_SIZE);
-      if (needGrads)
-      {
-        DerivRecords[ip] = new Matrix<Return_t>;
-        //DerivRecords[ip]->resize(wRef.numSamples(),num_opt_vars);
-        HDerivRecords[ip] = new Matrix<Return_rt>;
-        //HDerivRecords[ip]->resize(wRef.numSamples(),num_opt_vars);
-      }
-    }
-    else if (RecordsOnNode[ip]->size1() != wRef.numSamples())
-    {
-      RecordsOnNode[ip]->resize(wRef.numSamples(), SUM_INDEX_SIZE);
-      if (needGrads)
-      {
-        //DerivRecords[ip]->resize(wRef.numSamples(),num_opt_vars);
-        //HDerivRecords[ip]->resize(wRef.numSamples(),num_opt_vars);
-      }
-    }
-    // Populate local to global index mapping into psiClone internal component 'myVars',
-    // because psiClones persist between different sections and need update.
-    psiClones[ip]->checkOutVariables(opt_vars);
-    //    synchronize the random number generator with the node
-    (*MoverRng[ip]) = (*RngSaved[ip]);
-    hClones[ip]->setRandomGenerator(MoverRng[ip]);
-    //int nat = wRef.getTotalNum();
-    Return_rt e0 = 0.0;
-    //       Return_t ef=0.0;
-    Return_rt e2 = 0.0;
-
-
-    for (int iw = 0, iwg = wPerRank[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
-    {
-      wRef.loadSample(wRef, iw);
-      wRef.update();
-      Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
-      auto& psi_ref             = *psiClones[ip];
-      psi_ref.evaluateDeltaLogSetup(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
-      saved[REWEIGHT] = 1.0;
-      Return_rt etmp;
-      if (needGrads)
-      {
-        //allocate vector
-        Vector<Return_t> Dsaved(num_opt_vars, 0.0);
-        Vector<Return_t> HDsaved(num_opt_vars, 0.0);
-
-        etmp = hClones[ip]->evaluateValueAndDerivatives(psi_ref, wRef, opt_vars, Dsaved, HDsaved);
-
-        // add non-differentiated derivative vector
-        std::vector<Return_t> der_rat_samp(num_opt_vars + 1, 0.0);
-        std::vector<Return_t> le_der_samp(num_opt_vars + 1, 0.0);
-
-        // dervative vectors
-        der_rat_samp.at(0) = 1.0;
-        for (int i = 0; i < Dsaved.size(); i++)
-          der_rat_samp[i + 1] = Dsaved[i];
-
-        // energy dervivatives
-        le_der_samp.at(0) = etmp;
-        for (int i = 0; i < HDsaved.size(); i++)
-          le_der_samp[i + 1] = HDsaved[i] + etmp * Dsaved[i];
-
-#ifdef HAVE_LMY_ENGINE
-        if (descentEngineObj)
-        {
-          DescentEngine& descent_engine(*descentEngineObj);
-          //Could remove this copying over if LM engine becomes compatible with complex numbers
-          //so that der_rat_samp and le_der_samp are vectors of std::complex<double> when QMC_COMPLEX=1
-          std::vector<FullPrecValueType> der_rat_samp_comp(der_rat_samp.begin(), der_rat_samp.end());
-          std::vector<FullPrecValueType> le_der_samp_comp(le_der_samp.begin(), le_der_samp.end());
-
-          descent_engine.takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0, saved[REWEIGHT]);
-        }
-        else
-          EngineObj.take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
-#endif
-      }
-      else
-        etmp = hClones[ip]->evaluate(psi_ref, wRef);
-
-      e0 += saved[ENERGY_TOT] = etmp;
-      e2 += etmp * etmp;
-
-      saved[ENERGY_FIXED]                 = saved[ENERGY_TOT];
-      const auto twf_dependent_components = hClones[ip]->getTWFDependentComponents();
-      for (const OperatorBase& component : twf_dependent_components)
-        saved[ENERGY_FIXED] -= component.getValue();
-    }
-
-    //add them all using reduction
-    et_tot += e0;
-    e2_tot += e2;
-    // #pragma omp atomic
-    //       eft_tot+=ef;
-  }
-
-  //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerRank[NumThreads]) << endl;
-  //Need to sum over the processors
-  std::vector<Return_rt> etemp(3);
-  etemp[0] = et_tot;
-  etemp[1] = static_cast<Return_rt>(wPerRank[NumThreads]);
-  etemp[2] = e2_tot;
-  myComm->allreduce(etemp);
-  Etarget    = static_cast<Return_rt>(etemp[0] / etemp[1]);
-  NumSamples = static_cast<int>(etemp[1]);
-  app_log() << "  VMC Eavg = " << Etarget << std::endl;
-  app_log() << "  VMC Evar = " << etemp[2] / etemp[1] - Etarget * Etarget << std::endl;
-  app_log() << "  Total weights = " << etemp[1] << std::endl;
-
-
-#ifdef HAVE_LMY_ENGINE
-  // engine finish taking samples
-  if (descentEngineObj)
-  {
-    DescentEngine& descent_engine(*descentEngineObj);
-    descent_engine.sample_finish();
-  }
-  else
-    EngineObj.sample_finish();
-#endif
-
-  app_log().flush();
-
-  setTargetEnergy(Etarget);
-  ReportCounter = 0;
-}
-#endif
 
 
 void QMCCostFunction::resetPsi(bool final_reset)
@@ -501,6 +345,8 @@ void QMCCostFunction::resetPsi(bool final_reset)
 
 QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGrad)
 {
+  resetPsi();
+
   const auto num_opt_vars = opt_vars.size();
   for (int ip = 0; ip < NumThreads; ++ip)
   {
@@ -595,7 +441,7 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
   //    app_log()<<"After Purge"<<wgt_tot<<" "<< std::endl;
   for (int i = 0; i < SumValue.size(); i++)
     SumValue[i] = 0.0;
-  CSWeight = wgt_tot = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
+  wgt_tot = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
   for (int ip = 0; ip < NumThreads; ip++)
   {
     int nw = wClones[ip]->numSamples();
@@ -631,7 +477,6 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
   Right = 0.0;
   Left  = 0.0;
 
-  //     resetPsi();
   curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
   RealType V_avg      = curAvg2_w - curAvg_w * curAvg_w;

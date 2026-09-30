@@ -46,3 +46,6 @@ if(BUILD_MICRO_BENCHMARKS)
 
   add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}> --allow-running-no-tests)
 endif(BUILD_MICRO_BENCHMARKS)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

@@ -2,8 +2,7 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.BASISSET)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
+
 
 from . import TEST_DIR
 from ..testing import object_eq
@@ -62,7 +61,7 @@ def test_process_gaussian_text():
     from ..basisset import process_gaussian_text
 
     basis_refs = {
-        'Fe.aug-cc-pwcv5z-dk.0.bas'   : 503, 
+        'Fe.aug-cc-pwcv5z-dk.0.bas'   : 503,
         'Fe.aug-cc-pwcv5z-dk.0.gbs'   : 503,
         'Fe.BFD_VQZ.bas'              : 132,
         'Fe.BFD_VQZ.gbs'              : 132,

@@ -21,7 +21,6 @@ StructureFactorInput::StructureFactorInput(xmlNodePtr cur)
 
   auto setIfInInput = [&](auto& var, const std::string& tag) -> bool { return input_section_.setIfInInput(var, tag); };
   setIfInInput(name_, "name");
-  setIfInInput(type_, "type");
   setIfInInput(write_hdf5_, "writehdf5");
   setIfInInput(write_rho_, "writerho");
   setIfInInput(write_ion_ion_, "writeionion");

@@ -113,9 +113,9 @@ inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, communicator
   {
     const ComplexType fact = im * static_cast<ComplexType>(1.0 / static_cast<double>(n));
     if (TA == 'H' || TA == 'h')
-      ma::product(fact, ma::H(V(V.extension(0), {M0, Mn})), *pT1, zero, (*pT2).sliced(M0, Mn));
+      ma::product(fact, ma::H(V(get<0>(V.extents()), {M0, Mn})), *pT1, zero, (*pT2).sliced(M0, Mn));
     else if (TA == 'T' || TA == 't')
-      ma::product(fact, ma::T(V(V.extension(0), {M0, Mn})), *pT1, zero, (*pT2).sliced(M0, Mn));
+      ma::product(fact, ma::T(V(get<0>(V.extents()), {M0, Mn})), *pT1, zero, (*pT2).sliced(M0, Mn));
     else
       ma::product(fact, V.sliced(M0, Mn), *pT1, zero, (*pT2).sliced(M0, Mn));
     // overload += ???
@@ -174,7 +174,7 @@ inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, int order = 
   // getting around issue in multi, fix later
   //T1 = S;
   using std::copy_n;
-  copy_n(S.origin(), S.num_elements(), T1.origin());
+  copy_n(S.base(), S.num_elements(), T1.base());
   for (int n = 1; n <= order; n++)
   {
     ComplexType fact = im * static_cast<ComplexType>(1.0 / static_cast<double>(n));
@@ -186,7 +186,7 @@ inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, int order = 
       ma::productStridedBatched(fact, V, *pT1, zero, *pT2);
     //ma::add(ComplexType(1.0),*pT2,ComplexType(1.0),S,S);
     using ma::axpy;
-    axpy(S.num_elements(), ComplexType(1.0), (*pT2).origin(), 1, S.origin(), 1);
+    axpy(S.num_elements(), ComplexType(1.0), (*pT2).base(), 1, S.base(), 1);
     std::swap(pT1, pT2);
   }
 }
@@ -248,13 +248,13 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
   T2i.reserve(T2.size());
   for (int i = 0; i < V.size(); i++)
   {
-    Vi.emplace_back(ma::pointer_dispatch(V[i].origin()));
-    Vi.emplace_back(ma::pointer_dispatch(V[i].origin()));
+    Vi.emplace_back(ma::pointer_dispatch(V[i].base()));
+    Vi.emplace_back(ma::pointer_dispatch(V[i].base()));
   }
   for (int i = 0; i < T1.size(); i++)
-    T1i.emplace_back(ma::pointer_dispatch(T1[i].origin()));
+    T1i.emplace_back(ma::pointer_dispatch(T1[i].base()));
   for (int i = 0; i < T2.size(); i++)
-    T2i.emplace_back(ma::pointer_dispatch(T2[i].origin()));
+    T2i.emplace_back(ma::pointer_dispatch(T2[i].base()));
 
   auto pT1i(std::addressof(T1i));
   auto pT2i(std::addressof(T2i));
@@ -262,7 +262,7 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
   // getting around issue in multi, fix later
   //T1 = S;
   using std::copy_n;
-  copy_n(S.origin(), S.num_elements(), T1.origin());
+  copy_n(S.base(), S.num_elements(), T1.base());
   for (int n = 1; n <= order; n++)
   {
     ComplexType fact = im * static_cast<ComplexType>(1.0 / static_cast<double>(n));
@@ -271,7 +271,7 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
     gemmBatched('N', TA, M, N, K, fact, pT1i->data(), get<1>((*pT1).strides()), Vi.data(), ldv, zero, pT2i->data(),
                 get<1>((*pT2).strides()), nbatch);
     using ma::axpy;
-    axpy(S.num_elements(), ComplexType(1.0), (*pT2).origin(), 1, S.origin(), 1);
+    axpy(S.num_elements(), ComplexType(1.0), (*pT2).base(), 1, S.base(), 1);
     std::swap(pT1, pT2);
     std::swap(pT1i, pT2i);
   }

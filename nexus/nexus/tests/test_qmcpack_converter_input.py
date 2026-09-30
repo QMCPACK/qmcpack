@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_INPUT)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from ..testing import value_eq,object_eq
 
@@ -35,7 +33,7 @@ def test_pw2qmcpack_input_read(tmp_path):
     infile_path.write_text(pw2qmcpack_in)
 
     pi = Pw2qmcpackInput(infile_path)
-    
+
     pi_ref = obj(
         inputpp = obj(
             prefix     = 'pwscf',
@@ -57,7 +55,7 @@ def test_pw2qmcpack_input_write(tmp_path):
 
     write_path = tmp_path / 'p2q_write.in'
     pi_write = Pw2qmcpackInput(infile_path)
-    
+
     pi_write.write(write_path)
 
     pi_read = Pw2qmcpackInput(write_path)

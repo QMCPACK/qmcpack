@@ -127,7 +127,7 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
   {
     const std::string var_name = var_param.name(i);
     const RealType old_param   = std::real(var_param[var_name]);
-    //std::cout << "checking parameter " << var_name << std::endl;
+    //app_log() << "checking parameter " << var_name << std::endl;
 
     RealType dudr_h     = 10000000.0; // initialize to a wrong value
     RealType d2udr2_h   = 10000000.0; // initialize to a wrong value

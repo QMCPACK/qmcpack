@@ -1,0 +1,339 @@
+RMG initialization ... 1 image(s) total, 1 per node. 4 MPI processes/image. Thread level 2.
+Warning: localized projectors selected but their diameter exceeds cell size. Switching to delocalized.
+
+ EXTERNAL ELECTRIC FIELD INITIALIZATION 
+ ====================================== 
+
+ Electric Field: (  0.00000000,   0.00000000,   0.00000000) Ha/bohr
+
+
+                     * * * * * * * * * *
+                     *    R   M   G    *
+                     * * * * * * * * * *
+
+     -- A Real Space Multigrid Electronic structure code --
+     --      More information at www.rmgdft.org          --
+
+Code Revision:     7.1.0-master-313012520
+Build Date:        Aug 27 2026  13:45:04
+Start time:        Thu Aug 27 16:57:41 2026
+
+NOTICE: RMG internal pseudopotentials have switched to
+ONCVP from Ultrasoft. You can revert to Ultrasoft by
+adding the input tag internal_pseudo_type="ultrasoft" to
+your input files.
+
+
+Files
+   Control input file:        input.nscf
+   Data output file:          Waves/nscf
+
+Run Setup
+    Calculation type:         NSCF calculate 
+    Description:              C2 laptop NSCF analyzer run
+    Orbital Initialization:   LCAO (8 LCAO and 0 random orbitals)
+    Exchange Correlation:     pbe
+    Spin Polarization:        OFF
+    System charge:            Neutral
+
+Processor Topology
+   Total PEs:                 4
+   X direction:               2
+   Y direction:               2
+   Z direction:               1
+   MG Threads/PE:             3
+   OMP Threads/PE:            3
+
+Grid Points  (Linear Anisotropy: 1.000)
+    X:  Total: 16   Per PE: 8   Spacing:0.297 a0  
+    Y:  Total: 16   Per PE: 8   Spacing:0.297 a0  
+    Z:  Total: 16   Per PE: 16   Spacing:0.297 a0  
+
+    Equivalent energy cutoffs (psi,rho):   111.900    447.601 Ry
+
+    Charge density grid:         2 times finer
+
+Coordinate planes
+  Planar Anisotropy: 1.000
+  A0-A1 density:    13.092
+  A0-A2 density:    13.092
+  A1-A2 density:    13.092
+
+
+Lattice (Cell) Setup
+    Type:                       Cubic_FC
+    Volume (a0^3):                 75.87
+    Boundary conditions:        Periodic
+
+    X Basis Vector:       3.360       3.360       0.000 a0
+    Y Basis Vector:       0.000       3.360       3.360 a0
+    Z Basis Vector:       3.360       0.000       3.360 a0
+    X Reci Vector:       0.149       0.149      -0.149 a0
+    Y Reci Vector:      -0.149       0.149       0.149 a0
+    Z Reci Vector:       0.149      -0.149       0.149 a0
+
+K-points
+    Gamma Point Only (real orbitals)
+
+Atoms and States
+    Number of ions:                          2
+    Number of species:                       1
+    Number of states:                        14
+
+Run Parameters
+    SCF Convergence criterion (potential):   1.00e-04
+    SCF Convergence criterion (energy):      1.00e-07
+    Max SCF steps:                           1
+    Max MD steps                             100
+    Timestep for molecular dynamics:          50.00000000
+    Restart data write frequency:            5 MD steps
+
+SCF Cycle Settings
+    Charge density mixing:                   Broyden
+    Hartree Solver:                          PFFT
+    Interpolation type:                      FFT
+
+Adaptive Interpolation
+    On: cmix                                 1.222713044
+
+Finite Difference parameters
+    Kohn Sham FD Order:                      8   
+    Force Gradient Order:                    8   
+    Adaptive Finite Differencing:            On
+    Adaptive CFAC:                           0.479997298
+
+Subspace Diagonalization Options
+    Frequency:                               every 1 SCF step(s)
+    Driver:                                  Lapack
+    Initial diagonalization:                 ON
+    Folded spectrum:                         OFF
+
+Filtering Cutoff  Parameters
+    Wavefunction grid (cparm):               0.800
+    Charge density grid (rhocparm):          1.000
+    Filter factor:                           1.000
+
+Multigrid (MG) Parameters
+    Psi MG levels:                           3
+    Psi global step:                         0.660 
+    Psi pre:                                 2
+    Psi post:                                2
+
+Davidson Parameters
+    Davidson multiplier:                     4
+    Davidson max step:                       8
+    Davidson unocc tol factor:               1000.000
+
+Blas Libraries
+    CPU support with openblas-parallel.
+
+
+Atomic Species Information
+(PP = Pseudopotential, US = Ultrasoft, NC = Norm Conserving)
+-------------------------------------------------------------------------
+|Index|Symbol| Mass|Valence| PP |  Comp  |Local| Local|Nlocal|    PP    |
+|     |      |     |       |Type|Gaussian|  l  |Radius|Radius|Functional|
+-------------------------------------------------------------------------
+|    1|     C| 12.0|   4.00|  NC|    0.66|   -1| 10.91|  7.00|       PBE|
+-------------------------------------------------------------------------
+
+Pseudopotential generation information:
+   C pseudopotential file: ./@Internal
+      Generation info     : Generated using ONCVPSP code by D. R. Hamann
+      Author info         : anonymous
+
+
+Memory usage (Mbytes):     Min        Max       Total
+    wave functions          0.46       0.46       1.84
+    beta-functions          0.13       0.13       0.53
+
+
+
+Initial Ionic Positions And Displacements (Bohr)
+Species      X           Y           Z           dX          dY          dZ
+  C        1.6800      1.6800      1.6800      0.0000      0.0000      0.0000
+  C        0.0000      0.0000      0.0000      0.0000      0.0000      0.0000
+
+
+Initial Ionic Positions And Displacements (Angstrom)
+Species      X           Y           Z           dX          dY          dZ
+  C        0.8890      0.8890      0.8890      0.0000      0.0000      0.0000
+  C        0.0000      0.0000      0.0000      0.0000      0.0000      0.0000
+WriteRestart: Restart file Waves/nscf_init opened...
+WriteData: total size of each of the 4 files = 0.1 Mb
+WriteData: writing took 0.0 seconds, writing speed 23.359 Mbps 
+WriteRestart: writing took 0.0 seconds 
+WriteRestart: Restart file Waves/nscf opened...
+WriteData: total size of each of the 4 files = 0.1 Mb
+WriteData: writing took 0.0 seconds, writing speed 19.011 Mbps 
+WriteRestart: writing took 0.0 seconds 
+
+
+KOHN SHAM EIGENVALUES [eV] AT K-POINT [  0]:       0.000000      0.000000      0.000000
+
+[kpt   0   0   0]   -11.9283 [2.000]    26.0702 [2.000]    27.5211 [2.000]    27.5357 [2.000]    43.0926 [0.000]
+[kpt   0   0   1]    27.2335 [0.000]    27.2513 [0.000]    27.2209 [0.000]    30.7420 [0.000]    34.9789 [0.000]
+[kpt   0   0   2]    43.2882 [0.000]    38.4747 [0.000]    50.5516 [0.000]    43.2389 [0.000]
+
+
+spinup:  valence band maximum = 27.535673 eV, conduction band minumm = 27.220901 eV
+spinup:  no Band gap, metalic system
+
+Total charge in supercell =       0.00000000
+
+ Vdd took 0.000127 seconds
+
+
+VORONOI DEFORMATION DENSITY PARTIAL CHARGES 
+
+      Ion  Species      Charge
+       1      C          -0.051
+       2      C           0.051
+ quench: [md:   0/100  scf:   0/1  step time:   0.27  scf time:     0.34 secs  RMS[dV]: ******** ]
+
+
+
+ Convergence criterion not met but max_scf_steps 1 was reached.
+
+[   0   1    1        3 ] common_prototypes1.h: 
+final total energy from eig sum =       0.00000000 Ha
+
+
+KOHN SHAM EIGENVALUES [eV] AT K-POINT [  0]:       0.000000      0.000000      0.000000
+
+[kpt   0   1   0]   -11.9283 [2.000]    26.0702 [2.000]    27.5211 [2.000]    27.5357 [2.000]    43.0926 [0.000]
+[kpt   0   1   1]    27.2335 [0.000]    27.2513 [0.000]    27.2209 [0.000]    30.7420 [0.000]    34.9789 [0.000]
+[kpt   0   1   2]    43.2882 [0.000]    38.4747 [0.000]    50.5516 [0.000]    43.2389 [0.000]
+
+
+spinup:  valence band maximum = 27.535673 eV, conduction band minumm = 27.220901 eV
+spinup:  no Band gap, metalic system
+
+Total charge in supercell =       0.00000000
+
+SUM FORCE =     0.055821780314      0.036582028699      0.006132429584
+ volume and energy per atom =         5.62109896          0.00000000 eV
+WriteRestart: Restart file Waves/nscf opened...
+WriteData: total size of each of the 4 files = 0.1 Mb
+WriteData: writing took 0.0 seconds, writing speed 11.696 Mbps 
+WriteRestart: writing took 0.0 seconds 
+
+
+
+  IONIC POSITIONS [a0] AND FORCES [Ha/a0]
+  Charge analysis using: Voronoi Deformation Density
+
+@ION  Ion  Species       X           Y           Z       Charge  Mag       FX          FY         FZ      Movable
+@ION    1     C      1.6800000   1.6800000   1.6800000   -0.051  0.000   0.0159537   0.0133348   0.0058507  1 1 1
+@ION    2     C      0.0000000   0.0000000   0.0000000    0.051  0.000  -0.0159537  -0.0133348  -0.0058507  1 1 1
+
+ mean FX      =   0.01595366 Ha/a0
+ mean FY      =   0.01333481 Ha/a0
+ mean FZ      =   0.00585069 Ha/a0
+
+ max FX       =   0.01595366 Ha/a0   (ion 1)
+ max FY       =   0.01333481 Ha/a0   (ion 1)
+ max FZ       =   0.00585069 Ha/a0   (ion 1)
+ max F[x,y,z] =   0.01595366 Ha/a0
+ max |F|      =   0.02160016 Ha/a0   (ion 1)
+
+WriteRestart: Restart file Waves/nscf opened...
+WriteData: total size of each of the 4 files = 0.1 Mb
+WriteData: writing took 0.0 seconds, writing speed 10.571 Mbps 
+WriteRestart: writing took 0.0 seconds 
+
+
+--------TIMING INFORMATION FOR Processor owned the most atoms----------------
+                                        Total time               Per SCF/step
+
+1-TOTAL                                             2.96                2.96
+-----------------------------------------------------------------------------
+  1-TOTAL: Init                                     2.18                2.18
+  1-TOTAL: run                                      0.77                0.77
+  ---------------------------------------------------------------------------
+    1-TOTAL: run: Force                             0.34                0.34
+    1-TOTAL: run: Scf steps                         0.27                0.27
+
+2-Force                                             0.34                0.34
+-----------------------------------------------------------------------------
+  2-Force: core correction                          0.10                0.10
+  2-Force: corrections                              0.10                0.10
+  2-Force: ion-ion                                  0.00                0.00
+  2-Force: local                                    0.14                0.14
+  2-Force: non-local                                0.01                0.01
+  2-Force: non-local-betaxpsi                       0.00                0.00
+  2-Force: non-local-get gamma                      0.00                0.00
+  2-Force: non-local-nlforce_par_Q                  0.00                0.00
+  2-Force: non-local-nlforce_par_gamma              0.00                0.00
+  2-Force: non-local-nlforce_par_omega              0.00                0.00
+  2-Force: non-local-partial gamma                  0.00                0.00
+  2-Force: non-local-veff grad                      0.00                0.00
+
+2-Init                                              2.18                2.18
+-----------------------------------------------------------------------------
+  2-Init: KpointClass                               0.97                0.97
+  2-Init: LcaoGetPsi                                0.14                0.14
+  2-Init: ReinitIonicPotentials                     0.15                0.15
+  2-Init: radial potentials                         0.46                0.46
+  2-Init: weights                                   0.00                0.00
+
+2-Scf steps                                         0.27                0.27
+-----------------------------------------------------------------------------
+  2-Scf steps: MgridSubspace                        0.26                0.26
+
+3-MgridSubspace                                     0.26                0.26
+-----------------------------------------------------------------------------
+  3-MgridSubspace: AppNls                           0.00                0.00
+  3-MgridSubspace: Beta x psi                       0.00                0.00
+  3-MgridSubspace: Mg_eig                           0.25                0.25
+  3-MgridSubspace: ortho                            0.00                0.00
+
+3-ReinitIonicPotentials                             0.15                0.15
+-----------------------------------------------------------------------------
+  3-ReinitIonicPotentials: GetNlop                  0.01                0.01
+  3-ReinitIonicPotentials: GetWeight                0.00                0.00
+  3-ReinitIonicPotentials: get_QI                   0.00                0.00
+  3-ReinitIonicPotentials: get_qqq                  0.00                0.00
+  3-ReinitIonicPotentials: init_nuc                 0.14                0.14
+
+5-Functional                                        0.00                0.00
+
+AppNls                                              0.00                0.00
+-----------------------------------------------------------------------------
+  AppNls: data_rearrange                            0.00                0.00
+  ---------------------------------------------------------------------------
+    AppNls: data_rearrange: alloc and zeros           0.00                0.00
+    AppNls: data_rearrange: dnm                     0.00                0.00
+    AppNls: data_rearrange: sint                    0.00                0.00
+  AppNls: nv                                        0.00                0.00
+  AppNls: nv_work                                   0.00                0.00
+
+App_gradient                                        0.01                0.01
+
+GlobalSums                                          0.08                0.08
+
+Init                                                1.20                1.20
+
+Init Voronoi                                        0.06                0.06
+-----------------------------------------------------------------------------
+  MgridOrtho: 2nd stage overlaps                    0.00                0.00
+  MgridOrtho: 2nd stage update                      0.00                0.00
+  MgridOrtho: allreduce                             0.00                0.00
+  MgridOrtho: cholesky                              0.00                0.00
+  MgridOrtho: inverse                               0.00                0.00
+
+Orbital                                             0.00                0.00
+-----------------------------------------------------------------------------
+  Orbital: phase and set                            0.00                0.00
+  Orbital: proj cal                                 0.00                0.00
+
+Weight                                              0.00                0.00
+
+radial beta                                         0.24                0.24
+
+
+------------------------- TIMING INFORMATION FOR THREADS  -------------------
+
+                                           Min            Max            Avg
+GlobalSums                0.07           0.13           0.10
+-----------------------------------------------------------------------------

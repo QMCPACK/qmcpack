@@ -1,4 +1,4 @@
-/** Generic delgate input class.
+/** Generic delegate input class.
  *  The delegate input requires:
  *  A constructor that takes an xmlNodePtr
  *  A factoryFunction that matches the signature discussed in InputSection::DelegateHandler

@@ -1,13 +1,19 @@
-// Copyright 2018-2021 Alfredo A. Correa
-#include "../../mpi3/main.hpp"
-#include "../../mpi3/communicator.hpp"
+// Copyright 2018-2025 Alfredo A. Correa
+
+#include <mpi3/communicator.hpp>
+#include <mpi3/environment.hpp>
+
+#include <iostream>
 
 namespace mpi3 = boost::mpi3;
 using std::cout;
 
-auto mpi3::main(int/*argc*/, char** /*argv*/, mpi3::communicator world) -> int try {
-	cout <<"Before barrier, I am "<< world.rank() <<" of "<< world.size() << std::endl;
+int main(int argc, char** argv) {  // NOLINT(bugprone-exception-escape)
+	mpi3::environment env(argc, argv);
+
+	auto world = env.world();
+
+	cout << "Before barrier, I am " << world.rank() << " of " << world.size() << '\n';
 	world.barrier();
-	cout <<"After barrier, I am "<< world.rank() <<" of "<< world.size() << std::endl;
-	return 0;
-} catch(...) {return 1;}
+	cout << "After barrier, I am " << world.rank() << " of " << world.size() << '\n';
+}
