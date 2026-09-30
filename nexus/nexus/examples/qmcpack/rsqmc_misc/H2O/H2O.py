@@ -1,6 +1,8 @@
 #! /usr/bin/env python3
 # H2O molecule with Quantum ESPRESSO orbitals
 
+from copy import deepcopy
+
 from nexus import settings,job,run_project
 from nexus import read_structure
 from nexus import generate_physical_system
@@ -104,7 +106,7 @@ linopt1 = linear(
     )
 
 # QMC Optimization Parameters - Finer Sampling Set
-linopt2 = linopt1.copy()
+linopt2 = deepcopy(linopt1)
 linopt2.samples = 16384
 
 # QMC Optimization
@@ -146,7 +148,7 @@ qmc = generate_qmcpack(
             blocks               = 1,
             timestep             = 1.0,
             usedrift             = False,
-           ),
+            ),
         dmc(
             minimumtargetwalkers = 128,
             reconfiguration      = 'no',
@@ -155,7 +157,7 @@ qmc = generate_qmcpack(
             steps                = 10,
             blocks               = 200,
             nonlocalmoves        = True,
-           )
+            )
         ],
     dependencies   = [(p2q,'orbitals'),(opt,'jastrow')],
     )

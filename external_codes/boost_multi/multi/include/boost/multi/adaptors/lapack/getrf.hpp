@@ -1,67 +1,64 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXXX $CXXFLAGS $0 -o $0x$OXX `pkg-config --libs blas lapack` -lboost_unit_test_framework&&$0x$OXX -x 0&&rm $0x$OXX;exit
-#endif
-// © Alfredo A. Correa 2020
+// Copyright 2020-2025 Alfredo A. Correa
 
-#ifndef MULTI_ADAPTORS_LAPACK_GEQRF_HPP
-#define MULTI_ADAPTORS_LAPACK_GEQRF_HPP
+#ifndef BOOST_MULTI_ADAPTORS_LAPACK_GETRF_HPP
+#define BOOST_MULTI_ADAPTORS_LAPACK_GETRF_HPP
 
-#include "../lapack/core.hpp"
-#include "../blas/filling.hpp"
+#include "boost/multi/adaptors/blas/filling.hpp"
+#include "boost/multi/adaptors/lapack/core.hpp"
 
-#include "../../config/NODISCARD.hpp"
+#include "boost/multi/detail/config/NODISCARD.hpp"
 
 #include<cassert>
 
-//#include<lapacke.h>
-
-namespace boost{namespace multi{namespace lapack{
+namespace boost::multi::lapack {
 
 using index = int;
 
 using blas::filling;
 
 template<class Context, class A, class IPIV>
-auto getrf(Context&& ctxt, A&& a, IPIV&& ipiv){
-	assert( ipiv.size() == std::min(size(a), size(~a)) );
-	assert( stride(a) == 1 );
-//	assert( stride(ipiv) == 1 );
-	multi::index i = std::forward<Context>(ctxt).getrf(size(~a), size(a), base(a), stride(~a), ipiv.data() );
-	if(i == 0) return a();
-	else       return a({0, i - 1}, {0, i - 1});
+auto getrf(Context&& ctxt, A&& arr, IPIV&& ipiv){
+	assert( ipiv.size() == std::min(size(arr), size(~arr)) );
+	assert( stride(arr) == 1 );
+//  assert( stride(ipiv) == 1 );
+	multi::index const i = std::forward<Context>(ctxt).getrf(size(~arr), size(arr), arr.base(), stride(~arr), std::forward<IPIV>(ipiv).data() );
+	// if(i == 0) { return arr(); }
+	// else       { return arr({0, i - 1}, {0, i - 1}); }
+	if(i == 0) { return std::forward<A>(arr)(); }
+	return std::forward<A>(arr)({0, i - 1}, {0, i - 1});
 }
 
 template<class Context, class LU, class IPIV, class B>
-void getrs(Context&& ctxt, LU const& lu, IPIV const& ipiv, B&& b){
+void getrs(Context&& ctxt, LU const& lu, IPIV const& ipiv, B&& barr){
 	assert( size(lu) == size(~lu) );
 	assert( stride(lu) == 1 );
 	assert( size(ipiv) >= size(lu) );
-//	assert( stride(ipiv) == 1 );
-	assert( stride(b) == 1 );
-	std::forward<Context>(ctxt).getrs('N', size(lu), size(~b), base(lu), stride(~lu), ipiv.data(), base(b), stride(~b));
+//  assert( stride(ipiv) == 1 );
+	assert( stride(barr) == 1 );
+	std::forward<Context>(ctxt).getrs('N', size(lu), size(~barr), lu.base(), stride(~lu), ipiv.data(), std::forward<B>(barr).base(), stride(~barr));
 }
 
 template<class Context, class LU, class IPIV, class V>
-void getrs_one(Context&& ctxt, LU const& lu, IPIV const& ipiv, V&& b){
+void getrs_one(Context&& ctxt, LU const& lu, IPIV const& ipiv, V&& barr){
 	assert( size(lu) == size(~lu) );
 	assert( stride(lu) == 1 );
-//	assert( stride(ipiv) == 1 );
-	assert( stride(b) == 1 );
-	std::forward<Context>(ctxt).getrs('N', size(lu), 1, base(lu), stride(~lu), ipiv.data(), base(b), size(lu));
+//  assert( stride(ipiv) == 1 );
+	assert( stride(barr) == 1 );
+	std::forward<Context>(ctxt).getrs('N', size(lu), 1, lu.base(), stride(~lu), ipiv.data(), std::forward<V>(barr).base(), size(lu));
 }
 
 
 template<class A, class IPIV>
-auto getrf(A&& a, IPIV&& ipiv){return getrf(::lapack::context{}, std::forward<A>(a), std::forward<IPIV>(ipiv));}
+auto getrf(A&& arr, IPIV&& ipiv){return getrf(::lapack::context{}, std::forward<A>(arr), std::forward<IPIV>(ipiv));}
 
 template<class LU, class IPIV, class B>
-void getrs(LU const& lu, IPIV const& ipiv, B&& b){return getrs(::lapack::context{}, lu, ipiv, std::forward<B>(b));}
+void getrs(LU const& lu, IPIV const& ipiv, B&& barr){return getrs(::lapack::context{}, lu, ipiv, std::forward<B>(barr));}
 
 template<class LU, class IPIV, class B>
-void getrs_one(LU const& lu, IPIV const& ipiv, B&& b){return getrs_one(::lapack::context{}, lu, ipiv, std::forward<B>(b));}
+void getrs_one(LU const& lu, IPIV const& ipiv, B&& barr){return getrs_one(::lapack::context{}, lu, ipiv, std::forward<B>(barr));}
 
 
-}}}
+}  // namespace boost::multi::lapack
 
 #endif
 

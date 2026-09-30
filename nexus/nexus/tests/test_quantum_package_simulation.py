@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_SIMULATION)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from pathlib import Path
 from . import isolate_nexus_core
@@ -30,7 +28,7 @@ def get_quantum_package_sim(**kwargs):
 
     system = generate_physical_system(
         elem_pos = '''
-            O  0.000000  0.000000  0.000000 
+            O  0.000000  0.000000  0.000000
             H  0.000000  0.757160  0.586260
             H  0.000000  0.757160 -0.586260
             ''',
@@ -45,7 +43,7 @@ def get_quantum_package_sim(**kwargs):
         )
 
     assert(isinstance(sim,QuantumPackage))
-    
+
     return sim
 #end def get_quantum_package_sim
 
@@ -61,7 +59,7 @@ def test_minimal_init():
 
 def test_check_result():
     sim = get_quantum_package_sim()
-    
+
     assert(not sim.check_result('unknown',None))
     assert(not sim.check_result('orbitals',None))
 
@@ -75,20 +73,15 @@ def test_check_result():
 
 
 def test_get_result():
-    from ..developer import NexusError, obj
+    from ..developer import obj
 
     sim = get_quantum_package_sim()
-    
-    try:
+
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     sim.input.run_control.save_for_qmcpack = True
 
@@ -122,28 +115,18 @@ def test_incorporate_result():
     Gamess.ericfmt = None
 
     sim = get_quantum_package_sim()
-    
-    try:
+
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
-    
-    try:
+
+    with pytest.raises(
+        NexusError,
+        match="cannot get orbitals",
+        ):
         sim.get_result('orbitals',other)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     clear_all_sims()
 #end def test_incorporate_result
@@ -151,13 +134,12 @@ def test_incorporate_result():
 
 @isolate_nexus_core
 def test_check_sim_status(tmp_path):
-    import os
-    from ..nexus_base import nexus_core
+    from ..nexus_base import nexus_config
 
-    nexus_core.runs = ''
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.runs = ''
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     sim = get_quantum_package_sim()
 
@@ -170,7 +152,7 @@ def test_check_sim_status(tmp_path):
         sim.check_sim_status()
         raise FailedTest
     except IOError:
-        None
+        pass
     except Exception as e:
         failed(str(e))
     #end try

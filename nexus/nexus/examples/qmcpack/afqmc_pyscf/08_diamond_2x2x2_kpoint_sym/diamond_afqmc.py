@@ -28,10 +28,10 @@ system = generate_physical_system(
     )
 
 scf = generate_pyscf(
-    identifier = 'scf',               
-    path       = 'rhf',               
-    job        = job(serial=True),    
-    template   = './scf_template.py', 
+    identifier = 'scf',
+    path       = 'rhf',
+    job        = job(serial=True),
+    template   = './scf_template.py',
     system     = system,
     cell       = obj(
         basis   = 'gth-szv',

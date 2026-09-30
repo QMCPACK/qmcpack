@@ -7,15 +7,8 @@ case "$1" in
 
   # Configure qmcpack using cmake out-of-source builds 
   configure)
-    
-    if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
-    then
-      echo "Use recent cmake v3.21.3"
-      export PATH=/opt/cmake-3.21.3-linux-x86_64/bin:$PATH
-      # Make current environment variables available to subsequent steps, 
-      # e.g. ctest
-      echo "PATH=$PATH" >> $GITHUB_ENV
-    fi
+
+    cmake --version
     
     if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build ]
     then
@@ -93,15 +86,15 @@ case "$1" in
     case "${GH_JOBNAME}" in
       *"ASan"*)
         echo 'Configure for address sanitizer including leak sanitizer (lsan) -DENABLE_SANITIZER=asan'
-        IS_SANITIZER=asan
+        CMAKE_OPTIONS="$CMAKE_OPTIONS -DENABLE_SANITIZER=asan"
       ;;
       *"UBSan"*)
         echo 'Configure for undefined behavior sanitizer -DENABLE_SANITIZER=ubsan'
-        IS_SANITIZER=ubsan
+        CMAKE_OPTIONS="$CMAKE_OPTIONS -DENABLE_SANITIZER=ubsan"
       ;; 
       *"TSan"*)
         echo 'Configure for thread sanitizer -DENABLE_SANITIZER=tsan'
-        IS_SANITIZER=tsan
+        CMAKE_OPTIONS="$CMAKE_OPTIONS -DENABLE_SANITIZER=tsan"
       ;;
     esac
 
@@ -113,6 +106,14 @@ case "$1" in
       CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_MIXED_PRECISION=OFF"
     fi
 
+    # Sandbox only
+    if [[ "${GH_JOBNAME}" =~ (-Sandbox) ]] ; then
+      echo 'Configure for sandbox only build -DQMC_BUILD_SANDBOX_ONLY=ON'
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_BUILD_SANDBOX_ONLY=ON"
+    else
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_BUILD_SANDBOX_ONLY=OFF"
+    fi
+
     if [[ "$CONTAINER_OS" =~ (centos) ]]
     then
        module avail
@@ -121,44 +122,57 @@ case "$1" in
     fi
     
     case "${GH_JOBNAME}" in
-      *"macOS-GCC14"*"-Real"*)
-        echo 'Configure for building on macOS using gcc14'
+      *"macOS-GCC16"*"-Real"*)
+        echo 'Configure for building on macOS using gcc16'
         cmake -GNinja $CMAKE_OPTIONS \
-              -DCMAKE_C_COMPILER=gcc-14 \
-              -DCMAKE_CXX_COMPILER=g++-14 \
-              -DCMAKE_EXE_LINKER_FLAGS="-Wl,-ld_classic" \
+              -DCMAKE_C_COMPILER=gcc-16 \
+              -DCMAKE_CXX_COMPILER=g++-16 \
+              -DQMC_INSTALL_NEXUS=OFF \
+              ${GITHUB_WORKSPACE}
+              # -DCMAKE_EXE_LINKER_FLAGS="-Wl,-ld_classic" used with gcc-14, macos-14
+      ;;
+      *"macOS-AppleClang"*"-Real"*)
+        echo "Configure for building on macOS using Apple's clang compiler"
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DCMAKE_C_COMPILER=clang \
+              -DCMAKE_CXX_COMPILER=clang++ \
               -DQMC_INSTALL_NEXUS=OFF \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9"*"-CUDA-AFQMC"*)
-        echo 'Configure for building with CUDA and AFQMC, need built-from-source OpenBLAS due to bug in rpm'
+      *"GCC9-MPI"**)
+        echo 'Configure for GCC9 MPI'
+        export OMPI_CC=gcc-9
+        export OMPI_CXX=g++-9
+        # Make current environment variables available to subsequent steps
+        echo "OMPI_CC=gcc-9" >> $GITHUB_ENV
+        echo "OMPI_CXX=g++-9" >> $GITHUB_ENV
         cmake -GNinja $CMAKE_OPTIONS \
-              -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
-              -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
-              -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
-              -DBUILD_AFQMC=ON \
-              -DQMC_GPU=cuda \
-              -DQMC_GPU_ARCHS=sm_70 \
-              -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
-              -DQMC_DATA=$QMC_DATA_DIR \
+              -DCMAKE_C_COMPILER=mpicc \
+              -DCMAKE_CXX_COMPILER=mpicxx \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9"*"-MKL-"*)
-        echo 'Configure for building with GCC and Intel MKL'
-
-        source /opt/intel2020/mkl/bin/mklvars.sh intel64
-
+        *"GCC9-NoMPI"**)
+        echo 'Configure for GCC9 NoMPI'
         cmake -GNinja $CMAKE_OPTIONS \
-              -DBLA_VENDOR=Intel10_64lp \
-              -DQMC_DATA=$QMC_DATA_DIR \
+              -DCMAKE_C_COMPILER=gcc-9 \
+              -DCMAKE_CXX_COMPILER=g++-9 \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC"*"-Sandbox"*)
-        echo 'Configure for enabling sandbox (minimal) only option with gcc'
+      *"GCC15-MPI"*"-Gcov"*)
+        echo 'Configure for code coverage with gcc and gcovr -DENABLE_GCOV=TRUE and upload reports to Codecov'
+
+        # For consistency with other compiler usage, while usually the default, specify gcc to OpenMPI wrappers.
+        export OMPI_CC=gcc-15
+        export OMPI_CXX=g++-15
+        # Make current environment variables available to subsequent steps
+        echo "OMPI_CC=gcc-15" >> $GITHUB_ENV
+        echo "OMPI_CXX=g++-15" >> $GITHUB_ENV
+
         cmake -GNinja $CMAKE_OPTIONS \
-              -DCMAKE_C_COMPILER=gcc \
-              -DCMAKE_CXX_COMPILER=g++ \
-              -DQMC_BUILD_SANDBOX_ONLY=ON \
+              -DCMAKE_C_COMPILER=mpicc \
+              -DCMAKE_CXX_COMPILER=mpicxx \
+              -DENABLE_GCOV=TRUE \
+              -DENABLE_PYCOV=TRUE \
               ${GITHUB_WORKSPACE}
       ;;
       *"GCC"*"-Gcov"*)
@@ -178,6 +192,16 @@ case "$1" in
               -DENABLE_PYCOV=TRUE \
               ${GITHUB_WORKSPACE}
       ;;
+      *"GCC15"*"-Werror"*)
+        echo 'Configure for building with gcc -Werror flag enabled'
+        # figure out the actual target used by -march=native
+        gcc-15 -march=native -Q --help=target
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DCMAKE_C_COMPILER=gcc-15 \
+              -DCMAKE_CXX_COMPILER=g++-15 \
+              -DCMAKE_CXX_FLAGS=-Werror \
+              ${GITHUB_WORKSPACE}
+      ;;
       *"GCC"*"-Werror"*)
         echo 'Configure for building with gcc -Werror flag enabled'
         cmake -GNinja $CMAKE_OPTIONS \
@@ -186,18 +210,35 @@ case "$1" in
               -DCMAKE_CXX_FLAGS=-Werror \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC"*)
-        echo 'Configure for disabling OpenMP with QMC_OMP=0'
+      *"GCC"*) # Generic builds with gcc
         cmake -GNinja $CMAKE_OPTIONS \
               -DCMAKE_C_COMPILER=gcc \
               -DCMAKE_CXX_COMPILER=g++ \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Clang"*"San"*) # Sanitize with clang compilers
+      *"Clang22-NoMPI"*"-Offload"*)
         cmake -GNinja $CMAKE_OPTIONS \
-              -DCMAKE_C_COMPILER=clang \
-              -DCMAKE_CXX_COMPILER=clang++ \
-              -DENABLE_SANITIZER=$IS_SANITIZER \
+              -DCMAKE_C_COMPILER=clang-22 \
+              -DCMAKE_CXX_COMPILER=clang++-22 \
+              -DQMC_GPU=openmp \
+              -DOFFLOAD_TARGET=x86_64-pc-linux-gnu \
+              -DUSE_OBJECT_TARGET=ON \
+              ${GITHUB_WORKSPACE}
+      ;;
+      *"Clang22-NoMPI"*)
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DCMAKE_C_COMPILER=clang-22 \
+              -DCMAKE_CXX_COMPILER=clang++-22 \
+              ${GITHUB_WORKSPACE}
+      ;;
+      *"Clang22-MPI"*)
+        export OMPI_CC=clang-22
+        export OMPI_CXX=clang++-22        
+        echo "OMPI_CC=clang-22" >> $GITHUB_ENV
+        echo "OMPI_CXX=clang++-22" >> $GITHUB_ENV
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DCMAKE_C_COMPILER=mpicc \
+              -DCMAKE_CXX_COMPILER=mpiCC \
               ${GITHUB_WORKSPACE}
       ;;
       *"Clang16"*"-Offload"*)
@@ -234,6 +275,12 @@ case "$1" in
               -DQMC_GPU_ARCHS=sm_70 \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_DATA=$QMC_DATA_DIR \
+              ${GITHUB_WORKSPACE}
+      ;;
+      *"Clang"*) # Generic builds with clang
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DCMAKE_C_COMPILER=clang \
+              -DCMAKE_CXX_COMPILER=clang++ \
               ${GITHUB_WORKSPACE}
       ;;
       *"Intel21"*"-CUDA-AFQMC"*)
@@ -284,25 +331,33 @@ case "$1" in
   test)
     
     # Run only deterministic tests (reasonable for CI) by default
-    case "${GH_JOBNAME}" in
-      *"macOS-GCC14"*"-Real"*)
-        TEST_LABEL="-L deterministic -E deterministic-unit_test_estimators"
-        # estimator test bus error on mac only
-      ;;
-      *)  
-        TEST_LABEL="-L deterministic"
-      ;;  
-    esac  
+    TEST_LABEL="-L deterministic"  
 
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     
-    # Enable oversubscription in OpenMPI
+    # Required OpenMPI settings
     if [[ "${GH_JOBNAME}" =~ (-MPI-) ]]
     then
       echo "Enabling OpenMPI oversubscription"
+      # Use PRTE config file for OpenMPI 5.x
+      echo "Creating PRTE config file for OpenMPI 5.x"
+      mkdir $HOME/.prte
+      cat >$HOME/.prte/mca-params.conf <<EOF
+rmaps_default_mapping_policy = :oversubscribe
+hwloc_base_binding_policy = none
+EOF
+      # OpenMPI 4.x settings
       export OMPI_MCA_rmaps_base_oversubscribe=1
       export OMPI_MCA_hwloc_base_binding_policy=none
       
+      # Ensure OpenMPI can create session dirs when running as non-root inside container via workspace TMP
+      # Symptom: "A call to mkdir was unable to create the desired directory" & "orte_session_dir failed"
+      OMPI_TMP_DIR="${GITHUB_WORKSPACE:-$(pwd)}/ompi_tmp"
+      mkdir -p "$OMPI_TMP_DIR"
+      chmod 1777 "$OMPI_TMP_DIR"
+      export OMPI_MCA_orte_tmpdir_base="$OMPI_TMP_DIR"
+      export TMPDIR="$OMPI_TMP_DIR"
+
       if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
       then
         echo "Set the management layer to ucx"
@@ -315,6 +370,11 @@ case "$1" in
        export KMP_TEAMS_THREAD_LIMIT=1
        # Run only unit tests (reasonable for CI)
        TEST_LABEL="-L unit"
+    fi
+
+    if [[ "${GH_JOBNAME}" =~ (Clang22-NoMPI-Offload*) ]]
+    then
+       export KMP_TEAMS_THREAD_LIMIT=1
     fi
 
     if [[ "${GH_JOBNAME}" =~ (CUDA) ]]
@@ -366,7 +426,7 @@ case "$1" in
     # see https://gcovr.com/en/stable/faq.html#why-does-c-code-have-so-many-uncovered-branches
     # set suspicious hits threshold=2^40
     # see https://gcovr.com/en/stable/manpage.html#gcov-options
-    gcovr --exclude-unreachable-branches --exclude-throw-branches --gcov-ignore-parse-errors=suspicious_hits.warn_once_per_file --gcov-suspicious-hits-threshold=1099511627776 --root=${GITHUB_WORKSPACE}/.. --xml-pretty -o coverage.xml
+    gcovr --exclude-unreachable-branches --exclude-throw-branches --gcov-ignore-errors=source_not_found --gcov-ignore-parse-errors=suspicious_hits.warn_once_per_file --gcov-suspicious-hits-threshold=1099511627776 --root=${GITHUB_WORKSPACE}/.. --xml-pretty -o coverage.xml
     du -hs coverage.xml
     #cat coverage.xml
     python3-coverage combine nexus/nexus/tests/.coverage*

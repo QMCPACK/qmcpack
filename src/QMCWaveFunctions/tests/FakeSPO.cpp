@@ -146,6 +146,10 @@ void FakeSPO<T>::evaluate_notranspose(const ParticleSet& P,
   }
 }
 
+template<typename T>
+void FakeSPO<T>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
+{}
+
 #if !defined(MIXED_PRECISION)
 template class FakeSPO<double>;
 template class FakeSPO<std::complex<double>>;

@@ -290,12 +290,12 @@ which in turn set environment variables. The list of supported environment varia
 
 ::
 
-  CXX              C++ compiler
-  CC               C Compiler
-  MKL_ROOT         Path for MKL
-  HDF5_ROOT        Path for HDF5
-  BOOST_ROOT       Path for Boost
-  FFTW_HOME        Path for FFTW
+  CXX                  C++ compiler
+  CC                   C Compiler
+  VendorPerfLibs_ROOT  Path for vendor optimized libraries
+  HDF5_ROOT            Path for HDF5
+  BOOST_ROOT           Path for Boost
+  FFTW_ROOT            Path for FFTW
 
 .. _cmakeoptions:
 
@@ -328,9 +328,9 @@ the path to the source directory.
     QMC_GPU_ARCHS         Specify GPU architectures. For example, "gfx90a" targets AMD MI200 series GPUs.
                           "intel_gpu_pvc" targets Intel Data Center GPU Max 1xxx.
                           "sm_80;sm_70" creates a single executable running on both NVIDIA A100 and V100 GPUs.
-                          Mixing vendor "gfx90a;sm_70" is not supported. If not set, atempt to derive it
+                          Mixing vendor "gfx90a;sm_70" is not supported. If not set, attempt to derive it
                           from CMAKE_CUDA_ARCHITECTURES or CMAKE_HIP_ARCHITECTURES if available and then
-                          atempt to auto-detect existing GPUs.
+                          attempt to auto-detect existing GPUs.
 
 - General build options
 
@@ -338,7 +338,7 @@ the path to the source directory.
 
     CMAKE_BUILD_TYPE     A variable which controls the type of build
                          (defaults to Release). Possible values are:
-                         None (Do not set debug/optmize flags, use
+                         None (Do not set debug/optimize flags, use
                          CMAKE_C_FLAGS or CMAKE_CXX_FLAGS)
                          Debug (create a debug build)
                          Release (create a release/optimized build)
@@ -394,13 +394,18 @@ the path to the source directory.
     QMC_DISABLE_HIP_HOST_REGISTER  ON/OFF(default). If ON, make all the use of hipHostRegister/Unregister
                                    as no-op, namely disabling all the use of pinned memory.
 
-- BLAS/LAPACK related
+    QMC_OFFLOAD_USM                ON/OFF(default). If ON, enable OpenMP offload unified shared memory feature
+                                   that eliminates the device copies of data.
+
+- CPU Vendor Performance Libraries
 
   ::
 
-    BLA_VENDOR          If set, checks only the specified vendor, if not set checks all the possibilities.
-                        See full list at https://cmake.org/cmake/help/latest/module/FindLAPACK.html
-    MKL_ROOT            Path to MKL libraries. Only necessary when auto-detection fails or overriding is desired.
+    VPL_ID               Select the specified vendor or generic performance libraries. If not specified, search for any possible candidate.
+                         See details at https://github.com/QMCPACK/qmcpack/blob/develop/CMake/FindVendorPerfLibs.cmake
+    VendorPerfLibs_ROOT  Search path for the root directory of vendor performance libraries.
+    BLA_VENDOR           For selecting specified or any BLAS/LAPACK libraries when VPL_ID is "Generic".
+                         See full list at https://cmake.org/cmake/help/latest/module/FindLAPACK.html
 
 - Scalar and vector math functions
 
@@ -428,17 +433,23 @@ the path to the source directory.
 
   ::
 
-    FFTW_INCLUDE_DIRS   Specify include directories for FFTW
+    FFTW_INCLUDE_DIR    Specify include directory for FFTW
     FFTW_LIBRARY_DIRS   Specify library directories for FFTW
 
 - CTest related
 
   ::
 
-    MPIEXEC_EXECUTABLE     Specify the mpi wrapper, e.g. srun, aprun, mpirun, etc.
-    MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag,
-                           e.g. "-n", "-np", etc.
-    MPIEXEC_PREFLAGS       Flags to pass to MPIEXEC_EXECUTABLE directly before the executable to run.
+    MPIEXEC_EXECUTABLE           Specify the mpi wrapper, e.g. srun, aprun, mpirun, etc.
+    MPIEXEC_NUMPROC_FLAG         Specify the number of mpi processes flag,
+                                 e.g. "-n", "-np", etc.
+    MPIEXEC_PREFLAGS             Flags to pass to MPIEXEC_EXECUTABLE directly before the executable to run.
+    QMC_CTEST_NUM_GPUS           Number of GPUs available to CTest on the local node (default: 1).
+                                 CTest uses this value to run independent GPU tests simultaneously,
+                                 assigning one GPU to each test. With default value, GPU tests
+                                 are serialized and only used 1 GPU. Must be a positive integer.
+    QMC_GPU_VISIBILITY_VARIABLE  Optionally specify the environment variable to control GPU visibility for CTest.
+                                 By default, "CUDA_VISIBLE_DEVICES", "ROCR_VISIBLE_DEVICES", and "ZE_AFFINITY_MASK" are used. 
 
 - Sanitizers Developer Options
 
@@ -536,10 +547,9 @@ Example configure and build
 
     export CXX=icpc
     export CC=icc
-    export MKL_ROOT=/usr/local/intel/mkl/10.0.3.020
+    export VendorPerfLibs_ROOT=/usr/local/intel/mkl/10.0.3.020
     export HDF5_ROOT=/usr/local
     export BOOST_ROOT=/usr/local/boost
-    export FFTW_HOME=/usr/local/fftw
 
 - Move to build directory, run CMake, and make
 
@@ -584,7 +594,7 @@ than usually needed for comprehensiveness:
     -D CMAKE_BUILD_TYPE=Debug                         \
     -D LIBXML2_INCLUDE_DIR=/usr/include/libxml2      \
     -D LIBXML2_LIBRARY=/usr/lib/x86_64-linux-gnu/libxml2.so \
-    -D FFTW_INCLUDE_DIRS=/usr/include                 \
+    -D FFTW_INCLUDE_DIR=/usr/include                  \
     -D FFTW_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu    \
     -D QMC_DATA=/projects/QMCPACK/qmc-data            \
     ..
@@ -610,12 +620,12 @@ To use Intel MKL with, e.g. an MPICH wrapped gcc:
 
   cmake \
     -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
-    -DMKL_ROOT=YOUR_INTEL_MKL_ROOT_DIRECTORY \
+    -DVendorPerfLibs_ROOT=YOUR_INTEL_MKL_ROOT_DIRECTORY \
     ..
 
-MKL\_ROOT is only necessary when MKL is not auto-detected successfully or a particular MKL installation is desired.
+VendorPerfLibs\_ROOT is only necessary when MKL is not auto-detected successfully or a particular MKL installation is desired.
 YOUR\_INTEL\_MKL\_ROOT\_DIRECTORY is the directory containing the MKL bin, examples, and lib
-directories (etc.) and is often /opt/intel/mkl.
+directories (etc.) and is often /opt/intel/oneapi/mkl.
 
 .. _threadedlibrary:
 
@@ -975,7 +985,7 @@ Then using the following command:
       ..
   make -j 56
 
-Note that armclang is recognized as an 'unknown' compiler by CMake v3.13* and below. In this case, we need to force it as clang to apply necessary flags. To do so, pass the following additionals option to CMake:
+Note that armclang is recognized as an 'unknown' compiler by CMake v3.13* and below. In this case, we need to force it as clang to apply necessary flags. To do so, pass the following additional option to CMake:
 
 ::
 
@@ -1749,7 +1759,7 @@ expected to work with any recent version.
 Quantum ESPRESSO converter support for old versions via source code patches
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For QE 6.3-7.0, the pw2qmcpack converter can be addded via a source code patch specific to the specific version of QE. **Note that
+For QE 6.3-7.0, the pw2qmcpack converter can be added via a source code patch specific to the specific version of QE. **Note that
 this route is no longer recommended. Unless a specific old version of QE is required, users should use the latest version of QE and
 the cmake route described above.**
 

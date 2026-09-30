@@ -1,27 +1,40 @@
-// © Alfredo A. Correa 2021
-#include "../../mpi3/main.hpp"
-#include "../../mpi3/process.hpp"
+// Copyright 2021-2025 Alfredo A. Correa
 
-#include<iostream>
-#include<numeric>  // for iota
-#include<vector>
+#include <mpi3/communicator.hpp>
+#include <mpi3/environment.hpp>
+#include <mpi3/process.hpp>
 
-namespace bmpi3 = boost::mpi3;
+#include <boost/core/lightweight_test.hpp>
 
-int bmpi3::main(int /*argc*/, char ** /*argv*/, bmpi3::communicator world) try {
-	auto const size  = world.size(); assert(size != 0);
+namespace mpi3 = boost::mpi3;
+
+auto main(int argc, char** argv) -> int try {
+	mpi3::environment env(argc, argv);
+
+	auto world = env.world();
+
+	auto const size = world.size();
+	BOOST_TEST(size != 0);
 
 	mpi3::process&& next  = world[(world.rank() + size + 1) % size];
 	mpi3::process&& prior = world[(world.rank() + size - 1) % size];
 
 	int token;  // NOLINT(cppcoreguidelines-init-variables)
-	if(not world.is_root()) {prior >> token;}
-	else                    {token = -1;    }
+	if(!world.is_root()) {
+		prior >> token;
+	} else {
+		token = -1;
+	}
 
 	next << token;
 
-	if(    world.is_root()) {prior >> token;}
+	if(world.is_root()) {
+		prior >> token;
+	}
 
-	assert(token == -1);
-	return 0;
-} catch(...) {return 1;}
+	BOOST_TEST(token == -1);
+
+	return boost::report_errors();
+} catch(...) {
+	return 1;
+}

@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.XMLREADER)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from . import TEST_DIR
 from ..testing import object_eq
@@ -17,7 +15,7 @@ for file in TEST_FILES.values():
 
 
 def test_read():
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..xmlreader import readxml,XMLelement
 
     ref = obj(
@@ -241,7 +239,7 @@ def test_read():
     x = readxml(TEST_FILES['vmc.in.xml'])
     assert(isinstance(x,XMLelement))
     x.remove_hidden()
-    o = x.to_obj()
+    o = to_obj(x)
 
     assert(object_eq(o,ref))
 #end def test_read
@@ -334,6 +332,11 @@ def test_find_pair():
     assert(s[i1:i2]=='</qmc>')
     i1,i2 = find_pair(s,['</','>'],i2)
     assert(s[i1:i2]=='</simulation>')
+
+    # A right delimiter can remain after the final left delimiter.  In this
+    # case, no pair is present and both locations should report not found.
+    i1,i2 = find_pair('<simulation><project/></simulation>',['<include','/>'])
+    assert((i1,i2)==(-1,-1))
 #end def test_find_pair
 
 
@@ -388,7 +391,7 @@ def test_remove_pair_sections():
               ...
            </qmc>
         </simulation>
-        '''
+        '''  # noqa: W293
     assert(s==s_no_h)
 
     s = remove_pair_sections(s,('<qmcsystem>','</qmcsystem>'))
@@ -403,9 +406,9 @@ def test_remove_pair_sections():
               ...
            </qmc>
         </simulation>
-        '''
+        '''  # noqa: W293
     assert(s==s_no_sys)
-    
+
     s = remove_pair_sections(s,('<simulation>','</simulation>'))
     assert(s.strip()=='')
 #end def test_remove_pair_sections
@@ -426,7 +429,7 @@ def test_remove_empty_lines():
 
 
         empty lines.
-        '''
+        '''  # noqa: W293
 
     sref = '''        This string
         has a

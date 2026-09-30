@@ -8,8 +8,8 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
@@ -47,8 +47,8 @@ public:
     char* buf;
     int out_buflen;
     xmlDocDumpFormatMemory(m_doc_out, (xmlChar**)&buf, &out_buflen, 1);
-    std::cout << "XML buffer length = " << out_buflen << std::endl;
-    std::cout << "XML: " << std::endl << buf << std::endl;
+    app_log() << "XML buffer length = " << out_buflen << std::endl;
+    app_log() << "XML: " << std::endl << buf << std::endl;
     xmlFree(buf);
   }
 

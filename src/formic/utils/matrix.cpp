@@ -441,6 +441,8 @@ template formic::ColVec<int> formic::ConstMatrix<int>::col_as_vec(const size_t j
 template formic::ColVec<double> formic::ConstMatrix<double>::col_as_vec(const size_t j) const;
 template formic::ColVec<std::complex<double> > formic::ConstMatrix<std::complex<double> >::col_as_vec(const size_t j) const;
 
+/*
+// formic::RowVec disabled because it is not used and it triggers STL-related errors in debug
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  returns a new row vector whose elements are copied from the specified row
 ///         of this matrix
@@ -459,7 +461,7 @@ template<class S> formic::RowVec<S> formic::ConstMatrix<S>::row_as_vec(const siz
 template formic::RowVec<int> formic::ConstMatrix<int>::row_as_vec(const size_t i) const;
 template formic::RowVec<double> formic::ConstMatrix<double>::row_as_vec(const size_t i) const;
 template formic::RowVec<std::complex<double> > formic::ConstMatrix<std::complex<double> >::row_as_vec(const size_t i) const;
-
+*/
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  places the elements of the supplied vector in the specified column
 ///

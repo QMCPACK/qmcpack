@@ -8,11 +8,9 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Numerics/OneDimGridBase.h"
 #include "ParticleIO/XMLParticleIO.h"
@@ -56,7 +54,7 @@ void test_He(bool transform)
     ions.create({1});
     ions.R[0]            = 0.0;
     SpeciesSet& ispecies = ions.getSpeciesSet();
-    int heIdx            = ispecies.addSpecies("He");
+    ispecies.addSpecies("He");
     ions.update();
 
     elec.addTable(ions);
@@ -64,7 +62,6 @@ void test_He(bool transform)
 
     Libxml2Document doc;
     REQUIRE(doc.parse("he_sto3g.wfj.xml"));
-    xmlNodePtr root = doc.getRoot();
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -88,7 +85,7 @@ void test_He(bool transform)
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
     auto sposet = bb.createSPOSet(slater_base[0]);
 
-    //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
+    //app_log() << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
     SPOSet::ValueVector values;
     SPOSet::GradVector dpsi;
@@ -161,7 +158,7 @@ void test_He_mw(bool transform)
   ions.create({1});
   ions.R[0]            = 0.0;
   SpeciesSet& ispecies = ions.getSpeciesSet();
-  int heIdx            = ispecies.addSpecies("He");
+  ispecies.addSpecies("He");
   ions.update();
 
   elec.addTable(ions);
@@ -169,7 +166,6 @@ void test_He_mw(bool transform)
 
   Libxml2Document doc;
   REQUIRE(doc.parse("he_sto3g.wfj.xml"));
-  xmlNodePtr root = doc.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -193,7 +189,7 @@ void test_He_mw(bool transform)
   OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
   auto sposet = bb.createSPOSet(slater_base[0]);
 
-  //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
+  //app_log() << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
   SPOSet::ValueVector psi;
   SPOSet::GradVector dpsi;
@@ -288,7 +284,6 @@ void test_EtOH_mw(bool transform)
 
   Libxml2Document doc;
   REQUIRE(doc.parse("ethanol.structure.xml"));
-  xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -319,7 +314,6 @@ void test_EtOH_mw(bool transform)
 
   Libxml2Document doc2;
   REQUIRE(doc2.parse("ethanol.wfnoj.xml"));
-  xmlNodePtr root2 = doc2.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -346,7 +340,7 @@ void test_EtOH_mw(bool transform)
   auto sposet = bb.createSPOSet(slater_base[0]);
 
 
-  //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
+  //app_log() << "basis set size = " << sposet->getBasisSetSize() << std::endl;
   size_t n_mo = sposet->getOrbitalSetSize();
   SPOSet::ValueVector psiref_0(n_mo);
   SPOSet::GradVector dpsiref_0(n_mo);
@@ -492,7 +486,7 @@ void test_Ne(bool transform)
     ions.create({1});
     ions.R[0]            = {0.0, 0.0, 0.0};
     SpeciesSet& ispecies = ions.getSpeciesSet();
-    int heIdx            = ispecies.addSpecies("Ne");
+    ispecies.addSpecies("Ne");
     ions.update();
 
 
@@ -501,7 +495,6 @@ void test_Ne(bool transform)
 
     Libxml2Document doc;
     REQUIRE(doc.parse("ne_def2_svp.wfnoj.xml"));
-    xmlNodePtr root = doc.getRoot();
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -526,7 +519,7 @@ void test_Ne(bool transform)
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
     auto sposet = bb.createSPOSet(slater_base[0]);
 
-    //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
+    //app_log() << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
     const int norbs = 5;
     SPOSet::ValueVector values;
@@ -599,7 +592,6 @@ void test_HCN(bool transform)
 
     Libxml2Document doc;
     REQUIRE(doc.parse("hcn.structure.xml"));
-    xmlNodePtr root = doc.getRoot();
 
     const SimulationCell simulation_cell;
     auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -630,7 +622,6 @@ void test_HCN(bool transform)
 
     Libxml2Document doc2;
     REQUIRE(doc2.parse("hcn.wfnoj.xml"));
-    xmlNodePtr root2 = doc2.getRoot();
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));

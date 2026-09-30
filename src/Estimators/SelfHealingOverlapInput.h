@@ -34,8 +34,8 @@ public:
     SelfHealingOverlapInputSection()
     {
       section_name   = type_tag;
-      attributes     = {"type", "name", "param_deriv"};
-      strings        = {"type", "name"};
+      attributes     = {"name", "param_deriv"};
+      strings        = {"name"};
       bools          = {"param_deriv"};
       default_values = {{"param_deriv", false}};
     }
@@ -43,7 +43,6 @@ public:
   };
 
   std::string get_name() const { return name_; }
-  std::string get_type() const { return type_; }
 
   SelfHealingOverlapInput(xmlNodePtr cur);
   /** default copy constructor
@@ -56,7 +55,6 @@ public:
 
 private:
   std::string name_{type_tag};
-  std::string type_{type_tag};
 };
 
 } // namespace qmcplusplus

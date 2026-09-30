@@ -25,6 +25,7 @@ set(FORCE_SRCS test_force.cpp test_force_ewald.cpp test_stress.cpp test_spacewar
 set(HAM_SRCS
     test_bare_kinetic.cpp
     test_density_estimator.cpp
+    test_L2Potential.cpp
     test_NonLocalTOperator.cpp
     test_ecp.cpp
     test_hamiltonian_pool.cpp
@@ -81,3 +82,6 @@ foreach(CATEGORY coulomb force ham ewald2d)
   add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 endforeach()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

@@ -27,7 +27,6 @@ std::unique_ptr<OneDimGridFactory::GridType> OneDimGridFactory::createGrid(xmlNo
   RealType astep  = 1.25e-2;
   IndexType npts  = 1001;
   std::string gridType("log");
-  std::string gridID("invalid");
   OhmmsAttributeSet radAttrib;
   radAttrib.add(gridType, "type");
   radAttrib.add(npts, "npts");
@@ -37,22 +36,21 @@ std::unique_ptr<OneDimGridFactory::GridType> OneDimGridFactory::createGrid(xmlNo
   radAttrib.add(astep, "astep");
   radAttrib.add(ascale, "scale");
   radAttrib.add(astep, "step");
-  radAttrib.add(gridID, "id");
-  radAttrib.add(gridID, "name");
-  radAttrib.add(gridID, "ref");
   if (cur != NULL)
     radAttrib.put(cur);
   if (gridType == "log")
   {
     if (ascale > 0.0)
     {
-      LOGMSG("Using log grid with default values: scale = " << ascale << " step = " << astep << " npts = " << npts)
+      qmcplusplus::app_log() << "Using log grid with default values: scale = " << ascale << " step = " << astep
+                             << " npts = " << npts << std::endl;
       agrid = std::make_unique<LogGridZero<RealType>>();
       agrid->set(astep, ascale, npts);
     }
     else
     {
-      LOGMSG("Using log grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
+      qmcplusplus::app_log() << "Using log grid with default values: ri = " << ri << " rf = " << rf
+                             << " npts = " << npts << std::endl;
       if (ri < std::numeric_limits<RealType>::epsilon())
       {
         ri = std::numeric_limits<RealType>::epsilon();
@@ -64,7 +62,8 @@ std::unique_ptr<OneDimGridFactory::GridType> OneDimGridFactory::createGrid(xmlNo
   }
   else if (gridType == "linear")
   {
-    LOGMSG("Using linear grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
+    qmcplusplus::app_log() << "Using linear grid with default values: ri = " << ri << " rf = " << rf
+                           << " npts = " << npts << std::endl;
     agrid = std::make_unique<LinearGrid<RealType>>();
     agrid->set(ri, rf, npts);
   }

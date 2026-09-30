@@ -1,0 +1,57 @@
+import generate ;
+import path ;
+import property-set ;
+import virtual-target ;
+
+path-constant HERE : . ;
+
+make html/index.html : build_antora.sh : @run-script ;
+generate files-to-install : html/index.html : <generating-rule>@delayed-glob ;
+install install
+  : files-to-install
+  : <location>html
+    <install-source-root>html/multi
+  ;
+explicit html/index.html files-to-install ;
+
+# this runs the antora script
+actions run-script
+{
+    bash $(>)
+}
+
+# this globs after its sources are created
+rule delayed-glob ( project name : property-set : sources * )
+{
+  for local src in $(sources)
+  {
+    # the next line causes the source to be generated immediately
+    # and not later (which it normally would)
+    UPDATE_NOW [ $(src).actualize ] ;
+  }
+
+  # we need to construct the path to the globbed directory;
+  # this path would be <current-project>/antora
+  local root = [ path.root html [ $(project).location ] ] ;
+  local files ;
+
+  # actual globbing happens here
+  for local file in [ path.glob-tree $(root) : * ]
+  {
+    # we have to skip directories, because our match expression accepts anything
+    if [ CHECK_IF_FILE $(file) ]
+    {
+      # we construct a list of targets to copy
+      files += [ virtual-target.from-file $(file:D=) : $(file:D) : $(project) ] ;
+    }
+  }
+
+  # we prepend empty usage requirements to the result
+  return [ property-set.empty ] $(files) ;
+}
+
+###############################################################################
+alias boostdoc ;
+explicit boostdoc ;
+alias boostrelease : install ;
+explicit boostrelease ;

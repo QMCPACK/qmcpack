@@ -97,9 +97,7 @@ public:
                   bool opt_C_flag,
                   bool opt_F_flag)
       : OptimizableObject("countingjas"), F(f), C(std::move(c)), opt_F(opt_F_flag), opt_C(opt_C_flag)
-  {
-    num_els = P.getTotalNum();
-  }
+  { num_els = P.getTotalNum(); }
 
   std::string getClassName() const override { return "CountingJastrow"; }
 

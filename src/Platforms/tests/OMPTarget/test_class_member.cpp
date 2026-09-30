@@ -8,9 +8,8 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Platforms/Host/OutputManager.h"
 
 #include <memory>
 #include <vector>
@@ -46,7 +45,7 @@ struct maptest
         set_value(i, newdata, data);
     }
     PRAGMA_OFFLOAD("omp target exit data map(delete:data[0:6])")
-    std::cout << "data[5] = " << data[5] << std::endl;
+    app_log() << "data[5] = " << data[5] << std::endl;
   }
 };
 

@@ -9,8 +9,8 @@
 //
 // File created by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "QMCDrivers/Optimizers/HybridEngine.h"
 #include "QMCDrivers/Optimizers/OptimizerTypes.h"

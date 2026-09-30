@@ -7,7 +7,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 
 //  See http://www.boost.org for updates, documentation, and revision history.
-// NOLINTBEGIN(altera-id-dependent-backward-branch,altera-unroll-loops,misc-const-correctness) external code
+// NOLINTBEGIN(altera-id-dependent-backward-branch,altera-unroll-loops,misc-const-correctness,readability-use-concise-preprocessor-directives) external code
 #if (defined _MSC_VER) && (_MSC_VER == 1200)
 #  pragma warning (disable : 4786) // too long name, harmless warning
 #endif
@@ -38,8 +38,13 @@ namespace std{ using ::strcmp; }
 #include <boost/serialization/singleton.hpp>
 
 #ifdef BOOST_MSVC
+
 #  pragma warning(push)
 #  pragma warning(disable : 4511 4512)
+
+#undef BOOST_SERIALIZATION_DECL
+#define BOOST_SERIALIZATION_DECL /*comment*/  // for MSVC
+
 #endif
 
 namespace boost { 
@@ -191,4 +196,4 @@ extended_type_info::operator==(const extended_type_info &rhs) const {
 
 } // namespace serialization
 } // namespace boost
-// NOLINTEND(altera-id-dependent-backward-branch,altera-unroll-loops,misc-const-correctness) external code
+// NOLINTEND(altera-id-dependent-backward-branch,altera-unroll-loops,misc-const-correctness,readability-use-concise-preprocessor-directives) external code

@@ -2,15 +2,12 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.HDFREADER)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from ..testing import value_eq
 
 
 def test_read(tmp_path):
     h5py = pytest.importorskip("h5py")
-    import os
     import numpy as np
     from ..hdfreader import read_hdf
 

@@ -15,21 +15,14 @@
 #    HDFgroup                                                        #
 #      Class representing an HDF group.                              #
 #      Contains other HDFgroup's or named data as numpy arrays       #
-#                                                                    #                                        
+#                                                                    #
 #====================================================================#
 
 import numpy as np
 import keyword
 from inspect import getmembers
-from .developer import DevBase, obj, unavailable, valid_variable_name
-from .utilities import path_string
-
-try:
-    import h5py
-except:
-    h5py = unavailable('h5py')
-#end try
-
+from .developer import DevBase, obj
+from .utilities import path_string, valid_variable_name
 
 class HDFglobals(DevBase):
     view = False
@@ -46,18 +39,15 @@ class HDFgroup(DevBase):
 
     def _set_parent(self,parent):
         self._parent=parent
-        return
     #end def set_parent
 
     def _add_dataset(self,name,dataset):
         self._datasets[name]=dataset
-        return 
     #end def add_dataset
 
     def _add_group(self,name,group):
         group._name=name
         self._groups[name]=group
-        return 
     #end def add_group
 
     def _contains_group(self,name):
@@ -72,13 +62,13 @@ class HDFgroup(DevBase):
         s=''
         if len(self._datasets)>0:
             s+='  datasets:\n'
-            for k,v in self._datasets.items():
+            for k in self._datasets.keys():
                 s+= '    '+k+'\n'
             #end for
         #end if
         if len(self._groups)>0:
             s+= '  groups:\n'
-            for k,v in self._groups.items():
+            for k in self._groups.keys():
                 s+= '    '+k+'\n'
             #end for
         #end if
@@ -102,16 +92,15 @@ class HDFgroup(DevBase):
 
         self._escape_names=None
         self._escape_names=set(dict(getmembers(self)).keys()) | set(keyword.kwlist)
-        return
     #end def __init__
 
 
-    def _remove_hidden(self,deep=True):
+    def _remove_hidden(self,*,deep=True):
         if '_parent' in self:
             del self._parent
         #end if
         if deep:
-            for name,value in self.items():
+            for value in self.values():
                 if isinstance(value,HDFgroup):
                     value._remove_hidden()
                 #end if
@@ -175,7 +164,8 @@ class HDFgroup(DevBase):
                 svalue = self[name]
                 ovalue = other[name]
                 if not isinstance(svalue,np.ndarray) or not isinstance(ovalue,np.ndarray):
-                    self.error(name+' is not an array')
+                    msg = name+' is not an array'
+                    raise TypeError(msg)
                 #end if
                 shape  = np.minimum(svalue.shape,ovalue.shape)
                 self[name] = np.resize(svalue,shape)
@@ -187,7 +177,8 @@ class HDFgroup(DevBase):
                 if name in other and isinstance(other[name],HDFgroup):
                     value.minsize(other[name])
                 else:
-                    self.error(name+' not found in minsize partner')
+                    msg = name+' not found in minsize partner'
+                    raise KeyError(msg)
                 #end if
             #end if
         #end for
@@ -204,11 +195,13 @@ class HDFgroup(DevBase):
                 svalue = self[name]
                 ovalue = other[name]
                 if not isinstance(svalue,np.ndarray) or not isinstance(ovalue,np.ndarray):
-                    self.error(name+' is not an array')
+                    msg = name+' is not an array'
+                    raise TypeError(msg)
                 #end if
                 shape  = np.minimum(svalue.shape,ovalue.shape)
                 if np.abs(shape-np.array(svalue.shape)).sum() > 0:
-                    self.error(name+' in partner is too large')
+                    msg = name+' in partner is too large'
+                    raise ValueError(msg)
                 #end if
                 ranges = []
                 for s in shape:
@@ -224,14 +217,15 @@ class HDFgroup(DevBase):
                 if name in other and isinstance(other[name],HDFgroup):
                     value.accumulate(other[name])
                 else:
-                    self.error(name+' not found in accumulate partner')
+                    msg = name+' not found in accumulate partner'
+                    raise KeyError(msg)
                 #end if
             #end if
         #end for
         #self.sum(*names)
     #end def accumulate
 
-    
+
     def normalize(self,normalization,*names):
         for name in names:
             if name in self and isinstance(self[name],np.ndarray):
@@ -247,7 +241,7 @@ class HDFgroup(DevBase):
         #self.sum(*names)
     #end def normalize
 
-        
+
     def sum(self,*names):
         for name in names:
             if name in self and isinstance(self[name],np.ndarray) and name=='value':
@@ -262,8 +256,9 @@ class HDFgroup(DevBase):
 
 
 class HDFreader(DevBase):
-    
-    def __init__(self,fpath,verbose=False,view=False):
+
+    def __init__(self,fpath,*,verbose=False,view=False):
+        import h5py
         fpath = path_string(fpath)
         HDFglobals.view = view
 
@@ -308,7 +303,8 @@ class HDFreader(DevBase):
                     elif isinstance(v, h5py.Group):
                         self.add_group(hcur,cur,k,v)
                     else:
-                        self.error('encountered invalid type: '+str(type(v)))
+                        msg = 'encountered invalid type: '+str(type(v))
+                        raise TypeError(msg)
                 else:
                     self.warn('attribute '+k+' is not a valid variable name and has been ignored')
                 #end if
@@ -319,7 +315,6 @@ class HDFreader(DevBase):
             print('  end HDFreader Initialization')
         #end if
 
-        return
     #end def __init__
 
 
@@ -331,13 +326,11 @@ class HDFreader(DevBase):
             self.hcur.append(None)
         #end if
         self.pad = self.ilevel*'  '
-        return
     #end def increment_level
 
     def decrement_level(self):
         self.ilevel-=1
         self.pad = self.ilevel*'  '
-        return
     #end def decrement_level
 
     def add_dataset(self,cur,k,v):
@@ -347,10 +340,10 @@ class HDFreader(DevBase):
             cur[k] = v
         #end if
         cur._add_dataset(k,cur[k])
-        return
     #end def add_dataset
 
     def add_group(self,hcur,cur,k,v):
+        import h5py
         cur[k] = HDFgroup()
         cur._add_group(k,cur[k])
         cur._groups[k]._parent = cur
@@ -373,12 +366,11 @@ class HDFreader(DevBase):
             #end if
         #end for
 
-        return
     #end def add_group
 #end class HDFreader
 
 
 
-def read_hdf(fpath,verbose=False,view=False):
+def read_hdf(fpath,*,verbose=False,view=False):
     return HDFreader(fpath=fpath,verbose=verbose,view=view).obj
 #end def read_hdf

@@ -95,17 +95,18 @@ private:
   void set_ptcl(void);
   void unset_ptcl(void);
 
+#if !defined(REMOVE_TRACEMANAGER)
   TraceSample<TraceReal>* w_trace;
   TraceSample<TraceReal>* Td_trace;
   CombinedTraceSample<TraceReal>* Vd_trace;
   CombinedTraceSample<TraceReal>* Vs_trace;
 
   void getRequiredTraces(TraceManager& tm) override;
-
   void contributeScalarQuantities() override {}
   void checkoutScalarQuantities(TraceManager& tm) override {}
   void collectScalarQuantities() override {}
   void deleteScalarQuantities() override {}
+#endif
 };
 
 

@@ -1,3 +1,6 @@
-command to update subtree to v0.80.1 tag. Run from top level QMCPACK source directory
+To replace the Boost.Multi subtree with the v0.91.1 tag, run these commands from the top-level QMCPACK source directory. This overwrites the existing vendored copy.
 
-git subtree pull --squash -P external_codes/boost_multi/multi https://gitlab.com/correaa/boost-multi.git v0.80.1
+git merge --abort  # only if a previous subtree merge is in progress
+git rm -r external_codes/boost_multi/multi
+git commit -m "Remove old boost-multi subtree"
+git subtree add --squash -P external_codes/boost_multi/multi https://gitlab.com/correaa/boost-multi.git v0.91.1

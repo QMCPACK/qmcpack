@@ -65,11 +65,11 @@ public:
     }
     if (DMBuffer.size() < dm_size)
     {
-      DMBuffer.reextent(iextensions<1u>{dm_size});
+      DMBuffer.reextent(extents_t<1u>{dm_size});
     }
     if (DMAverage.size() < dm_size)
     {
-      DMAverage.reextent(iextensions<1u>{dm_size});
+      DMAverage.reextent(extents_t<1u>{dm_size});
     }
     std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0, 0.0));
     std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0, 0.0));
@@ -88,7 +88,7 @@ public:
     CMatrix_ref OneRDM(DMBuffer.data(), {dm_dims.first, dm_dims.second});
     denom[0] = ComplexType(0.0, 0.0);
     std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0, 0.0));
-    stdCVector wgt(iextensions<1u>{wset.size()});
+    stdCVector wgt(extents_t<1u>{wset.size()});
     wset.getProperty(WEIGHT, wgt);
 
     int nx((wset.getWalkerType() == COLLINEAR) ? 2 : 1);
@@ -101,7 +101,7 @@ public:
 
     if (!importanceSampling)
     {
-      stdCVector phase(iextensions<1u>{wset.size()});
+      stdCVector phase(extents_t<1u>{wset.size()});
       wset.getProperty(PHASE, phase);
       for (int i = 0; i < wgt.size(); i++)
         wgt[i] *= phase[i];
@@ -130,8 +130,8 @@ public:
         std::string padded_iblock = std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
 
         using std::get;
-        boost::multi::array_ref<ComplexType, 1> wOvlp_(wOvlp.origin(), {get<0>(wOvlp.sizes()) * get<1>(wOvlp.sizes())});
-        boost::multi::array_ref<ComplexType, 1> wDMsum_(wDMsum.origin(), {get<0>(wDMsum.sizes()) * get<1>(wDMsum.sizes())});
+        boost::multi::array_ref<ComplexType, 1> wOvlp_(wOvlp.base(), {get<0>(wOvlp.sizes()) * get<1>(wOvlp.sizes())});
+        boost::multi::array_ref<ComplexType, 1> wDMsum_(wDMsum.base(), {get<0>(wDMsum.sizes()) * get<1>(wDMsum.sizes())});
         dump.write(DMAverage, "one_rdm_" + padded_iblock);
         dump.write(denom_average, "one_rdm_denom_" + padded_iblock);
         dump.write(wOvlp_, "one_rdm_walker_overlaps_" + padded_iblock);

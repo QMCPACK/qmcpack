@@ -151,9 +151,7 @@ public:
                            int iat,
                            std::vector<GradType>& grad_now,
                            std::vector<ComplexType>& spingrad_now) const override
-  {
-    mw_evalGradWithSpin_serialized(wfc_list, p_list, iat, grad_now, spingrad_now);
-  }
+  { mw_evalGradWithSpin_serialized(wfc_list, p_list, iat, grad_now, spingrad_now); }
 
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                     const RefVectorWithLeader<ParticleSet>& P_list,
@@ -167,9 +165,7 @@ public:
                             std::vector<PsiValue>& ratios,
                             std::vector<GradType>& grad_new,
                             std::vector<ComplexType>& spingrad_new) const override
-  {
-    mw_ratioGradWithSpin_serialized(wfc_list, p_list, iat, ratios, grad_new, spingrad_new);
-  }
+  { mw_ratioGradWithSpin_serialized(wfc_list, p_list, iat, ratios, grad_new, spingrad_new); }
 
   void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                     const RefVectorWithLeader<ParticleSet>& P_list,
@@ -191,9 +187,7 @@ public:
                                       const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                       const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
                                       std::vector<std::vector<ValueType>>& ratios) const override
-  {
-    mw_evaluateSpinorRatios_serialized(wfc_list, vp_list, spinor_multiplier_list, ratios);
-  }
+  { mw_evaluateSpinorRatios_serialized(wfc_list, vp_list, spinor_multiplier_list, ratios); }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {

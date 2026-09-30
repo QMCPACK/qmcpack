@@ -1,14 +1,13 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_INPUT)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 import shutil
 from . import isolate_nexus_core, TEST_DIR
-from nexus.nexus_base import nexus_core
-from ..testing import object_eq
+from nexus.nexus_base import nexus_config
+from ..testing import object_eq,dict_serialize
 
 
 TEST_FILES = {
@@ -21,21 +20,6 @@ TEST_FILES = {
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"
-
-
-def make_serial_reference(gi):
-    s = gi.serial()
-    ref = '    ref = {\n'
-    for k in sorted(s.keys()):
-        v = s[k]
-        if isinstance(v,str):
-            v = "'"+v+"'"
-        #end if
-        ref +="        '{}' : {},\n".format(k,v)
-    #end for
-    ref += '        }\n'
-    return ref
-#end def make_serial_reference
 
 
 serial_references = dict()
@@ -273,7 +257,7 @@ def get_serial_references():
 def check_vs_serial_reference(gi,name):
     from ..developer import obj
     sr = obj(get_serial_references()[name])
-    sg = gi.serial()
+    sg = dict_serialize(gi,dict_type=obj)
     assert(object_eq(sg,sr))
 #end def check_vs_serial_reference
 
@@ -334,8 +318,7 @@ def test_write(tmp_path):
 @isolate_nexus_core
 def test_generate(tmp_path):
     from ..developer import obj
-    from ..nexus_base import nexus_noncore
-    from ..pseudopotential import Pseudopotentials
+    from ..pseudoset import PseudoSet, ppset
     from ..physical_system import generate_physical_system
     from ..gamess_input import generate_gamess_input
 
@@ -343,33 +326,33 @@ def test_generate(tmp_path):
     pp_dir = tmp_path / "pseudopotentials"
     pp_dir.mkdir()
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
-    ppfiles_full = []
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
     for file in ppfiles:
         pp = TEST_FILES[file]
-        pp_copied = shutil.copy(
+        shutil.copy(
             src=pp,
             dst=pp_dir / file,
             )
-        ppfiles_full.append(str(pp_copied))
-
-    nexus_noncore.pseudopotentials = Pseudopotentials(ppfiles_full)
+    PseudoSet.pseudo_files = {
+        file:str((pp_dir/file).resolve()) for file in ppfiles
+        }
+    PseudoSet.labeled_pseudosets = {}
 
     input_files = ['rhf.inp','cisd.inp','cas.inp']
 
     h2o = generate_physical_system(
-        elem        = ['O','H','H'], 
+        elem        = ['O','H','H'],
         pos         = [[0.000000, 0.000000, 0.000000],
                        [0.000000,-0.757160, 0.586260],
                        [0.000000, 0.757160, 0.586260]],
         units       = 'A',
-        net_spin    = 0,  
-        O           = 6,  
-        H           = 1,  
+        net_spin    = 0,
+        O           = 6,
+        H           = 1,
         # C2v symmetry structure
-        folded_elem = ['O','H'],     
+        folded_elem = ['O','H'],
         folded_pos  = [[0.000000, 0.000000, 0.000000],
                        [0.000000, 0.757160, 0.586260]],
         )
@@ -453,7 +436,11 @@ def test_generate(tmp_path):
         gi = generate_gamess_input(**inputs[infile])
         check_vs_serial_reference(gi,infile)
     #end for
+
+    ppset('bfd',gamess=ppfiles)
+    labeled_input = deepcopy(inputs['rhf.inp'])
+    labeled_input.pseudos = 'bfd'
+    gi = generate_gamess_input(**labeled_input)
+    check_vs_serial_reference(gi,'rhf.inp')
+
 #end def test_generate
-
-
-

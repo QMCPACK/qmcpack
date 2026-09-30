@@ -8,8 +8,8 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "Numerics/OneDimCubicSpline.h"
 
 #include <stdio.h>
@@ -144,7 +144,7 @@ TEST_CASE("one_dim_cubic_spline_1", "[numerics]")
     double val2 = cubic_spline.splint(r, du, d2u);
     check_yvals_d2u.push_back(D2U(val2, du, d2u));
 
-    //std::cout << i << " r = " << r << " val = " << val << " " << check_yvals[i] << std::endl;
+    //app_log() << i << " r = " << r << " val = " << val << " " << check_yvals[i] << std::endl;
   }
 
   CHECK(check_yvals[0] == Approx(1));

@@ -4,7 +4,7 @@
 .coverage
 .venv
 .DS_Store
-/build_*/
+/build*/
 nexus/nexus/tests/*output
 .nexus_test
 nexus/docs/_build

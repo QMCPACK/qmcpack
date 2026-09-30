@@ -27,20 +27,20 @@ dia16 = generate_physical_system(
     kshift = (0,0,0),
     C      = 4
     )
-              
+
 scf = generate_pwscf(
     identifier   = 'scf',
     path         = 'diamond/scf',
     job          = job(cores=16,app='pw.x'),
     input_type   = 'generic',
     calculation  = 'scf',
-    input_dft    = 'lda', 
-    ecutwfc      = 200,   
-    conv_thr     = 1e-8, 
+    input_dft    = 'lda',
+    ecutwfc      = 200,
+    conv_thr     = 1e-8,
     nosym        = True,
     wf_collect   = True,
     system       = dia16,
-    pseudos      = ['C.BFD.upf'], 
+    pseudos      = ['C.BFD.upf'],
     )
 
 conv = generate_pw2qmcpack(

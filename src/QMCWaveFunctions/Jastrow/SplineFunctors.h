@@ -146,9 +146,7 @@ struct CubicSplineSingle : public OptimizableFunctorBase
                            const int dist_stride,
                            RT* mw_vals,
                            Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
-  {
-    throw std::runtime_error("mw_evaluateV not implemented!");
-  }
+  { throw std::runtime_error("mw_evaluateV not implemented!"); }
 
   inline void evaluateVGL(const int iat,
                           const int iStart,
@@ -279,9 +277,7 @@ struct CubicSplineBasisSet : public OptimizableFunctorBase
   /** evaluate everything: value, first and second derivatives
   */
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2)
-  {
-    return OutFunc->splint(r, dudr, d2udr2);
-  }
+  { return OutFunc->splint(r, dudr, d2udr2); }
 
   /** evaluate value only
   */

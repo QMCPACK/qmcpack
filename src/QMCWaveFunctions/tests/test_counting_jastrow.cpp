@@ -8,10 +8,9 @@
 //
 // File created by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSet.h"
 #include "VariableSet.h"
@@ -355,7 +354,7 @@ TEST_CASE("CountingJastrow", "[wavefunction]")
   optVars.resetIndex();
   cj->checkInVariablesExclusive(optVars);
   cj->checkOutVariables(optVars);
-  optVars.print(std::cout);
+  optVars.print(app_log());
 
   // test evaluateDerivatives
   cj->evaluateDerivatives(elec, optVars, dlogpsi, dhpsioverpsi);
@@ -379,7 +378,7 @@ TEST_CASE("CountingJastrow", "[wavefunction]")
   optVars2.resetIndex();
   cj2->checkInVariablesExclusive(optVars2);
   cj2->checkOutVariables(optVars2);
-  optVars2.print(std::cout);
+  optVars2.print(app_log());
 
   cj2->evaluateDerivatives(elec, optVars2, dlogpsi, dhpsioverpsi);
   for (int p = 0; p < num_derivs; ++p)

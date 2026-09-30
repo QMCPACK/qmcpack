@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_ANALYZER)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from . import TEST_DIR
 from ..testing import object_eq
@@ -27,7 +25,7 @@ def test_empty_init():
 
 def test_analyze():
     from numpy import array
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..gamess_analyzer import GamessAnalyzer
 
     # no analysis
@@ -129,7 +127,7 @@ def test_analyze():
             )
         )
 
-    assert(object_eq(ga.to_obj(),ga_ref))
+    assert(object_eq(to_obj(ga),ga_ref))
 
 
     # full analysis
@@ -247,6 +245,6 @@ def test_analyze():
             ),
         )
 
-    assert(object_eq(ga.to_obj(),ga_ref))
+    assert(object_eq(to_obj(ga),ga_ref))
 
 #end def test_analyze

@@ -1,34 +1,37 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #ifndef MPI3_COMMUNICATOR_HPP
 #define MPI3_COMMUNICATOR_HPP
 
-#include "../mpi3/communication_mode.hpp"
-#include "../mpi3/error.hpp"
-#include "../mpi3/generalized_request.hpp"
-#include "../mpi3/group.hpp"
-#include "../mpi3/handle.hpp"
-#include "../mpi3/info.hpp"
-#include "../mpi3/message.hpp"
-#include "../mpi3/operation.hpp"
-#include "../mpi3/port.hpp"
-#include "../mpi3/request.hpp"
-#include "../mpi3/status.hpp"
-#include "../mpi3/type.hpp"
+#include <mpi.h>
 
-#include "../mpi3/detail/basic_communicator.hpp"
-#include "../mpi3/detail/buffer.hpp"
-#include "../mpi3/detail/datatype.hpp"
-#include "../mpi3/detail/equality.hpp"
-#include "../mpi3/detail/iterator.hpp"
-#include "../mpi3/detail/value_traits.hpp"
+#include <mpi3/communication_mode.hpp>
+#include <mpi3/error.hpp>
+#include <mpi3/generalized_request.hpp>
+#include <mpi3/group.hpp>
+#include <mpi3/handle.hpp>
+#include <mpi3/info.hpp>
+#include <mpi3/message.hpp>
+#include <mpi3/operation.hpp>
+#include <mpi3/port.hpp>
+#include <mpi3/request.hpp>
+#include <mpi3/status.hpp>
+#include <mpi3/type.hpp>
 
-#include "../mpi3/detail/package.hpp"
+#include <mpi3/detail/basic_communicator.hpp>
+#include <mpi3/detail/buffer.hpp>
+#include <mpi3/detail/datatype.hpp>
+#include <mpi3/detail/equality.hpp>
+#include <mpi3/detail/iterator.hpp>
+#include <mpi3/detail/value_traits.hpp>
 
-#include "../mpi3/config/NODISCARD.hpp"
+#include <mpi3/detail/package.hpp>
 
-//#define OMPI_SKIP_MPICXX 1  // https://github.com/open-mpi/ompi/issues/5157
-#include<mpi.h>
+#include <mpi3/config/NODISCARD.hpp>
+
+#include <algorithm>
+
+#include <mpi3/detail/mpi_impl.h>
 
 #define BOOST_PACKAGE_ARCHIVE_SOURCE
 
@@ -54,26 +57,26 @@
 #ifdef _MAKE_BOOST_SERIALIZATION_HEADER_ONLY
 //#include <boost/archive/detail/decl.hpp>
 #if BOOST_VERSION > 106000 && BOOST_VERSION < 106600
-#include "../mpi3/serialization_hack/singleton.cpp"
+#include <mpi3/serialization_hack/singleton.cpp>
 #endif
 #if BOOST_VERSION < 105900
 #define BOOST_ARCHIVE_DECL
 #define BOOST_SERIALIZATION_DECL
 #endif
-// NOLINTBEGIN(hicpp-use-auto,misc-const-correctness,modernize-use-auto)  external code
-#include "../mpi3/serialization_hack/archive_exception.cpp"  // NOLINT(bugprone-suspicious-include) hack
-#include "../mpi3/serialization_hack/basic_archive.cpp"  // NOLINT(bugprone-suspicious-include) hack
-#include "../mpi3/serialization_hack/basic_iarchive.cpp"  // NOLINT(bugprone-suspicious-include) hack
-#include "../mpi3/serialization_hack/basic_iserializer.cpp"  // NOLINT(bugprone-suspicious-include) hack
-#include "../mpi3/serialization_hack/basic_oarchive.cpp"  // NOLINT(bugprone-suspicious-include) hack
-#include "../mpi3/serialization_hack/basic_oserializer.cpp"  // NOLINT(bugprone-suspicious-include) hack
-#include "../mpi3/serialization_hack/extended_type_info.cpp"  // NOLINT(bugprone-suspicious-include) hack
-#include "../mpi3/serialization_hack/extended_type_info_typeid.cpp"  // NOLINT(bugprone-suspicious-include,misc-const-correctness) hack
-// NOLINTEND(hicpp-use-auto,misc-const-correctness,modernize-use-auto)
+// NOLINTBEGIN(hicpp-use-auto,misc-const-correctness,modernize-use-auto,bugprone-suspicious-include)  external code
+#include <mpi3/serialization_hack/archive_exception.cpp>
+#include <mpi3/serialization_hack/basic_archive.cpp>
+#include <mpi3/serialization_hack/basic_iarchive.cpp>
+#include <mpi3/serialization_hack/basic_iserializer.cpp>
+#include <mpi3/serialization_hack/basic_oarchive.cpp>
+#include <mpi3/serialization_hack/basic_oserializer.cpp>
+#include <mpi3/serialization_hack/extended_type_info.cpp>
+#include <mpi3/serialization_hack/extended_type_info_typeid.cpp>  // NOLINT(misc-const-correctness) hack
+// NOLINTEND(hicpp-use-auto,misc-const-correctness,modernize-use-auto,bugprone-suspicious-include)
 
 #endif
 
-#include "../mpi3/package_archive.hpp"
+#include <mpi3/package_archive.hpp>
 
 #include<cassert>
 #include<iostream>
@@ -267,13 +270,14 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
  protected:
 	bool is_null() const {return MPI_COMM_NULL == impl_;}
 	friend class mpi3::environment;
+
+ public:
 	detail::equality compare(communicator const& other) const {
 		int ret;  // NOLINT(cppcoreguidelines-init-variables) delayed init
 		MPI_(Comm_compare)(impl_, other.impl_, &ret);
 		return static_cast<detail::equality>(ret);
 	}
 
- public:
 	communicator(communicator const& o, group const& g);
 
 	communicator(group const& g, int tag);
@@ -283,9 +287,27 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 
 	communicator() = default;
 
+	#ifndef EXAMPI
+	static decltype(MPI_PROC_NULL) const nproc = MPI_PROC_NULL;
+	#else
+	static int const nproc = -1;
+	#endif
+
 	communicator(communicator const&) = delete;//default;
 	communicator(communicator& other) : basic_communicator{other} {}  // NOLINT(hicpp-use-equals-default,modernize-use-equals-default) intel and nvcc 11 need this (not =default)
 	communicator(communicator&&) = default;
+
+private:
+	bool owns_ = true;
+
+protected:
+	class lease_policy_t{} lease_policy;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,misc-non-private-member-variables-in-classes) this is an experiment, this kind of logic should be part of a different class, communicator_ref
+	communicator(lease_policy_t /*unused*/, communicator& other) : communicator{} {  // cppcheck-suppress constParameterReference;
+		this->impl_ = other.impl_;
+		owns_ = false;
+	}
+
+public:
 
 	communicator& operator=(communicator const&) = delete;
 	[[deprecated]] auto operator=(communicator& other) -> communicator& {  // NOLINT(cppcoreguidelines-c-copy-assignment-signature,misc-unconventional-assign-operator) duplicate assigment
@@ -299,12 +321,12 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	auto operator=(communicator     && other) noexcept -> communicator& {  // TODO(correaa) tidy this operator
 		if(impl_ != MPI_COMM_NULL) {
 			try {
-			#if not defined(EXAMPI)
+			#ifndef EXAMPI
 				MPI_(Comm_disconnect)(&impl_);  //this will wait for communications to finish communications, <s>if it gets to this point is probably an error anyway</s> <-- not true, it is necessary to synchronize the flow
 			#else
 				MPI_Comm_free(&impl_);
 			#endif
-			} catch(std::exception& e) { std::cerr<< e.what() <<std::endl; MPI_Abort(impl_, 666); }
+			} catch(std::exception& e) { std::cerr<< e.what() <<'\n'; MPI_Abort(impl_, 666); }
 		}
 		impl_ = std::exchange(other.impl_, MPI_COMM_NULL);
 		// communicator tmp{std::move(other)};
@@ -312,9 +334,13 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		return *this;
 	}
 
-	bool operator!=(communicator const& o) const {return not(*this==o);}
-	bool operator==(communicator const& o) const {
-		return this==std::addressof(o) or compare(o) == detail::equality::congruent;
+	// [[deprecated]]
+	bool operator!=(communicator const& o) const {  // TODO(correaa) it is a mistake to compare for equality, use congruency
+		return this!=std::addressof(o) && compare(o) != detail::equality::congruent;
+	}
+	// [[deprecated]] 
+	bool operator==(communicator const& o) const {  // TODO(correaa) it is a mistake to compare for equality, use congruency
+		return this==std::addressof(o) || compare(o) == detail::equality::congruent;
 	}
 
 	explicit operator bool() const{return not is_empty();}
@@ -344,11 +370,40 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	auto get()         const {return impl_;}  // TODO(correaa) deprecate
 	impl_t& get() {return this->impl_;}
 
+	template<class T, class Size = mpi3::size_t>
+	auto make_window(Size size) -> window<T> {
+		mpi3::info inf;
+		void* ptr;  // NOLINT(cppcoreguidelines-init-variables) delayed init
+		window<T> ret;
+		int s = MPI_Win_allocate(static_cast<MPI_Aint>(static_cast<std::size_t>(size)*sizeof(T)), sizeof(T), inf.impl_, this->impl_, &ptr, &ret.impl_);
+		if(s != MPI_SUCCESS) { throw std::runtime_error("cannot window_allocate"); }
+		return ret;
+	}
+
+	template<typename P = char*, typename Size = std::size_t, typename V = typename std::pointer_traits<P>::element_type>
+	auto create_window(P base = nullptr, Size size = 0) {
+		window<V> ret;
+		int const s = MPI_Win_create(base, static_cast<MPI_Aint>(static_cast<std::size_t>(size) * sizeof(V)), sizeof(V), MPI_INFO_NULL, this->impl_, &ret.impl_);
+		if(s != MPI_SUCCESS) {
+			switch(s) {
+			case MPI_ERR_ARG  : throw std::runtime_error("cannot window_create: Invalid argument. Some argument is invalid and is not identified by a specific error class (e.g., MPI_ERR_RANK).");
+			case MPI_ERR_COMM : throw std::runtime_error("cannot window_create: Invalid communicator. A common error is to use a null communicator in a call (not even allowed in MPI_Comm_rank).");
+			case MPI_ERR_DISP : throw std::runtime_error("cannot window_create: MPI_ERR_DISP.");
+			case MPI_ERR_INFO : throw std::runtime_error("cannot window_create: MPI_ERR_INFO. Invalid Info");
+			case MPI_ERR_SIZE : throw std::runtime_error("cannot window_create: MPI_ERR_SIZE.");
+			case MPI_ERR_OTHER: throw std::runtime_error("cannot window_create: MPI_ERR_OTHER.");
+			default           : throw std::runtime_error("cannot window_create: " + mpi3::string(static_cast<enum mpi3::error>(s)));
+			}
+		}
+		std::cerr << "window successfully created" << '\n';
+		return ret;
+	}
+
 	class ptr {  // cppcheck-suppress noConstructor ; bug in cppcheck 2.3
 		communicator* ptr_;
 
 	 public:
-		explicit ptr(communicator* ptr) : ptr_{ptr} {}  // cppcheck-suppress constParameterPointer ; TODO(correaa)
+		explicit ptr(communicator* ptr) : ptr_{ptr} {}  // cppcheck-suppress [constParameterPointer,constParameterCallback] ; TODO(correaa)
 		operator MPI_Comm() const {return ptr_->get_mutable();}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 		explicit operator communicator      *() const {return ptr_;}
 	//  explicit operator communicator const*() const{return ptr_;}
@@ -364,14 +419,14 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	communicator      * operator&()     && {return this;}                    // NOLINT(google-runtime-operator)
 
 	~communicator() {
-		if(impl_ != MPI_COMM_WORLD and impl_ != MPI_COMM_NULL and impl_ != MPI_COMM_SELF) {
+		if(impl_ != MPI_COMM_WORLD && impl_ != MPI_COMM_NULL && impl_ != MPI_COMM_SELF && owns_) {
 			try {
-			#if not defined(EXAMPI)
+			#ifndef EXAMPI
 				MPI_(Comm_disconnect)(&impl_);  //this will wait for communications to finish communications, <s>if it gets to this point is probably an error anyway</s> <-- not true, it is necessary to synchronize the flow
 			#else
 				MPI_Comm_free(&impl_);
 			#endif
-			} catch(std::exception& e) { std::cerr<< e.what() <<std::endl; MPI_Abort(impl_, 666); }
+			} catch(std::exception& e) { std::cerr<< e.what() <<'\n'; MPI_Abort(impl_, 666); }
 		}
 	}
 
@@ -401,7 +456,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		return ret;
 	}
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	template<class T>
 	class keyval {
 		static int delete_fn(MPI_Comm /*comm*/, int /*keyval*/, void *attr_val, void */*extra_state*/){
@@ -441,7 +496,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 #endif
 
 	using detail::basic_communicator::send_receive_n;
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	using detail::basic_communicator::matched_probe;
 #endif
 
@@ -516,7 +571,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 
 	template<class T> struct has_dimensionality : decltype(has_dimensionality_aux(T{})) {};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
 
-	template<class It, typename Size, class = std::enable_if_t<(not has_dimensionality<It>{})> >
+	template<class It, typename Size, class = std::enable_if_t<(!has_dimensionality<It>::value)> >  // NOLINT(modernize-use-constraints) for C++20
 	void send_n(It first, Size count, int dest, int tag = 0) {  // cppcheck-suppress duplInheritedMember ; TODO(correaa) remove duplications in the base class
 		return send_n(
 			first,
@@ -546,7 +601,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	}
 	template<class It>
 	auto send(  // cppcheck-suppress duplInheritedMember ; TODO(correaa) remove duplications in the base class
-		It first, It last,
+		It const& first, It const& last,
 			detail::input_iterator_tag /*tag*/,
 			detail::basic_tag /*tag*/,
 		int dest, int tag
@@ -575,7 +630,9 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 
 	template<class MultiIt>
 	auto receive_n(MultiIt first, typename MultiIt::difference_type count, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG)
+	// cppcheck-suppress[cstyleCast,intToPointerCast]
 	->decltype( MPI_Recv (mpi3::base(first), count, mpi3::type{first}, source, tag, impl_, MPI_STATUS_IGNORE), first + count) {  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast) for macro
+	// cppcheck-suppress[cstyleCast,intToPointerCast]
 		return MPI_(Recv)(mpi3::base(first), count, mpi3::type{first}, source, tag, impl_, MPI_STATUS_IGNORE), first + count; }  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast) for macro
 
 	template<class It>
@@ -588,7 +645,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		return isend_n(first, std::distance(first, last), dest, tag);
 	}
 	template<class It>
-	auto send(It first, It last, int dest, int tag = 0) {  // cppcheck-suppress duplInheritedMember ; TODO(correaa) remove duplications in the base class
+	auto send(It const& first, It const& last, int dest, int tag = 0) {  // cppcheck-suppress duplInheritedMember ; TODO(correaa) remove duplications in the base class
 		return send(
 			first, last,
 				detail::iterator_category_t<It>{},
@@ -619,7 +676,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		communicator ret;
 		MPI_(Comm_split)(impl_, color, key, &ret.impl_);
 		if(ret) {ret.set_name(name() + std::to_string(color));}
-	#if not defined(EXAMPI)
+	#ifndef EXAMPI
 		if(ret) {ret.attribute("color") = color;}
 	#endif
 		return ret;
@@ -637,7 +694,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 
 	communicator reversed() {return split(0, size() - rank());}
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	int cartesian_map(std::vector<int> const& dims, std::vector<int> const& periods) const {
 		assert(dims.size() == periods.size());
 		return MPI_(Cart_map)(impl_, static_cast<int>(dims.size()), dims.data(), periods.data());  // TODO(correaa) use safe cast
@@ -687,26 +744,30 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		MPI_(Comm_rank)(impl_, &rank);
 		return rank;
 	}
+
 	int right() const {
 		int const s = size(); assert(s != 0);
 		return (rank() + 1) % s;
 	}
+
 	int left() const {
 		int const s = size(); assert(s != 0);
 		int left = rank() - 1;
 		if(left < 0) {left = s - 1;}
 		return left;
 	}
+
 	int next(int n = 1) const {
-		assert(rank() + n < size());
-		return rank() + n;
-	}
-	int prev(int n = 1) const {
-		assert(rank() - n > 0);
-		return rank() - n;
+		int ret = rank();
+		ret += n;
+		return ((ret < 0) || (ret >= size()))?nproc:ret;
 	}
 
-#if not defined(EXAMPI)
+	int prev(int n = 1) const {
+		return next(-n);
+	}
+
+#ifndef EXAMPI
 	communicator accept(port const& p, int root = 0) const {
 		communicator ret;
 		MPI_Comm_accept(p.name_.c_str(), MPI_INFO_NULL, root, impl_, &ret.impl_);
@@ -717,11 +778,11 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	[[deprecated("call non const version")]]
 	void  barrier() const {             MPI_( Barrier)(get()   )                        ;}
 	void  barrier()       {             MPI_( Barrier)(handle())                        ;}
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	auto ibarrier()       {request ret; MPI_(Ibarrier)(handle(), &ret.impl_); return ret;}
 #endif
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	communicator connect(port const& p, int root = 0) const {
 		communicator ret;
 		MPI_(Comm_connect)(p.name_.c_str(), MPI_INFO_NULL, root, impl_, &ret.impl_);
@@ -739,34 +800,34 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	auto operator[](int rank) -> reference;
 
  protected:
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	template<class T> void set_attribute(int kv_idx, T const& t) {
 		MPI_(Comm_set_attr)(impl_, kv_idx, new T{t});  // NOLINT(readability-implicit-bool-conversion, cppcoreguidelines-owning-memory) TODO(correaa)
 	}
-	inline void delete_attribute(int kv_idx){
+	void delete_attribute(int kv_idx){
 		MPI_Comm_delete_attr(impl_, kv_idx);
 	}
 	void* get_attribute(int kvidx) const {
-		void* v = nullptr;
+		void* v = nullptr;  // NOLINT(misc-const-correctness) dummy to pass to legacy API
 		int flag;  // NOLINT(cppcoreguidelines-init-variables) delayed init
 		MPI_(Comm_get_attr)(impl_, kvidx, &v, &flag);
 		if(flag == 0) {assert(!v); return nullptr;}
 		return v;
 	}
 	bool has_attribute(int kvidx) const {
-		void* v = nullptr;
+		void* v;  // NOLINT(cppcoreguidelines-init-variables) delayed init
 		int flag;  // NOLINT(cppcoreguidelines-init-variables) delayed init
-		MPI_Comm_get_attr(impl_, kvidx, &v, &flag);
+		MPI_Comm_get_attr(impl_, kvidx, &v, &flag);  // NOLINT(bugprone-multi-level-implicit-pointer-conversion)
 		return flag != 0;
 	}
 #endif
 
  public:
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	template<class T, class TT = T> void
 	set_attribute(keyval<T> const& k, TT const& t = {}) {set_attribute<T>(k.impl_, t);}
 	template<class T>
-	inline void delete_attribute(keyval<T> const& k) {delete_attribute(k.impl_);}
+	void delete_attribute(keyval<T> const& k) {delete_attribute(k.impl_);}
 	template<class T>
 	T const& get_attribute(keyval<T> const& kv) const {return *static_cast<T*>(get_attribute(kv.impl_));}
 	template<class T>
@@ -781,7 +842,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	mpi3::any& attribute(std::string const& s);
 #endif
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	void call_error_handler(int errorcode) noexcept {
 		auto const s = MPI_Comm_call_errhandler(impl_, errorcode); (void)s;
 		assert(s == MPI_SUCCESS);
@@ -797,7 +858,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		return split(
 			(rank() < size()/n*(n-size()%n))?
 				rank()/(size()/n):
-				n-size()%n + (rank() - (n-size()%n)*(size()/n))/((size()/n)+1)
+				n-(size()%n) + ((rank() - (n-size()%n)*(size()/n))/((size()/n)+1))
 		);
 	}
 	communicator divide_high(int n) {
@@ -875,26 +936,26 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		);
 	}
 
-#if 0
-#ifdef MPICH_NUMVERSION
-#if MPICH_NUMVERSION >= 30400000
- private:
-	template<class It, class Size, class It2>
-	[[nodiscard]] auto isend_receive_replace_n(It first, Size count, It2 d_first, int dest, int source = MPI_ANY_SOURCE) 
-	-> decltype(detail::data(first), std::declval<mpi3::request>()){
-		auto const sz = size();
-		assert(sz != 0);
-		mpi3::request r;
-		MPI_I(sendrecv_replace)(detail::data(first), count/sz, datatype<typename std::iterator_traits<It>::value_type>{}(), dest, 0, source, MPI_ANY_TAG, &*this, &r.impl_);
-		return r;
-	}
+// #if 0
+// #ifdef MPICH_NUMVERSION
+// #if MPICH_NUMVERSION >= 30400000
+//  private:
+//  template<class It, class Size, class It2>
+//  [[nodiscard]] auto isend_receive_replace_n(It first, Size count, It2 d_first, int dest, int source = MPI_ANY_SOURCE) 
+//  -> decltype(detail::data(first), std::declval<mpi3::request>()){
+//      auto const sz = size();
+//      assert(sz != 0);
+//      mpi3::request r;
+//      MPI_I(sendrecv_replace)(detail::data(first), count/sz, datatype<typename std::iterator_traits<It>::value_type>{}(), dest, 0, source, MPI_ANY_TAG, &*this, &r.impl_);
+//      return r;
+//  }
 
- public:
-#endif
-#endif
-#endif
+//  public:
+// #endif
+// #endif
+// #endif
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	template<class It, class Size>
 	auto send_receive_replace_n(  // cppcheck-suppress duplInheritedMember ; TODO(correaa) remove duplications in the base class
 		It first, Size size,
@@ -912,7 +973,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	}
 #endif
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	template<class It, typename Size>
 	It send_receive_replace_n(  // cppcheck-suppress duplInheritedMember ; TODO(correaa) remove duplications in the base class
 		It first,
@@ -925,10 +986,11 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			datatype<typename std::iterator_traits<It>::value_type>{}(),
 			dest, sendtag, source, recvtag, impl_
 		);
-		return first + s.count<typename std::iterator_traits<It>::value_type>();
+		return first + s.count<typename std::iterator_traits<It>::value_type>();  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) TODO(correaa) use checked std::span
 	}
 #endif
 
+#ifndef MSMPI_VER
 	template<class It1, typename Size, class It2>
 	auto send_receive_n(
 		It1 first, Size count, int dest,
@@ -943,6 +1005,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			sendtag, recvtag
 		);
 	}
+#endif
 
 	template<class It1, typename Size, class It2>
 	auto send_receive_n(
@@ -958,25 +1021,6 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			sendtag, recvtag
 		);
 	}
-
-//  private:
-
-//  public:
-//      template<class It, class Size>
-//  auto isend_receive_replace_n(
-//      It first, Size size,
-//      int dest, int source, // = MPI_ANY_SOURCE, 
-//      int sendtag = 0, int recvtag = MPI_ANY_TAG
-//  ) {
-//      using value_type = typename std::iterator_traits<It>::value_type;
-//      return isend_receive_replace_n(
-//          first,
-//              detail::iterator_category_t<It>{},
-//              detail::value_category_t<value_type>{},
-//          size,
-//          dest, source, sendtag, recvtag
-//      );
-//  }
 
  private:
 	template<class It, typename Size, class It2>
@@ -1016,10 +1060,10 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			source, recvtag,
 			impl_  //, &ret.impl_  // status refers to the receive operation.
 		);
-		return d_first + ret.count<V2>();
+		return d_first + ret.count<V2>();  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 	}
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	template<class It, typename Size, typename... Meta>
 	auto send_receive_replace_n(  // cppcheck-suppress duplInheritedMember ; TODO(correaa) remove duplications in the base class
 		It first,
@@ -1041,7 +1085,10 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		auto st = send_receive_n(
 			p.begin(), p.size(), dest,
 			p2.begin(), p2.size(),
-			source, sendtag, recvtag
+			source,
+				detail::contiguous_iterator_tag{},
+				detail::basic_tag{},
+			sendtag, recvtag
 		);
 		(void)st;
 		package_iarchive pia(p2);
@@ -1061,7 +1108,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			detail::basic_tag /*tag*/,
 		Size count, int dest, int source, int sendtag, int recvtag
 	) {
-		uvector<typename std::iterator_traits<It>::value_type> v(static_cast<std::size_t>(count));
+		uvector<typename std::iterator_traits<It>::value_type> v(static_cast<typename uvector<typename std::iterator_traits<It>::value_type>::size_type>(count));
 		std::copy_n(first, count, v.begin());
 		send_receive_replace_n(v.begin(), v.size(), dest, source, sendtag, recvtag);
 		return std::copy_n(v.begin(), v.size(), first);
@@ -1092,6 +1139,8 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		return send_receive_n(
 			first, std::distance(first, last), dest,
 			d_first, std::distance(d_first, d_last), source,
+				detail::iterator_category_t<It1>{},
+				detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
 			sendtag, recvtag
 		);
 	}
@@ -1220,7 +1269,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	}
 
 	void send_packed_n(void const* begin, int n, int dest, int tag = 0) {
-		std::cout<<"sending packet of size "<< n <<std::endl;
+		std::cout<<"sending packet of size "<< n << '\n';
 		MPI_(Send)(begin, n, MPI_PACKED, dest, tag, impl_);
 	}
 	auto receive_packed_n(void* begin, int n, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG) {
@@ -1229,13 +1278,14 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		return ret;
 	}
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	auto receive_packed(void* begin, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG) {
 		MPI_Status status;
 		MPI_Message msg;  // NOLINT(cppcoreguidelines-init-variables) delayed init
 		int count = -1;
 		MPI_Mprobe(source, tag, impl_, &msg, &status);
 		MPI_Get_count(&status, MPI_PACKED, &count);
+		// cppcheck-suppress[cstyleCast,intToPointerCast]
 		MPI_Mrecv(begin, count, MPI_PACKED, &msg, MPI_STATUS_IGNORE);  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast)
 	//  auto n = probe(source, tag).count<char>();
 	//  receive_packed_n(begin, n, source, tag);
@@ -1258,7 +1308,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			source, tag, impl_, &sta.impl_
 		);
 		assert(sta.count<typename std::iterator_traits<It>::value_type>() == static_cast<count_type>(count));
-		return dest + sta.count<typename std::iterator_traits<It>::value_type>();
+		return dest + sta.count<typename std::iterator_traits<It>::value_type>();  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 	}
 	template<class It, typename Size>
 	auto ireceive_n(
@@ -1277,7 +1327,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		return r;
 	}  // NOLINT(clang-analyzer-optin.mpi.MPI-Checker) // MPI_Wait called on destructor of ret
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	template<class It, typename Size>
 	auto receive_n(  // cppcheck-suppress duplInheritedMember ; TODO(correaa) remove duplications in the base class
 		It dest,
@@ -1294,7 +1344,8 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 #endif
 
 	template<class It, typename Size,
-		std::enable_if_t<not has_dimensionality<It>{}, int> =0// or (not detail::is_basic<typename std::iterator_traits<It>::value_type>{}), int> =0 // needed by intel commpiler
+		std::enable_if_t<!has_dimensionality<It>::value, int> =0  // NOLINT(modernize-use-constraints)
+		// or (not detail::is_basic<typename std::iterator_traits<It>::value_type>{}), int> =0 // needed by intel commpiler
 	>
 	auto receive_n(It dest, Size n, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG) {
 		return receive_n(
@@ -1318,7 +1369,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		);
 	}
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	template<class It>
 	auto receive(
 		It dest,
@@ -1333,7 +1384,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	}
 #endif
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	template<class It>
 	[[deprecated]] auto receive(
 		It dest,
@@ -1355,12 +1406,14 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			detail::basic_tag /*tag*/,
 		int source, int tag
 	) {
-		return matched_probe(source, tag).receive_n(dest);
+		// return matched_probe(source, tag).receive_n(dest);
+		return matched_probe(source, tag).receive(dest);
 	}
 #endif
 
 	template<class It>
-	[[deprecated]] auto receive(It dest, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG) {
+	[[deprecated]]
+	auto receive(It dest, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG) {
 		return receive(
 			dest,
 				detail::iterator_category_t<It>{},
@@ -1395,7 +1448,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		/**/ detail::basic_tag /*tag*/,
 		int source, int tag
 	) {
-		mpi3::uvector<typename std::iterator_traits<It>::value_type> buffer(std::distance(d_first, d_last));
+		mpi3::uvector<typename std::iterator_traits<It>::value_type> buffer(static_cast<typename mpi3::uvector<typename std::iterator_traits<It>::value_type>::size_type>(std::distance(d_first, d_last)));
 		receive_n(buffer.begin(), buffer.size(), source, tag);
 		return std::copy(buffer.begin(), buffer.end(), d_first);
 	}
@@ -1491,6 +1544,17 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	) {
 		return ireceive_n(d_first, std::distance(d_first, d_last), source, tag);
 	}
+
+	template<class It>
+	auto ireceive(It d_first, It d_last, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG) {
+		return ireceive(
+			d_first, d_last,
+				detail::iterator_category_t<It>{},
+				detail::value_category_t<typename std::iterator_traits<It>::value_type>{},
+			source, tag
+		);
+	}
+
 	template<class It>
 	auto receive(It d_first, It d_last, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG) {
 		return receive(
@@ -1547,18 +1611,19 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		return send(buffered_communication_mode{}, blocking_mode{}, It1, It2, dest, tag);
 	}
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	template<class InputIt, class V = typename std::iterator_traits<InputIt>::value_type>
 	auto dynamic_receive(InputIt first, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG) {
-	//  auto count = probe(source, tag).count<V>();
-	//  return receive(first, first + count, source, tag);
-		MPI_Status status;
-	    MPI_Message msg;  // NOLINT(cppcoreguidelines-init-variables) delayed init
-        int count = -1;
-        MPI_Mprobe(source, tag, impl_, &msg, &status);
-        MPI_Get_count(&status, datatype<V>{}(), &count);
-        using detail::data;
-        MPI_Mrecv(data(first), count, datatype<V>{}(), &msg, MPI_STATUS_IGNORE);  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast) for macro
+		//  auto count = probe(source, tag).count<V>();
+		//  return receive(first, first + count, source, tag);
+		MPI_Status  status;
+		MPI_Message msg;  // NOLINT(cppcoreguidelines-init-variables) delayed init
+		int         count = -1;
+		MPI_Mprobe(source, tag, impl_, &msg, &status);
+		MPI_Get_count(&status, datatype<V>{}(), &count);
+		using detail::data;
+		// cppcheck-suppress[cstyleCast,intToPointerCast]
+		MPI_Mrecv(data(first), count, datatype<V>{}(), &msg, MPI_STATUS_IGNORE);  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast) for macro
 	}
 #endif
 
@@ -1688,22 +1753,21 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	) {
 		// auto const sz = static_cast<Size>(size());
 		// assert(sz != 0 and count % sz == 0);
-		using count_type = int;
 		MPI_(Alltoall)(
 			detail::data(  first), static_cast<count_type>(count/* / sz*/), datatype<typename std::iterator_traits<It1>::value_type>{}(),
 			detail::data(d_first), static_cast<count_type>(count/* / sz*/), datatype<typename std::iterator_traits<It2>::value_type>{}(),
 			impl_
 		);
-		return d_first + count;
+		return d_first + count;  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) TODO(correaa) use checked std::span
 	}
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	using in_place_type = decltype(MPI_IN_PLACE);  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast,performance-no-int-to-ptr) openmpi #defines this as (void*)1, it may not be a pointer in general
 #else
 	using in_place_type = int;
 #endif
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	template<class It1, typename Size>
 	auto all_to_all_n(
 		It1 first,
@@ -1717,7 +1781,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			detail::data(first), count/*/size()*/,
 			datatype<typename std::iterator_traits<It1>::value_type>{}(),
 			impl_
-		), first + count*size()) {
+		), first + (count*size())) {
 		// auto const sz = size();
 		// assert(sz > 0);
 		// assert( count % sz == 0 );
@@ -1729,32 +1793,42 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			datatype<typename std::iterator_traits<It1>::value_type>{}(),
 			impl_
 		);
-		return first + count*size();
+		return first + (count*size());
 	}
 #endif
 
  public:
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	template<class It1, typename Size>
 	auto all_to_all_inplace_n(It1 first, Size count) {
-		using count_type = int;
+		using value_type = typename std::iterator_traits<It1>::value_type;
 		// auto const sz = static_cast<count_type>(size());  // TODO(correaa) safe cast
 		// assert(sz > 0);
 		// assert(  static_cast<count_type>(count) % sz == 0 );
-		auto const in_place = MPI_IN_PLACE;  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast,llvm-qualified-auto,readability-qualified-auto,performance-no-int-to-ptr) openmpi #defines this as (void*)1, it may not be a pointer in general  // TODO(correaa) define constant globally for the library
-		using count_type = int;
+#ifdef MSMPI_VER
+		// MS-MPI's MPI_Alltoall with MPI_IN_PLACE does not work correctly; use a temporary buffer
+		auto const total = static_cast<std::size_t>(size()) * static_cast<std::size_t>(count);
+		uvector<value_type> tmp(total);
 		MPI_(Alltoall)(
-			in_place           , 0*static_cast<count_type>(count)/*/sz*/, datatype<typename std::iterator_traits<It1>::value_type>{}(),
-			detail::data(first),   static_cast<count_type>(count)/*/sz*/, datatype<typename std::iterator_traits<It1>::value_type>{}(),
+			detail::data(first), static_cast<count_type>(count), datatype<value_type>{}(),
+			tmp.data()         , static_cast<count_type>(count), datatype<value_type>{}(),
 			impl_
 		);
-		return first + count;
+		std::copy(tmp.begin(), tmp.end(), first);
+#else
+		auto const in_place = MPI_IN_PLACE;  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast,llvm-qualified-auto,readability-qualified-auto,performance-no-int-to-ptr) openmpi #defines this as (void*)1, it may not be a pointer in general  // TODO(correaa) define constant globally for the library
+		MPI_(Alltoall)(
+			in_place           , 0*static_cast<count_type>(count)/*/sz*/, datatype<value_type>{}(),
+			detail::data(first),   static_cast<count_type>(count)/*/sz*/, datatype<value_type>{}(),
+			impl_
+		);
+#endif
+		return first + count;  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) TODO(correaa) use checked std::span
 	}
 #endif
 
 	template<class It1, typename Size, class It2>
 	auto all_to_all_n(It1 first, Size count, It2 d_first) {
-		// using count_type = int;
 		// assert( static_cast<count_type>(count) % size() == 0 );  // NOLINT(clang-analyzer-core.DivideZero) TODO(correaa) add size cache to immutable communicator
 		return
 			all_to_all_n(
@@ -1792,6 +1866,58 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	auto all_to_all(It1 first)
 	->decltype(all_to_all_n(first, size())){
 		return all_to_all_n(first, size());}
+
+  private:
+
+        template<class It1, class It2, typename Itsz>
+        void all_to_all_v_n(
+                It1 first,
+                /**/ detail::contiguous_iterator_tag /*tag*/,
+                /**/ detail::basic_tag /*tag*/,
+                Itsz count1,
+                Itsz disp1,
+                It2  d_first,
+                /**/ detail::contiguous_iterator_tag /*tag*/,
+                /**/ detail::basic_tag /*tag*/,
+                Itsz count2,
+                Itsz disp2
+        ) {
+                // auto const sz = static_cast<Size>(size());
+                // assert(sz != 0 and count % sz == 0);
+                //using count_type = int;
+                MPI_(Alltoallv)(
+                        detail::data(  first), count1, disp1, detail::basic_datatype<typename std::iterator_traits<It1>::value_type>{},
+                        detail::data(d_first), count2, disp2, detail::basic_datatype<typename std::iterator_traits<It2>::value_type>{},
+                        impl_
+                );
+                //return d_first + (*(count2+rank()))*size();
+        }
+
+  public: 
+
+        template<class It1, class It2, typename Itsz>
+        auto all_to_all_v_n(
+                It1 first,
+                Itsz count1,
+                Itsz disp1,
+                It2  d_first,
+                Itsz count2,
+                Itsz disp2
+        ) {
+                return
+                    all_to_all_v_n(
+                        first,
+                        detail::iterator_category_t<It1>{},
+                        detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
+                        count1,
+                        disp1,
+                        d_first,
+                        detail::iterator_category_t<It2>{},
+                        detail::value_category_t<typename std::iterator_traits<It2>::value_type>{},
+                        count2,
+                        disp2);
+
+        }
 
 	template<class T>
 	auto operator()(T&& t)
@@ -1887,7 +2013,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 				datatype<typename std::iterator_traits<It>::value_type>{}(),
 			root, impl_
 		);
-		return first + static_cast<typename std::iterator_traits<It>::difference_type>(count);
+		return first + static_cast<typename std::iterator_traits<It>::difference_type>(count);  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) TODO(correaa) use checked std::span
 	}
 	template<class It>
 	auto ibroadcast(
@@ -1966,12 +2092,14 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	) {
 		static_assert(std::is_same<typename std::iterator_traits<It1>::value_type, typename std::iterator_traits<It2>::value_type>{});
 		static mpi3::operation<typename std::iterator_traits<It1>::value_type, typename std::iterator_traits<It2>::pointer> const combine{Op{}};  // will leak?
+		// recvbuf is only significant at root; avoid dereferencing d_first on non-root (MSVC debug asserts on empty-container iterators)
+		typename std::iterator_traits<It2>::pointer recv_ptr = (rank() == root) ? detail::data(d_first) : nullptr;
 		MPI_(Reduce)(
-			detail::data(first), detail::data(d_first), static_cast<count_type>(count),
+			detail::data(first), recv_ptr, static_cast<count_type>(count),
 			datatype<typename std::iterator_traits<It2>::value_type>{}(), &combine,
 			root, impl_
 		);
-		return rank() == root?d_first + static_cast<typename std::iterator_traits<It2>::difference_type>(count):d_first;
+		return rank() == root?d_first + static_cast<typename std::iterator_traits<It2>::difference_type>(count):d_first;  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) TODO(correaa) use checked std::span
 	}
 
 	template<class It1, class Size, class It2, class Op = std::plus<> >
@@ -1993,7 +2121,8 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	template<class T, class Op = std::plus<> >
 	void all_reduce_value(T const& t, T& ret, Op op = {}){
 		auto* e = all_reduce_n(std::addressof(t), 1, std::addressof(ret), op); (void)e;
-		assert( e == std::next(std::addressof(ret)) );
+		auto* e_check = std::next(std::addressof(ret)); (void)e_check;
+		assert( e == e_check );
 	}
 	template<class T, class Op = std::plus<>, typename = decltype(T{T(0)})>
 	auto all_reduce_value(T const& t, Op op = {}){
@@ -2045,15 +2174,42 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			detail::contiguous_iterator_tag /*tag*/,
 			detail::basic_tag /*tag*/,
 		Op /*operation*/  // TODO(correaa) why is not used?
-	) {
+	) -> It2 {
 		static_assert(std::is_same<typename std::iterator_traits<It1>::value_type, typename std::iterator_traits<It2>::value_type>{});
-		using count_type = int;
 		static mpi3::operation<typename std::iterator_traits<It1>::value_type, typename std::iterator_traits<It2>::pointer> const combine{Op{}};  // will leak?
 		MPI_(Allreduce)(
 			detail::data(first), detail::data(d_first), static_cast<count_type>(count), datatype<typename std::iterator_traits<It1>::value_type>{}(),  // TODO(correaa) use safe cast
 			&combine, impl_
 		);
-		return d_first + static_cast<typename std::iterator_traits<It2>::difference_type>(count);
+		return d_first + static_cast<typename std::iterator_traits<It2>::difference_type>(count);  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) TODO(correaa) use checked std::span
+	}
+
+	template<typename It1, typename Size, typename It2>
+	auto all_gather_n(
+		It1 first, Size count,
+			detail::forward_iterator_tag /*tag*/,
+			detail::value_unspecified_tag /*tag*/,
+		It2 d_first,  // Size d_count,
+			detail::forward_iterator_tag /*tag*/,
+			detail::value_unspecified_tag /*tag*/
+	) -> It2 {
+		detail::package po(*this);
+		package_oarchive poa(po);
+		std::copy_n(first, count, package_oarchive::iterator<typename std::iterator_traits<It1>::value_type>(poa));
+		// while(count--) {poa << *(first++);}  // TODO(correaa) remove comment
+		auto const posize = static_cast<int>(po.size());
+		std::vector<int> sizes (usize());
+		std::vector<int> displs(usize() + 1);
+		all_gather_n(&posize, 1, sizes.begin());  // , 1);
+		displs[0] = 0;
+		partial_sum(sizes.begin(), sizes.end(), displs.begin()+1);  // NOLINT(boost-use-ranges) for C++20, use std::ranges::partial_sum
+		auto const total = static_cast<unsigned int>(displs.back());
+		detail::package pi(*this);
+		pi.resize(total);
+		all_gatherv_n(po.data(), po.size(), pi.data(), sizes.data(), displs.data());
+		package_iarchive pia(pi);
+		// d_count *= size();
+		return std::copy_n(package_iarchive::iterator<typename std::iterator_traits<It2>::value_type>(pia), count*size(), d_first);
 	}
 
 	template<
@@ -2062,7 +2218,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		class VC2 = detail::value_category_t<typename std::iterator_traits<It2>::value_type>,
 		class = decltype(std::declval<typename std::iterator_traits<It2>::reference>() = std::declval<Op>()(typename std::iterator_traits<It1>::value_type{}, typename std::iterator_traits<It1>::value_type{}))
 	>
-	It2 all_reduce_n(It1 first, Size count, It2 d_first, Op op = {}) {
+	auto all_reduce_n(It1 first, Size count, It2 d_first, Op op = {}) -> It2 {
 		return all_reduce_n(
 			first,
 				detail::iterator_category_t<It1>{},
@@ -2075,39 +2231,53 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		);
 	}
 	template<typename It1, typename It2, class Op = std::plus<>>
-	It2 all_reduce(It1 first, It1 last, It2 d_first, Op op = {}){
+	auto all_reduce(It1 first, It1 last, It2 d_first, Op op = {}) -> It2 {
 		return all_reduce_n(first, std::distance(first, last), d_first, op);
 	}
 
  private:
 	template<class T> static auto data_adl(T&& t){
 		using detail::data;
+		// using std::data;
 		return data(std::forward<T>(t));
 	}
 
  public:
- #if not defined(EXAMPI)
+ #ifndef EXAMPI
 	template<
 		class It1, class Size, class Op = std::plus<>,
 	    class V1 = typename std::iterator_traits<It1>::value_type, class P1 = decltype(data_adl(std::declval<It1>())),
-		class = std::enable_if_t<std::is_assignable_v<V1&, decltype(std::declval<Op>()(std::declval<V1 const&>(), std::declval<V1 const&>()))>>
+		class = std::enable_if_t<std::is_assignable_v<V1&, decltype(std::declval<Op>()(std::declval<V1 const&>(), std::declval<V1 const&>()))>>  // NOLINT(modernize-use-constraints) for C++20
 	>
-	auto all_reduce_in_place_n(It1 first, Size count, Op /*op*/) {
+	auto all_reduce_in_place_n(It1 first, Size count, Op /*op*/) -> It1 {
 		auto const in_place = MPI_IN_PLACE;  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast,llvm-qualified-auto,readability-qualified-auto,performance-no-int-to-ptr) openmpi #defines this as (void*)1, it may not be a pointer in general
 		static mpi3::operation<typename std::iterator_traits<It1>::value_type, typename std::iterator_traits<It1>::pointer> const combine{Op{}};  // will leak?
 		MPI_(Allreduce)(in_place, data_adl(first), static_cast<count_type>(count), datatype<V1>{}(), &combine, impl_);
+		return first + static_cast<typename std::iterator_traits<It1>::difference_type>(count);  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) TODO(correaa) use checked std::span
+	}
+
+	template<
+		class It1, class Size,
+	    class V1 = typename std::iterator_traits<It1>::value_type, class P1 = decltype(data_adl(std::declval<It1>())),
+		class = std::enable_if_t<std::is_assignable_v<V1&, decltype(std::declval<std::plus<> >()(std::declval<V1 const&>(), std::declval<V1 const&>()))>>  // NOLINT(modernize-use-constraints) for C++20
+	>
+	auto all_reduce_in_place_n(It1 first, Size count) -> It1 {
+		return all_reduce_in_place_n(first, count, std::plus<>{});
 	}
 #endif
 
-	template<
-		class It1, class Size, class Op = std::plus<>,
-		class V1 = typename std::iterator_traits<It1>::value_type, class P1 = decltype(data_adl(std::declval<It1>()))
-	>
-	auto all_reduce_n(It1 first, Size count, Op op = {})
-	->decltype(all_reduce_in_place_n(first, count, op)) {
-		return all_reduce_in_place_n(first, count, op); }
+	// template<
+	// 	class It1, class Size, class Op = std::plus<>,
+	// 	// class = decltype(std::declval<Op&>(std::declval<std::iterator_traits<It1>::reference>(), std::declval<std::iterator_traits<It1>::value_type>())),
+	// 	// class = decltype(all_reduce_in_place_n(It1{}, Size{}, std::declval<Op>())),
+	// 	class V1 = typename std::iterator_traits<It1>::value_type, class P1 = decltype(data_adl(std::declval<It1>()))
+	// >
+	// auto all_reduce_n(It1 first, Size count, Op op = {})// -> It1
+	// ->decltype(all_reduce_in_place_n(first, count, op)) 
+	// {
+	// 	return all_reduce_in_place_n(first, count, op); }
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	template<
 		class It1, class Size, class Op,
 		class V1 = typename std::iterator_traits<It1>::value_type, class P1 = decltype(data_adl(It1{})), 
@@ -2252,12 +2422,14 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		auto const s = size();
 		if(s == 0) {throw std::runtime_error{"invalid empty communicator for scatter_n"};}
 		assert( n%s == 0 );
+		// sendbuf only significant at root; avoid dereferencing first on non-root (MSVC debug asserts on empty-container iterators)
+		typename std::iterator_traits<CIt1>::pointer send_ptr = (rank() == root) ? detail::data(first) : nullptr;
 		MPI_(Scatter)(
-			detail::data(  first), static_cast<count_type>(n/s), datatype<typename std::iterator_traits<CIt1>::value_type>{}(),
+			send_ptr           , static_cast<count_type>(n/s), datatype<typename std::iterator_traits<CIt1>::value_type>{}(),
 			detail::data(d_first), static_cast<count_type>(n/s), datatype<typename std::iterator_traits<CIt2>::value_type>{}(),
 			root, impl_
 		);
-		if(rank() == root) {std::advance(d_first, n);}
+		std::advance(d_first, n/s);
 		return d_first;
 	}
 	template<class In1, class Size, class It2, class Any2, class Any3>
@@ -2271,11 +2443,13 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			throw std::runtime_error{"invalid empty communicator for scatter_n"};
 		}
 		assert(n % s == 0);
-		vector<typename std::iterator_traits<In1>::value_type> buff;
-		buff.reserve(static_cast<std::size_t>(n));
-		using std::copy_n;
-		copy_n(first, n, std::back_inserter(buff));
-		scatter_n(buff.begin(), n, d_first, root);
+		// only root has the sendbuf data; non-root may have an empty range
+		vector<typename std::iterator_traits<In1>::value_type> buff(static_cast<typename vector<typename std::iterator_traits<In1>::value_type>::size_type>(rank() == root ? n : 0));
+		if(rank() == root) {
+			using std::copy_n;
+			copy_n(first, n, buff.begin());
+		}
+		scatter_n(buff.data(), n, d_first, root);
 		std::advance(d_first, n / s);
 		return d_first;
 	}
@@ -2398,7 +2572,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			displs[i] = static_cast<int>(d);
 		}
 		if(rank() == root) {
-			std::cerr<<"in scatterv 2 "<< displs[0] <<" "<< displs[1] <<" "<< displs[2] <<std::endl;
+			std::cerr<<"in scatterv 2 "<< displs[0] <<" "<< displs[1] <<" "<< displs[2] << '\n';
 		}
 		std::vector<int> counts(c.size());
 		std::transform(
@@ -2415,7 +2589,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	}
 	template<class T> class id {using type = T;};
 
-	template<class MultiIt, class Size, class MultiIt2, class=std::enable_if_t<(MultiIt::dimensionality>=1)> >
+	template<class MultiIt, class Size, class MultiIt2, class=std::enable_if_t<(MultiIt::dimensionality>=1)> >  // NOLINT(modernize-use-constraints) for C++20
 	auto gather_n(MultiIt first, Size count, MultiIt2 d_first, int root = 0)
 	->decltype( MPI_Gather (mpi3::base(first), count, mpi3::type{first}, mpi3::base(d_first), count, mpi3::type{d_first}, root, impl_), d_first+count) {
 		return MPI_(Gather)(mpi3::base(first), count, mpi3::type{first}, mpi3::base(d_first), count, mpi3::type{d_first}, root, impl_), d_first+count; }
@@ -2434,13 +2608,16 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		Size2 d_count,
 		int   root
 	) {
+		// recvbuf is only significant at root; avoid dereferencing d_first on non-root (empty container on MSVC debug asserts)
+		typename std::iterator_traits<It2>::pointer recv_ptr = nullptr;
+		if(rank() == root) { recv_ptr = detail::data(d_first); }
 		MPI_(Gather)
 		(
-			detail::data(  first), static_cast<count_type>(  count), datatype<typename std::iterator_traits<It1>::value_type>{}(),
-			detail::data(d_first), static_cast<count_type>(d_count), datatype<typename std::iterator_traits<It2>::value_type>{}(),
+			detail::data(first), static_cast<count_type>(count), datatype<typename std::iterator_traits<It1>::value_type>{}(),
+			recv_ptr,            static_cast<count_type>(d_count), datatype<typename std::iterator_traits<It2>::value_type>{}(),
 			root, impl_
 		);
-		return d_first + ((rank() == root) ? static_cast<typename std::iterator_traits<It2>::difference_type>(d_count * static_cast<Size2>(size())) : 0);
+		return d_first + ((rank() == root) ? static_cast<typename std::iterator_traits<It2>::difference_type>(d_count * static_cast<Size2>(size())) : 0);  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) TODO(correaa) use checked std::span
 	}
 
 	template<class It1, class Size1, class It2, class Size2>
@@ -2449,7 +2626,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			first, 
 				detail::iterator_category_t<It1>{},
 				detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
-			count, 
+			count,
 			d_first,
 				detail::iterator_category_t<It2>{},
 				detail::value_category_t<typename std::iterator_traits<It2>::value_type>{},
@@ -2457,7 +2634,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			root
 		);
 	}
-	template<class It1, class Size1, class It2, class=std::enable_if_t<(not has_dimensionality<It1>{})>>
+	template<class It1, class Size1, class It2, class=std::enable_if_t<(!has_dimensionality<It1>::value)>>  // NOLINT(modernize-use-constraints)
 	auto gather_n(It1 first, Size1 count, It2 d_first, int root = 0) {
 		return gather_n(first, count, d_first, count, root);
 	}
@@ -2468,7 +2645,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		int nn = n;
 		gather_n(std::addressof(nn), 1, counts.data(), root);
 		std::vector<int> displs(usize());
-		partial_sum(counts.begin(), counts.end(), displs.begin()+1);
+		partial_sum(counts.begin(), counts.end(), displs.begin()+1);  // NOLINT(boost-use-ranges) for C++20, use std::ranges::partial_sum
 		scatterv_n(
 			first, counts.data(), displs.data(),
 			detail::iterator_category_t<It1>{}, detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
@@ -2551,29 +2728,29 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	}
 
  public:
-	template<typename It1, typename Size1, typename It2, typename Size2>
+	template<typename It1, typename Size, typename It2>
 	auto all_gather_n(
-		It1   first, Size1   count,
+		It1   first, Size count,
 		/**/ detail::contiguous_iterator_tag /*tag*/,
 		/**/ detail::basic_tag /*tag*/,
-		It2 d_first, Size2 d_count,
+		It2 d_first,  // Size2 d_count,
 		/**/ detail::contiguous_iterator_tag /*tag*/,
 		/**/ detail::basic_tag /*tag*/
 	) {
 		MPI_(Allgather)(
 			detail::data(  first), static_cast<int>(  count), datatype<typename std::iterator_traits<It1>::value_type>{}(),  // TODO(correaa) use safe cast
-			detail::data(d_first), static_cast<int>(d_count), datatype<typename std::iterator_traits<It2>::value_type>{}(),  // TODO(correaa) use safe cast
+			detail::data(d_first), static_cast<int>(count), datatype<typename std::iterator_traits<It2>::value_type>{}(),  // TODO(correaa) use safe cast
 			impl_
 		);
-		return d_first + static_cast<decltype(usize())>(d_count) * usize();
+		return d_first + (static_cast<decltype(usize())>(count) * usize());
 	}
-	template<typename It1, typename Size, typename It2>
-	auto all_gather_n(It1 first, Size count, It2 d_first, Size d_count) {
+	template<typename It1, typename Size, typename It2, class BLABLA = detail::iterator_category_t<It2> >
+	auto all_gather_n(It1 first, Size count, It2 d_first /*, Size d_count*/) -> It2 {
 		return all_gather_n(
 			first, count,
 				detail::iterator_category_t<It1>{},
 				detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
-			d_first, d_count,
+			d_first, // d_count,
 				detail::iterator_category_t<It2>{},
 				detail::value_category_t<typename std::iterator_traits<It2>::value_type>{}
 		);
@@ -2594,10 +2771,10 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		It2 d_first,
 			detail::output_iterator_tag /*tag*/,
 		CountsIt counts, DisplsIt displs
-	) {
+	) -> It2 {
 		auto const s = static_cast<std::size_t>(std::accumulate(counts, counts + size(), typename std::iterator_traits<CountsIt>::value_type{0}));
 		std::vector<typename std::iterator_traits<It1>::value_type> buff(s);
-		auto e = all_gatherv_n(first, count, buff.data(), counts, displs);
+		[[maybe_unused]] auto e = all_gatherv_n(first, count, buff.data(), counts, displs);
 		assert( e == std::next(buff.data(), static_cast<std::ptrdiff_t>(buff.size())) );
 		using std::move;
 		return move(buff.begin(), buff.end(), d_first);  // cppcheck-suppress returnDanglingLifetime ; cppcheck 2.3 bug
@@ -2608,7 +2785,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		It2 d_first,
 			detail::forward_iterator_tag /*tag*/,
 		CountsIt counts, DisplsIt displs
-	) {
+	) -> It2 {
 		return all_gatherv_n(
 			first, count,
 				detail::iterator_category_t<It1>{},
@@ -2619,7 +2796,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			counts, displs); 
 	}
 	template<typename It1, typename Size, typename It2, typename CountsIt, typename DisplsIt>
-	auto all_gatherv_n(It1 first, Size count, It2 d_first, CountsIt counts, DisplsIt displs) {
+	auto all_gatherv_n(It1 first, Size count, It2 d_first, CountsIt counts, DisplsIt displs) -> It2 {
 		return all_gatherv_n(
 			first, count,
 			d_first,
@@ -2636,7 +2813,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			detail::contiguous_iterator_tag /*tag*/,
 			detail::basic_tag /*tag*/,
 		CountsIt counts, DisplsIt displs
-	) {
+	) -> It2 {
 		MPI_(Allgatherv)(
 			detail::data(  first), static_cast<int>(count)                   , datatype<typename std::iterator_traits<It1>::value_type>{}(),  // TODO(correaa) use safe cast
 			detail::data(d_first), detail::data(counts), detail::data(displs), datatype<typename std::iterator_traits<It2>::value_type>{}(),
@@ -2644,38 +2821,41 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		);
 		return d_first + detail::data(displs)[size()-1] + detail::data(counts)[size()-1];  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 	}
-	template<typename It1, typename Size, typename It2>
-	auto all_gather_n(
-		It1 first, Size count,
-			detail::forward_iterator_tag /*tag*/,
-			detail::value_unspecified_tag /*tag*/,
-		It2 d_first, Size d_count,
-			detail::forward_iterator_tag /*tag*/,
-			detail::value_unspecified_tag /*tag*/
-	) {
-		detail::package po(*this);
-		package_oarchive poa(po);
-		std::copy_n(first, count, package_oarchive::iterator<typename std::iterator_traits<It1>::value_type>(poa));
-		// while(count--) {poa << *(first++);}  // TODO(correaa) remove comment
-		auto const posize = static_cast<int>(po.size());
-		std::vector<int> sizes (usize());
-		std::vector<int> displs(usize());
-		all_gather_n(&posize, 1, sizes.begin(), 1);
-		partial_sum(sizes.begin(), sizes.end(), displs.begin()+1);
-		detail::package pi(*this);
-		auto const total = static_cast<unsigned int>(std::accumulate(sizes.begin(), sizes.end(), 0));
-		pi.resize(total);
-		all_gatherv_n(po.data(), po.size(), pi.data(), sizes.data(), displs.data());
-		package_iarchive pia(pi);
-		d_count *= size();
-		return std::copy_n(package_iarchive::iterator<typename std::iterator_traits<It2>::value_type>(pia), d_count, d_first);
-	}
-	template<typename It1, typename Size, typename It2>
-	auto all_gather_n(It1 first, Size count, It2 d_first) {
-		return all_gather_n(first, count, d_first, count);
-	}
+	// template<typename It1, typename Size, typename It2>
+	// auto all_gather_n(
+	// 	It1 first, Size count,
+	// 		detail::forward_iterator_tag /*tag*/,
+	// 		detail::value_unspecified_tag /*tag*/,
+	// 	It2 d_first, Size d_count,
+	// 		detail::forward_iterator_tag /*tag*/,
+	// 		detail::value_unspecified_tag /*tag*/
+	// ) -> It2 {
+	// 	std::cerr << "from rank " << rank() << " communicating: count = " << count << " value[0] " << *first << std::endl; 
+	// 	// assert(0);
+	// 	detail::package po(*this);
+	// 	package_oarchive poa(po);
+	// 	std::copy_n(first, count, package_oarchive::iterator<typename std::iterator_traits<It1>::value_type>(poa));
+	// 	// while(count--) {poa << *(first++);}  // TODO(correaa) remove comment
+	// 	auto const posize = static_cast<int>(po.size());
+	// 	std::vector<int> sizes (usize());
+	// 	std::vector<int> displs(usize() + 1);
+	// 	all_gather_n(&posize, 1, sizes.begin(), 1);
+	// 	displs[0] = 0;
+	// 	partial_sum(sizes.begin(), sizes.end(), displs.begin()+1);  // NOLINT(boost-use-ranges) for C++20, use std::ranges::partial_sum
+	// 	auto const total = static_cast<unsigned int>(displs.back());
+	// 	detail::package pi(*this);
+	// 	pi.resize(total);
+	// 	all_gatherv_n(po.data(), po.size(), pi.data(), sizes.data(), displs.data());
+	// 	package_iarchive pia(pi);
+	// 	d_count *= size();
+	// 	return std::copy_n(package_iarchive::iterator<typename std::iterator_traits<It2>::value_type>(pia), d_count, d_first);
+	// }
+	// template<typename It1, typename Size, typename It2>
+	// auto all_gather_n(It1 first, Size count, It2 d_first) {
+	// 	return all_gather_n(first, count, d_first);  // , count);
+	// }
 	template<typename V, typename It2>
-	auto all_gather_v(V const& v, It2 d_first) {
+	auto all_gather_v(V const& v, It2 d_first) -> It2{
 		return all_gather_n(std::addressof(v), 1, d_first);
 	}
 	template<class Vector, typename V>
@@ -2685,12 +2865,12 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		return ret;
 	}
 	template<typename It1, typename Size, typename It2>
-	auto all_gatherv_n(It1 first, Size count, It2 d_first) {
+	auto all_gatherv_n(It1 first, Size count, It2 d_first) -> It2 {
 		std::vector<int> counts(usize()    );
 		std::vector<int> displs(usize() + 1);
 		int c = static_cast<int>(count);
 		all_gather_n(&c, 1, counts.begin());
-		partial_sum(counts.begin(), counts.end(), displs.begin()+1);
+		partial_sum(counts.begin(), counts.end(), displs.begin()+1);  // NOLINT(boost-use-ranges) for C++20, use std::ranges::partial_sum
 		return all_gatherv_n(first, count, d_first, counts.begin(), displs.begin());
 	}
 	template<typename It1, typename Size, typename It2>
@@ -2699,7 +2879,7 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		std::vector<int> displs(usize() + 1);
 		int c = count;
 		all_gather_n(&c, 1, counts.begin());
-		partial_sum(counts.begin(), counts.end(), displs.begin()+1);
+		partial_sum(counts.begin(), counts.end(), displs.begin()+1);  // NOLINT(boost-use-ranges) for C++20, use std::ranges::partial_sum
 		return gatherv_n(first, count, d_first, counts.begin(), displs.begin());
 	}
 	template<class It1, typename Size1, class It2, class Size2>
@@ -2710,26 +2890,29 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		Size1 count,
 		It2 d_first,
 		/**/ detail::forward_iterator_tag /*tag*/,
-		/**/ detail::value_unspecified_tag /*tag*/,
-		Size2 d_count
+		/**/ detail::value_unspecified_tag /*tag*/
+		// Size2 d_count
 	) {
+		std::cout << "from rank " << rank() << " trying to communicate, count " << count << " " << *first << std::endl;
 		detail::package po(*this);
 		package_oarchive poa(po);
 		std::copy_n(first, count, package_oarchive::iterator<typename std::iterator_traits<It1>::value_type>(poa));
-		// while(count--) {poa << *(first++);}
+		// while(count--) {poa << *(first++);}  // TODO(correaa) remove comment
 		auto const posize = static_cast<int>(po.size());
 		std::vector<int> sizes (usize());
-		std::vector<int> displs(usize());
-		all_gather_n(&posize, 1, sizes.begin(), 1);
-		partial_sum(sizes.begin(), sizes.end(), displs.begin()+1);
+		std::vector<int> displs(usize() + 1);
+		all_gather_n(&posize, 1, sizes.begin());  // , 1);
+		displs[0] = 0;
+		partial_sum(sizes.begin(), sizes.end(), displs.begin()+1);  // NOLINT(boost-use-ranges) for C++20, use std::ranges::partial_sum
+		auto const total = static_cast<unsigned int>(displs.back());
 		detail::package pi(*this);
-		auto total = static_cast<std::size_t>(std::accumulate(sizes.begin(), sizes.end(), 0));
 		pi.resize(total);
 		all_gatherv_n(po.data(), po.size(), pi.data(), sizes.data(), displs.data());
 		package_iarchive pia(pi);
-		d_count *= size();
-		return std::copy_n(package_iarchive::iterator<typename std::iterator_traits<It2>::value_type>(pia), d_count, d_first);
+		// d_count *= size();
+		return std::copy_n(package_iarchive::iterator<typename std::iterator_traits<It2>::value_type>(pia), count*size(), d_first);
 	}
+
 	template<typename It1, typename It2>
 	auto all_gatherv(
 		It1 first, It1 last,
@@ -2761,9 +2944,13 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 			detail::contiguous_iterator_tag /*tag*/,
 		int root
 	) {
+		// recvbuf, counts, displs only significant at root
+		typename std::iterator_traits<It2>::pointer recv_ptr     = (rank() == root) ? detail::data(d_first) : nullptr;
+		typename std::iterator_traits<Itc>::pointer counts_ptr   = (rank() == root) ? detail::data(counts)  : nullptr;
+		typename std::iterator_traits<Itd>::pointer displs_ptr   = (rank() == root) ? detail::data(displs)  : nullptr;
 		MPI_(Gatherv)(
-			detail::data(  first), static_cast<int>(count),                    datatype<typename std::iterator_traits<It1>::value_type>{}(),  // TODO(correaa) use safe cast
-			detail::data(d_first), detail::data(counts), detail::data(displs), datatype<typename std::iterator_traits<It1>::value_type>{}(),
+			detail::data(first), static_cast<int>(count),   datatype<typename std::iterator_traits<It1>::value_type>{}(),  // TODO(correaa) use safe cast
+			recv_ptr           , counts_ptr, displs_ptr,    datatype<typename std::iterator_traits<It1>::value_type>{}(),
 			root, impl_
 		);
 	}
@@ -2800,10 +2987,12 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		Size2 d_count,
 		int root
 	) {
+		// recvbuf only significant at root; avoid dereferencing d_first on non-root (MSVC debug asserts on empty-container iterators)
+		typename std::iterator_traits<It2>::pointer recv_ptr = (rank() == root) ? detail::data(d_first) : nullptr;
 		request ret;
 		MPI_(Igather)(
-			detail::data(first)  , static_cast<count_type>(  count), datatype<typename std::iterator_traits<It1>::value_type>{}(),
-			detail::data(d_first), static_cast<count_type>(d_count), datatype<typename std::iterator_traits<It2>::value_type>{}(),
+			detail::data(first), static_cast<count_type>(  count), datatype<typename std::iterator_traits<It1>::value_type>{}(),
+			recv_ptr           , static_cast<count_type>(d_count), datatype<typename std::iterator_traits<It2>::value_type>{}(),
 			root, impl_, &ret.impl_
 		);
 		return ret;
@@ -2845,11 +3034,11 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		// while(count--) {poa << *(first++);}  TODO(correaa) remove comment
 		int posize = static_cast<int>(po.size());
 		std::vector<int> sizes(rank()==root?usize():0);
-		gather_n(&posize, 1, sizes.begin(), 1, root);
+		gather_n(&posize, 1, sizes.data(), 1, root);  // use .data() not .begin(): on MSVC debug, dereferencing an empty vector's iterator asserts
 		std::vector<int> displs(sizes.size()+1);
-		partial_sum(sizes.begin(), sizes.end(), displs.begin()+1);
+		partial_sum(sizes.begin(), sizes.end(), displs.begin()+1);  // NOLINT(boost-use-ranges) for C++20, use std::ranges::partial_sum
 		detail::package pi(*this);
-		auto const total = static_cast<unsigned int>(std::accumulate(sizes.begin(), sizes.end(), 0));
+		auto const total = static_cast<unsigned int>(std::accumulate(sizes.begin(), sizes.end(), 0));  // NOLINT(boost-use-ranges) for C++20, use std::ranges::accumulate
 		pi.resize(total);
 		gatherv_n(po.data(), po.size(), pi.data(), sizes.data(), displs.data(), root);
 		if(rank() == root) {
@@ -3043,27 +3232,30 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		class V2 = typename std::iterator_traits<It2>::value_type 
 	>
 	auto gather_n_dispatch(
-		gather_mode g, std::true_type /*true*/, 
+		gather_mode g, std::true_type /*true*/,
 		It1 first, Size count, It2 d_first, int root = 0
 	) {
+		// recvbuf only significant at root; avoid dereferencing d_first on non-root (MSVC debug asserts on empty-container iterators)
+		typename std::iterator_traits<It2>::pointer recv_ptr = (rank() == root) ? detail::data(d_first) : nullptr;
 		int s = g(
-			detail::data(first)  , count, datatype<V1>{}(),
-			detail::data(d_first), count, datatype<V2>{}(),
+			detail::data(first), count, datatype<V1>{}(),
+			recv_ptr           , count, datatype<V2>{}(),
 			root, impl_
 		);
 		if(s != MPI_SUCCESS) {throw std::runtime_error("cannot scatter");}
 	}
 	template<class It1, class Size, class It2,
-		class V1 = typename std::iterator_traits<It1>::value_type, 
-		class V2 = typename std::iterator_traits<It2>::value_type 
+		class V1 = typename std::iterator_traits<It1>::value_type,
+		class V2 = typename std::iterator_traits<It2>::value_type
 	>
 	auto gather_n_dispatch(
-		gather_mode g, std::false_type /*false*/, 
+		gather_mode g, std::false_type /*false*/,
 		It1 first, Size count, It2 d_first, int root = 0
 	) {
+		typename std::iterator_traits<It2>::pointer recv_ptr = (rank() == root) ? detail::data(d_first) : nullptr;
 		int s = g(
-			detail::data(first)  , count, datatype<V1>{}(),
-			detail::data(d_first), count, datatype<V2>{}(),
+			detail::data(first), count, datatype<V1>{}(),
+			recv_ptr           , count, datatype<V2>{}(),
 			root, impl_
 		);
 		if(s != MPI_SUCCESS) {throw std::runtime_error("cannot scatter");}
@@ -3076,10 +3268,11 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 		igather_mode g, std::true_type /*true*/,
 		It1 first, Size count, It2 d_first, int root = 0
 	) {
+		typename std::iterator_traits<It2>::pointer recv_ptr = (rank() == root) ? detail::data(d_first) : nullptr;
 		request r;
 		int s = g(
-			detail::data(first)  , count, datatype<V1>{}(),
-			detail::data(d_first), count, datatype<V2>{}(),
+			detail::data(first), count, datatype<V1>{}(),
+			recv_ptr           , count, datatype<V2>{}(),
 			root, impl_, &r.impl_
 		);
 		if(s != MPI_SUCCESS) {throw std::runtime_error("cannot scatter");}
@@ -3115,24 +3308,25 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 
 	[[deprecated]] void name(std::string const& s) {set_name(s);}
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	static mpi3::communicator& parent() {
-		static_assert(sizeof(MPI_Comm) == sizeof(mpi3::communicator), "!");
+		// static_assert(sizeof(MPI_Comm) == sizeof(mpi3::communicator), "!");
 		static_assert(std::is_same<decltype(impl_), MPI_Comm>{}, "!");
 		MPI_Comm* p{}; MPI_Comm_get_parent(p); assert(p);
 		return reinterpret_cast<mpi3::communicator&>(*p);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) : TODO(correaa) avoid reinterpret_cast
 	}
 #endif
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	static communicator spawn(std::string const& argv0, int np) {
 		communicator intercomm;
+		// cppcheck-suppress[cstyleCast]
 		MPI_Comm_spawn(argv0.data(), MPI_ARGV_NULL, np, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm.impl_, MPI_ERRCODES_IGNORE );
 		return intercomm;
 	}
 #endif
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	communicator intercommunicator_create(int local_leader, communicator const& peer, int remote_leader, int tag = 0) const{
 		communicator ret;
 		int const s = MPI_Intercomm_create(impl_, local_leader, peer.impl_, remote_leader, tag, &ret.impl_);
@@ -3148,11 +3342,11 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	communicator create(group const& g) const;
 	communicator create_group(group const& g, int tag) const;
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	FILE*        fopen(char const* filename, int amode = unsigned{MPI_MODE_RDWR} | unsigned{MPI_MODE_CREATE});
 #endif
 
-	inline static auto name(communicator::topology const& t) -> std::string const& {
+	static auto name(communicator::topology const& t) -> std::string const& {
 		static std::map<communicator::topology, std::string> const names = {
 			{communicator::topology::undefined, "undefined"}, 
 			{communicator::topology::graph, "graph"},
@@ -3170,6 +3364,9 @@ class communicator : protected detail::basic_communicator {  // in mpich MPI_Com
 	friend T operator+=(communicator& comm, T const& t) {  // NOLINT(fuchsia-overloaded-operator) : experimental operator
 		return comm.all_reduce_value(t, std::plus<>{});
 	}
+
+	template<class T>
+	T operator+(T const& t) { return this->all_reduce_value(t, std::plus<>{}); }
 
 	template<class T>
 	friend T operator&=(communicator& comm, T const& t) {  // NOLINT(fuchsia-overloaded-operator) : experimental operator
@@ -3199,17 +3396,20 @@ inline communicator::topology const communicator::topology::graph    {MPI_GRAPH 
 inline communicator::topology const communicator::topology::cartesian{MPI_CART     };
 
 inline void  barrier(communicator& self) {       self. barrier();}
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 inline auto ibarrier(communicator& self) {return self.ibarrier();}
 #endif
-
-inline communicator::communicator(group const& g, int tag){
-	MPI_(Comm_create_group)(MPI_COMM_WORLD, &const_cast<group&>(g), tag, &impl_);  // NOLINT(cppcoreguidelines-pro-type-const-cast) : TODO(correaa) consider using non-const argument to begin with
-}
 
 inline communicator::communicator(group const& g){
 	MPI_(Comm_create)(MPI_COMM_WORLD, &const_cast<group&>(g), &impl_);  // NOLINT(cppcoreguidelines-pro-type-const-cast) : TODO(correaa) consider using non-const argument to begin with
 }
+
+#ifndef MSMPI_VER
+inline communicator::communicator(group const& g, int tag) {
+	MPI_(Comm_create_group)(MPI_COMM_WORLD, &const_cast<group&>(g), tag, &impl_);  // NOLINT(cppcoreguidelines-pro-type-const-cast) : TODO(correaa) consider using non-const argument to begin with
+}
+#endif
+
 // https://www.open-mpi.org/doc/v3.0/man3/MPI_Comm_create_group.3.php
 // MPI_Comm_create_group is similar to MPI_Comm_create; however, MPI_Comm_create must be called by all processes in the group of comm, whereas MPI_Comm_create_group must be called by all processes in group, which is a subgroup of the group of comm. In addition, MPI_Comm_create_group requires that comm is an intracommunicator. MPI_Comm_create_group returns a new intracommunicator, newcomm, for which the group argument defines the communication group. No cached information propagates from comm to newcomm. 
 
@@ -3229,11 +3429,13 @@ inline communicator communicator::create(group const& g) const{
 	return ret;
 }
 
+#ifndef MSMPI_VER
 inline communicator communicator::create_group(class group const& g, int tag = 0) const{
 	communicator ret;
 	MPI_(Comm_create_group)(impl_, &const_cast<group&>(g), tag, &ret.impl_);  // NOLINT(cppcoreguidelines-pro-type-const-cast) : TODO(correaa) consider using non-const argument to begin with
 	return ret;
 }
+#endif
 
 template<class T>
 inline void communicator::deallocate_shared(pointer<T> /*unused*/){
@@ -3249,17 +3451,15 @@ inline void communicator::deallocate(pointer<T>& /*p*/, MPI_Aint /*size*/) {  //
 //  p.pimpl_ == nullptr;
 }
 
-#if 0
-template<class T>
-inline window<T> communicator::make_window(mpi3::size_t size){
-	mpi3::info inf;
-	void* ptr;
-	window<T> ret;
-	int s = MPI_Win_allocate(size*sizeof(T), sizeof(T), inf.impl_, this->impl_, &ptr, &ret.impl_);
-	if(s != MPI_SUCCESS) throw std::runtime_error("cannot window_allocate");
-	return ret;
-}
-#endif
+// template<class T>
+// inline window<T> communicator::make_window(mpi3::size_t size){
+//  mpi3::info inf;
+//  void* ptr;
+//  window<T> ret;
+//  int s = MPI_Win_allocate(size*sizeof(T), sizeof(T), inf.impl_, this->impl_, &ptr, &ret.impl_);
+//  if(s != MPI_SUCCESS) throw std::runtime_error("cannot window_allocate");
+//  return ret;
+// }
 
 class strided_range {
 	int first_;
@@ -3280,7 +3480,6 @@ auto operator/(Range const& r, communicator& self)  // NOLINT(fuchsia-overloaded
 	->decltype(self.scatter(begin(r), end(r))) {
 		return self.scatter(begin(r), end(r)); }
 
-
 inline mpi3::communicator& deref(MPI_Comm const& handle) {
 	return reinterpret_cast<mpi3::communicator&>(const_cast<MPI_Comm&>(handle));  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-type-const-cast)
 }
@@ -3296,115 +3495,4 @@ inline mpi3::communicator& grip_communicator(MPI_Comm const& handle) {
 
 }  // end namespace mpi3
 }  // end namespace boost
-
-//BOOST_SERIALIZATION_REGISTER_ARCHIVE(boost::mpi3::package_oarchive)
-//BOOST_SERIALIZATION_USE_ARRAY_OPTIMIZATION(boost::mpi3::detail::package_oarchive)
-//BOOST_SERIALIZATION_USE_ARRAY_OPTIMIZATION(boost::mpi3::detail::package_iarchive)
-
-//#if not __INCLUDE_LEVEL__
-
-//#include "../mpi3/main.hpp"
-//#include "../mpi3/version.hpp"
-
-//#include<iostream>
-
-//using std::cout;
-//namespace mpi3 = boost::mpi3;
-
-//class V{
-//  mpi3::communicator comm_;
-//  public:
-//  V(mpi3::communicator const& c) : comm_(c){}
-//  V(mpi3::communicator&& c) : comm_(std::move(c)){}
-//};
-
-//int mpi3::main(int, char*[], mpi3::communicator world){
-//  std::cout << mpi3::undefined << std::endl;
-
-//  static_assert(std::is_nothrow_constructible<mpi3::communicator>::value, "MyType should be noexcept MoveConstructible");
-
-////    auto worldcopy1 = world;
-////    auto worldcopy2 = std::move(worldcopy1);
-////    V v(worldcopy);
-////    V v2(std::move(v));
-
-//  if(world.rank() == 0) cout << "MPI version " <<  mpi3::version() << '\n';
-////    if(world.rank() == 0) cout << "Topology: " << name(world.topo()) << '\n';
-
-//  cout << "MPI_ERR_COMM = " << MPI_ERR_COMM << '\n';
-
-//  mpi3::communicator comm;
-//  assert(!comm);
-////    cout << comm.rank() << '\n';
-
-//  mpi3::communicator comm2 = world;
-//  assert(comm2);
-//  assert(comm2.size() == world.size());
-//  assert(comm2 == world);
-//  assert(&comm2 != &world);
-
-//  mpi3::communicator comm3 = world;//.duplicate();
-//  assert(comm3);
-//  assert(comm3 == world);
-//  assert(&comm3 != &world);
-//  comm = comm2;
-//  assert(&comm != &comm2);
-
-////    world2 = world;
-
-//  return 0;
-//#if 0
-////    boost::mpi3::communicator newcomm = world;
-//  {
-//      int color = world.rank()/3;
-//      communicator row_comm;
-//      row_comm = world.split(color);
-//      world.barrier();
-//      std::cout << std::to_string(world.rank()) + " " + std::to_string(row_comm.rank()) + "\n";// << std::endl;
-//      world.barrier();
-//  }
-//  {
-//      communicator row_comm = world/3;
-//      world.barrier();
-//      std::cout << std::to_string(world.rank()) + " " + std::to_string(row_comm.rank()) + "\n";// << std::endl;
-//      world.barrier();
-//  }
-
-//  world.barrier();
-//  if(world.rank() == 0) cout << "prime communicator" << '\n';
-//  world.barrier();
-
-//  {
-//  //  group world_group(world);
-//  //  const int ranks[4] = {2, 3, 5, 7};
-//  //  group prime = world_group.include(ranks, ranks + 4);
-//  //  communicator prime_comm(world, prime);
-//      auto prime_comm = world.subcomm({2,3,5,7});
-//      cout << world.rank() << " -> " << prime_comm.rank() << "/" << prime_comm.size() << '\n';
-//#if 0
-//      if(communicator::null != prime_comm){
-//          cout << world.rank() << " -> " << prime_comm.rank() << "/" << prime_comm.size() << '\n';
-//      }else{
-//          cout << world.rank() << " not in prime comm\n";
-//      }
-//#endif
-//  }
-
-//  world.barrier();
-//  if(world.rank() == 0) cout << "prime communicator" << '\n';
-//  world.barrier();
-
-//  if(0){
-//      auto prime = world.subcomm({2,3,5,7});
-//      if(prime.is_empty()){
-//  //  if (communicator::null != prime){
-//          cout << world.rank() << " -> " << prime.rank() << "/" << prime.size() << '\n';
-//      }else{
-//          cout << world.rank() << " not in prime comm\n";
-//      }
-//  }
-//#endif
-//}
-
-//#endif
 #endif

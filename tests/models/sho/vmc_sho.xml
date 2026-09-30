@@ -1,5 +1,5 @@
 <simulation>
-<project id="m5" series="0">
+<project id="vmc_sho" series="0">
   <parameter name="driver_version">legacy</parameter>
 </project>
   <qmcsystem>
@@ -41,10 +41,11 @@
     </hamiltonian>
   </qmcsystem>
 
-  <qmc method="vmc" move="not_pbyp_or_whatever">
+  <qmc method="vmc" move="pbyp">
     <parameter name="blocks">   256  </parameter>
     <parameter name="steps">      2  </parameter>
     <parameter name="substeps">   2  </parameter>
     <parameter name="timestep"> 2.0  </parameter>
+    <parameter name="usedrift">  yes </parameter>
   </qmc>
 </simulation>

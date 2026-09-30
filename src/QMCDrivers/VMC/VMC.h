@@ -33,7 +33,7 @@ public:
       const UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
       Communicate* comm,
       bool enable_profiling);
-  bool run() override;
+  void run() override;
   bool put(xmlNodePtr cur) override;
   QMCRunType getRunType() override { return QMCRunType::VMC; }
 

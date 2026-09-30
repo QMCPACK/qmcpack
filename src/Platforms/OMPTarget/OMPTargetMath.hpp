@@ -34,8 +34,6 @@ using namespace qmcplusplus;
 
 template<typename T>
 T min(T a, T b)
-{
-  return a < b ? a : b;
-}
+{ return a < b ? a : b; }
 } // namespace omptarget
 #endif

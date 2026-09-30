@@ -103,7 +103,6 @@ public:
     }
   }
 
-  void put_id(timer_id_t c1) { short_buckets[level] = c1; }
 
   timer_id_t get_id(int idx) const { return short_buckets[idx]; }
 
@@ -224,7 +223,6 @@ public:
 
   void set_name(const std::string& myname) { name = myname; }
 
-  void set_active(const bool& is_active) { active = is_active; }
 
   void set_active_by_timer_threshold(const timer_levels threshold);
 

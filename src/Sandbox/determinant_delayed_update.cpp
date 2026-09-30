@@ -18,7 +18,7 @@
 #include "Utilities/PrimeNumberSet.h"
 #include "Utilities/Timer.h"
 #include "random.hpp"
-#include "mpi/collectives.h"
+#include "Message/CommOperators.h"
 #include <getopt.h>
 using namespace std;
 #include "CPU/SIMD/aligned_allocator.hpp"
@@ -239,7 +239,11 @@ int main(int argc, char** argv)
   int nthreads_nested = 1;
 #pragma omp parallel
   {
+#if _OPENMP >= 202011
+#pragma omp masked
+#else
 #pragma omp master
+#endif
     nthreads_nested = omp_get_max_threads();
   }
 

@@ -1,14 +1,28 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #include <mpi3/communicator.hpp>
-#include <mpi3/main.hpp>
-//#include <mpi3/detail/package_archive.hpp"
+#include <mpi3/environment.hpp>
+#include <mpi3/type.hpp>
 
-#include <boost/serialization/utility.hpp>  // serialize std::pair
-#include <boost/serialization/vector.hpp>
+#include <mpi3/detail/datatype.hpp>
 
+#include <boost/serialization/array_wrapper.hpp>
+#include <boost/serialization/split_free.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <boost/serialization/utility.hpp>  // NOLINT(misc-include-cleaner) used indirectly, serialize std::pair
+#include <boost/serialization/vector.hpp>   // NOLINT(misc-include-cleaner) used indirectly
+
+#include <algorithm>
+#include <boost/core/lightweight_test.hpp>
+#include <complex>
+#include <cstddef>
+#include <map>
+#include <memory>
+#include <numeric>
 #include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace mpi3 = boost::mpi3;
 
@@ -20,7 +34,7 @@ struct A {  // NOLINT(readability-identifier-naming) example name
 
  public:
 	A() = default;
-	explicit A(std::size_t n) : n_{n}, data_{new double[n_]} {}
+	explicit A(std::size_t n) : n_{n}, data_{std::make_unique<double[]>(n_)} {}  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 	A(A const& other) : name_{other.name_}, n_{other.n_}, data_{new double[n_]} {}
 	A(A&&) = delete;
 	~A()   = default;
@@ -38,7 +52,7 @@ struct A {  // NOLINT(readability-identifier-naming) example name
 	}
 	auto operator=(A&&) -> A& = default;
 
-	auto operator[](std::ptrdiff_t i) -> double& { return data_.get()[i]; }
+	auto operator[](std::ptrdiff_t i) -> double& { return data_.get()[i]; }  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 	// intrusive serialization
 	template<class Archive>
 	void save(Archive& ar, unsigned int const /*version*/) const {
@@ -53,13 +67,13 @@ struct A {  // NOLINT(readability-identifier-naming) example name
 	BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
-struct B {  // NOLINT(readability-identifier-naming) example name
+struct B {                                        // NOLINT(readability-identifier-naming) example name
 	std::string               name_ = "unnamed";  // NOLINT(misc-non-private-member-variables-in-classes) exposed for serialization
-	std::size_t               n_    = 0;  // NOLINT(misc-non-private-member-variables-in-classes)
-	std::unique_ptr<double[]> data;  // NOLINT(misc-non-private-member-variables-in-classes, cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
+	std::size_t               n_    = 0;          // NOLINT(misc-non-private-member-variables-in-classes)
+	std::unique_ptr<double[]> data;               // NOLINT(misc-non-private-member-variables-in-classes, cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 
 	B() = default;
-	explicit B(std::size_t n) : n_{n}, data{std::make_unique<double[]>(n_)} {}  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
+	explicit B(std::size_t n) : n_{n}, data{std::make_unique<double[]>(n_)} {}                     // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 	B(B const& other) : name_{other.name_}, n_{other.n_}, data{std::make_unique<double[]>(n_)} {}  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 	B(B&&) = delete;
 
@@ -75,17 +89,17 @@ struct B {  // NOLINT(readability-identifier-naming) example name
 	}
 	auto operator=(B&& other) -> B& = default;
 
-	auto operator[](std::ptrdiff_t i) const -> double& { return data.get()[i]; }
+	auto operator[](std::ptrdiff_t i) const -> double& { return data.get()[i]; }  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 	~B() = default;
 };
 
 // nonintrusive serialization
 template<class Archive>
-void save(Archive& ar, B const& b, unsigned int const /*version*/) {
+static void save(Archive& ar, B const& b, unsigned int const /*version*/) {  // NOLINT(misc-use-anonymous-namespace) needed by boost serialization
 	ar << b.name_ << b.n_ << boost::serialization::make_array(b.data.get(), b.n_);
 }
 template<class Archive>
-void load(Archive& ar, B& b, unsigned int const /*version*/) {  // NOLINT(google-runtime-references): serialization protocol
+static void load(Archive& ar, B& b, unsigned int const /*version*/) {  // NOLINT(misc-use-anonymous-namespace,google-runtime-references): serialization protocol
 	ar >> b.name_ >> b.n_;
 	b.data = std::make_unique<double[]>(b.n_);  // NOLINT(cppcoreguidelines-owning-memory,cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 	ar >> boost::serialization::make_array(b.data.get(), b.n_);
@@ -93,15 +107,14 @@ void load(Archive& ar, B& b, unsigned int const /*version*/) {  // NOLINT(google
 BOOST_SERIALIZATION_SPLIT_FREE(B)
 
 template<> struct mpi3::datatype<
-	std::pair<std::complex<double>, std::complex<double>>
-> : struct_<
-	std::complex<double>,
-	std::complex<double>
-> {};
+	std::pair<std::complex<double>, std::complex<double>>> : struct_<std::complex<double>, std::complex<double>> {};
 
-auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int try {
+auto main(int argc, char** argv) -> int try {
+	mpi3::environment env(argc, argv);
 
-	assert(world.size() > 1);
+	auto world = env.world();
+
+	BOOST_TEST(world.size() > 1);
 
 	switch(world.rank()) {
 	case 0: {
@@ -113,23 +126,27 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	case 1: {
 		std::vector<std::vector<double>> buffer(10, std::vector<double>(20));
 		world.receive(buffer.begin(), buffer.end(), 0, 123);
-		assert(buffer[4][5] == 6.1);
+		BOOST_TEST(buffer[4][5] == 6.1);
 		break;
 	};
+	default: {
+	}
 	}
 	switch(world.rank()) {
 	case 0: {
 		std::vector<double> buffer(10);
-		iota(begin(buffer), end(buffer), 0.0);
+		iota(begin(buffer), end(buffer), 0.0);  // NOLINT(boost-use-ranges) for C++20, use std::ranges::iota
 		world.send(begin(buffer), end(buffer), 1);
 		break;
 	};
 	case 1: {
 		std::vector<double> v(10);
 		auto                it = world.receive_n(begin(v), 10, 0);
-		assert(it == end(v) and v[3] == 3.0);
+		BOOST_TEST(it == end(v) and v[3] == 3.0);
 		break;
 	};
+	default: {
+	}
 	}
 	switch(world.rank()) {
 	case 0: {
@@ -142,9 +159,11 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	case 1: {
 		std::vector<std::pair<int, std::vector<double>>> v(2);
 		world.receive(begin(v), end(v), 0, 123);
-		assert((v[1] == std::pair<int, std::vector<double>>{5, std::vector<double>(5)}));
+		BOOST_TEST((v[1] == std::pair<int, std::vector<double>>{5, std::vector<double>(5)}));
 		break;
 	};
+	default: {
+	}
 	}
 
 	switch(world.rank()) {
@@ -157,9 +176,11 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	case 1: {
 		std::vector<A> v(5);
 		world.receive(begin(v), end(v), 0, 123);
-		assert(v[2][2] == 3.14);
+		BOOST_TEST(v[2][2] == 3.14);
 		break;
 	};
+	default: {
+	}
 	}
 
 	switch(world.rank()) {
@@ -172,27 +193,31 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	case 1: {
 		std::vector<B> v(5);
 		world.receive(begin(v), end(v), 0, 123);
-		assert(v[2][2] == 3.14);
+		BOOST_TEST(v[2][2] == 3.14);
 		break;
 	};
+	default: {
+	}
 	}
 
 	switch(world.rank()) {
 	case 0: {
-		std::vector<std::pair<std::complex<double>, std::complex<double>> > v(5);
+		std::vector<std::pair<std::complex<double>, std::complex<double>>> v(5);
 		v[2] = std::make_pair(std::complex<double>{3.14, 6.28}, std::complex<double>{4.0, 5.0});
 		world.send(begin(v), end(v), 1);
 		break;
 	};
 	case 1: {
-		std::vector<std::pair<std::complex<double>, std::complex<double>> > v(5);
+		std::vector<std::pair<std::complex<double>, std::complex<double>>> v(5);
 		world.receive(begin(v), end(v), 0);
-		assert( v[2] == std::make_pair(std::complex<double>{3.14, 6.28}, std::complex<double>{4.0, 5.0}) );
+		BOOST_TEST(v[2] == std::make_pair(std::complex<double>{3.14, 6.28}, std::complex<double>{4.0, 5.0}));
 		break;
 	};
+	default: {
+	}
 	}
 
-	return 0;
+	return boost::report_errors();
 } catch(...) {
 	return 1;
 }

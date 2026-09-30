@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PYSCF_INPUT)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from ..testing import object_eq,text_eq
 
@@ -15,20 +13,20 @@ mno_poscar = '''MnO Crystal
   0.000000000000000   0.000000000000000   1.000000000000000
    4   4
 Cartesian
-  0.000000000000000   0.000000000000000   2.247269020000000 
-  0.000000000000000   2.247269020000000   0.000000000000000 
-  2.247269020000000   0.000000000000000   0.000000000000000 
-  2.247269020000000   2.247269020000000   2.247269020000000 
-  0.000000000000000   0.000000000000000   0.000000000000000 
-  0.000000000000000   2.247269020000000   2.247269020000000 
-  2.247269020000000   0.000000000000000   2.247269020000000 
-  2.247269020000000   2.247269020000000   0.000000000000000 
+  0.000000000000000   0.000000000000000   2.247269020000000
+  0.000000000000000   2.247269020000000   0.000000000000000
+  2.247269020000000   0.000000000000000   0.000000000000000
+  2.247269020000000   2.247269020000000   2.247269020000000
+  0.000000000000000   0.000000000000000   0.000000000000000
+  0.000000000000000   2.247269020000000   2.247269020000000
+  2.247269020000000   0.000000000000000   2.247269020000000
+  2.247269020000000   2.247269020000000   0.000000000000000
 '''
 
 
 h2o_xyz = '''3
 
-O  0.000000  0.000000  0.000000 
+O  0.000000  0.000000  0.000000
 H  0.000000  0.757160  0.586260
 H  0.000000  0.757160 -0.586260
 '''
@@ -46,14 +44,14 @@ mf.kernel()
 
 
 def test_empty_init():
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..pyscf_input import PyscfInput,generate_pyscf_input
 
     ref = obj(
         addendum      = None,
-        allow_not_set = set([]),
+        allow_not_set = set(),
         checkpoint    = False,
-        keywords      = set([]),
+        keywords      = set(),
         prefix        = None,
         save_qmc      = False,
         template      = None,
@@ -61,7 +59,7 @@ def test_empty_init():
         )
 
     pi = PyscfInput()
-    assert(object_eq(pi.to_obj(),ref))
+    assert(object_eq(to_obj(pi),ref))
 
     pi2 = generate_pyscf_input()
     assert(isinstance(pi2,PyscfInput))
@@ -71,7 +69,7 @@ def test_empty_init():
 
 
 def test_generate(tmp_path):
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..physical_system import generate_physical_system
     from ..pyscf_input import generate_pyscf_input
 
@@ -119,17 +117,17 @@ def test_generate(tmp_path):
 
     ref_internal = obj(
         addendum      = None,
-        allow_not_set = set([]),
+        allow_not_set = set(),
         checkpoint    = False,
-        keywords      = set(['system']),
+        keywords      = {'system'},
         prefix        = None,
         save_qmc      = False,
         )
     del pi.template
     del pi.values
-    assert(object_eq(pi.to_obj(),ref_internal))
+    assert(object_eq(to_obj(pi),ref_internal))
 
-    
+
     # diamond crystal
     system = generate_physical_system(
         units    = 'A',
@@ -192,7 +190,7 @@ def test_generate(tmp_path):
 
     del pi.template
     del pi.values
-    assert(object_eq(pi.to_obj(),ref_internal))
+    assert(object_eq(to_obj(pi),ref_internal))
 
     # water molecule without template
     xyz_path = tmp_path / 'H2O.xyz'
@@ -247,7 +245,7 @@ def test_generate(tmp_path):
         from pyscf import df, scf, dft
         ### end generated pyscfimport text ###
         '''.format("'''")
-                    
+
     ref_python_exe = 'python3'
 
     assert(len(pi.values)==4 and 'system' in pi.values)
@@ -261,18 +259,18 @@ def test_generate(tmp_path):
 
     ref_internal = obj(
         addendum      = None,
-        allow_not_set = set([]),
+        allow_not_set = set(),
         checkpoint    = False,
-        keywords      = set(['system','calculation','pyscfimport','python_exe']),
+        keywords      = {'system','calculation','pyscfimport','python_exe'},
         prefix        = None,
         save_qmc      = False,
         )
     del pi.values
     del pi.calculation
     del pi.template
-    assert(object_eq(pi.to_obj(),ref_internal))
+    assert(object_eq(to_obj(pi),ref_internal))
 
-    
+
     # MnO crystal without template
     poscar_path = tmp_path / 'MnO.POSCAR'
 
@@ -368,7 +366,7 @@ def test_generate(tmp_path):
         from pyscf.pbc import df, scf
         ### end generated pyscfimport text ###
         '''.format("'''")
-                    
+
     ref_python_exe = 'python3'
 
     assert(len(pi.values)==4 and 'system' in pi.values)
@@ -382,16 +380,16 @@ def test_generate(tmp_path):
 
     ref_internal = obj(
         addendum      = None,
-        allow_not_set = set([]),
+        allow_not_set = set(),
         checkpoint    = False,
-        keywords      = set(['system','calculation','pyscfimport','python_exe']),
+        keywords      = {'system','calculation','pyscfimport','python_exe'},
         prefix        = None,
         save_qmc      = False,
         )
     del pi.values
     del pi.calculation
     del pi.template
-    assert(object_eq(pi.to_obj(),ref_internal))
+    assert(object_eq(to_obj(pi),ref_internal))
 #end def test_generate
 
 
@@ -508,10 +506,10 @@ savetoqmcpack(mol,mf,'scf')
 
     ref_text = '''
         #! /usr/bin/env python3
-        
+
         from pyscf import scf
-        
-        
+
+
         ### generated system text ###
         from numpy import array
         from pyscf.pbc import gto as gto_loc
@@ -538,12 +536,12 @@ savetoqmcpack(mol,mf,'scf')
             [0.0, 0.0, 0.0] ,
             [0.4656748546088228, 0.4656748546088228, -0.4656748546088228]])
         ### end generated system text ###
-        
-        
-        
+
+
+
         mf = scf.RHF(mol)
         mf.kernel()
-        
+
         ### generated conversion text ###
         from PyscfToQmcpack import savetoqmcpack
         tiling = [2,1,1]

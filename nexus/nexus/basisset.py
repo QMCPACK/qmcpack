@@ -4,23 +4,15 @@
 
 
 import os
+from copy import deepcopy
 from pathlib import Path
+from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
-from .developer import DevBase, obj, error, to_str, unavailable
+from .developer import DevBase, obj, nxs_print, NexusError
 from .fileio import TextFile
-from .utilities import path_string
+from .utilities import path_string, to_str
 
-try:
-    import matplotlib.pyplot as plt
-except:
-    plt = unavailable('matplotlib','pyplot')
-#end try
-
-
-def show_plots():
-    plt.show()
-#end def show_plots
 
 # container class for available basis set files
 class BasisSets(DevBase):
@@ -30,19 +22,22 @@ class BasisSets(DevBase):
         #end if
         bsfiles = []
         bss     = []
-        errors = False
+        msg = ""
         for bs in basissets:
             if isinstance(bs,BasisFile):
                 bss.append(bs)
             elif isinstance(bs,(str, Path)):
                 bsfiles.append(bs)
             else:
-                self.error('expected BasisFile type or filepath, got '+str(type(bs)),exit=False)
-                errors = True
+                msg += 'expected BasisFile type or filepath, got '+str(type(bs))+"\n"
             #end if
         #end for
-        if errors:
-            self.error('cannot create Basissets object')
+        if len(msg) > 0:
+            msg = (
+                'cannot create Basissets object\n'
+                f'{msg}'
+                )
+            raise TypeError(msg)
         #end if
 
         if len(bss)>0:
@@ -63,17 +58,17 @@ class BasisSets(DevBase):
         #end for
     #end def addbs
 
-        
+
     def readbs(self,*bsfiles):
         if len(bsfiles)==1 and isinstance(bsfiles[0],list):
             bsfiles = bsfiles[0]
         #end if
         bss = []
-        self.log('')
-        self.log('  Basissets')
+        nxs_print('')
+        nxs_print('  Basissets')
         for filepath in bsfiles:
             filepath_str = str(filepath)
-            self.log('    reading basis: '+filepath_str)
+            nxs_print('    reading basis: '+filepath_str)
             ext = filepath_str.split('.')[-1].lower()
             if ext=='gms_bas' or ext=='bas':
                 bs = gamessBasisFile(filepath_str)
@@ -82,7 +77,7 @@ class BasisSets(DevBase):
             #end if
             bss.append(bs)
         #end for
-        self.log('')
+        nxs_print('')
         self.addbs(bss)
     #end def readbs
 
@@ -95,7 +90,11 @@ class BasisSets(DevBase):
                 bs = self[bsfile]
                 bss[bs.element_label] = bs
             else:
-                self.error('basis file not found\nmissing file: {0}'.format(bsfile))
+                msg = (
+                    'basis file not found\n'
+                    f'missing file: {bsfile}'
+                    )
+                raise FileNotFoundError(msg)
             #end if
         #end for
         return bss
@@ -116,7 +115,12 @@ class BasisFile(DevBase):
             elem_label = self.filename.split('.')[0]
             is_elem, elem = Elements.is_element(elem_label, return_element=True)
             if not is_elem:
-                self.error('cannot determine element for basis file: {0}\nbasis file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filepath))
+                msg = (
+                    f'cannot determine element for basis file: {filepath}\n'
+                    'basis file names must be prefixed by an atomic symbol or label\n'
+                    '(e.g. Si, Si1, etc)'
+                    )
+                raise RuntimeError(msg)
             #end if
             self.element = elem.symbol
             self.element_label = elem_label
@@ -124,7 +128,7 @@ class BasisFile(DevBase):
     #end def __init__
 
     def cleaned_text(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def cleaned_text
 #end class BasisFile
 
@@ -142,7 +146,11 @@ class gaussBasisFile(BasisFile):
 
     def cleaned_text(self):
         if self.text is None:
-            self.error('text requested prior to read\nfile: {0}'.format(self.location))
+            msg = (
+                'text requested prior to read\n'
+                f'file: {self.location}'
+                )
+            raise NexusError(msg)
         #end if
         return self.text
     #end def cleaned_text
@@ -152,7 +160,8 @@ class gaussBasisFile(BasisFile):
             filepath = self.location
         #end if
         if not os.path.exists(filepath):
-            self.error('file does not exist: {0}'.format(filepath))
+            msg = f'file does not exist: {filepath}'
+            raise FileNotFoundError(msg)
         #end if
         file = TextFile(filepath)
         self.read_file(file)
@@ -160,7 +169,7 @@ class gaussBasisFile(BasisFile):
     #end def read
 
     def read_file(self,file):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_file
 #end class gaussBasisFile
 
@@ -206,7 +215,7 @@ class gamessBasisFile(gaussBasisFile):
 #end class gamessBasisFile
 
 
-def process_gaussian_text(text,format,pp=True,basis=True,preserve_spacing=False):
+def process_gaussian_text(text,format,*,pp=True,basis=True,preserve_spacing=False):
     if format=='gamess' or format=='gaussian' or format=='atomscf':
         rawlines = text.splitlines()
         sections = []
@@ -274,7 +283,8 @@ def process_gaussian_text(text,format,pp=True,basis=True,preserve_spacing=False)
             #end if
         #end for
     else:
-        error('{0} format is unknown'.format(format),'process_gaussian_text')
+        msg = f'{format} format is unknown'
+        raise NotImplementedError(msg)
     #end if
     if pp and basis:
         return pp_lines,basis_lines
@@ -283,7 +293,8 @@ def process_gaussian_text(text,format,pp=True,basis=True,preserve_spacing=False)
     elif basis:
         return basis_lines
     else:
-        error('must request pp or basis')
+        msg = 'must request pp or basis'
+        raise ValueError(msg)
     #end if
 #end def process_gaussian_text
 
@@ -291,10 +302,10 @@ def process_gaussian_text(text,format,pp=True,basis=True,preserve_spacing=False)
 class GaussianBasisSet(DevBase):
     lset_full = tuple('spdfghijk')
     lstyles = obj(s='g-',p='r-',d='b-',f='m-',g='c-',h='k-',i='g-.',j='r-.',k='b-.')
-    formats = 'gaussian gamess'.split()
+    formats = ('gaussian', 'gamess')
 
-    crystal_lmap = {0:'s',1:'sp',2:'p',3:'d',4:'f'}
-    crystal_lmap_reverse = dict(s=0,sp=1,p=2,d=3,f=4)
+    crystal_lmap = MappingProxyType({0:'s',1:'sp',2:'p',3:'d',4:'f'})
+    crystal_lmap_reverse = MappingProxyType(dict(s=0,sp=1,p=2,d=3,f=4))
 
     @staticmethod
     def process_float(s):
@@ -313,12 +324,21 @@ class GaussianBasisSet(DevBase):
 
     def read(self,filepath,format=None):
         if format is None:
-            self.error('format keyword must be specified to read file {0}\nvalid options are: {1}'.format(filepath,self.formats))
+            msg = (
+                f'format keyword must be specified to read file {filepath}\n'
+                f'valid options are: {self.formats}'
+                )
+            raise ValueError(msg)
         elif format not in self.formats:
-            self.error('incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats))
+            msg = (
+                f'incorrect format requested: {format}\n'
+                f'valid options are: {self.formats}'
+                )
+            raise ValueError(msg)
         #end if
         if not os.path.exists(filepath):
-            self.error('cannot read {0}, file does not exist'.format(filepath))
+            msg = f'cannot read {filepath}, file does not exist'
+            raise FileNotFoundError(msg)
         #end if
         #self.name = split_delims(os.path.split(filepath)[1])[0]
         self.name = os.path.split(filepath)[1].split('.')[0]
@@ -330,9 +350,17 @@ class GaussianBasisSet(DevBase):
 
     def write(self,filepath=None,format=None):
         if format is None:
-            self.error('format keyword must be specified to write file {0}\nvalid options are: {1}'.format(filepath,self.formats))
+            msg = (
+                f'format keyword must be specified to write file {filepath}\n'
+                f'valid options are: {self.formats}'
+                )
+            raise ValueError(msg)
         elif format not in self.formats:
-            self.error('incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats))
+            msg = (
+                f'incorrect format requested: {format}\n'
+                f'valid options are: {self.formats}'
+                )
+            raise ValueError(msg)
         #end if
         text = self.write_text(format)
         if filepath is not None:
@@ -360,13 +388,13 @@ class GaussianBasisSet(DevBase):
                 ngauss = int(tokens[1])
                 scale  = np.array(tokens[2:],dtype=float)
                 bterms = obj()
-                for j in range(ngauss):
+                for j in range(ngauss):  # noqa: B007
                     index,expon,coeff = basis_lines[i].split(); i+=1
                     expon = GaussianBasisSet.process_float(expon)
                     coeff = GaussianBasisSet.process_float(coeff)
-                    bterms.append(obj(expon=expon,coeff=coeff))
+                    bterms[len(bterms)] = obj(expon=expon,coeff=coeff)
                 #end for
-                basis.append(obj(l=ltext,scale=scale,terms=bterms))
+                basis[len(basis)] = obj(l=ltext,scale=scale,terms=bterms)
             #end while
         #end if
         elif format=='gaussian':
@@ -377,20 +405,21 @@ class GaussianBasisSet(DevBase):
                 ngauss = int(tokens[1])
                 scale  = np.array(tokens[2:],dtype=float)
                 bterms = obj()
-                for j in range(ngauss):
+                for j in range(ngauss):  # noqa: B007
                     expon,coeff = basis_lines[i].split(); i+=1
                     expon = GaussianBasisSet.process_float(expon)
                     coeff = GaussianBasisSet.process_float(coeff)
-                    bterms.append(obj(expon=expon,coeff=coeff))
+                    bterms[len(bterms)] = obj(expon=expon,coeff=coeff)
                 #end for
-                basis.append(obj(l=ltext,scale=scale,terms=bterms))
+                basis[len(basis)] = obj(l=ltext,scale=scale,terms=bterms)
             #end while
         elif format=='crystal':
             i=0
             while i<len(basis_lines):
                 tokens = basis_lines[i].split(); i+=1
                 if len(tokens)!=5:
-                    self.error('could not parse crystal basisset, input may be misformatted')
+                    msg = 'could not parse crystal basisset, input may be misformatted'
+                    raise RuntimeError(msg)
                 #end if
                 basis_type    =   int(tokens[0])
                 l_type        =   int(tokens[1])
@@ -400,30 +429,31 @@ class GaussianBasisSet(DevBase):
                 ltext = GaussianBasisSet.crystal_lmap[l_type]
                 if ltext!='sp':
                     bterms = obj()
-                    for j in range(ngauss):
+                    for j in range(ngauss):  # noqa: B007
                         expon,coeff = basis_lines[i].split(); i+=1
                         expon = GaussianBasisSet.process_float(expon)
                         coeff = GaussianBasisSet.process_float(coeff)
-                        bterms.append(obj(expon=expon,coeff=coeff))
+                        bterms[len(bterms)] = obj(expon=expon,coeff=coeff)
                     #end for
-                    basis.append(obj(l=ltext,scale=scale,terms=bterms))
+                    basis[len(basis)] = obj(l=ltext,scale=scale,terms=bterms)
                 else: # sp has shared exponent for s and p, split them now
                     sterms = obj()
                     pterms = obj()
-                    for j in range(ngauss):
+                    for j in range(ngauss):  # noqa: B007
                         expon,scoeff,pcoeff = basis_lines[i].split(); i+=1
                         expon = GaussianBasisSet.process_float(expon)
                         scoeff = GaussianBasisSet.process_float(scoeff)
                         pcoeff = GaussianBasisSet.process_float(pcoeff)
-                        sterms.append(obj(expon=expon,coeff=scoeff))
-                        pterms.append(obj(expon=expon,coeff=pcoeff))
+                        sterms[len(sterms)] = obj(expon=expon,coeff=scoeff)
+                        pterms[len(sterms)] = obj(expon=expon,coeff=pcoeff)
                     #end for
-                    basis.append(obj(l='s',scale=scale,terms=sterms))
-                    basis.append(obj(l='p',scale=scale,terms=pterms))
+                    basis[len(basis)] = obj(l='s',scale=scale,terms=sterms)
+                    basis[len(basis)] = obj(l='p',scale=scale,terms=pterms)
                 #end if
             #end while
         else:
-            self.error('ability to read file format {0} has not been implemented'.format(format))
+            msg = f'ability to read file format {format} has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         # sort the basis in s,p,d,f,... order
         self.lsort()
@@ -437,28 +467,28 @@ class GaussianBasisSet(DevBase):
             #text += '{0} {1} 0. 0. 0.\n'.format(self.element,self.Zcore+self.Zval)
             for ib in range(len(self.basis)):
                 b = self.basis[ib]
-                line = '{0} {1}'.format(b.l,len(b.terms))
+                line = f'{b.l} {len(b.terms)}'
                 for s in b.scale:
-                    line += ' {0}'.format(s)
+                    line += f' {s}'
                 #end for
                 text += line + '\n'
                 for it in range(len(b.terms)):
                     t = b.terms[it]
-                    text += '{0:<4} {1:12.8E} {2: 12.8E}\n'.format(it+1,t.expon,t.coeff)
+                    text += f'{it+1:<4} {t.expon:12.8E} {t.coeff: 12.8E}\n'
                 #end for
             #end for
         elif format=='gaussian':
             #text += '{0} 0\n'.format(self.element)
             for ib in range(len(self.basis)):
                 b = self.basis[ib]
-                line = '{0} {1}'.format(b.l,len(b.terms))
+                line = f'{b.l} {len(b.terms)}'
                 for s in b.scale:
-                    line += ' {0}'.format(s)
+                    line += f' {s}'
                 #end for
                 text += line + '\n'
                 for it in range(len(b.terms)):
                     t = b.terms[it]
-                    text += '{0:12.8E} {1: 12.8E}\n'.format(t.expon,t.coeff)
+                    text += f'{t.expon:12.8E} {t.coeff: 12.8E}\n'
                 #end for
             #end for
         elif format=='crystal':
@@ -468,7 +498,8 @@ class GaussianBasisSet(DevBase):
             for ib in range(len(self.basis)):
                 b = self.basis[ib]
                 if b.l not in self.crystal_lmap_reverse:
-                    self.error('{0} channels cannot be handled by crystal'.format(b.l))
+                    msg = f'{b.l} channels cannot be handled by crystal'
+                    raise NotImplementedError(msg)
                 #end if
                 Zf = 0
                 if occ is not None and b.l in occ and lcounts[b.l]<len(occ[b.l]):
@@ -476,15 +507,16 @@ class GaussianBasisSet(DevBase):
                     lcounts[b.l]+=1
                 #end if
                 lnum = self.crystal_lmap_reverse[b.l]
-                line = '0 {0} {1} {2} {3}'.format(lnum,len(b.terms),Zf,b.scale[0])
+                line = f'0 {lnum} {len(b.terms)} {Zf} {b.scale[0]}'
                 text += line + '\n'
                 for it in range(len(b.terms)):
                     t = b.terms[it]
-                    text += '{0:12.8E} {1: 12.8E}\n'.format(t.expon,t.coeff)
+                    text += f'{t.expon:12.8E} {t.coeff: 12.8E}\n'
                 #end for
             #end for
         else:
-            self.error('ability to write file format {0} has not been implemented'.format(format))
+            msg = f'ability to write file format {format} has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         return text
     #end def write_text
@@ -521,12 +553,12 @@ class GaussianBasisSet(DevBase):
             if l not in lbasis:
                 lbasis[l] = obj()
             #end if
-            lbasis[l].append(bf)
+            lbasis[l][len(lbasis[l])] = bf
         #end for
         return lbasis
     #end def lbasis
 
-    
+
     # test needed
     def lsort(self):
         lbasis = self.lbasis()
@@ -536,7 +568,7 @@ class GaussianBasisSet(DevBase):
                 lbas = lbasis[l]
                 for n in range(len(lbas)):
                     bf = lbas[n]
-                    self.basis.append(bf)
+                    self.basis[len(self.basis)] = bf
                 #end for
             #end if
         #end for
@@ -583,9 +615,9 @@ class GaussianBasisSet(DevBase):
                 #end for
                 for expon in exponents:
                     cterms = obj()
-                    cterms.append(obj(expon=expon,coeff=1.0))
+                    cterms[0] = obj(expon=expon,coeff=1.0)
                     bf = obj(l=l,scale=np.array([1.0]),terms=cterms)
-                    self.basis.append(bf)
+                    self.basis[len(self.basis)] = bf
                 #end for
             #end if
         #end for
@@ -617,7 +649,7 @@ class GaussianBasisSet(DevBase):
         if self.uncontracted():
             return self.contracted_basis_size()
         #end if
-        uc = self.copy()
+        uc = deepcopy(self)
         uc.uncontract()
         return uc.contracted_basis_size()
     #end def uncontracted_basis_size
@@ -627,14 +659,15 @@ class GaussianBasisSet(DevBase):
     def basis_size(self):
         us = self.uncontracted_basis_size()
         cs = self.contracted_basis_size()
-        return '({0})/[{1}]'.format(us,cs)
+        return f'({us})/[{cs}]'
     #end def basis_size
 
 
     # test needed
     def prim_expons(self):
         if self.contracted():
-            self.error('cannot find primitive gaussian expons because basis is contracted')
+            msg = 'cannot find primitive gaussian expons because basis is contracted'
+            raise NexusError(msg)
         #end if
         lbasis = self.lbasis()
         gexpon = obj()
@@ -652,7 +685,8 @@ class GaussianBasisSet(DevBase):
     # test needed
     def prim_widths(self):
         if self.contracted():
-            self.error('cannot find primitive gaussian widths because basis is contracted')
+            msg = 'cannot find primitive gaussian widths because basis is contracted'
+            raise NexusError(msg)
         #end if
         lbasis = self.lbasis()
         gwidth = obj()
@@ -666,7 +700,7 @@ class GaussianBasisSet(DevBase):
         return gwidth
     #end def prim_widths
 
-    
+
     # test needed
     def remove_prims(self,comp=None,keep=None,**lselectors):
         lbasis = self.lbasis()
@@ -675,7 +709,8 @@ class GaussianBasisSet(DevBase):
         #end if
         for l,lsel in lselectors.items():
             if l not in lbasis:
-                self.error('cannot remove basis functions from channel {0}, channel not present'.format(l))
+                msg = f'cannot remove basis functions from channel {l}, channel not present'
+                raise KeyError(msg)
             #end if
             lbas = lbasis[l]
             if isinstance(lsel,float):
@@ -686,9 +721,11 @@ class GaussianBasisSet(DevBase):
                 elif comp=='>':
                     less = False
                 elif comp is None:
-                    self.error('comp argument must be provided (< or >)')
+                    msg = 'comp argument must be provided (< or >)'
+                    raise ValueError(msg)
                 else:
-                    self.error('comp must be < or >, you provided: {0}'.format(comp))
+                    msg = f'comp must be < or >, you provided: {comp}'
+                    raise ValueError(msg)
                 #end if
                 gw = gwidths[l]
                 iw = np.arange(len(gw))
@@ -707,24 +744,27 @@ class GaussianBasisSet(DevBase):
                         del lbas[rem[i]]
                     #end for
                 #end if
-            elif isinstance(lsel,int):                
+            elif isinstance(lsel,int):
                 if comp=='<':
                     if lsel>len(lbas):
-                        self.error('cannot remove {0} basis functions from channel {1} as it only has {2}'.format(lsel,l,len(lbas)))
+                        msg = f'cannot remove {lsel} basis functions from channel {l} as it only has {len(lbas)}'
+                        raise NexusError(msg)
                     #end if
                     for i in range(lsel):
                         del lbas[i]
                     #end for
                 elif comp=='>':
                     if lsel>len(lbas):
-                        self.error('cannot remove {0} basis functions from channel {1} as it only has {2}'.format(lsel,l,len(lbas)))
+                        msg = f'cannot remove {lsel} basis functions from channel {l} as it only has {len(lbas)}'
+                        raise NexusError(msg)
                     #end if
                     for i in range(len(lbas)-lsel,len(lbas)):
                         del lbas[i]
                     #end for
                 else:
                     if lsel>=len(lbas):
-                        self.error('cannot remove basis function {0} from channel {1} as it only has {2}'.format(lsel,l,len(lbas)))
+                        msg = f'cannot remove basis function {lsel} from channel {l} as it only has {len(lbas)}'
+                        raise NexusError(msg)
                     #end if
                     del lbas[lsel]
                 #end if
@@ -739,7 +779,7 @@ class GaussianBasisSet(DevBase):
             if l in lbasis:
                 lbas = lbasis[l]
                 for k in sorted(lbas.keys()):
-                    self.basis.append(lbas[k])
+                    self.basis[len(self.basis)] = lbas[k]
                 #end for
             #end if
         #end for
@@ -806,15 +846,15 @@ class GaussianBasisSet(DevBase):
                 lbas = lbasis[l]
                 for n in range(len(lbas)):
                     bf = lbas[n]
-                    self.basis.append(bf)
+                    self.basis[len(self.basis)] = bf
                 #end for
             #end if
         #end for
     #end def remove_channels
-                
+
 
     # test needed
-    def incorporate(self,other,tol=1e-3,unique=False):
+    def incorporate(self,other,tol=1e-3,*,unique=False):
         uncontracted = self.uncontracted() and other.uncontracted()
         lbasis       = self.lbasis()
         lbasis_other = other.lbasis()
@@ -829,14 +869,14 @@ class GaussianBasisSet(DevBase):
                     lbas = lbasis[l]
                     for n in range(len(lbas)):
                         bf = lbas[n]
-                        self.basis.append(bf)
+                        self.basis[len(self.basis)] = bf
                     #end for
                 #end if
                 if l in lbasis_other:
                     lbas = lbasis_other[l]
                     for n in range(len(lbas)):
                         bf = lbas[n]
-                        self.basis.append(bf)
+                        self.basis[len(self.basis)] = bf
                     #end for
                 #end if
             #end for
@@ -846,12 +886,12 @@ class GaussianBasisSet(DevBase):
                 widths     = []
                 orig_widths = np.array([])
                 if l in lbasis:
-                    primitives.extend(lbasis[l].list())
+                    primitives.extend(list(lbasis[l].values()))
                     widths.extend(gwidths[l])
                     orig_widths = gwidths[l]
                 #end if
                 if l in lbasis_other:
-                    prims = lbasis_other[l].list()
+                    prims = list(lbasis_other[l].values())
                     owidths = gwidths_other[l]
                     for n in range(len(prims)):
                         w = owidths[n]
@@ -863,21 +903,22 @@ class GaussianBasisSet(DevBase):
                 #end if
                 primitives = np.array(primitives,dtype=object)[np.array(widths).argsort()]
                 for bf in primitives:
-                    self.basis.append(bf)
+                    self.basis[len(self.basis)] = bf
                 #end for
             #end for
         #end if
     #end def incorporate
 
 
-    def plot(self,r=None,rmin=0.01,rmax=8.0,show=True,fig=True,sep=False,prim=False,style=None,fmt=None,nsub=None):
+    def plot(self,r=None,rmin=0.01,rmax=8.0,*,show=True,fig=True,sep=False,prim=False,style=None,fmt=None,nsub=None):
+        import matplotlib.pyplot as plt
         if r is None:
             r = np.linspace(rmin,rmax,1000)
         #end if
         if not prim:
-            ptitle = '{0} {1} basis'.format(self.name,self.basis_size())
+            ptitle = f'{self.name} {self.basis_size()} basis'
         else:
-            ptitle = '{0} {1} primitives'.format(self.name,self.basis_size())
+            ptitle = f'{self.name} {self.basis_size()} primitives'
         #end if
         if fig:
             plt.figure()
@@ -937,22 +978,24 @@ class GaussianBasisSet(DevBase):
             #end if
             plt.xlabel('r')
             if show:
-                show_plots()
+                plt.show()
             #end if
         #end if
     #end def plot
 
 
     def plot_primitives(self):
-        None
+        pass
     #end def plot_primitives
 
 
-    def plot_prim_widths(self,show=True,fig=True,sep=False,style='o',fmt=None,nsub=None,semilog=True,label=True):
+    def plot_prim_widths(self,*,show=True,fig=True,sep=False,style='o',fmt=None,nsub=None,semilog=True,label=True):
+        import matplotlib.pyplot as plt
         if self.contracted():
-            self.error('cannot plot primitive gaussian widths because basis is contracted')
+            msg = 'cannot plot primitive gaussian widths because basis is contracted'
+            raise NexusError(msg)
         #end if
-        ptitle = '{0} {1} primitive widths'.format(self.name,self.basis_size())
+        ptitle = f'{self.name} {self.basis_size()} primitive widths'
         if fig:
             plt.figure()
         #end if
@@ -1000,7 +1043,7 @@ class GaussianBasisSet(DevBase):
             plt.xlabel('primitive index')
         #end if
         if show:
-            show_plots()
+            plt.show()
         #end if
     #end def plot_prim_widths
 #end class GaussianBasisSet

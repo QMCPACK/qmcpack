@@ -50,12 +50,12 @@ class OneReducedDensityMatrix:
         self.rdm_d_err = 0.5*(self.rdm_d_err + self.rdm_d_err.T)
 
         print("Read summary:")
-        print("Norbs  = {:4d}".format(dim1))
-        print("Nblocks= {:4d}".format(nblk))
+        print(f"Norbs  = {dim1:4d}")
+        print(f"Nblocks= {nblk:4d}")
         print("Trace of 1rdms:")
-        print("   spin 0 = {:12.8f} +/- {:12.8f}".format(np.trace(self.rdm_u), np.trace(self.rdm_u_err)))
-        print("   spin 1 = {:12.8f} +/- {:12.8f}".format(np.trace(self.rdm_d), np.trace(self.rdm_d_err)))
-        
+        print(f"   spin 0 = {np.trace(self.rdm_u):12.8f} +/- {np.trace(self.rdm_u_err):12.8f}")
+        print(f"   spin 1 = {np.trace(self.rdm_d):12.8f} +/- {np.trace(self.rdm_d_err):12.8f}")
+
         self.is_valid = True
     # End function
 
@@ -66,45 +66,43 @@ class OneReducedDensityMatrix:
             for i in range(self.rdm_u.shape[0]):
                 txt = ""
                 for j in range(self.rdm_u.shape[1]):
-                    txt += "{:12.8e} ".format(self.rdm_u[i,j])
+                    txt += f"{self.rdm_u[i,j]:12.8e} "
                 print(txt)
         elif channel == "down":
             for i in range(self.rdm_d.shape[0]):
                 txt = ""
                 for j in range(self.rdm_d.shape[1]):
-                    txt += "{:12.8e} ".format(self.rdm_d[i,j])
+                    txt += f"{self.rdm_d[i,j]:12.8e} "
                 print(txt)
     # End function
 
 
     # Write the array and errors
     def write(self, channel):
-        if channel == "up":
-            fa  = open("1rdm_"+channel+".dat", mode="w")
-            fe  = open("1rdm_"+channel+"_err.dat", mode="w")
-            arr = np.copy(self.rdm_u)
-            err = np.copy(self.rdm_u_err)
-        else:
-            fa  = open("1rdm_"+channel+".dat", mode="w")
-            fe  = open("1rdm_"+channel+"_err.dat", mode="w")
-            arr = np.copy(self.rdm_d)
-            err = np.copy(self.rdm_d_err)
-            
-        print("Writing file: ", fa)
-        print("Writing file: ", fe)
-        for i in range(self.rdm_u.shape[0]):
-            txta = ""
-            txte = ""
-            for j in range(self.rdm_u.shape[1]):
-                txta += "{:12.8e} ".format(arr[i,j])
-                txte += "{:12.8e} ".format(err[i,j])
-            fa.write(txta + "\n")
-            fe.write(txte + "\n")
-        fa.close()
-        fe.close()
+        with (
+            open("1rdm_"+channel+".dat", mode="w")     as fa,
+            open("1rdm_"+channel+"_err.dat", mode="w") as fe,
+            ):
+            if channel == "up":
+                arr = np.copy(self.rdm_u)
+                err = np.copy(self.rdm_u_err)
+            else:
+                arr = np.copy(self.rdm_d)
+                err = np.copy(self.rdm_d_err)
+
+            print("Writing file: ", fa)
+            print("Writing file: ", fe)
+            for i in range(self.rdm_u.shape[0]):
+                txta = ""
+                txte = ""
+                for j in range(self.rdm_u.shape[1]):
+                    txta += f"{arr[i,j]:12.8e} "
+                    txte += f"{err[i,j]:12.8e} "
+                fa.write(txta + "\n")
+                fe.write(txte + "\n")
     # End function
 # End class
-        
+
 
 
 if __name__ == "__main__":
@@ -112,7 +110,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: ./get_1rdms.py path/to/qmcpack.stat.h5")
         sys.exit()
-    
+
     print("Starting job...")
     rdms = OneReducedDensityMatrix()
     rdms.read_qmcpack_stath5(sys.argv[1])
@@ -122,5 +120,5 @@ if __name__ == "__main__":
     else:
         print("It failed!")
         sys.exit()
-    
+
     print("Done.")

@@ -16,9 +16,9 @@
 
 
 from subprocess import Popen, PIPE
-from .developer import to_str
+from .utilities import to_str
 
-def execute(command,verbose=False,skip=False):
+def execute(command,*,verbose=False,skip=False):
     out,err = '',''
     returncode = 0
     if skip:

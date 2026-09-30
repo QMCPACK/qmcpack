@@ -8,8 +8,7 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
@@ -28,10 +27,14 @@ public:
     Cmplx aa;
     CmplxRebuild bb;
     aa = bb;
+    static_cast<void>(aa);
+    static_cast<void>(bb);
 
     Real cc;
     RealRebuild dd(0);
     cc = dd;
+    static_cast<void>(cc);
+    static_cast<void>(dd);
   }
 };
 

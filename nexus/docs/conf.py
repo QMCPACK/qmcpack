@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Nexus Guide'
+project = 'Nexus'
 copyright = '2020, Jaron T. Krogel'
 author = 'Jaron T. Krogel'
 
@@ -30,15 +30,80 @@ highlight_language = "python"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-import sys, os
-sys.path.append(os.path.abspath('extensions'))
+import importlib
+import sys
+from importlib.metadata import PackageNotFoundError
+from pathlib import Path
 
-import sphinx_rtd_theme
+nxs_root = Path(__file__).parent.parent.resolve()
+sys.path.insert(0,str(nxs_root))
 
-extensions = ['sphinxcontrib.bibtex', "sphinx_rtd_theme"]
+# Not sure why, but Sphinx has problems with this import unless it's in this file
+from CifFile import CifFile  # noqa: F401
+
+from nexus.nexus_base import nexus_config
+
+try:
+    release = importlib.metadata.version("nexus")
+except PackageNotFoundError:
+    release = "2.3.9"
+
+
+from intersphinx_registry import get_intersphinx_mapping
+
+extensions = [
+    "sphinx.ext.autosummary",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.viewcode",
+    "sphinxcontrib.bibtex",
+    "sphinx.ext.coverage",
+    "sphinx.ext.mathjax",
+    "pydata_sphinx_theme",
+    "sphinx_design",
+    "sphinx_copybutton",
+    "numpydoc",
+]
+
+autodoc_inherit_docstrings = False
+
+
+def _add_nexus_config_defaults(app, what, name, obj, options, lines):
+    """Add defaults from ``NexusConfig.restore_defaults`` to attribute docs."""
+    del app, obj, options
+    prefix = "nexus.nexus_base.NexusConfig."
+    if what != "attribute" or not name.startswith(prefix):
+        return
+
+    attribute = name.removeprefix(prefix)
+    if attribute in nexus_config.__slots__:
+        default = getattr(nexus_config, attribute)
+        if isinstance(default, str):
+            lines.extend(("", f"Default: ``{default!r}``"))
+        else:
+            lines.extend(("", f"Default: ``{default!s}``"))
+
+
+def setup(app):
+    app.connect("autodoc-process-docstring", _add_nexus_config_defaults)
+
+copybutton_exclude = '.linenos, .gp, .go' # Don't copy line numbers, prompts, or outputs.
+
 bibtex_bibfiles = ['bibs/methods.bib']
 
+numpydoc_class_members_toctree = False
+numpydoc_show_class_members = True
+numpydoc_xref_ignore = {"optional", "type_without_description"}
+numpydoc_xref_param_type = True
+numpydoc_xref_aliases = {
+    "ArrayLike": "numpy.typing.ArrayLike",
+    "NDArray": "numpy.typing.NDArray",
+    "array_like": "numpy.typing.ArrayLike",
+    "ndarray": "numpy.typing.NDArray",
+}
 numfig = True
+
+add_function_parentheses = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -54,7 +119,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = "pydata_sphinx_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -64,3 +129,30 @@ html_static_path = ['_static']
 html_css_files = [
     'custom.css',
 ]
+html_theme_options = {
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/QMCPACK/qmcpack",
+            "icon": "fa-brands fa-github",
+        },
+    ],
+    "navbar_end": [
+        "search-button",
+        "theme-switcher",
+        "navbar-icon-links",
+    ],
+    "show_toc_level": 3,
+    "collapse_navigation": True,
+    "secondary_sidebar_items": ["page-toc"],
+    "pygments_light_style": "default",
+    "pygments_dark_style": "monokai",
+}
+
+html_sidebars = {
+    "theory": [],
+}
+
+html_context = {"default_mode": "auto"}
+
+intersphinx_mapping = get_intersphinx_mapping(packages=["python", "numpy"])

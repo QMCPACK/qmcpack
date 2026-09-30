@@ -11,6 +11,8 @@
 
 #ifndef QMCPLUSPLUS_QMCDRIVERNEWTESTWRAPPER_H
 #define QMCPLUSPLUS_QMCDRIVERNEWTESTWRAPPER_H
+#include <catch2/matchers/catch_matchers_string.hpp>
+
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/DriverTraits.h"
 #include "Particle/SampleStack.h"
@@ -173,7 +175,7 @@ public:
     CHECK(determineNumCrowds(4, 2) == 2);
   }
 
-  bool run() override { return false; }
+  void run() override { return; }
 
   int get_num_crowds() { return crowds_.size(); }
 
@@ -196,7 +198,7 @@ public:
     CHECK(QMCDriverNew::determineStepsPerBlock(6, 0, 0, 2) == 1);
 
     CHECK_THROWS_WITH(QMCDriverNew::determineStepsPerBlock(6, 13, 1, 2),
-                      Catch::Contains("more than the total number of walkers"));
+                      Catch::Matchers::ContainsSubstring("more than the total number of walkers"));
   }
 };
 

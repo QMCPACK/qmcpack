@@ -52,9 +52,7 @@ public:
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tpq) const override
-  {
-    return std::make_unique<ConstantOrbital>();
-  }
+  { return std::make_unique<ConstantOrbital>(); }
 
   void evaluateDerivatives(ParticleSet& P,
                            const OptVariables& optvars,

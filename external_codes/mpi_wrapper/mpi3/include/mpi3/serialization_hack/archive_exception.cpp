@@ -21,6 +21,12 @@
 #include <boost/serialization/config.hpp>
 #include <boost/version.hpp>
 
+#ifdef BOOST_MSVC
+#undef BOOST_ARCHIVE_DECL
+#define BOOST_ARCHIVE_DECL /*comment*/  // for MSVC
+#pragma warning( disable : 4273 ) // Disable warning C4101 (unreferenced local variable)
+#endif
+
 namespace boost {
 namespace archive {
 

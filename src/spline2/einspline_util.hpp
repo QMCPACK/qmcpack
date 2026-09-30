@@ -19,7 +19,7 @@
 #define QMCPLUSPLUS_EINSPLINE_UTILITIES_H
 
 #include "Message/CommOperators.h"
-#include "mpi/mpi_datatype.h"
+#include "Message/mpi_datatype.h"
 #include "Host/OutputManager.h"
 #include "bspline_traits.hpp"
 #include <limits>
@@ -73,7 +73,7 @@ inline void gatherv(Communicate* comm,
                     << "Some MPI libraries may not work!" << std::endl;
     const size_t nx         = buffer->coefs_size / xs;
     const int nrow          = buffer->coefs_size / (ncol * nx);
-    MPI_Datatype columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
+    auto columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
     for (size_t iz = 0; iz < nx; iz++)
       comm->gatherv_in_place(buffer->coefs + xs * iz, columntype, counts_const, offset);
     mpi::free_column_type(columntype);
@@ -81,7 +81,7 @@ inline void gatherv(Communicate* comm,
   else
   {
     const int nrow          = buffer->coefs_size / ncol;
-    MPI_Datatype columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
+    auto columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
     comm->gatherv_in_place(buffer->coefs, columntype, counts_const, offset);
     mpi::free_column_type(columntype);
   }

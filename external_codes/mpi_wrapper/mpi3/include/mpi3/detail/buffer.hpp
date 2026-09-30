@@ -14,7 +14,7 @@ namespace detail{
 struct buffer : mpi3::uvector<detail::packed>{
 	int pos = 0;  // NOLINT(misc-non-private-member-variables-in-classes) TODO(correaa) : make private
 	buffer() = default;
-	explicit buffer(std::size_t r) {reserve(r);}
+	explicit buffer(size_type r) {reserve(r);}
 	buffer(buffer const&) = delete;
 	buffer(buffer&&) = delete;
 	buffer& operator=(buffer const&) = delete;

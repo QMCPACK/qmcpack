@@ -8,8 +8,7 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include <catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
 #include "config.h"
@@ -79,9 +78,6 @@ void testDualAllocator()
   distance_host   = matrix_view3.data() - vcsoa.data();
   distance_device = matrix_view3.device_data() - vcsoa.device_data();
   CHECK(distance_host == distance_device);
-
-  int ifrom = 2;
-  int ito   = 0;
 
   vcsoa.copyDeviceDataByIndex(0, 2);
   vcsoa.updateFrom();

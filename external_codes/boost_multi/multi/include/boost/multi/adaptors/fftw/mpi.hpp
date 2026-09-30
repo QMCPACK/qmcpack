@@ -51,8 +51,8 @@ struct array<T, multi::dimensionality_type{2}, Alloc>{
 	array_ptr<T, 2, typename std::allocator_traits<Alloc>::pointer> local_ptr_;
 	ptrdiff_t                                                       n0_;
 
-	static std::pair<typename std::allocator_traits<Alloc>::size_type, multi::extensions_t<2>>
-	local_2d(multi::extensions_t<2> ext, boost::mpi3::communicator const& comm){
+	static std::pair<typename std::allocator_traits<Alloc>::size_type, multi::extents_t<2>>
+	local_2d(multi::extents_t<2> ext, boost::mpi3::communicator const& comm){
 		ptrdiff_t local_n0;
 		ptrdiff_t local_0_start;
 
@@ -60,20 +60,20 @@ struct array<T, multi::dimensionality_type{2}, Alloc>{
 		assert( count >= local_n0*std::get<1>(ext).size() );
 		return {count, {{local_0_start, local_0_start + local_n0}, std::get<1>(ext)}};
 	}
-	static auto local_count_2d(multi::extensions_t<2> ext, boost::mpi3::communicator const& comm){
+	static auto local_count_2d(multi::extents_t<2> ext, boost::mpi3::communicator const& comm){
 		return local_2d(ext, comm).first;
 	}
-	static auto local_extension_2d(multi::extensions_t<2> ext, boost::mpi3::communicator const& comm){
+	static auto local_extension_2d(multi::extents_t<2> ext, boost::mpi3::communicator const& comm){
 		return local_2d(ext, comm).second;
 	}
-	array(multi::extensions_t<2> ext, bmpi3::communicator comm = mpi3::environment::self(), Alloc alloc = {}) :
+	array(multi::extents_t<2> ext, bmpi3::communicator comm = mpi3::environment::self(), Alloc alloc = {}) :
 		comm_{std::move(comm)},
 		alloc_{alloc},
 		local_count_{local_count_2d(ext, comm_)},
 		local_ptr_  {alloc_.allocate(local_count_), local_extension_2d(ext, comm_)},
 		n0_{multi::layout_t<2>(ext).size()}
 	{
-		if(not std::is_trivially_default_constructible<element_type>{})
+		if(!std::is_trivially_default_constructible<element>{})
 			adl_alloc_uninitialized_default_construct_n(alloc_, local_ptr_->base(), local_ptr_->num_elements());
 	}
 	bmpi3::communicator& comm() const&{return comm_;}
@@ -102,7 +102,7 @@ struct array<T, multi::dimensionality_type{2}, Alloc>{
 	array_ref <T, 2> local_cutout()      &{return *local_ptr_;}
 	array_cref<T, 2> local_cutout() const&{return *local_ptr_;}
 	ptrdiff_t        local_count() const&{return  local_count_;}
-	multi::extensions_t<2> extensions() const&{return {n0_, std::get<1>(local_cutout().extensions())};}
+	multi::extents_t<2> extensions() const&{return {n0_, std::get<1>(local_cutout().extensions())};}
 	ptrdiff_t num_elements() const&{return multi::layout_t<2>(extensions()).num_elements();}
 	operator multi::array<T, 2>() const&{ static_assert( std::is_trivially_copy_assignable<T>{}, "!" );
 		multi::array<T, 2> ret(extensions(), alloc_);

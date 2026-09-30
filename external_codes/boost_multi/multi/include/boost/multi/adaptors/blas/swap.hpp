@@ -6,7 +6,7 @@
 #define BOOST_MULTI_ADAPTORS_BLAS_SWAP_HPP
 #pragma once
 
-#include <boost/multi/adaptors/blas/core.hpp>
+#include "boost/multi/adaptors/blas/core.hpp"
 
 namespace boost::multi::blas {
 

@@ -8,13 +8,11 @@
 //
 // File created by: Leon Otis, leon_otis@berkeley.edu, University of California Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/WFOpt/EngineHandle.h"
-#include "Configuration.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus

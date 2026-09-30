@@ -38,9 +38,7 @@ struct BandInfo
   ///  This is true if we should make distinct copies represeninting a +k, -k pair
   bool MakeTwoCopies;
   ///default constructor
-  BandInfo()
-      : TwistIndex(0), BandIndex(-1), BandGroup(0), Spin(0), Energy(1e9), MakeTwoCopies(false)
-  {}
+  BandInfo() : TwistIndex(0), BandIndex(-1), BandGroup(0), Spin(0), Energy(1e9), MakeTwoCopies(false) {}
 
   /** operator to determine the order of any band
    * 

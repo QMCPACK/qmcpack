@@ -19,9 +19,9 @@
 
 import os
 from pathlib import Path
-from .developer import obj
+from .developer import obj, NexusError
 from .execute import execute
-from .nexus_base import nexus_core
+from .nexus_base import nexus_config
 from .simulation import Simulation
 from .quantum_package_input import QuantumPackageInput, generate_quantum_package_input, read_qp_value
 from .quantum_package_analyzer import QuantumPackageAnalyzer
@@ -34,8 +34,8 @@ class QuantumPackage(Simulation):
     generic_identifier = 'qp'
     infile_extension   = '.ezfio'
     application        = 'qp_run'
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['orbitals']) 
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'orbitals'})
 
     allow_overlapping_files = True
 
@@ -54,11 +54,21 @@ class QuantumPackage(Simulation):
         else:
             QuantumPackage.qprc = qprc
 
-        if qprc is not None and not nexus_core.status_only:
+        if qprc is not None and not nexus_config.status_only:
             if not isinstance(qprc,str):
-                QuantumPackage.class_error('settings input "qprc" must be a path\nreceived type: {0}\nwith value: {1}'.format(qprc.__class__.__name__,qprc))
+                msg = (
+                    'settings input "qprc" must be a path\n'
+                    f'received type: {qprc.__class__.__name__}\n'
+                    f'with value: {qprc}'
+                    )
+                raise TypeError(msg)
             elif not os.path.exists(qprc):
-                QuantumPackage.class_error('quantum_package.rc file does not exist\nfile path provided via "qprc" in settings\nfile path: {0}'.format(qprc))
+                msg = (
+                    'quantum_package.rc file does not exist\n'
+                    'file path provided via "qprc" in settings\n'
+                    f'file path: {qprc}'
+                    )
+                raise FileNotFoundError(msg)
             #end if
         #end if
     #end def settings
@@ -77,9 +87,13 @@ class QuantumPackage(Simulation):
     def post_init(self):
         qprc = QuantumPackage.qprc
         if qprc is None:
-            self.error('cannot run quantum package\nplease provide path to quantum_package.rc in settings via argument "qprc"')
+            msg = (
+                'cannot run quantum package\n'
+                'please provide path to quantum_package.rc in settings via argument "qprc"'
+                )
+            raise RuntimeError(msg)
         #end if
-        self.job.presub += '\nsource {0}\n'.format(os.path.abspath(qprc))
+        self.job.presub += f'\nsource {os.path.abspath(qprc)}\n'
     #end def post_init
 
 
@@ -87,13 +101,17 @@ class QuantumPackage(Simulation):
         # write an ascii representation of the input changes
         infile = self.identifier+'.in'
         infile = os.path.join(self.locdir,infile)
-        f = open(infile,'w')
-        s = self.input.delete_optional('structure',None)
-        f.write(str(self.input))
-        if s is not None:
-            self.input.structure = s
-        #end if
-        f.close()
+        with open(infile,'w') as f:
+            s = None
+            if 'structure' in self.input:
+                s = self.input.structure
+                del self.input.structure
+            #end if
+            f.write(str(self.input))
+            if s is not None:
+                self.input.structure = s
+            #end if
+        #end with
 
         # copy ezfio directory from dependencies
         qp_dirs = []
@@ -111,17 +129,17 @@ class QuantumPackage(Simulation):
                         if not os.path.exists(s_ezfio):
                             os.makedirs(s_ezfio)
                         #end if
-                        command = 'rsync -av {0}/ {1}/'.format(d_ezfio,s_ezfio)
+                        command = f'rsync -av {d_ezfio}/ {s_ezfio}/'
                         out,err,rc = execute(command)
                         if rc!=0:
-                            self.warn('rsync of ezfio directory failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted rsync command: {2}'.format(self.identifier,self.locdir,command))
+                            self.warn(f'rsync of ezfio directory failed\nall runs depending on this one will be blocked\nsimulation identifier: {self.identifier}\nlocal directory: {self.locdir}\nattempted rsync command: {command}')
                             self.failed = True
                             self.block_dependents()
                         else:
-                            f = open(sync_record,'w')
-                            f.write(command+'\n')
-                            f.close()
-                            execute('qp_edit -c {0}'.format(d_ezfio))
+                            with open(sync_record,'w') as f:
+                                f.write(command+'\n')
+
+                            execute(f'qp_edit -c {d_ezfio}')
                         #end if
                     #end if
                 #end if
@@ -132,7 +150,12 @@ class QuantumPackage(Simulation):
             for d in qp_dirs:
                 qpd += d+'\n'
             #end for
-            self.error('quantum package run depends on multiple others with distinct ezfio directories\ncannot determine which run to copy ezfio directory from\nezfio directories from prior runs:\n{0}'.format(qpd))
+            msg = (
+                'quantum package run depends on multiple others with distinct ezfio directories\n'
+                'cannot determine which run to copy ezfio directory from\n'
+                f'ezfio directories from prior runs:\n{qpd}'
+                )
+            raise RuntimeError(msg)
         #end if
     #end def write_prep
 
@@ -155,12 +178,18 @@ class QuantumPackage(Simulation):
             if rc.run_type=='save_for_qmcpack':
                 result.outfile = os.path.join(self.locdir,self.outfile)
             elif rc.save_for_qmcpack:
-                result.outfile = os.path.join(self.locdir,'{0}_savewf.out'.format(self.identifier))
+                result.outfile = os.path.join(self.locdir,f'{self.identifier}_savewf.out')
             else:
-                self.error("cannot get orbitals\ntracking of save_for_qmcpack is somehow corrupted\nthis is a developer error")
+                msg = (
+                    "cannot get orbitals\n"
+                    "tracking of save_for_qmcpack is somehow corrupted\n"
+                    "this is a developer error"
+                    )
+                raise NexusError(msg)
             #end if
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         return result
     #end def get_result
@@ -173,10 +202,10 @@ class QuantumPackage(Simulation):
                 loc_file = self.input.run_control.prefix
                 loc_out = os.path.join(self.locdir,loc_file)
                 gms_out = result.outfile
-                command = 'cp {0} {1}'.format(gms_out,loc_out)
+                command = f'cp {gms_out} {loc_out}'
                 out,err,rc = execute(command)
                 if rc!=0:
-                    self.warn('copying GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted command: {2}'.format(self.identifier,self.locdir,command))
+                    self.warn(f'copying GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {self.identifier}\nlocal directory: {self.locdir}\nattempted command: {command}')
                     self.failed = True
                     self.block_dependents()
                 #end if
@@ -186,7 +215,7 @@ class QuantumPackage(Simulation):
                 out,err,rc = execute(command)
                 os.chdir(cwd)
                 if rc!=0:
-                    self.warn('creation of ezfio file from GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted command: {2}'.format(self.identifier,self.locdir,command))
+                    self.warn(f'creation of ezfio file from GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {self.identifier}\nlocal directory: {self.locdir}\nattempted command: {command}')
                     self.failed = True
                     self.block_dependents()
                 #end if
@@ -197,7 +226,9 @@ class QuantumPackage(Simulation):
             not_implemented = True
         #end if
         if not_implemented:
-            self.error('ability to incorporate result "{}" from {} has not been implemented',result_name,sim.__class__.__name__)
+            msg = f'ability to incorporate result "{result_name}" from {sim.__class__.__name__} has not been implemented'
+            raise NotImplementedError(msg)
+
         #end if
     #end def incorporate_result
 
@@ -220,9 +251,9 @@ class QuantumPackage(Simulation):
         failed = False
         if scf:
             outfile = os.path.join(self.locdir,self.outfile)
-            f = open(outfile,'r')
-            output = f.read()
-            f.close()
+            with open(outfile,'r') as f:
+                output = f.read()
+
             hf_not_converged = '* SCF energy' not in output
             failed |= hf_not_converged
         #end if
@@ -239,7 +270,7 @@ class QuantumPackage(Simulation):
                 n_det = read_qp_value(n_det_path)
                 if isinstance(n_det,int) and n_det<n_det_max:
                     self.save_attempt()
-                    input.set(read_wf=True)
+                    input.update(read_wf=True)
                     self.reset_indicators()
                 #end if
             #end if
@@ -293,7 +324,7 @@ class QuantumPackage(Simulation):
                 fc+='\n'
                 for n in range(nloop):
                     jloop.app_command = self.app_name+' cis '+self.infile
-                    fc += jloop.run_command()+' >{0}_{1}.out 2>{0}_{1}.err\n'.format(self.identifier,n)
+                    fc += jloop.run_command()+f' >{self.identifier}_{n}.out 2>{self.identifier}_{n}.err\n'
                     jloop.app_command = self.app_name+' save_natorb '+self.infile
                     fc += jloop.run_command()+'\n'
                 #end for
@@ -309,7 +340,7 @@ class QuantumPackage(Simulation):
                     isec,ivar = integral.split('/')
                     if input.present(ivar):
                         val = input.delete(ivar)
-                        cl += 'echo "{0}" > {1}/{2}\n'.format(val,self.infile,integral)
+                        cl += f'echo "{val}" > {self.infile}/{integral}\n'
                     #end if
                 #end for
                 if len(cl)>0:
@@ -340,7 +371,7 @@ class QuantumPackage(Simulation):
         split_nodes  = job.nodes is not None and job.nodes>1 and job.full_command is None
         split_nodes &= slave is not None
         if split_nodes:
-            slave_command = self.app_name+' -slave {0} {1}'.format(slave,self.infile)
+            slave_command = self.app_name+f' -slave {slave} {self.infile}'
             outfile = self.outfile
             errfile = self.errfile
             prefix,ext = outfile.split('.',1)
@@ -352,39 +383,39 @@ class QuantumPackage(Simulation):
             job1,job2 = job.split_nodes(1)
             job1.app_command = app_command
             job2.app_command = slave_command
-            fc += job1.run_command()+' >{0} 2>{1}&\n'.format(outfile,errfile)
-            fc += 'sleep {0}\n'.format(self.input.run_control.sleep)
-            fc += job2.run_command()+' >{0} 2>{1}\n'.format(slave_outfile,slave_errfile)
+            fc += job1.run_command()+f' >{outfile} 2>{errfile}&\n'
+            fc += f'sleep {self.input.run_control.sleep}\n'
+            fc += job2.run_command()+f' >{slave_outfile} 2>{slave_errfile}\n'
 
             if 'fci' in slave and not input.present('distributed_davidson'):
-                input.set(distributed_davidson=True)
+                input.update(distributed_davidson=True)
             #end if
         elif len(fc)>0 or jpost is not None:
             job.divert_out_err()
             job.app_command = app_command
-            fc += job.run_command()+' >{0} 2>{1}\n'.format(self.outfile,self.errfile)
+            fc += job.run_command()+f' >{self.outfile} 2>{self.errfile}\n'
         #end if
 
         if postprocess.save_natorb:
             jno = jpost.serial_clone()
             fc += '\n'
             jno.app_command = self.app_name+' save_natorb '+self.infile
-            fc += jno.run_command()+' >{0}_natorb.out 2>{0}_natorb.err\n'.format(self.identifier)
+            fc += jno.run_command()+f' >{self.identifier}_natorb.out 2>{self.identifier}_natorb.err\n'
         #end if
 
         if postprocess.four_idx_transform:
             jfit = jpost.serial_clone()
             fc += '\n'
-            fc += 'echo "Write" > {}/mo_two_e_ints/io_mo_two_e_integrals\n'.format(self.infile)
+            fc += f'echo "Write" > {self.infile}/mo_two_e_ints/io_mo_two_e_integrals\n'
             jfit.app_command = self.app_name+' four_idx_transform '+self.infile
-            fc += jfit.run_command()+' >{0}_fit.out 2>{0}_fit.err\n'.format(self.identifier)
+            fc += jfit.run_command()+f' >{self.identifier}_fit.out 2>{self.identifier}_fit.err\n'
         #end if
 
         if postprocess.save_for_qmcpack:
             jsq = jpost.serial_clone()
             fc += '\n'
             jsq.app_command = self.app_name+' save_for_qmcpack '+self.infile
-            fc += jsq.run_command()+' >{0}_savewf.out 2>{0}_savewf.err\n'.format(self.identifier)
+            fc += jsq.run_command()+f' >{self.identifier}_savewf.out 2>{self.identifier}_savewf.err\n'
         #end if
 
         if len(fc)>0:
@@ -415,4 +446,4 @@ def generate_quantum_package(**kwargs):
 
     return qp
 #end def generate_quantum_package
-    
+

@@ -101,10 +101,10 @@ public:
 
   void fillYkgstrain(const KContainer& KList)
   {
-    Fkgstrain.resize(KList.getKptsCartWorking().size());
+    Fkgstrain.resize(KList.getKptsCart().size());
     const std::vector<int>& kshell(KList.getKShell());
     MaxKshell = kshell.size() - 1;
-    const auto& ksq = KList.getKSQWorking();
+    const auto& ksq = KList.getKSQ();
     for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
     {
       mRealType uk = evalYkgstrain(std::sqrt(ksq[ki]));
@@ -115,9 +115,9 @@ public:
 
   void filldFk_dk(const KContainer& KList)
   {
-    const auto& kpts_cart = KList.getKptsCartWorking();
+    const auto& kpts_cart = KList.getKptsCart();
     dFk_dstrain.resize(kpts_cart.size());
-    const auto& ksq = KList.getKSQWorking();
+    const auto& ksq = KList.getKSQ();
     for (int ki = 0; ki < dFk_dstrain.size(); ki++)
     {
       dFk_dstrain[ki] = evaluateLR_dstrain(kpts_cart[ki], std::sqrt(ksq[ki]));

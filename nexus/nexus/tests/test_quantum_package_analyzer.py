@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_ANALYZER)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 
 

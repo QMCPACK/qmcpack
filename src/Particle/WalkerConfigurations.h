@@ -40,15 +40,15 @@ namespace qmcplusplus
 template<typename T>
 struct MCDataType
 {
-  T NumSamples;
-  T RNSamples;
-  T Weight;
-  T Energy;
-  T AlternateEnergy;
-  T Variance;
-  T R2Accepted;
-  T R2Proposed;
-  T LivingFraction;
+  T NumSamples{};
+  T RNSamples{};
+  T Weight{};
+  T Energy{};
+  T AlternateEnergy{};
+  T Variance{};
+  T R2Accepted{};
+  T R2Proposed{};
+  T LivingFraction{};
 };
 
 /** A set of light weight walkers that are carried between driver sections and restart

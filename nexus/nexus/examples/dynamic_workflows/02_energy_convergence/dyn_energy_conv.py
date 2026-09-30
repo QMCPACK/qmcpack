@@ -1,26 +1,27 @@
 #! /usr/bin/env python3
 
 '''
-A simple type of dynamic workflow is to automatically determine 
-converged parameter values.  In DFT, two such cases are convergence 
-of the total energy with respect to increasing planewave energy 
-cutoff and to increasingly large k-poing grids.  
+A simple type of dynamic workflow is to automatically determine
+converged parameter values.  In DFT, two such cases are convergence
+of the total energy with respect to increasing planewave energy
+cutoff and to increasingly large k-poing grids.
 
-This example first iteratively finds a converged planewave energy 
-cutoff for a diamond primitive cell using a BFD potential for carbon 
-and terminating when successive iterations produce total energies 
-within 1e-4 Ry of each other.  The resulting energy cutoff is then 
-fed into another iterative convergence procedure for the k-point grid, 
-which stops when a tolerance of 1e-3 Ry has been met.  The converged 
-values for the energy cutoff and k-point grid are 330 Ry and 7x7x7, 
-respectively.  
+This example first iteratively finds a converged planewave energy
+cutoff for a diamond primitive cell using a BFD potential for carbon
+and terminating when successive iterations produce total energies
+within 1e-4 Ry of each other.  The resulting energy cutoff is then
+fed into another iterative convergence procedure for the k-point grid,
+which stops when a tolerance of 1e-3 Ry has been met.  The converged
+values for the energy cutoff and k-point grid are 330 Ry and 7x7x7,
+respectively.
 
-From this example, it is clear how the workflow can be extended to 
-include subsequent supercell expansion, Jastrow factor optimization, 
-and VMC/DMC runs with total energies converged below a specified 
+From this example, it is clear how the workflow can be extended to
+include subsequent supercell expansion, Jastrow factor optimization,
+and VMC/DMC runs with total energies converged below a specified
 minimum statistical errorbar.
 '''
 
+import sys
 from nexus import settings,job,workflow_manager
 from nexus import generate_physical_system
 from nexus import generate_pwscf
@@ -57,8 +58,8 @@ def gen_qe(run_type   = 'scf',
         nkgrid = 1
         path = '01_ecut_conv/ecut_'+str(ecutwfc)
     else:
-        path = '02_kgrid_conv/kgrid_{0}{0}{0}'.format(nkgrid)
-    assert run_type in ('scf','nscf')
+        path = f'02_kgrid_conv/kgrid_{nkgrid}{nkgrid}{nkgrid}'
+    assert run_type in {'scf','nscf'}
     if run_type=='scf':
         kgrid = 3*[nkgrid]
         extra = dict(kgrid=kgrid,requires='none')
@@ -101,7 +102,7 @@ def print_progress(ecut,energies):
     print('  energies:',energies)
     if len(energies)>=2:
         dE = abs(energies[-1]-energies[-2])
-        print('  dE = {:7.5f} , tol = {:7.5f}'.format(dE,tol))
+        print(f'  dE = {dE:7.5f} , tol = {tol:7.5f}')
     print(50*'=')
     print()
 
@@ -139,11 +140,11 @@ while not converged:
             if nruns>max_runs:
                 dE = abs(energies[-1]-energies[-2])
                 print('\n'+50*'*')
-                print('Maximum number of runs exceeded ({})'.format(max_runs))
-                print('Convergence level requested: {:6.4e}'.format(tol))
-                print('Convergence level reached  : {:6.4e}'.format(abs(dE)))
+                print(f'Maximum number of runs exceeded ({max_runs})')
+                print(f'Convergence level requested: {tol:6.4e}')
+                print(f'Convergence level reached  : {abs(dE):6.4e}')
                 print(50*'*'+'\n')
-                exit(1)
+                sys.exit(1)
             qe = gen_qe(ecutwfc=ecut)
         else:
             # When converged, report the final energy cutoff
@@ -154,7 +155,7 @@ while not converged:
             converged = True # to exit polling loop
     elif qe.fail:
         print('\nQE run failed!!!')
-        exit(1)
+        sys.exit(1)
 
     # Run simulations actively upon poll
     wm.poll(1)
@@ -177,7 +178,7 @@ def print_progress(nkgrid,energies):
     print('  energies:',energies)
     if len(energies)>=2:
         dE = abs(energies[-1]-energies[-2])
-        print('  dE = {:6.4f} , tol = {:6.4f}'.format(dE,tol))
+        print(f'  dE = {dE:6.4f} , tol = {tol:6.4f}')
     print(50*'=')
     print()
 
@@ -204,21 +205,21 @@ while not converged:
             if nruns>max_runs:
                 dE = abs(energies[-1]-energies[-2])
                 print('\n'+50*'*')
-                print('Maximum number of runs exceeded ({})'.format(max_runs))
-                print('Convergence level requested: {:6.4e}'.format(tol))
-                print('Convergence level reached  : {:6.4e}'.format(abs(dE)))
+                print(f'Maximum number of runs exceeded ({max_runs})')
+                print(f'Convergence level requested: {tol:6.4e}')
+                print(f'Convergence level reached  : {abs(dE):6.4e}')
                 print(50*'*'+'\n')
-                exit(1)
+                sys.exit(1)
             qe = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
         else:
             print_progress(nkgrid,energies)
             print('\n'+50*'*')
-            print('Converged!!!  Final kgrid: {0}x{0}x{0}'.format(nkgrid))
+            print(f'Converged!!!  Final kgrid: {nkgrid}x{nkgrid}x{nkgrid}')
             print(50*'*')
             converged = True # to exit polling loop
     elif qe.fail:
         print('\nQE run failed!!!')
-        exit(1)
+        sys.exit(1)
     wm.poll(1)
 
 

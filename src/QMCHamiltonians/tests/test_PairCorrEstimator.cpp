@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Lattice/CrystalLattice.h"
 #include "Particle/ParticleSet.h"
@@ -66,8 +65,8 @@ namespace qmcplusplus
 {
 TEST_CASE("Pair Correlation", "[hamiltonian]")
 {
-  std::cout << std::fixed;
-  std::cout << std::setprecision(8);
+  app_log() << std::fixed;
+  app_log() << std::setprecision(8);
   using RealType = QMCTraits::RealType;
 
   Communicate* c = OHMMS::Controller;
@@ -75,7 +74,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   // XML parser
   Libxml2Document doc;
 
-  std::cout << "\n\n\ntest_paircorr:: START\n";
+  app_log() << "\n\n\ntest_paircorr:: START\n";
 
   // TEST new idea: ParticlesetPool to make a ParticleSet
   bool lat_okay = doc.parseFromString(lat_xml);
@@ -93,7 +92,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   // Get the (now assembled) ParticleSet, do simple sanity checks, then print info
   ParticleSet* elec = pset_builder.getParticleSet("e");
 
-  std::cout << "cheeeee " << elec->getLattice().R << std::endl;
+  app_log() << "cheeeee " << elec->getLattice().R << std::endl;
   REQUIRE(elec->isSameMass());
   REQUIRE(elec->getName() == "e");
 
@@ -127,12 +126,11 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   elec->R[7][1] = 1.0;
   elec->R[7][2] = 1.0;
 
-  elec->get(std::cout); // print particleset info to stdout
+  elec->get(app_log()); // print particleset info to stdout
 
   // Set up the distance table, match expected layout
-  const int ee_table_id = elec->addTable(*elec);
+  elec->addTable(*elec);
 
-  const auto& dii(elec->getDistTable(ee_table_id));
   elec->update(); // distance table evaluation here
 
   // Make a PairCorrEstimator, call put() to set up internals
@@ -155,21 +153,21 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   const RealType deltaR = Rmax / static_cast<RealType>(Nbins);
 
   auto gofr = elec->Collectables;
-  std::cout << "\n";
-  std::cout << "gofr:\n";
-  std::cout << std::fixed;
-  std::cout << std::setprecision(6);
-  std::cout << std::setw(4) << "i"
+  app_log() << "\n";
+  app_log() << "gofr:\n";
+  app_log() << std::fixed;
+  app_log() << std::setprecision(6);
+  app_log() << std::setw(4) << "i"
             << "  " << std::setw(12) << "r"
             << "  " << std::setw(12) << "uu"
             << "  " << std::setw(12) << "ud"
             << "  " << std::setw(12) << "dd"
             << "\n";
-  std::cout << "============================================================\n";
+  app_log() << "============================================================\n";
 
   for (int i = 0; i < Nbins; i++)
   {
-    std::cout << std::setw(4) << i << "  " << std::setw(12) << i * deltaR << "  " << std::setw(12) << gofr[i] << "  "
+    app_log() << std::setw(4) << i << "  " << std::setw(12) << i * deltaR << "  " << std::setw(12) << gofr[i] << "  "
               << std::setw(12) << gofr[i + Nbins] << "  " << std::setw(12) << gofr[i + 2 * Nbins] << "\n";
   }
 
@@ -183,13 +181,13 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
 
   // Nearest neighbor peak (ud) | Distance = 1
   const int bin_nn = 49;
-  REQUIRE(std::fabs(gofr[49] - 0.00000000) < eps);
+  REQUIRE(std::fabs(gofr[bin_nn] - 0.00000000) < eps);
   REQUIRE(std::fabs(gofr[148] - 23.6361163) < eps);
   REQUIRE(std::fabs(gofr[247] - 0.00000000) < eps);
 
   // 2nd-nearest neighbor peak (uu/dd) | Distance = sqrt(2)
   const int bin_2n = 70;
-  REQUIRE(std::fabs(gofr[70] - 15.536547) < eps);
+  REQUIRE(std::fabs(gofr[bin_2n] - 15.536547) < eps);
   REQUIRE(std::fabs(gofr[169] - 0.0000000) < eps);
   REQUIRE(std::fabs(gofr[268] - 15.536547) < eps);
 
@@ -198,7 +196,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   REQUIRE(std::fabs(gofr[184] - 2.6408410) < eps);
   REQUIRE(std::fabs(gofr[283] - 0.0000000) < eps);
 
-  std::cout << "test_paircorr:: STOP\n";
+  app_log() << "test_paircorr:: STOP\n";
 }
 
 TEST_CASE("Pair Correlation Pair Index", "[hamiltonian]")

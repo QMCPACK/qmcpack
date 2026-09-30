@@ -8,10 +8,9 @@
 //
 // File created by: Yubo "Paul" Yang, yubo.paul.yang@gmail.com, University of Illinois Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "Lattice/CrystalLattice.h"
 #include "Particle/ParticleSet.h"
 #include "LongRange/LRHandlerBase.h"
@@ -47,7 +46,7 @@ TEST_CASE("dummy", "[lrhandler]")
 
   handler.initBreakup(ref);
 
-  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  app_log() << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
   CHECK( handler.MaxKshell == 78);
   CHECK(handler.LR_kc == Approx(12));
   CHECK(handler.LR_rc == Approx(0));
@@ -61,7 +60,7 @@ TEST_CASE("dummy", "[lrhandler]")
   for (int ish = 0; ish < handler.MaxKshell; ish++)
   {
     int ik           = ref.getSimulationCell().getKLists().getKShell()[ish];
-    double k2        = ref.getSimulationCell().getKLists().getKSQWorking()[ik];
+    double k2        = ref.getSimulationCell().getKLists().getKSQ()[ik];
     double fk_expect = fk(k2);
     CHECK(handler.Fk_symm[ish] == Approx(norm * fk_expect));
   }

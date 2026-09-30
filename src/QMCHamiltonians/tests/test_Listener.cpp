@@ -8,8 +8,9 @@
 //
 // Some code refactored from: DensityMatrices1b.h
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
 
-#include "catch.hpp"
+#include <numeric>
 
 #include "Listener.hpp"
 #include <string>

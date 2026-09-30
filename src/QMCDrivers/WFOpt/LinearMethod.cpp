@@ -120,7 +120,7 @@ LinearMethod::Real LinearMethod::selectEigenvalue(std::vector<Real>& eigenvals,
 }
 
 
-LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev) const
+LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev)
 {
   int Nl(ev.size());
   //   Getting the optimal worksize
@@ -205,7 +205,7 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vect
   //     }
 }
 
-void LinearMethod::getNonLinearRange(int& first, int& last, const QMCCostFunctionBase& optTarget) const
+void LinearMethod::getNonLinearRange(int& first, int& last, const QMCCostFunctionBase& optTarget)
 {
   std::vector<int> types;
   optTarget.getParameterTypes(types);
@@ -239,7 +239,7 @@ void LinearMethod::getNonLinearRange(int& first, int& last, const QMCCostFunctio
 
 LinearMethod::Real LinearMethod::getNonLinearRescale(std::vector<Real>& dP,
                                                      Matrix<Real>& S,
-                                                     const QMCCostFunctionBase& optTarget) const
+                                                     const QMCCostFunctionBase& optTarget)
 {
   int first(0), last(0);
   getNonLinearRange(first, last, optTarget);

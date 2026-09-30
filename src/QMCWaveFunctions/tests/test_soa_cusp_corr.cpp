@@ -9,11 +9,9 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Numerics/OneDimGridBase.h"
 #include "ParticleIO/XMLParticleIO.h"
@@ -27,8 +25,6 @@ namespace qmcplusplus
 {
 TEST_CASE("readCuspInfo", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
-
   using GridType = OneDimGridBase<double>;
 
   Matrix<CuspCorrectionParameters> info;
@@ -40,7 +36,6 @@ TEST_CASE("readCuspInfo", "[wavefunction]")
   REQUIRE(okay);
 
   // N
-  CHECK(info(0, 0).redo == Approx(0.0));                   // redo
   CHECK(info(0, 0).C == Approx(0.0));                      // C
   CHECK(info(0, 0).sg == Approx(1.0));                     // sg
   CHECK(info(0, 0).Rc == Approx(0.0769130700800000));      // rc
@@ -66,7 +61,6 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
   Libxml2Document doc;
   REQUIRE(doc.parse("hcn.structure.xml"));
-  xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -97,7 +91,6 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
   Libxml2Document doc2;
   REQUIRE(doc2.parse("hcn.wfnoj.xml"));
-  xmlNodePtr root2 = doc2.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -233,7 +226,6 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
   Libxml2Document doc;
   REQUIRE(doc.parse("hcn.structure.xml"));
-  xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -264,7 +256,6 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
   Libxml2Document doc2;
   REQUIRE(doc2.parse("hcn.wfnoj.xml"));
-  xmlNodePtr root2 = doc2.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -313,7 +304,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
   values = 0.0;
   sposet->evaluateValue(elec, 0, values);
-  //std::cout << "values = " << values << std::endl;
+  //app_log() << "values = " << values << std::endl;
   // Values from gen_cusp_corr.py
   CHECK(values[0] == Approx(9.5150713253));
   CHECK(values[1] == Approx(-0.0086731542));
@@ -327,9 +318,9 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   values = 0.0;
   sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
 
-  //std::cout << "values = " << values << std::endl;
-  //std::cout << "dpsi = " << dpsi << std::endl;
-  //std::cout << "d2psi = " << d2psi << std::endl;
+  //app_log() << "values = " << values << std::endl;
+  //app_log() << "dpsi = " << dpsi << std::endl;
+  //app_log() << "d2psi = " << d2psi << std::endl;
 
   // Values from gen_cusp_corr.py
   CHECK(values[0] == Approx(9.5150713253));
@@ -406,7 +397,6 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 
   Libxml2Document doc;
   REQUIRE(doc.parse("ethanol.structure.xml"));
-  xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -437,7 +427,6 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 
   Libxml2Document doc2;
   REQUIRE(doc2.parse("ethanol.wfnoj.xml"));
-  xmlNodePtr root2 = doc2.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -554,7 +543,6 @@ TEST_CASE("broadcastCuspInfo", "[wavefunction]")
     cp.alpha[2] = 1.3;
     cp.alpha[3] = 1.4;
     cp.alpha[4] = 1.5;
-    cp.redo     = 1;
   }
 
   broadcastCuspInfo(cp, *c, root);
@@ -567,7 +555,6 @@ TEST_CASE("broadcastCuspInfo", "[wavefunction]")
   CHECK(cp.alpha[2] == Approx(1.3));
   CHECK(cp.alpha[3] == Approx(1.4));
   CHECK(cp.alpha[4] == Approx(1.5));
-  REQUIRE(cp.redo == 1);
 }
 
 

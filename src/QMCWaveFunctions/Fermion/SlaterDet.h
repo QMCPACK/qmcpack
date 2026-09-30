@@ -93,16 +93,12 @@ public:
                        const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
   inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
-  {
-    return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP, ratios);
-  }
+  { return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP, ratios); }
 
   inline void evaluateSpinorRatios(const VirtualParticleSet& VP,
                                    const std::pair<ValueVector, ValueVector>& spinor_multiplier,
                                    std::vector<ValueType>& ratios) override
-  {
-    return Dets[getDetID(VP.refPtcl)]->evaluateSpinorRatios(VP, spinor_multiplier, ratios);
-  }
+  { return Dets[getDetID(VP.refPtcl)]->evaluateSpinorRatios(VP, spinor_multiplier, ratios); }
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const OptVariables& optvars,
@@ -161,9 +157,7 @@ public:
   GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 
   GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
-  {
-    return Dets[getDetID(iat)]->evalGradWithSpin(P, iat, spingrad);
-  }
+  { return Dets[getDetID(iat)]->evalGradWithSpin(P, iat, spingrad); }
 
   void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                    const RefVectorWithLeader<ParticleSet>& p_list,

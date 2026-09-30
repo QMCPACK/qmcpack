@@ -54,7 +54,7 @@ inline int swapWalkersSimple(WlkBucket& wset,
   static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
   if (wlk_size != get<1>(Wexcess.sizes()))
     throw std::runtime_error("Array dimension error in swapWalkersSimple().");
-  if (1 != Wexcess.stride(1))
+  if (1 != get<1>(Wexcess.strides()))
     throw std::runtime_error("Array shape error in swapWalkersSimple().");
   if (CurrNumPerNode.size() < NumContexts || NewNumPerNode.size() < NumContexts)
     throw std::runtime_error("Array dimension error in swapWalkersSimple().");
@@ -89,7 +89,7 @@ inline int swapWalkersSimple(WlkBucket& wset,
   {
     if (plus[ic] == MyContext)
     {
-      comm.send_n(Wexcess[nsend].origin(), Wexcess[nsend].size(), minus[ic], plus[ic] + 999);
+      comm.send_n(Wexcess[nsend].base(), Wexcess[nsend].size(), minus[ic], plus[ic] + 999);
       ++nsend;
     }
     if (minus[ic] == MyContext)
@@ -123,7 +123,7 @@ inline int swapWalkersAsync(WlkBucket& wset,
   static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
   if (wlk_size != get<1>(Wexcess.sizes()))
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");
-  if (1 != Wexcess.stride(1) || (get<0>(Wexcess.sizes()) > 0 && get<1>(Wexcess.sizes()) != Wexcess.stride(0)))
+  if (1 != get<1>(Wexcess.strides()) || (get<0>(Wexcess.sizes()) > 0 && get<1>(Wexcess.sizes()) != Wexcess.stride()))
     throw std::runtime_error("Array shape error in swapWalkersAsync().");
   if (CurrNumPerNode.size() < NumContexts || NewNumPerNode.size() < NumContexts)
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");
@@ -165,7 +165,7 @@ inline int swapWalkersAsync(WlkBucket& wset,
       }
       else
       {
-        requests.emplace_back(comm.isend(Wexcess[nsend].origin(), Wexcess[nsend].origin() + countSend * get<1>(Wexcess.sizes()),
+        requests.emplace_back(comm.isend(Wexcess[nsend].base(), Wexcess[nsend].base() + countSend * get<1>(Wexcess.sizes()),
                                          minus[ic], plus[ic] + 1999));
         nsend += countSend;
         countSend = 1;

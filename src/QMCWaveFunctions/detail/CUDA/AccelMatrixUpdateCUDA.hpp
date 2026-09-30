@@ -100,9 +100,7 @@ void applyW_stageV(Queue<PlatformKind::CUDA>& queue,
                    const int ndelay,
                    T* V_gpu,
                    const T* Ainv)
-{
-  applyW_stageV_cuda(delay_list_gpu, delay_count, temp_gpu, numorbs, ndelay, V_gpu, Ainv, queue.getNative());
-}
+{ applyW_stageV_cuda(delay_list_gpu, delay_count, temp_gpu, numorbs, ndelay, V_gpu, Ainv, queue.getNative()); }
 
 } // namespace compute
 } // namespace qmcplusplus

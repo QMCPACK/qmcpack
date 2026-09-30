@@ -16,7 +16,7 @@ namespace qmcplusplus
 {
 namespace compute
 {
-std::atomic<size_t> MemManage<PlatformKind::CUDA>::device_mem_allocated_ = 0;
+MemoryUsageAccount MemManage<PlatformKind::CUDA>::device_mem_usage_;
 
 template class MemManage<PlatformKind::CUDA>;
 } // namespace compute

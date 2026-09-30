@@ -326,7 +326,11 @@ void TimerManager<TIMER>::print_flat(Communicate* comm)
 
   if (comm == nullptr || comm->rank() == 0)
   {
+#if _OPENMP >= 202011
+#pragma omp masked
+#else
 #pragma omp master
+#endif
     {
       std::array<char, 256> tmpout;
       std::map<std::string, int>::iterator it(p.nameList.begin()), it_end(p.nameList.end());

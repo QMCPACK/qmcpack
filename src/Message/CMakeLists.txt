@@ -20,7 +20,6 @@ if(HAVE_MPI)
 endif()
 
 add_library(catch_main catch_main.cpp)
-target_compile_definitions(catch_main PUBLIC "CATCH_CONFIG_ENABLE_BENCHMARKING")
 target_link_libraries(catch_main PUBLIC qmc_external_catch2)
 target_link_libraries(catch_main PRIVATE message platform_runtime)
 if(HAVE_MPI)

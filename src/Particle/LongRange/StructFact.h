@@ -21,11 +21,12 @@
 #include <NewTimer.h>
 #include <OMPTarget/OffloadAlignedAllocators.hpp>
 #include <type_traits/template_types.hpp>
-#include "KContainer.h"
 
 namespace qmcplusplus
 {
 class ParticleSet;
+template<typename T>
+class KContainerT;
 struct SKMultiWalkerMem;
 
 /** @ingroup longrange
@@ -41,6 +42,7 @@ class StructFact : public QMCTraits
 public:
   //Typedef for the lattice-type
   using ParticleLayout = Lattice;
+  using KContainer = KContainerT<RealType>;
 
   /** enumeration for the methods to handle mixed bconds
    *
