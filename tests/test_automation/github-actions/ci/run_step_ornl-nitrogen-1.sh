@@ -56,6 +56,7 @@ case "$1" in
     cmake -GNinja \
           -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
           -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+          -DPython3_EXECUTABLE=python3.14 \
           -DQMC_MPI=0 \
           -DQMC_GPU=hip \
           -DQMC_GPU_ARCHS=gfx906 \
