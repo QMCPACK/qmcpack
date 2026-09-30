@@ -32,6 +32,12 @@ nexus = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/qmcpack_pylib",
+    "src/afqmctools",
+]
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",

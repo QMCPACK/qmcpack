@@ -4,8 +4,8 @@ import argparse
 import scipy.sparse
 import sys
 import time
-from afqmctools.wavefunction.mol import write_qmcpack_wfn
-from afqmctools.wavefunction.converter import (
+from ..wavefunction.mol import write_qmcpack_wfn
+from ..wavefunction.converter import (
         read_qmcpack_ascii_wavefunction,
         read_dmc_ci_wavefunction
         )

@@ -7,7 +7,7 @@ import os
 import sys
 import numpy
 from mpi4py import MPI
-from afqmctools.utils.gto_basis_utils import extend_gto_id
+from .gto_basis_utils import extend_gto_id
 try:
     from pyscf_driver import (pyscf_driver_init, pyscf_driver_get_info, pyscf_driver_end,
                     pyscf_driver_mp2,pyscf_driver_hamil,pyscf_driver_mp2no)

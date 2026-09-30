@@ -1,6 +1,6 @@
 import numpy
-from afqmctools.hamiltonian.converter import read_qmcpack_hamiltonian
-from afqmctools.wavefunction.converter import read_qmcpack_wavefunction
+from ..hamiltonian.converter import read_qmcpack_hamiltonian
+from ..wavefunction.converter import read_qmcpack_wavefunction
 
 
 def calculate_hf_energy(hamil_file, wfn_file):

@@ -3,11 +3,11 @@ import numpy
 import scipy.sparse
 import scipy.linalg
 import sys
-from afqmctools.utils.io import (
+from ..utils.io import (
         to_qmcpack_complex,
         from_qmcpack_complex
         )
-from afqmctools.hamiltonian.io import (
+from .io import (
         write_sparse_basic,
         write_sparse_chol_chunk
         )

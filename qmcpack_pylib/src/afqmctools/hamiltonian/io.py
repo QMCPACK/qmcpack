@@ -1,6 +1,6 @@
 import h5py
 import numpy
-from afqmctools.utils.io import to_qmcpack_complex
+from ..utils.io import to_qmcpack_complex
 
 def write_qmcpack_sparse(hcore, chol, nelec, nmo, e0=0.0, filename='hamiltonian.h5',
                  real_chol=False, verbose=False, cutoff=1e-16, ortho=None):

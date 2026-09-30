@@ -9,8 +9,8 @@ import os
 import scipy.sparse
 import sys
 import time
-from afqmctools.inputs.from_pyscf import write_qmcpack
-from afqmctools.utils.misc import get_git_hash
+from ..inputs.from_pyscf import write_qmcpack
+from ..utils.misc import get_git_hash
 
 def parse_args(args, comm):
     """Parse command-line arguments.

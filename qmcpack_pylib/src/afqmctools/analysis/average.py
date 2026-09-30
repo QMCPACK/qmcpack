@@ -5,7 +5,7 @@ import numpy
 from math import sqrt
 import scipy.stats
 import scipy.integrate
-from afqmctools.analysis.extraction import (
+from .extraction import (
         get_metadata,
         extract_observable
         )

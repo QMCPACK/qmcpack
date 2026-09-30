@@ -6,14 +6,14 @@ import time
 import os
 from pyscf import lib
 from pyscf.pbc import tools, df
-from afqmctools.hamiltonian.supercell import generate_grid_shifts, Partition
-from afqmctools.utils.parallel import bisect, fair_share
-from afqmctools.utils.io import (
+from .supercell import generate_grid_shifts, Partition
+from ..utils.parallel import bisect, fair_share
+from ..utils.io import (
         format_fixed_width_floats,
         format_fixed_width_strings,
         to_qmcpack_complex
         )
-from afqmctools.utils.pyscf_utils import load_from_pyscf_chk
+from ..utils.pyscf_utils import load_from_pyscf_chk
 
 def alloc_helper(shape, dtype=numpy.float64, name='array', verbose=False):
     """Numpy array allocator helper.

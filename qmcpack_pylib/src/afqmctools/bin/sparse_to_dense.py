@@ -2,9 +2,9 @@
 
 import argparse
 import sys
-from afqmctools.hamiltonian.converter import (
+from ..hamiltonian.converter import (
         read_qmcpack_hamiltonian,
-        kpoint_to_sparse
+        sparse_to_dense
         )
 
 
@@ -24,10 +24,10 @@ def parse_args(args):
 
     parser = argparse.ArgumentParser(description = __doc__)
     parser.add_argument('-i', '--input', dest='input_file', type=str,
-                        default=None, help='Input kpoint factorized file.')
+                        default=None, help='Input AFQMC hamiltonian file.')
     parser.add_argument('-o', '--output', dest='output_file',
-                        type=str, default='sparse.h5',
-                        help='Output file for sparse hamiltonian.')
+                        type=str, default='FCIDUMP',
+                        help='Output file for FCIDUMP.')
     parser.add_argument('-r', '--real-chol', dest='real_chol',
                         action='store_true', default=False,
                         help='Dump real integrals.')
@@ -52,10 +52,8 @@ def main(args):
         command-line arguments.
     """
     options = parse_args(args)
-    kpoint_to_sparse(options.input_file,
-                     options.output_file,
-                     real_chol=options.real_chol,
-                     verbose=options.verbose)
+    sparse_to_dense(options.input_file, options.output_file,
+                    real_chol=options.real_chol)
 
 
 if __name__ == '__main__':

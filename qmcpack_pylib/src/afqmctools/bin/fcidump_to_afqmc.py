@@ -5,11 +5,11 @@ import scipy.sparse
 import sys
 import time
 import numpy
-from afqmctools.hamiltonian.mol import (
+from ..hamiltonian.mol import (
         write_qmcpack_sparse
         )
-from afqmctools.hamiltonian.converter import read_fcidump
-from afqmctools.utils.linalg import modified_cholesky_direct
+from ..hamiltonian.converter import read_fcidump
+from ..utils.linalg import modified_cholesky_direct
 
 
 def parse_args(args):

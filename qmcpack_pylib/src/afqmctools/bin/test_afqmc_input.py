@@ -3,7 +3,7 @@
 import argparse
 import sys
 
-from afqmctools.hamiltonian.converter import read_qmcpack_hamiltonian
+from ..hamiltonian.converter import read_qmcpack_hamiltonian
 
 def parse_args(args):
     """Parse command-line arguments.

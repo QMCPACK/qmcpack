@@ -8,12 +8,12 @@ from functools import reduce
 from pyscf import lib
 from pyscf.pbc import tools, df
 from mpi4py import MPI
-from afqmctools.utils.parallel import fair_share, bisect
-from afqmctools.utils.pyscf_utils import (
+from ..utils.parallel import fair_share, bisect
+from ..utils.pyscf_utils import (
         load_from_pyscf_chk
         )
 
-from afqmctools.utils.io import (
+from ..utils.io import (
         format_fixed_width_floats,
         format_fixed_width_strings
         )

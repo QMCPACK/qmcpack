@@ -1,7 +1,7 @@
 import numpy
 import time
 from pyscf import lib
-from afqmctools.utils.io import (
+from .io import (
         format_fixed_width_floats,
         format_fixed_width_strings,
         )

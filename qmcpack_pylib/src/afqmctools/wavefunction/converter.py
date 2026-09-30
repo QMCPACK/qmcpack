@@ -3,7 +3,7 @@ import h5py
 import numpy
 import scipy.sparse
 import struct
-from afqmctools.utils.io import from_qmcpack_complex
+from ..utils.io import from_qmcpack_complex
 
 def read_qmcpack_ascii_wavefunction(filename, nmo, nelec):
     na, nb = nelec

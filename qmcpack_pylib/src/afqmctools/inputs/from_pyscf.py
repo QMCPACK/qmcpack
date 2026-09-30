@@ -5,17 +5,17 @@ try:
 except ImportError:
     print("Cannot find pyscf.")
     sys.exit()
-from afqmctools.hamiltonian.supercell import write_hamil_supercell
-from afqmctools.hamiltonian.kpoint import write_hamil_kpoints
-from afqmctools.hamiltonian.mol import write_hamil_mol
-from afqmctools.inputs.energy import calculate_hf_energy
-from afqmctools.utils.qmcpack_utils import write_xml_input
-from afqmctools.utils.pyscf_utils import (
+from ..hamiltonian.supercell import write_hamil_supercell
+from ..hamiltonian.kpoint import write_hamil_kpoints
+from ..hamiltonian.mol import write_hamil_mol
+from .energy import calculate_hf_energy
+from ..utils.qmcpack_utils import write_xml_input
+from ..utils.pyscf_utils import (
         load_from_pyscf_chk,
         load_from_pyscf_chk_mol
         )
-from afqmctools.wavefunction.mol import write_wfn_mol
-from afqmctools.wavefunction.pbc import write_wfn_pbc
+from ..wavefunction.mol import write_wfn_mol
+from ..wavefunction.pbc import write_wfn_pbc
 
 
 def write_qmcpack(chkfile, hamil_file, threshold, comm=None,

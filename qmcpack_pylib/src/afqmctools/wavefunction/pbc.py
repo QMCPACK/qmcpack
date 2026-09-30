@@ -5,7 +5,7 @@ import itertools
 import time
 import sys
 import scipy.linalg
-from afqmctools.wavefunction.mol import write_qmcpack_wfn, write_nomsd_wfn
+from ..wavefunction.mol import write_qmcpack_wfn, write_nomsd_wfn
 
 def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True,
                   verbose=False, ndet_max=1, low=0.1, high=0.95):

@@ -1,5 +1,5 @@
 import numpy
-from afqmctools.utils.linalg import modified_cholesky_direct
+from .linalg import modified_cholesky_direct
 
 def generate_hamiltonian(nmo, nelec, cplx=False, sym=8):
     h1e = numpy.random.random((nmo,nmo))

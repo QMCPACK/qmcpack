@@ -5,13 +5,13 @@ from pyscf import fci
 import scipy.sparse
 import sys
 import time
-from afqmctools.utils.io import (
+from ..utils.io import (
         format_fixed_width_floats,
         format_fixed_width_strings,
         to_qmcpack_complex
         )
-from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
-from afqmctools.hamiltonian.io import (
+from ..utils.pyscf_utils import load_from_pyscf_chk_mol
+from .io import (
         write_qmcpack_sparse,
         write_qmcpack_dense
         )

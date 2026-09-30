@@ -4,7 +4,7 @@ import numpy
 import scipy.linalg
 import sys
 from pyscf import fci
-from afqmctools.utils.io import to_qmcpack_complex, add_group, add_dataset
+from ..utils.io import to_qmcpack_complex, add_group, add_dataset
 
 def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
                   init=None, verbose=False):

@@ -6,7 +6,7 @@ import numpy
 from pyscf import lib
 from pyscf.lib.chkfile import load, load_mol
 from pyscf.pbc.lib.chkfile import load_cell
-from afqmctools.utils.linalg import get_ortho_ao_mol
+from .linalg import get_ortho_ao_mol
 
 def load_from_pyscf_chk(chkfile,hcore=None,orthoAO=False):
 
