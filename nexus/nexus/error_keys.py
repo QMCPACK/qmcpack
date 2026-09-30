@@ -1,8 +1,29 @@
-"""Error diagnostics commonly printed by scientific applications.
+"""High-confidence failure diagnostics for scientific simulation runs.
 
-The tuples ending in ``_errors`` contain readable examples of diagnostics.
-The tuples ending in ``_error_patterns`` contain regular expressions used to
-match variable portions or to add context that reduces false positives.
+This module vets output from simulation workflows.  Its primary purpose is to
+identify diagnostics that strongly indicate failure of the actual, primary
+simulation run, rather than an error from an unrelated or loosely related
+process.
+
+The ``*_errors`` tuples show readable examples of the diagnostic forms that
+the corresponding regular expressions are intended to recognize.  Commented
+examples are explicitly excluded because they are not sufficiently reliable
+failure indicators.
+
+The ``*_error_patterns`` tuples provide the regular
+expressions used by :func:`find_error_keys` for its explicit output search;
+they accommodate variable text and require context that limits false
+positives.  Active examples are kept consistent with these patterns
+
+Where enabled by an error set, the key lists also participate as literal
+search expressions, not just the broader regexes. This is accomplished via
+conversion to literal regexes. Examples: Slurm, MPI, PWSCF, RMG, QMCPACK,
+VASP, and GAMESS.
+
+Consistency between the keyword lists and the regexes is tested explicitly
+within the standard testing framework.  This way, if desired search literals
+are added, it will be immediately known whether or not the corresponding
+regex needs updating.
 """
 
 import os
@@ -11,34 +32,52 @@ from functools import cache
 from os import PathLike
 from typing import TextIO
 
+#==========================================================#
 # Operating-system errors
+#==========================================================#
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 shell_errors = (
     'Segmentation fault',
     'Floating point exception',
     'Illegal instruction',
     'Bus error',
     'Bad system call',
+    'Aborted',
+    'Killed',
+    'Terminated',
     'Stack overflow',
     'Out of memory',
-    'invoked oom-killer',
-    'Machine Check Exception',
-    'EDAC Hardware Error',
+    'Cannot allocate memory',
+    # Kernel OOM messages can identify a different process on the node.
+    # 'oom-kill',
+    # 'invoked oom-killer',
+    # 'Killed process 123',
+    'run.sh: line 8: 4217 Killed',
+    # Machine-check and EDAC diagnostics can report corrected hardware errors.
+    # 'Machine Check Exception',
+    # 'EDAC Hardware Error',
     'stack smashing detected',
     'general protection fault',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 shell_error_patterns = (
     r'^.*\b(?:segmentation fault|floating point exception|illegal instruction|bus error|bad system call)(?:\s+\(core dumped\))?\s*$',
-    r'^.*\b(?:aborted|killed)(?:\s+\(core dumped\))?\s*$',
-    r'^.*\bterminated\s*$',
-    r'\b(?:out of memory|cannot allocate memory|oom-kill(?:er)?|invoked oom-killer|killed process\s+\d+)\b',
-    r'\b(?:stack smashing detected|general protection fault|Machine Check Exception)\b',
-    r'\b(?:MCE|EDAC)[^\n]{0,80}\bHardware Error\b',
+    r'^\s*(?:aborted|killed)(?:\s+\(core dumped\))?\s*$',
+    r'^.*:\s+line\s+\d+:\s+\d+\s+(?:aborted|killed)(?:\s+\(core dumped\))?(?:\s+.+)?$',
+    r'^\s*terminated\s*$',
+    r'^\s*(?:out of memory|cannot allocate memory)\s*$',
+    r'\b(?:stack overflow|stack smashing detected|general protection fault)\b',
+    # Machine-check and EDAC diagnostics can report corrected hardware errors.
+    # r'\bMachine Check Exception\b',
+    # r'\b(?:MCE|EDAC)[^\n]{0,80}\bHardware Error\b',
     )
 
 # Signal names are matched only when termination context is present.  Several
 # other POSIX signals are routinely used for job control and checkpointing.
+# Representative signal names and termination forms requiring contextual matching.
 linux_exit_signals = (
     'SIGHUP',
     'SIGILL',
@@ -53,30 +92,43 @@ linux_exit_signals = (
     'SIGTRAP',
     'SIGXCPU',
     'SIGXFSZ',
+    'terminated with signal 11',
+    'exited on signal 11',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 linux_signal_error_patterns = (
-    r'\b(?:terminated|killed|exited|aborted|died|received signal)\b[^\n]{0,80}\bSIG(?:HUP|ILL|ABRT|FPE|KILL|SEGV|PIPE|TERM|BUS|SYS|TRAP|XCPU|XFSZ)\b',
-    r'\bSIG(?:HUP|ILL|ABRT|FPE|KILL|SEGV|PIPE|TERM|BUS|SYS|TRAP|XCPU|XFSZ)\b[^\n]{0,80}\b(?:terminated|killed|exited|aborted|died)\b',
+    r'\b(?:terminated|killed|exited|aborted|died|received signal)\b[^\n]*\bSIG(?:HUP|ILL|ABRT|FPE|KILL|SEGV|PIPE|TERM|BUS|SYS|TRAP|XCPU|XFSZ)\b',
+    r'\bSIG(?:HUP|ILL|ABRT|FPE|KILL|SEGV|PIPE|TERM|BUS|SYS|TRAP|XCPU|XFSZ)\b[^\n]*\b(?:terminated|killed|exited|aborted|died)\b',
     r'\bterminated with signal\s+\d+\b',
     r'\bexited on signal\s+\d+\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 posix_errors = (
-    'No such file or directory',
-    'Permission denied',
-    'Not a directory',
-    'Is a directory',
-    'No space left on device',
-    'Too many open files',
-    'Cannot allocate memory',
-    'Connection refused',
-    'Connection timed out',
-    'Network is unreachable',
-    'Address already in use',
-    'Broken pipe',
+    # Most errno messages can result from handled probes or retryable I/O.
+    # Missing executables and explicitly fatal errors provide run-failure
+    # context rather than relying on the errno message alone.
+    'bash: pw.x: No such file or directory',
+    'fish: pw.x: No such file or directory',
+    'bash: ./pw.x: Permission denied',
+    'fatal error: No such file or directory',
+    'fatal error: Permission denied',
+    'fatal error: Not a directory',
+    'fatal error: Is a directory',
+    'fatal error: No space left on device',
+    'fatal error: Too many open files',
+    'fatal error: Cannot allocate memory',
+    'fatal error: Connection refused',
+    'fatal error: Connection timed out',
+    'fatal error: Network is unreachable',
+    'fatal error: Address already in use',
+    'fatal error: Broken pipe',
+    'fatal error: errno ENOSPC',
     )
 
+# Representative errno names requiring explicit fatal-error context.
 posix_errno_keys = (
     'ENOENT',
     'EACCES',
@@ -102,172 +154,252 @@ posix_errno_keys = (
     'ENOTCONN',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 posix_error_patterns = (
-    r'^(?:.*:\s*)?(?:no such file or directory|permission denied|not a directory|is a directory|no space left on device|too many open files|cannot allocate memory|connection refused|connection timed out|network is unreachable|address already in use|broken pipe)\s*$',
-    r'\b(?:fatal|error|exception|failed|cannot|unable)[^\n]{0,100}\b(?:no such file or directory|permission denied|not a directory|is a directory|no space left on device|too many open files|cannot allocate memory|connection refused|connection timed out|network is unreachable|address already in use|broken pipe)\b',
-    r'\b(?:errno|error|failed|failure|fatal)[^\n]{0,40}\b(?:ENOENT|EACCES|EISDIR|ENOTDIR|ENOSPC|EMFILE|ENOMEM|ECONNREFUSED|ETIMEDOUT|ENETUNREACH|EADDRINUSE|EPIPE|EIO|ENXIO|EBADF|EBUSY|ENODEV|EROFS|EDQUOT|ECONNRESET|EHOSTUNREACH|ENOTCONN)\b',
+    r'^\s*(?:bash|sh|zsh|ksh|fish):(?:\s+line\s+\d+:)?\s+[^:\n]+:\s+(?:no such file or directory|permission denied)\s*$',
+    r'\bfatal(?:\s+error)?[^\n]*\b(?:no such file or directory|permission denied|not a directory|is a directory|no space left on device|too many open files|cannot allocate memory|connection refused|connection timed out|network is unreachable|address already in use|broken pipe)\b',
+    r'\bfatal[^\n]*\b(?:errno\s+)?(?:ENOENT|EACCES|EISDIR|ENOTDIR|ENOSPC|EMFILE|ENOMEM|ECONNREFUSED|ETIMEDOUT|ENETUNREACH|EADDRINUSE|EPIPE|EIO|ENXIO|EBADF|EBUSY|ENODEV|EROFS|EDQUOT|ECONNRESET|EHOSTUNREACH|ENOTCONN)\b',
     )
 
 
+#==========================================================#
 # HPC environment errors
+#==========================================================#
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 infiniband_errors = (
-    'UCX ERROR',
-    'libibverbs: malformed packet',
+    # Provider initialization and endpoint errors can be retried or cause a
+    # fallback to another transport; none alone establishes run failure.
+    # 'UCX ERROR',
+    # 'libibverbs: malformed packet',
+    # 'ucp_ep_create failed',
+    # 'uct_ep_connect_to_ep unreachable',
+    # 'ucs_init timed out',
+    # 'ibv_create_qp failed',
+    # 'libfabric transport error',
+    # 'ofi_endpoint unreachable',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 infiniband_error_patterns = (
-    r'\bUCX\s+ERROR\b',
-    r'\b(?:ucp|uct|ucs)_[a-z0-9_]+\b[^\n]{0,80}\b(?:failed|error|unreachable|timed out)\b',
-    r'\bibv_[a-z0-9_]+\b[^\n]{0,80}\b(?:failed|error)\b',
-    r'\b(?:libfabric|ofi_[a-z0-9_]+)\b[^\n]{0,80}\b(?:error|failed|unreachable)\b',
+    # See infiniband_errors: these require separate termination context.
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 lustre_errors = (
-    'LustreError:',
-    'LBUG:',
+    # Filesystem and network-layer errors can concern another client or be
+    # recovered by retry/failover without invalidating this simulation.
+    # 'LustreError:',
+    # 'LBUG:',
+    # 'LNetError transport failed',
+    # 'Lustre client evicted',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 lustre_error_patterns = (
-    r'\bLNet(?:Error)?\b[^\n]{0,80}\b(?:error|failed|fatal|timeout|unreachable)\b',
-    r'\bLustre\b[^\n]{0,80}\b(?:error|failed|fatal|evicted)\b',
+    # See lustre_errors: these require separate termination context.
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 gpfs_errors = (
-    'GPFS: [ERROR]',
-    'GPFS: [FATAL]',
+    # GPFS can retry, renew tokens, or fail over disks; these messages can also
+    # describe node-wide events unrelated to the process being inspected.
+    # 'GPFS: [ERROR]',
+    # 'GPFS: [FATAL]',
+    # 'GPFS deadlock detected',
+    # 'GPFS disk unavailable',
+    # 'GPFS unmounted abnormally',
+    # 'GPFS token expired',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 gpfs_error_patterns = (
-    r'\bGPFS\b[^\n]{0,80}\b(?:deadlock detected|disk unavailable|unmounted abnormally|token expired)\b',
+    # See gpfs_errors: these require separate termination context.
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 slurm_errors = (
-    'slurmstepd: error:',
-    'srun: error:',
+    # Generic launcher errors can describe non-fatal setup/cleanup issues.
+    # 'slurmstepd: error:',
+    # 'srun: error:',
     'srun: Force term; sending SIGKILL',
     'DUE TO TIME LIMIT',
     'Exceeded job memory limit',
+    'State=FAILED',
+    'State=TIMEOUT',
+    'State=NODE_FAIL',
+    'State=OUT_OF_MEMORY',
+    'State=BOOT_FAIL',
+    'State=DEADLINE',
+    'State=CANCELLED',
+    'State=PREEMPTED',
+    'JOB CANCELLED',
+    'STEP FAILED',
+    'srun: launch failed',
+    'slurmstepd: error: Detected 1 oom-kill event',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 slurm_error_patterns = (
+    r'\bsrun:\s*Force term;\s*sending SIGKILL\b',
+    r'\bDUE TO TIME LIMIT\b',
+    r'\bExceeded job memory limit\b',
     r'\bState=(?:FAILED|TIMEOUT|NODE_FAIL|OUT_OF_MEMORY|BOOT_FAIL|DEADLINE|CANCELLED|PREEMPTED)\b',
-    r'\b(?:JOB|STEP)[^\n]{0,80}\b(?:CANCELLED|FAILED|OUT_OF_MEMORY|TIMEOUT|NODE_FAIL)\b',
-    r'\b(?:launch failed|oom-kill)\b',
+    r'\b(?:JOB|STEP)[^\n]*\b(?:CANCELLED|FAILED|OUT_OF_MEMORY|TIMEOUT|NODE_FAIL)\b',
+    r'\b(?:srun|slurmstepd):[^\n]*\blaunch failed\b',
+    r'\bslurmstepd:[^\n]*\boom-kill\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 pbs_errors = (
     'PBS: job killed:',
     'ob_init: Unable to read server database',
     'cannot send job to mom',
     'qsub: Bad UID for job execution',
+    'exit_status=1',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 pbs_error_patterns = (
+    r'\bPBS:\s*job killed:',
+    r'\bob_init:\s*Unable to read server database\b',
+    r'\bcannot send job to mom\b',
+    r'\bqsub:\s*Bad UID for job execution\b',
     r'\bexit_status\s*=\s*(?!0\b)-?\d+\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 mpi_errors = (
-    'MPI_ABORT',
-    'MPI_ERR_BUFFER',
-    'MPI_ERR_COUNT',
-    'MPI_ERR_TYPE',
-    'MPI_ERR_TAG',
-    'MPI_ERR_COMM',
-    'MPI_ERR_RANK',
-    'MPI_ERR_REQUEST',
-    'MPI_ERR_ROOT',
-    'MPI_ERR_GROUP',
-    'MPI_ERR_OP',
-    'MPI_ERR_TOPOLOGY',
-    'MPI_ERR_DIMS',
-    'MPI_ERR_ARG',
-    'MPI_ERR_UNKNOWN',
-    'MPI_ERR_TRUNCATE',
-    'MPI_ERR_OTHER',
-    'MPI_ERR_INTERN',
-    'MPI_ERR_IN_STATUS',
-    'MPI_ERR_PENDING',
-    'MPI_ERR_ACCESS',
-    'MPI_ERR_AMODE',
-    'MPI_ERR_ASSERT',
-    'MPI_ERR_BAD_FILE',
-    'MPI_ERR_BASE',
-    'MPI_ERR_CONVERSION',
-    'MPI_ERR_DISP',
-    'MPI_ERR_DUP_DATAREP',
-    'MPI_ERR_FILE_EXISTS',
-    'MPI_ERR_FILE_IN_USE',
-    'MPI_ERR_FILE',
-    'MPI_ERR_INFO_KEY',
-    'MPI_ERR_INFO_NOKEY',
-    'MPI_ERR_INFO_VALUE',
-    'MPI_ERR_INFO',
-    'MPI_ERR_IO',
-    'MPI_ERR_KEYVAL',
-    'MPI_ERR_LOCKTYPE',
-    'MPI_ERR_NAME',
-    'MPI_ERR_NO_MEM',
-    'MPI_ERR_NOT_SAME',
-    'MPI_ERR_NO_SPACE',
-    'MPI_ERR_NO_SUCH_FILE',
-    'MPI_ERR_PORT',
-    'MPI_ERR_PROC_ABORTED',
-    'MPI_ERR_QUOTA',
-    'MPI_ERR_READ_ONLY',
-    'MPI_ERR_RMA_CONFLICT',
-    'MPI_ERR_RMA_SYNC',
-    'MPI_ERR_SERVICE',
-    'MPI_ERR_SIZE',
-    'MPI_ERR_SPAWN',
-    'MPI_ERR_UNSUPPORTED_DATAREP',
-    'MPI_ERR_UNSUPPORTED_OPERATION',
-    'MPI_ERR_WIN',
-    'MPI_T_ERR_MEMORY',
-    'MPI_T_ERR_NOT_INITIALIZED',
-    'MPI_T_ERR_CANNOT_INIT',
-    'MPI_T_ERR_INVALID_INDEX',
-    'MPI_T_ERR_INVALID_ITEM',
-    'MPI_T_ERR_INVALID_HANDLE',
-    'MPI_T_ERR_OUT_OF_HANDLES',
-    'MPI_T_ERR_OUT_OF_SESSIONS',
-    'MPI_T_ERR_INVALID_SESSION',
-    'MPI_T_ERR_CVAR_SET_NOT_NOW',
-    'MPI_T_ERR_CVAR_SET_NEVER',
-    'MPI_T_ERR_PVAR_NO_STARTSTOP',
-    'MPI_T_ERR_PVAR_NO_WRITE',
-    'MPI_T_ERR_PVAR_NO_ATOMIC',
-    'MPI_ERR_RMA_RANGE',
-    'MPI_ERR_RMA_ATTACH',
-    'MPI_ERR_RMA_FLAVOR',
-    'MPI_ERR_RMA_SHARED',
-    'MPI_T_ERR_INVALID',
-    'MPI_T_ERR_INVALID_NAME',
-    'MPI_ERR_SESSION',
+    # MPI error-class names are return values that applications may handle.
+    # MPI_Abort is also an API name; termination context is required below.
+    # 'MPI_ABORT',
+    # 'MPI_ERR_BUFFER',
+    # 'MPI_ERR_COUNT',
+    # 'MPI_ERR_TYPE',
+    # 'MPI_ERR_TAG',
+    # 'MPI_ERR_COMM',
+    # 'MPI_ERR_RANK',
+    # 'MPI_ERR_REQUEST',
+    # 'MPI_ERR_ROOT',
+    # 'MPI_ERR_GROUP',
+    # 'MPI_ERR_OP',
+    # 'MPI_ERR_TOPOLOGY',
+    # 'MPI_ERR_DIMS',
+    # 'MPI_ERR_ARG',
+    # 'MPI_ERR_UNKNOWN',
+    # 'MPI_ERR_TRUNCATE',
+    # 'MPI_ERR_OTHER',
+    # 'MPI_ERR_INTERN',
+    # 'MPI_ERR_IN_STATUS',
+    # 'MPI_ERR_PENDING',
+    # 'MPI_ERR_ACCESS',
+    # 'MPI_ERR_AMODE',
+    # 'MPI_ERR_ASSERT',
+    # 'MPI_ERR_BAD_FILE',
+    # 'MPI_ERR_BASE',
+    # 'MPI_ERR_CONVERSION',
+    # 'MPI_ERR_DISP',
+    # 'MPI_ERR_DUP_DATAREP',
+    # 'MPI_ERR_FILE_EXISTS',
+    # 'MPI_ERR_FILE_IN_USE',
+    # 'MPI_ERR_FILE',
+    # 'MPI_ERR_INFO_KEY',
+    # 'MPI_ERR_INFO_NOKEY',
+    # 'MPI_ERR_INFO_VALUE',
+    # 'MPI_ERR_INFO',
+    # 'MPI_ERR_IO',
+    # 'MPI_ERR_KEYVAL',
+    # 'MPI_ERR_LOCKTYPE',
+    # 'MPI_ERR_NAME',
+    # 'MPI_ERR_NO_MEM',
+    # 'MPI_ERR_NOT_SAME',
+    # 'MPI_ERR_NO_SPACE',
+    # 'MPI_ERR_NO_SUCH_FILE',
+    # 'MPI_ERR_PORT',
+    # 'MPI_ERR_PROC_ABORTED',
+    # 'MPI_ERR_QUOTA',
+    # 'MPI_ERR_READ_ONLY',
+    # 'MPI_ERR_RMA_CONFLICT',
+    # 'MPI_ERR_RMA_SYNC',
+    # 'MPI_ERR_SERVICE',
+    # 'MPI_ERR_SIZE',
+    # 'MPI_ERR_SPAWN',
+    # 'MPI_ERR_UNSUPPORTED_DATAREP',
+    # 'MPI_ERR_UNSUPPORTED_OPERATION',
+    # 'MPI_ERR_WIN',
+    # 'MPI_T_ERR_MEMORY',
+    # 'MPI_T_ERR_NOT_INITIALIZED',
+    # 'MPI_T_ERR_CANNOT_INIT',
+    # 'MPI_T_ERR_INVALID_INDEX',
+    # 'MPI_T_ERR_INVALID_ITEM',
+    # 'MPI_T_ERR_INVALID_HANDLE',
+    # 'MPI_T_ERR_OUT_OF_HANDLES',
+    # 'MPI_T_ERR_OUT_OF_SESSIONS',
+    # 'MPI_T_ERR_INVALID_SESSION',
+    # 'MPI_T_ERR_CVAR_SET_NOT_NOW',
+    # 'MPI_T_ERR_CVAR_SET_NEVER',
+    # 'MPI_T_ERR_PVAR_NO_STARTSTOP',
+    # 'MPI_T_ERR_PVAR_NO_WRITE',
+    # 'MPI_T_ERR_PVAR_NO_ATOMIC',
+    # 'MPI_ERR_RMA_RANGE',
+    # 'MPI_ERR_RMA_ATTACH',
+    # 'MPI_ERR_RMA_FLAVOR',
+    # 'MPI_ERR_RMA_SHARED',
+    # 'MPI_T_ERR_INVALID',
+    # 'MPI_T_ERR_INVALID_NAME',
+    # 'MPI_ERR_SESSION',
     'mpirun: kill job',
-    'mpirun noticed that process rank',
+    'orterun: kill job',
     'prterun: kill job',
-    'prterun noticed that process rank',
-    'ORTE_ERROR_LOG',
-    'PRTE_ERROR_LOG',
+    'mpirun noticed that process rank 1 exited on signal 11',
+    # ORTE/PRTE can log handled internal errors during component selection.
+    # 'ORTE_ERROR_LOG',
+    # 'PRTE_ERROR_LOG',
     'the first job to fail is listed below',
     'job aborted:',
-    'mpiexec_callback_proc',
-    'cleaning up processes',
+    'MPI_Abort was invoked',
+    'one or more processes exited with non-zero status',
+    'process returned a non-zero exit code',
+    'Primary job terminated normally, but',
+    'mpirun aborted',
+    'mpiexec failed to launch the application',
+    'orterun terminated',
+    'prterun exited on signal 11',
+    'exited on signal 11',
+    'terminated with signal 11',
+    # A callback name and generic cleanup text do not establish failure.
+    # 'mpiexec_callback_proc',
+    # 'cleaning up processes',
     'execvp error',
     'not enough slots available',
     'unable to find the specified executable file',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 mpi_error_patterns = (
+    r'\b(?:mpirun|orterun|prterun):\s*kill job\b',
+    r'\bmpirun noticed that process rank\s+\d+[^\n]*\b(?:non-zero|signal|terminated|aborted|died)\b',
+    r'\bthe first job to fail is listed below\b',
+    r'\bjob aborted:',
     r'\bMPI_Abort was invoked\b',
     r'\bone or more processes exited with non-zero status\b',
     r'\bprocess returned a non-zero exit code\b',
     r'\bPrimary job terminated normally, but\b',
-    r'\b(?:mpirun|mpiexec|orterun|prterun)\b[^\n]{0,120}\b(?:aborted|failed|non-zero|signal|terminated)\b',
+    r'\b(?:mpirun|mpiexec|orterun|prterun)\b[^\n]*\b(?:aborted|failed|non-zero|signal|terminated)\b',
     r'\b(?:exited on|terminated with) signal(?:\s+\d+)?\b',
+    r'\bnot enough slots available\b',
+    r'\bunable to find the specified executable file\b',
+    r'\bexecvp error\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 openmp_errors = (
     'OMP: Error',
     'libgomp: Thread creation failed',
@@ -275,36 +407,61 @@ openmp_errors = (
     'libiomp5: error',
     )
 
-openmp_error_patterns = ()
-
-
-# Compiled-code and language-runtime errors
-
-linking_errors = (
-    'error while loading shared libraries',
-    'cannot open shared object file',
-    'undefined symbol:',
-    'wrong ELF class',
-    'symbol lookup error',
-    'relocation error',
+# Regular expressions used by find_error_keys during its explicit output search.
+openmp_error_patterns = (
+    r'\bOMP:\s*Error\b',
+    r'\blibgomp:\s*(?:Thread creation failed|Out of memory)\b',
+    r'\blibiomp5:\s*error\b',
     )
 
+
+#==========================================================#
+# Compiled-code and language-runtime errors
+#==========================================================#
+
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
+linking_errors = (
+    'error while loading shared libraries',
+    # These fragments can be emitted while probing an optional plugin.
+    # 'cannot open shared object file',
+    # 'undefined symbol:',
+    # 'wrong ELF class',
+    'symbol lookup error',
+    'relocation error',
+    'GLIBCXX_3.4.30 not found',
+    'CXXABI_1.3.13 not found',
+    "version 'GLIBC_2.34' not found",
+    )
+
+# Regular expressions used by find_error_keys during its explicit output search.
 linking_error_patterns = (
-    r'\b(?:GLIBCXX|CXXABI)_[0-9.]+\b[^\n]{0,40}\bnot found\b',
+    r'\b(?:error while loading shared libraries|symbol lookup error|relocation error)',
+    r'\b(?:GLIBCXX|CXXABI)_[0-9.]+\b[^\n]*\bnot found\b',
     r'\bversion\s+[\'`][^\'`]+[\'`]\s+not found\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 fortran_runtime_errors = (
     'Fortran runtime error:',
     'ERROR STOP',
-    'Stat_Stopped_Image',
+    'forrtl: severe (174):',
+    'Coarray ERROR STOP',
+    # A coarray status value may be inspected and handled by the application.
+    # 'Stat_Stopped_Image',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 fortran_error_patterns = (
+    r'\bFortran runtime error:',
+    r'\bERROR STOP\b',
     r'\bforrtl:\s*severe\s*\(\d+\):',
     r'\bCoarray\s+ERROR STOP\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 cpp_errors = (
     'terminate called after throwing an instance of',
     'terminating with uncaught exception of type',
@@ -321,41 +478,107 @@ cpp_errors = (
     'AddressSanitizer:DEADLYSIGNAL',
     'ERROR: AddressSanitizer',
     'SUMMARY: AddressSanitizer',
-    'ERROR: LeakSanitizer',
-    'WARNING: ThreadSanitizer',
-    'UndefinedBehaviorSanitizer',
+    # These sanitizers can report issues without terminating the calculation.
+    # 'ERROR: LeakSanitizer',
+    # 'WARNING: ThreadSanitizer',
+    # 'UndefinedBehaviorSanitizer',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 cpp_error_patterns = (
-    r'^\s*what\(\):\s+.+$',
+    r'\bterminate called after throwing an instance of\b',
+    r'\bterminating with uncaught exception of type\b',
+    r'\bterminate called (?:without an active exception|recursively)\b',
+    r'\bAssertion failed\b',
+    r'(?:\bdouble free or corruption\b|\bcorrupted size vs\. prev_size\b|free\(\): (?:invalid pointer|double free detected)|malloc\(\): memory corruption|munmap_chunk\(\): invalid pointer|\bpure virtual method called\b)',
+    r'\b(?:AddressSanitizer:DEADLYSIGNAL|ERROR: AddressSanitizer|SUMMARY: AddressSanitizer)\b',
+    # A what() line alone does not establish that an exception was uncaught.
+    # r'^\s*what\(\):\s+.+$',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 cuda_errors = (
     'CUDA error:',
-    'NVRM: Xid',
-    'NCCL WARN',
+    # CUDA/NCCL return values can be checked and handled, and connection
+    # failures can trigger transport fallback.  Require an application's
+    # explicit "CUDA error:" diagnostic rather than a bare status token.
+    # 'cudaErrorMemoryAllocation',
+    # 'cudaErrorInitializationError',
+    # 'cudaErrorLaunchFailure',
+    # 'cudaErrorLaunchTimeout',
+    # 'cudaErrorLaunchOutOfResources',
+    # 'cudaErrorIllegalAddress',
+    # 'cudaErrorNoKernelImageForDevice',
+    # 'cudaErrorInsufficientDriver',
+    # 'cudaErrorSystemDriverMismatch',
+    # 'cudaErrorECCUncorrectable',
+    # 'cudaErrorUnknown',
+    # 'ncclUnhandledCudaError',
+    # 'ncclSystemError',
+    # 'ncclInternalError',
+    # 'ncclInvalidArgument',
+    # 'ncclInvalidUsage',
+    # 'ncclRemoteError',
+    # 'NCCL call to connect failed',
+    # 'UCX call to connect failed',
+    # 'CUDA call to connect failed',
+    # 'socket call to connect failed',
+    # 'transport call to connect failed',
+    # An Xid is a driver event, not proof that this process failed.  NCCL WARN
+    # includes warnings as well as errors; concrete NCCL failures are matched
+    # below.
+    # 'NVRM: Xid',
+    # 'NCCL WARN',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 cuda_error_patterns = (
-    r'\bcudaError(?:MemoryAllocation|InitializationError|LaunchFailure|LaunchTimeout|LaunchOutOfResources|IllegalAddress|NoKernelImageForDevice|InsufficientDriver|SystemDriverMismatch|ECCUncorrectable|Unknown)\b',
-    r'\bnccl(?:UnhandledCudaError|SystemError|InternalError|InvalidArgument|InvalidUsage|RemoteError)\b',
-    r'\b(?:NCCL|UCX|CUDA|socket|transport)[^\n]{0,80}\bcall to connect failed\b',
+    r'\bCUDA error:',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 hip_errors = (
     'HIP error:',
-    'ECC Error',
-    'amdgpu: Page Fault',
+    # HIP return values can be handled by a fallback path.
+    # 'hipErrorMemoryAllocation',
+    # 'hipErrorInitializationError',
+    # 'hipErrorLaunchFailure',
+    # 'hipErrorLaunchTimeOut',
+    # 'hipErrorLaunchOutOfResources',
+    # 'hipErrorIllegalAddress',
+    # 'hipErrorNoBinaryForGpu',
+    # 'hipErrorInsufficientDriver',
+    # 'hipErrorECCNotCorrectable',
+    # 'hipErrorUnknown',
+    # This also occurs in status labels such as "ECC Error Count: 0".
+    # 'ECC Error',
+    # Kernel GPU messages can concern a different process on the node.
+    # 'amdgpu: Page Fault',
+    # 'amdgpu GPU fault',
+    # 'amdgpu ring timeout',
+    # 'amdgpu GPU reset',
+    # 'amdgpu uncorrectable error',
+    # 'kfd GPU fault',
+    # 'kfd page fault',
+    # 'kfd ring timeout',
+    # 'kfd GPU reset',
+    # 'kfd uncorrectable error',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 hip_error_patterns = (
-    r'\bhipError(?:MemoryAllocation|InitializationError|LaunchFailure|LaunchTimeOut|LaunchOutOfResources|IllegalAddress|NoBinaryForGpu|InsufficientDriver|ECCNotCorrectable|Unknown)\b',
-    r'\b(?:amdgpu|kfd)[^\n]{0,100}\b(?:GPU fault|page fault|ring timeout|GPU reset|uncorrectable)\b',
+    r'\bHIP error:',
     )
 
 
-# Python-runtime errors.  Exception names are documented separately for
-# examples, while matching requires traceback/final-exception structure.
+#==========================================================#
+# Python-runtime errors
+#==========================================================#
+# Exception names are documented separately for examples, while matching
+# requires traceback/final-exception structure.
+# Representative exception names requiring explicit traceback context.
 python_exception_names = (
     'IndexError',
     'KeyError',
@@ -381,148 +604,237 @@ python_exception_names = (
     'TimeoutError',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 python_errors = (
     'Traceback (most recent call last):',
     'ExceptionGroup Traceback',
     'Fatal Python error',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 python_error_patterns = (
-    r'^\s*(?:[\w.]+\.)?[A-Za-z_]\w*(?:Error|Exception)\s*:\s*.*$',
+    r'^\s*Traceback \(most recent call last\):',
+    r'^\s*ExceptionGroup Traceback\b',
+    r'^\s*Fatal Python error\b',
+    # Exception lines can be printed by handlers; traceback/fatal markers above
+    # provide termination context.
+    # r'^\s*(?:[\w.]+\.)?[A-Za-z_]\w*(?:Error|Exception)\s*:\s*.*$',
     )
 
 
+#==========================================================#
 # Compiled scientific-library errors
+#==========================================================#
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 blas_errors = (
-    'Intel MKL ERROR:',
     'Intel MKL FATAL ERROR:',
-    'OpenBLAS Error:',
+    # BLAS argument errors and non-fatal library errors return to the caller,
+    # which can select a fallback or otherwise handle them.
+    # 'Intel MKL ERROR:',
+    # 'OpenBLAS Error:',
+    # 'on entry to DGEMM parameter number 1 had an illegal value',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 blas_error_patterns = (
-    r'\bon entry to\s+[a-z0-9_]+\s+parameter(?: number)?\s+\d+\s+had an illegal value\b',
+    r'\bIntel MKL FATAL ERROR:',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 lapack_errors = (
-    'LAPACK error:',
-    'LAPACK native error:',
-    'LAPACK computational failure:',
-    'matrix is exactly singular',
-    'matrix is singular',
-    'is not positive definite',
-    'decomposition constraint violation',
+    # LAPACK reports status to its caller; these conditions can be handled by
+    # fallback algorithms and do not establish failure of the simulation.
+    # 'LAPACK error:',
+    # 'LAPACK native error:',
+    # 'LAPACK computational failure:',
+    # These numerical conditions can be handled by fallback algorithms.
+    # 'matrix is exactly singular',
+    # 'matrix is singular',
+    # 'is not positive definite',
+    # 'decomposition constraint violation',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 lapack_error_patterns = (
-    r'\b(?:LAPACK|[sdcz][a-z0-9_]{3,})[^\n]{0,100}\b(?:matrix is singular|is not positive definite|failed to converge|computational failure)\b',
+    # Numerical solver conditions can be handled by a fallback algorithm.
+    # r'\b(?:LAPACK|[sdcz][a-z0-9_]{3,})[^\n]{0,100}\b(?:matrix is singular|is not positive definite|failed to converge|computational failure)\b',
     )
 
 # Failure to import FFTW wisdom is recoverable and fftw_execute is merely an
 # API name.  Keep the group present for future confirmed fatal diagnostics.
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 fftw_errors = ()
+# Regular expressions used by find_error_keys during its explicit output search.
 fftw_error_patterns = ()
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 hdf5_errors = (
-    'unable to open file',
-    'unable to create file',
-    'unable to open group',
-    'unable to open dataset',
-    'parallel write failed',
-    'major: Parallel HDF5',
-    'data space selection exceeds dataset dimensions',
+    # Applications routinely probe optional files and objects and recover from
+    # the resulting HDF5 error stack.
+    # 'unable to open file',
+    # 'unable to create file',
+    # 'unable to open group',
+    # 'unable to open dataset',
+    # A failed write or invalid selection can concern optional checkpoint or
+    # metadata output, and HDF5 returns these errors to the caller.
+    # 'parallel write failed',
+    # This is only an HDF5 error-stack classification, not a terminal outcome.
+    # 'major: Parallel HDF5',
+    # 'data space selection exceeds dataset dimensions',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 hdf5_error_patterns = (
-    r'HDF5-DIAG:\s*Error\s*detected',
-    r'\b(?:major|minor):\s*(?:file accessibility|unable to open file|unable to create file|write failed|read failed|object not found|bad value)\b',
+    # HDF5 prints an error stack for failed probes even when the caller recovers.
+    # r'HDF5-DIAG:\s*Error\s*detected',
+    # r'\b(?:major|minor):\s*(?:file accessibility|unable to open file|unable to create file|write failed|read failed|object not found|bad value)\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 libxml2_errors = (
-    'parser error :',
-    'This element is not expected',
-    'Schemas validity error',
-    'I/O error : Permission denied to access system file',
-    'failed to load external entity',
-    'Opening and ending tag mismatch',
-    'Premature end of data',
+    # Parsing and validation failures can concern optional XML content and are
+    # returned to the caller; termination must be established elsewhere.
+    # 'parser error :',
+    # 'This element is not expected',
+    # 'Schemas validity error',
+    # External entities can be optional and failure to load them is recoverable.
+    # 'I/O error : Permission denied to access system file',
+    # 'failed to load external entity',
+    # 'Opening and ending tag mismatch',
+    # 'Premature end of data',
+    # 'XML validation failed',
+    # 'XML element is not expected',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 libxml2_error_patterns = (
-    r'\b(?:parser|schemas?|xml)[^\n]{0,80}\b(?:error|validation failed|not expected|failed to load)\b',
+    # See libxml2_errors: these require separate termination context.
     )
 
 
+#==========================================================#
 # Python-module errors
+#==========================================================#
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 numpy_errors = (
-    'LinAlgError',
-    'AxisError',
-    'DTypePromotionError',
-    'TooHardError',
-    '_ArrayMemoryError',
+    # NumPy exceptions can be caught and handled by the calling application.
+    # 'LinAlgError: calculation failed',
+    # 'AxisError: calculation failed',
+    # 'DTypePromotionError: calculation failed',
+    # 'TooHardError: calculation failed',
+    # '_ArrayMemoryError: calculation failed',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 numpy_error_patterns = (
-    r'^\s*(?:numpy[\w.]*\.)?(?:LinAlgError|AxisError|DTypePromotionError|TooHardError|_ArrayMemoryError)\s*:',
+    # A surrounding uncaught traceback must establish run failure.
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 scipy_errors = (
-    'ArpackError',
-    'ArpackNoConvergence',
-    'NoConvergence',
-    'QhullError',
-    'ARPACK error',
-    'ARPACK iteration did not converge',
-    'SuperLU factorization failed',
-    'Factor is exactly singular',
+    # SciPy exceptions and partial-convergence results can be handled.
+    # 'ArpackError: calculation failed',
+    # 'ArpackNoConvergence: calculation failed',
+    # 'NoConvergence: calculation failed',
+    # 'QhullError: calculation failed',
+    # These are exception messages that callers can catch and recover from.
+    # 'ARPACK error',
+    # 'ARPACK iteration did not converge',
+    # 'SuperLU factorization failed',
+    # 'Factor is exactly singular',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 scipy_error_patterns = (
-    r'^\s*(?:scipy[\w.]*\.)?(?:ArpackError|ArpackNoConvergence|NoConvergence|QhullError)\s*:',
+    # A surrounding uncaught traceback must establish run failure.
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 h5py_errors = (
-    'CheckWriteEligibilityError',
-    'file signature not found',
-    "object doesn't exist",
-    'bad object header',
-    'address overflow',
-    'no write intent',
+    # h5py exceptions are routinely caught during optional file/object probes.
+    # 'CheckWriteEligibilityError: write is not permitted',
+    # 'OSError: unable to open file',
+    # 'RuntimeError: unable to create file',
+    # 'ValueError: unable to read dataset',
+    # 'OSError: unable to write dataset',
+    # 'OSError: file signature not found',
+    # "RuntimeError: object doesn't exist",
+    # 'OSError: bad object header',
+    # 'ValueError: address overflow',
+    # 'OSError: no write intent',
+    # These fragments can come from caught exceptions during optional probes.
+    # 'file signature not found',
+    # "object doesn't exist",
+    # 'bad object header',
+    # 'address overflow',
+    # 'no write intent',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 h5py_error_patterns = (
-    r'^\s*(?:h5py[\w.]*\.)?CheckWriteEligibilityError\s*:',
-    r'^\s*(?:OSError|RuntimeError|ValueError):[^\n]*(?:unable to (?:open|create|read|write)|file signature not found|object doesn\'t exist|bad object header|address overflow|no write intent)',
+    # A surrounding uncaught traceback must establish run failure.
     )
 
 
+#==========================================================#
 # Simulation-code errors
+#==========================================================#
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 pwscf_errors = (
     'Error in routine',
+    'Error in routine cdiaghg (1):',
     'bfgs failed',
+    'bfgs failed: convergence not achieved',
     'convergence NOT achieved',
+    'convergence NOT achieved after 100 iterations',
     'problems computing cholesky',
     'too many bands are not converged',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 pwscf_error_patterns = (
+    r'\bError in routine\b',
+    r'\bbfgs failed\b',
+    r'\bconvergence\s+NOT\s+achieved\b',
+    r'\bproblems computing cholesky\b',
+    r'\btoo many bands are not converged\b',
     r'\bError in routine\s+[a-z0-9_]+\s*\(\d+\):',
     r'\bconvergence\s+NOT\s+achieved\s+after\s+\d+\s+iterations\b',
     r'\bbfgs failed\b[^\n]*\bconvergence not achieved\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 pyscf_errors = (
-    'LibxcError',
+    'LibxcError: functional is not available',
     'SCF not converged',
+    'CASSCF not converged',
+    'UCASSCF not converged',
+    'CCSD not converged',
+    'Newton not converged',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 pyscf_error_patterns = (
-    r'\b(?:SCF|CASSCF|UCASSCF|CCSD|Newton)[^\n]{0,40}\bnot converged\b',
+    r'\b(?:SCF|CASSCF|UCASSCF|CCSD|Newton)[^\n]*\bnot converged\b',
     r'^\s*(?:pyscf[\w.]*\.)?LibxcError\s*:',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 quantum_package_errors = (
     'EZFIO error:',
     'FATAL ERROR:',
@@ -531,26 +843,54 @@ quantum_package_errors = (
     'qp run: Error',
     'Too many determinants',
     'Selection failed',
+    'Davidson not converged',
+    'CIPSI not converged',
+    'SCF not converged',
+    'selection not converged',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 quantum_package_error_patterns = (
-    r'\b(?:Davidson|CIPSI|SCF|selection)[^\n]{0,60}\bnot converged\b',
+    r'(?:\bEZFIO error:|\bFATAL ERROR:|\birp_error\b|\bIRP_FATAL\b|\bqp run:\s*Error\b|\bToo many determinants\b|\bSelection failed\b)',
+    r'\b(?:Davidson|CIPSI|SCF|selection)[^\n]*\bnot converged\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 rmg_errors = (
     'FATAL ERROR:',
     'CRITICAL:',
     'RMG Error:',
+    'RMG Fatal:',
+    'RMG Critical:',
+    'RMGDFT Error:',
+    'RMGDFT Fatal:',
+    'RMGDFT Critical:',
+    'Fatal RMG error',
+    'Critical RMG error',
+    'Fatal RMGDFT error',
+    'Critical RMGDFT error',
+    'SCF failed to converge',
+    'SCF not converged',
+    'multigrid failed',
+    'Davidson breakdown',
+    'subspace not converged',
+    'domain decomposition failed',
+    'grid decomposition failed',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 rmg_error_patterns = (
+    r'^\s*(?:FATAL ERROR|CRITICAL):',
     r'\bRMG(?:DFT)?\s*(?:Error|Fatal|Critical)\s*:',
     r'\b(?:Fatal|Critical)\s+RMG(?:DFT)?\s+error\b',
-    r'\bSCF[^\n]{0,60}\b(?:failed to converge|not converged)\b',
-    r'\b(?:multigrid|Davidson|subspace)[^\n]{0,60}\b(?:failed|breakdown|not converged)\b',
-    r'\b(?:domain decomposition|grid decomposition)[^\n]{0,60}\bfailed\b',
+    r'\bSCF[^\n]*\b(?:failed to converge|not converged)\b',
+    r'\b(?:multigrid|Davidson|subspace)[^\n]*\b(?:failed|breakdown|not converged)\b',
+    r'\b(?:domain decomposition|grid decomposition)[^\n]*\bfailed\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 qmcpack_errors = (
     'APP_ABORT',
     'Fatal Error',
@@ -558,55 +898,81 @@ qmcpack_errors = (
     'inconsistent input settings',
     'UniformCommunicateError',
     'barrier_and_abort',
+    'Communicate::abort',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 qmcpack_error_patterns = (
     r'\bAPP_ABORT\b',
     r'\bUniformCommunicateError\b',
     r'\b(?:barrier_and_abort|Communicate::abort)\b',
+    r'\bFatal Error\b',
+    r'\bAborting at\b',
+    r'\binconsistent input settings\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 vasp_errors = (
     'VERY BAD NEWS! internal error in subroutine',
     'ZBRENT: fatal error in bracketing',
-    'BRMIX: very serious problems',
+    # VASP can continue from this warning and subsequently converge.
+    # 'BRMIX: very serious problems',
     'EDDDAV: Call to ZHEGV failed',
+    'EDDDAV: Call to ZHEEV failed',
     'EDDRMM: Call to ZHEGV failed',
+    'EDDRMM: Call to ZHEEV failed',
     'LAPACK: Routine ZPOTRF failed',
     'ERROR FEXCP:',
     'ERROR: the triple product of the basis vectors',
     'ERROR: there must be 1 or 3 items on line 2 of POSCAR',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 vasp_error_patterns = (
     r'^\s*(?:\|\s*)?(?:VERY BAD NEWS!\s*)?(?:internal\s+)?error in subroutine\b',
     r'^\s*ZBRENT:\s*fatal\s+(?:error|internal)[^\n]*\bbracket',
-    r'^\s*BRMIX:\s*very serious problems\b',
+    # BRMIX can be transient and followed by a converged, valid calculation.
+    # r'^\s*BRMIX:\s*very serious problems\b',
     r'^\s*(?:EDDDAV|EDDRMM):[^\n]*(?:ZHEGV|ZHEEV)[^\n]*failed\b',
     r'^\s*LAPACK:[^\n]*\bfailed\b',
     r'^\s*ERROR FEXCP:',
+    r'^\s*ERROR:\s*the triple product of the basis vectors\b',
+    r'^\s*ERROR:\s*there must be 1 or 3 items on line 2 of POSCAR\b',
     )
 
+# Representative strings that the regular expressions below are expected to
+# match.  Commented-out entries are intentionally excluded from detection.
 gamess_errors = (
     'EXECUTION OF GAMESS TERMINATED -ABNORMALLY-',
     'SCF IS UNCONVERGED, TOO MANY ITERATIONS',
     'SCF DID NOT CONVERGE',
     'MEMORY REQUEST EXCEEDS AVAILABLE MEMORY',
     'WORDS OF MEMORY UNAVAILABLE',
+    '1024 WORDS OF MEMORY UNAVAILABLE',
     'INPUT HAS AT LEAST ONE SPELLING OR LOGIC MISTAKE',
     'THIS JOB CANNOT CONTINUE',
     'ddikick.x: Fatal error detected',
     'ddikick.x: application process quit unexpectedly',
+    'ddikick.x: application process 0 quit unexpectedly',
     'ddikick.x: Execution terminated due to error(s)',
+    'DDI Process 0: error code 1',
     '*** ERROR TERMINATION ***',
     )
 
+# Regular expressions used by find_error_keys during its explicit output search.
 gamess_error_patterns = (
     r'\bEXECUTION OF GAMESS TERMINATED\s+-?ABNORMALLY-?(?!\w)',
-    r'\bddikick\.x:\s*application process\s+\d+\s+quit unexpectedly\b',
+    r'\bddikick\.x:\s*application process(?:\s+\d+)?\s+quit unexpectedly\b',
     r'\bDDI Process\s+\d+:\s*error code\s+(?!0\b)\d+\b',
     r'\bSCF\s+(?:IS UNCONVERGED,\s+TOO MANY ITERATIONS|DID NOT CONVERGE)\b',
-    r'\b\d+\s+WORDS OF MEMORY UNAVAILABLE\b',
+    r'\bMEMORY REQUEST EXCEEDS AVAILABLE MEMORY\b',
+    r'\b(?:\d+\s+)?WORDS OF MEMORY UNAVAILABLE\b',
+    r'\bINPUT HAS AT LEAST ONE SPELLING OR LOGIC MISTAKE\b',
+    r'\bTHIS JOB CANNOT CONTINUE\b',
+    r'\bddikick\.x:\s*Fatal error detected\b',
+    r'\bddikick\.x:\s*Execution terminated due to error\(s\)\.?',
+    r'\*{3}\s*ERROR TERMINATION\s*\*{3}',
     )
 
 
@@ -636,28 +1002,27 @@ _error_keys = {
     'libxml2'         : libxml2_errors,
     'numpy'           : (),
     # Exception class names from scipy_errors are matched only as structured
-    # exception lines by scipy_error_patterns.  These library messages are
-    # sufficiently specific to search for literally.
+    # exception lines by scipy_error_patterns.  Message fragments alone do not
+    # establish that the exception was left unhandled.
     'scipy'           : (
-        'ARPACK error',
-        'ARPACK iteration did not converge',
-        'SuperLU factorization failed',
-        'Factor is exactly singular',
+        # 'ARPACK error',
+        # 'ARPACK iteration did not converge',
+        # 'SuperLU factorization failed',
+        # 'Factor is exactly singular',
         ),
     # CheckWriteEligibilityError is anchored as an exception line by
-    # h5py_error_patterns.  These HDF5-specific message fragments are retained
-    # as safe literal matches.
+    # h5py_error_patterns.  HDF5 message fragments can result from caught
+    # exceptions during optional probes.
     'h5py'            : (
-        'file signature not found',
-        "object doesn't exist",
-        'bad object header',
-        'address overflow',
-        'no write intent',
+        # 'file signature not found',
+        # "object doesn't exist",
+        # 'bad object header',
+        # 'address overflow',
+        # 'no write intent',
         ),
     'pwscf'           : pwscf_errors,
     # LibxcError is matched as a structured exception line by
-    # pyscf_error_patterns; PySCF's explicit convergence message is safe to
-    # search for literally.
+    # pyscf_error_patterns.
     'pyscf'           : ('SCF not converged',),
     'quantum_package' : quantum_package_errors,
     'rmg'             : rmg_errors,
@@ -704,7 +1069,21 @@ _error_set_names = tuple(_error_keys)
 
 
 def _literal_error_pattern(error_key: str) -> str:
-    """Escape a readable key while allowing flexible whitespace."""
+    """Convert a readable diagnostic key into a safe literal regex.
+
+    The resulting expression accepts arbitrary nonempty whitespace between key
+    words and prevents a word-like key from matching inside a larger word.
+
+    Parameters
+    ----------
+    error_key : str
+        Human-readable diagnostic text to match literally.
+
+    Returns
+    -------
+    str
+        Regular-expression source suitable for inclusion in a combined matcher.
+    """
     pattern = r'\s+'.join(re.escape(part) for part in error_key.split())
     if error_key and (error_key[0].isalnum() or error_key[0] == '_'):
         pattern = r'(?<!\w)' + pattern
@@ -714,7 +1093,25 @@ def _literal_error_pattern(error_key: str) -> str:
 
 
 @cache
-def _combined_error_pattern(enabled_sets: str) -> re.Pattern[str] | None:
+def _combined_error_pattern(
+        enabled_sets: tuple[str, ...],
+        ) -> re.Pattern[str] | None:
+    """Build the cached, case-insensitive matcher for selected error sets.
+
+    Literal expressions derived from the readable keys of enabled sets and their
+    explicit regular expressions are deduplicated and compiled together.
+
+    Parameters
+    ----------
+    enabled_sets : tuple of str
+        Names of the error sets selected for a search.
+
+    Returns
+    -------
+    re.Pattern or None
+        Compiled combined matcher, or ``None`` when no selected set supplies a
+        literal key or regular expression.
+    """
     patterns = []
     seen = set()
     for set_name in enabled_sets:
@@ -736,6 +1133,24 @@ def _combined_error_pattern(enabled_sets: str) -> re.Pattern[str] | None:
 
 
 def _read_error_text(source: str | PathLike | TextIO) -> str:
+    """Read a supported error-output source as text.
+
+    Parameters
+    ----------
+    source : str, os.PathLike, or text file
+        Text to search, a path-like object, a string naming an existing file,
+        or an open text stream.  Other strings are treated as text.
+
+    Returns
+    -------
+    str
+        Text read from or supplied by ``source``.
+
+    Raises
+    ------
+    TypeError
+        If ``source`` is unsupported or provides binary rather than text data.
+    """
     if hasattr(source, 'read'):
         text = source.read()
     elif isinstance(source, os.PathLike):
@@ -818,7 +1233,8 @@ def find_error_keys(
     source : str, os.PathLike, or text file
         Text to search, a path to a text file, or an open text stream.  A
         string naming an existing file is interpreted as a path; all other
-        strings are interpreted as text.
+        strings are interpreted as text.  Callers inspecting a simulation
+        must search its standard output and standard error separately.
     all_errors : bool, optional
         Enable every individual error set.
     operating_system : bool, optional
@@ -831,7 +1247,9 @@ def find_error_keys(
     code_library : bool, optional
         Enable ``blas``, ``lapack``, ``fftw``, ``hdf5``, and ``libxml2``.
     python_module : bool, optional
-        Enable ``numpy``, ``scipy``, and ``h5py``.
+        Enable ``numpy``, ``scipy``, and ``h5py``.  These sets intentionally
+        exclude standalone exception lines; also enable ``python`` to detect
+        uncaught failures through their traceback.
     shell, linux_signals, posix : bool, optional
         Select individual operating-system error sets.
     infiniband, lustre, gpfs, slurm, pbs, mpi, openmp : bool, optional
@@ -842,10 +1260,23 @@ def find_error_keys(
         Select uncaught Python and interpreter errors.
     blas, lapack, fftw, hdf5, libxml2 : bool, optional
         Select individual compiled-library error sets.
-    numpy, scipy, h5py : bool, optional
-        Select individual Python-module error sets.
-    pwscf, pyscf, quantum_package, rmg, qmcpack, vasp, gamess : bool, optional
+    numpy : bool, optional
+        Select NumPy-specific errors.  A NumPy exception can be handled, so
+        no standalone exception is currently definitive; enable ``python``
+        to detect an uncaught exception through its traceback.
+    scipy : bool, optional
+        Select SciPy-specific errors.  A SciPy exception can be handled, so
+        no standalone exception is currently definitive; enable ``python``
+        to detect an uncaught exception through its traceback.
+    h5py : bool, optional
+        Select h5py-specific errors.  An h5py exception can be handled, so no
+        standalone exception is currently definitive; enable ``python`` to
+        detect an uncaught exception through its traceback.
+    pwscf, quantum_package, rmg, qmcpack, vasp, gamess : bool, optional
         Select individual simulation-code error sets.
+    pyscf : bool, optional
+        Select PySCF errors and uncaught Python/interpreter errors.  Enabling
+        this selector also enables ``python``.
     return_lines : bool, optional
         If ``True``, return the lines containing matching diagnostics in
         addition to the status.
@@ -867,6 +1298,12 @@ def find_error_keys(
     expression.  The patterns favor diagnostics that make failure to produce
     intended simulation output likely; completion and output validity are
     expected to be assessed separately.
+
+    With ``return_lines=False``, one search of the complete text can stop at
+    the first match.  With ``return_lines=True``, the same cached expression is
+    searched against every line to collect all matching lines, which is more
+    work but preserves per-line results.  Caching avoids recompiling the
+    combined expression for either mode when the enabled sets are unchanged.
 
     Examples
     --------
@@ -940,6 +1377,12 @@ def find_error_keys(
         if python_module:
             for name in ('numpy', 'scipy', 'h5py'):
                 flags[name] = True
+
+    # PySCF is a Python simulation code.  A traceback or fatal interpreter
+    # diagnostic is therefore a PySCF run failure even when its exception type
+    # is not one of the PySCF-specific diagnostics above.
+    if flags['pyscf']:
+        flags['python'] = True
 
     enabled_sets = tuple(name for name in _error_set_names if flags[name])
     if len(enabled_sets)==0:
