@@ -8,8 +8,6 @@ case "$1" in
   # Configure qmcpack using cmake out-of-source builds
   configure)
 
-    echo "Use recent CMake v3.26.3"
-    export PATH=$HOME/opt/cmake/3.26.3/bin:$PATH
     # Make current environment variables available to subsequent steps, ctest
     echo "PATH=$PATH" >> $GITHUB_ENV
 
@@ -17,8 +15,9 @@ case "$1" in
 
     # Using 1.74 to avoid the > 1.75 error: use of undeclared identifier 'noinline'; did you mean 'inline'?
     # caused by LLVM + GCC libstdc++ mismatch
-    BOOST_DIR=$HOME/opt/spack/linux-rhel9-cascadelake/gcc-9.4.0/boost-1.74.0-gdhlc5uynyw5un6mniss7nfjdyqqjd7p
-
+    #BOOST_DIR=$HOME/opt/spack/linux-rhel9-cascadelake/gcc-9.4.0/boost-1.74.0-gdhlc5uynyw5un6mniss7nfjdyqqjd7p
+    BOOST_DIR=/opt/boost
+  
     if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build-2 ]
     then
       echo "Found existing out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build-2, removing"

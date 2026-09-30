@@ -928,22 +928,4 @@ void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi, const 
       obj.resetParametersExclusive(opt_variables);
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  If the LMYEngine is available, returns the cost function calculated by the engine.
-///         Otherwise, returns the usual cost function.
-///
-/// \param[in]      needDeriv             whether derivative vectors should be computed
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef HAVE_LMY_ENGINE
-QMCCostFunctionBase::Return_rt QMCCostFunctionBase::LMYEngineCost(const bool needDeriv,
-                                                                  cqmc::engine::LMYEngine<Return_t>& EngineObj)
-{
-  // prepare local energies, weights, and possibly derivative vectors
-  correlatedSampling(needDeriv);
-  // since we are using the LMYEngine, compute and return it's cost function value
-  return this->LMYEngineCost_detail(EngineObj);
-}
-#endif
-
 } // namespace qmcplusplus
