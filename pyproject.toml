@@ -34,9 +34,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = [
-    "src/qmcpack_pylib",
-    "src/afqmctools",
+    "py_src/qmcpack_pylib",
+    "py_src/afqmctools",
 ]
+only-packages = true
 
 [dependency-groups]
 dev = [
