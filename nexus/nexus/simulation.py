@@ -1582,7 +1582,7 @@ class Simulation(NexusCore):
     #end def fill_products
 #end class Simulation
 
-Simulation.allowed_inputs = frozenset(signature(Simulation.__init__).parameters)
+Simulation.allowed_inputs = frozenset(signature(Simulation).parameters)
 
 
 
