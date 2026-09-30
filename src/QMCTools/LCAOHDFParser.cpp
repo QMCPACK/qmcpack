@@ -265,7 +265,7 @@ void LCAOHDFParser::getGeometry(const std::string& fname)
     IonSystem.R[i][0]                     = IonPos[i][0];
     IonSystem.R[i][1]                     = IonPos[i][1];
     IonSystem.R[i][2]                     = IonPos[i][2];
-    GroupName[i]                          = tags[i].empty() ? IonName[atomic_number[i]] : tags[i];
+    GroupName[i]                          = tags[i];
     int speciesID                         = species.addSpecies(GroupName[i]);
     IonSystem.GroupID[i]                  = speciesID;
     species(AtomicNumberIndex, speciesID) = atomic_number[i];
