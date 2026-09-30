@@ -77,6 +77,7 @@ case "$1" in
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
+              -DPython3_EXECUTABLE=python3.14 \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBOOST_ROOT=$BOOST_DIR \
               -DBUILD_AFQMC=ON \
@@ -103,6 +104,7 @@ case "$1" in
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
+              -DPython3_EXECUTABLE=python3.14 \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBOOST_ROOT=$BOOST_DIR \
               -DQMC_GPU=cuda \
