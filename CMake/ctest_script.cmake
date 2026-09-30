@@ -1,6 +1,6 @@
 # ctest script for building, running, and submitting the test results
 # Usage:  ctest -s script,build
-#   build = debug / optimized / valgrind / coverage
+#   build = debug / optimized / valgrind
 # Note: this test will use use the number of processors defined in the variable N_PROCS,
 #   the environment variables
 #   N_PROCS, or the number of processors available (if not specified)
@@ -30,21 +30,14 @@ elseif(
   OR (${CTEST_SCRIPT_ARG} STREQUAL "opt")
   OR (${CTEST_SCRIPT_ARG} STREQUAL "release"))
   set(CMAKE_BUILD_TYPE "Release")
-  set(CTEST_COVERAGE_COMMAND)
   set(ENABLE_GCOV "false")
   set(USE_VALGRIND FALSE)
 elseif(${CTEST_SCRIPT_ARG} STREQUAL "valgrind")
   set(CMAKE_BUILD_TYPE "Debug")
-  set(CTEST_COVERAGE_COMMAND)
   set(ENABLE_GCOV "false")
   set(USE_VALGRIND TRUE)
-elseif(${CTEST_SCRIPT_ARG} STREQUAL "coverage")
-  set(CMAKE_BUILD_TYPE "Debug")
-  set(CTEST_COVERAGE_COMMAND "gcov")
-  set(ENABLE_GCOV "true")
-  set(CTEST_BUILD_NAME "${CTEST_BUILD_NAME}-coverage")
 else()
-  message(FATAL_ERROR "Invalid build (${CTEST_SCRIPT_ARG}): ctest -S /path/to/script,build (debug/opt/valgrind")
+  message(FATAL_ERROR "Invalid build (${CTEST_SCRIPT_ARG}): ctest -S /path/to/script,build (debug/opt/valgrind)")
 endif()
 
 # Set the number of processors
@@ -259,8 +252,6 @@ ctest_submit(PARTS Configure Build)
 if(USE_VALGRIND)
   ctest_memcheck(EXCLUDE procs PARALLEL_LEVEL ${N_PROCS})
   ctest_submit(PARTS MemCheck)
-elseif(CTEST_COVERAGE_COMMAND)
-  # Skip the normal tests when doing coverage
 else()
   #    CTEST_TEST( INCLUDE short PARALLEL_LEVEL ${N_PROCS} )
   # run and submit the classified tests to their corresponding track
@@ -283,75 +274,6 @@ else()
   ctest_start("${CTEST_DASHBOARD}" TRACK "Unstable" APPEND)
   ctest_test(INCLUDE_LABEL "unstable" PARALLEL_LEVEL ${N_CONCURRENT_TESTS})
   ctest_submit(PARTS Test)
-endif()
-
-if(CTEST_COVERAGE_COMMAND)
-
-  # Path prefix to remove to shorten some file names.  The final SRC_ROOT Should not contain '..'
-  get_filename_component(SRC_ROOT2 ${QMC_SOURCE_DIR} DIRECTORY)
-  get_filename_component(SRC_ROOT ${SRC_ROOT2} DIRECTORY)
-
-  execute_process(COMMAND "pwd" OUTPUT_VARIABLE CURRENT_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
-  #MESSAGE("Using new code coverage path in ${CTEST_SOURCE_DIRECTORY}")
-  #MESSAGE("Using new code coverage path bin: ${CTEST_BINARY_DIRECTORY}")
-  include("${CTEST_SOURCE_DIRECTORY}/CMake/compareGCOV.cmake")
-  # Base test
-  clear_gcda(${CTEST_BINARY_DIRECTORY})
-  ctest_test(INCLUDE_LABEL coverage)
-  file(REMOVE_RECURSE ${CTEST_BINARY_DIRECTORY}/tgcov_base_raw)
-  generate_gcov(${CTEST_BINARY_DIRECTORY} ${CTEST_BINARY_DIRECTORY}/tgcov_base_raw "USE_LONG_FILE_NAMES" ${SRC_ROOT})
-  filter_gcov(${CTEST_BINARY_DIRECTORY}/tgcov_base_raw)
-
-  file(REMOVE_RECURSE ${CTEST_BINARY_DIRECTORY}/tgcov_base)
-  merge_gcov(${CTEST_BINARY_DIRECTORY}/tgcov_base_raw ${CTEST_BINARY_DIRECTORY}/tgcov_base ${SRC_ROOT})
-
-  # Generate gcov
-  clear_gcda(${CTEST_BINARY_DIRECTORY})
-  # Remove gcda files
-  ctest_test(INCLUDE_LABEL unit)
-  # Generate gcov
-  file(REMOVE_RECURSE ${CTEST_BINARY_DIRECTORY}/tgcov_unit_raw)
-  generate_gcov(${CTEST_BINARY_DIRECTORY} ${CTEST_BINARY_DIRECTORY}/tgcov_unit_raw "USE_LONG_FILE_NAMES" ${SRC_ROOT})
-  filter_gcov(${CTEST_BINARY_DIRECTORY}/tgcov_unit_raw)
-
-  file(REMOVE_RECURSE ${CTEST_BINARY_DIRECTORY}/tgcov_unit)
-  merge_gcov(${CTEST_BINARY_DIRECTORY}/tgcov_unit_raw ${CTEST_BINARY_DIRECTORY}/tgcov_unit ${SRC_ROOT})
-
-  # Generate diff
-  file(REMOVE_RECURSE ${CTEST_BINARY_DIRECTORY}/tgcov_diff)
-  compare_gcov(${CTEST_BINARY_DIRECTORY}/tgcov_base ${CTEST_BINARY_DIRECTORY}/tgcov_unit
-               ${CTEST_BINARY_DIRECTORY}/tgcov_diff tgcov_diff)
-
-  # create tar file
-  create_gcov_tar(${CTEST_BINARY_DIRECTORY} tgcov_unit)
-  create_gcov_tar(${CTEST_BINARY_DIRECTORY} tgcov_base)
-
-  file(GLOB DIFF_GCOV_FILES ${CTEST_BINARY_DIRECTORY}/tgcov_diff/*.gcov)
-
-  set(CTEST_BUILD_NAME_ORIGINAL "${CTEST_BUILD_NAME}")
-  set(CTEST_BUILD_NAME "${CTEST_BUILD_NAME_ORIGINAL}-diff")
-  ctest_start(${CTEST_DASHBOARD})
-  if(EXISTS "${CTEST_BINARY_DIRECTORY}/gcov.tar")
-    message("submitting ${CTEST_BINARY_DIRECTORY}/gcov.tar")
-    ctest_submit(CDASH_UPLOAD "${CTEST_BINARY_DIRECTORY}/gcov.tar" CDASH_UPLOAD_TYPE GcovTar)
-  endif()
-
-  set(CTEST_BUILD_NAME "${CTEST_BUILD_NAME_ORIGINAL}-base")
-  ctest_start(${CTEST_DASHBOARD})
-
-  if(EXISTS "${CTEST_BINARY_DIRECTORY}/gcov_tgcov_base.tar")
-    message("submitting ${CTEST_BINARY_DIRECTORY}/gcov_tgcov_base.tar")
-    ctest_submit(CDASH_UPLOAD "${CTEST_BINARY_DIRECTORY}/gcov_tgcov_base.tar" CDASH_UPLOAD_TYPE GcovTar)
-  endif()
-
-  set(CTEST_BUILD_NAME "${CTEST_BUILD_NAME_ORIGINAL}-unit")
-  ctest_start(${CTEST_DASHBOARD})
-
-  if(EXISTS "${CTEST_BINARY_DIRECTORY}/gcov_tgcov_unit.tar")
-    message("submitting ${CTEST_BINARY_DIRECTORY}/gcov_tgcov_unit.tar")
-    ctest_submit(CDASH_UPLOAD "${CTEST_BINARY_DIRECTORY}/gcov_tgcov_unit.tar" CDASH_UPLOAD_TYPE GcovTar)
-  endif()
-
 endif()
 
 # Clean up
