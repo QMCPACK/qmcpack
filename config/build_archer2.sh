@@ -46,7 +46,6 @@ do
           -DCMAKE_CXX_COMPILER="CC" \
 	  -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
           -D LibXml2_ROOT=$LIBXML2_ROOT \
-          -DBUILD_LMYENGINE_INTERFACE=0 \
           ${builds[$build]} \
           ..
     make -j 20
