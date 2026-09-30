@@ -11,8 +11,7 @@ function(
   series
   input_file
   procs
-  threads
-  use_for_coverage)
+  threads)
 
   # "run restart and check" function does 3 things:
   #  1. run qmcpack executable on $input_file.in.xml
@@ -51,11 +50,6 @@ function(
       APPEND
       PROPERTY DEPENDS ${full_name})
 
-    if(use_for_coverage)
-      set_property(TEST ${full_name} APPEND PROPERTY LABELS "coverage")
-      set_property(TEST ${restart_name} APPEND PROPERTY LABELS "coverage")
-    endif()
-
     math(EXPR series_plus_1 "${series} + 1")
     set(XXX "00${series}")
     set(XXY "00${series_plus_1}")
@@ -90,8 +84,7 @@ run_restart_and_check(
   1
   qmc
   2
-  2
-  false)
+  2)
 
 run_restart_and_check(
   deterministic-restart
@@ -99,8 +92,7 @@ run_restart_and_check(
   1
   qmc
   1
-  4
-  true)
+  4)
 
 run_restart_and_check(
   deterministic-restart_batch
@@ -108,8 +100,7 @@ run_restart_and_check(
   1
   qmc_batch
   2
-  2
-  false)
+  2)
 
 add_test_check_file_existence(deterministic-restart_batch-r2-t2 qmc_batch.s000.config.h5 TRUE)
 add_test_check_file_existence(deterministic-restart_batch-r2-t2 qmc_batch.s000.random.h5 TRUE)
@@ -122,8 +113,7 @@ run_restart_and_check(
   1
   qmc_batch
   1
-  4
-  true)
+  4)
 
 if(NOT QMC_MIXED_PRECISION)  
   run_restart_and_check(
@@ -132,8 +122,7 @@ if(NOT QMC_MIXED_PRECISION)
     1
     qmc_batch
     2
-    2
-    false)
+    2)
   
   add_test_check_file_existence(deterministic-restart_batch_opt-r2-t2 qmc_batch.s000.config.h5 TRUE)
   add_test_check_file_existence(deterministic-restart_batch_opt-r2-t2 qmc_batch.s000.random.h5 TRUE)
@@ -146,8 +135,7 @@ if(NOT QMC_MIXED_PRECISION)
     1
     qmc_batch
     1
-    4
-    true)
+    4)
   
   add_test_check_file_existence(deterministic-restart_batch_opt-r1-t4 qmc_batch.s000.config.h5 TRUE)
   add_test_check_file_existence(deterministic-restart_batch_opt-r1-t4 qmc_batch.s000.random.h5 TRUE)
@@ -161,8 +149,7 @@ run_restart_and_check(
   2
   det_qmc_vmcbatch_dmcbatch_tm
   2
-  2
-  false)
+  2)
 
 run_restart_and_check(
   deterministic-restart_dmc
@@ -170,8 +157,7 @@ run_restart_and_check(
   2
   det_qmc_vmcbatch_dmcbatch_tm
   1
-  4
-  true)
+  4)
 
 run_restart_and_check(
   deterministic-restart_dmc_disable_branching
@@ -179,8 +165,7 @@ run_restart_and_check(
   2
   det_qmc_vmcbatch_dmcbatch_tm
   2
-  2
-  false)
+  2)
 
 run_restart_and_check(
   deterministic-restart_dmc_disable_branching
@@ -188,8 +173,7 @@ run_restart_and_check(
   2
   det_qmc_vmcbatch_dmcbatch_tm
   1
-  4
-  true)
+  4)
 
 run_restart_and_check(
   deterministic-save_spline_coefs-batched
@@ -197,8 +181,7 @@ run_restart_and_check(
   1
   qmc_batched
   2
-  2
-  false)
+  2)
 
 run_restart_and_check(
   deterministic-save_spline_coefs-batched
@@ -206,8 +189,7 @@ run_restart_and_check(
   1
   qmc_batched
   1
-  4
-  true)
+  4)
 
 run_restart_and_check(
   deterministic-save_spline_coefs_hybridrep-batched
@@ -215,8 +197,7 @@ run_restart_and_check(
   1
   qmc_batched
   2
-  2
-  false)
+  2)
 
 run_restart_and_check(
   deterministic-save_spline_coefs_hybridrep-batched
@@ -224,8 +205,7 @@ run_restart_and_check(
   1
   qmc_batched
   1
-  3
-  true)
+  3)
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
 add_labels_for_tests("${CURRENT_TESTS}")
