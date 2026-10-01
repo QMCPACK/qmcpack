@@ -178,7 +178,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   }
   catch (const UniformCommunicateError& uce)
   {
-    comm->barrier_and_abort(uce.what());
+    comm->barrier_and_abort(std::string("Failed to create basisset. ") + uce.what());
   }
 }
 
@@ -372,15 +372,16 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
       auto it = std::find(ao_built_centers.begin(), ao_built_centers.end(), elementType);
       if (it == ao_built_centers.end())
       {
+        int activeCenter = sourcePtcl.getSpeciesSet().findSpecies(elementType);
+        if (activeCenter == sourcePtcl.getSpeciesSet().size())
+          throw UniformCommunicateError("Species " + elementType + " not found.");
+
         AOBasisBuilder<ao_type> any(elementType, myComm);
         any.put(cur);
         auto aoBasis = any.createAOSet(cur);
         if (aoBasis)
         {
           //add the new atomic basis to the basis set
-          int activeCenter = sourcePtcl.getSpeciesSet().findSpecies(elementType);
-          if (activeCenter == sourcePtcl.getSpeciesSet().size())
-            throw UniformCommunicateError("Species " + elementType + " not found.");
           mBasisSet->add(activeCenter, std::move(aoBasis));
         }
         ao_built_centers.push_back(elementType);
@@ -456,15 +457,16 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
     auto it = std::find(ao_built_centers.begin(), ao_built_centers.end(), elementType);
     if (it == ao_built_centers.end())
     {
+      int activeCenter = sourcePtcl.getSpeciesSet().findSpecies(elementType);
+      if (activeCenter == sourcePtcl.getSpeciesSet().size())
+        throw UniformCommunicateError("Species " + elementType + " not found.");
+
       AOBasisBuilder<ao_type> any(elementType, myComm);
       any.putH5(hin);
       auto aoBasis = any.createAOSetH5(hin);
       if (aoBasis)
       {
         //add the new atomic basis to the basis set
-        int activeCenter = sourcePtcl.getSpeciesSet().findSpecies(elementType);
-        if (activeCenter == sourcePtcl.getSpeciesSet().size())
-          throw UniformCommunicateError("Species " + elementType + " not found.");
         mBasisSet->add(activeCenter, std::move(aoBasis));
       }
       ao_built_centers.push_back(elementType);
