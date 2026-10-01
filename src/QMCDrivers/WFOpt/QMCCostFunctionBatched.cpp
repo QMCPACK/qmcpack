@@ -21,7 +21,6 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"
-#include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "Concurrency/ParallelExecutor.hpp"
 //#define QMCCOSTFUNCTION_DEBUG
 
@@ -618,11 +617,6 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
   SumValue[SUM_ABSE_BARE] = 0.0;
 }
 
-#ifdef HAVE_LMY_ENGINE
-void QMCCostFunctionBatched::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                                        OptionalRef<DescentEngine> descentEngineObj)
-{ APP_ABORT("LMYEngine not implemented with batch optimization"); }
-#endif
 
 
 void QMCCostFunctionBatched::resetPsi(bool final_reset) { resetOptimizableObjects(Psi, opt_vars); }
