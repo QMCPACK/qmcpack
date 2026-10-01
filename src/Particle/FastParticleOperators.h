@@ -326,7 +326,7 @@ struct ApplyBConds<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
 
 /** inout[i]=inout[i]-floor(inout[i])
  *
- * See CPU/SIMD/vmath.h and should be specialized for vector libraries, e.g., INTEL vml, IBM massv
+ * See CPU/SIMD/vmath.h and should be specialized for vector libraries, e.g., INTEL vml
  */
 template<typename T, unsigned D>
 inline void put2box(ParticleAttrib<TinyVector<T, D>>& inout)
