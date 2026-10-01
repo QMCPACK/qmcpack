@@ -12,8 +12,11 @@
 
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
+#include "QMCHamiltonians/OrbitalImages.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCHamiltonians/HamiltonianFactory.h"
+#include "MinimalParticlePool.h"
+#include "MinimalWaveFunctionPool.h"
 #include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
@@ -82,6 +85,26 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   REQUIRE(ham->getOperatorType("ElecElec") == "coulomb");
   REQUIRE(ham->getOperatorType("ElecIon") == "coulomb");
   REQUIRE(ham->getOperatorType("pressure") == "Pressure");
+}
+
+TEST_CASE("OrbitalImages rejects one-past-end orbital index", "[hamiltonian]")
+{
+  Communicate* comm = OHMMS::Controller;
+  RuntimeOptions runtime_options;
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);
+  auto& electrons        = *particle_pool.getParticleSet("e");
+  auto& wavefunction     = wavefunction_pool.getWaveFunction().value().get();
+
+  OrbitalImages orbital_images(electrons, particle_pool.getPool(), comm, wavefunction.getSPOMap());
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<estimator name="orbital_images" ions="ion">
+    <parameter name="sposets">spo_ud</parameter>
+    <parameter name="spo_ud">4</parameter>
+    <parameter name="grid">1 1 1</parameter>
+  </estimator>)"));
+
+  CHECK_THROWS_AS(orbital_images.put(doc.getRoot()), std::runtime_error);
 }
 
 TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")

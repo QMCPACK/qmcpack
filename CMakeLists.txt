@@ -147,13 +147,6 @@ option(ENABLE_GCOV "Enable code coverage" OFF)
 option(ENABLE_PYCOV "Enable python code coverage" OFF)
 option(BUILD_UNIT_TESTS "Build unit tests" ON)
 option(BUILD_MICRO_BENCHMARKS "Build micro benchmarks" ON)
-option(BUILD_LMYENGINE_INTERFACE "Build LMY engine" ON)
-if(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
-  message(STATUS "LMY engine is not compatible with mixed precision build! Disabling LMY engine. Some optimizers will not be available.")
-  set(BUILD_LMYENGINE_INTERFACE OFF)
-else()
-  message(STATUS "LMY engine enabled for widest range of wavefunction optimization methods.")
-endif()
 option(BUILD_AFQMC "Build with AFQMC" OFF)
 option(ENABLE_DEEPQMC_INFERENCE "Enable experimental DeepQMC wavefunction inference support" OFF)
 if(ENABLE_DEEPQMC_INFERENCE)
@@ -464,7 +457,7 @@ endif()
 #-------------------------------------------------------------------
 add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
 
-set(VALID_MATH_VENDORS "GENERIC" "INTEL_VML" "IBM_MASS" "AMD_LIBM")
+set(VALID_MATH_VENDORS "GENERIC" "INTEL_VML" "AMD_LIBM")
 set(QMC_MATH_VENDOR
     "GENERIC"
     CACHE STRING "Vendor optimized libraries for scalar and vector math functions")
@@ -474,7 +467,7 @@ if(NOT QMC_MATH_VENDOR IN_LIST VALID_MATH_VENDORS)
   message(FATAL_ERROR "Invalid vendor math library ${QMC_MATH_VENDOR}, value must be one of ${VALID_MATH_VENDORS}")
 endif()
 
-find_package(VendorPerfLibs QUIET COMPONENTS vml)
+find_package(VendorPerfLibs COMPONENTS vml)
 if(VendorPerfLibs_FOUND)
   if(VPL_vml_ID STREQUAL "IntelMKL")
     target_compile_definitions(Math::scalar_vector_functions INTERFACE "HAVE_MKL;HAVE_MKL_VML")
@@ -482,18 +475,11 @@ if(VendorPerfLibs_FOUND)
     target_compile_definitions(Math::scalar_vector_functions INTERFACE "HAVE_AMD_LIBM")
   endif()
   target_link_libraries(Math::scalar_vector_functions INTERFACE VPL::vml)
-else()
-  message(STATUS "Selected vendor math library ${QMC_MATH_VENDOR}")
-  # This needs to go before HAVE_SINCOS check
-  set(SINCOS_INCLUDE cmath)
-  if(QMC_MATH_VENDOR STREQUAL "IBM_MASS")
-    include(FindIBMMASS)
-  endif()
-
-  # CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
-  message(STATUS "SINCOS_INCLUDE : ${SINCOS_INCLUDE}")
-  include(CheckSincos)
 endif()
+
+# check the existence of sincos function.
+include(CheckCXXSymbolExists)
+check_cxx_symbol_exists(sincos "cmath" HAVE_SINCOS)
 
 #-------------------------------------------------------------------
 #  set up FFTW3 library
