@@ -17,6 +17,18 @@ if(NOT QMC_COMPLEX)
     4
     H4_MSD_ORB_OPT_SCALARS # OPT step 4
   )
+  qmc_run_and_check(
+    short-H4-msd-orb-optbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_msd_ae"
+    H4
+    H4_msd_orb_opt_batch.xml
+    16
+    1
+    ${SUCCESS_STATUS_MP}
+    4
+    H4_MSD_ORB_OPT_SCALARS # OPT step 4
+  )
+
 else()
   message(VERBOSE
           "Skipping H4_msd_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
