@@ -42,6 +42,10 @@ working directory isolation, and symlinking of required input files.
 
   ``ARGS``
     Extra arguments to pass to the test executable.
+
+  The function sets the variable ``ADDED_UNIT_TEST_NAME`` in the parent
+  scope containing the fully registered CTest name (or empty if the test
+  was not added due to configuration, e.g., MPI missing).
 #]=======================================================================]
 function(ADD_UNIT_TEST)
   set(options "")
@@ -112,6 +116,10 @@ function(ADD_UNIT_TEST)
       TEST ${TESTNAME}
       APPEND
       PROPERTY LABELS "unit")
+
+    set(ADDED_UNIT_TEST_NAME ${TESTNAME} PARENT_SCOPE)
+  else()
+    set(ADDED_UNIT_TEST_NAME "" PARENT_SCOPE)
   endif()
 endfunction()
 

@@ -26,11 +26,7 @@ foreach(I RANGE 0 ${ENDP} 2)
   get_filename_component(WFN ${WFN_FILE} NAME_WE)
   set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_${HAMIL}_${WFN})
   add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> ARGS "--hamil ${HAMIL_FILE}" "--wfn ${WFN_FILE}")
-  set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-  set_property(
-    TEST ${UTEST_NAME}
-    APPEND
-    PROPERTY LABELS "afqmc")
+  set_property(TEST ${ADDED_UNIT_TEST_NAME} APPEND PROPERTY LABELS "afqmc")
 endforeach()
 if(NOT QMC_COMPLEX)
   set(UTEST_EXE test_afqmc_phmsd)
@@ -38,8 +34,7 @@ if(NOT QMC_COMPLEX)
   target_link_libraries(${UTEST_EXE} catch_main afqmc)
   set(UTEST_NAME deterministic-unit_test_afqmc_phmsd)
   add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> ARGS "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/Be_sto-3g/qmcpack.h5 " "--wfn ${qmcpack_SOURCE_DIR}/tests/afqmc/Be_sto-3g/qmcpack.h5")
-  set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-  set_property(TEST ${UTEST_NAME} APPEND PROPERTY LABELS "afqmc")
+  set_property(TEST ${ADDED_UNIT_TEST_NAME} APPEND PROPERTY LABELS "afqmc")
 endif()
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)

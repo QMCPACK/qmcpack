@@ -24,11 +24,7 @@ if(QMC_COMPLEX)
   #      "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/ham_chol.h5"
   #      "--wfn ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/wfn_rhf.h5")
 endif()
-set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-set_property(
-  TEST ${UTEST_NAME}
-  APPEND
-  PROPERTY LABELS "afqmc")
+set_property(TEST ${ADDED_UNIT_TEST_NAME} APPEND PROPERTY LABELS "afqmc")
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
 add_labels_for_tests("${CURRENT_TESTS}")

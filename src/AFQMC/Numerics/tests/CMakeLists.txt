@@ -29,11 +29,7 @@ add_executable(
 target_link_libraries(${UTEST_EXE} catch_main afqmc platform_LA)
 
 add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
-set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-set_property(
-  TEST ${UTEST_NAME}
-  APPEND
-  PROPERTY LABELS "afqmc")
+set_property(TEST ${ADDED_UNIT_TEST_NAME} APPEND PROPERTY LABELS "afqmc")
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
 add_labels_for_tests("${CURRENT_TESTS}")
