@@ -1,6 +1,48 @@
 include(test_labels)
 
-# Runs unit tests
+#[=======================================================================[.rst:
+ADD_UNIT_TEST
+-------------
+
+Registers a unit test with CTest, handling MPI execution, thread counts,
+working directory isolation, and symlinking of required input files.
+
+.. command:: ADD_UNIT_TEST
+
+  .. code-block:: cmake
+
+    ADD_UNIT_TEST(
+      BASENAME <name>
+      TEST_BINARY <executable_target>
+      [PROCS <num_mpi_ranks>]
+      [THREADS <num_omp_threads>]
+      [INPUT_FILES <file1> [<file2> ...]]
+      [ARGS <arg1> [<arg2> ...]]
+    )
+
+  ``BASENAME``
+    Base name for the test. The registered CTest name will be appended
+    with ``-r<PROCS>-t<THREADS>``.
+
+  ``TEST_BINARY``
+    The executable to run. Usually a generator expression like
+    ``$<TARGET_FILE:my_test_exe>``.
+
+  ``PROCS``
+    Number of MPI ranks. Defaults to 1. If greater than 1 and MPI is
+    disabled in the build, the test is not registered.
+
+  ``THREADS``
+    Number of OpenMP threads (sets ``OMP_NUM_THREADS``). Defaults to 1.
+
+  ``INPUT_FILES``
+    List of files to symlink or copy into the test's isolated working
+    directory before execution. Relative paths are resolved against
+    ``CMAKE_CURRENT_SOURCE_DIR``.
+
+  ``ARGS``
+    Extra arguments to pass to the test executable.
+#]=======================================================================]
 function(ADD_UNIT_TEST)
   set(options "")
   set(oneValueArgs BASENAME PROCS THREADS TEST_BINARY)
@@ -39,9 +81,13 @@ function(ADD_UNIT_TEST)
   if(TEST_ADDED)
     file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}")
 
-    foreach(INPUT_FILE ${ARG_INPUT_FILES})
-      get_filename_component(FILE_NAME ${INPUT_FILE} NAME)
-      MAYBE_SYMLINK(${INPUT_FILE} "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}/${FILE_NAME}")
+    foreach(file IN LISTS ARG_INPUT_FILES)
+      cmake_path(GET file FILENAME fname)
+      if(IS_ABSOLUTE "${file}")
+        maybe_symlink("${file}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}/${fname}")
+      else()
+        maybe_symlink("${CMAKE_CURRENT_SOURCE_DIR}/${file}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}/${fname}")
+      endif()
     endforeach()
 
     set_tests_properties(${TESTNAME} PROPERTIES PROCESSORS ${TOT_PROCS} ENVIRONMENT OMP_NUM_THREADS=${ARG_THREADS}
@@ -55,17 +101,6 @@ function(ADD_UNIT_TEST)
 
     set_test_gpu_resources(${TESTNAME})
 
-    if(ARG_INPUT_FILES)
-      foreach(file IN LISTS ARG_INPUT_FILES)
-        cmake_path(GET file FILENAME fname)
-        if(IS_ABSOLUTE ${file})
-          maybe_symlink("${file}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}/${fname}")
-        else()
-          maybe_symlink("${CMAKE_CURRENT_SOURCE_DIR}/${file}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}/${fname}")
-        endif()
-      endforeach()
-    endif()
-
     if(ENABLE_OFFLOAD)
       set_property(
         TEST ${TESTNAME}
@@ -77,19 +112,41 @@ function(ADD_UNIT_TEST)
       TEST ${TESTNAME}
       APPEND
       PROPERTY LABELS "unit")
-
-    set(ADDED_UNIT_TEST_NAME ${TESTNAME} PARENT_SCOPE)
-  else()
-    set(ADDED_UNIT_TEST_NAME "" PARENT_SCOPE)
   endif()
 endfunction()
 
+#[=======================================================================[.rst:
+make_file_alias
+---------------
+
+Creates a symlink (or copies, depending on configuration) for a given file
+into the current binary directory under a new alias name. Also appends the
+resulting aliased file path to the ``ALIASED_FILES`` list variable.
+
+.. command:: make_file_alias
+
+  .. code-block:: cmake
+
+    make_file_alias(<src_file> <dest_file_name>)
+#]=======================================================================]
 macro(make_file_alias file dst_fname)
   maybe_symlink("${file}" "${CMAKE_CURRENT_BINARY_DIR}/${dst_fname}")
   list(APPEND ALIASED_FILES "${CMAKE_CURRENT_BINARY_DIR}/${dst_fname}")
 endmacro()
 
-# Add a test to see if the target output exists in the desired location in the build directory.
+#[=======================================================================[.rst:
+add_test_target_in_output_location
+----------------------------------
+
+Registers a simple test that checks if the output executable for a CMake
+target exists in the expected output location (`qmcpack_BINARY_DIR/bin/`).
+
+.. command:: add_test_target_in_output_location
+
+  .. code-block:: cmake
+
+    add_test_target_in_output_location(<target_name> <relative_exe_dir>)
+#]=======================================================================]
 function(add_test_target_in_output_location TARGET_NAME_TO_TEST EXE_DIR_RELATIVE_TO_BUILD)
 
   # obtain BASE_NAME
