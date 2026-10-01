@@ -27,7 +27,6 @@ if(USE_OBJECT_TARGET)
 endif()
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
-set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 
 # Minimal test for qmc-check-affinity. Check for "OpenMP" in output, no errorcodes.
 if(HAVE_MPI)

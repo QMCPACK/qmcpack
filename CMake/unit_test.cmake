@@ -1,7 +1,8 @@
 include(test_labels)
 
 # Runs unit tests
-function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
+function(ADD_UNIT_TEST BASENAME PROCS THREADS TEST_BINARY)
+  set(TESTNAME "${BASENAME}-r${PROCS}-t${THREADS}")
   message(VERBOSE "Adding test ${TESTNAME}")
   math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
   if(HAVE_MPI)
@@ -18,8 +19,9 @@ function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
   endif()
 
   if(TEST_ADDED)
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}")
     set_tests_properties(${TESTNAME} PROPERTIES PROCESSORS ${TOT_PROCS} ENVIRONMENT OMP_NUM_THREADS=${THREADS}
-                                                PROCESSOR_AFFINITY TRUE)
+                                                PROCESSOR_AFFINITY TRUE WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}")
     if("asan" IN_LIST ENABLE_SANITIZER)
       set_property(
         TEST ${TESTNAME}
@@ -36,11 +38,14 @@ function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
         PROPERTY ENVIRONMENT "OMP_TARGET_OFFLOAD=mandatory")
     endif()
 
-
     set_property(
       TEST ${TESTNAME}
       APPEND
       PROPERTY LABELS "unit")
+
+    set(ADDED_UNIT_TEST_NAME ${TESTNAME} PARENT_SCOPE)
+  else()
+    set(ADDED_UNIT_TEST_NAME "" PARENT_SCOPE)
   endif()
 endfunction()
 

@@ -42,13 +42,10 @@ endforeach()
 set(UTEST_INPUT_FILES diamondC_1x1x1.pwscf.h5 o2_45deg_spins.pwscf.h5 C.BFD.xml)
 
 function(set_estimators_test_working_directory TEST_NAME)
-  # Use dedicated directories for each rank count to avoid output file collisions
-  set(TEST_WORKING_DIR "${UTEST_DIR}/${TEST_NAME}")
-  file(MAKE_DIRECTORY "${TEST_WORKING_DIR}")
+  get_test_property(${TEST_NAME} WORKING_DIRECTORY TEST_WORKING_DIR)
   foreach(fname ${UTEST_INPUT_FILES})
     maybe_symlink("${UTEST_DIR}/${fname}" "${TEST_WORKING_DIR}/${fname}")
   endforeach()
-  set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY "${TEST_WORKING_DIR}")
 endfunction()
 
 set(SRCS
@@ -109,7 +106,7 @@ if(USE_OBJECT_TARGET)
 endif()
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
-set_estimators_test_working_directory(${UTEST_NAME})
+set_estimators_test_working_directory(${ADDED_UNIT_TEST_NAME})
 
 if(HAVE_MPI)
   set(UTEST_EXE test_${SRC_DIR}_mpi)
@@ -140,7 +137,7 @@ if(HAVE_MPI)
   test_estimators_help minimal_test_pools mock_walker_elements)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
   add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
-  set_estimators_test_working_directory(${UTEST_NAME})
+  set_estimators_test_working_directory(${ADDED_UNIT_TEST_NAME})
 endif()
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
