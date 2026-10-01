@@ -110,7 +110,7 @@ documentation.
 newer versions are faster; see :ref:`buildperformance` for performance suggestions. Versions of compilers over two years old are
 unsupported and untested by the developers although they may still work.
 
--  C/C++ compilers such as GNU, Clang, Intel, and IBM XL. C++ compilers
+-  C/C++ compilers such as GNU, Clang, and Intel. C++ compilers
    are required to support the C++ 17 standard. Use of recent (“current
    year version”) compilers is strongly encouraged.
 
@@ -218,7 +218,7 @@ Building with CMake
 The build system for QMCPACK is based on CMake. It will autoconfigure
 based on the detected compilers and libraries. The most recent version
 of CMake has the best detection for the greatest variety of systems. The
-minimum required version of CMake is 3.21.0. Most
+minimum required version of CMake is 3.28.0. Most
 computer installations have a sufficiently recent CMake, though it might
 not be the default.
 
@@ -230,8 +230,8 @@ executable can be run directly from that location.
 
 Previously, QMCPACK made extensive use of toolchains, but the build
 system has since been updated to eliminate the use of toolchain files
-for most cases. The build system is verified to work with GNU, Intel,
-and IBM XLC compilers. Specific compile options can be specified either
+for most cases. The build system is verified to work with GNU, Clang,
+and Intel compilers. Specific compile options can be specified either
 through specific environment or CMake variables. When the libraries are
 installed in standard locations (e.g., /usr, /usr/local), there is no
 need to set environment or CMake variables for the packages.
