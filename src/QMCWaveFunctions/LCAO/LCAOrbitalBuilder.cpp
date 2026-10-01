@@ -210,7 +210,7 @@ int LCAOrbitalBuilder::determineRadialOrbType(xmlNodePtr cur) const
   return radialOrbType;
 }
 
-std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent)
+std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent) const
 {
   ReportEngine PRE(class_name_, "loadBasisSetFromXML(xmlNodePtr)");
   int ylm = -1;
@@ -277,7 +277,7 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cu
   return myBasisSet;
 }
 
-std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr parent)
+std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr parent) const
 {
   ReportEngine PRE(class_name_, "loadBasisSetFromH5()");
 
@@ -340,7 +340,7 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr par
 
 
 template<int I, int J>
-std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
+std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur) const
 {
   ReportEngine PRE(class_name_, "createBasisSet(xmlNodePtr)");
 
@@ -396,7 +396,7 @@ std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSet
 
 
 template<int I, int J>
-std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSetH5()
+std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSetH5() const
 {
   ReportEngine PRE(class_name_, "createBasisSetH5(xmlNodePtr)");
 

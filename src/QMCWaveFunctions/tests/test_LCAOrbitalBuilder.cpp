@@ -38,7 +38,7 @@ public:
   void setH5Path(const std::string& path) { h5_path = path; }
 
   template<int I, int J>
-  std::unique_ptr<BasisSet_t> testCreateBasisSetH5()
+  std::unique_ptr<BasisSet_t> testCreateBasisSetH5() const
   { return createBasisSetH5<I, J>(); }
 };
 
