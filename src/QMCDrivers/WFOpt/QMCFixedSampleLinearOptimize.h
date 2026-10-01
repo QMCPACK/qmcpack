@@ -18,13 +18,8 @@
 #define QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_VMCSINGLE_H
 
 #include "NRCOptimization.h"
-#ifdef HAVE_LMY_ENGINE
-#include "formic/utils/matrix.h"
-#include "formic/utils/lmyengine/engine.h"
-#endif
 #include "QMCDrivers/QMCDriver.h"
-#include "QMCDrivers/Optimizers/DescentEngine.h"
-#include "QMCDrivers/Optimizers/HybridEngine.h"
+#include "QMCDrivers/Optimizers/OptimizerTypes.h"
 #include "OutputMatrix.h"
 
 namespace qmcplusplus
@@ -82,63 +77,15 @@ private:
     return valid;
   }
 
-  // check if the proposed new cost function value is the best available
-  bool is_best_cost(const int ii,
-                    const std::vector<RealType>& cv,
-                    const std::vector<double>& sh,
-                    const RealType ic) const;
-
-  // perform the adaptive three-shift update
-  void adaptive_three_shift_run();
-
   // perform the single-shift update, no sample regeneration
   void one_shift_run();
 
-  // perform optimization using a gradient descent algorithm
-  void descent_run();
-
-#ifdef HAVE_LMY_ENGINE
-  // use hybrid approach of descent and blocked linear method for optimization
-  void hybrid_run();
-#endif
 
   // Perform test of parameter gradients
   void test_run();
 
   std::unique_ptr<GradientTest> testEngineObj;
 
-
-  void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
-                                   const std::vector<double>& shiffts_s,
-                                   std::vector<std::vector<RealType>>& parameterDirections);
-
-#ifdef HAVE_LMY_ENGINE
-  formic::VarDeps vdeps;
-  std::unique_ptr<cqmc::engine::LMYEngine<ValueType>> EngineObj;
-#endif
-
-  //engine for running various gradient descent based algorithms for optimization
-  std::unique_ptr<DescentEngine> descentEngineObj;
-
-  //engine for controlling a optimization using a hybrid combination of linear method and descent
-  std::unique_ptr<HybridEngine> hybridEngineObj;
-
-  // prepare a vector of shifts to try
-  std::vector<double> prepare_shifts(const double central_shift) const;
-
-  // previous update
-#ifdef HAVE_LMY_ENGINE
-  std::vector<formic::ColVec<double>> previous_update;
-#endif
-
-  void print_cost_summary_header();
-  void print_cost_summary(const double si,
-                          const double ss,
-                          const RealType mc,
-                          const RealType cv,
-                          const int ind,
-                          const int bi,
-                          const bool gu);
 
   int nstabilizers;
   RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
@@ -158,52 +105,13 @@ private:
   std::bitset<2> accept_history;
   /// Shift_s adjustment base
   RealType shift_s_base;
-  /// number of shifts we will try
-  int num_shifts;
-  /// the maximum relative change in the cost function for the adaptive three-shift scheme
-  RealType max_relative_cost_change;
-  ///max amount a parameter may change relative to current wave function weight
-  RealType max_param_change;
-  /// the tolerance to cost function increases when choosing the best shift in the adaptive shift method
-  RealType cost_increase_tol;
-  /// the shift_i value that the adaptive shift method should aim for
-  RealType target_shift_i;
-  ///whether we are targeting an excited state
-  std::string targetExcitedStr;
-  ///whether we are targeting an excited state
-  bool targetExcited;
-  ///whether we are doing block algorithm
-  std::string block_lmStr;
-  ///whether we are doing block algorithm
-  bool block_lm;
-  ///number of blocks used in block algorithm
-  int nblocks;
-  ///number of old updates kept
-  int nolds;
-  ///number of directions kept
-  int nkept;
-  ///the shift to use when targeting an excited state
-  RealType omega_shift;
-  ///whether to do the first part of block lm
-  bool block_first;
-  ///whether to do the second part of block lm
-  bool block_second;
-  ///whether to do the third part of block lm
-  bool block_third;
-
   //Variables for alternatives to linear method
 
   //name of the current optimization method, updated by processOptXML before run
   std::string MinMethod;
 
-  //type of the previous optimization method, updated by processOptXML before run
-  OptimizerType previous_optimizer_type_;
-
   //type of the current optimization method, updated by processOptXML before run
   OptimizerType current_optimizer_type_;
-
-  //whether to use hybrid method
-  bool doHybrid;
 
   bool doGradientTest;
 
@@ -235,9 +143,6 @@ private:
 
   ///common operation to start optimization, used by the derived classes
   void start();
-#ifdef HAVE_LMY_ENGINE
-  void engine_start();
-#endif
   ///common operation to finish optimization, used by the derived classes
   void finish();
   void generateSamples();

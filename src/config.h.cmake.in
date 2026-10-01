@@ -99,8 +99,6 @@
 
 #endif /* HAVE_EINSPLINE_EXT */
 
-/* Find ESSL library */
-#cmakedefine HAVE_ESSL @HAVE_ESSL@
 
 /* Using translation of CUDA to HIP for GPU execution */
 #cmakedefine QMC_CUDA2HIP @QMC_CUDA2HIP@
