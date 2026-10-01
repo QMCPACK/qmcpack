@@ -45,7 +45,7 @@ class MemParserClass : public ParserClass
 {
 private:
   std::string Buffer;
-  int Pos, saved;
+  std::string::size_type Pos, saved;
 
 public:
   bool OpenFile(std::string fname) override;
