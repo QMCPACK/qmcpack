@@ -56,7 +56,7 @@ def test_bundle():
 
     with pytest.raises(
         ValueError,
-        match="multiple simulations in a single directory have the same identifier"
+        match="Multiple simulations in a single directory have the same identifier"
         ):
         bundle(levels[1]+[sims.s9])
 
