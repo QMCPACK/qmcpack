@@ -19,6 +19,16 @@ set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 
+function(set_drivers_test_working_directory TEST_NAME)
+  # Use dedicated directories for each rank count to avoid output file collisions
+  set(TEST_WORKING_DIR "${UTEST_DIR}/${TEST_NAME}")
+  file(MAKE_DIRECTORY "${TEST_WORKING_DIR}")
+  maybe_symlink(
+    "${UTEST_DIR}/diamondC_1x1x1.pwscf.h5"
+    "${TEST_WORKING_DIR}/diamondC_1x1x1.pwscf.h5")
+  set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY "${TEST_WORKING_DIR}")
+endfunction()
+
 set(DRIVER_TEST_SRC
     test_WalkerLogCollector.cpp
     test_TauParams.cpp
@@ -60,7 +70,7 @@ if(USE_OBJECT_TARGET)
 endif()
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
-set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+set_drivers_test_working_directory(${UTEST_NAME})
 
 # New Driver Only test program
 # to avoid dealing with the build dependencies
@@ -105,7 +115,7 @@ if(USE_OBJECT_TARGET)
 endif()
 
 add_unit_test(${UTEST_NAME} 1 8 $<TARGET_FILE:${UTEST_EXE}>)
-set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+set_drivers_test_working_directory(${UTEST_NAME})
 
 if(HAVE_MPI)
   set(UTEST_EXE test_new_${SRC_DIR}_mpi)
@@ -130,7 +140,7 @@ if(HAVE_MPI)
   foreach(NUM_RANKS 1 2 3 4 16)
     set(UTEST_NAME deterministic-unit_${UTEST_EXE}-r${NUM_RANKS})
     add_unit_test(${UTEST_NAME} ${NUM_RANKS} 1 $<TARGET_FILE:${UTEST_EXE}>)
-    set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+    set_drivers_test_working_directory(${UTEST_NAME})
   endforeach()
 endif(HAVE_MPI)
 
