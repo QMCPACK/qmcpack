@@ -21,8 +21,7 @@ target_link_libraries(${UTEST_EXE} catch_main afqmc)
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_chol_uc)
 
 if(QMC_COMPLEX)
-  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>
-                "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/ham_chol_uc.h5")
+  add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> ARGS "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/He_2x2x2_dzv/ham_chol_uc.h5")
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
   set_property(
     TEST ${UTEST_NAME}
@@ -30,21 +29,18 @@ if(QMC_COMPLEX)
     PROPERTY LABELS "afqmc")
   if(NOT ENABLE_CUDA)
     set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_chol_sc)
-    add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>
-                  "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/ham_chol_sc.h5")
+    add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> ARGS "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/ham_chol_sc.h5")
     set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
     set_property(TEST ${UTEST_NAME} APPEND PROPERTY LABELS "afqmc")
 
     set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_thc_sc)
-    add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>
-                  "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_szv/ham_thc_sc.h5")
+    add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> ARGS "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_szv/ham_thc_sc.h5")
     set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
     set_property(TEST ${UTEST_NAME} APPEND PROPERTY LABELS "afqmc")
   endif()
 else()
   set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_chol)
-  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>
-                "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/ham_chol.h5")
+  add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> ARGS "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/ham_chol.h5")
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
   set_property(TEST ${UTEST_NAME} APPEND PROPERTY LABELS "afqmc")
 endif()

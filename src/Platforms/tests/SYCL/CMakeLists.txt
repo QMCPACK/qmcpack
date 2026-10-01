@@ -17,7 +17,7 @@ set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 add_executable(${UTEST_EXE} test_SYCLallocator.cpp)
 target_link_libraries(${UTEST_EXE} SYCL::device platform_runtime containers catch_main)
 
-add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 
 ## gemv/ger
 set(UTEST_EXE test_sycl_blas)
@@ -26,7 +26,7 @@ set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 add_executable(${UTEST_EXE} test_syclBLAS.cpp)
 target_link_libraries(${UTEST_EXE} catch_main containers platform_LA)
 
-add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
 add_labels_for_tests("${CURRENT_TESTS}")

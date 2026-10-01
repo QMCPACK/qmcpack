@@ -66,7 +66,7 @@ if(USE_OBJECT_TARGET)
     platform_omptarget_LA)
 endif()
 
-add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 set_drivers_test_working_directory(${ADDED_UNIT_TEST_NAME})
 
 # New Driver Only test program
@@ -111,7 +111,7 @@ if(USE_OBJECT_TARGET)
     platform_omptarget_LA)
 endif()
 
-add_unit_test(${UTEST_NAME} 1 8 $<TARGET_FILE:${UTEST_EXE}>)
+add_unit_test(BASENAME ${UTEST_NAME} THREADS 8 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 set_drivers_test_working_directory(${ADDED_UNIT_TEST_NAME})
 
 if(HAVE_MPI)
@@ -136,7 +136,7 @@ if(HAVE_MPI)
   endif()
   foreach(NUM_RANKS 1 2 3 4 16)
     set(UTEST_NAME deterministic-unit_${UTEST_EXE}-r${NUM_RANKS})
-    add_unit_test(${UTEST_NAME} ${NUM_RANKS} 1 $<TARGET_FILE:${UTEST_EXE}>)
+    add_unit_test(BASENAME ${UTEST_NAME} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
     set_drivers_test_working_directory(${ADDED_UNIT_TEST_NAME})
   endforeach()
 endif(HAVE_MPI)

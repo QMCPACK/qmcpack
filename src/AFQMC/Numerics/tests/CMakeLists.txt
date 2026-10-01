@@ -28,7 +28,7 @@ add_executable(
   test_misc_kernels.cpp)
 target_link_libraries(${UTEST_EXE} catch_main afqmc platform_LA)
 
-add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 set_property(
   TEST ${UTEST_NAME}

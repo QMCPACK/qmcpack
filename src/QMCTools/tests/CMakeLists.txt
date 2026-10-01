@@ -26,7 +26,7 @@ if(USE_OBJECT_TARGET)
   target_link_libraries(${UTEST_EXE} qmcparticle qmcparticle_omptarget qmcutil)
 endif()
 
-add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 
 # Minimal test for qmc-check-affinity. Check for "OpenMP" in output, no errorcodes.
 if(HAVE_MPI)

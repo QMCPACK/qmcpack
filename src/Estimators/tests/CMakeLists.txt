@@ -105,7 +105,7 @@ if(USE_OBJECT_TARGET)
     utilities_for_test)
 endif()
 
-add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 set_estimators_test_working_directory(${ADDED_UNIT_TEST_NAME})
 
 if(HAVE_MPI)
@@ -136,7 +136,7 @@ if(HAVE_MPI)
   target_link_libraries(${UTEST_EXE} catch_main qmcestimators
   test_estimators_help minimal_test_pools mock_walker_elements)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
-  add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
+  add_unit_test(BASENAME ${UTEST_NAME} PROCS 3 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
   set_estimators_test_working_directory(${ADDED_UNIT_TEST_NAME})
 endif()
 
