@@ -77,9 +77,9 @@ protected:
      * Use ao_traits<T,I,J> to match (ROT)x(SH) combo
      */
   template<int I, int J>
-  BasisSet_t* createBasisSet(xmlNodePtr cur);
+  std::unique_ptr<BasisSet_t> createBasisSet(xmlNodePtr cur);
   template<int I, int J>
-  BasisSet_t* createBasisSetH5();
+  std::unique_ptr<BasisSet_t> createBasisSetH5();
 
   // The following items were previously in SPOSet
   ///occupation number

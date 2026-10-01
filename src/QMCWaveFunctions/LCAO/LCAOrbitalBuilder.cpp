@@ -244,7 +244,7 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cu
   if (radialOrbType < 0)
     PRE.error("Unknown radial function for LCAO orbitals. Specify keyword=\"NMO/GTO/STO\" .", true);
 
-  BasisSet_t* myBasisSet = nullptr;
+  std::unique_ptr<BasisSet_t> myBasisSet;
   /** process atomicBasisSet per ion species */
   switch (radialOrbType)
   {
@@ -274,7 +274,7 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cu
     break;
   }
 
-  return std::unique_ptr<BasisSet_t>(myBasisSet);
+  return myBasisSet;
 }
 
 std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr parent)
@@ -309,7 +309,7 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr par
   if (radialOrbType < 0)
     PRE.error("Unknown radial function for LCAO orbitals. Specify keyword=\"NMO/GTO/STO\" .", true);
 
-  BasisSet_t* myBasisSet = nullptr;
+  std::unique_ptr<BasisSet_t> myBasisSet;
   /** process atomicBasisSet per ion species */
   switch (radialOrbType)
   {
@@ -335,19 +335,19 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr par
     PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.", true);
     break;
   }
-  return std::unique_ptr<BasisSet_t>(myBasisSet);
+  return myBasisSet;
 }
 
 
 template<int I, int J>
-LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
+std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
 {
   ReportEngine PRE(class_name_, "createBasisSet(xmlNodePtr)");
 
   using ao_type    = typename ao_traits<RealType, ValueType, I, J>::ao_type;
   using basis_type = typename ao_traits<RealType, ValueType, I, J>::basis_type;
 
-  basis_type* mBasisSet = new basis_type(sourcePtcl, targetPtcl);
+  auto mBasisSet = std::make_unique<basis_type>(sourcePtcl, targetPtcl);
 
   //list of built centers
   std::vector<std::string> ao_built_centers;
@@ -396,14 +396,14 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
 
 
 template<int I, int J>
-LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
+std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSetH5()
 {
   ReportEngine PRE(class_name_, "createBasisSetH5(xmlNodePtr)");
 
   using ao_type    = typename ao_traits<RealType, ValueType, I, J>::ao_type;
   using basis_type = typename ao_traits<RealType, ValueType, I, J>::basis_type;
 
-  basis_type* mBasisSet = new basis_type(sourcePtcl, targetPtcl);
+  auto mBasisSet = std::make_unique<basis_type>(sourcePtcl, targetPtcl);
 
   //list of built centers
   std::vector<std::string> ao_built_centers;
