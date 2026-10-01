@@ -21,7 +21,7 @@ if(NOT QMC_COMPLEX)
     short-H4-msd-orb-optbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_msd_ae"
     H4
-    H4_msd_orb_opt_batch.xml
+    H4_msd_orb_optbatch.xml
     16
     1
     ${SUCCESS_STATUS_MP}

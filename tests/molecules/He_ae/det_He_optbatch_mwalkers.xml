@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="det_He_opt_batch_mwalkers" series="0"/>
+  <project id="det_He_optbatch_mwalkers" series="0"/>
   <random seed="509"/>
 
   <!-- Location of atoms -->
