@@ -15,16 +15,10 @@ set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 # test_drivers shouldn't be dependent on wavefunctions
-set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
-set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
-maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
+set(ALIASED_FILES)
+make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5 diamondC_1x1x1.pwscf.h5)
 
-function(set_drivers_test_working_directory TEST_NAME)
-  get_test_property(${TEST_NAME} WORKING_DIRECTORY TEST_WORKING_DIR)
-  maybe_symlink(
-    "${UTEST_DIR}/diamondC_1x1x1.pwscf.h5"
-    "${TEST_WORKING_DIR}/diamondC_1x1x1.pwscf.h5")
-endfunction()
+set(UTEST_INPUT_FILES ${ALIASED_FILES})
 
 set(DRIVER_TEST_SRC
     test_WalkerLogCollector.cpp
@@ -66,8 +60,7 @@ if(USE_OBJECT_TARGET)
     platform_omptarget_LA)
 endif()
 
-add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
-set_drivers_test_working_directory(${ADDED_UNIT_TEST_NAME})
+add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
 
 # New Driver Only test program
 # to avoid dealing with the build dependencies
@@ -111,8 +104,7 @@ if(USE_OBJECT_TARGET)
     platform_omptarget_LA)
 endif()
 
-add_unit_test(BASENAME ${UTEST_NAME} THREADS 8 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
-set_drivers_test_working_directory(${ADDED_UNIT_TEST_NAME})
+add_unit_test(BASENAME ${UTEST_NAME} THREADS 8 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
 
 if(HAVE_MPI)
   set(UTEST_EXE test_new_${SRC_DIR}_mpi)
@@ -136,8 +128,7 @@ if(HAVE_MPI)
   endif()
   foreach(NUM_RANKS 1 2 3 4 16)
     set(UTEST_NAME deterministic-unit_${UTEST_EXE}-r${NUM_RANKS})
-    add_unit_test(BASENAME ${UTEST_NAME} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
-    set_drivers_test_working_directory(${ADDED_UNIT_TEST_NAME})
+    add_unit_test(BASENAME ${UTEST_NAME} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
   endforeach()
 endif(HAVE_MPI)
 

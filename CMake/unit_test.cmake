@@ -84,6 +84,11 @@ function(ADD_UNIT_TEST)
   endif()
 endfunction()
 
+macro(make_file_alias file dst_fname)
+  maybe_symlink("${file}" "${CMAKE_CURRENT_BINARY_DIR}/${dst_fname}")
+  list(APPEND ALIASED_FILES "${CMAKE_CURRENT_BINARY_DIR}/${dst_fname}")
+endmacro()
+
 # Add a test to see if the target output exists in the desired location in the build directory.
 function(add_test_target_in_output_location TARGET_NAME_TO_TEST EXE_DIR_RELATIVE_TO_BUILD)
 

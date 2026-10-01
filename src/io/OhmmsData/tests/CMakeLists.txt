@@ -20,9 +20,7 @@ add_executable(${UTEST_EXE} test_xml.cpp test_AttributeSet.cpp test_FileUtility.
 target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../../")
 target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcio_xml)
 
-execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/simple.xml" ${UTEST_DIR})
-
-add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
+add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES simple.xml)
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
 add_labels_for_tests("${CURRENT_TESTS}")

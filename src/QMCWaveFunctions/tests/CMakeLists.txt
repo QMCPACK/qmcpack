@@ -17,11 +17,6 @@ target_link_libraries(minimal_wavefunction_pool PUBLIC qmcwfs)
 set(SRC_DIR wavefunction)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-macro(make_file_alias file dst_fname)
-  maybe_symlink("${file}" "${CMAKE_CURRENT_BINARY_DIR}/${dst_fname}")
-  list(APPEND ALIASED_FILES "${CMAKE_CURRENT_BINARY_DIR}/${dst_fname}")
-endmacro()
-
 set(ALIASED_FILES)
 make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5 diamondC_1x1x1.pwscf.h5)
 make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp/pwscf.pwscf.h5 diamondC_2x1x1.pwscf.h5)
@@ -29,7 +24,7 @@ make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae/pwscf.pwscf.h5 
 make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp/pwscf.pwscf.h5 hcpBe.pwscf.h5)
 make_file_alias(${qmcpack_SOURCE_DIR}/tests/converter/test_Bi_dirac/gold.orbs.h5 Bi.orbs.h5)
 make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp/C_Diamond.h5 C_Diamond_2x1x1-Gaussian.h5)
-make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp/C_Diamond-tiled-cplx.h5 C_Diamond_2x1x1-Gaussian-tiled-cplx.h5)
+make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx/C_diamond-tiled-cplx.h5 C_Diamond_2x1x1-Gaussian-tiled-cplx.h5)
 
 set(UTEST_INPUT_FILES ${ALIASED_FILES}
     ${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/LiH-arb.pwscf.h5
