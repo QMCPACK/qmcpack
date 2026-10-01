@@ -174,7 +174,7 @@ def create_label_sets():
     # aos specific (but general otherwise)
     if aos:
         intermittent_stat_fail |= set([
-            'short-H4-orb-opt-dmc',
+            'short-H4-opt_orb-dmc',
             ])
         check_fail |= set([
             'short-bccH_2x2x2_ae-deriv',
@@ -202,10 +202,10 @@ def create_label_sets():
             'short-c_no-hf_vmc',
             'short-c_no-sj_dmc',
             'short-H2-FDLR',
-            'short-H2-orb-opt',
+            'short-H2-opt_orb',
             'short-H4-FDLR',
-            'short-H4-orb-opt',
-            'short-H4-orb-opt-dmc',
+            'short-H4-opt_orb',
+            'short-H4-opt_orb-dmc',
             'short-bccH_2x2x2_ae-gamma-deriv',
             'short-bccH_2x2x2_ae-grad_lap',
             'short-bccH_3x3x3_ae-gamma-deriv',

@@ -52,7 +52,7 @@ else()
   list(APPEND He_VMC_MWALKERS_2-3_SCALAR "totenergy" "-2.81743526 0.000001")
 
   qmc_run_and_check(
-    deterministic-He_ae-opt_vmc
+    deterministic-He_ae-opt-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
     det_He_opt
     det_He_opt.xml
@@ -64,7 +64,7 @@ else()
   )
 
   qmc_run_and_check(
-    deterministic-He_ae-opt_vmc-mwalkers
+    deterministic-He_ae-opt-vmc-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
     det_He_opt_mwalkers
     det_He_opt_mwalkers.xml
@@ -76,7 +76,7 @@ else()
   )
 
   qmc_run_and_check(
-    deterministic-He_ae-opt_vmc-mwalkers
+    deterministic-He_ae-opt-vmc-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
     det_He_opt_mwalkers
     det_He_opt_mwalkers.xml
@@ -138,7 +138,7 @@ else()
     reference.det_He_optbatch_mwalkers_2-3.s001.opt.xml)
 
   qmc_run_and_check(
-    deterministic-He_ae-opt_vmc-batch
+    deterministic-He_ae-optbatch-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
     det_He_optbatch
     det_He_optbatch.xml
@@ -150,7 +150,7 @@ else()
   )
 
   qmc_run_and_check(
-    deterministic-He_ae-opt_vmc-batch-mwalkers
+    deterministic-He_ae-optbatch-vmcbatch-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
     det_He_optbatch_mwalkers
     det_He_optbatch_mwalkers.xml
@@ -162,7 +162,7 @@ else()
   )
 
   qmc_run_and_check(
-    deterministic-He_ae-opt_vmc-batch-mwalkers
+    deterministic-He_ae-optbatch-vmcbatch-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
     det_He_optbatch_mwalkers
     det_He_optbatch_mwalkers.xml

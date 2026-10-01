@@ -68,7 +68,7 @@ if(NOT QMC_COMPLEX)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-Be_STO-orb_opt
+      short-Be_STO-opt_orb
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/Be_STO"
       PREFIX
@@ -84,7 +84,7 @@ if(NOT QMC_COMPLEX)
       SCALAR_VALUES
       BE_STO_OPT_SHORT)
   else()
-    message(VERBOSE "Skipping Be_STO orb_opt tests because linear optimizer is not supported by mixed precision builds (QMC_MIXED_PRECISION=1)")
+    message(VERBOSE "Skipping Be_STO opt_orb tests because linear optimizer is not supported by mixed precision builds (QMC_MIXED_PRECISION=1)")
   endif()
 else()
   message(VERBOSE "Skipping Be_STO tests because STO basis sets are not supported by complex build (QMC_COMPLEX=1)")
