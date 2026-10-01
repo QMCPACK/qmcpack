@@ -9,12 +9,10 @@ add_test(
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 set_tests_properties(${THISTESTNAME} PROPERTIES LABELS "deterministic")
 
-find_program(HAVE_NUMDIFF numdiff)
-if(HAVE_NUMDIFF)
-  add_test(
-    NAME ppconvert_o_diff
-    COMMAND numdiff -a 0.001 ${CMAKE_CURRENT_BINARY_DIR}/O.BFD.xml
-            ${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp/O.BFD.xml
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-  set_tests_properties(ppconvert_o_diff PROPERTIES DEPENDS ppconvert_runs LABELS "deterministic")
-endif(HAVE_NUMDIFF)
+add_test(
+  NAME ppconvert_o_diff
+  COMMAND
+    ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../numeric_diff.py --absolute-tolerance 0.001
+    ${CMAKE_CURRENT_BINARY_DIR}/O.BFD.xml ${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp/O.BFD.xml
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+set_tests_properties(ppconvert_o_diff PROPERTIES DEPENDS ppconvert_runs LABELS "deterministic")
