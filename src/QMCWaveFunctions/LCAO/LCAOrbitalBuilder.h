@@ -72,14 +72,28 @@ protected:
   /// Captured gpu input string
   std::string useGPU;
 
-  /** create basis set
-     *
-     * Use ao_traits<T,I,J> to match (ROT)x(SH) combo
-     */
+  /** Create a localized basis set from an XML input node
+   *
+   * Processes the atomicBasisSet elements per ion species and builds
+   * the complete localized basis set. Uses ao_traits<T,I,J> to match
+   * the appropriate (Radial Orbital Type) x (Spherical Harmonics) combinations.
+   *
+   * @param cur pointer to the XML node containing the basis set definitions
+   * @return a unique pointer to the newly constructed BasisSet_t
+   */
   template<int I, int J>
-  BasisSet_t* createBasisSet(xmlNodePtr cur);
+  std::unique_ptr<BasisSet_t> createBasisSet(xmlNodePtr cur) const;
+
+  /** Create a localized basis set from an HDF5 file
+   *
+   * Reads atomic basis set parameters and definitions from an HDF5 archive
+   * (specified by h5_path) and builds the localized basis set. Uses ao_traits<T,I,J>
+   * to match the appropriate combinations.
+   *
+   * @return a unique pointer to the newly constructed BasisSet_t
+   */
   template<int I, int J>
-  BasisSet_t* createBasisSetH5();
+  std::unique_ptr<BasisSet_t> createBasisSetH5() const;
 
   // The following items were previously in SPOSet
   ///occupation number
@@ -117,10 +131,28 @@ protected:
                             Matrix<LCAOrbitalBuilder::RealType>& Creal) const;
 
 private:
-  ///load a basis set from XML input
-  std::unique_ptr<BasisSet_t> loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent);
-  ///load a basis set from h5 file
-  std::unique_ptr<BasisSet_t> loadBasisSetFromH5(xmlNodePtr parent);
+  /** Load and construct a complete localized basis set entirely from XML
+   *
+   * Determines the radial orbital type from the XML attributes, dispatches
+   * the creation to the appropriate template instantiation of createBasisSet,
+   * and returns the resulting BasisSet_t.
+   *
+   * @param cur pointer to the current XML node being parsed
+   * @param parent pointer to the parent XML node
+   * @return unique pointer to the constructed basis set
+   */
+  std::unique_ptr<BasisSet_t> loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent) const;
+
+  /** Load and construct a complete localized basis set partially/fully from an HDF5 file
+   *
+   * Determines the radial orbital type from the XML attributes, dispatches
+   * the creation to the appropriate template instantiation of createBasisSetH5
+   * (which reads the bulk of the data from the HDF5 archive), and returns it.
+   *
+   * @param parent pointer to the parent XML node containing configuration attributes
+   * @return unique pointer to the constructed basis set
+   */
+  std::unique_ptr<BasisSet_t> loadBasisSetFromH5(xmlNodePtr parent) const;
   ///determine radial orbital type based on "keyword" and "transform" attributes
   int determineRadialOrbType(xmlNodePtr cur) const;
 };
