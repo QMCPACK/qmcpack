@@ -10,7 +10,7 @@ target_link_libraries(sandbox_helper PUBLIC qmcparticle)
 foreach(p ${ESTEST})
   add_executable(${p} ${p}.cpp)
   target_link_libraries(${p} spline2 qmcparticle sandbox_helper)
-  add_unit_test(sandbox_${p} 1 3 $<TARGET_FILE:${p}>)
+  add_unit_test(BASENAME sandbox_${p} THREADS 3 TEST_BINARY $<TARGET_FILE:${p}>)
 endforeach(p ${ESTEST})
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)

@@ -17,17 +17,13 @@ set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(SRCS test_qmcfstool.cpp)
 
-execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/simple_Sk.dat" ${UTEST_DIR})
-execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/simple_input.xml" ${UTEST_DIR})
-
 add_executable(${UTEST_EXE} ${SRCS})
 target_link_libraries(${UTEST_EXE} catch_main fstool)
 if(USE_OBJECT_TARGET)
   target_link_libraries(${UTEST_EXE} qmcparticle qmcparticle_omptarget qmcutil)
 endif()
 
-add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
-set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES simple_Sk.dat simple_input.xml)
 
 # Minimal test for qmc-check-affinity. Check for "OpenMP" in output, no errorcodes.
 if(HAVE_MPI)
