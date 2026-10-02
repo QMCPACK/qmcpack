@@ -2980,11 +2980,11 @@ class vmc(QIxml):
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
                   'storeconfigs','checkproperties','recordconfigs','current',
                   'stepsbetweensamples','samplesperthread','samples','usedrift',
-                  'spin_mass','estimator_period',
+                  'spin_mass','estimator_period','write_vmc_dat',
                   'walkers','nonlocalpp','tau','walkersperthread','reconfiguration', # legacy - batched
                   'dmcwalkersperthread','current','ratio','firststep',
                   'minimumtargetwalkers','max_seconds')
-    write_types = obj(usedrift=yesno,profiling=yesno,                   # batched
+    write_types = obj(usedrift=yesno,profiling=yesno,write_vmc_dat=yesno, # batched
                       gpu=yesno,nonlocalpp=yesno,reconfiguration=yesno, # legacy - batched
                       ratio=yesno,completed=yesno)
 #end class vmc
@@ -3034,8 +3034,8 @@ class vmc_batch(QIxml):
     tag = 'qmc'
     attributes = ('method','move','profiling','kdelay','checkpoint')
     elements   = ('estimator','estimators')
-    parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','usedrift')
-    write_types = obj(usedrift=yesno,profiling=yesno)
+    parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','usedrift','write_vmc_dat')
+    write_types = obj(usedrift=yesno,profiling=yesno,write_vmc_dat=yesno)
 #end class vmc_batch
 
 class dmc_batch(QIxml):
@@ -4146,6 +4146,8 @@ class QmcpackInput(SimulationInput,Names):
                     files.opt = fprefix+'opt.xml'
                 elif q.type=='dmc':
                     files.dmc = fprefix+'dmc.dat'
+                elif q.type=='vmc' and 'write_vmc_dat' in qo and qo.write_vmc_dat:
+                    files.vmc = fprefix+'vmc.dat'
                 #end if
                 outfiles.extend(files.values())
                 q.files = files
@@ -8535,6 +8537,7 @@ vmc_batched_defaults = obj(
     maxcpusecs       = None,
     crowds           = None,
     spin_mass        = None,
+    write_vmc_dat    = False,
     )
 vmc_test_batched_defaults = obj(
     warmupsteps = 10,
@@ -9132,6 +9135,7 @@ def generate_batched_vmc_calculations(
         maxcpusecs       ,
         crowds           ,
         spin_mass        ,
+        write_vmc_dat    ,
         ):
 
     if total_walkers is not None and walkers_per_rank is not None:
@@ -9146,6 +9150,7 @@ def generate_batched_vmc_calculations(
         substeps    = substeps,
         timestep    = timestep,
         usedrift    = usedrift,
+        write_vmc_dat = write_vmc_dat,
         )
     optional_vmc_inputs = obj(
         total_walkers = total_walkers,

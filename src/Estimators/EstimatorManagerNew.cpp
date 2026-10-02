@@ -253,6 +253,18 @@ void EstimatorManagerNew::startDriverRun()
 
 void EstimatorManagerNew::stopDriverRun() { h_file.reset(); }
 
+void EstimatorManagerNew::startVMCdat()
+{
+  // Only rank zero owns the ASCII stream; all ranks contribute at block end.
+  if (my_comm_->rank() == 0)
+  {
+    std::filesystem::path fname(my_comm_->getName());
+    fname.concat(".vmc.dat");
+    vmc_archive_ = std::make_unique<std::ofstream>(fname);
+    addHeader(*vmc_archive_);
+  }
+}
+
 void EstimatorManagerNew::startBlock(int steps)
 {
   block_timer_.restart();
@@ -280,6 +292,61 @@ void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, 
   PropertyCache[cpuInd] = block_timer_.elapsed();
   writeScalarH5();
   RecordCount++;
+}
+
+void EstimatorManagerNew::stopBlockVMC(int first_step, std::vector<FullPrecRealType>& step_data)
+{
+  const int row_width = AverageCache.size() + 3; // scalar numerators, weight, accepts, rejects
+  assert(step_data.size() % row_width == 0);
+#ifdef HAVE_MPI
+  // One block-end reduction combines the independently buffered crowd rows.
+  my_comm_->comm.reduce_in_place_n(step_data.begin(), step_data.size(), std::plus<>{});
+#endif
+
+  if (my_comm_->rank() == 0)
+  {
+    // Derive each per-step scalar row and the equivalent block scalar accumulators.
+    AverageCache = 0.0;
+    FullPrecRealType block_weight = 0.0;
+    FullPrecRealType block_accept = 0.0;
+    FullPrecRealType block_reject = 0.0;
+    const int steps = step_data.size() / row_width;
+    const FullPrecRealType step_cpu = steps ? block_timer_.elapsed() / steps : 0.0;
+    for (int step = 0; step < steps; ++step)
+    {
+      const auto row = step_data.begin() + step * row_width;
+      const FullPrecRealType weight = row[AverageCache.size()];
+      const FullPrecRealType accepted = row[AverageCache.size() + 1];
+      const FullPrecRealType rejected = row[AverageCache.size() + 2];
+      for (int i = 0; i < AverageCache.size(); ++i)
+        AverageCache[i] += row[i];
+      block_weight += weight;
+      block_accept += accepted;
+      block_reject += rejected;
+
+      *vmc_archive_ << std::setw(10) << first_step + step;
+      const int maxobjs = std::min(BlockAverages.size(), max4ascii);
+      for (int i = 0; i < maxobjs; ++i)
+        *vmc_archive_ << std::setw(FieldWidth) << row[i] / weight;
+      *vmc_archive_ << std::setw(FieldWidth) << weight << std::setw(FieldWidth) << step_cpu
+                    << std::setw(FieldWidth) << accepted / (accepted + rejected) << std::endl;
+    }
+    // Reuse the reduced VMC data to form the normal scalar.dat/stat.h5 block result.
+    AverageCache *= 1.0 / block_weight;
+    PropertyCache[weightInd] = block_weight;
+    PropertyCache[cpuInd] = block_timer_.elapsed();
+    PropertyCache[acceptRatioInd] = block_accept / (block_accept + block_reject);
+    energyAccumulator(AverageCache[0]);
+    varAccumulator(AverageCache[1]);
+    writeScalarH5();
+    RecordCount++;
+  }
+
+  reduceOperatorEstimators();
+  writeOperatorEstimators();
+  for (auto& op_est : operator_ests_)
+    op_est->stopBlock();
+  zeroOperatorEstimators();
 }
 
 void EstimatorManagerNew::collectMainEstimators(const RefVector<ScalarEstimatorBase>& main_estimators)
