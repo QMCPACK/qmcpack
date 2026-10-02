@@ -31,7 +31,7 @@ if(USE_OBJECT_TARGET)
   target_link_libraries(${UTEST_EXE} platform_omptarget_LA)
 endif()
 
-add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 
 if(BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_accelBLAS)
@@ -44,7 +44,7 @@ if(BUILD_MICRO_BENCHMARKS)
     target_link_libraries(${UTEST_EXE} platform_omptarget_LA)
   endif()
 
-  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}> --allow-running-no-tests)
+  add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> ARGS --allow-running-no-tests)
 endif(BUILD_MICRO_BENCHMARKS)
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
