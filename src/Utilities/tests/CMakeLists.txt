@@ -32,12 +32,12 @@ add_executable(
   test_StdRandom.cpp)
 target_link_libraries(${UTEST_EXE} catch_main qmcutil)
 
-add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 
 set(UTEST_EXE test_utilities_output_manager)
 add_executable(${UTEST_EXE} test_output_manager.cpp)
 target_link_libraries(${UTEST_EXE} catch_main qmcutil)
-add_unit_test(deterministic-unit_${UTEST_EXE} 1 1 $<TARGET_FILE:${UTEST_EXE}> --turn-on-printout)
+add_unit_test(BASENAME deterministic-unit_${UTEST_EXE} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> ARGS --turn-on-printout)
 
 add_subdirectory(for_testing)
 

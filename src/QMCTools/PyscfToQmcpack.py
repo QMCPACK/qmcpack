@@ -43,10 +43,10 @@ def savetoqmcpack(
         sp_twist = [0.0,0.0,0.0]
 
     if sys.version_info >= (3, 0):
-        sys.stdout.write("Using Python 3.x\n") 
+        sys.stdout.write("Using Python 3.x\n")
         Python3 = True
     else:
-        sys.stdout.write("Using Python 2.x\n") 
+        sys.stdout.write("Using Python 2.x\n")
         Python2 = True
 
     val = str(mf.dump_flags)
@@ -162,7 +162,7 @@ def savetoqmcpack(
         mo_phase = lib.einsum('kum,kuv,vi->kmi', C_k.conj(), s_k_g, C_gamma)
         C_gamma_unsorted = C_gamma[:,E_desort_idx]
         E_g_unsorted = E_g[E_desort_idx]
-        #return E_g_unsorted, C_gamma_unsorted, 
+        #return E_g_unsorted, C_gamma_unsorted,
         return E_g, C_gamma, E_g_unsorted,C_gamma_unsorted
 
     IonName = dict([
@@ -263,7 +263,7 @@ def savetoqmcpack(
 
     H5_qmcpack = h5py.File(title+'.h5', 'w')
     groupApp = H5_qmcpack.create_group("application")
-    if Python3: 
+    if Python3:
         strList = ['PySCF']
         asciiList = [n.encode("ascii", "ignore") for n in strList]
         groupApp.create_dataset('code', (1,), 'S5', asciiList)
@@ -292,16 +292,16 @@ def savetoqmcpack(
     #Dataset Number Of Atoms
     groupAtom.create_dataset("number_of_atoms", (1,), dtype="i4", data=natom)
 
-    #Dataset Number Of Species 
+    #Dataset Number Of Species
     #Species contains (Atom_Name, Atom_Number,Atom_Charge,Atom_Core)
     l_atoms = [
         (
-            loc_cell.atom_pure_symbol(x),
+            loc_cell.atom_symbol(x),
             IonName[loc_cell.atom_pure_symbol(x)],
             loc_cell.atom_charge(x),
             loc_cell.atom_nelec_core(x),
         ) for x in range(natom)
-    ] 
+    ]
 
 
     d = defaultdict(list)
@@ -323,9 +323,9 @@ def savetoqmcpack(
 
     groupAtom.create_dataset("number_of_species", (1,), dtype="i4", data=NbSpecies)
 
-    #Dataset positions 
+    #Dataset positions
     MyPos=groupAtom.create_dataset("positions", (natom, 3), dtype="f8")
-    for x in range(natom): 
+    for x in range(natom):
         MyPos[x:] = loc_cell.atom_coord(x)
 
     #Group Atoms
@@ -356,11 +356,11 @@ def savetoqmcpack(
     bohrUnit = True
     Spin = loc_cell.spin
 
-    GroupParameter.create_dataset("Unit", (1,), dtype="b1", data=bohrUnit) 
-    GroupParameter.create_dataset("NbAlpha", (1,), dtype="i4", data=loc_cell.nelec[0]) 
-    GroupParameter.create_dataset("NbBeta", (1,), dtype="i4", data=loc_cell.nelec[1]) 
+    GroupParameter.create_dataset("Unit", (1,), dtype="b1", data=bohrUnit)
+    GroupParameter.create_dataset("NbAlpha", (1,), dtype="i4", data=loc_cell.nelec[0])
+    GroupParameter.create_dataset("NbBeta", (1,), dtype="i4", data=loc_cell.nelec[1])
     GroupParameter.create_dataset("NbTotElec", (1,), dtype="i4", data=loc_cell.nelec[0]+loc_cell.nelec[1])
-    GroupParameter.create_dataset("spin", (1,), dtype="i4", data=Spin) 
+    GroupParameter.create_dataset("spin", (1,), dtype="i4", data=Spin)
 
     #basisset Group
     GroupBasisSet = H5_qmcpack.create_group("basisset")
@@ -458,7 +458,7 @@ def savetoqmcpack(
         nshell = loc_cell.atom_shell_ids(MyIdx)
         n = 0
         for i in nshell:
-            l = loc_cell.bas_angular(i)   
+            l = loc_cell.bas_angular(i)
             contracted_coeffs = loc_cell.bas_ctr_coeff(i)
             contracted_exp = loc_cell.bas_exp(i)
             for line in zip(*contracted_coeffs):
@@ -466,11 +466,11 @@ def savetoqmcpack(
 
                 mylen = "S"+str(len((uniq_atoms[x][0]+str(n)+str(l))))
                 if Python3:
-                    strList = ['Gaussian'] 
+                    strList = ['Gaussian']
                     asciiList = [n.encode("ascii", "ignore") for n in strList]
                     BasisGroup.create_dataset('type', (1,), 'S8', asciiList)
 
-                    strList = [uniq_atoms[x][0]+str(n)+str(l)] 
+                    strList = [uniq_atoms[x][0]+str(n)+str(l)]
                     asciiList = [n.encode("ascii", "ignore") for n in strList]
                     BasisGroup.create_dataset('rid', (1,), mylen, asciiList)
                 else:
@@ -620,7 +620,7 @@ def savetoqmcpack(
                 n = n_orbital(r)
                 unordered_l = l_l[i:i+n]
                 unordered = l_order[i:i+n]
-                #print i,n,unordered 
+                #print i,n,unordered
                 ordered = [x for _, x in sorted(zip(unordered_l, unordered), key=cmp_to_key(compare_python3))]
                 l_order_new.extend(ordered)
 
@@ -656,7 +656,7 @@ def savetoqmcpack(
 
             eigenvalue = GroupDet.create_dataset("eigenval_0", (1, NbMO), dtype="f8", data=mf.mo_energy)
         else:
-            NbAO, NbMO = mo_coeff[0].shape 
+            NbAO, NbMO = mo_coeff[0].shape
             if loc_cell.cart == True:
                 eigenset_up = GroupDet.create_dataset("eigenset_0", (NbMO, NbAO), dtype="f8", data=order_mo_coef(mo_coeff[0]))
                 eigenset_dn = GroupDet.create_dataset("eigenset_1", (NbMO, NbAO), dtype="f8", data=order_mo_coef(mo_coeff[1]))
@@ -678,12 +678,12 @@ def savetoqmcpack(
         #Supertwist Coordinate
         GroupDet.create_dataset("Coord", (1, 3), dtype="f8", data=sp_twist)
 
-        if Gamma:  
+        if Gamma:
             E_g = mf.mo_energy
             E_g_unsorted = E_g
-            mo_coeff_ = get_mo(mo_coeff, loc_cell.cart) 
-            mo_coeff_unsorted = mo_coeff_ 
-            NbAO, NbMO = mo_coeff.shape 
+            mo_coeff_ = get_mo(mo_coeff, loc_cell.cart)
+            mo_coeff_unsorted = mo_coeff_
+            NbAO, NbMO = mo_coeff.shape
         else:
             if kmap is not None:
                 if cas_idx is not None:
@@ -698,21 +698,21 @@ def savetoqmcpack(
 
             E_g, C_gamma, E_g_unsorted, C_unsorted = mo_k2gamma(cell, e_k, mo_k, kpts, kmesh)
             mo_coeff = C_gamma
-            NbAO, NbMO = mo_coeff.shape 
+            NbAO, NbMO = mo_coeff.shape
 
-            mo_coeff_ = get_mo(mo_coeff.real, loc_cell.cart) 
-            mo_coeff_imag = get_mo(mo_coeff.imag, loc_cell.cart) 
-            mo_coeff_unsorted = get_mo(C_unsorted.real, loc_cell.cart) 
-            mo_coeff_unsorted_imag = get_mo(C_unsorted.imag, loc_cell.cart) 
-            eigenset_imag = GroupDet.create_dataset("eigenset_0_imag", (NbMO, NbAO), dtype="f8", data=mo_coeff_imag) 
-            eigenset_unsorted_imag = GroupDet.create_dataset("eigenset_unsorted_0_imag", (NbMO, NbAO), dtype="f8", data=mo_coeff_unsorted_imag) 
+            mo_coeff_ = get_mo(mo_coeff.real, loc_cell.cart)
+            mo_coeff_imag = get_mo(mo_coeff.imag, loc_cell.cart)
+            mo_coeff_unsorted = get_mo(C_unsorted.real, loc_cell.cart)
+            mo_coeff_unsorted_imag = get_mo(C_unsorted.imag, loc_cell.cart)
+            eigenset_imag = GroupDet.create_dataset("eigenset_0_imag", (NbMO, NbAO), dtype="f8", data=mo_coeff_imag)
+            eigenset_unsorted_imag = GroupDet.create_dataset("eigenset_unsorted_0_imag", (NbMO, NbAO), dtype="f8", data=mo_coeff_unsorted_imag)
 
 
-        eigenset = GroupDet.create_dataset("eigenset_0", (NbMO, NbAO), dtype="f8", data=mo_coeff_) 
+        eigenset = GroupDet.create_dataset("eigenset_0", (NbMO, NbAO), dtype="f8", data=mo_coeff_)
         eigenvalue = GroupDet.create_dataset("eigenval_0", (1, NbMO), dtype="f8", data=E_g)
 
         #Unsorted Mo_coeffs for Multideterminants order matching QP
-        eigenset_unsorted = GroupDet.create_dataset("eigenset_unsorted_0", (NbMO, NbAO), dtype="f8", data=mo_coeff_unsorted) 
+        eigenset_unsorted = GroupDet.create_dataset("eigenset_unsorted_0", (NbMO, NbAO), dtype="f8", data=mo_coeff_unsorted)
         eigenvalue_unsorted = GroupDet.create_dataset("eigenval_unsorted_0", (1, NbMO), dtype="f8", data=E_g_unsorted)
 
 
