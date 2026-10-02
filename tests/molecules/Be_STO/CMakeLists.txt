@@ -68,13 +68,13 @@ if(NOT QMC_COMPLEX)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-Be_STO-opt_orb
+      short-Be_STO-optbatch_orb
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/Be_STO"
       PREFIX
-      be_opt
+      be_optbatch
       INPUT_FILE
-      be_opt.in.xml
+      be_optbatch.in.xml
       PROCS
       1
       THREADS
