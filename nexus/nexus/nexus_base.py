@@ -25,12 +25,14 @@
 #====================================================================#
 from __future__ import annotations
 
+import logging
 import os
 import pickle
 import sys
 import textwrap
 from collections.abc import Collection
 from enum import Flag, auto
+from logging.handlers import RotatingFileHandler
 from os import PathLike
 from pathlib import Path
 from pickle import UnpicklingError
@@ -109,6 +111,11 @@ class NexusConfig:
         "stages",
         "dependent_modes",
         "quiet",
+        "debug",
+        "disable_logging",
+        "logger_name",
+        "logfile_num_backups",
+        "main_log_handler",
         "indent",
         "progress_tty",
         "graph_sims",
@@ -206,6 +213,21 @@ class NexusConfig:
     quiet: bool
     """Disable all Nexus output after initialization."""
 
+    debug: bool
+    """Enable debug logging."""
+
+    disable_logging: bool
+    """Disable all Nexus logging functionality."""
+
+    logger_name: str
+    """Base name for the current script's log file."""
+
+    logfile_num_backups: int
+    """Number of log files to keep when running the same script several times."""
+
+    main_log_handler: RotatingFileHandler
+    """Primary log handler for Nexus. Controls log file rollover."""
+
     indent: str
     """Indentation base level for Nexus output.
 
@@ -278,6 +300,10 @@ class NexusConfig:
         self.stages           = SimStage.all
         self.dependent_modes  = SimStage.submit
         self.quiet            = False
+        self.debug            = False
+        self.disable_logging  = False
+        self.logger_name      = sys.argv[0].removesuffix(".py")
+        self.logfile_num_backups = 3
         self.indent           = '  '
         self.progress_tty     = False
         self.graph_sims       = False
@@ -286,6 +312,18 @@ class NexusConfig:
         self.basis_dir        = None
         self.basissets        = None
         self.pseudo_dir       = None
+        self.main_log_handler = RotatingFileHandler(
+            filename=f"{self.logger_name}.log",
+            backupCount=self.logfile_num_backups,
+            delay=True,
+        )
+
+        self.main_log_handler.setFormatter(
+            logging.Formatter(
+                fmt="{asctime}  {filename:>16}:{lineno:<5} - {levelname:<8} {name}: {message}",
+                style="{"
+            )
+        )
         # Legacy
         self.generate_only = False
 
