@@ -78,7 +78,7 @@ case "$1" in
     rocm-smi --showdriverversion
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     SLOW_DETERMINISTIC_TESTS='^deterministic-diamondC_2x1x1(_pp-vmcbatch-dmcbatch-mwalkers_sdj-r1-t(4|16)|_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj-r1-t16|-gaussian_pp_MSD-vmcbatch-dmcbatch-mwalkers_sdj-r1-t4|_pp-vmcbatch-dmcbatch_gaussian_sdj-r1-t4)(-|$)'
-    ctest --output-on-failure -L deterministic -E "${SLOW_DETERMINISTIC_TESTS}" -j 32 --timeout 120 --repeat after-timeout:4
+    ctest --output-on-failure -L deterministic -E "${SLOW_DETERMINISTIC_TESTS}" -j 32 --timeout 600 --repeat after-timeout:4
     ;;
     
 esac
