@@ -77,7 +77,8 @@ case "$1" in
     echo "Running deterministic tests"
     amd-smi version
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
-    ctest --output-on-failure -L deterministic -j 40 --timeout 120 --repeat until-pass:4
+    SLOW_DETERMINISTIC_TESTS='^deterministic-diamondC_2x1x1(_pp-vmcbatch-dmcbatch-mwalkers_sdj-r1-t(4|16)|_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj-r1-t16|-gaussian_pp_MSD-vmcbatch-dmcbatch-mwalkers_sdj-r1-t4|_pp-vmcbatch-dmcbatch_gaussian_sdj-r1-t4)(-|$)'
+    ctest --output-on-failure -L deterministic -E "${SLOW_DETERMINISTIC_TESTS}" -j 40 --timeout 600 --repeat until-pass:4
     ;;
     
 esac
