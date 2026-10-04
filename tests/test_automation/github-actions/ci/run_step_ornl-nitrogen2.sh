@@ -76,6 +76,7 @@ case "$1" in
   test)
     echo "Running deterministic tests"
     amd-smi version
+    export LIBOMPTARGET_AMDGPU_MAX_ASYNC_COPY_BYTES=0
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     ctest --output-on-failure -L deterministic -j 40 --timeout 600 --repeat until-pass:4
     ;;
