@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <simulation>
    <project id="qmc_batch" series="0">
+    <parameter name="driver_version">batch</parameter>
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <random seed="49154"/>
@@ -81,7 +82,7 @@
       </hamiltonian>
    </qmcsystem>
   <loop max="1">
-    <qmc method="linear_batch" move="pbyp" checkpoint="0">
+    <qmc method="linear" move="pbyp" checkpoint="0">
       <parameter name="total_walkers"       >    16              </parameter>   
       <parameter name="blocks">     8  </parameter>
       <parameter name="warmupsteps"> 64 </parameter>
@@ -101,7 +102,7 @@
       <parameter name="output_vp_override">yes</parameter>
     </qmc>
   </loop>
-   <qmc method="vmc_batch" move="pbyp" checkpoint="-1">
+   <qmc method="vmc" move="pbyp" checkpoint="-1">
       <parameter name="total_walkers"       >    16              </parameter>
       <parameter name="blocks"              >    1               </parameter>
       <parameter name="steps"               >    1               </parameter>
