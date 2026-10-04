@@ -145,7 +145,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  short-diamondC_1x1x1_pp-optbatch_sdj
+  short-diamondC_1x1x1_pp-sdj-optbatch
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   qmc_short
   qmc_short_optbatch.in.xml

@@ -16,6 +16,18 @@ if(NOT QMC_COMPLEX)
     5
     H4_OPT_SCALARS # OPT step 5
   )
+  qmc_run_and_check(
+    short-H4-optbatch-linear
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+    H4-linear
+    optm-batch-linear.xml
+    16
+    1
+    ${SUCCESS_STATUS_MP}
+    5
+    H4_OPT_SCALARS # OPT step 5
+  )
+
 
   qmc_run_and_check(
     short-H4-opt-linear-rescale
@@ -28,6 +40,18 @@ if(NOT QMC_COMPLEX)
     5
     H4_OPT_SCALARS # OPT step 5
   )
+  qmc_run_and_check(
+    short-H4-optbatch-linear-rescale
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+    H4-linear-rescale
+    optm-batch-linear-rescale.xml
+    4
+    4
+    ${SUCCESS_STATUS_MP}
+    5
+    H4_OPT_SCALARS # OPT step 5
+  )
+
 
   qmc_run_and_check(
     short-H4-opt-linear-linemin
@@ -40,6 +64,18 @@ if(NOT QMC_COMPLEX)
     5
     H4_OPT_SCALARS # OPT step 5
   )
+  qmc_run_and_check(
+    short-H4-optbatch-linear-linemin
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+    H4-linear-linemin
+    optm-batch-linear-linemin.xml
+    16
+    1
+    ${SUCCESS_STATUS_MP}
+    5
+    H4_OPT_SCALARS # OPT step 5
+  )
+
 
   if(NOT MIXED_PRECISION)
     check_python_reqs(h5py deterministic-H4-descent-vp ADD_DESCENT_VP_TESTS)
@@ -173,6 +209,18 @@ if(NOT QMC_COMPLEX)
     5
     H4_OPT_SCALARS_ONLY_JAS # OPT step 5
   )
+  qmc_run_and_check(
+    short-H4-optbatch-OneShiftOnly-onlyjas
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+    H4-OneShiftOnly
+    optm-batch-OneShiftOnly-onlyjas.xml
+    1
+    16
+    ${SUCCESS_STATUS_MP}
+    5
+    H4_OPT_SCALARS_ONLY_JAS # OPT step 5
+  )
+
 
   list(APPEND H4_OPT_SCALARS_ONLY_MSD "totenergy" "-2.138635 0.0009") # total energy
   qmc_run_and_check(
@@ -186,6 +234,18 @@ if(NOT QMC_COMPLEX)
     5
     H4_OPT_SCALARS_ONLY_MSD # OPT step 5
   )
+  qmc_run_and_check(
+    short-H4-optbatch-OneShiftOnly-onlymsd
+    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+    H4-OneShiftOnly
+    optm-batch-OneShiftOnly-onlymsd.xml
+    1
+    16
+    ${SUCCESS_STATUS_MP}
+    5
+    H4_OPT_SCALARS_ONLY_MSD # OPT step 5
+  )
+
 
   qmc_run_and_check(
     short-H4-optbatch-OneShiftOnly-multistep

@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <simulation>
    <project id="qmc_batch" series="2">
+    <parameter name="driver_version">batch</parameter>
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <random seed="49154"/>
@@ -83,7 +84,7 @@
 
    <mcwalkerset fileroot="qmc_batch.s000" node="-1" nprocs="1" version="0 4" collected="yes"/>
 
-   <qmc method="vmc_batch" move="pbyp" checkpoint="-1">
+   <qmc method="vmc" move="pbyp" checkpoint="-1">
       <parameter name="total_walkers">    16            </parameter>
       <parameter name="blocks">           1             </parameter>
       <parameter name="steps">            1             </parameter>

@@ -93,7 +93,7 @@
      <parameter name="timestep">  1.0 </parameter>
      <parameter name="usedrift">   no </parameter>
    </qmc>
-   <qmc method="dmc_batch" move="pbyp" checkpoint="0">
+   <qmc method="dmc" move="pbyp" checkpoint="0">
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="total_walkers"> 16  </parameter>
      <parameter name="reconfiguration">   no </parameter>
@@ -103,7 +103,7 @@
      <parameter name="blocks">  2   </parameter>
      <parameter name="nonlocalmoves">  v0 </parameter>
    </qmc>
-   <qmc method="dmc_batch" move="pbyp" checkpoint="0">
+   <qmc method="dmc" move="pbyp" checkpoint="0">
      <estimator name="LocalEnergy" hdf5="yes"/>
      <parameter name="reconfiguration">   no </parameter>
      <parameter name="warmupSteps">  2  </parameter>
