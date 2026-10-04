@@ -46,18 +46,30 @@ case "$1" in
         IS_MIXED_PRECISION=0
       ;;
     esac
+
+    # GPU settings
+    case "${GH_JOBNAME}" in
+      *"Offload"*)
+        echo 'Configure for building OpenMP Offload+HIP with AMDClang compilers'
+        QMC_GPU="openmp;hip" # Default when not specified
+      ;;
+      *"CUDA2HIP"*)
+        echo 'Configure for building CUDA2HIP with AMDClang compilers'
+        QMC_GPU=hip
+      ;;
+    esac
        
     # check the GPU architecture in use
     whoami
     groups
     amdgpu-arch
 
-    echo 'Configure for building OpenMP Offload with AMDClang compilers'
     cmake -GNinja \
           -DCMAKE_C_COMPILER=amdclang \
           -DCMAKE_CXX_COMPILER=amdclang++ \
           -DPython3_EXECUTABLE=python3.14 \
           -DQMC_MPI=0 \
+          -DQMC_GPU=$QMC_GPU \
           -DQMC_GPU_ARCHS=gfx90a \
           -DQMC_CTEST_NUM_GPUS=2 \
           -DQMC_COMPLEX=$IS_COMPLEX \

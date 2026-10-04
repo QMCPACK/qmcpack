@@ -315,6 +315,10 @@ jobs:
             MI210-AMDClang-NoMPI-Offload-Real,
             MI210-AMDClang-NoMPI-Offload-Complex-Mixed,
             MI210-AMDClang-NoMPI-Offload-Complex,
+            MI210-AMDClang-NoMPI-CUDA2HIP-Real-Mixed,
+            MI210-AMDClang-NoMPI-CUDA2HIP-Real,
+            MI210-AMDClang-NoMPI-CUDA2HIP-Complex-Mixed,
+            MI210-AMDClang-NoMPI-CUDA2HIP-Complex,
           ]
 
     steps:
@@ -389,4 +393,3 @@ jobs:
           state: ${{job.status}}
           sha: ${{fromJson(steps.request.outputs.data).head.sha}}
           target_url: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
-
