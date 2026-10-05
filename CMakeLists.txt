@@ -395,7 +395,13 @@ if(QMC_MPI)
     endif()
   endif()
 
-  if(${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "Open MPI")
+  set(MPI_IS_OPENMPI FALSE)
+  if("${MPI_CXX_LIBRARY_VERSION_STRING}" MATCHES "Open MPI"
+     OR "${MPI_CXX_COMPILER}" MATCHES "openmpi"
+     OR "${MPI_CXX_LIBRARIES}" MATCHES "openmpi")
+    set(MPI_IS_OPENMPI TRUE)
+  endif()
+  if(MPI_IS_OPENMPI)
     if(NOT MPIEXEC_PREFLAGS)
       set(MPIEXEC_PREFLAGS "--bind-to;none")
       message(STATUS "Detected Open MPI. Setting bind-to options for thread affinity in MPIEXEC_PREFLAGS.")
@@ -530,31 +536,57 @@ if(HDF5_FOUND)
     endif()
   endif(HDF5_VERSION)
   if(HDF5_IS_PARALLEL)
-    if(HAVE_MPI)
-      message(STATUS "Parallel HDF5 library found")
-      option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ON)
-    else(HAVE_MPI)
+    if(NOT HAVE_MPI)
       message(FATAL_ERROR "Parallel HDF5 library found but cannot be used with QMCPACK non-MPI build. "
                           "Please provide a serial HDF5 library or switch to building QMCPACK with MPI.")
-    endif(HAVE_MPI)
+    endif(NOT HAVE_MPI)
+    message(STATUS "Parallel HDF5 library found")
   else(HDF5_IS_PARALLEL)
     message(STATUS "Serial HDF5 library found")
-    option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" OFF)
-    if(ENABLE_PHDF5)
-      if(HAVE_MPI)
-        message(FATAL_ERROR "Parallel HDF5 code paths requested but serial HDF5 library found! "
-                            "Please either provide parallel HDF5 library or set ENABLE_PHDF5=0.")
-      else(HAVE_MPI)
-        message(FATAL_ERROR "Parallel HDF5 code paths cannot be enabled on non-MPI builds! Please set ENABLE_PHDF5=0.")
-      endif(HAVE_MPI)
-    endif(ENABLE_PHDF5)
   endif(HDF5_IS_PARALLEL)
 
+  option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ${HDF5_IS_PARALLEL})
+
   if(ENABLE_PHDF5)
+    if(NOT HDF5_IS_PARALLEL)
+        message(FATAL_ERROR "Parallel HDF5 code paths requested but serial HDF5 library in use! "
+                            "Please either provide parallel HDF5 library or set ENABLE_PHDF5=OFF.")
+    endif()
     message(STATUS "Using HDF5 parallel collective I/O code paths")
   else(ENABLE_PHDF5)
     message(STATUS "Using HDF5 non-scalable serial I/O code paths")
   endif(ENABLE_PHDF5)
+
+  # best effort to check if parallel hdf5 library is built with the same flavor of MPI
+  if(HDF5_IS_PARALLEL AND HDF5_C_LIBRARIES)
+    list(GET HDF5_C_LIBRARIES 0 _hdf5_main_lib)
+    if(EXISTS "${_hdf5_main_lib}")
+      get_filename_component(_hdf5_lib_dir "${_hdf5_main_lib}" DIRECTORY)
+      set(HDF5_SETTINGS_FILE "${_hdf5_lib_dir}/libhdf5.settings")
+      if(EXISTS "${HDF5_SETTINGS_FILE}")
+        file(STRINGS "${HDF5_SETTINGS_FILE}" _hdf5_flavor_line REGEX "Flavor name:")
+        if(_hdf5_flavor_line)
+          list(GET _hdf5_flavor_line 0 _hdf5_flavor_first_line)
+          if(_hdf5_flavor_first_line MATCHES "Flavor name:[ \t]*([a-zA-Z0-9_-]+)")
+            string(TOLOWER "${CMAKE_MATCH_1}" _hdf5_flavor)
+            if(_hdf5_flavor STREQUAL "openmpi" AND NOT MPI_IS_OPENMPI)
+              message(
+                FATAL_ERROR
+                  "Parallel HDF5 was built with Open MPI (Flavor name: openmpi), but MPI is not Open MPI! "
+                  "Please use Open MPI or an HDF5 library consistent with the MPI vendor. "
+                  "Alternatively, search for serial HDF5 library by setting HDF5_PREFER_PARALLEL=OFF. ")
+            elseif(_hdf5_flavor STREQUAL "mpich" AND MPI_IS_OPENMPI)
+              message(
+                FATAL_ERROR
+                  "Parallel HDF5 was built with MPICH (Flavor name: mpich), but MPI is Open MPI! "
+                  "Please use Open MPI or an HDF5 library consistent with the MPI vendor. "
+                  "Alternatively, search for serial HDF5 library by setting HDF5_PREFER_PARALLEL=OFF. ")
+            endif()
+          endif()
+        endif()
+      endif()
+    endif()
+  endif()
 
   if(HAVE_MPI AND NOT ENABLE_PHDF5)
     message(
