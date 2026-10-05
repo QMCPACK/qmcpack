@@ -19,46 +19,46 @@ import re
 
 from os.path import join, getsize
 
-help_flag = re.compile(r'(-h|--help|-\?)')
+help_flag = re.compile(r"(-h|--help|-\?)")
 for arg in sys.argv:
     if help_flag.match(arg):
-        print ("""Formats all C/C++/CUDA files in a directory recursively with clang-format 
+        print("""Formats all C/C++/CUDA files in a directory recursively with clang-format 
 until no change is observed.
 usage: python full_clang-format.py <directory>
 directory is taken to be . if not supplied""")
         exit()
-if(sys.argv[1]):
+if sys.argv[1]:
     format_root = sys.argv[1]
 else:
     format_root = os.getcwd()
 
-#first time through
+# first time through
 formatted_hashes = {}
-code_suffixes = re.compile(r'.*\.(cpp|c|cu|h|hpp)$')
+code_suffixes = re.compile(r".*\.(cpp|c|cu|h|hpp)$")
 for root, dirs, files in os.walk(format_root):
     for name in files:
         if code_suffixes.match(name) != None:
-            path_name = join(root,name)
+            path_name = join(root, name)
             print(path_name)
-            with open(path_name, 'r') as f_for_hash:
+            with open(path_name, "r") as f_for_hash:
                 sha256 = hashlib.sha256()
                 contents = f_for_hash.read()
                 sha256.update(str.encode(contents))
                 formatted_hashes[path_name] = sha256.digest()
             subprocess.run(["clang-format", "-i", path_name])
-    #this prevents mucking about in the .git directories
-    if '.git' in dirs:
-        dirs.remove('.git')
+    # this prevents mucking about in the .git directories
+    if ".git" in dirs:
+        dirs.remove(".git")
 
-#now we have the list of formatted files
-#we use this to keep formatting until there are no changes
+# now we have the list of formatted files
+# we use this to keep formatting until there are no changes
 try:
-    #popitem will throw a KeyError when we finally drain the file list
+    # popitem will throw a KeyError when we finally drain the file list
     while True:
-        (path_name,hash) = formatted_hashes.popitem()
-        print (path_name)
+        (path_name, hash) = formatted_hashes.popitem()
+        print(path_name)
         subprocess.run(["clang-format", "-i", path_name])
-        with open(path_name, 'r') as f_for_hash:
+        with open(path_name, "r") as f_for_hash:
             sha256 = hashlib.sha256()
             contents = f_for_hash.read()
             sha256.update(str.encode(contents))
@@ -68,5 +68,3 @@ try:
 except KeyError as ke:
     print(ke)
     print("Done formatting")
-
-                

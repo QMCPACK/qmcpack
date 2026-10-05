@@ -1,4 +1,3 @@
-
 # Evaluate STO's starting from a symbolic representation
 
 from sympy import *

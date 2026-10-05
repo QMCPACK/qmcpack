@@ -1,4 +1,3 @@
-
 # Compute wavefunction values and parameter derivatives
 # for a wavefunction with STO Be orbitals, two determinants, and orbital rotation
 
@@ -10,6 +9,7 @@ import read_qmcpack
 from slater_orbitals import STO
 
 import scipy.linalg
+
 
 # From construct_rot.py
 def construct_antisym_ex(p):
@@ -195,4 +195,4 @@ def run():
 
 if __name__ == "__main__":
     gen_point_derivatives()
-    #run()
+    # run()

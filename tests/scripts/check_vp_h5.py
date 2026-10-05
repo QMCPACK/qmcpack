@@ -14,6 +14,7 @@ import h5py
 REL_TOLERANCE = 1.0e-9
 ABS_TOLERANCE = 1.0e-12
 
+
 # Read and validate the ordered parameter name/value pairs stored in variational-parameter HDF5 file.
 def read_h5_parameters(filename):
     with h5py.File(filename, "r") as h5_file:
@@ -21,13 +22,17 @@ def read_h5_parameters(filename):
         values_dataset = h5_file["name_value_lists/parameter_values"]
 
         if names_dataset.ndim != 1 or values_dataset.ndim != 1:
-            raise ValueError("parameter_names and parameter_values must be one-dimensional")
+            raise ValueError(
+                "parameter_names and parameter_values must be one-dimensional"
+            )
 
         names = names_dataset.asstr()[:].tolist()
         values = values_dataset[:].tolist()
 
     if len(names) != len(values):
-        raise ValueError(f"HDF5 parameter name/value counts differ: {len(names)} != {len(values)}")
+        raise ValueError(
+            f"HDF5 parameter name/value counts differ: {len(names)} != {len(values)}"
+        )
     if len(names) != len(set(names)):
         raise ValueError("HDF5 parameter names are not unique")
 
@@ -91,9 +96,13 @@ def read_xml_elements(filename):
 
 # Parse command-line arguments, compare all HDF5/XML parameters, and return the test status.
 def main():
-    parser = argparse.ArgumentParser(description="Compare QMCPACK variational parameters in HDF5 and XML files.")
+    parser = argparse.ArgumentParser(
+        description="Compare QMCPACK variational parameters in HDF5 and XML files."
+    )
     parser.add_argument("h5_file", help="QMCPACK *.vp.h5 variational-parameter file")
-    parser.add_argument("xml_file", help="QMCPACK *.opt.xml optimized-wavefunction file")
+    parser.add_argument(
+        "xml_file", help="QMCPACK *.opt.xml optimized-wavefunction file"
+    )
     args = parser.parse_args()
 
     try:
@@ -104,8 +113,12 @@ def main():
             xml_value = find_xml_value(xml_elements, name)
             if not math.isfinite(h5_value) or not math.isfinite(xml_value):
                 raise ValueError(f"Parameter {name} contains a non-finite value")
-            if not math.isclose(h5_value, xml_value, rel_tol=REL_TOLERANCE, abs_tol=ABS_TOLERANCE):
-                raise ValueError(f"Parameter {name} differs: HDF5 {h5_value} != XML {xml_value}")
+            if not math.isclose(
+                h5_value, xml_value, rel_tol=REL_TOLERANCE, abs_tol=ABS_TOLERANCE
+            ):
+                raise ValueError(
+                    f"Parameter {name} differs: HDF5 {h5_value} != XML {xml_value}"
+                )
     except (KeyError, OSError, TypeError, ValueError, ET.ParseError) as error:
         print(f"Test status: fail\n{error}")
         return 1

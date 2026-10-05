@@ -1,10 +1,9 @@
-
 # Helium atom with a combination of two orbitals and simple jastrow factor
 
 # Uses automatic differentiation via the autograd package to
 #  compute spatial and parameter derivatives
 import autograd.numpy as np
-from autograd import hessian,grad
+from autograd import hessian, grad
 from stats import averager
 from run_qmc import run_qmc
 
@@ -36,60 +35,60 @@ class Wavefunction:
         self.coeff = coeff
 
     def mag(self, r):
-        return np.sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2])
+        return np.sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2])
 
     # normalized STO's correspond to the 'normalized="no"' part of the input
     #     <atomicBasisSet type="STO" elementType="He" normalized="no">
 
     def sto_norm1(self, zeta):
-        return 2*np.sqrt(zeta**3)
+        return 2 * np.sqrt(zeta**3)
 
     def sto_norm2(self, zeta):
-        return 2*np.sqrt(3)*np.sqrt(zeta**5)/3
+        return 2 * np.sqrt(3) * np.sqrt(zeta**5) / 3
 
     def orb1(self, R):
         r = self.mag(R)
         Z = 2.0
-        y00 = 1/np.sqrt(4 * np.pi)
+        y00 = 1 / np.sqrt(4 * np.pi)
         snorm1 = self.sto_norm1(Z)
-        return y00 * snorm1 * np.exp(-Z*r)
+        return y00 * snorm1 * np.exp(-Z * r)
 
     def orb2(self, R):
         r = self.mag(R)
         zeta = 1.0
-        y00 = 1/np.sqrt(4*np.pi)
+        y00 = 1 / np.sqrt(4 * np.pi)
         snorm2 = self.sto_norm2(zeta)
-        return snorm2* y00 * r* np.exp(-zeta*r)
+        return snorm2 * y00 * r * np.exp(-zeta * r)
 
     def jastrow(self, r12, B):
         A = 0.5
-        return np.exp(A*r12/(1.0 + B*r12) - A/B)
+        return np.exp(A * r12 / (1.0 + B * r12) - A / B)
 
     def rot_orb(self, R, theta):
-        c00 = self.coeff[0,0] * np.cos(theta) + self.coeff[1,0] * np.sin(theta)
-        c01 = self.coeff[0,1] * np.cos(theta) + self.coeff[1,1] * np.sin(theta)
+        c00 = self.coeff[0, 0] * np.cos(theta) + self.coeff[1, 0] * np.sin(theta)
+        c01 = self.coeff[0, 1] * np.cos(theta) + self.coeff[1, 1] * np.sin(theta)
         return self.orb1(R) * c00 + self.orb2(R) * c01
 
     def psi_no_jastrow(self, r1, r2, VP):
         theta1 = VP[0]
         theta2 = VP[1]
-        o1 = self.rot_orb(r1,theta1)
-        o2 = self.rot_orb(r2,theta2)
-        return o1*o2
+        o1 = self.rot_orb(r1, theta1)
+        o2 = self.rot_orb(r2, theta2)
+        return o1 * o2
 
     def psi_with_jastrow(self, r1, r2, VP):
         theta1 = VP[0]
         theta2 = VP[1]
         B = VP[2]
-        o1 = self.rot_orb(r1,theta1)
-        o2 = self.rot_orb(r2,theta2)
+        o1 = self.rot_orb(r1, theta1)
+        o2 = self.rot_orb(r2, theta2)
         r12 = r2 - r1
         j = self.jastrow(r12, B)
-        return o1*o2*j
+        return o1 * o2 * j
 
     def psi(self, r, VP):
-        r1 = r[0,:]
-        r2 = r[1,:]
+        r1 = r[0, :]
+        r2 = r[1, :]
         return self.psi_internal(r1, r2, VP)
 
     # It's easier to take spatial derivatives if each particle is a separate argument.
@@ -103,9 +102,9 @@ class Wavefunction:
             r12 = self.mag(r2 - r1)
             j = self.jastrow(r12, B)
 
-        o1 = self.rot_orb(r1,theta1)
-        o2 = self.rot_orb(r2,theta2)
-        return o1*o2*j
+        o1 = self.rot_orb(r1, theta1)
+        o2 = self.rot_orb(r2, theta2)
+        return o1 * o2 * j
 
     def log_psi_internal(self, r1, r2, B):
         return np.log(self.psi_internal(r1, r2, B))
@@ -127,78 +126,77 @@ class Wavefunction:
         r1_mag = self.mag(r1)
         r2_mag = self.mag(r2)
         Z = 2.0
-        return -Z/r1_mag - Z/r2_mag
+        return -Z / r1_mag - Z / r2_mag
 
     def ee_pot(self, r1, r2):
         r12 = r2 - r1
         r12_mag = self.mag(r12)
-        return 1.0/r12_mag
+        return 1.0 / r12_mag
 
     def local_energy(self, r, VP):
-        r1 = r[0,:]
-        r2 = r[1,:]
+        r1 = r[0, :]
+        r2 = r[1, :]
         pot = self.en_pot(r1, r2) + self.ee_pot(r1, r2)
         psi_val = self.psi_internal(r1, r2, VP)
         lapl = self.lap(r1, r2, VP)
 
-        h = -0.5*lapl/psi_val + pot
+        h = -0.5 * lapl / psi_val + pot
         return h
+
 
 # Return the 2x2 rotation matrix
 def rot_mat_size2(theta):
-    return np.array([[ np.cos(theta), np.sin(theta) ],
-                     [ -np.sin(theta), np.cos(theta) ]])
+    return np.array([[np.cos(theta), np.sin(theta)], [-np.sin(theta), np.cos(theta)]])
 
 
-def print_wf_values(theta1=0.0, theta2=0.0,  use_j=False, B=0.0):
+def print_wf_values(theta1=0.0, theta2=0.0, use_j=False, B=0.0):
     wf = Wavefunction(use_jastrow=use_j)
 
     # Adjust numpy output so arrays are printed with higher precision
     float_formatter = "{:.15g}".format
-    np.set_printoptions(formatter={'float_kind':float_formatter})
+    np.set_printoptions(formatter={"float_kind": float_formatter})
 
     if use_j:
         VP = np.array([theta1, theta2, B])
-        print("Values for theta = ",theta1,theta2," and jastrow B = ",B)
+        print("Values for theta = ", theta1, theta2, " and jastrow B = ", B)
     else:
         VP = np.array([theta1, theta2])
-        print("Values for theta = ",theta1,theta2," and no jastrow")
-
-
+        print("Values for theta = ", theta1, theta2, " and no jastrow")
 
     r1 = np.array([1.0, 2.0, 3.0])
     r2 = np.array([0.0, 1.1, 2.2])
-    r = np.zeros((2,3))
-    r[0,:] = r1
-    r[1,:] = r2
+    r = np.zeros((2, 3))
+    r[0, :] = r1
+    r[1, :] = r2
 
     psi_val = wf.psi(r, VP)
-    print("  wf = ",psi_val," log wf = ",np.log(np.abs(psi_val)))
+    print("  wf = ", psi_val, " log wf = ", np.log(np.abs(psi_val)))
 
-    g0 = wf.grad0(r1, r2, VP)/psi_val
-    print("  grad/psi for particle 0 = ",g0[0],g0[1],g0[2])
+    g0 = wf.grad0(r1, r2, VP) / psi_val
+    print("  grad/psi for particle 0 = ", g0[0], g0[1], g0[2])
 
     # Using the laplacian of log psi to match internal QMCPACK values
     lap_0 = wf.lap0(r1, r2, VP)
-    print(" laplacian of log psi for particle 0 = ",lap_0)
+    print(" laplacian of log psi for particle 0 = ", lap_0)
 
     lap_1 = wf.lap1(r1, r2, VP)
-    print(" laplacian for log psi particle 1 = ",lap_1)
+    print(" laplacian for log psi particle 1 = ", lap_1)
 
     eloc = wf.local_energy(r, VP)
-    print("  local energy = ",eloc)
+    print("  local energy = ", eloc)
 
     dp = wf.dpsi(r, VP)
-    print("  parameter derivative of log psi = ",dp / psi_val)
+    print("  parameter derivative of log psi = ", dp / psi_val)
 
     deloc = wf.dlocal_energy(r, VP)
-    print("  parameter derivative of local energy = ",deloc)
+    print("  parameter derivative of local energy = ", deloc)
 
     print("")
 
 
 # Generate the wavefunction values for a single set of electron positions
 # used in test_RotatedSPOs_LCAO.cpp
+
 
 def print_point_values():
     r1 = np.array([1.0, 2.0, 3.0])
@@ -217,7 +215,7 @@ def run_qmc_parameter_derivatives():
     theta = 0.1
     wf.set_coeff(rot_mat_size2(theta))
 
-    print("Initial rotation matrix coefficients for theta = ",theta)
+    print("Initial rotation matrix coefficients for theta = ", theta)
     print(wf.coeff)
 
     # Apply the rotation to the coefficients, then compute the derivative at zero angle
@@ -225,14 +223,14 @@ def run_qmc_parameter_derivatives():
     # Doesn't matter for 2x2 case, but will matter for larger sizes.
     theta1 = 0.0
     theta2 = 0.0
-    #VP = np.array([theta1, theta2])
+    # VP = np.array([theta1, theta2])
     beta = 0.2
     VP = np.array([theta1, theta2, beta])
 
-    r = np.array([[1.0, 2.0, 3.0],
-                  [0.0, 1.1, 2.2]])
+    r = np.array([[1.0, 2.0, 3.0], [0.0, 1.1, 2.2]])
 
     run_qmc(r, wf, VP)
+
 
 # Some results from run_qmc_parameter_derivatives
 
@@ -256,8 +254,6 @@ def run_qmc_parameter_derivatives():
 # parameter derivative errors =  [0.02598407 0.02115345 0.01133443]
 
 
-
-if __name__=='__main__':
-    #print_point_values()
+if __name__ == "__main__":
+    # print_point_values()
     run_qmc_parameter_derivatives()
-

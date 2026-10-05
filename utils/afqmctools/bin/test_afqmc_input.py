@@ -5,6 +5,7 @@ import sys
 
 from afqmctools.hamiltonian.converter import read_qmcpack_hamiltonian
 
+
 def parse_args(args):
     """Parse command-line arguments.
 
@@ -19,9 +20,10 @@ def parse_args(args):
         Command line arguments.
     """
 
-    parser = argparse.ArgumentParser(description = __doc__)
-    parser.add_argument('-i', '--input', dest='input', type=str,
-                        default=None, help='Input afqmc file.')
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "-i", "--input", dest="input", type=str, default=None, help="Input afqmc file."
+    )
 
     options = parser.parse_args(args)
 
@@ -30,6 +32,7 @@ def parse_args(args):
         sys.exit()
 
     return options
+
 
 def main(args):
     """Sanity check for afqmc Hamiltonian.
@@ -53,5 +56,6 @@ def main(args):
     else:
         sys.exit(0)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main(sys.argv[1:])

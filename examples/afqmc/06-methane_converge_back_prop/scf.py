@@ -5,9 +5,9 @@ import numpy
 from pyscf import gto, scf
 
 # Bond angle HCH
-alpha = acos(-1.0/3.0)
+alpha = acos(-1.0 / 3.0)
 # Rotation angle about z.
-beta = 2*pi / 3.0
+beta = 2 * pi / 3.0
 c = cos(beta)
 s = sin(beta)
 # Rotation matrix about z axis.
@@ -18,14 +18,16 @@ rch = 1.1085
 C = numpy.array([0, 0, 0])
 H1 = numpy.array([0, 0, rch])
 # Arbitrary position of first HCH molecule
-H2 = numpy.array([rch*cos(alpha-pi/2.), 0, -rch*sin(alpha-pi/2.)])
+H2 = numpy.array([rch * cos(alpha - pi / 2.0), 0, -rch * sin(alpha - pi / 2.0)])
 H3 = R.dot(H2)
 H4 = R.dot(H3)
 
-mol = gto.M(atom=[['C', C], ['H', H1], ['H', H2], ['H', H3], ['H', H4]],
-            basis='sto-3g',
-            unit='Angstrom')
+mol = gto.M(
+    atom=[["C", C], ["H", H1], ["H", H2], ["H", H3], ["H", H4]],
+    basis="sto-3g",
+    unit="Angstrom",
+)
 
 mf = scf.RHF(mol)
-mf.chkfile = 'scf.chk'
+mf.chkfile = "scf.chk"
 ehf = mf.scf()
