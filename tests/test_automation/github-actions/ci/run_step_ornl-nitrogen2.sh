@@ -49,12 +49,16 @@ case "$1" in
 
     # GPU settings
     case "${GH_JOBNAME}" in
-      *"Offload"*)
+      *"Offload-HIP"*)
         echo 'Configure for building OpenMP Offload+HIP with AMDClang compilers'
         QMC_GPU="openmp;hip" # Default when not specified
       ;;
-      *"CUDA2HIP"*)
-        echo 'Configure for building CUDA2HIP with AMDClang compilers'
+      *"Offload"*)
+        echo 'Configure for building OpenMP Offload with AMDClang compilers'
+        QMC_GPU="openmp"
+      ;;
+      *"HIP"*)
+        echo 'Configure for building HIP with AMDClang compilers'
         QMC_GPU=hip
       ;;
     esac

@@ -311,14 +311,14 @@ jobs:
       matrix:
         jobname:
           [
-            MI210-AMDClang-NoMPI-Offload-Real-Mixed,
-            MI210-AMDClang-NoMPI-Offload-Real,
-            MI210-AMDClang-NoMPI-Offload-Complex-Mixed,
-            MI210-AMDClang-NoMPI-Offload-Complex,
-            MI210-AMDClang-NoMPI-CUDA2HIP-Real-Mixed,
-            MI210-AMDClang-NoMPI-CUDA2HIP-Real,
-            MI210-AMDClang-NoMPI-CUDA2HIP-Complex-Mixed,
-            MI210-AMDClang-NoMPI-CUDA2HIP-Complex,
+            MI210-AMDClang-NoMPI-Offload-HIP-Real-Mixed,
+            MI210-AMDClang-NoMPI-Offload-HIP-Real,
+            MI210-AMDClang-NoMPI-Offload-HIP-Complex-Mixed,
+            MI210-AMDClang-NoMPI-Offload-HIP-Complex,
+            MI210-AMDClang-NoMPI-HIP-Real-Mixed,
+            MI210-AMDClang-NoMPI-HIP-Real,
+            MI210-AMDClang-NoMPI-HIP-Complex-Mixed,
+            MI210-AMDClang-NoMPI-HIP-Complex,
           ]
 
     steps:
