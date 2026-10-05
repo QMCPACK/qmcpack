@@ -274,7 +274,7 @@ void timeMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer, int m)
 
 int main(int argc, char* argv[])
 {
-  boost::mpi3::environment env(argc, argv);
+  boost::mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
   auto world = boost::mpi3::environment::get_world_instance();
   auto node  = world.split_shared(world.rank());
 #if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
