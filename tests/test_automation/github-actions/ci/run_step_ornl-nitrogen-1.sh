@@ -77,6 +77,7 @@ case "$1" in
     echo "Running deterministic tests"
     rocm-smi --showdriverversion
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
+    export LIBOMPTARGET_AMDGPU_MAX_ASYNC_COPY_BYTES=0
     ctest --output-on-failure -L deterministic -j 32 --timeout 600 --repeat after-timeout:4
     ;;
     
