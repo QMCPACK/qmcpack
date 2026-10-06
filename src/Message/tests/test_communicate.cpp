@@ -109,4 +109,11 @@ TEST_CASE("test_communicate_split_two_stripe_three", "[message]")
   REQUIRE(c2->rank() == new_rank);
   REQUIRE(c2->getGroupID() == (c->rank() / 3 % 2));
 }
+
+#ifdef HAVE_MPI
+TEST_CASE("mpi_thread_level", "[message]")
+{
+  CHECK(boost::mpi3::environment::thread_support() >= boost::mpi3::thread_level::funneled);
+}
+#endif
 } // namespace qmcplusplus
