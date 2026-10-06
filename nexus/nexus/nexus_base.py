@@ -313,7 +313,7 @@ class NexusConfig:
         self.basissets        = None
         self.pseudo_dir       = None
         self.main_log_handler = RotatingFileHandler(
-            filename=f"{self.logger_name}.log",
+            filename=f"{self.logger_name}.nexus.log",
             backupCount=self.logfile_num_backups,
             delay=True,
         )
