@@ -407,13 +407,6 @@ the path to the source directory.
     BLA_VENDOR           For selecting specified or any BLAS/LAPACK libraries when VPL_ID is "Generic".
                          See full list at https://cmake.org/cmake/help/latest/module/FindLAPACK.html
 
-- Scalar and vector math functions
-
-  ::
-
-    QMC_MATH_VENDOR     Select a vendor optimized library for scalar and vector math functions.
-                        Providers are GENERIC INTEL_VML IBM_MASS AMD_LIBM
-
 - libxml2 related
 
   ::
