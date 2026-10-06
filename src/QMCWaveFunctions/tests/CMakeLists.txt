@@ -16,38 +16,25 @@ target_link_libraries(minimal_wavefunction_pool PUBLIC qmcwfs)
 
 set(SRC_DIR wavefunction)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
-#SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp/pwscf.pwscf.h5)
-set(UTEST_HDF_INPUT0 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
-set(UTEST_HDF_INPUT1 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp/pwscf.pwscf.h5)
-set(UTEST_HDF_INPUT2 ${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae/pwscf.pwscf.h5)
-set(UTEST_HDF_INPUT3 ${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/LiH-arb.pwscf.h5)
-set(UTEST_HDF_INPUT3_1 ${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/LiH-x.pwscf.h5)
-set(UTEST_HDF_INPUT4 ${qmcpack_SOURCE_DIR}/tests/solids/monoO_noncollinear_1x1x1_pp/o2_45deg_spins.pwscf.h5)
-set(UTEST_HDF_INPUT5 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx/C_diamond-twist-third.h5)
-set(UTEST_HDF_INPUT6 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor.h5)
-set(UTEST_HDF_INPUT7 ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.orbs.h5)
-set(UTEST_HDF_INPUT8 ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.Multidet.h5)
-set(UTEST_HDF_INPUT9 ${qmcpack_SOURCE_DIR}/tests/converter/test_Bi_dirac/gold.orbs.h5)
-set(UTEST_HDF_INPUT10 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor_molecule.h5)
-set(UTEST_HDF_INPUT11 ${qmcpack_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp/pwscf.pwscf.h5)
-set(UTEST_HDF_INPUT12 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp/C_Diamond.h5)
-set(UTEST_HDF_INPUT13 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx/C_diamond-tiled-cplx.h5)
 
-maybe_symlink(${UTEST_HDF_INPUT0} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
-maybe_symlink(${UTEST_HDF_INPUT1} ${UTEST_DIR}/diamondC_2x1x1.pwscf.h5)
-maybe_symlink(${UTEST_HDF_INPUT2} ${UTEST_DIR}/bccH.pwscf.h5)
-maybe_symlink(${UTEST_HDF_INPUT3} ${UTEST_DIR}/LiH-arb.pwscf.h5)
-maybe_symlink(${UTEST_HDF_INPUT3_1} ${UTEST_DIR}/LiH-x.pwscf.h5)
-maybe_symlink(${UTEST_HDF_INPUT4} ${UTEST_DIR}/o2_45deg_spins.pwscf.h5)
-maybe_symlink(${UTEST_HDF_INPUT5} ${UTEST_DIR}/C_diamond-twist-third.h5)
-maybe_symlink(${UTEST_HDF_INPUT6} ${UTEST_DIR}/lcao_spinor.h5)
-maybe_symlink(${UTEST_HDF_INPUT7} ${UTEST_DIR}/LiH.orbs.h5)
-maybe_symlink(${UTEST_HDF_INPUT8} ${UTEST_DIR}/LiH.Multidet.h5)
-maybe_symlink(${UTEST_HDF_INPUT9} ${UTEST_DIR}/Bi.orbs.h5)
-maybe_symlink(${UTEST_HDF_INPUT10} ${UTEST_DIR}/lcao_spinor_molecule.h5)
-maybe_symlink(${UTEST_HDF_INPUT11} ${UTEST_DIR}/hcpBe.pwscf.h5)
-maybe_symlink(${UTEST_HDF_INPUT12} ${UTEST_DIR}/C_Diamond_2x1x1-Gaussian.h5)
-maybe_symlink(${UTEST_HDF_INPUT13} ${UTEST_DIR}/C_Diamond_2x1x1-Gaussian-tiled-cplx.h5)
+set(ALIASED_FILES)
+make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5 diamondC_1x1x1.pwscf.h5)
+make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp/pwscf.pwscf.h5 diamondC_2x1x1.pwscf.h5)
+make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae/pwscf.pwscf.h5 bccH.pwscf.h5)
+make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp/pwscf.pwscf.h5 hcpBe.pwscf.h5)
+make_file_alias(${qmcpack_SOURCE_DIR}/tests/converter/test_Bi_dirac/gold.orbs.h5 Bi.orbs.h5)
+make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp/C_Diamond.h5 C_Diamond_2x1x1-Gaussian.h5)
+make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx/C_diamond-tiled-cplx.h5 C_Diamond_2x1x1-Gaussian-tiled-cplx.h5)
+
+set(UTEST_INPUT_FILES ${ALIASED_FILES}
+    ${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/LiH-arb.pwscf.h5
+    ${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/LiH-x.pwscf.h5
+    ${qmcpack_SOURCE_DIR}/tests/solids/monoO_noncollinear_1x1x1_pp/o2_45deg_spins.pwscf.h5
+    ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx/C_diamond-twist-third.h5
+    ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor.h5
+    ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.orbs.h5
+    ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.Multidet.h5
+    ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor_molecule.h5)
 
 if(NOT QMC_DATA)
   message(VERBOSE "QMC_DATA not set. NiO_a16 based tests not added.")
@@ -59,15 +46,14 @@ else()
   set(H5_FULL_PATH "${QMC_DATA}/NiO/${H5_FILE}")
 
   if(EXISTS ${H5_FULL_PATH})
-    #symlink h5 file
-    maybe_symlink(${H5_FULL_PATH} ${UTEST_DIR}/${H5_FILE})
+    list(APPEND UTEST_INPUT_FILES ${H5_FULL_PATH})
     set(NiO_a16_H5_FOUND TRUE)
   else()
     message(VERBOSE "NiO_a16 based tests not added because the corresponding h5 file not found: ${H5_FULL_PATH}")
   endif()
 endif()
 
-set(FILES_TO_COPY
+list(APPEND UTEST_INPUT_FILES
     he_sto3g.wfj.xml
     ne_def2_svp.wfnoj.xml
     hcn.structure.xml
@@ -85,10 +71,6 @@ set(FILES_TO_COPY
     rot_Be_STO.wfnoj.xml
     rot_multi_1det_Be_STO.wfnoj.xml
     rot_multi_2det_Be_STO.wfnoj.xml)
-
-foreach(fname ${FILES_TO_COPY})
-  execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${fname}" ${UTEST_DIR})
-endforeach()
 
 if(NOT QMC_COMPLEX)
   set(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp test_cartesian_ao.cpp test_RotatedSPOs_LCAO.cpp)
@@ -202,14 +184,12 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
     target_link_libraries(${UTEST_EXE} qmcparticle qmcparticle_omptarget qmcwfs_omptarget spline2 spline2_omptarget qmcutil platform_omptarget_LA)
   endif()
 
-  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
-  set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+  add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
 
   if(CATEGORY IN_LIST CATEGORY_MPI AND HAVE_MPI)
     foreach(NUM_RANKS 2 3 6)
       set(UTEST_NAME_MPI ${UTEST_NAME}-r${NUM_RANKS})
-      add_unit_test(${UTEST_NAME_MPI} ${NUM_RANKS} 1 $<TARGET_FILE:${UTEST_EXE}>)
-      set_tests_properties(${UTEST_NAME_MPI} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+      add_unit_test(BASENAME ${UTEST_NAME_MPI} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
     endforeach()
   endif()
 
@@ -253,7 +233,7 @@ if((ENABLE_CUDA OR ENABLE_SYCL) AND BUILD_MICRO_BENCHMARKS)
   endif()
   #  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../..")
   target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
-  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+  add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
 endif()
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)

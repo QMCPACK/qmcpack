@@ -5,11 +5,11 @@ from copy import deepcopy
 from optparse import OptionParser
 import sys
 
-if sys.version_info[0:3] < (3, 10, 0):
+if sys.version_info[0:3] < (3, 12, 0):
     v = sys.version_info[0:3]
     print(
        f"Your version of Python ({v[0]}.{v[1]}.{v[2]}) is less than the minimum required for Nexus!\n"
-        "To use Nexus, please install at least Python 3.10.0 or higher!\n\n"
+        "To use Nexus, please install at least Python 3.12.0 or higher!\n\n"
         "If you already have a higher version installed, ensure that your Python\n"
         "environment is properly activated and your $PATH is set correctly."
     )
@@ -64,7 +64,7 @@ def find_nexus_modules():
 # Load Nexus modules
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
-from nexus.developer import DevBase,obj,error
+from nexus.developer import DevBase,obj
 import nexus.memory as memory
 from nexus.observables import ChargeDensity, vlog
 from nexus.fileio import XsfFile

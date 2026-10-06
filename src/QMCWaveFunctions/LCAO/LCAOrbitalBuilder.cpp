@@ -33,6 +33,7 @@
 #endif
 #include "hdf/hdf_archive.h"
 #include "Message/CommOperators.h"
+#include "Message/UniformCommunicateError.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "CPU/math.hpp"
 
@@ -141,36 +142,44 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   //Evaluate the Phase factor. Equals 1 for OBC.
   EvalPeriodicImagePhaseFactors(SuperTwist, PeriodicImagePhaseFactors, PeriodicImageDisplacements);
 
-  // no need to wait but load the basis set
-  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
-    if (cname == "basisset")
-    {
-      std::string basisset_name_input(getXMLAttributeValue(element, "name"));
-      std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input);
-      if (basisset_map_.find(basisset_name) != basisset_map_.end())
-      {
-        std::ostringstream err_msg;
-        err_msg << "Cannot create basisset " << basisset_name << " which already exists." << std::endl;
-        throw std::runtime_error(err_msg.str());
-      }
-      if (h5_path != "")
-        basisset_map_[basisset_name] = loadBasisSetFromH5(element);
-      else
-        basisset_map_[basisset_name] = loadBasisSetFromXML(element, cur);
-    }
-  });
 
-  // deprecated h5 basis set handling when basisset element is missing
-  if (basisset_map_.size() == 0 && h5_path != "")
+  try
   {
-    app_warning() << "!!!!!!! Deprecated input style: missing basisset element. "
-                  << "LCAO needs an explicit basisset XML element. "
-                  << "Fallback on loading an implicit one." << std::endl;
-    basisset_map_["LCAOBSet"] = loadBasisSetFromH5(cur);
-  }
+    // no need to wait but load the basis set
+    processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+      if (cname == "basisset")
+      {
+        std::string basisset_name_input(getXMLAttributeValue(element, "name"));
+        std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input);
+        if (basisset_map_.find(basisset_name) != basisset_map_.end())
+        {
+          std::ostringstream err_msg;
+          err_msg << "Cannot create basisset " << basisset_name << " which already exists." << std::endl;
+          throw std::runtime_error(err_msg.str());
+        }
+        if (h5_path != "")
+          basisset_map_[basisset_name] = loadBasisSetFromH5(element);
+        else
+          basisset_map_[basisset_name] = loadBasisSetFromXML(element, cur);
+      }
+    });
 
-  if (basisset_map_.size() == 0)
-    throw std::runtime_error("No basisset found in the XML input!");
+    // deprecated h5 basis set handling when basisset element is missing
+    if (basisset_map_.size() == 0 && h5_path != "")
+    {
+      app_warning() << "!!!!!!! Deprecated input style: missing basisset element. "
+                    << "LCAO needs an explicit basisset XML element. "
+                    << "Fallback on loading an implicit one." << std::endl;
+      basisset_map_["LCAOBSet"] = loadBasisSetFromH5(cur);
+    }
+
+    if (basisset_map_.size() == 0)
+      throw UniformCommunicateError("No basisset found in the XML input!");
+  }
+  catch (const UniformCommunicateError& uce)
+  {
+    comm->barrier_and_abort(std::string("Failed to create basisset. ") + uce.what());
+  }
 }
 
 LCAOrbitalBuilder::~LCAOrbitalBuilder()
@@ -201,7 +210,7 @@ int LCAOrbitalBuilder::determineRadialOrbType(xmlNodePtr cur) const
   return radialOrbType;
 }
 
-std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent)
+std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent) const
 {
   ReportEngine PRE(class_name_, "loadBasisSetFromXML(xmlNodePtr)");
   int ylm = -1;
@@ -235,7 +244,7 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cu
   if (radialOrbType < 0)
     PRE.error("Unknown radial function for LCAO orbitals. Specify keyword=\"NMO/GTO/STO\" .", true);
 
-  BasisSet_t* myBasisSet = nullptr;
+  std::unique_ptr<BasisSet_t> myBasisSet;
   /** process atomicBasisSet per ion species */
   switch (radialOrbType)
   {
@@ -265,10 +274,10 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cu
     break;
   }
 
-  return std::unique_ptr<BasisSet_t>(myBasisSet);
+  return myBasisSet;
 }
 
-std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr parent)
+std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr parent) const
 {
   ReportEngine PRE(class_name_, "loadBasisSetFromH5()");
 
@@ -300,7 +309,7 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr par
   if (radialOrbType < 0)
     PRE.error("Unknown radial function for LCAO orbitals. Specify keyword=\"NMO/GTO/STO\" .", true);
 
-  BasisSet_t* myBasisSet = nullptr;
+  std::unique_ptr<BasisSet_t> myBasisSet;
   /** process atomicBasisSet per ion species */
   switch (radialOrbType)
   {
@@ -326,19 +335,19 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr par
     PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.", true);
     break;
   }
-  return std::unique_ptr<BasisSet_t>(myBasisSet);
+  return myBasisSet;
 }
 
 
 template<int I, int J>
-LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
+std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur) const
 {
   ReportEngine PRE(class_name_, "createBasisSet(xmlNodePtr)");
 
   using ao_type    = typename ao_traits<RealType, ValueType, I, J>::ao_type;
   using basis_type = typename ao_traits<RealType, ValueType, I, J>::basis_type;
 
-  basis_type* mBasisSet = new basis_type(sourcePtcl, targetPtcl);
+  auto mBasisSet = std::make_unique<basis_type>(sourcePtcl, targetPtcl);
 
   //list of built centers
   std::vector<std::string> ao_built_centers;
@@ -363,13 +372,16 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
       auto it = std::find(ao_built_centers.begin(), ao_built_centers.end(), elementType);
       if (it == ao_built_centers.end())
       {
+        int activeCenter = sourcePtcl.getSpeciesSet().findSpecies(elementType);
+        if (activeCenter == sourcePtcl.getSpeciesSet().size())
+          throw UniformCommunicateError("Species " + elementType + " not found.");
+
         AOBasisBuilder<ao_type> any(elementType, myComm);
         any.put(cur);
         auto aoBasis = any.createAOSet(cur);
         if (aoBasis)
         {
           //add the new atomic basis to the basis set
-          int activeCenter = sourcePtcl.getSpeciesSet().findSpecies(elementType);
           mBasisSet->add(activeCenter, std::move(aoBasis));
         }
         ao_built_centers.push_back(elementType);
@@ -384,14 +396,14 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
 
 
 template<int I, int J>
-LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
+std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSetH5() const
 {
   ReportEngine PRE(class_name_, "createBasisSetH5(xmlNodePtr)");
 
   using ao_type    = typename ao_traits<RealType, ValueType, I, J>::ao_type;
   using basis_type = typename ao_traits<RealType, ValueType, I, J>::basis_type;
 
-  basis_type* mBasisSet = new basis_type(sourcePtcl, targetPtcl);
+  auto mBasisSet = std::make_unique<basis_type>(sourcePtcl, targetPtcl);
 
   //list of built centers
   std::vector<std::string> ao_built_centers;
@@ -417,6 +429,11 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
   if (Nb_Elements < 1)
     PRE.error("Missing elementType attribute of atomicBasisSet.", true);
 
+  if (Nb_Elements > sourcePtcl.getSpeciesSet().size())
+    throw UniformCommunicateError("Number of elements in the HDF5 basis set (" + std::to_string(Nb_Elements) +
+                                  ") is more than the number of species (" +
+                                  std::to_string(sourcePtcl.getSpeciesSet().size()) + ") in the particleset.");
+
   for (int i = 0; i < Nb_Elements; i++)
   {
     std::string elementType, dataset;
@@ -440,13 +457,16 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
     auto it = std::find(ao_built_centers.begin(), ao_built_centers.end(), elementType);
     if (it == ao_built_centers.end())
     {
+      int activeCenter = sourcePtcl.getSpeciesSet().findSpecies(elementType);
+      if (activeCenter == sourcePtcl.getSpeciesSet().size())
+        throw UniformCommunicateError("Species " + elementType + " not found.");
+
       AOBasisBuilder<ao_type> any(elementType, myComm);
       any.putH5(hin);
       auto aoBasis = any.createAOSetH5(hin);
       if (aoBasis)
       {
         //add the new atomic basis to the basis set
-        int activeCenter = sourcePtcl.getSpeciesSet().findSpecies(elementType);
         mBasisSet->add(activeCenter, std::move(aoBasis));
       }
       ao_built_centers.push_back(elementType);
@@ -601,11 +621,9 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
 
   //initialize the number of orbital by the basis set size
   std::string debugc("no");
-  double orbital_mix_magnitude = 0.0;
-  bool PBC                     = false;
+  bool PBC = false;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(debugc, "debug");
-  aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
   aAttrib.put(cur);
   xmlNodePtr occ_ptr   = NULL;
   xmlNodePtr coeff_ptr = NULL;
@@ -775,7 +793,7 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       n++;
     }
   }
-  myComm->bcast(spo.C->data(), spo.C->size());
+  myComm->bcast(*spo.C);
   return true;
 }
 
@@ -867,9 +885,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 
     hin.close();
   }
-#ifdef HAVE_MPI
-  myComm->comm.broadcast_n(spo.C->data(), spo.C->size());
-#endif
+  myComm->bcast(*spo.C);
   return true;
 }
 

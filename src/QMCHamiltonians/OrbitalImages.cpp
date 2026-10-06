@@ -224,11 +224,11 @@ bool OrbitalImages::put(xmlNodePtr cur)
     for (int n = 0; n < sposet_inds.size(); ++n)
     {
       int index = sposet_inds[n];
-      if (index < 0 || index > sposet->size())
+      if (index < 0 || index >= sposet->size())
       {
-        app_log() << "\nindex for sposet " << sposet_names[i] << " is out of range\nindex must be between 0 and "
-                  << sposet->size() - 1 << "\nyou provided: " << index << std::endl;
-        APP_ABORT("OrbitalImages::put  sposet index out of range, see message above");
+        throw std::runtime_error("OrbitalImages::put  index " + std::to_string(index) + " for sposet " +
+                                 sposet_names[i] + " is out of range [0, " +
+                                 std::to_string(sposet->size() - 1) + "]");
       }
     }
   }

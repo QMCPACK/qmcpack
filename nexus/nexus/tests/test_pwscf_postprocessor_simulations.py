@@ -66,7 +66,7 @@ def test_get_result():
             sim.get_result('anything',None)
             raise FailedTest
         except NotImplementedError:
-            None
+            pass
         except FailedTest:
             failed()
         except Exception as e:
@@ -89,7 +89,7 @@ def test_incorporate_result():
             sim.incorporate_result('anything',None,None)
             raise FailedTest
         except NotImplementedError:
-            None
+            pass
         except FailedTest:
             failed()
         except Exception as e:

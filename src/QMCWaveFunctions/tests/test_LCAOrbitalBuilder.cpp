@@ -9,8 +9,11 @@
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 
 #include "Message/Communicate.h"
+#include "Message/UniformCommunicateError.h"
+#include "hdf/hdf_archive.h"
 
 #include "LCAO/LCAOrbitalBuilder.h"
 #include "LCAO/MultiQuinticSpline1D.h"
@@ -25,6 +28,19 @@
 
 namespace qmcplusplus
 {
+
+class TestLCAOrbitalBuilder : public LCAOrbitalBuilder
+{
+public:
+  TestLCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur)
+      : LCAOrbitalBuilder(els, ions, comm, cur)
+  {}
+  void setH5Path(const std::string& path) { h5_path = path; }
+
+  template<int I, int J>
+  std::unique_ptr<BasisSet_t> testCreateBasisSetH5() const
+  { return createBasisSetH5<I, J>(); }
+};
 
 
 TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
@@ -184,4 +200,76 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
             bs6.get()) != nullptr);
 }
 
+
+TEST_CASE("LCAOrbitalBuilder HDF5 Exceptions", "[wavefunction][LCAO]")
+{
+  Communicate* c = OHMMS::Controller;
+
+  const SimulationCell sim_cell;
+  ParticleSet elec(sim_cell);
+  elec.setName("e");
+  ParticleSet ions(sim_cell);
+  ions.setName("ion0");
+  ions.create({1});
+  SpeciesSet& source_species(ions.getSpeciesSet());
+  source_species.addSpecies("C");
+  ions.update();
+
+  auto wf_xml_valid = R"(
+    <tmp>
+     <basisset keyword="STO" transform="yes">
+        <atomicBasisSet angular="cartesian" elementType="C" normalized="no" type="STO">
+          <basisGroup l="0" m="0" n="0" rid="1S1" type="Slater">
+            <radfunc contraction="1.0" exponent="11.4" n="1"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+    </tmp>
+  )";
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(wf_xml_valid));
+  TestLCAOrbitalBuilder lcaob(elec, ions, c, doc.getRoot());
+
+  SECTION("Nb_Elements > species size")
+  {
+    if (c->rank() == 0)
+    {
+      hdf_archive hout(c);
+      hout.create("test_trap_nb_elements.h5");
+      hout.push("basisset", true);
+      int nb = 2; // more than the 1 species we created
+      hout.write(nb, "NbElements");
+      hout.pop();
+      hout.close();
+    }
+    c->barrier();
+
+    lcaob.setH5Path("test_trap_nb_elements.h5");
+    REQUIRE_THROWS_WITH((lcaob.testCreateBasisSetH5<0, 0>()), "Number of elements in the HDF5 basis set (2) is more than the number of species (1) in the particleset.");
+  }
+
+  SECTION("Missing species in HDF5")
+  {
+    if (c->rank() == 0)
+    {
+      hdf_archive hout(c);
+      hout.create("test_trap_missing_species.h5");
+      hout.push("basisset", true);
+      int nb = 1;
+      hout.write(nb, "NbElements");
+      hout.push("atomicBasisSet0", true);
+      std::string name = "LCAOBSet";
+      hout.write(name, "name");
+      std::string elementType = "O"; // 'O' is not in the species set ('C' only)
+      hout.write(elementType, "elementType");
+      hout.pop();
+      hout.pop();
+      hout.close();
+    }
+    c->barrier();
+
+    lcaob.setH5Path("test_trap_missing_species.h5");
+    REQUIRE_THROWS_WITH((lcaob.testCreateBasisSetH5<0, 0>()), "Species O not found.");
+  }
+}
 } // namespace qmcplusplus

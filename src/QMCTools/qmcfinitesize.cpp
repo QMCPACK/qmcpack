@@ -51,7 +51,7 @@ using Grid_t   = SkParserBase::Grid_t;
 int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
-  mpi3::environment env(argc, argv);
+  mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
   OHMMS::Controller = new Communicate(env.world());
 #endif
   Random.init(-1);

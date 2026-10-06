@@ -22,12 +22,8 @@
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "NRCOptimization.h"
-#ifdef HAVE_LMY_ENGINE
-#include "formic/utils/matrix.h"
-#include "formic/utils/lmyengine/engine.h"
-#endif
 #include "QMCDrivers/Optimizers/DescentEngine.h"
-#include "QMCDrivers/Optimizers/HybridEngine.h"
+#include "QMCDrivers/Optimizers/OptimizerTypes.h"
 #include "OutputMatrix.h"
 
 namespace qmcplusplus
@@ -44,6 +40,10 @@ namespace qmcplusplus
 class QMCCostFunctionBase;
 class VMCBatched;
 class GradientTest;
+namespace testing
+{
+class QMCFixedSampleLinearOptimizeInputTest;
+}
 
 
 class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew
@@ -71,15 +71,13 @@ public:
   ///preprocess xml node
   void process(xmlNodePtr cur) override;
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
-  bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
+  bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5);
 
   ///common operation to start optimization
   void start();
 
-#ifdef HAVE_LMY_ENGINE
   using ValueType = QMCTraits::ValueType;
-  void engine_start();
-#endif
+  void descent_start();
 
 
   ///common operation to finish optimization, used by the derived classes
@@ -89,6 +87,8 @@ public:
 
 
 private:
+  friend class testing::QMCFixedSampleLinearOptimizeInputTest;
+
   NRCOptimization<RealType> nrc_opt_;
 
   inline bool ValidCostFunction(bool valid)
@@ -99,15 +99,6 @@ private:
                 << std::endl;
     return valid;
   }
-
-  // check if the proposed new cost function value is the best available
-  bool is_best_cost(const int ii,
-                    const std::vector<RealType>& cv,
-                    const std::vector<double>& sh,
-                    const RealType ic) const;
-
-  // perform the adaptive three-shift update
-  void adaptive_three_shift_run();
 
   // perform the single-shift update, no sample regeneration
   void one_shift_run();
@@ -122,48 +113,14 @@ private:
   void previous_linear_methods_run();
 
 
-#ifdef HAVE_LMY_ENGINE
-  // use hybrid approach of descent and blocked linear method for optimization
-  void hybrid_run();
-#endif
-
   // Perform test of gradients
   void test_run();
 
   std::unique_ptr<GradientTest> testEngineObj;
 
 
-  void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
-                                   const std::vector<double>& shiffts_s,
-                                   std::vector<std::vector<RealType>>& parameterDirections);
-
-#ifdef HAVE_LMY_ENGINE
-  formic::VarDeps vdeps;
-  std::unique_ptr<cqmc::engine::LMYEngine<ValueType>> EngineObj;
-#endif
-
   //engine for running various gradient descent based algorithms for optimization
   std::unique_ptr<DescentEngine> descentEngineObj;
-
-  //engine for controlling a optimization using a hybrid combination of linear method and descent
-  std::unique_ptr<HybridEngine> hybridEngineObj;
-
-  // prepare a vector of shifts to try
-  std::vector<double> prepare_shifts(const double central_shift) const;
-
-  // previous update
-#ifdef HAVE_LMY_ENGINE
-  std::vector<formic::ColVec<double>> previous_update;
-#endif
-
-  void print_cost_summary_header();
-  void print_cost_summary(const double si,
-                          const double ss,
-                          const RealType mc,
-                          const RealType cv,
-                          const int ind,
-                          const int bi,
-                          const bool gu);
 
   // ------------------------------------
   // Used by legacy linear method algos
@@ -199,66 +156,9 @@ private:
   /// tolerance for CG solution in SR
   RealType sr_tolerance;
 
-  // ------------------------------------
-  // Parameters in this struct are used by one or more of the adaptive LM, descent, or hybrid optimizers
-
-  //String inputs are listed outside the struct
   ///name of the current optimization method, updated by processOptXML before run
   std::string MinMethod;
-
-  //LMY related input
-  struct LMYOptions
-  {
-    /// number of shifts we will try
-    int num_shifts = 3;
-    /// the maximum relative change in the cost function for the adaptive three-shift scheme
-    RealType max_relative_cost_change = 10.0;
-    ///max amount a parameter may change relative to current wave function weight
-    RealType max_param_change = 0.3;
-    /// the tolerance to cost function increases when choosing the best shift in the adaptive shift method
-    RealType cost_increase_tol = 0.0;
-    /// the shift_i value that the adaptive shift method should aim for
-    RealType target_shift_i = -1.0;
-    ///whether we are targeting an excited state
-    bool targetExcited = false;
-    ///whether we are doing block algorithm
-    bool block_lm = false;
-    ///number of blocks used in block algorithm
-    int nblocks = 1;
-    ///number of old updates kept
-    int nolds = 1;
-    ///number of directions kept
-    int nkept = 1;
-    ///number of samples to do in correlated sampling part
-    int nsamp_comp = 0;
-    ///the shift to use when targeting an excited state
-    RealType omega_shift = 0.0;
-    ///whether to do the first part of block lm
-    bool block_first = true;
-    ///whether to do the second part of block lm
-    bool block_second = false;
-    ///whether to do the third part of block lm
-    bool block_third = false;
-    ///whether to filter parameters for the lm
-    bool filter_param = false;
-    ///whether to filter parameters for the lm
-    bool filter_info = false;
-    ///threshold for filtering parameters for the lm
-    double ratio_threshold = 0.0;
-    ///whether to store samples for the lm
-    bool store_samples = false;
-    ///type of the previous optimization method, updated by processOptXML before run
-    OptimizerType previous_optimizer_type = OptimizerType::NONE;
-    ///type of the current optimization method, updated by processOptXML before run
-    OptimizerType current_optimizer_type = OptimizerType::NONE;
-    ///whether to use hybrid method
-    bool doHybrid = false;
-  };
-
-  /// LMY engine related options
-  LMYOptions options_LMY_;
-
-  // ------------------------------------
+  OptimizerType current_optimizer_type_ = OptimizerType::NONE;
 
   // Test parameter gradients
   bool doGradientTest;

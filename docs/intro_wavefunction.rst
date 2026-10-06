@@ -1206,10 +1206,6 @@ The following modifications are worth a try in the optimization block:
    exp0 cause the search directions to more closely follow those
    predicted by steepest-descent than those by the linear method.
 
-Note that the new adaptive shift optimizer has not yet been tried with
-backflow wavefunctions. It should perform better than the older
-optimizers, but a considered optimization process is still recommended.
-
 .. _jastrow:
 
 Jastrow Factors

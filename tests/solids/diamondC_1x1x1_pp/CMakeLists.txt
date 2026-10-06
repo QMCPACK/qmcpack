@@ -145,7 +145,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  short-diamondC_1x1x1_pp-optbatch_sdj
+  short-diamondC_1x1x1_pp-sdj-optbatch
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   qmc_short
   qmc_short_optbatch.in.xml
@@ -235,10 +235,6 @@ qmc_run_and_check(
   2
   DIAMOND_DMC_SCALARS # DMC
 )
-
-# Coverage test - shorter version of dmc test
-coverage_run("diamondC_1x1x1_pp-vmc_sdj-1-1" "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp" 1 1
-             qmc_short_vmc_dmc_coverage.in.xml)
 
 # Test time limit
 cpu_limit_run("diamondC_1x1x1_pp-vmc-1-1" "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp" 1 1 180
@@ -548,7 +544,7 @@ if(add_estimator_tests)
     -s
     0
     -q
-    spindensity
+    "spindensity spindensity"
     -e
     20
     -c
