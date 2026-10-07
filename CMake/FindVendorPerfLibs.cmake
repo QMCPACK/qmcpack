@@ -185,7 +185,6 @@ endfunction()
 
 macro(find_VPL_core)
   set(VPL_CORE_FOUND TRUE)
-  set(VPL_UTILS)
   if(VPL_ID STREQUAL "IntelMKL")
     # MKL core library support BLAS/LAPACK and FFT.
     # Thus we require VendorPerfLibs_INCLUDE_DIR and VPL_CORE_LIBRARIES being set
@@ -243,14 +242,7 @@ macro(find_VPL_core)
       list(APPEND _vpl_warning_core_aocl "AOCL header file blis.h not found.\n")
     endif()
 
-    find_library(AOCL_UTILS_LIB NAMES aoclutils)
-    if(AOCL_UTILS_LIB)
-      set(VPL_UTILS ${AOCL_UTILS_LIB})
-    else()
-      list(APPEND _vpl_warning_core_aocl "AOCL aoclutils library file not found. Please set the AOCL root directory via a CMake variable CMAKE_PREFIX_PATH or VendorPerfLibs_ROOT.\n")
-    endif()
-
-    if(NOT VendorPerfLibs_FIND_QUIETLY AND NOT (VendorPerfLibs_INCLUDE_DIR AND AOCL_UTILS_LIB))
+    if(NOT VendorPerfLibs_FIND_QUIETLY AND NOT VendorPerfLibs_INCLUDE_DIR)
       message(WARNING ${_vpl_warning_core_aocl} "If you'd like to fully opt out AOCL, set VPL_ID=Generic.")
     endif()
   elseif(VPL_ID STREQUAL "ARMPL")
@@ -295,10 +287,6 @@ macro(find_VPL_core)
 
   if(VPL_CORE_FOUND)
     list(APPEND _vpl_lib_found_ids "core(${VPL_ID})")
-  endif()
-
-  if(VPL_UTILS)
-    list(APPEND _vpl_lib_found_ids "utils(${VPL_ID})")
   endif()
 endmacro()
 
@@ -511,7 +499,7 @@ if(VendorPerfLibs_FOUND)
       add_library(vpl_lapack INTERFACE IMPORTED)
       set_target_properties(vpl_lapack PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${VendorPerfLibs_INCLUDE_DIR}"
-        INTERFACE_LINK_LIBRARIES "${LAPACK_LIBRARIES};${VPL_UTILS}"
+        INTERFACE_LINK_LIBRARIES "${LAPACK_LIBRARIES}"
       )
       add_library(VPL::lapack ALIAS vpl_lapack)
     endif()
@@ -523,7 +511,7 @@ if(VendorPerfLibs_FOUND)
       add_library(vpl_fft INTERFACE IMPORTED)
       set_target_properties(vpl_fft PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${VendorPerfLibs_INCLUDE_DIR};${VendorPerfLibs_FFTW_INCLUDE_DIR}"
-        INTERFACE_LINK_LIBRARIES "${VPL_FFT_LIBRARIES};${VPL_UTILS}"
+        INTERFACE_LINK_LIBRARIES "${VPL_FFT_LIBRARIES}"
       )
       add_library(VPL::fft ALIAS vpl_fft)
     endif()
@@ -535,7 +523,7 @@ if(VendorPerfLibs_FOUND)
       add_library(vpl_vml INTERFACE IMPORTED)
       set_target_properties(vpl_vml PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${VendorPerfLibs_INCLUDE_DIR}"
-        INTERFACE_LINK_LIBRARIES "${VPL_VML_LIBRARIES};${VPL_UTILS}"
+        INTERFACE_LINK_LIBRARIES "${VPL_VML_LIBRARIES}"
       )
       add_library(VPL::vml ALIAS vpl_vml)
     endif()
