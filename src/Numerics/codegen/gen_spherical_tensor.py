@@ -7,9 +7,24 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 
-from sympy import (Integer, Poly, Symbol, cos, diff, expand, expand_complex,
-                   expand_func, expand_trig, im, powdenest, re, simplify, sin,
-                   sqrt, sympify)
+from sympy import (
+    Integer,
+    Poly,
+    Symbol,
+    cos,
+    diff,
+    expand,
+    expand_complex,
+    expand_func,
+    expand_trig,
+    im,
+    powdenest,
+    re,
+    simplify,
+    sin,
+    sqrt,
+    sympify,
+)
 from sympy.functions.special.spherical_harmonics import Ynm
 from sympy.printing.cxx import cxxcode
 
@@ -122,7 +137,8 @@ def verify_hessian_recurrence(lmax=6):
             target = create_raw_solid_harmonic_symbolic(l, m)
             for source_coordinate in coordinates:
                 lower_value = lambda lower_m: diff(
-                    create_raw_solid_harmonic_symbolic(l - 1, lower_m), source_coordinate
+                    create_raw_solid_harmonic_symbolic(l - 1, lower_m),
+                    source_coordinate,
                 )
                 recurrence_derivatives = apply_gradient_recurrence(l, m, lower_value)
                 for derivative_coordinate, recurrence_derivative in zip(
@@ -156,7 +172,9 @@ def gen_recurrence_coefficients():
     lines = []
     for name, emitted, expression in coefficients:
         if simplify(sqrt(sympify(emitted)) - expression) != 0:
-            raise RuntimeError(f"emitted coefficient {name} does not match its symbolic form")
+            raise RuntimeError(
+                f"emitted coefficient {name} does not match its symbolic form"
+            )
         lines.append(f"  const T {name:<2} = std::sqrt({emitted});")
     return "\n".join(lines)
 
@@ -348,7 +366,10 @@ def create_soa_spherical_tensor_cpp():
     if shutil.which("clang-format"):
         subprocess.run(["clang-format", "-i", output_path], check=True)
     else:
-        print("Warning: clang-format executable not found. Skipping formatting.", file=sys.stderr)
+        print(
+            "Warning: clang-format executable not found. Skipping formatting.",
+            file=sys.stderr,
+        )
 
 
 if __name__ == "__main__":

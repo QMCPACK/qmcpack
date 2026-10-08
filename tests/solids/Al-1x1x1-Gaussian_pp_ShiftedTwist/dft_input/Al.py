@@ -1,11 +1,10 @@
 #! /usr/bin/env python3
-  
-'''
+
+"""
 Gamma point post-HF calculation needs only real integrals.
 Methods implemented in finite-size system can be directly used here without
 any modification.
-'''
-
+"""
 
 import numpy as np
 from pyscf import lib
@@ -21,28 +20,26 @@ import scipy.linalg as la
 
 kmesh = [1, 1, 1]
 
-#cell = gto.M(
+# cell = gto.M(
 #    atom = '''He     0.  0.  0. ''',
 cell = gto.Cell()
 # .a is a matrix for lattice vectors.
 
 
-
-
-
-cell.a = '''
+cell.a = """
   4.03893   0.00000   0.00000
  -0.00000   4.03893   0.00000
  -0.00000  -0.00000   4.03893
-'''
-cell.atom = '''  
+"""
+cell.atom = """  
 Al   0.00000   0.00000   0.00000
 Al   2.01946   2.01946   0.00000
 Al   2.01946   0.00000   2.01946
 Al   0.00000   2.01946   2.01946
-'''
-#Basis: Al-ccpvDz             '''
-cell.basis= {'Al': Mgto.parse('''
+"""
+# Basis: Al-ccpvDz             '''
+cell.basis = {
+    "Al": Mgto.parse("""
 Al S
 8.257944 0.003287
 4.514245 -0.017168
@@ -71,10 +68,11 @@ Al P
 0.202698 1.000000
 Al D
 0.192882 1.000000
-''')
+""")
 }
 
-cell.ecp = {'Al': Mgto.basis.parse_ecp('''
+cell.ecp = {
+    "Al": Mgto.basis.parse_ecp("""
 Al nelec 10
 Al ul
 1 5.073893 3.000000
@@ -86,49 +84,47 @@ Al S
 Al P
 2 3.125175 7.786227
 2 1.414930 7.109015
-''')
+""")
 }
 
 
-
-cell.unit='A'
-cell.drop_exponent=0.1
+cell.unit = "A"
+cell.drop_exponent = 0.1
 
 cell.verbose = 5
-cell.spin =0
+cell.spin = 0
 
 cell.build()
-sp_twist=[0.11,0.23,-0.34]
+sp_twist = [0.11, 0.23, -0.34]
 twist = np.asarray(sp_twist) / 1.0
-kmesh=[1,1,1]
-kpts = cell.make_kpts((1,1,1), with_gamma_point=False,  wrap_around=True, scaled_center=twist)
+kmesh = [1, 1, 1]
+kpts = cell.make_kpts(
+    (1, 1, 1), with_gamma_point=False, wrap_around=True, scaled_center=twist
+)
 
-supcell=cell
-mydf = df.GDF(supcell,kpts)
-mydf.auxbasis = 'weigend'
-mydf._cderi_to_save = 'df_ints.h5' 
-mydf.build()         
-mf = scf.KRHF(supcell,kpts).density_fit()
+supcell = cell
+mydf = df.GDF(supcell, kpts)
+mydf.auxbasis = "weigend"
+mydf._cderi_to_save = "df_ints.h5"
+mydf.build()
+mf = scf.KRHF(supcell, kpts).density_fit()
 
 
-
-mf.with_df._cderi = 'df_ints.h5'
-mf.exxdiv = 'ewald'
+mf.with_df._cderi = "df_ints.h5"
+mf.exxdiv = "ewald"
 mf.with_df = mydf
-mf.chkfile ='Al-TZ.chk'
+mf.chkfile = "Al-TZ.chk"
 
-e_scf=mf.kernel()    
+e_scf = mf.kernel()
 
 
-ener = open('e_scf','w')
-ener.write('%s\n' % (e_scf))
-print('e_scf',e_scf)
+ener = open("e_scf", "w")
+ener.write("%s\n" % (e_scf))
+print("e_scf", e_scf)
 ener.close()
 
-title="Al-DZ"
+title = "Al-DZ"
 
 from PyscfToQmcpack import savetoqmcpack
-savetoqmcpack(cell,mf,title=title,kmesh=kmesh,kpts=kpts,sp_twist=kpts)
 
-
-
+savetoqmcpack(cell, mf, title=title, kmesh=kmesh, kpts=kpts, sp_twist=kpts)

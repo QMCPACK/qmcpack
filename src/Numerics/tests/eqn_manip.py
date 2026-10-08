@@ -10,15 +10,17 @@ from sympy import Eq
 
 # Used by scripts that symbolically derive equations (cubic splines, etc)
 
+
 # Move symbols in sym_list from left hand side of equation to right hand side
 def move_terms(eqn, sym_list):
     new_lhs = eqn.lhs
     new_rhs = eqn.rhs
     for sym in sym_list:
         c = eqn.lhs.coeff(sym)
-        new_lhs = new_lhs - c*sym
-        new_rhs = new_rhs - c*sym
+        new_lhs = new_lhs - c * sym
+        new_rhs = new_rhs - c * sym
     return Eq(new_lhs, new_rhs)
+
 
 # Move symbols in sym_list from right hand side of equation to left hand side
 def move_terms_left(eqn, sym_list):
@@ -26,21 +28,24 @@ def move_terms_left(eqn, sym_list):
     new_rhs = eqn.rhs
     for sym in sym_list:
         c = eqn.rhs.coeff(sym)
-        new_lhs = new_lhs - c*sym
-        new_rhs = new_rhs - c*sym
+        new_lhs = new_lhs - c * sym
+        new_rhs = new_rhs - c * sym
     return Eq(new_lhs, new_rhs)
+
 
 # Move all there terms in the symbol lists to the respective side of the equation
 def divide_terms(eqn, sym_list_left, sym_list_right):
-    #print 'start',eqn
+    # print 'start',eqn
     eqn1 = move_terms(eqn, sym_list_right)
-    #print 'middle ',eqn1
+    # print 'middle ',eqn1
     eqn2 = move_terms_left(eqn1, sym_list_left)
     return eqn2
 
+
 # Multiply equation by term
 def mult_eqn(eqn, e):
-    return Eq(eqn.lhs*e, eqn.rhs*e)
+    return Eq(eqn.lhs * e, eqn.rhs * e)
+
 
 # Extract coefficient from an expression for the symbol 'sym'.
 # Works by setting all values in symlist to zero, except the target in 'sym'.
