@@ -462,17 +462,6 @@ endif()
 #  set up scalar/vector math libraries
 #-------------------------------------------------------------------
 add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
-
-set(VALID_MATH_VENDORS "GENERIC" "INTEL_VML" "AMD_LIBM")
-set(QMC_MATH_VENDOR
-    "GENERIC"
-    CACHE STRING "Vendor optimized libraries for scalar and vector math functions")
-
-# Perform math vendor option check
-if(NOT QMC_MATH_VENDOR IN_LIST VALID_MATH_VENDORS)
-  message(FATAL_ERROR "Invalid vendor math library ${QMC_MATH_VENDOR}, value must be one of ${VALID_MATH_VENDORS}")
-endif()
-
 find_package(VendorPerfLibs COMPONENTS vml)
 if(VendorPerfLibs_FOUND)
   if(VPL_vml_ID STREQUAL "IntelMKL")
