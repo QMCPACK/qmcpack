@@ -1,4 +1,3 @@
-
 # Compute wavefunction values and parameter derivatives
 # for a wavefunction with STO Be orbitals, single determinant, and orbital rotation
 
@@ -9,6 +8,7 @@ import read_qmcpack
 from slater_orbitals import STO
 
 import scipy.linalg
+
 
 # From construct_rot.py
 def construct_antisym(p):
@@ -138,6 +138,7 @@ class Wavefunction_Be_STO:
         h = -0.5 * lapl / psi_val + pot
         return h
 
+
 # Create reference values for
 # "Rotated LCAO Be single determinant" and "Rotated LCAO Be multi determinant with one determinant"
 # in test_RotatedSPOs_LCAO.cpp
@@ -182,4 +183,4 @@ def run():
 
 if __name__ == "__main__":
     generate_point_values()
-    #run()
+    # run()

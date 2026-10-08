@@ -1,22 +1,19 @@
 #! /usr/bin/env python3
 
-'''
+"""
 Gamma point Hartree-Fock/DFT
 The 2-electron integrals are computed using Poisson solver with FFT by default.
 In most scenario, it should be used with pseudo potential.
-'''
+"""
 
 # Note import path which is different to molecule code
-#from pyscf.pbc import gto, scf, df, dft
+# from pyscf.pbc import gto, scf, df, dft
 from pyscf import gto, df, dft
-import  numpy
-
-
-
+import numpy
 
 
 cell = gto.M(
-   atom ='''
+    atom="""
              Fe    0.0000013   -0.0000001   -0.0000001
              C     0.0000037   -0.0072194    2.3405884
              O    -0.0000299   -0.0415619    3.4549199
@@ -30,31 +27,30 @@ cell = gto.M(
              O     0.0000240   -3.4513475    0.0412328
              C     0.0000037    2.3369862   -0.0065788
              O    -0.0000326    3.4513476   -0.0412324
-''',
-   basis ='bfd-vtz',
-   ecp='bfd',
-   unit="angstrom",
-   spin=4,
-   verbose = 5,
-   cart = False,
-   charge = 2,
+""",
+    basis="bfd-vtz",
+    ecp="bfd",
+    unit="angstrom",
+    spin=4,
+    verbose=5,
+    cart=False,
+    charge=2,
 )
 
 
-
-
 mf = dft.RKS(cell).density_fit()
-#mf = dft.RKS(cell)
-mf.xc = 'b3lyp'
-#mf.chkfile = 'FeCO6.chk'
-#dm = mf.from_chk('FeCO6.chk')
-mf.chkfile = 'FeCO6-spherical.chk'
-dm = mf.from_chk('FeCO6-spherical.chk')
+# mf = dft.RKS(cell)
+mf.xc = "b3lyp"
+# mf.chkfile = 'FeCO6.chk'
+# dm = mf.from_chk('FeCO6.chk')
+mf.chkfile = "FeCO6-spherical.chk"
+dm = mf.from_chk("FeCO6-spherical.chk")
 mf.kernel(dm)
-#mf.kernel()
+# mf.kernel()
 
-title='FeCO6'
-kpts=[]
+title = "FeCO6"
+kpts = []
 
 from PyscfToQmcpack import savetoqmcpack
-savetoqmcpack(cell,mf,title=title,kpts=kpts)
+
+savetoqmcpack(cell, mf, title=title, kpts=kpts)

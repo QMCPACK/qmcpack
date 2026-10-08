@@ -7,14 +7,14 @@ import numpy
 import h5py
 
 mol = gto.Mole()
-mol.basis = 'cc-pvtz'
-mol.atom = (('C', 0,0,0),)
+mol.basis = "cc-pvtz"
+mol.atom = (("C", 0, 0, 0),)
 mol.spin = 2
 mol.verbose = 4
 mol.build()
 
 mf = scf.UHF(mol)
-mf.chkfile = 'scf.chk'
+mf.chkfile = "scf.chk"
 mf.kernel()
 # Check if UHF solution is stable.
 mf.stability()

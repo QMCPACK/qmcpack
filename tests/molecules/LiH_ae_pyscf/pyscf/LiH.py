@@ -2,15 +2,17 @@
 
 
 # Note import path which is different to molecule code
-#from pyscf.pbc import gto, scf, df, dft
+# from pyscf.pbc import gto, scf, df, dft
 from pyscf import gto, scf, df, dft
-import  numpy
+import numpy
 
 
 cell = gto.M(
-   atom ='''Li  0.0 0.0 0.0
-            H   0.0 0.0 3.0139239778''',
-   basis ={'H':'cc-pv5z','Li':gto.basis.parse('''
+    atom="""Li  0.0 0.0 0.0
+            H   0.0 0.0 3.0139239778""",
+    basis={
+        "H": "cc-pv5z",
+        "Li": gto.basis.parse("""
 #BASIS SET: (14s,7p,4d,3f,2g,1h) -> [6s,5p,4d,3f,2g,1h]
 Li    S
   29493.0000000              0.0000180             -0.0000030
@@ -61,20 +63,21 @@ Li    G
       0.3200000              1.0000000
 Li    G
       0.1600000              1.0000000
-''')},
-   unit="bohr",
-   spin=0,
-   verbose = 5,
-   cart=False,
+"""),
+    },
+    unit="bohr",
+    spin=0,
+    verbose=5,
+    cart=False,
 )
-
 
 
 mf = scf.ROHF(cell)
 mf.kernel()
 
-title='LiH'
+title = "LiH"
 
 
 from PyscfToQmcpack import savetoqmcpack
-savetoqmcpack(cell,mf,title)
+
+savetoqmcpack(cell, mf, title)

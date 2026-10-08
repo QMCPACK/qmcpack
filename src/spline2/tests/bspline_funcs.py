@@ -18,7 +18,9 @@ from sympy import (
 
 def _infer_position_symbol(ival: And) -> Symbol:
     """Infer the spline coordinate from an interval condition."""
-    symbols = sorted([s for s in ival.free_symbols if s.name != "Delta"], key=lambda s: s.name)
+    symbols = sorted(
+        [s for s in ival.free_symbols if s.name != "Delta"], key=lambda s: s.name
+    )
     if len(symbols) != 1:
         raise ValueError(f"expected one spline coordinate in {ival}, found {symbols}")
     return symbols[0]
@@ -83,7 +85,7 @@ def transpose_interval_and_coefficients(
     """
     cond_map = defaultdict(list)
 
-    i1 = Interval(0, 5, False, False) # Interval for evaluation
+    i1 = Interval(0, 5, False, False)  # Interval for evaluation
     for idx, s0 in enumerate(sym_basis):
         for expr, cond in s0.args:
             if cond == True:
@@ -123,7 +125,7 @@ def recreate_piecewise(basis_map: dict, c: IndexedBase, xs: Symbol) -> Piecewise
 
 
 def get_base_interval(
-    basis_map: dict[Interval, tuple[int, Expr]]
+    basis_map: dict[Interval, tuple[int, Expr]],
 ) -> tuple[int, Expr] | None:
     """Get the values corresponding to the interval starting at 0.
 
@@ -134,7 +136,7 @@ def get_base_interval(
     """
     for cond, exprs in basis_map.items():
         if cond.start == 0:
-          return exprs
+            return exprs
     return None
 
 
@@ -146,8 +148,8 @@ def create_spline(
 ) -> Piecewise:
     """Create a set of spline functions."""
     if Delta is None:
-        Delta = Symbol('Delta', positive=True)
-    all_knots = [i*Delta for i in range(-3, nknots+3)]
+        Delta = Symbol("Delta", positive=True)
+    all_knots = [i * Delta for i in range(-3, nknots + 3)]
 
     # Third-order bspline
     sym_basis = bspline_basis_set(3, all_knots, xs)

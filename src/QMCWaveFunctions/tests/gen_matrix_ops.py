@@ -5,71 +5,82 @@ from sympy import *
 import scipy.linalg
 import numpy as np
 
+
 # Create 2x2 skew symmetric matrix
 def create2x2_matrix(k1):
-    return Matrix([[0.0, -k1],
-                   [k1, 0.0]])
+    return Matrix([[0.0, -k1], [k1, 0.0]])
+
 
 # Create 3x3 skew symmetric matrix
 # The pattern of plus/minus reflects how the matrix is constructed in QMCPACK.
 # The standard presentation for a 3x3 matrix (that creates a rotation matrix)
 # numbers the variables differently, and flips the sign on k2
 def create3x3_matrix(k1, k2, k3):
-    return Matrix([[0.0, -k1, -k2],
-                   [k1,  0.0, -k3],
-                   [k2,   k3, 0.0]])
+    return Matrix([[0.0, -k1, -k2], [k1, 0.0, -k3], [k2, k3, 0.0]])
 
-#We are keeping + upper diagonal convention for this.
+
+# We are keeping + upper diagonal convention for this.
 def create3x3_matrix_complex(k1, k2, k3):
-    return np.array([[0.0, k1, k2],
-                   [-np.conj(k1),  0.0, k3],
-                   [-np.conj(k2),   -np.conj(k3), 0.0]])
+    return np.array(
+        [[0.0, k1, k2], [-np.conj(k1), 0.0, k3], [-np.conj(k2), -np.conj(k3), 0.0]]
+    )
+
 
 def extract3x3parameters(m3):
-    k1 = m3[1,0]
-    k2 = m3[2,0]
-    k3 = m3[1,2]
+    k1 = m3[1, 0]
+    k2 = m3[2, 0]
+    k3 = m3[1, 2]
 
     # Test that it is really an antisymmetric matrix
     tol = 1e-12
     for i in range(3):
-        assert(abs(m3[i,i]) < tol)
+        assert abs(m3[i, i]) < tol
 
-    for (i,j) in [(1,0), (2,0), (1,2)]:
-        assert(abs(m3[i,j] + m3[j,i]) < tol)
+    for i, j in [(1, 0), (2, 0), (1, 2)]:
+        assert abs(m3[i, j] + m3[j, i]) < tol
 
     return k1, k2, k3
 
+
 def create4x4_matrix(k1, k2, k3, k4, k5, k6):
-    return np.array([[0.0, -k1, -k2, -k3],
-                     [k1,  0.0, -k4, -k5],
-                     [k2,   k4, 0.0, -k6],
-                     [k3,   k5,  k6, 0.0]])
+    return np.array(
+        [
+            [0.0, -k1, -k2, -k3],
+            [k1, 0.0, -k4, -k5],
+            [k2, k4, 0.0, -k6],
+            [k3, k5, k6, 0.0],
+        ]
+    )
+
 
 def extract4x4parameters(m4):
-    k1 = m4[1,0]
-    k2 = m4[2,0]
-    k3 = m4[3,0]
-    k4 = m4[2,1]
-    k5 = m4[3,1]
-    k6 = m4[3,2]
+    k1 = m4[1, 0]
+    k2 = m4[2, 0]
+    k3 = m4[3, 0]
+    k4 = m4[2, 1]
+    k5 = m4[3, 1]
+    k6 = m4[3, 2]
 
     # Test that it is really an antisymmetric matrix
     tol = 1e-12
     for i in range(4):
-        assert(abs(m4[i,i]) < tol)
+        assert abs(m4[i, i]) < tol
 
-    for (i,j) in [(1,0), (2,0), (3,0), (1,2), (1,3), (2,3)]:
-        assert(abs(m4[i,j] + m4[j,i]) < tol)
+    for i, j in [(1, 0), (2, 0), (3, 0), (1, 2), (1, 3), (2, 3)]:
+        assert abs(m4[i, j] + m4[j, i]) < tol
 
     return k1, k2, k3, k4, k5, k6
+
 
 # Print a check for each matrix entry
 def print_matrix_for_check(m, matrix_name):
     for i in range(m.rows):
         for j in range(m.cols):
-            print("  CHECK({matrix_name}({row},{col}) == ValueApprox({val:15g}));".format(
-                matrix_name=matrix_name, row=i, col=j, val=m[i,j]))
+            print(
+                "  CHECK({matrix_name}({row},{col}) == ValueApprox({val:15g}));".format(
+                    matrix_name=matrix_name, row=i, col=j, val=m[i, j]
+                )
+            )
 
 
 # Print matrix as initializer list (for use in checkMatrix)
@@ -89,14 +100,15 @@ def print_matrix_as_initializer_list(m):
     for i in range(rows):
         for j in range(cols):
             # Skip comma after the last entry
-            if i == rows-1 and j == cols-1:
+            if i == rows - 1 and j == cols - 1:
                 comma = ""
-            print(" {:>18.15g}{comma}".format(float(m[i,j]), comma=comma), end="")
-        if i == rows-1:
+            print(" {:>18.15g}{comma}".format(float(m[i, j]), comma=comma), end="")
+        if i == rows - 1:
             print(" };")
         else:
             print()
             print(" ", end="")
+
 
 def print_matrix_as_initializer_list_complex(m):
     try:
@@ -113,10 +125,15 @@ def print_matrix_as_initializer_list_complex(m):
     for i in range(rows):
         for j in range(cols):
             # Skip comma after the last entry
-            if i == rows-1 and j == cols-1:
+            if i == rows - 1 and j == cols - 1:
                 comma = ""
-            print(" cmplx_t({:>12.9g}{comma}{:>12.9g}){comma}".format(float(m[i,j].real),float(m[i,j].imag), comma=comma), end="")
-        if i == rows-1:
+            print(
+                " cmplx_t({:>12.9g}{comma}{:>12.9g}){comma}".format(
+                    float(m[i, j].real), float(m[i, j].imag), comma=comma
+                ),
+                end="",
+            )
+        if i == rows - 1:
             print(" };")
         else:
             print()
@@ -132,6 +149,7 @@ def test_1x1():
     print(m1exp)
     print()
 
+
 def test_2x2():
     print("2x2 matrix")
     m2 = create2x2_matrix(0.1)
@@ -142,6 +160,7 @@ def test_2x2():
     print("\nExp(Input)")
     print_matrix_as_initializer_list(m2exp)
     print()
+
 
 def test_3x3():
     print("3x3 matrix")
@@ -154,17 +173,19 @@ def test_3x3():
     print_matrix_as_initializer_list(m3exp)
     print()
 
+
 def test_3x3_complex():
     print("3x3 complex")
-    m3_cmplx = create3x3_matrix_complex(0.3+0.1j, 0.1-0.3j, 0.2+0.01j)
+    m3_cmplx = create3x3_matrix_complex(0.3 + 0.1j, 0.1 - 0.3j, 0.2 + 0.01j)
     m3exp_cmplx = scipy.linalg.expm(np.array(m3_cmplx))
-    
+
     print("Input")
     print_matrix_as_initializer_list_complex(m3_cmplx)
     print("\nExp(Input)")
     print_matrix_as_initializer_list_complex(m3exp_cmplx)
     print()
-     
+
+
 def test_4x4():
     # Application of rotation matrix in the test "RotatedSPOs construct delta matrix" in test_RotatedSPOs.cpp
     # Sympy operations are very slow for a 4x4 matrix, and it doesn't have a matrix log.
@@ -189,7 +210,7 @@ def test_4x4():
     print("Corresponding antisymmetric matrix")
     print(param4)
     ks = extract4x4parameters(param4)
-    print('Extracted parameters (Reminder: ordering differs from QMCPACK)')
+    print("Extracted parameters (Reminder: ordering differs from QMCPACK)")
     print(ks)
 
 
@@ -205,18 +226,19 @@ def test_multiple_3x3():
     m3old = np.array(create3x3_matrix(0.1, 0.2, 0.0))
     m3next = np.array(create3x3_matrix(0.3, 0.15, 0.0))
 
-    print('Original rotation matrix')
+    print("Original rotation matrix")
     print_matrix_as_initializer_list(scipy.linalg.expm(m3old).T)
 
     m3new = np.dot(scipy.linalg.expm(m3next).T, scipy.linalg.expm(m3old).T)
-    print('After second rotation')
+    print("After second rotation")
     print_matrix_as_initializer_list(m3new)
 
     param3 = scipy.linalg.logm(m3new)
 
     ks3 = extract3x3parameters(param3.T)
-    print('Extracted parameters after second rotation')
+    print("Extracted parameters after second rotation")
     print(ks3)
+
 
 if __name__ == "__main__":
     test_1x1()

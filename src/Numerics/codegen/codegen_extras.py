@@ -9,6 +9,7 @@ from sympy.codegen.ast import Assignment, Pointer, Node, Type
 from sympy.codegen.ast import String, Declaration, Variable
 from sympy.printing.cxxcode import CXX11CodePrinter
 
+
 # A range class that accepts symbolic limits. Purpose is For loops
 class ARange(Set):
     is_iterable = True
@@ -20,6 +21,7 @@ class ARange(Set):
         step = slc.step
 
         return Basic.__new__(cls, start, stop, step)
+
     start = property(lambda self: self.args[0])
     stop = property(lambda self: self.args[1])
     step = property(lambda self: self.args[2])
@@ -29,9 +31,10 @@ class ARange(Set):
         i = 0
         yield i
 
+
 # The end value should be included in the iteration
 class ARangeClosedEnd(ARange):
-  pass
+    pass
 
 
 # Convert Eq to Assignment
@@ -41,20 +44,20 @@ def convert_eq_to_assignment(expr):
 
 # Node for a C++ reference
 class Reference(Pointer):
-    """ Represents a C++ reference"""
+    """Represents a C++ reference"""
+
     pass
 
 
 # Specify direct initialization (with parentheses)
 #  e.g.   int j(0);
 class VariableWithInit(Variable):
-
-    __slots__ = ['type_init'] + Variable.__slots__
+    __slots__ = ["type_init"] + Variable.__slots__
 
 
 # Templated function definition
 class TemplateFunctionDefinition(Node):
-    __slots__ = ['return_type','name','parameters','template_types','body','attrs']
+    __slots__ = ["return_type", "name", "parameters", "template_types", "body", "attrs"]
     _construct_return_type = Type
     _construct_name = String
 
@@ -67,6 +70,7 @@ class TemplateFunctionDefinition(Node):
                 return arg
             else:
                 return Variable.deduced(arg)
+
         return Tuple(*map(_var, args))
 
     @staticmethod
@@ -83,15 +87,15 @@ class ACodePrinter(CXX11CodePrinter):
         lhs = expr.lhs
         rhs = expr.rhs
         if lhs.has(IndexedBase) or rhs.has(IndexedBase):
-            return self._get_statement("%s = %s"%(self._print(lhs),self._print(rhs)))
+            return self._get_statement("%s = %s" % (self._print(lhs), self._print(rhs)))
         else:
             return super(ACodePrinter, self)._print_Assignment(expr)
 
     def _print_Pow(self, expr):
-      if expr.exp == 2:
-        e = self._print(expr.base)
-        return '%s*%s'%(e,e)
-      return super(ACodePrinter, self)._print_Pow(expr)
+        if expr.exp == 2:
+            e = self._print(expr.base)
+            return "%s*%s" % (e, e)
+        return super(ACodePrinter, self)._print_Pow(expr)
 
     def _print_Symbol(self, expr):
         name = super(ACodePrinter, self)._print_Symbol(expr)
@@ -102,56 +106,69 @@ class ACodePrinter(CXX11CodePrinter):
         return name
 
     def _print_Declaration(self, decl):
-        #print("decl = ",decl,type(decl))
+        # print("decl = ",decl,type(decl))
         var = decl.variable
         val = var.value
         if isinstance(var, Reference):
-            result = '{t}& {s}'.format(
-                t = self._print(var.type),
-                s = self._print(var.symbol)
+            result = "{t}& {s}".format(
+                t=self._print(var.type), s=self._print(var.symbol)
             )
             return result
         elif isinstance(var, VariableWithInit):
-            result = '{t} {s}({init})'.format(
-                      t=self._print(var.type),
-                      s=self._print(var.symbol),
-                      init=self._print(var.type_init))
+            result = "{t} {s}({init})".format(
+                t=self._print(var.type),
+                s=self._print(var.symbol),
+                init=self._print(var.type_init),
+            )
             return result
         else:
             return super(ACodePrinter, self)._print_Declaration(decl)
 
     def _print_TemplateFunctionDefinition(self, expr):
         decl = "template<{template_args}>\n{ret_type} {name}({params}){body}".format(
-                    template_args=', '.join(map(lambda arg: 'typename '+self._print(arg), expr.template_types)),
-                    ret_type=self._print(expr.return_type),
-                    name=expr.name,
-                    params=', '.join(map(lambda arg: self._print(Declaration(arg)), expr.parameters)),
-                    body=self._print_Scope(expr)
-
-                )
+            template_args=", ".join(
+                map(lambda arg: "typename " + self._print(arg), expr.template_types)
+            ),
+            ret_type=self._print(expr.return_type),
+            name=expr.name,
+            params=", ".join(
+                map(lambda arg: self._print(Declaration(arg)), expr.parameters)
+            ),
+            body=self._print_Scope(expr),
+        )
         return decl
 
     def _print_For(self, expr):
         target = self._print(expr.target)
         it = expr.iterable
         body = self._print(expr.body)
-        #print("it = ",it,type(it),isinstance(it,ARange))
+        # print("it = ",it,type(it),isinstance(it,ARange))
 
         if isinstance(it, ARange):
             end_compare = ""
             if isinstance(it, ARangeClosedEnd):
-              end_compare="="
+                end_compare = "="
             if it.step > 0:
-                return ("for (auto {target} = {start}; {target} <{end_compare} {stop}; {target} += {step}) {{\n{body}\n}}").format(
-                    target=target,start=it.start, stop=it.stop, step=it.step, body=body,end_compare=end_compare)
+                return (
+                    "for (auto {target} = {start}; {target} <{end_compare} {stop}; {target} += {step}) {{\n{body}\n}}"
+                ).format(
+                    target=target,
+                    start=it.start,
+                    stop=it.stop,
+                    step=it.step,
+                    body=body,
+                    end_compare=end_compare,
+                )
             else:
-                return ("for (auto {target} = {start}; {target} >{end_compare} {stop}; {target} += {step}) {{\n{body}\n}}").format(
-                    target=target,start=it.start, stop=it.stop, step=it.step, body=body, end_compare=end_compare)
+                return (
+                    "for (auto {target} = {start}; {target} >{end_compare} {stop}; {target} += {step}) {{\n{body}\n}}"
+                ).format(
+                    target=target,
+                    start=it.start,
+                    stop=it.stop,
+                    step=it.step,
+                    body=body,
+                    end_compare=end_compare,
+                )
         else:
             return super(ACodePrinter, self)._print_For(expr)
-
-
-
-
-
-

@@ -6,108 +6,110 @@ import numpy as np
 
 
 def read(fdat):
-  """ read the scalar.dat file in table format readable by numpy.loadtxt.
+    """read the scalar.dat file in table format readable by numpy.loadtxt.
 
-   The header line should start with '#' and contain column labels.
+     The header line should start with '#' and contain column labels.
 
-  Args:
-    fdat (str): name of input file
-  Return:
-    dict: dict containing data from fdat
-  """
-  with open(fdat, 'r') as fp:
-    file = fp.readlines()
-  # end with
+    Args:
+      fdat (str): name of input file
+    Return:
+      dict: dict containing data from fdat
+    """
+    with open(fdat, "r") as fp:
+        file = fp.readlines()
+    # end with
 
-  # Initialize empty dict
-  data = {}
+    # Initialize empty dict
+    data = {}
 
-  # Grab columns from first line of file
-  cols = file[0].replace('#', '').strip().split()
+    # Grab columns from first line of file
+    cols = file[0].replace("#", "").strip().split()
 
-  # Initialize dict entries for each column
-  for col in cols:
-    data[col] = []
+    # Initialize dict entries for each column
+    for col in cols:
+        data[col] = []
 
-  # Iterate over the rows (skipping the header row with [1:])
-  for row in file[1:]:
-    row_data = row.strip().split()
+    # Iterate over the rows (skipping the header row with [1:])
+    for row in file[1:]:
+        row_data = row.strip().split()
 
-    # Add the data from each row to their respective column
-    for col, datum in zip(cols, row_data):
-      data[col] += [float(datum)]
+        # Add the data from each row to their respective column
+        for col, datum in zip(cols, row_data):
+            data[col] += [float(datum)]
 
-  return data
+    return data
+
+
 # end def read
 
 
 def compare_columns_dat_h5(fdat, fh5):
-  """ compare mutual data columns in scalar.dat and stat.h5 files
+    """compare mutual data columns in scalar.dat and stat.h5 files
 
-  Args:
-    fdat (str): name of scalar.dat file
-    fh5  (str): name of stat.h5 file
-  Return:
-    dict: a dictionary holding mutual columns names as key
-  """
+    Args:
+      fdat (str): name of scalar.dat file
+      fh5  (str): name of stat.h5 file
+    Return:
+      dict: a dictionary holding mutual columns names as key
+    """
 
-  # open database
-  data = read(fdat)
-  # get "columns" (holdover naming from when this was done with pandas)
-  dat_cols = data.keys()
+    # open database
+    data = read(fdat)
+    # get "columns" (holdover naming from when this was done with pandas)
+    dat_cols = data.keys()
 
-  fp = h5py.File(fh5,'r')
-  h5_cols = fp.keys()
+    fp = h5py.File(fh5, "r")
+    h5_cols = fp.keys()
 
-  # compare mutual columns in .dat v.s. .h5
-  agree_map = {}  # keep track of which columns agree
-  for col in h5_cols:
-    if col not in dat_cols:
-      continue
+    # compare mutual columns in .dat v.s. .h5
+    agree_map = {}  # keep track of which columns agree
+    for col in h5_cols:
+        if col not in dat_cols:
+            continue
 
-    # check if col agree between .dat and .h5
+        # check if col agree between .dat and .h5
 
-    # get .h5 values
-    h5_loc = os.path.join(col, 'value')
-    h5y  = fp[h5_loc][:][:,-1]
+        # get .h5 values
+        h5_loc = os.path.join(col, "value")
+        h5y = fp[h5_loc][:][:, -1]
 
-    # get .dat values and put them into a numpy array
-    daty = np.array(data[col], dtype=np.float64)
-    agree_map[col] = np.allclose(h5y,daty)
-  # end for col
-   
-  # close database
-  fp.close()
+        # get .dat values and put them into a numpy array
+        daty = np.array(data[col], dtype=np.float64)
+        agree_map[col] = np.allclose(h5y, daty)
+    # end for col
 
-  if len(agree_map) == 0:
-    raise RuntimeError('%s and %s have no mutual column' % (fdat, fh5))
+    # close database
+    fp.close()
 
-  return agree_map
+    if len(agree_map) == 0:
+        raise RuntimeError("%s and %s have no mutual column" % (fdat, fh5))
+
+    return agree_map
+
+
 # end def
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    prefix = sys.argv[1]
+    seriesl = [0, 1]
 
-  prefix = sys.argv[1]
-  seriesl= [0,1]
+    # check Properties
+    series_success_map = {}
+    for iseries in seriesl:
+        # define files to read
+        fdat = "%s.s00%d.scalar.dat" % (prefix, iseries)
+        fh5 = "%s.s00%d.stat.h5" % (prefix, iseries)
 
-  # check Properties
-  series_success_map = {}
-  for iseries in seriesl:
+        agree_map = compare_columns_dat_h5(fdat, fh5)
+        success = np.all(agree_map.values())
+        series_success_map[iseries] = success
+    # end for iseries
 
-    # define files to read
-    fdat = '%s.s00%d.scalar.dat' % (prefix, iseries)
-    fh5  = '%s.s00%d.stat.h5' % (prefix, iseries)
+    all_success = np.all(series_success_map.values())
+    if all_success:
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
-    agree_map = compare_columns_dat_h5(fdat, fh5)
-    success = np.all( agree_map.values() )
-    series_success_map[iseries] = success
-  # end for iseries
-  
-  all_success = np.all( series_success_map.values() )
-  if all_success:
-    sys.exit(0)
-  else:
-    sys.exit(1)
-  
 # end __main__
