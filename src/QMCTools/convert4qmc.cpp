@@ -329,6 +329,5 @@ int main(int argc, char** argv)
       APP_ABORT("Unhandled Exception");
     }
   }
-  OHMMS::Controller->finalize();
   return 0;
 }

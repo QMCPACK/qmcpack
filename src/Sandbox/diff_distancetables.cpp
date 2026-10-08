@@ -166,7 +166,5 @@ int main(int argc, char** argv)
     cout << "Done with the sweep. Diffusion |els.R-R0|^2/nels = " << r_err / nels << endl;
   }
 
-  OHMMS::Controller->finalize();
-
   return 0;
 }

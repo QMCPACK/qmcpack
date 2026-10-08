@@ -388,8 +388,5 @@ int main(int argc, char** argv)
     }
   }
 
-
-  OHMMS::Controller->finalize();
-
   return 0;
 }

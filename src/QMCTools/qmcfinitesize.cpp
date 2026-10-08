@@ -159,7 +159,6 @@ int main(int argc, char** argv)
   qmcfs.validateXML();
   qmcfs.execute();
 
-  // Jobs done. Clean up.
-  OHMMS::Controller->finalize();
+  // Jobs done.
   return 0;
 }
