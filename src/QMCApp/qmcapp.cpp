@@ -144,7 +144,6 @@ int main(int argc, char** argv)
                      "containing lists of .xml input files."
                   << std::endl;
       }
-      OHMMS::Controller->finalize();
       return 1;
     }
     //safe to move on
@@ -226,10 +225,10 @@ int main(int argc, char** argv)
     APP_ABORT("Unhandled Exception (not derived from std::exception)");
   }
 
+  OHMMS::Controller->barrier(); // Barrier needed to ensure all groups in ensemble runs complete successfully
+
   if (OHMMS::Controller->rank() == 0)
     std::cout << std::endl << "QMCPACK execution completed successfully" << std::endl;
-
-  OHMMS::Controller->finalize();
 
   return 0;
 }

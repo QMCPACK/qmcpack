@@ -261,7 +261,5 @@ int main(int argc, char** argv)
   //cout << "#per MC step steps " << nsteps << " substeps " << nsubsteps << endl;
   //cout << "diffusion_mc " << t_diffusion << " pseudo_mc  " << t_pseudo << endl;
 
-  OHMMS::Controller->finalize();
-
   return 0;
 }

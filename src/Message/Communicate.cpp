@@ -88,25 +88,12 @@ Communicate Communicate::NodeComm() const
   return Communicate{comm.split_shared()};
 }
 
-void Communicate::finalize()
-{
-  static bool has_finalized = false;
-
-  if (!has_finalized)
-  {
-    has_finalized = true;
-  }
-}
-
-
 void Communicate::abort() const { comm.abort(1); }
 
 void Communicate::barrier() const { comm.barrier(); }
 #else
 
 Communicate Communicate::NodeComm() const { return Communicate{}; }
-
-void Communicate::finalize() {}
 
 void Communicate::abort() const { std::_Exit(EXIT_FAILURE); }
 

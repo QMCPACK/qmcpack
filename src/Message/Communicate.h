@@ -93,7 +93,6 @@ public:
   /// provide a node/shared-memory communicator from current (parent) communicator
   Communicate NodeComm() const;
 
-  void finalize();
   void barrier() const;
   void abort() const;
   void barrier_and_abort(const std::string& msg) const;

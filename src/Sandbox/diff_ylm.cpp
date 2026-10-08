@@ -160,7 +160,5 @@ int main(int argc, char** argv)
 
   cout << "Error " << ntot << " " << nsamples << " " << err << endl;
 
-  OHMMS::Controller->finalize();
-
   return 0;
 }

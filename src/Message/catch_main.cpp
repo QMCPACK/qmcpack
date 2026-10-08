@@ -62,9 +62,6 @@ int main(int argc, char* argv[])
   qmcplusplus::print_mem("Before running tests", qmcplusplus::app_log());
   // Run the tests.
   int result = session.run();
-#ifdef CATCH_MAIN_HAVE_MPI
-  OHMMS::Controller->finalize();
-#endif
   if (parser_err != 0)
   {
     return parser_err;

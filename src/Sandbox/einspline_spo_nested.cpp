@@ -343,8 +343,5 @@ int main(int argc, char** argv)
     cout << endl;
   }
 
-
-  OHMMS::Controller->finalize();
-
   return 0;
 }
