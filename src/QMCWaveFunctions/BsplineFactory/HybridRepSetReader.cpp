@@ -222,7 +222,7 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
   if (foundspline && myComm->rank() == 0)
   {
     Timer now;
-    hdf_archive h5f(myComm);
+    hdf_archive h5f(*myComm);
     const auto splinefile = getSplineDumpFileName(bandgroup);
     h5f.open(splinefile, H5F_ACC_RDONLY);
     foundspline = SplineUtils<ST>::read(multi_splines, h5f) && hybrid_center_orbs.read_atomic_splines(h5f);
@@ -701,7 +701,7 @@ void HybridRepSetReader<ST>::initialize_hybrid_pio_gather(const int spin,
 
   app_log() << "Start transforming plane waves to 3D B-splines and atomic radial orbital 1D B-splines." << std::endl;
   OneSplineOrbData oneband(mybuilder->MeshSize, half_g, use_duplex_splines_);
-  hdf_archive h5f(&band_group_comm, false);
+  hdf_archive h5f(band_group_comm, false);
   Vector<std::complex<double>> cG(mybuilder->Gvecs[0].size());
   const std::vector<BandInfo>& cur_bands = bandgroup.myBands;
   if (band_group_comm.isGroupLeader())

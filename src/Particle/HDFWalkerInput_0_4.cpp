@@ -123,7 +123,7 @@ bool HDFWalkerInput_0_4::read_hdf5(const std::filesystem::path& h5name)
 {
   size_t nw_in = 0;
 
-  hdf_archive hin(myComm, false); //everone reads this
+  hdf_archive hin(*myComm, false); //everone reads this
   if (!hin.open(h5name, H5F_ACC_RDONLY))
     return false;
   //check if hdf and xml versions can work together
@@ -196,7 +196,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
   bool success = false;
   if (myComm->rank() == 0)
   {
-    hdf_archive hin(myComm); //everone reads this
+    hdf_archive hin(*myComm); //everone reads this
     success = hin.open(h5name, H5F_ACC_RDONLY);
     if (success)
     {
@@ -261,7 +261,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
   bool success2 = false;
   if (myComm->rank() == 0)
   {
-    hdf_archive hin(myComm);
+    hdf_archive hin(*myComm);
     success2 = hin.open(h5name, H5F_ACC_RDONLY);
     if (success2)
     {
@@ -303,7 +303,7 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
   bool success      = false;
 
   { // handle small dataset with master rank
-    hdf_archive hin(myComm, false);
+    hdf_archive hin(*myComm, false);
     if (myComm->rank() == 0)
     {
       success = hin.open(h5name, H5F_ACC_RDONLY);
@@ -354,7 +354,7 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
     nw_in = woffsets[woffsets_size - 1];
   }
 
-  hdf_archive hin(myComm, true); //everone reads this
+  hdf_archive hin(*myComm, true); //everone reads this
   if (!hin.open(h5name, H5F_ACC_RDONLY))
     return false;
   if (!hin.is_group(hdf::main_state))

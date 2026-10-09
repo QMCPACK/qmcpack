@@ -30,7 +30,7 @@ PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate* comm
       targetPtcl(p),
       rootNode(cur),
       myParam{std::make_unique<PWParameterSet>(comm)},
-      hfile{comm}
+      hfile{*comm}
 {
   //
   //Get wavefunction data and parameters from XML and HDF5

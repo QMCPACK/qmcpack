@@ -136,7 +136,7 @@ bool BranchIO<SFNB>::write(const std::string& fname)
   std::string h5name(fname);
   if (fname.find("qmc.h5") >= fname.size())
     h5name.append(".qmc.h5");
-  hdf_archive dump(myComm);
+  hdf_archive dump(*myComm);
   hid_t fid = dump.create(h5name);
   dump.push(hdf::main_state);
   dump.push(hdf::qmc_status);

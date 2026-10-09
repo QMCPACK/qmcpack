@@ -234,7 +234,7 @@ TEST_CASE("LCAOrbitalBuilder HDF5 Exceptions", "[wavefunction][LCAO]")
   {
     if (c.rank() == 0)
     {
-      hdf_archive hout(&c);
+      hdf_archive hout(c);
       hout.create("test_trap_nb_elements.h5");
       hout.push("basisset", true);
       int nb = 2; // more than the 1 species we created
@@ -254,7 +254,7 @@ TEST_CASE("LCAOrbitalBuilder HDF5 Exceptions", "[wavefunction][LCAO]")
   {
     if (c.rank() == 0)
     {
-      hdf_archive hout(&c);
+      hdf_archive hout(c);
       hout.create("test_trap_missing_species.h5");
       hout.push("basisset", true);
       int nb = 1;

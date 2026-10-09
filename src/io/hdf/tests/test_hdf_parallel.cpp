@@ -24,7 +24,7 @@ using namespace qmcplusplus;
 TEST_CASE("hdf_archive_parallel", "[hdf]")
 {
   Communicate& c(*OHMMS::Controller);
-  hdf_archive hd(&c);
+  hdf_archive hd(c);
   hd.create("test_communicate.hdf");
   int i     = 23;
   bool okay = hd.writeEntry(i, "int");

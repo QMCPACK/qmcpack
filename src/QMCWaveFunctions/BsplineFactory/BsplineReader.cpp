@@ -121,7 +121,7 @@ bool BsplineReader::lookforSplineDataDumpFile(const BandInfoGroup& bandgroup,
   int foundspline = 0;
   if (myComm->rank() == 0)
   {
-    hdf_archive h5f(myComm);
+    hdf_archive h5f(*myComm);
     foundspline = h5f.open(getSplineDumpFileName(bandgroup), H5F_ACC_RDONLY);
     if (foundspline)
     {

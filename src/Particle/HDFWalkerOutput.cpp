@@ -90,7 +90,7 @@ bool HDFWalkerOutput::dump(const WalkerConfigurations& W, int nblock)
   //}
 
   //try to use collective
-  hdf_archive dump_file(myComm, true);
+  hdf_archive dump_file(*myComm, true);
   dump_file.create(FileName);
   HDFVersion cur_version;
   dump_file.write(cur_version.version, hdf::version);

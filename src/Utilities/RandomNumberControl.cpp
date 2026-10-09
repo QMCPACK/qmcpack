@@ -183,7 +183,7 @@ bool RandomNumberControl::put(xmlNodePtr cur)
 void RandomNumberControl::read(const std::string& fname, Communicate* comm)
 {
   std::string h5name = fname + ".random.h5";
-  hdf_archive hin(comm, true); //attempt to read in parallel
+  hdf_archive hin(*comm, true); //attempt to read in parallel
   hin.open(h5name, H5F_ACC_RDONLY);
   if (hin.is_parallel())
     read_parallel(hin, comm);
@@ -198,7 +198,7 @@ void RandomNumberControl::write(const std::string& fname, Communicate* comm)
 void RandomNumberControl::write(const RefVector<Generator>& rng, const std::string& fname, Communicate* comm)
 {
   std::string h5name = fname + ".random.h5";
-  hdf_archive hout(comm, true); //attempt to write in parallel
+  hdf_archive hout(*comm, true); //attempt to write in parallel
   hout.create(h5name);
   if (hout.is_parallel())
     write_parallel(rng, hout, comm);

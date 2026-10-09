@@ -113,7 +113,7 @@ bool BenchmarkDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
             << "****************************************************\n"
             << std::endl;
 
-  hdf_archive read(myComm);
+  hdf_archive read(*myComm);
   if (!wfn0->init(TGdata, &CommBuffer, read, std::string(""), MPI_COMM_TG_LOCAL, MPI_COMM_NODE_LOCAL,
                   MPI_COMM_HEAD_OF_NODES))
   {
