@@ -81,7 +81,7 @@ TEST_CASE("Crowd integration", "[drivers]")
   using namespace testing;
   SetupPools pools;
 
-  EstimatorManagerNew em(pools.hamiltonian_pool->getHamiltonian().value(), &comm);
+  EstimatorManagerNew em(pools.hamiltonian_pool->getHamiltonian().value(), comm);
 
   DriverWalkerResourceCollection driverwalker_resource_collection_;
 

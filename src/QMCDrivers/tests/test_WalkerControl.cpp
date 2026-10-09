@@ -31,10 +31,10 @@ namespace qmcplusplus
 {
 namespace testing
 {
-UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(*dpools_.comm, Random)
+UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpools_.comm, Random)
 {
-  int num_ranks = dpools_.comm->size();
-  pop_ = std::make_unique<MCPopulation>(num_ranks, dpools_.comm->rank(), *dpools_.particle_pool->getParticleSet("e"),
+  int num_ranks = dpools_.comm.size();
+  pop_ = std::make_unique<MCPopulation>(num_ranks, dpools_.comm.rank(), *dpools_.particle_pool->getParticleSet("e"),
                                         dpools_.wavefunction_pool->getWaveFunction().value(),
                                         dpools_.hamiltonian_pool->getHamiltonian().value());
 
@@ -61,7 +61,7 @@ void UnifiedDriverWalkerControlMPITest::testNewDistribution(std::vector<int>& in
                                                             std::vector<int>& minus,
                                                             std::vector<int>& plus)
 {
-  assert(initial_num_per_rank.size() == dpools_.comm->size());
+  assert(initial_num_per_rank.size() == dpools_.comm.size());
   std::vector<int> num_per_rank = initial_num_per_rank;
   std::vector<int> fair_offset;
   wc_.determineNewWalkerPopulation(num_per_rank, fair_offset, minus, plus);
@@ -115,11 +115,11 @@ TEST_CASE("WalkerControl::determineNewWalkerPopulation", "[drivers][walker_contr
 }
 
 void testing::UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& rank_counts_before,
-                                                                    std::vector<int>& rank_counts_after)
+                                                                   std::vector<int>& rank_counts_after)
 {
   using MCPWalker = MCPopulation::MCPWalker;
 
-  int rank               = dpools_.comm->rank();
+  int rank               = dpools_.comm.rank();
   auto num_local_walkers = pop_->get_num_local_walkers();
 
   // if rank counts_before is different manipulation multiplicities on walkers to get the rank count we want.
@@ -139,14 +139,14 @@ void testing::UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<
   wc_.swapWalkersSimple(*pop_);
   wc_.killDeadWalkersOnRank(*pop_);
   pop_->fissionHighMultiplicityWalkers();
-  reportWalkersPerRank(*dpools_.comm, *pop_);
+  reportWalkersPerRank(dpools_.comm, *pop_);
   CHECK(pop_->get_num_local_walkers() == rank_counts_after[rank]);
 }
 
 void testing::UnifiedDriverWalkerControlMPITest::testWalkerIDs(std::vector<std::vector<int>> walker_ids_after,
                                                                std::vector<std::vector<int>> parent_ids_after)
 {
-  int rank = dpools_.comm->rank();
+  int rank = dpools_.comm.rank();
   std::vector<int> walker_ids;
   std::vector<int> parent_ids;
 #ifndef NDEBUG

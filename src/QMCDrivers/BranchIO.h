@@ -28,8 +28,8 @@ public:
   using VParamType = typename SFNB::VParamType;
 
   SFNB& ref;
-  Communicate* myComm;
-  BranchIO(SFNB& source, Communicate* c) : ref(source), myComm(c) {}
+  Communicate& myComm;
+  BranchIO(SFNB& source, Communicate& c) : ref(source), myComm(c) {}
 
   bool write(const std::string& fname);
   bool read(const std::string& fname);

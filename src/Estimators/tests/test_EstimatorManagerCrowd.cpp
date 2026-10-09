@@ -45,7 +45,7 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
   TrialWaveFunction& twf(wavefunction_pool.getWaveFunction().value());
   QMCHamiltonian& ham(hamiltonian_pool.getHamiltonian().value());
 
-  EstimatorManagerNew emn(ham, &comm);
+  EstimatorManagerNew emn(ham, comm);
   emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
   CHECK(emn.getNumEstimators() == n_opest_new_input_xml);
@@ -79,7 +79,7 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   PerParticleHamiltonianLoggerInput pphli;
   emi.append(std::move(pphli));
 
-  EstimatorManagerNew emn(ham, &comm);
+  EstimatorManagerNew emn(ham, comm);
   emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
   CHECK(emn.getNumEstimators() == 4);

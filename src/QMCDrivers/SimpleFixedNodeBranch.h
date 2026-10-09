@@ -61,7 +61,7 @@ class EstimatorManagerBase;
  *
  * Steps in 'Legacy' SFNB states machine
  * 1. Construction (gets global walker number (rank or section wide?)
- * 2. setEstimatorManager (also makes bootstrapping SFNB state dependent on valid Communicate*)
+ * 2. setEstimatorManager (also makes bootstrapping SFNB state dependent on valid Communicate&)
  * 3. put(reads driver XML node yet again)
  * 4. setWalkerController (Maybe a WalkerController pointer is passed in)
  * 5. InitWalkerController 

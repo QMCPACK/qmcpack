@@ -161,22 +161,22 @@ int main(int argc, char** argv)
       comm_job              = std::make_unique<Communicate>(*OHMMS::Controller, inputs.size());
       qmc_common.mpi_groups = inputs.size();
     }
-    Communicate* qmcComm = inputs.size() > 1 ? comm_job.get() : OHMMS::Controller.get();
+    Communicate& qmcComm = inputs.size() > 1 ? *comm_job : *OHMMS::Controller;
     std::stringstream logname;
-    int inpnum          = (inputs.size() > 1) ? qmcComm->getGroupID() : 0;
-    std::string myinput = inputs[qmcComm->getGroupID()];
+    int inpnum          = (inputs.size() > 1) ? qmcComm.getGroupID() : 0;
+    std::string myinput = inputs[qmcComm.getGroupID()];
     myinput             = myinput.substr(0, myinput.size() - 4);
     logname << myinput;
 
-    if (qmcComm->rank() != 0)
+    if (qmcComm.rank() != 0)
     {
       outputManager.shutOff();
       // might need to redirect debug stream to a file per rank if debugging is enabled
     }
-    if (inputs.size() > 1 && qmcComm->rank() == 0)
+    if (inputs.size() > 1 && qmcComm.rank() == 0)
     {
       std::array<char, 128> fn;
-      if (std::snprintf(fn.data(), fn.size(), "%s.g%03d.qmc", logname.str().c_str(), qmcComm->getGroupID()) < 0)
+      if (std::snprintf(fn.data(), fn.size(), "%s.g%03d.qmc", logname.str().c_str(), qmcComm.getGroupID()) < 0)
         throw std::runtime_error("Error generating filename");
       infoSummary.redirectToFile(fn.data());
       infoLog.redirectToSameStream(infoSummary);
@@ -189,30 +189,30 @@ int main(int argc, char** argv)
       app_log() << inputs[k] << " ";
     app_log() << std::endl;
 
-    auto qmc = std::make_unique<QMCMain>(*qmcComm);
+    auto qmc = std::make_unique<QMCMain>(qmcComm);
 
     if (inputs.size() > 1)
-      validInput = qmc->parse(inputs[qmcComm->getGroupID()]);
+      validInput = qmc->parse(inputs[qmcComm.getGroupID()]);
     else
       validInput = qmc->parse(inputs[0]);
 
     if (!validInput)
-      qmcComm->barrier_and_abort("main(). Input invalid.");
+      qmcComm.barrier_and_abort("main(). Input invalid.");
 
     bool qmcSuccess = qmc->execute();
     if (!qmcSuccess)
-      qmcComm->barrier_and_abort("main(). QMC Execution failed.");
+      qmcComm.barrier_and_abort("main(). QMC Execution failed.");
 
     Libxml2Document timingDoc;
     timingDoc.newDoc("resources");
-    output_hardware_info(*qmcComm, timingDoc, timingDoc.getRoot());
-    getGlobalTimerManager().output_timing(*qmcComm, timingDoc, timingDoc.getRoot());
+    output_hardware_info(qmcComm, timingDoc, timingDoc.getRoot());
+    getGlobalTimerManager().output_timing(qmcComm, timingDoc, timingDoc.getRoot());
     qmc->getParticlePool().output_particleset_info(timingDoc, timingDoc.getRoot());
     if (OHMMS::Controller->rank() == 0)
     {
       timingDoc.dump(qmc->getTitle() + ".info.xml");
     }
-    getGlobalTimerManager().print(*qmcComm);
+    getGlobalTimerManager().print(qmcComm);
 
     qmc.reset();
   }

@@ -108,7 +108,7 @@ void BranchIO<SFNB>::initAttributes()
 template<class SFNB>
 bool BranchIO<SFNB>::write(const std::string& fname)
 {
-  if (myComm->rank())
+  if (myComm.rank())
     return true;
 
 #if defined(HAVE_LIBBOOST)
@@ -136,7 +136,7 @@ bool BranchIO<SFNB>::write(const std::string& fname)
   std::string h5name(fname);
   if (fname.find("qmc.h5") >= fname.size())
     h5name.append(".qmc.h5");
-  hdf_archive dump(*myComm);
+  hdf_archive dump(myComm);
   hid_t fid = dump.create(h5name);
   dump.push(hdf::main_state);
   dump.push(hdf::qmc_status);
@@ -167,7 +167,7 @@ bool BranchIO<SFNB>::read(const std::string& fname)
 {
   int found_config = 0;
 
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     initAttributes();
     using boost::property_tree::ptree;
@@ -196,7 +196,7 @@ bool BranchIO<SFNB>::read(const std::string& fname)
       found_config = 1;
     }
   }
-  myComm->bcast(found_config);
+  myComm.bcast(found_config);
 
   if (!found_config)
     return false;
@@ -212,7 +212,7 @@ void BranchIO<SFNB>::bcast_state()
   int n = ref.vParam.size() + ref.iParam.size();
   std::vector<RealType> pdata(n + 1 + 16, -1);
 
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     copy(ref.vParam.begin(), ref.vParam.end(), pdata.begin());
     copy(ref.iParam.begin(), ref.iParam.end(), pdata.begin() + ref.vParam.size());
@@ -228,9 +228,9 @@ void BranchIO<SFNB>::bcast_state()
   }
 
   //broadcast to the nodes : need to add a namespace mpi::
-  myComm->bcast(pdata);
+  myComm.bcast(pdata);
 
-  if (myComm->rank())
+  if (myComm.rank())
   {
     int ii = 0;
     for (auto& vpar : ref.vParam)

@@ -47,7 +47,7 @@ class WalkerLogManager
 private:
   /// file prefix for the current driver
   std::string file_root;
-  Communicate* communicator;
+  Communicate& communicator;
   /// output state
   WalkerLogState state;
   /// access to HDF file

@@ -51,7 +51,7 @@ namespace qmcplusplus
 
 using SPOMap = SPOSet::SPOMap;
 
-EstimatorManagerNew::EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* c)
+EstimatorManagerNew::EstimatorManagerNew(const QMCHamiltonian& ham, Communicate& c)
     : RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
 {
   app_log() << " Legacy constructor adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
@@ -110,7 +110,7 @@ void EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
           createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
                                                        twf.getSPOMap(), pset) ||
           createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
-          createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank()) ||
+          createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_.rank()) ||
           createEstimator<EnergyDensityInput>(est_input, pset_pool) ||
           createEstimator<StructureFactorInput>(est_input, pset_pool) ||
           // Estimators are preferred not modifying pset, twf, H during the constructor call
@@ -223,16 +223,16 @@ void EstimatorManagerNew::startDriverRun()
   if (!DebugArchive)
   {
     std::array<char, 128> fname;
-    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", my_comm_->getName().c_str(),
-                      my_comm_->rank()) < 0)
+    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", my_comm_.getName().c_str(),
+                      my_comm_.rank()) < 0)
       throw std::runtime_error("Error generating filename");
     DebugArchive = std::make_unique<std::ofstream>(fname.data());
     addHeader(*DebugArchive);
   }
 #endif
-  if (my_comm_->rank() == 0)
+  if (my_comm_.rank() == 0)
   {
-    std::filesystem::path fname(my_comm_->getName());
+    std::filesystem::path fname(my_comm_.getName());
     fname.concat(".scalar.dat");
     Archive = std::make_unique<std::ofstream>(fname);
     addHeader(*Archive);
@@ -240,7 +240,7 @@ void EstimatorManagerNew::startDriverRun()
     {
       h5desc.clear();
     }
-    fname  = my_comm_->getName() + ".stat.h5";
+    fname  = my_comm_.getName() + ".stat.h5";
     h_file = std::make_unique<hdf_archive>();
     h_file->create(fname);
     main_estimator_->registerObservables(h5desc, *h_file);
@@ -334,9 +334,9 @@ void EstimatorManagerNew::reduceBlockData()
 
   // This is necessary to use mpi3's C++ style reduce
 #ifdef HAVE_MPI
-  my_comm_->comm.reduce_in_place_n(reduce_buffer.begin(), reduce_buffer.size(), std::plus<>{});
+  my_comm_.comm.reduce_in_place_n(reduce_buffer.begin(), reduce_buffer.size(), std::plus<>{});
 #endif
-  if (my_comm_->rank() == 0)
+  if (my_comm_.rank() == 0)
   {
     auto cur = reduce_buffer.begin();
     copy(cur, cur + n1, AverageCache.begin());
@@ -356,14 +356,14 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   // these could be replaced with a singple call MPI_struct_type some packing scheme or even
   // a pack into and out of an fp type that can be assured to hold the integral type exactly
   // IMHO they should not be primarily stored in a vector with magic indexes
-  std::vector<unsigned long> accepts_and_rejects(my_comm_->size() * 2, 0);
-  accepts_and_rejects[my_comm_->rank()]                    = accepts;
-  accepts_and_rejects[my_comm_->size() + my_comm_->rank()] = rejects;
-  my_comm_->allreduce(accepts_and_rejects);
+  std::vector<unsigned long> accepts_and_rejects(my_comm_.size() * 2, 0);
+  accepts_and_rejects[my_comm_.rank()]                    = accepts;
+  accepts_and_rejects[my_comm_.size() + my_comm_.rank()] = rejects;
+  my_comm_.allreduce(accepts_and_rejects);
   int64_t total_block_accept =
-      std::accumulate(accepts_and_rejects.begin(), accepts_and_rejects.begin() + my_comm_->size(), int64_t(0));
-  int64_t total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_->size(),
-                                               accepts_and_rejects.begin() + my_comm_->size() * 2, int64_t(0));
+      std::accumulate(accepts_and_rejects.begin(), accepts_and_rejects.begin() + my_comm_.size(), int64_t(0));
+  int64_t total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_.size(),
+                                               accepts_and_rejects.begin() + my_comm_.size() * 2, int64_t(0));
 
   reduceBlockData();
 
@@ -429,7 +429,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       operator_recv_buffer.resize(adjusted_size);
       // This is necessary to use mpi3's C++ style reduce
 #ifdef HAVE_MPI
-      my_comm_->comm.reduce_n(operator_send_buffer.begin(), adjusted_size, operator_recv_buffer.begin(), std::plus<>{},
+      my_comm_.comm.reduce_n(operator_send_buffer.begin(), adjusted_size, operator_recv_buffer.begin(), std::plus<>{},
                               0);
 #else
       operator_recv_buffer = operator_send_buffer;
@@ -440,7 +440,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       // i.e.  (1 / Sum(w_1 + ... + w_n)) * (w_1 * S_1 + ... + w_n * S_n) != (1/w_1) * w_1 * S_1 + ... + (1/w_n) * w_n * S_n
       // for a general case where w's are not strictly ==
       // Assumptions lead rank is 0, true for Ensembles?
-      if (my_comm_->rank() == 0)
+      if (my_comm_.rank() == 0)
       {
         assert(estimator.getFullDataSize() < operator_recv_buffer.size());
         assert(operator_recv_buffer.current() == 0);
@@ -456,7 +456,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
 
 void EstimatorManagerNew::writeOperatorEstimators()
 {
-  if (my_comm_->rank() == 0)
+  if (my_comm_.rank() == 0)
   {
     if (h_file)
     {
@@ -479,7 +479,7 @@ void EstimatorManagerNew::getApproximateEnergyVariance(FullPrecRealType& e, Full
   tmp[0] = energyAccumulator.count();
   tmp[1] = energyAccumulator.result();
   tmp[2] = varAccumulator.result();
-  my_comm_->bcast(tmp, 3);
+  my_comm_.bcast(tmp, 3);
   e   = tmp[1] / tmp[0];
   var = tmp[2] / tmp[0] - e * e;
 }

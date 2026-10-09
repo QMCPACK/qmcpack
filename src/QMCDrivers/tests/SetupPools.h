@@ -40,7 +40,7 @@ public:
   Libxml2Document doc;
   xmlNodePtr node;
 
-  Communicate* comm;
+  Communicate& comm;
 };
 
 class RandomNumberGeneratorPool

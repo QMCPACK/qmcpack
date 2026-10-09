@@ -44,17 +44,14 @@ QMCTraits::RealType getSplinedSOPot(SOECPComponent* so_comp, int l, double r) { 
 
 TEST_CASE("ReadFileBuffer_no_file", "[hamiltonian]")
 {
-  ReadFileBuffer buf(NULL);
+  ReadFileBuffer buf(*OHMMS::Controller);
   bool open_okay = buf.open_file("does_not_exist");
   REQUIRE(open_okay == false);
 }
 
 TEST_CASE("ReadFileBuffer_simple_serial", "[hamiltonian]")
 {
-  // Initializing with no Communicate pointer under MPI,
-  //   this will read the file on every node.  Should be okay
-  //   for testing purposes.
-  ReadFileBuffer buf(NULL);
+  ReadFileBuffer buf(*OHMMS::Controller);
   bool open_okay = buf.open_file("simple.txt");
   REQUIRE(open_okay == true);
 
@@ -68,7 +65,7 @@ TEST_CASE("ReadFileBuffer_simple_mpi", "[hamiltonian]")
 {
   Communicate& c(*OHMMS::Controller);
 
-  ReadFileBuffer buf(&c);
+  ReadFileBuffer buf(c);
   bool open_okay = buf.open_file("simple.txt");
   REQUIRE(open_okay == true);
 
@@ -234,10 +231,7 @@ TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
 
 TEST_CASE("ReadFileBuffer_reopen", "[hamiltonian]")
 {
-  // Initializing with no Communicate pointer under MPI,
-  //   this will read the file on every node.  Should be okay
-  //   for testing purposes.
-  ReadFileBuffer buf(NULL);
+  ReadFileBuffer buf(*OHMMS::Controller);
   bool open_okay = buf.open_file("simple.txt");
   REQUIRE(open_okay == true);
 

@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 DescentEngine::DescentEngine(Communicate& comm, const xmlNodePtr cur)
-    : my_comm_(&comm),
+    : my_comm_(comm),
       engine_target_excited_(false),
       num_params_(0),
       flavor_("RMSprop"),
@@ -374,8 +374,8 @@ void DescentEngine::sample_finish()
       }
     }
 
-    my_comm_->allreduce(avg_le_der_samp_);
-    my_comm_->allreduce(avg_der_rat_samp_);
+    my_comm_.allreduce(avg_le_der_samp_);
+    my_comm_.allreduce(avg_der_rat_samp_);
   }
   else
   {
@@ -406,8 +406,8 @@ void DescentEngine::sample_finish()
       }
     }
 
-    my_comm_->allreduce(avg_numer_der_samp_);
-    my_comm_->allreduce(avg_denom_der_samp_);
+    my_comm_.allreduce(avg_numer_der_samp_);
+    my_comm_.allreduce(avg_denom_der_samp_);
   }
 
   int num_optimizables = lderivs_.size();
@@ -509,7 +509,7 @@ void DescentEngine::mpi_unbiased_ratio_of_means(int numSamples,
     y[5] += weight * n * d;
   }
 
-  my_comm_->allreduce(y);
+  my_comm_.allreduce(y);
 
   ValueType mf = y[1] / y[0]; // mean of numerator
   ValueType mg = y[2] / y[0]; // mean of denominator

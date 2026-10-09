@@ -197,7 +197,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
           return {};
       };
 
-      auto estimator_manager = std::make_unique<EstimatorManagerNew>(primaryH, &comm);
+      auto estimator_manager = std::make_unique<EstimatorManagerNew>(primaryH, comm);
       estimator_manager->constructEstimators(makeEstimatorManagerInput(global_emi, driver_emi), qmc_system, primaryPsi,
                                              primaryH, particle_pool.getPool());
       return estimator_manager;

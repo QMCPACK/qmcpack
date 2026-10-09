@@ -65,7 +65,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   TrialWaveFunction& twf(wavefunction_pool.getWaveFunction().value());
   QMCHamiltonian& ham(hamiltonian_pool.getHamiltonian().value());
-  EstimatorManagerNew emn(ham, &comm);
+  EstimatorManagerNew emn(ham, comm);
   emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
   CHECK(emn.getNumEstimators() == 3);
@@ -82,7 +82,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   CHECK(emi2.get_estimator_inputs().size() == n_opest_new_input_xml);
   CHECK(emi2.get_scalar_estimator_inputs().size() == 4);
 
-  EstimatorManagerNew emn2(ham, &comm);
+  EstimatorManagerNew emn2(ham, comm);
   emn2.constructEstimators(std::move(emi2), pset, twf, ham, particle_pool.getPool());
   CHECK(emn2.getNumEstimators() == n_opest_new_input_xml);
   // Because the only scalar estimator becomes the main estimator.
@@ -112,7 +112,7 @@ TEST_CASE("EstimatorManagerNew_estimator_naming", "[estimators]")
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   TrialWaveFunction& twf(wavefunction_pool.getWaveFunction().value());
   QMCHamiltonian& ham(hamiltonian_pool.getHamiltonian().value());
-  EstimatorManagerNew emn(ham, &comm);
+  EstimatorManagerNew emn(ham, comm);
   emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
   EstimatorManagerNewTestAccess emnta(emn);
   auto operator_estimators = emnta.getOperatorEstimators();

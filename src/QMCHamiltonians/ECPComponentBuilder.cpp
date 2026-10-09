@@ -81,7 +81,7 @@ void ReadFileBuffer::reset()
 {
   if (is_open)
   {
-    if (myComm == NULL || myComm->rank() == 0)
+    if (myComm.rank() == 0)
     {
       delete fin;
       fin = NULL;
@@ -97,14 +97,13 @@ bool ReadFileBuffer::open_file(const std::string& fname)
 {
   reset();
 
-  if (myComm == NULL || myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     fin = new std::ifstream(fname.c_str());
     if (fin->is_open())
       is_open = true;
   }
-  if (myComm)
-    myComm->bcast(is_open);
+  myComm.bcast(is_open);
   return is_open;
 }
 
@@ -113,21 +112,19 @@ bool ReadFileBuffer::read_contents()
   if (!is_open)
     return false;
 
-  if (myComm == NULL || myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     length = get_file_length(fin);
   }
-  if (myComm)
-    myComm->bcast(length);
+  myComm.bcast(length);
 
   cbuffer         = new char[length + 1];
   cbuffer[length] = '\0';
 
-  if (myComm == NULL || myComm->rank() == 0)
+  if (myComm.rank() == 0)
     fin->read(cbuffer, length);
 
-  if (myComm != NULL)
-    myComm->bcast(cbuffer, length);
+  myComm.bcast(cbuffer, length);
 
   return true;
 }
@@ -135,7 +132,7 @@ bool ReadFileBuffer::read_contents()
 
 bool ECPComponentBuilder::read_pp_file(const std::string& fname)
 {
-  ReadFileBuffer buf(&myComm);
+  ReadFileBuffer buf(myComm);
   bool okay = buf.open_file(fname);
   if (!okay)
     myComm.barrier_and_abort("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");

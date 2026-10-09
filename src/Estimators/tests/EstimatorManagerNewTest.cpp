@@ -22,7 +22,7 @@ namespace qmcplusplus
 namespace testing
 {
 EstimatorManagerNewTest::EstimatorManagerNewTest(const QMCHamiltonian& ham, Communicate* comm, int ranks)
-    : em(ham, comm), comm_(comm)
+    : em(ham, *comm), comm_(comm)
 {
   int num_ranks = comm_->size();
   if (num_ranks != ranks)

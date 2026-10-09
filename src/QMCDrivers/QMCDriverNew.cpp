@@ -70,7 +70,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
   if (estimator_manager)
     estimator_manager_ = std::move(estimator_manager);
   else
-    estimator_manager_ = std::make_unique<EstimatorManagerNew>(population_.get_golden_hamiltonian(), &comm);
+    estimator_manager_ = std::make_unique<EstimatorManagerNew>(population_.get_golden_hamiltonian(), comm);
 
   drift_modifier_.reset(
       createDriftModifier(qmcdriver_input_.get_drift_modifier(), qmcdriver_input_.get_drift_modifier_unr_a()));

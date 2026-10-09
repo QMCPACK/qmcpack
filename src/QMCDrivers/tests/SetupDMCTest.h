@@ -50,10 +50,10 @@ public:
             nullptr,
             std::move(dmc_input_copy),
             walker_confs,
-            MCPopulation(comm->size(), comm->rank(), *particle_pool->getParticleSet("e"),
+            MCPopulation(comm.size(), comm.rank(), *particle_pool->getParticleSet("e"),
                          wavefunction_pool->getWaveFunction().value(), hamiltonian_pool->getHamiltonian().value()),
             rng_pool.getRngRefs(),
-            *comm};
+            comm};
   }
 
 private:
