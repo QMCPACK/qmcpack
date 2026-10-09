@@ -33,10 +33,10 @@ int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
-  OHMMS::Controller.get() = new Communicate(env.world());
+  OHMMS::Controller = std::make_unique<Communicate>(env.world());
 #endif
-  Communicate* myComm = OHMMS::Controller.get();
-  if (OHMMS::Controller->rank() != 0)
+  Communicate& myComm = *OHMMS::Controller;
+  if (myComm.rank() != 0)
   {
     outputManager.shutOff();
   }
@@ -61,6 +61,7 @@ int main(int argc, char** argv)
     {
     case 'h':
       printf("[-g \"n0 n1 n2\"]\n");
+      OHMMS::Controller.reset();
       return 1;
     case 'g': //tiling1 tiling2 tiling3
       sscanf(optarg, "%d %d %d", &na, &nb, &nc);
@@ -166,5 +167,6 @@ int main(int argc, char** argv)
     cout << "Done with the sweep. Diffusion |els.R-R0|^2/nels = " << r_err / nels << endl;
   }
 
+  OHMMS::Controller.reset();
   return 0;
 }

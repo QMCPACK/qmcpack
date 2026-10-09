@@ -40,9 +40,9 @@ int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
-  OHMMS::Controller.get() = new Communicate(env.world());
+  OHMMS::Controller = std::make_unique<Communicate>(env.world());
 #endif
-  Communicate* myComm = OHMMS::Controller.get();
+  Communicate& myComm = *OHMMS::Controller;
 
   using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
@@ -72,6 +72,7 @@ int main(int argc, char** argv)
     {
     case 'h':
       printf("[-n int=64]\n");
+      OHMMS::Controller.reset();
       return 1;
     case 'd': //debug
       debug = true;
@@ -261,5 +262,6 @@ int main(int argc, char** argv)
   //cout << "#per MC step steps " << nsteps << " substeps " << nsubsteps << endl;
   //cout << "diffusion_mc " << t_diffusion << " pseudo_mc  " << t_pseudo << endl;
 
+  OHMMS::Controller.reset();
   return 0;
 }

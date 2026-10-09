@@ -38,7 +38,7 @@ extern "C" void __gcov_dump();
 #endif
 
 //Global Communicator is created without initialization
-std::unique_ptr<Communicate> OHMMS::Controller;
+std::unique_ptr<Communicate> OHMMS::Controller = std::make_unique<Communicate>();
 
 //default constructor: ready for a serial execution
 Communicate::Communicate() : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1) {}

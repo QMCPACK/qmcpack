@@ -27,10 +27,10 @@ int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
-  OHMMS::Controller.get() = new Communicate(env.world());
+  OHMMS::Controller = std::make_unique<Communicate>(env.world());
 #endif
-  Communicate* myComm = OHMMS::Controller.get();
-  if (OHMMS::Controller->rank() != 0)
+  Communicate& myComm = *OHMMS::Controller;
+  if (myComm.rank() != 0)
   {
     outputManager.shutOff();
   }
@@ -56,6 +56,7 @@ int main(int argc, char** argv)
     {
     case 'h':
       printf("[-l lmax -s samples]\n");
+      OHMMS::Controller.reset();
       return 1;
     case 'l':
       lmax = atoi(optarg);
@@ -160,5 +161,6 @@ int main(int argc, char** argv)
 
   cout << "Error " << ntot << " " << nsamples << " " << err << endl;
 
+  OHMMS::Controller.reset();
   return 0;
 }
