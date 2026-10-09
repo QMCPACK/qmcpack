@@ -158,8 +158,6 @@ function(
         ${TESTNAME}
         PROPERTIES FAIL_REGULAR_EXPRESSION
                    "QMCPACK ERROR"
-                   PASS_REGULAR_EXPRESSION
-                   "QMCPACK execution completed successfully"
                    PROCESSORS
                    ${TOT_PROCS}
                    PROCESSOR_AFFINITY
