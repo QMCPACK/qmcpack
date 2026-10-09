@@ -16,6 +16,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCWaveFunctions/TWFdispatcher.h"
 #include "BsplineFactory/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
@@ -104,6 +105,60 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
   REQUIRE(twf_ptr->size() == 2);
 
   return twf_ptr;
+}
+
+namespace
+{
+class UnsupportedAllParticleWF : public WaveFunctionComponent
+{
+public:
+  std::string getClassName() const override { return "UnsupportedAllParticleWF"; }
+  LogValue evaluateLog(const ParticleSet&, ParticleSet::ParticleGradient&, ParticleSet::ParticleLaplacian&) override
+  {
+    return LogValue(0);
+  }
+  void acceptMove(ParticleSet&, int, bool) override {}
+  void restore(int) override {}
+  PsiValue ratio(ParticleSet&, int) override { return PsiValue(1); }
+  void registerData(ParticleSet&, WFBufferType&) override {}
+  LogValue updateBuffer(ParticleSet&, WFBufferType&, bool) override { return LogValue(0); }
+  void copyFromBuffer(ParticleSet&, WFBufferType&) override {}
+  void evaluateDerivatives(ParticleSet&, const OptVariables&, Vector<ValueType>&, Vector<ValueType>&) override {}
+};
+} // namespace
+
+TEST_CASE("TrialWaveFunction all-particle APIs require component support", "[wavefunction]")
+{
+  const SimulationCell simulation_cell;
+  ParticleSet elec(simulation_cell);
+  elec.create({1});
+  elec.update();
+  RuntimeOptions runtime_options;
+  TrialWaveFunction twf(runtime_options);
+  twf.addComponent(std::make_unique<UnsupportedAllParticleWF>());
+  RefVectorWithLeader<TrialWaveFunction> wf_list(twf, {twf});
+  RefVectorWithLeader<ParticleSet> p_list(elec, {elec});
+  ParticleSet::ParticleGradient gradients(1);
+  ParticleSet::ParticleLaplacian laplacians(1);
+  RefVectorWithLeader<WaveFunctionComponent> wfc_list(*twf.getOrbitals()[0], {*twf.getOrbitals()[0]});
+  RefVector<ParticleSet::ParticleGradient> gradient_list;
+  gradient_list.push_back(gradients);
+  RefVector<ParticleSet::ParticleLaplacian> laplacian_list;
+  laplacian_list.push_back(laplacians);
+
+  REQUIRE_THROWS_AS(twf.getOrbitals()[0]->mw_evaluateLogAllParticles(wfc_list, p_list, gradient_list, laplacian_list,
+                                                                      {true}),
+                    std::runtime_error);
+  REQUIRE_THROWS_AS(twf.getOrbitals()[0]->mw_accept_rejectMoveAllParticles(wfc_list, p_list, gradient_list,
+                                                                            laplacian_list, {false}),
+                    std::runtime_error);
+  REQUIRE_THROWS_AS(TrialWaveFunction::mw_evaluateLogAllParticles(wf_list, p_list, {true}), std::runtime_error);
+  REQUIRE_THROWS_AS(TrialWaveFunction::mw_accept_rejectMoveAllParticles(wf_list, p_list, {false}),
+                    std::runtime_error);
+
+  TWFdispatcher dispatcher(/*use_batch=*/false);
+  REQUIRE_THROWS_AS(dispatcher.flex_evaluateLogAllParticles(wf_list, p_list, {true}), std::runtime_error);
+  REQUIRE_THROWS_AS(dispatcher.flex_accept_rejectMoveAllParticles(wf_list, p_list, {true}), std::runtime_error);
 }
 
 TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]")
