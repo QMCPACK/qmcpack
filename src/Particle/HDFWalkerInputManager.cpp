@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-HDFWalkerInputManager::HDFWalkerInputManager(WalkerConfigurations& wc_list, size_t num_ptcls, Communicate* c) : wc_list_(wc_list), num_ptcls_(num_ptcls), myComm(c) {}
+HDFWalkerInputManager::HDFWalkerInputManager(WalkerConfigurations& wc_list, size_t num_ptcls, Communicate& c) : wc_list_(wc_list), num_ptcls_(num_ptcls), myComm(c) {}
 
 HDFWalkerInputManager::~HDFWalkerInputManager() {}
 
@@ -31,7 +31,7 @@ bool HDFWalkerInputManager::put(xmlNodePtr cur)
   //reference revision number
   HDFVersion start_version(0, 4);
   //current node
-  int pid = myComm->rank();
+  int pid = myComm.rank();
   std::string froot("0"), cfile("0");
   //string  target("e"), collect("no");
   int nprocs = 1;
@@ -51,7 +51,7 @@ bool HDFWalkerInputManager::put(xmlNodePtr cur)
     cfile   = win.FileName_noext;
   }
   else
-    myComm->barrier_and_abort("Outdated restart file!");
+    myComm.barrier_and_abort("Outdated restart file!");
   if (success)
     CurrentFileRoot = cfile;
   return success;

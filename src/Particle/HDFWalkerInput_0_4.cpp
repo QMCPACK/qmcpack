@@ -25,7 +25,7 @@ namespace qmcplusplus
 {
 HDFWalkerInput_0_4::HDFWalkerInput_0_4(WalkerConfigurations& wc_list,
                                        size_t num_ptcls,
-                                       Communicate* c,
+                                       Communicate& c,
                                        const HDFVersion& v)
     : wc_list_(wc_list), num_ptcls_(num_ptcls), myComm(c), cur_version(0, 4)
 { i_info.version = v; }
@@ -61,11 +61,11 @@ void HDFWalkerInput_0_4::checkOptions(xmlNodePtr cur)
   {
     if (i_info.nprocs > 1) //need to process multiple files
     {
-      int nprocs_now = myComm->size();
+      int nprocs_now = myComm.size();
       if (i_info.nprocs > nprocs_now) //using less nodes
       {
         int np  = i_info.nprocs / nprocs_now;
-        int pid = myComm->rank(), ip = 0;
+        int pid = myComm.rank(), ip = 0;
         while (pid < i_info.nprocs && ip < np)
         {
           // 2 chars for '.p', 11 chars for pid, 1 char for \0
@@ -79,7 +79,7 @@ void HDFWalkerInput_0_4::checkOptions(xmlNodePtr cur)
       }
       else
       {
-        int pid = myComm->rank() % i_info.nprocs;
+        int pid = myComm.rank() % i_info.nprocs;
         // 2 chars for '.p', 11 chars for pid, 1 char for \0
         std::array<char, 14> h5name;
         if (std::snprintf(h5name.data(), h5name.size(), ".p%03d", pid) < 0)
@@ -123,7 +123,7 @@ bool HDFWalkerInput_0_4::read_hdf5(const std::filesystem::path& h5name)
 {
   size_t nw_in = 0;
 
-  hdf_archive hin(*myComm, false); //everone reads this
+  hdf_archive hin(myComm, false); //everone reads this
   if (!hin.open(h5name, H5F_ACC_RDONLY))
     return false;
   //check if hdf and xml versions can work together
@@ -161,26 +161,26 @@ bool HDFWalkerInput_0_4::read_hdf5(const std::filesystem::path& h5name)
   std::vector<int> woffsets;
   hin.read(woffsets, "walker_partition");
 
-  int np1 = myComm->size() + 1;
+  int np1 = myComm.size() + 1;
   if (woffsets.size() != np1)
   {
-    woffsets.resize(myComm->size() + 1, 0);
-    FairDivideLow(nw_in, myComm->size(), woffsets);
+    woffsets.resize(myComm.size() + 1, 0);
+    FairDivideLow(nw_in, myComm.size(), woffsets);
   }
 
   app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << std::endl;
-  nw_in = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
+  nw_in = woffsets[myComm.rank() + 1] - woffsets[myComm.rank()];
   {
     const int nitems    = num_ptcls_ * OHMMS_DIM;
     const int curWalker = wc_list_.getActiveWalkers();
     wc_list_.createWalkers(nw_in, num_ptcls_);
 
-    auto it = posin.begin() + woffsets[myComm->rank()] * nitems;
+    auto it = posin.begin() + woffsets[myComm.rank()] * nitems;
     for (int i = 0; i < nw_in; ++i, it += nitems)
       copy(it, it + nitems, get_first_address(wc_list_[i + curWalker]->R));
     if (has_weights)
     {
-      const auto woffset = woffsets[myComm->rank()];
+      const auto woffset = woffsets[myComm.rank()];
       for (int i = 0; i < nw_in; ++i)
         wc_list_[i + curWalker]->Weight = weights_in[i + woffset];
     }
@@ -194,9 +194,9 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
   size_t nw_in = 0;
 
   bool success = false;
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
-    hdf_archive hin(*myComm); //everone reads this
+    hdf_archive hin(myComm); //everone reads this
     success = hin.open(h5name, H5F_ACC_RDONLY);
     if (success)
     {
@@ -224,10 +224,10 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
     }
   }
 
-  myComm->bcast(success);
+  myComm.bcast(success);
   if (!success)
     return false;
-  myComm->bcast(nw_in);
+  myComm.bcast(nw_in);
 
   if (nw_in == 0)
   {
@@ -237,11 +237,11 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
 
   using Buffer_t = std::vector<QMCTraits::RealType>;
 
-  const int np1 = myComm->size() + 1;
+  const int np1 = myComm.size() + 1;
   std::vector<int> woffsets_weights(np1, 0);
-  FairDivideLow(nw_in, myComm->size(), woffsets_weights);
+  FairDivideLow(nw_in, myComm.size(), woffsets_weights);
 
-  std::vector<int> counts_weights(myComm->size());
+  std::vector<int> counts_weights(myComm.size());
   for (int i = 0; i < counts_weights.size(); ++i)
     counts_weights[i] = woffsets_weights[i + 1] - woffsets_weights[i];
 
@@ -250,7 +250,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
   const int nitems = num_ptcls_ * OHMMS_DIM;
   for (int i = 0; i < woffsets.size(); ++i)
     woffsets[i] = nitems * woffsets_weights[i];
-  std::vector<int> counts(myComm->size());
+  std::vector<int> counts(myComm.size());
   for (int i = 0; i < counts.size(); ++i)
     counts[i] = woffsets[i + 1] - woffsets[i];
 
@@ -259,9 +259,9 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
   std::vector<QMCTraits::FullPrecRealType> weights_in(nw_in);
   bool has_weights{false};
   bool success2 = false;
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
-    hdf_archive hin(*myComm);
+    hdf_archive hin(myComm);
     success2 = hin.open(h5name, H5F_ACC_RDONLY);
     if (success2)
     {
@@ -270,19 +270,19 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
       has_weights = hin.readEntry(weights_in, hdf::walker_weights);
     }
   }
-  myComm->bcast(success2);
+  myComm.bcast(success2);
   if (!success2)
     return false;
 
-  Buffer_t posout(counts[myComm->rank()]);
-  std::vector<QMCTraits::FullPrecRealType> weights_out(counts[myComm->rank()]);
-  myComm->scatterv(posin, posout, counts, woffsets);
+  Buffer_t posout(counts[myComm.rank()]);
+  std::vector<QMCTraits::FullPrecRealType> weights_out(counts[myComm.rank()]);
+  myComm.scatterv(posin, posout, counts, woffsets);
 
-  myComm->bcast(has_weights);
+  myComm.bcast(has_weights);
   if (has_weights)
-    myComm->scatterv(weights_in, weights_out, counts_weights, woffsets_weights);
+    myComm.scatterv(weights_in, weights_out, counts_weights, woffsets_weights);
 
-  const size_t nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
+  const size_t nw_loc = woffsets[myComm.rank() + 1] - woffsets[myComm.rank()];
   const int curWalker = wc_list_.getActiveWalkers();
   wc_list_.createWalkers(nw_loc, num_ptcls_);
 
@@ -303,8 +303,8 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
   bool success      = false;
 
   { // handle small dataset with master rank
-    hdf_archive hin(*myComm, false);
-    if (myComm->rank() == 0)
+    hdf_archive hin(myComm, false);
+    if (myComm.rank() == 0)
     {
       success = hin.open(h5name, H5F_ACC_RDONLY);
       //check if hdf and xml versions can work together
@@ -335,26 +335,26 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
         success = false;
       }
     }
-    myComm->bcast(success);
+    myComm.bcast(success);
     if (!success)
       return false;
 
     // load woffsets by master
     // can not read collectively since the size may differ from Nranks+1.
-    if (myComm->rank() == 0)
+    if (myComm.rank() == 0)
     {
       hin.read(woffsets, "walker_partition");
       woffsets_size = woffsets.size();
       assert(woffsets[woffsets_size - 1] == nw_in);
     }
 
-    myComm->bcast(woffsets_size);
+    myComm.bcast(woffsets_size);
     woffsets.resize(woffsets_size);
-    myComm->bcast(woffsets.data(), woffsets_size);
+    myComm.bcast(woffsets.data(), woffsets_size);
     nw_in = woffsets[woffsets_size - 1];
   }
 
-  hdf_archive hin(*myComm, true); //everone reads this
+  hdf_archive hin(myComm, true); //everone reads this
   if (!hin.open(h5name, H5F_ACC_RDONLY))
     return false;
   if (!hin.is_group(hdf::main_state))
@@ -368,18 +368,18 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
   std::array<size_t, 3> dims{nw_in, num_ptcls_, OHMMS_DIM};
   std::array<size_t, 1> dims_w{nw_in};
 
-  if (woffsets.size() != myComm->size() + 1)
+  if (woffsets.size() != myComm.size() + 1)
   {
-    woffsets.resize(myComm->size() + 1, 0);
-    FairDivideLow(nw_in, myComm->size(), woffsets);
+    woffsets.resize(myComm.size() + 1, 0);
+    FairDivideLow(nw_in, myComm.size(), woffsets);
   }
 
-  const size_t nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
+  const size_t nw_loc = woffsets[myComm.rank() + 1] - woffsets[myComm.rank()];
 
   std::array<size_t, 3> counts{nw_loc, num_ptcls_, OHMMS_DIM};
   std::array<size_t, 1> counts_w{nw_loc};
-  std::array<size_t, 3> offsets{static_cast<size_t>(woffsets[myComm->rank()]), 0, 0};
-  std::array<size_t, 1> offsets_w{static_cast<size_t>(woffsets[myComm->rank()])};
+  std::array<size_t, 3> offsets{static_cast<size_t>(woffsets[myComm.rank()]), 0, 0};
+  std::array<size_t, 1> offsets_w{static_cast<size_t>(woffsets[myComm.rank()])};
   Buffer_t posin(nw_loc * dims[1] * dims[2]);
   std::vector<QMCTraits::FullPrecRealType> weights_in(nw_loc);
 
@@ -390,7 +390,7 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
   const bool has_weights = hin.readEntry(slab_w, hdf::walker_weights);
 
   app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << std::endl;
-  nw_in = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
+  nw_in = woffsets[myComm.rank() + 1] - woffsets[myComm.rank()];
   {
     const int nitems    = num_ptcls_ * OHMMS_DIM;
     const int curWalker = wc_list_.getActiveWalkers();

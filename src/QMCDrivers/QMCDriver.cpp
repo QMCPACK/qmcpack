@@ -201,7 +201,7 @@ void QMCDriver::process(xmlNodePtr cur)
   branchEngine->put(cur);
   Estimators->put(H, cur);
   if (!wOut)
-    wOut = std::make_unique<HDFWalkerOutput>(W.getTotalNum(), RootName, myComm);
+    wOut = std::make_unique<HDFWalkerOutput>(W.getTotalNum(), RootName, *myComm);
   branchEngine->start(RootName);
   branchEngine->write(RootName);
   //use new random seeds
@@ -242,7 +242,7 @@ void QMCDriver::putWalkers(std::vector<xmlNodePtr>& wset)
   if (wset.empty())
     return;
   int nfile = wset.size();
-  HDFWalkerInputManager W_in(W, W.getTotalNum(), myComm);
+  HDFWalkerInputManager W_in(W, W.getTotalNum(), *myComm);
   for (int i = 0; i < wset.size(); i++)
     if (W_in.put(wset[i]))
       h5FileRoot = W_in.getFileRoot();
@@ -298,7 +298,7 @@ void QMCDriver::recordBlock(int block)
     ScopedTimer local(checkpoint_timer_);
     wOut->dump(W, block);
     branchEngine->write(RootName, true); //save energy_history
-    RandomNumberControl::write(RootName, myComm);
+    RandomNumberControl::write(RootName, *myComm);
   }
 }
 
@@ -314,7 +314,7 @@ void QMCDriver::finalize(int block, bool dumpwalkers)
   branchEngine->finalize(W);
 
   if (DumpConfig)
-    RandomNumberControl::write(RootName, myComm);
+    RandomNumberControl::write(RootName, *myComm);
 }
 
 /** Add walkers to the end of the ensemble of walkers.

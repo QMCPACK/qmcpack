@@ -75,7 +75,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
   drift_modifier_.reset(
       createDriftModifier(qmcdriver_input_.get_drift_modifier(), qmcdriver_input_.get_drift_modifier_unr_a()));
 
-  wOut = std::make_unique<HDFWalkerOutput>(population.get_golden_electrons().getTotalNum(), get_root_name(), myComm);
+  wOut = std::make_unique<HDFWalkerOutput>(population.get_golden_electrons().getTotalNum(), get_root_name(), *myComm);
 }
 
 QMCDriverNew::~QMCDriverNew() = default;
@@ -183,7 +183,7 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
     return;
   const int nfile = wset.size();
 
-  HDFWalkerInputManager W_in(walker_configs_ref_, population_.get_golden_electrons().getTotalNum(), myComm);
+  HDFWalkerInputManager W_in(walker_configs_ref_, population_.get_golden_electrons().getTotalNum(), *myComm);
   for (int i = 0; i < wset.size(); i++)
     if (W_in.put(wset[i]))
       h5_file_root_ = W_in.getFileRoot();
@@ -221,7 +221,7 @@ void QMCDriverNew::finalize(int block, bool dumpwalkers)
   infoLog.flush();
 
   if (DumpConfig)
-    RandomNumberControl::write(rngs_, get_root_name(), myComm);
+    RandomNumberControl::write(rngs_, get_root_name(), *myComm);
 }
 
 void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)

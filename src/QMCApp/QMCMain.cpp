@@ -650,7 +650,7 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
     a.add(fname, "src");
     a.put(result[result.size() - 1]);
     if (fname.size())
-      RandomNumberControl::read(fname, myComm);
+      RandomNumberControl::read(fname, *myComm);
   }
   return true;
 }
