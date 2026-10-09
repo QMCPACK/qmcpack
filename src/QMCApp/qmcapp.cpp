@@ -206,13 +206,13 @@ int main(int argc, char** argv)
     Libxml2Document timingDoc;
     timingDoc.newDoc("resources");
     output_hardware_info(qmcComm, timingDoc, timingDoc.getRoot());
-    getGlobalTimerManager().output_timing(qmcComm, timingDoc, timingDoc.getRoot());
+    getGlobalTimerManager().output_timing(*qmcComm, timingDoc, timingDoc.getRoot());
     qmc->getParticlePool().output_particleset_info(timingDoc, timingDoc.getRoot());
     if (OHMMS::Controller->rank() == 0)
     {
       timingDoc.dump(qmc->getTitle() + ".info.xml");
     }
-    getGlobalTimerManager().print(qmcComm);
+    getGlobalTimerManager().print(*qmcComm);
 
     qmc.reset();
   }

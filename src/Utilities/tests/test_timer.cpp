@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 #include "Utilities/TimerManager.h"
+#include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 
 using namespace std::chrono_literals;
@@ -96,7 +97,7 @@ TEST_CASE("test_timer_flat_profile", "[utilities]")
   set_num_calls(t1, 2);
 
   FakeTimerManager::FlatProfileData p;
-  tm.collate_flat_profile(NULL, p);
+  tm.collate_flat_profile(*OHMMS::Controller, p);
 
   REQUIRE(p.nameList.size() == 1);
   REQUIRE(p.nameList.at("timer1") == 0);
@@ -131,7 +132,7 @@ TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
 
   FakeTimerManager::FlatProfileData p;
 
-  tm.collate_flat_profile(NULL, p);
+  tm.collate_flat_profile(*OHMMS::Controller, p);
 
 #ifdef ENABLE_TIMERS
   REQUIRE(p.nameList.size() == 2);
@@ -161,7 +162,7 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
   t1->stop();
 
   FakeTimerManager::FlatProfileData p;
-  tm.collate_flat_profile(NULL, p);
+  tm.collate_flat_profile(*OHMMS::Controller, p);
 
 #ifdef ENABLE_TIMERS
   REQUIRE(p.nameList.size() == 2);
@@ -173,7 +174,7 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
 #endif
 
   FakeTimerManager::StackProfileData p2;
-  tm.collate_stack_profile(NULL, p2);
+  tm.collate_stack_profile(*OHMMS::Controller, p2);
 
 #ifdef ENABLE_TIMERS
   REQUIRE(p2.nameList.size() == 2);
@@ -207,7 +208,7 @@ TEST_CASE("test_timer_nested_profile_two_children", "[utilities]")
   t1->stop();
 
   FakeTimerManager::StackProfileData p2;
-  tm.collate_stack_profile(NULL, p2);
+  tm.collate_stack_profile(*OHMMS::Controller, p2);
 
 #ifdef ENABLE_TIMERS
   REQUIRE(p2.names.size() == 3);
@@ -219,7 +220,7 @@ TEST_CASE("test_timer_nested_profile_two_children", "[utilities]")
 
   Libxml2Document doc;
   doc.newDoc("resources");
-  tm.output_timing(NULL, doc, doc.getRoot());
+  tm.output_timing(*OHMMS::Controller, doc, doc.getRoot());
   doc.dump("tmp.xml");
   // To really test this, should read the file in and inspect the contents.
   // For now, it makes for quick iterations on writing the file.
@@ -253,8 +254,8 @@ TEST_CASE("test_timer_nested_profile_alt_routes", "[utilities]")
   t1->stop();
 
   FakeTimerManager::StackProfileData p2;
-  tm.collate_stack_profile(NULL, p2);
-  //tm.print_stack(NULL);
+  tm.collate_stack_profile(*OHMMS::Controller, p2);
+  //tm.print_stack(*OHMMS::Controller);
 #ifdef ENABLE_TIMERS
   REQUIRE(p2.names.size() == 7);
   REQUIRE(p2.names[0] == "timer1");
@@ -273,7 +274,7 @@ TEST_CASE("test_timer_nested_profile_alt_routes", "[utilities]")
 
   Libxml2Document doc;
   doc.newDoc("resources");
-  tm.output_timing(NULL, doc, doc.getRoot());
+  tm.output_timing(*OHMMS::Controller, doc, doc.getRoot());
   doc.dump("tmp2.xml");
 }
 
@@ -309,8 +310,8 @@ TEST_CASE("test_timer_nested_profile_collate", "[utilities]")
 
 
   FakeTimerManager::StackProfileData p2;
-  tm.collate_stack_profile(NULL, p2);
-  //tm.print_stack(NULL);
+  tm.collate_stack_profile(*OHMMS::Controller, p2);
+  //tm.print_stack(*OHMMS::Controller);
 #ifdef ENABLE_TIMERS
   REQUIRE(p2.names.size() == 3);
   REQUIRE(p2.names[0] == "timer1");
@@ -320,7 +321,7 @@ TEST_CASE("test_timer_nested_profile_collate", "[utilities]")
 
   Libxml2Document doc;
   doc.newDoc("resources");
-  tm.output_timing(NULL, doc, doc.getRoot());
+  tm.output_timing(*OHMMS::Controller, doc, doc.getRoot());
   doc.dump("tmp3.xml");
 }
 
@@ -357,11 +358,11 @@ TEST_CASE("test stack exceeded message")
 
   REQUIRE(timer_max_level_exceeded == true);
 
-  //tm.print_stack(NULL);
+  //tm.print_stack(*OHMMS::Controller);
 
   Libxml2Document doc;
   doc.newDoc("resources");
-  tm.output_timing(NULL, doc, doc.getRoot());
+  tm.output_timing(*OHMMS::Controller, doc, doc.getRoot());
   doc.dump("tmp4.xml");
 }
 
@@ -380,7 +381,7 @@ TEST_CASE("test max exceeded message")
 
   Libxml2Document doc;
   doc.newDoc("resources");
-  tm.output_timing(NULL, doc, doc.getRoot());
+  tm.output_timing(*OHMMS::Controller, doc, doc.getRoot());
   doc.dump("tmp5.xml");
 }
 #endif

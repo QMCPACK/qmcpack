@@ -166,7 +166,7 @@ std::string TimerManager<TIMER>::get_timer_threshold_string() const
 
 
 template<class TIMER>
-void TimerManager<TIMER>::collate_flat_profile(Communicate* comm, FlatProfileData& p)
+void TimerManager<TIMER>::collate_flat_profile(Communicate& comm, FlatProfileData& p)
 {
   for (int i = 0; i < timer_storage_.size(); ++i)
   {
@@ -187,11 +187,8 @@ void TimerManager<TIMER>::collate_flat_profile(Communicate* comm, FlatProfileDat
     }
   }
 
-  if (comm)
-  {
-    comm->allreduce(p.timeList);
-    comm->allreduce(p.callList);
-  }
+  comm.allreduce(p.timeList);
+  comm.allreduce(p.callList);
 }
 
 struct ProfileData
@@ -242,7 +239,7 @@ void TimerManager<TIMER>::get_stack_name_from_id(const StackKey& key, std::strin
 }
 
 template<class TIMER>
-void TimerManager<TIMER>::collate_stack_profile(Communicate* comm, StackProfileData& p)
+void TimerManager<TIMER>::collate_stack_profile(Communicate& comm, StackProfileData& p)
 {
 #ifdef USE_STACK_TIMERS
   // Put stacks from all timers into one data structure
@@ -296,7 +293,7 @@ void TimerManager<TIMER>::collate_stack_profile(Communicate* comm, StackProfileD
 }
 
 template<class TIMER>
-void TimerManager<TIMER>::print(Communicate* comm)
+void TimerManager<TIMER>::print(Communicate& comm)
 {
   if (timer_threshold <= timer_level_none)
     return;
@@ -305,11 +302,11 @@ void TimerManager<TIMER>::print(Communicate* comm)
   app_log() << "Use --enable-timers=<value> command line option to increase or decrease level of timing information"
             << std::endl;
 #ifdef USE_STACK_TIMERS
-  if (comm == nullptr || comm->rank() == 0)
+  if (comm.rank() == 0)
     app_log() << "Stack timer profile" << std::endl;
   print_stack(comm);
 #else
-  if (comm == nullptr || comm->rank() == 0)
+  if (comm.rank() == 0)
     app_log() << "\nFlat profile" << std::endl;
   print_flat(comm);
 #endif
@@ -317,14 +314,14 @@ void TimerManager<TIMER>::print(Communicate* comm)
 }
 
 template<class TIMER>
-void TimerManager<TIMER>::print_flat(Communicate* comm)
+void TimerManager<TIMER>::print_flat(Communicate& comm)
 {
 #ifdef ENABLE_TIMERS
   FlatProfileData p;
 
   collate_flat_profile(comm, p);
 
-  if (comm == nullptr || comm->rank() == 0)
+  if (comm.rank() == 0)
   {
 #if _OPENMP >= 202011
 #pragma omp masked
@@ -341,7 +338,7 @@ void TimerManager<TIMER>::print_flat(Communicate* comm)
             std::snprintf(tmpout.data(), tmpout.size(), "%-40s  %9.4f  %13ld  %16.9f  %12.6f TIMER\n",
                           (*it).first.c_str(), p.timeList[i], p.callList[i],
                           p.timeList[i] / (static_cast<double>(p.callList[i]) + std::numeric_limits<double>::epsilon()),
-                          p.timeList[i] / static_cast<double>(omp_get_max_threads() * comm->size()));
+                          p.timeList[i] / static_cast<double>(omp_get_max_threads() * comm.size()));
         if (length < 0)
           throw std::runtime_error("Error generating timer string");
         app_log() << std::string_view(tmpout.data(), length);
@@ -362,14 +359,14 @@ void pad_string(const std::string& in, std::string& out, int field_len)
 }
 
 template<class TIMER>
-void TimerManager<TIMER>::print_stack(Communicate* comm)
+void TimerManager<TIMER>::print_stack(Communicate& comm)
 {
 #ifdef ENABLE_TIMERS
   StackProfileData p;
 
   collate_stack_profile(comm, p);
 
-  if (comm == nullptr || comm->rank() == 0)
+  if (comm.rank() == 0)
   {
     if (timer_max_level_exceeded)
     {
@@ -421,14 +418,14 @@ void TimerManager<TIMER>::print_stack(Communicate* comm)
 }
 
 template<class TIMER>
-void TimerManager<TIMER>::output_timing(Communicate* comm, Libxml2Document& doc, xmlNodePtr root)
+void TimerManager<TIMER>::output_timing(Communicate& comm, Libxml2Document& doc, xmlNodePtr root)
 {
 #if defined(ENABLE_TIMERS) && defined(USE_STACK_TIMERS)
   StackProfileData p;
 
   collate_stack_profile(comm, p);
 
-  if (comm == nullptr || comm->rank() == 0)
+  if (comm.rank() == 0)
   {
     xmlNodePtr timing_root = doc.addChild(root, "timing");
     doc.addChild(timing_root, "max_stack_level_exceeded", timer_max_level_exceeded ? "yes" : "no");
