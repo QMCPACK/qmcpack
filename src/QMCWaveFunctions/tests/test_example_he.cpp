@@ -27,7 +27,7 @@ using PsiValue  = WaveFunctionComponent::PsiValue;
 
 TEST_CASE("ExampleHe", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
 
@@ -64,7 +64,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
-  WaveFunctionFactory wff(elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, &c);
 
   const char* wavefunction_xml = R"(<wavefunction>
   <example_he name="mine" source="ion0">

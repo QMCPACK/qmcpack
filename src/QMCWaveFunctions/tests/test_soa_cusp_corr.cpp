@@ -57,7 +57,7 @@ TEST_CASE("readCuspInfo", "[wavefunction]")
 
 TEST_CASE("applyCuspInfo", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parse("hcn.structure.xml"));
@@ -96,7 +96,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
-  SPOSetBuilderFactory bf(c, elec, particle_set_map);
+  SPOSetBuilderFactory bf(&c, elec, particle_set_map);
 
   OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
   REQUIRE(MO_base.size() == 1);
@@ -222,7 +222,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
 TEST_CASE("HCN MO with cusp", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parse("hcn.structure.xml"));
@@ -261,7 +261,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
-  SPOSetBuilderFactory bf(c, elec, particle_set_map);
+  SPOSetBuilderFactory bf(&c, elec, particle_set_map);
 
   OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
   REQUIRE(MO_base.size() == 1);
@@ -393,7 +393,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 // Test case with multiple atoms of the same type
 TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parse("ethanol.structure.xml"));
@@ -432,7 +432,7 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
-  SPOSetBuilderFactory bf(c, elec, particle_set_map);
+  SPOSetBuilderFactory bf(&c, elec, particle_set_map);
 
   OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
   REQUIRE(MO_base.size() == 1);
@@ -530,10 +530,10 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 
 TEST_CASE("broadcastCuspInfo", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
   CuspCorrectionParameters cp;
   int root = 0;
-  if (c->rank() == root)
+  if (c.rank() == root)
   {
     cp.Rc       = 2.0;
     cp.C        = 3.0;
@@ -545,7 +545,7 @@ TEST_CASE("broadcastCuspInfo", "[wavefunction]")
     cp.alpha[4] = 1.5;
   }
 
-  broadcastCuspInfo(cp, *c, root);
+  broadcastCuspInfo(cp, *&c, root);
 
   CHECK(cp.Rc == Approx(2.0));
   CHECK(cp.C == Approx(3.0));

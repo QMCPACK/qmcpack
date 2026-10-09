@@ -26,8 +26,7 @@ namespace qmcplusplus
 {
 TEST_CASE("ProjectData", "[ohmmsapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
 
   ProjectData proj1;
@@ -41,7 +40,7 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   REQUIRE(proj2.getSeriesIndex() == 1);
   REQUIRE(proj2.getTitle() == std::string("asample"));
 
-  proj2.setCommunicator(c);
+  proj2.setCommunicator(&c);
   std::stringstream o2;
   proj2.get(o2);
 }

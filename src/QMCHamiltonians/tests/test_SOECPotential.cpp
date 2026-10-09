@@ -66,7 +66,7 @@ void doSOECPotentialTest(bool use_VPs)
   using Pos          = QMCTraits::PosType;
   using testing::getParticularListener;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   //Cell definition:
 

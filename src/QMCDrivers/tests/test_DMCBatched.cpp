@@ -57,16 +57,16 @@ TEST_CASE("QMCDriverFactory rejects invalid L2 diffusion configurations for DMCB
   using namespace testing;
   RandomNumberGeneratorPool rng_pool(1);
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(R"(<qmc method="dmc"><parameter name="L2_diffusion">yes</parameter></qmc>)"));
   xmlNodePtr node = doc.getRoot();
 
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
-  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(&comm, particle_pool, wavefunction_pool);
 
   std::string expected_error;
   SECTION("spinor ParticleSet")
@@ -82,7 +82,7 @@ TEST_CASE("QMCDriverFactory rejects invalid L2 diffusion configurations for DMCB
 
   auto construct_driver = [&]() {
     driver_factory.createQMCDriver(node, das, std::nullopt, *particle_pool.getWalkerSet("e"), particle_pool,
-                                   wavefunction_pool, hamiltonian_pool, comm);
+                                   wavefunction_pool, hamiltonian_pool, &comm);
   };
 
   CHECK_THROWS_MATCHES(construct_driver(), UniformCommunicateError, Catch::Matchers::Message(expected_error));
@@ -98,8 +98,7 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   Concurrency::OverrideMaxCapacity<> override(8);
   RandomNumberGeneratorPool rng_pool(8);
   ProjectData test_project;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
   outputManager.pause();
 
   Libxml2Document doc;
@@ -109,19 +108,19 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   qmcdriver_input.readXML(node);
   DMCDriverInput dmcdriver_input;
   dmcdriver_input.readXML(node);
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
 
-  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(&comm, particle_pool, wavefunction_pool);
   SampleStack samples;
   WalkerConfigurations walker_confs;
 
   DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), nullptr, std::move(dmcdriver_input), walker_confs,
-                       MCPopulation(comm->size(), comm->rank(), *particle_pool.getParticleSet("e"),
+                       MCPopulation(comm.size(), comm.rank(), *particle_pool.getParticleSet("e"),
                                     wavefunction_pool.getWaveFunction().value(),
                                     hamiltonian_pool.getHamiltonian().value()),
-                       rng_pool.getRngRefs(), comm);
+                       rng_pool.getRngRefs(), &comm);
 
   // setStatus must be called before process
   std::string root_name{"Test"};

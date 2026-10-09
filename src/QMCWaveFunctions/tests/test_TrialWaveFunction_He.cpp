@@ -110,7 +110,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 {
   using ValueType = QMCTraits::ValueType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -122,7 +122,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
-  auto psi_ptr = setup_He_wavefunction(c, elec, ions, particle_set_map);
+  auto psi_ptr = setup_He_wavefunction(&c, elec, ions, particle_set_map);
   TrialWaveFunction& psi(*psi_ptr);
 
   ions.update();
@@ -217,7 +217,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   using ValueType = QMCTraits::ValueType;
   using RealType  = QMCTraits::RealType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
   const SimulationCell simulation_cell;
   auto ions_ptr  = std::make_unique<ParticleSet>(simulation_cell);
   auto elec1_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -231,7 +231,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   // This He wavefunction has two components
   // The orbitals are fixed and have not optimizable parameters.
   // The Jastrow factor does have an optimizable parameter.
-  auto psi_ptr = setup_He_wavefunction(c, elec1, ions, particle_set_map);
+  auto psi_ptr = setup_He_wavefunction(&c, elec1, ions, particle_set_map);
   TrialWaveFunction& psi(*psi_ptr);
   ions.update();
   elec1.update();

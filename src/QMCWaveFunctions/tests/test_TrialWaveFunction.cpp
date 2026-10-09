@@ -46,7 +46,7 @@ using ValueType = QMCTraits::ValueType;
 
 TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
 #if defined(ENABLE_OFFLOAD)
   const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS_OFFLOAD;
@@ -59,7 +59,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   lattice.BoxBConds = {1, 1, 1};
   lattice.reset();
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
+  ParticleSetPool ptcl = ParticleSetPool(&c);
   ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell(), kind_selected);
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell(), kind_selected);
@@ -109,7 +109,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   xmlNodePtr spo_root = doc.getRoot();
   xmlNodePtr ein1     = xmlFirstElementChild(spo_root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, spo_root);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), &c, spo_root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != nullptr);
 
@@ -139,7 +139,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   xmlNodePtr jas_root = doc.getRoot();
   xmlNodePtr jas1     = xmlFirstElementChild(jas_root);
 
-  RadialJastrowBuilder jb(c, elec_);
+  RadialJastrowBuilder jb(&c, elec_);
   psi.addComponent(jb.buildComponent(jas1));
 
   // should not find MSD
@@ -387,7 +387,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 TEST_CASE("TrialWaveFunction::mw_evalGrad for spinors", "[wavefunction]")
 {
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_O2_spinor(comm);
   auto wavefunction_pool =

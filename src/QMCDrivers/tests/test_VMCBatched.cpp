@@ -33,7 +33,7 @@ public:
   VMCBatchedTest(const ProjectData& project_data) : project_data_(project_data)
   {
     Concurrency::OverrideMaxCapacity<> override(8);
-    comm_ = OHMMS::Controller;
+    comm_ = OHMMS::Controller.get();
   }
 
   void testCalcDefaultLocalWalkers()

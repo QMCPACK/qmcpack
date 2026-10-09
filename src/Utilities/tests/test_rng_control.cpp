@@ -45,8 +45,7 @@ TEST_CASE("RandomNumberControl no random in xml", "[ohmmsapp]")
 
 TEST_CASE("RandomNumberControl random in xml", "[ohmmsapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const char* xml_input = R"(<tmp><random seed="0"></random></tmp>)";
 
@@ -59,10 +58,10 @@ TEST_CASE("RandomNumberControl random in xml", "[ohmmsapp]")
   rnc.initialize(context);
 
 
-  rnc.write("rng_out", c);
+  rnc.write("rng_out", &c);
 
   RandomNumberControl rnc2;
-  rnc2.read("rng_out", c);
+  rnc2.read("rng_out", &c);
   // not sure what to test here - for now make sure it doesn't crash.
 }
 } // namespace qmcplusplus

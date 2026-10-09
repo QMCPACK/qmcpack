@@ -47,16 +47,14 @@ public:
   static int getKillNodeCrossing(const DMC& driver) { return driver.KillNodeCrossing; }
   static void setKillNodeCrossing(DMC& driver, int value) { driver.KillNodeCrossing = value; }
   static const QMCUpdateBase* getFirstMover(const DMC& driver)
-  {
-    return driver.Movers.empty() ? nullptr : driver.Movers.front();
-  }
+  { return driver.Movers.empty() ? nullptr : driver.Movers.front(); }
 };
 } // namespace testing
 
 TEST_CASE("DMC", "[drivers][dmc]")
 {
   ProjectData project_data;
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell);
@@ -102,7 +100,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  DMC dmc_omp(project_data, elec, psi, h, rngs, c, false);
+  DMC dmc_omp(project_data, elec, psi, h, rngs, &c, false);
 
   const char* dmc_input = R"(<qmc method="dmc" checkpoint="-1">
    <parameter name="steps">1</parameter>
@@ -143,7 +141,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
 TEST_CASE("SODMC", "[drivers][dmc]")
 {
   ProjectData project_data;
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell);
@@ -190,7 +188,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  DMC dmc_omp(project_data, elec, psi, h, rngs, c, false);
+  DMC dmc_omp(project_data, elec, psi, h, rngs, &c, false);
 
   const char* dmc_input = R"(<qmc method="dmc" checkpoint="-1">
    <parameter name="steps">1</parameter>
@@ -225,7 +223,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 TEST_CASE("DMC move-all node-crossing mover selection", "[drivers][dmc]")
 {
   ProjectData project_data;
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell);
@@ -266,7 +264,7 @@ TEST_CASE("DMC move-all node-crossing mover selection", "[drivers][dmc]")
   h.addObservables(elec);
   elec.resetWalkerProperty();
 
-  DMC dmc(project_data, elec, psi, h, rngs, c, false);
+  DMC dmc(project_data, elec, psi, h, rngs, &c, false);
   dmc.setUpdateMode(false);
 
   const char* dmc_input = R"(<qmc method="dmc" checkpoint="-1">

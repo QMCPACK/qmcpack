@@ -66,7 +66,7 @@ TEST_CASE("MCDataType default initialization", "[particle]")
 
 TEST_CASE("walker HDF read and write", "[particle]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const size_t num_ptcls = 1;
   MCPWalker w1(num_ptcls);
@@ -84,11 +84,11 @@ TEST_CASE("walker HDF read and write", "[particle]")
 
   REQUIRE(wc_list.getActiveWalkers() == 2);
 
-  std::vector<int> walker_offset(c->size() + 1);
+  std::vector<int> walker_offset(c.size() + 1);
 
   walker_offset[0] = 0;
   int offset       = 2;
-  for (int i = 0; i < c->size(); i++)
+  for (int i = 0; i < c.size(); i++)
   {
     walker_offset[i + 1] = offset;
     offset += 2;
@@ -96,16 +96,16 @@ TEST_CASE("walker HDF read and write", "[particle]")
 
   wc_list.setWalkerOffsets(walker_offset);
 
-  c->setName("walker_test");
-  HDFWalkerOutput hout(num_ptcls, "this string apparently does nothing", c);
+  c.setName("walker_test");
+  HDFWalkerOutput hout(num_ptcls, "this string apparently does nothing", &c);
   hout.dump(wc_list, 0);
 
-  c->barrier();
+  c.barrier();
 
   WalkerConfigurations wc_list2;
 
   HDFVersion version(0, 4);
-  HDFWalkerInput_0_4 hinp(wc_list2, num_ptcls, c, version);
+  HDFWalkerInput_0_4 hinp(wc_list2, num_ptcls, &c, version);
   bool okay = hinp.read_hdf5("walker_test.config.h5");
   REQUIRE(okay);
 

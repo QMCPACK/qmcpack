@@ -29,8 +29,7 @@ extern std::unique_ptr<ParticleSet> createElectronParticleSet(const SimulationCe
 
 TEST_CASE("HamiltonianPool", "[qmcapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // See src/QMCHamiltonians/tests/test_hamiltonian_factory for parsing tests
   const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
@@ -42,15 +41,15 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
 
   xmlNodePtr root = doc.getRoot();
 
-  ParticleSetPool pp(c);
+  ParticleSetPool pp(&c);
   auto qp = createElectronParticleSet(pp.getSimulationCell());
   pp.addParticleSet(std::move(qp));
 
   RuntimeOptions runtime_options;
-  WaveFunctionPool wfp(runtime_options, pp, c);
+  WaveFunctionPool wfp(runtime_options, pp, &c);
   wfp.add("psi0", std::make_unique<TrialWaveFunction>(runtime_options, "psi0"));
 
-  HamiltonianPool hpool(pp, wfp, c);
+  HamiltonianPool hpool(pp, wfp, &c);
 
   REQUIRE(hpool.empty());
 

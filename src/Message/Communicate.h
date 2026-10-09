@@ -38,8 +38,8 @@ struct CommunicatorTraits
 #else
 struct CommunicatorTraits
 {
-  using mpi_comm_type               = int;
-  static const int MPI_COMM_NULL    = 0;
+  using mpi_comm_type            = int;
+  static const int MPI_COMM_NULL = 0;
 };
 #endif
 
@@ -214,7 +214,8 @@ namespace OHMMS
 {
 /** Global Communicator for a process
  */
-extern Communicate* Controller;
+#include <memory>
+extern std::unique_ptr<Communicate> Controller;
 } // namespace OHMMS
 
 

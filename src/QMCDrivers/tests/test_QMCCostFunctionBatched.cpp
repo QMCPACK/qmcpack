@@ -98,9 +98,9 @@ TEST_CASE("fillOverlapAndHamiltonianMatrices", "[drivers]")
 
   using Return_rt = qmcplusplus::QMCTraits::RealType;
 
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
-  testing::LinearMethodTestSupport lin(walkers_per_crowd, comm);
+  testing::LinearMethodTestSupport lin(walkers_per_crowd, &comm);
 
   int numSamples = 1;
   int numParam   = 1;
@@ -148,9 +148,9 @@ void fill_from_text(int num_opt_crowds, FillData& fd)
 
   using Return_rt = qmcplusplus::QMCTraits::RealType;
 
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
-  testing::LinearMethodTestSupport lin(walkers_per_crowd, comm);
+  testing::LinearMethodTestSupport lin(walkers_per_crowd, &comm);
 
   int numSamples = fd.numSamples;
   int numParam   = fd.numParam;

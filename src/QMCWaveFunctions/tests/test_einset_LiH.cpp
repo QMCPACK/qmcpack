@@ -36,12 +36,12 @@ using OffloadVector = Vector<T, OffloadPinnedAllocator<T>>;
 
 void test_einset_LiH_x(bool use_offload)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   lattice.R = {-3.55, 0.0, 3.55, 0.0, 3.55, 3.55, -3.55, 3.55, 0.0};
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
+  ParticleSetPool ptcl = ParticleSetPool(&c);
   ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -86,7 +86,7 @@ void test_einset_LiH_x(bool use_offload)
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), &c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
   REQUIRE(spo->isOMPoffload() == use_offload);

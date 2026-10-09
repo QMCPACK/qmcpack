@@ -59,7 +59,7 @@ TEST_CASE("BSpline functor one", "[wavefunction]")
 
 void test_J1_spline(const DynamicCoordinateKind kind_selected)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   ParticleSet ions_(simulation_cell, kind_selected);
@@ -115,7 +115,7 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow(c, elec_, ions_);
+  RadialJastrowBuilder jastrow(&c, elec_, ions_);
 
   using J1Type = J1OrbitalSoA<BsplineFunctor<RealType>>;
   auto j1_uptr = jastrow.buildComponent(jas1);
@@ -329,7 +329,7 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
 
   xmlNodePtr jas2 = xmlFirstElementChild(root2);
 
-  RadialJastrowBuilder jastrow2(c, elec_, ions_);
+  RadialJastrowBuilder jastrow2(&c, elec_, ions_);
 
   auto j12_uptr = jastrow2.buildComponent(jas2);
   J1Type* j12   = dynamic_cast<J1Type*>(j12_uptr.get());

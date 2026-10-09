@@ -69,7 +69,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   app_log() << std::setprecision(8);
   using RealType = QMCTraits::RealType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // XML parser
   Libxml2Document doc;
@@ -81,7 +81,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   REQUIRE(lat_okay);
   xmlNodePtr lat_xml_root = doc.getRoot();
 
-  ParticleSetPool pset_builder(c, "pset_builder");
+  ParticleSetPool pset_builder(&c, "pset_builder");
   pset_builder.readSimulationCellXML(lat_xml_root); // Builds lattice
 
   bool pset_okay = doc.parseFromString(pset_xml);

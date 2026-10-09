@@ -221,13 +221,12 @@ const std::string identity_coeff = R"(
 TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
 {
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool pp(c);
+  ParticleSetPool pp(&c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, &c);
 
   REQUIRE(wp.empty() == true);
 
@@ -293,13 +292,12 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
 TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
 {
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool pp(c);
+  ParticleSetPool pp(&c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, &c);
 
   REQUIRE(wp.empty() == true);
 
@@ -348,13 +346,12 @@ TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
 TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
 {
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool pp(c);
+  ParticleSetPool pp(&c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, &c);
 
   REQUIRE(wp.empty() == true);
 
@@ -466,13 +463,12 @@ const std::string coeff_rot_by_point2 = R"(
 TEST_CASE("Rotated LCAO WF1, MO coeff rotated, zero angle", "[qmcapp]")
 {
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool pp(c);
+  ParticleSetPool pp(&c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, &c);
 
   REQUIRE(wp.empty() == true);
 
@@ -528,13 +524,12 @@ const std::string coeff_rot_by_point05 = R"(
 TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
 {
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool pp(c);
+  ParticleSetPool pp(&c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, &c);
 
   REQUIRE(wp.empty() == true);
 
@@ -587,13 +582,12 @@ TEST_CASE("Rotated LCAO rotation consistency", "[qmcapp]")
   using ValueMatrix = SPOSet::ValueMatrix;
 
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool pp(c);
+  ParticleSetPool pp(&c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, &c);
   REQUIRE(wp.empty() == true);
 
   // Only care that this wavefunction has 3 SPOs and a 3x3 coefficient matrix
@@ -730,13 +724,12 @@ TEST_CASE("Rotated LCAO rotation consistency", "[qmcapp]")
 TEST_CASE("Rotated LCAO Be single determinant", "[qmcapp]")
 {
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool pp(c);
+  ParticleSetPool pp(&c);
   setupParticleSetPoolBe(pp);
 
-  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, &c);
 
   REQUIRE(wp.empty() == true);
 
@@ -795,13 +788,12 @@ TEST_CASE("Rotated LCAO Be single determinant", "[qmcapp]")
 TEST_CASE("Rotated LCAO Be multi determinant with one determinant", "[qmcapp]")
 {
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool pp(c);
+  ParticleSetPool pp(&c);
   setupParticleSetPoolBe(pp);
 
-  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, &c);
 
   REQUIRE(wp.empty() == true);
 
@@ -860,13 +852,12 @@ TEST_CASE("Rotated LCAO Be multi determinant with one determinant", "[qmcapp]")
 TEST_CASE("Rotated LCAO Be two determinant", "[qmcapp]")
 {
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool pp(c);
+  ParticleSetPool pp(&c);
   setupParticleSetPoolBe(pp);
 
-  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, &c);
 
   REQUIRE(wp.empty() == true);
 

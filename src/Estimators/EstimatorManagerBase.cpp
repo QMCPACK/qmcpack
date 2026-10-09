@@ -59,9 +59,7 @@ EstimatorManagerBase::EstimatorManagerBase(Communicate* c)
       main_estimator_name_("LocalEnergy"),
       max_output_scalar_dat_(8),
       max_block_avg_name_(20)
-{
-  setCommunicator(c);
-}
+{ setCommunicator(c); }
 
 EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
     : Options(em.Options),
@@ -91,7 +89,7 @@ void EstimatorManagerBase::setCommunicator(Communicate* c)
   // I think this is actually checking if this is the "Main Estimator"
   if (myComm && myComm == c)
     return;
-  myComm = c ? c : OHMMS::Controller;
+  myComm = c ? c : OHMMS::Controller.get();
   //set the default options
   // This is a flag to tell manager if there is more than one rank
   // running walkers, its discovered by smelly query of myComm.
@@ -198,7 +196,7 @@ void EstimatorManagerBase::start(int blocks, bool record)
     {
       h5desc.clear();
     }
-    fname  = myComm->getName() + ".stat.h5";
+    fname = myComm->getName() + ".stat.h5";
     h_file.create(fname);
     for (int i = 0; i < Estimators.size(); i++)
       Estimators[i]->registerObservables(h5desc, h_file);

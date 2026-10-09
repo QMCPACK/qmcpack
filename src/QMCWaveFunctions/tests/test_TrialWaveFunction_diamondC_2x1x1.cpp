@@ -56,7 +56,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   const double grad_precision  = std::is_same<SPO_precision, float_tag>::value ? 1.3e-4 : 1e-8;
   const double ratio_precision = std::is_same<SPO_precision, float_tag>::value ? 2e-4 : 1e-5;
 #endif
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const DynamicCoordinateKind kind_selected =
       offload_switches.jas ? DynamicCoordinateKind::DC_POS_OFFLOAD : DynamicCoordinateKind::DC_POS;
@@ -67,7 +67,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   lattice.BoxBConds = {1, 1, 1};
   lattice.reset();
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
+  ParticleSetPool ptcl = ParticleSetPool(&c);
   ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell(), kind_selected);
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell(), kind_selected);
@@ -128,7 +128,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   xmlNodePtr spo_root = doc.getRoot();
   xmlNodePtr ein1     = xmlFirstElementChild(spo_root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, spo_root);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), &c, spo_root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != nullptr);
 
@@ -168,7 +168,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   xmlNodePtr jas_root = doc.getRoot();
   xmlNodePtr jas1     = xmlFirstElementChild(jas_root);
 
-  RadialJastrowBuilder jb(c, elec_);
+  RadialJastrowBuilder jb(&c, elec_);
   psi.addComponent(jb.buildComponent(jas1));
 
   // initialize distance tables.

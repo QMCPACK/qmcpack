@@ -61,7 +61,7 @@ TEST_CASE("Pade2 functor", "[wavefunction]")
 
 TEST_CASE("Pade Jastrow", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   ParticleSet ions_(simulation_cell);
@@ -102,7 +102,7 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
 
   // cusp = -0.25
   // r_ee = 3.42050023755
-  RadialJastrowBuilder jastrow(c, elec_);
+  RadialJastrowBuilder jastrow(&c, elec_);
   std::unique_ptr<WaveFunctionComponent> jas(jastrow.buildComponent(jas1));
 
   // update all distance tables
@@ -114,9 +114,9 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
 
 TEST_CASE("Pade2 Jastrow", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
+  ParticleSetPool ptcl = ParticleSetPool(&c);
   auto& simulation_cell(ptcl.getSimulationCell());
   auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
   auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -172,7 +172,7 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
 
   // update all distance tables
   elec_.update();
-  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), &c);
   RuntimeOptions runtime_options;
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);

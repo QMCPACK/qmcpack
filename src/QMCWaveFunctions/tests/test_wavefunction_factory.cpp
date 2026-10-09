@@ -19,7 +19,7 @@ namespace qmcplusplus
 {
 TEST_CASE("WaveFunctionFactory", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto qp = std::make_unique<ParticleSet>(simulation_cell);
@@ -41,7 +41,7 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
   WaveFunctionFactory::PSetMap particle_set_map;
   particle_set_map.emplace("e", std::move(qp));
 
-  WaveFunctionFactory wff(*particle_set_map["e"], particle_set_map, c);
+  WaveFunctionFactory wff(*particle_set_map["e"], particle_set_map, &c);
 
   const char* wavefunction_xml = R"(<wavefunction>
          <jastrow type="Two-Body" name="J2" function="bspline" print="yes" gpu="no">

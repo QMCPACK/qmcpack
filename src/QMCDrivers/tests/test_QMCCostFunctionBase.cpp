@@ -64,9 +64,9 @@ TEST_CASE("updateXmlNodes", "[drivers]")
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);
 
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
-  QMCCostFunctionTest cost(w, psi, h, comm);
+  QMCCostFunctionTest cost(w, psi, h, &comm);
 
   cost.setRootName("tmp");
 
@@ -99,9 +99,9 @@ TEST_CASE("updateXmlNodes with existing element", "[drivers]")
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);
 
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
-  QMCCostFunctionTest cost(w, psi, h, comm);
+  QMCCostFunctionTest cost(w, psi, h, &comm);
   cost.setRootName("tmp2");
 
   const char* wf_xml = R"(

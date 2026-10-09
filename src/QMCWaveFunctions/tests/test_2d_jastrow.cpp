@@ -28,7 +28,7 @@ using PosType   = QMCTraits::PosType;
 
 TEST_CASE("Jastrow 2D", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
   Libxml2Document doc;
   xmlNodePtr root, node;
 
@@ -84,7 +84,7 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
   REQUIRE(doc.parseFromString(jastrow_text));
   root = doc.getRoot();
   node = xmlFirstElementChild(root);
-  RadialJastrowBuilder jastrow(c, elec);
+  RadialJastrowBuilder jastrow(&c, elec);
   using J2Type = TwoBodyJastrow<BsplineFunctor<RealType>>;
   auto j2_uptr = jastrow.buildComponent(node);
   J2Type* j2   = dynamic_cast<J2Type*>(j2_uptr.get());

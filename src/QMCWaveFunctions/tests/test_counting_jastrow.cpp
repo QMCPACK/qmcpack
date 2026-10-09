@@ -133,7 +133,7 @@ TEST_CASE("CountingJastrow", "[wavefunction]")
   using VariableSet = optimize::VariableSet;
   using LogValue    = std::complex<QMCTraits::QTFull::RealType>;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // initialize particle sets
   const SimulationCell simulation_cell;
@@ -200,7 +200,7 @@ TEST_CASE("CountingJastrow", "[wavefunction]")
   REQUIRE(parse_cj);
 
   xmlNodePtr cj_root = doc.getRoot();
-  CountingJastrowBuilder cjb(c, elec);
+  CountingJastrowBuilder cjb(&c, elec);
 
   auto cj_uptr                                = cjb.buildComponent(cj_root);
   CountingJastrow<CountingGaussianRegion>* cj = dynamic_cast<CountingJastrow<CountingGaussianRegion>*>(cj_uptr.get());
@@ -242,7 +242,7 @@ TEST_CASE("CountingJastrow", "[wavefunction]")
   REQUIRE(parse_cjv);
 
   xmlNodePtr cjv_root = doc2.getRoot();
-  CountingJastrowBuilder cjvb(c, elec, ion0);
+  CountingJastrowBuilder cjvb(&c, elec, ion0);
 
   // test evaluateLog for cjv
   auto cjv_uptr                                = cjvb.buildComponent(cjv_root);

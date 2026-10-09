@@ -46,15 +46,11 @@ const ParticleSet::ParticlePos default_start_pos{{1.451870349, 1.381521229, 1.16
 
 template<typename REAL>
 REAL tensorAccessor(const std::vector<REAL>& grid_data, int i, int j, int k, int iv)
-{
-  return grid_data[1200 * i + 60 * j + 3 * k + iv];
-}
+{ return grid_data[1200 * i + 60 * j + 3 * k + iv]; }
 
 template<typename REAL>
 REAL tensorAccessor(const Matrix<REAL>& grid_data, int i, int j, int k, int iv)
-{
-  return grid_data.data()[1200 * i + 60 * j + 3 * k + iv];
-}
+{ return grid_data.data()[1200 * i + 60 * j + 3 * k + iv]; }
 
 template<typename REAL>
 REAL tensorAccessor(const NESpaceGrid<REAL>& grid, int i, int j, int k, int iv)
@@ -75,10 +71,9 @@ REAL tensorAccessor(const NESpaceGrid<REAL>& grid, std::array<int, 3> gind, int 
 TEST_CASE("SpaceGrid::Construction", "[estimators]")
 {
   using Input = testing::ValidSpaceGridInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
-  testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
+  testing::SpaceGridEnv<Input::valid::ORIGIN> sge(&comm);
 
   // EnergyDensityEstimator gets this from an enum giving indexes into each offset of SOA buffer.
   // It is a smell.
@@ -95,10 +90,9 @@ TEST_CASE("SpaceGrid::Construction", "[estimators]")
 TEST_CASE("SpaceGrid::CYLINDRICAL", "[estimators]")
 {
   using Input = testing::ValidSpaceGridInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
-  testing::SpaceGridEnv<Input::valid::CYLINDRICAL> sge(comm);
+  testing::SpaceGridEnv<Input::valid::CYLINDRICAL> sge(&comm);
 
   // EnergyDensityEstimator gets this from an enum giving indexes into each offset of SOA buffer.
   // It is a smell.
@@ -115,10 +109,9 @@ TEST_CASE("SpaceGrid::CYLINDRICAL", "[estimators]")
 TEST_CASE("SpaceGrid::SPHERICAL", "[estimators]")
 {
   using Input = testing::ValidSpaceGridInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
-  testing::SpaceGridEnv<Input::valid::SPHERICAL> sge(comm);
+  testing::SpaceGridEnv<Input::valid::SPHERICAL> sge(&comm);
 
   // EnergyDensityEstimator gets this from an enum giving indexes into each offset of SOA buffer.
   // It is a smell.
@@ -135,9 +128,8 @@ TEST_CASE("SpaceGrid::SPHERICAL", "[estimators]")
 TEST_CASE("SpaceGrid::Basic", "[estimators]")
 {
   using Input = testing::ValidSpaceGridInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
-  testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
+  Communicate& comm(*OHMMS::Controller);
+  testing::SpaceGridEnv<Input::valid::ORIGIN> sge(&comm);
   sge.pset_elec_.R = default_start_pos;
   int num_values   = 3;
   NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, true);
@@ -264,9 +256,8 @@ TEST_CASE("SpaceGrid::Basic", "[estimators]")
 TEST_CASE("SpaceGrid::Accumulate::outside", "[estimators]")
 {
   using Input = testing::ValidSpaceGridInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
-  testing::SpaceGridEnv<Input::valid::CYLINDRICAL> sge(comm);
+  Communicate& comm(*OHMMS::Controller);
+  testing::SpaceGridEnv<Input::valid::CYLINDRICAL> sge(&comm);
   int num_values = 3;
   NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
   using NES = testing::NESpaceGridTests<double>;
@@ -312,9 +303,8 @@ TEST_CASE("SpaceGrid::Accumulate::outside", "[estimators]")
 TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]")
 {
   using Input = testing::ValidSpaceGridInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
-  testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
+  Communicate& comm(*OHMMS::Controller);
+  testing::SpaceGridEnv<Input::valid::ORIGIN> sge(&comm);
   int num_values   = 3;
   sge.pset_elec_.R = default_start_pos;
   NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
@@ -387,9 +377,8 @@ TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]")
 TEST_CASE("SpaceGrid::WeirdCartesian", "[estimators]")
 {
   using Input = testing::ValidSpaceGridInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
-  testing::SpaceGridEnv<Input::valid::WEIRD_CARTESIAN> sge(comm);
+  Communicate& comm(*OHMMS::Controller);
+  testing::SpaceGridEnv<Input::valid::WEIRD_CARTESIAN> sge(&comm);
   sge.pset_elec_.R = default_start_pos;
 
   int num_values = 3;
@@ -477,9 +466,8 @@ TEST_CASE("SpaceGrid::WeirdCartesian", "[estimators]")
 TEST_CASE("SpaceGrid::hdf5", "[estimators]")
 {
   using Input = testing::ValidSpaceGridInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
-  testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
+  Communicate& comm(*OHMMS::Controller);
+  testing::SpaceGridEnv<Input::valid::ORIGIN> sge(&comm);
   sge.pset_elec_.R = default_start_pos;
   int num_values   = 3;
   NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
@@ -552,9 +540,8 @@ TEST_CASE("SpaceGrid::hdf5", "[estimators]")
 TEST_CASE("SpaceGrid::collect", "[estimators]")
 {
   using Input = testing::ValidSpaceGridInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
-  testing::SpaceGridEnv<Input::valid::ORIGIN> sge(comm);
+  Communicate& comm(*OHMMS::Controller);
+  testing::SpaceGridEnv<Input::valid::ORIGIN> sge(&comm);
   int num_values = 3;
   NESpaceGrid<Real> collection_space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, false);
   UPtrVector<NESpaceGrid<Real>> accumulating_space_grids;

@@ -20,7 +20,7 @@ namespace qmcplusplus
 {
 TEST_CASE("VirtualParticleSet", "[particle]")
 {
-  auto pset_pool = MinimalParticlePool::make_NiO_a4(OHMMS::Controller);
+  auto pset_pool = MinimalParticlePool::make_NiO_a4(OHMMS::Controller.get());
 
   auto& ions  = *pset_pool.getParticleSet("i");
   auto& elecs = *pset_pool.getParticleSet("e");

@@ -37,15 +37,15 @@ struct LogAndStuff
 
 TEST_CASE("WalkerLogManager::move", "[drivers]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   using WLInput = testing::WalkerLogInputSections;
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(WLInput::getXml(WLInput::valid::DEFAULT)));
   xmlNodePtr node = doc.getRoot();
   WalkerLogInput walker_log_input{node};
-  auto make_stuff = [comm](WalkerLogInput& walker_log_input) -> LogAndStuff {
-    WalkerLogManager wlm{walker_log_input, true, "root_name", comm};
+  auto make_stuff = [&comm](WalkerLogInput& walker_log_input) -> LogAndStuff {
+    WalkerLogManager wlm{walker_log_input, true, "root_name", &comm};
     CollectorHolder ch;
     ch.setWalkerLogCollector(wlm.makeCollector());
     return {std::move(wlm), std::move(ch)};

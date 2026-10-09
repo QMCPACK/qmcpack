@@ -38,13 +38,13 @@ using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
 TEST_CASE("EnergyDensityEstimatorIntegration::multirank_reduction", "[estimators]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   int num_walkers = 4;
 #ifndef ENABLE_OFFLOAD
-  testing::EnergyDensityTest eden_test(comm, num_walkers, generate_test_data);
+  testing::EnergyDensityTest eden_test(&comm, num_walkers, generate_test_data);
 #else
-  testing::EnergyDensityTest eden_test(comm, num_walkers, &testing::makeGoldWalkerElementsWithEI, generate_test_data);
+  testing::EnergyDensityTest eden_test(&comm, num_walkers, &testing::makeGoldWalkerElementsWithEI, generate_test_data);
 #endif
 
   auto doc = testing::createEstimatorManagerEnergyDenistyInputXML();
@@ -64,7 +64,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::multirank_reduction", "[estimators
   auto twf_list = eden_test.getTwfList();
   auto twf_lock = ResourceCollectionTeamLock<TrialWaveFunction>(eden_test.getTwfRes(), twf_list);
 
-  EstimatorManagerNew emn(gold_elem.ham, comm);
+  EstimatorManagerNew emn(gold_elem.ham, &comm);
   emn.constructEstimators(std::move(emi), gold_elem.pset_elec, gold_elem.twf, gold_elem.ham,
                           gold_elem.particle_pool.getPool());
   EstimatorManagerCrowd emc(emn);
@@ -117,13 +117,13 @@ TEST_CASE("EnergyDensityEstimatorIntegration::multirank_reduction", "[estimators
 
 TEST_CASE("EnergyDensityEstimatorIntegration::operator_reporting", "[estimators]")
 {
-  Communicate* comm = OHMMS::Controller;
-  int num_walkers   = 4;
+  Communicate& comm(*OHMMS::Controller);
+  int num_walkers = 4;
 #ifndef ENABLE_OFFLOAD
-  testing::EnergyDensityTest eden_test(comm, num_walkers, &testing::makeGoldWalkerElementsWithEEEIPS,
+  testing::EnergyDensityTest eden_test(&comm, num_walkers, &testing::makeGoldWalkerElementsWithEEEIPS,
                                        generate_test_data);
 #else
-  testing::EnergyDensityTest eden_test(comm, num_walkers, &testing::makeGoldWalkerElementsWithEI, generate_test_data);
+  testing::EnergyDensityTest eden_test(&comm, num_walkers, &testing::makeGoldWalkerElementsWithEI, generate_test_data);
 #endif
   auto doc = testing::createEstimatorManagerEnergyDenistyInputXML();
   EstimatorManagerInput emi(doc.getRoot());
@@ -142,7 +142,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::operator_reporting", "[estimators]
   auto twf_list = eden_test.getTwfList();
   auto twf_lock = ResourceCollectionTeamLock<TrialWaveFunction>(eden_test.getTwfRes(), twf_list);
 
-  EstimatorManagerNew emn(gold_elem.ham, comm);
+  EstimatorManagerNew emn(gold_elem.ham, &comm);
 
   emn.startDriverRun();
   emn.constructEstimators(std::move(emi), gold_elem.pset_elec, gold_elem.twf, gold_elem.ham,
@@ -210,9 +210,9 @@ TEST_CASE("EnergyDensityEstimatorIntegration::operator_reporting", "[estimators]
 
 TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
 {
-  int num_walkers   = 4;
-  Communicate* comm = OHMMS::Controller;
-  testing::EDenEstimatorManagerIntegrationTest eden_emn_integration_test(comm, num_walkers);
+  int num_walkers = 4;
+  Communicate& comm(*OHMMS::Controller);
+  testing::EDenEstimatorManagerIntegrationTest eden_emn_integration_test(&comm, num_walkers);
   auto walker_list = eden_emn_integration_test.getWalkerList();
   auto ham_list    = eden_emn_integration_test.getHamList();
 
@@ -316,7 +316,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
   emnta.stopBlockUpToWrite(accept, 0, block_weight);
   app_log() << "walkers weight after reduction: " << app_e_den_est.get_walkers_weight() << '\n';
 
-  if (comm->rank() == 0)
+  if (comm.rank() == 0)
   {
     summed_grid = 0;
     // grid memory layout is (W)eight (T) Kinetic (V) potential

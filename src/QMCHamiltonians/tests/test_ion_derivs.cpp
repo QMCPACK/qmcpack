@@ -173,7 +173,7 @@ void test_msd_wrapper(const std::string& wffile,
   using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -198,7 +198,7 @@ void test_msd_wrapper(const std::string& wffile,
   particle_set_map.emplace("ion0", std::move(ions_ptr));
 
   RuntimeOptions runtime_options;
-  WaveFunctionFactory wff(elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, &c);
   auto psi_ptr = wff.buildTWF(root2, runtime_options);
   auto& psi(*psi_ptr);
   //end incantation
@@ -211,7 +211,7 @@ void test_msd_wrapper(const std::string& wffile,
   RealType logpsi = psi.evaluateLog(elec);
   CHECK(logpsi == Approx(ref_logpsi));
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, &c);
 
   auto ham_ptr = create_CN_Hamiltonian(hf);
   QMCHamiltonian& ham(*ham_ptr);
@@ -673,7 +673,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Single Slater No Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -688,7 +688,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   particle_set_map.emplace("e", std::move(elec_ptr));
   particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  WaveFunctionFactory wff(elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, &c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.wfnoj.xml");
@@ -699,7 +699,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   auto psi_ptr      = wff.buildTWF(wfroot, runtime_options);
   auto& psi(*psi_ptr);
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, &c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-1.4233853149e+01,0.0000000000e+00)
@@ -829,7 +829,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Single Slater+Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -844,7 +844,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   particle_set_map.emplace("e", std::move(elec_ptr));
   particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  WaveFunctionFactory wff(elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, &c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.wfj.xml");
@@ -855,7 +855,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   auto psi_ptr      = wff.buildTWF(wfroot, runtime_options);
   auto& psi(*psi_ptr);
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, &c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //  Logpsi: (-8.945509461103977600e+00,0.000000000000000000e+00)
@@ -991,7 +991,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Multislater No Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -1006,7 +1006,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   particle_set_map.emplace("e", std::move(elec_ptr));
   particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  WaveFunctionFactory wff(elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, &c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.msd-wfnoj.xml");
@@ -1017,7 +1017,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   auto psi_ptr      = wff.buildTWF(wfroot, runtime_options);
   auto& psi(*psi_ptr);
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, &c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-1.411499619826623686e+01,0.000000000000000000e+00)
@@ -1138,7 +1138,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Multislater+Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -1153,7 +1153,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   particle_set_map.emplace("e", std::move(elec_ptr));
   particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  WaveFunctionFactory wff(elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, &c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.msd-wfj.xml");
@@ -1164,7 +1164,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   auto psi_ptr      = wff.buildTWF(wfroot, runtime_options);
   auto& psi(*psi_ptr);
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, &c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-8.693299948465634586e+00,0.000000000000000000e+00)
@@ -1279,7 +1279,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -1301,7 +1301,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   particle_set_map.emplace("ion0", std::move(ions_ptr));
 
   RuntimeOptions runtime_options;
-  WaveFunctionFactory wff(elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, &c);
   auto psi_ptr = wff.buildTWF(root2, runtime_options);
   auto& psi(*psi_ptr);
   //end incantation
@@ -1316,7 +1316,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   dpsi.resize(9);
   d2psi.resize(9);
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, &c);
 
   auto ham_ptr = create_CN_Hamiltonian(hf);
   QMCHamiltonian& ham(*ham_ptr);
@@ -1537,7 +1537,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -1559,7 +1559,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   particle_set_map.emplace("ion0", std::move(ions_ptr));
 
   RuntimeOptions runtime_options;
-  WaveFunctionFactory wff(elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, &c);
   auto psi_ptr = wff.buildTWF(root2, runtime_options);
   auto& psi(*psi_ptr);
   //end incantation
@@ -1574,7 +1574,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   dpsi.resize(9);
   d2psi.resize(9);
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, &c);
 
   auto ham_ptr = create_CN_Hamiltonian(hf);
   QMCHamiltonian& ham(*ham_ptr);
@@ -1800,7 +1800,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   std::ostringstream section_name;
   section_name << "Carbon diamond off gamma unit test: ";
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   lattice.BoxBConds[0]             = 1; // periodic
@@ -2318,8 +2318,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Single Slater+Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSet ions;
   ParticleSet elec;
@@ -2485,8 +2484,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Multislater No Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSet ions;
   ParticleSet elec;
@@ -2638,8 +2636,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Multislater+Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSet ions;
   ParticleSet elec;

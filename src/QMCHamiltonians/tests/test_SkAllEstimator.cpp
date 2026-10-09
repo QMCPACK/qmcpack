@@ -43,8 +43,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   app_log() << std::setprecision(8);
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // XML parser
   Libxml2Document doc;
@@ -113,7 +112,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   app_log() << "\n\n\ntest_SkAllEstimator: START\n";
 
   // Build a ParticleSetPool - makes ParticleSets
-  ParticleSetPool pset_builder(c, "pset_builder");
+  ParticleSetPool pset_builder(&c, "pset_builder");
 
   // First attach the Lattice defined above
   pset_builder.readSimulationCellXML(lat_xml_root);

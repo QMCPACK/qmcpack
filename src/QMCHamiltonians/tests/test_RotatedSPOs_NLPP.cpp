@@ -44,9 +44,9 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
     BEGIN Boilerplate stuff to make a simple SPOSet. Copied from test_einset.cpp
   */
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool pp(c);
+  ParticleSetPool pp(&c);
 
   Lattice lattice;
   lattice.R(0, 0) = 4.32747284;
@@ -98,7 +98,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
 
   pp.addParticleSet(std::move(ions_uptr));
 
-  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, &c);
   REQUIRE(wp.empty() == true);
 
   const char* wf_input_multi_det = R"(
@@ -171,7 +171,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   if (use_nlpp_batched)
     ham_input = ham_input_nlpp_batched;
 
-  HamiltonianFactory hf("h0", elec, pp.getPool(), wp.getWaveFunction(), c);
+  HamiltonianFactory hf("h0", elec, pp.getPool(), wp.getWaveFunction(), &c);
 
   Libxml2Document doc2;
   REQUIRE(doc2.parseFromString(ham_input));

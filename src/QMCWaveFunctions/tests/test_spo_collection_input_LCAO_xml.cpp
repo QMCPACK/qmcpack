@@ -28,9 +28,9 @@ namespace qmcplusplus
 {
 void test_He_sto3g_xml_input(const std::string& spo_xml_string)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
+  ParticleSetPool ptcl = ParticleSetPool(&c);
   auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& elec(*elec_uptr);
@@ -64,7 +64,7 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory(elec, ptcl.getPool(), c);
+  WaveFunctionFactory wf_factory(elec, ptcl.getPool(), &c);
   RuntimeOptions runtime_options;
   auto twf_ptr = wf_factory.buildTWF(ein_xml, runtime_options);
 

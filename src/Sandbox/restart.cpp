@@ -47,10 +47,10 @@ int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
-  OHMMS::Controller = new Communicate(env.world());
+  OHMMS::Controller.get() = new Communicate(env.world());
 #endif
 
-  Communicate* myComm = OHMMS::Controller;
+  Communicate* myComm = OHMMS::Controller.get();
 
   using RealType         = QMCTraits::RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;

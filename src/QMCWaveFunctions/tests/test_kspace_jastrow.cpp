@@ -32,7 +32,7 @@ namespace qmcplusplus
 {
 TEST_CASE("kspace jastrow", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // initialize simulationcell for kvectors
   const char* xmltext = R"(<tmp>
@@ -95,7 +95,7 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   root            = doc.getRoot();
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  kSpaceJastrowBuilder jastrow(c, elec_, ions_);
+  kSpaceJastrowBuilder jastrow(&c, elec_, ions_);
   std::unique_ptr<WaveFunctionComponent> jas(jastrow.buildComponent(jas1));
 
   // update all distance tables
@@ -107,7 +107,7 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
 
 TEST_CASE("kspace jastrow derivatives", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // initialize simulationcell for kvectors
   const char* xmltext = R"(<tmp>
@@ -171,7 +171,7 @@ TEST_CASE("kspace jastrow derivatives", "[wavefunction]")
   root            = doc.getRoot();
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  kSpaceJastrowBuilder jastrow(c, elec_, ions_);
+  kSpaceJastrowBuilder jastrow(&c, elec_, ions_);
   std::unique_ptr<WaveFunctionComponent> wfc(jastrow.buildComponent(jas1));
   kSpaceJastrow* jas = dynamic_cast<kSpaceJastrow*>(wfc.get());
 
@@ -234,7 +234,7 @@ TEST_CASE("kspace jastrow derivatives", "[wavefunction]")
   root            = doc.getRoot();
   xmlNodePtr jas2 = xmlFirstElementChild(root);
 
-  kSpaceJastrowBuilder jastrow2(c, elec_, ions_);
+  kSpaceJastrowBuilder jastrow2(&c, elec_, ions_);
   std::unique_ptr<WaveFunctionComponent> wfc2(jastrow2.buildComponent(jas2));
   kSpaceJastrow* j2 = dynamic_cast<kSpaceJastrow*>(wfc2.get());
 

@@ -27,7 +27,7 @@ using ValueType         = qmcplusplus::QMCTraits::ValueType;
 ///This provides a basic test of the descent engine's parameter update algorithm
 TEST_CASE("DescentEngine RMSprop update", "[drivers][descent]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
 
   const std::string engine_input("<tmp> </tmp>");
@@ -37,7 +37,7 @@ TEST_CASE("DescentEngine RMSprop update", "[drivers][descent]")
 
   xmlNodePtr fakeXML = doc.getRoot();
 
-  std::unique_ptr<DescentEngine> descentEngineObj = std::make_unique<DescentEngine>(c, fakeXML);
+  std::unique_ptr<DescentEngine> descentEngineObj = std::make_unique<DescentEngine>(&c, fakeXML);
 
   optimize::VariableSet myVars;
 

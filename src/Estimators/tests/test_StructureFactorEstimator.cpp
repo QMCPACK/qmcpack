@@ -35,10 +35,9 @@ using Real  = RealAlias<Value>;
 TEST_CASE("StructureFactorEstimator::StructureFactorEstimator", "[estimators]")
 {
   using Input = qmcplusplus::testing::ValidStructureFactorInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
-  ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(comm)};
+  ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(&comm)};
 
   ParticleSet pset_elec{*(particle_pool.getParticleSet("e"))};
   ParticleSet pset_ions{*(particle_pool.getParticleSet("ion"))};
@@ -64,8 +63,7 @@ TEST_CASE("StructureFactorEstimator::StructureFactorEstimator", "[estimators]")
 TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 {
   using Input = qmcplusplus::testing::ValidStructureFactorInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(Input::getXml(Input::valid::SKALL)));
@@ -73,7 +71,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   UPtr<StructureFactorInput> sf_in;
   sf_in = std::make_unique<StructureFactorInput>(node);
 
-  ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(comm)};
+  ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(&comm)};
 
   ParticleSet pset_elec{*(particle_pool.getParticleSet("e"))};
   ParticleSet pset_ions{*(particle_pool.getParticleSet("ion"))};
@@ -132,7 +130,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
 
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
 
   TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
   std::vector<UPtr<TrialWaveFunction>> twfcs(nwalkers);
@@ -143,7 +141,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 
   // These hamiltomians are just pro forma arguments needed to hold off UBSan,
   // StructureFactorEstimator never accesses into them.
-  auto hamiltonian_pool = MinimalHamiltonianPool::makeHamWithEEEI(comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::makeHamWithEEEI(&comm, particle_pool, wavefunction_pool);
   QMCHamiltonian& gold_hamiltonian(hamiltonian_pool.getHamiltonian().value());
   std::vector<UPtr<QMCHamiltonian>> hams(nwalkers);
   for (int iw = 0; iw < nwalkers; ++iw)

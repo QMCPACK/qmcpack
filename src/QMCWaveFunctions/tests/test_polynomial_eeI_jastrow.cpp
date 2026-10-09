@@ -187,7 +187,7 @@ void create_J3_ion_reference_values(TinyVector<ParticleSet::ParticleGradient, 3>
 
 void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   ParticleSet ions_(simulation_cell, kind_selected);
@@ -233,7 +233,7 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
 
   xmlNodePtr jas_eeI = xmlFirstElementChild(root);
 
-  eeI_JastrowBuilder jastrow(c, elec_, ions_);
+  eeI_JastrowBuilder jastrow(&c, elec_, ions_);
   std::unique_ptr<WaveFunctionComponent> jas(jastrow.buildComponent(jas_eeI));
 
   using J3Type              = JeeIOrbitalSoA<PolynomialFunctor3D>;

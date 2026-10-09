@@ -33,10 +33,9 @@ namespace qmcplusplus
 
 TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
 {
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
-  ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(comm)};
+  ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(&comm)};
 
   ParticleSet pset_elec{*(particle_pool.getParticleSet("e"))};
   ParticleSet pset_ions{*(particle_pool.getParticleSet("ion"))};
@@ -63,10 +62,9 @@ TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
 
 TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
 {
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
-  ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(comm)};
+  ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(&comm)};
 
   ParticleSet pset_elec{*(particle_pool.getParticleSet("e"))};
   ParticleSet pset_ions{*(particle_pool.getParticleSet("ion"))};
@@ -100,10 +98,10 @@ TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
 
 TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
 #ifndef ENABLE_OFFLOAD
-  testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
+  testing::EnergyDensityTest eden_test(&comm, 4 /*num_walkers*/, generate_test_data);
 #else
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, &testing::makeGoldWalkerElementsWithEI,
                                        generate_test_data);
@@ -174,10 +172,10 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
 
 TEST_CASE("NEEnergyDensityEstimator::Collect", "[estimators]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
 #ifndef ENABLE_OFFLOAD
-  testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
+  testing::EnergyDensityTest eden_test(&comm, 4 /*num_walkers*/, generate_test_data);
 #else
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, &testing::makeGoldWalkerElementsWithEI,
                                        generate_test_data);

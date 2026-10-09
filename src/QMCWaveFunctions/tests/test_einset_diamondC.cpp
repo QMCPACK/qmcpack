@@ -31,7 +31,7 @@ namespace qmcplusplus
 {
 void test_einset_diamond_1x1x1(bool use_offload, int distributed_ranks = 1, int shared_ranks = 1)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   // monoO
@@ -40,7 +40,7 @@ void test_einset_diamond_1x1x1(bool use_offload, int distributed_ranks = 1, int 
   // diamondC_1x1x1
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
+  ParticleSetPool ptcl = ParticleSetPool(&c);
   ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -88,7 +88,7 @@ void test_einset_diamond_1x1x1(bool use_offload, int distributed_ranks = 1, int 
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), &c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
   REQUIRE(spo->isOMPoffload() == use_offload);
@@ -304,15 +304,15 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   test_einset_diamond_1x1x1(true);
   test_einset_diamond_1x1x1(false);
-  Communicate* c = OHMMS::Controller;
-  if (c->size() % 2 == 0)
+  Communicate& c(*OHMMS::Controller);
+  if (c.size() % 2 == 0)
   {
     test_einset_diamond_1x1x1(true, 2, 1);
     test_einset_diamond_1x1x1(false, 2, 1);
     test_einset_diamond_1x1x1(true, 1, 2);
     test_einset_diamond_1x1x1(false, 1, 2);
   }
-  if (c->size() % 6 == 0)
+  if (c.size() % 6 == 0)
   {
     test_einset_diamond_1x1x1(true, 2, 3);
     test_einset_diamond_1x1x1(false, 2, 3);
@@ -323,13 +323,13 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 
 TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   // diamondC_2x1x1
   lattice.R = {6.7463223, 6.7463223, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
+  ParticleSetPool ptcl = ParticleSetPool(&c);
   ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -374,7 +374,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), &c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
@@ -521,7 +521,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
 
 TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   lattice.R       = 0.0;
@@ -545,7 +545,7 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   ptcl_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
   xmlNodePtr cur = NULL;
-  EinsplineSetBuilder esb(elec, ptcl_map, c, cur);
+  EinsplineSetBuilder esb(elec, ptcl_map, &c, cur);
 
   esb.SuperLattice       = 0.0;
   esb.SuperLattice(0, 0) = 1.0;

@@ -48,7 +48,7 @@ int main(int argc, char** argv)
   using namespace qmcplusplus;
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
-  OHMMS::Controller = new Communicate(env.world());
+  OHMMS::Controller = std::make_unique<Communicate>(env.world());
 #endif
   try
   {
@@ -120,7 +120,7 @@ int main(int argc, char** argv)
             if (words.size())
             {
               if (words[0].find(".xml") == words[0].size() - 4)
-                  fgroup_names_txt.push_back(words[0]);
+                fgroup_names_txt.push_back(words[0]);
             }
             else
               valid = false;
@@ -147,7 +147,7 @@ int main(int argc, char** argv)
       return 1;
     }
     //safe to move on
-    Communicate* qmcComm = OHMMS::Controller;
+    std::unique_ptr<Communicate> comm_job;
     if (inputs.size() > 1)
     {
       if (inputs.size() > OHMMS::Controller->size())
@@ -158,9 +158,10 @@ int main(int argc, char** argv)
             << "Increase the number of MPI ranks or reduce the number of calculations." << std::endl;
         OHMMS::Controller->barrier_and_abort(msg.str());
       }
-      qmcComm               = new Communicate(*OHMMS::Controller, inputs.size());
+      comm_job              = std::make_unique<Communicate>(*OHMMS::Controller, inputs.size());
       qmc_common.mpi_groups = inputs.size();
     }
+    Communicate* qmcComm = inputs.size() > 1 ? comm_job.get() : OHMMS::Controller.get();
     std::stringstream logname;
     int inpnum          = (inputs.size() > 1) ? qmcComm->getGroupID() : 0;
     std::string myinput = inputs[qmcComm->getGroupID()];
@@ -230,6 +231,8 @@ int main(int argc, char** argv)
   if (OHMMS::Controller->rank() == 0)
     std::cout << std::endl << "QMCPACK execution completed successfully" << std::endl;
 
+  // OHMMS::Controller holds duplicated (linked) mpi3::environment and must be freed first.
+  OHMMS::Controller.reset();
   return 0;
 }
 

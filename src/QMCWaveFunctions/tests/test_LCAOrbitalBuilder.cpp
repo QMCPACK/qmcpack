@@ -45,7 +45,7 @@ public:
 
 TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   using Real      = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
@@ -79,7 +79,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
   REQUIRE(doc.parseFromString(wf_xml_num_cart));
 
   using BasisSet_t = LCAOrbitalBuilder::BasisSet_t;
-  LCAOrbitalBuilder lcaob_num_cart(elec, ions, c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_num_cart(elec, ions, &c, doc.getRoot());
   const auto& bs = lcaob_num_cart.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<
             SoaLocalizedBasisSet<SoaAtomicBasisSet<MultiQuinticSpline1D<Real>, SoaCartesianTensor<Real>>, ValueType>*>(
@@ -101,7 +101,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 
   REQUIRE(doc.parseFromString(wf_xml_num_sph));
 
-  LCAOrbitalBuilder lcaob_num_sph(elec, ions, c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_num_sph(elec, ions, &c, doc.getRoot());
   const auto& bs2 = lcaob_num_sph.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<
             SoaLocalizedBasisSet<SoaAtomicBasisSet<MultiQuinticSpline1D<Real>, SoaSphericalTensor<Real>>, ValueType>*>(
@@ -125,7 +125,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 
   REQUIRE(doc.parseFromString(wf_xml_gto_cart));
 
-  LCAOrbitalBuilder lcaob_gto_cart(elec, ions, c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_gto_cart(elec, ions, &c, doc.getRoot());
   const auto& bs3 = lcaob_gto_cart.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<SoaLocalizedBasisSet<
             SoaAtomicBasisSet<MultiFunctorAdapter<GaussianCombo<Real>>, SoaCartesianTensor<Real>>, ValueType>*>(
@@ -149,7 +149,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 
   REQUIRE(doc.parseFromString(wf_xml_gto_sph));
 
-  LCAOrbitalBuilder lcaob_gto_sph(elec, ions, c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_gto_sph(elec, ions, &c, doc.getRoot());
   const auto& bs4 = lcaob_gto_sph.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<SoaLocalizedBasisSet<
             SoaAtomicBasisSet<MultiFunctorAdapter<GaussianCombo<Real>>, SoaSphericalTensor<Real>>, ValueType>*>(
@@ -171,7 +171,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 
   REQUIRE(doc.parseFromString(wf_xml_sto_cart));
 
-  LCAOrbitalBuilder lcaob_sto_cart(elec, ions, c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_sto_cart(elec, ions, &c, doc.getRoot());
   const auto& bs5 = lcaob_sto_cart.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<SoaLocalizedBasisSet<
             SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<Real>>, SoaCartesianTensor<Real>>, ValueType>*>(
@@ -193,7 +193,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 
   REQUIRE(doc.parseFromString(wf_xml_sto_sph));
 
-  LCAOrbitalBuilder lcaob_sto_sph(elec, ions, c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_sto_sph(elec, ions, &c, doc.getRoot());
   const auto& bs6 = lcaob_sto_sph.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<SoaLocalizedBasisSet<
             SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<Real>>, SoaSphericalTensor<Real>>, ValueType>*>(
@@ -203,7 +203,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 
 TEST_CASE("LCAOrbitalBuilder HDF5 Exceptions", "[wavefunction][LCAO]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell sim_cell;
   ParticleSet elec(sim_cell);
@@ -228,13 +228,13 @@ TEST_CASE("LCAOrbitalBuilder HDF5 Exceptions", "[wavefunction][LCAO]")
   )";
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(wf_xml_valid));
-  TestLCAOrbitalBuilder lcaob(elec, ions, c, doc.getRoot());
+  TestLCAOrbitalBuilder lcaob(elec, ions, &c, doc.getRoot());
 
   SECTION("Nb_Elements > species size")
   {
-    if (c->rank() == 0)
+    if (c.rank() == 0)
     {
-      hdf_archive hout(c);
+      hdf_archive hout(&c);
       hout.create("test_trap_nb_elements.h5");
       hout.push("basisset", true);
       int nb = 2; // more than the 1 species we created
@@ -242,17 +242,19 @@ TEST_CASE("LCAOrbitalBuilder HDF5 Exceptions", "[wavefunction][LCAO]")
       hout.pop();
       hout.close();
     }
-    c->barrier();
+    c.barrier();
 
     lcaob.setH5Path("test_trap_nb_elements.h5");
-    REQUIRE_THROWS_WITH((lcaob.testCreateBasisSetH5<0, 0>()), "Number of elements in the HDF5 basis set (2) is more than the number of species (1) in the particleset.");
+    REQUIRE_THROWS_WITH((lcaob.testCreateBasisSetH5<0, 0>()),
+                        "Number of elements in the HDF5 basis set (2) is more than the number of species (1) in the "
+                        "particleset.");
   }
 
   SECTION("Missing species in HDF5")
   {
-    if (c->rank() == 0)
+    if (c.rank() == 0)
     {
-      hdf_archive hout(c);
+      hdf_archive hout(&c);
       hout.create("test_trap_missing_species.h5");
       hout.push("basisset", true);
       int nb = 1;
@@ -266,7 +268,7 @@ TEST_CASE("LCAOrbitalBuilder HDF5 Exceptions", "[wavefunction][LCAO]")
       hout.pop();
       hout.close();
     }
-    c->barrier();
+    c.barrier();
 
     lcaob.setH5Path("test_trap_missing_species.h5");
     REQUIRE_THROWS_WITH((lcaob.testCreateBasisSetH5<0, 0>()), "Species O not found.");

@@ -70,9 +70,7 @@ public:
 
   template<CoordsType CT>
   void makeMove(const MCCoords<CT>& displacements, std::vector<bool>& valid)
-  {
-    ParticleSet::mw_makeMoveAllParticles(p_list_, displacements, valid);
-  }
+  { ParticleSet::mw_makeMoveAllParticles(p_list_, displacements, valid); }
 
   template<CoordsType CT>
   std::vector<bool> makeMove(const MCCoords<CT>& displacements)
@@ -314,7 +312,7 @@ TEST_CASE("ParticleSet all-particle periodic proposal remains unwrapped and supp
 
 TEST_CASE("ParticleSet batched all-particle move updates and restores structure factors", "[particle]")
 {
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(OHMMS::Controller);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(OHMMS::Controller.get());
   ParticleSet& p0    = *particle_pool.getParticleSet("e");
   REQUIRE(p0.hasSK());
   p0.update();

@@ -35,8 +35,8 @@ using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
 
 void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
 {
-  using VT       = SPOSet::ValueType;
-  Communicate* c = OHMMS::Controller;
+  using VT = SPOSet::ValueType;
+  Communicate& c(*OHMMS::Controller);
 
   const char* particles = R"(<simulationcell>
      <parameter name="lattice" units="bohr">
@@ -121,7 +121,7 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
   xmlNodePtr bset_xml   = xmlFirstElementChild(root);
   xmlNodePtr sposet_xml = xmlNextElementSibling(bset_xml);
 
-  LCAOrbitalBuilder lcaoSet(elec_, ions_, c, root);
+  LCAOrbitalBuilder lcaoSet(elec_, ions_, &c, root);
   auto spo = lcaoSet.createSPOSetFromXML(sposet_xml);
   REQUIRE(spo);
   auto& lcao_spos = dynamic_cast<const LCAOrbitalSet&>(*spo);
@@ -451,8 +451,8 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
 
 void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
 {
-  using VT       = SPOSet::ValueType;
-  Communicate* c = OHMMS::Controller;
+  using VT = SPOSet::ValueType;
+  Communicate& c(*OHMMS::Controller);
 
   const char* particles = R"(<simulationcell>
      <parameter name="lattice" units="bohr">
@@ -537,7 +537,7 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
   xmlNodePtr bset_xml   = xmlFirstElementChild(root);
   xmlNodePtr sposet_xml = xmlNextElementSibling(bset_xml);
 
-  LCAOrbitalBuilder lcaoSet(elec_, ions_, c, root);
+  LCAOrbitalBuilder lcaoSet(elec_, ions_, &c, root);
   auto spo = lcaoSet.createSPOSetFromXML(sposet_xml);
   REQUIRE(spo);
   auto& lcao_spos = dynamic_cast<const LCAOrbitalSet&>(*spo);
