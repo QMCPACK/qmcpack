@@ -37,7 +37,7 @@ public:
       std::function<WaveFunctionPool(RuntimeOptions run_time_opt, Communicate& comm, ParticleSetPool& psp)>;
   using HamPoolFactoryFunc =
       std::function<HamiltonianPool(Communicate& comm, ParticleSetPool& psp, WaveFunctionPool& wfp)>;
-  MockGoldWalkerElements(Communicate* comm,
+  MockGoldWalkerElements(Communicate& comm,
                          RuntimeOptions& runtime_opt,
                          WaveFunctionPoolFactoryFunc wfp_func,
                          HamPoolFactoryFunc ham_pool_fac_func);
@@ -54,19 +54,19 @@ public:
 /** make walker elements with primary hamiltonian with Coulombic electron
  *  electron interaction and electron ion interaction
  */
-MockGoldWalkerElements makeGoldWalkerElementsWithEE(Communicate*, RuntimeOptions run_time_opt);
+MockGoldWalkerElements makeGoldWalkerElementsWithEE(Communicate&, RuntimeOptions run_time_opt);
 /** make walker elements with primary hamiltonian with Coulombic electron
  *  ion interaction
  */
-MockGoldWalkerElements makeGoldWalkerElementsWithEI(Communicate*, RuntimeOptions run_time_opt);
+MockGoldWalkerElements makeGoldWalkerElementsWithEI(Communicate&, RuntimeOptions run_time_opt);
 /** make walker elements with a primary hamiltonian with Coulombic electron
  *   electron interaction and electron ion interaction and ion ion interaction.
  */
-MockGoldWalkerElements makeGoldWalkerElementsWithEEEI(Communicate*, RuntimeOptions run_time_opt);
+MockGoldWalkerElements makeGoldWalkerElementsWithEEEI(Communicate&, RuntimeOptions run_time_opt);
 /** make walker elements with a primary hamiltonian with Coulombic electron
  *   electron interaction and electron ion interaction and a pseudo potential component
  */
-MockGoldWalkerElements makeGoldWalkerElementsWithEEEIPS(Communicate*, RuntimeOptions run_time_opt);
+MockGoldWalkerElements makeGoldWalkerElementsWithEEEIPS(Communicate&, RuntimeOptions run_time_opt);
 } // namespace testing
 } // namespace qmcplusplus
 

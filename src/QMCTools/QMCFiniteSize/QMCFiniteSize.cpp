@@ -11,7 +11,7 @@
 namespace qmcplusplus
 {
 QMCFiniteSize::QMCFiniteSize()
-    : skparser(NULL), ptclPool(NULL), myRcut(0.0), myConst(0.0), P(NULL), h(0.0), sphericalgrid(0)
+    : skparser(NULL), ptclPool(*OHMMS::Controller), myRcut(0.0), myConst(0.0), P(NULL), h(0.0), sphericalgrid(0)
 {
   IndexType mtheta = 80;
   IndexType mphi   = 80;
@@ -21,7 +21,7 @@ QMCFiniteSize::QMCFiniteSize()
 }
 
 QMCFiniteSize::QMCFiniteSize(SkParserBase* skparser_i)
-    : skparser(skparser_i), ptclPool(NULL), myRcut(0.0), myConst(0.0), P(NULL), h(0.0), sphericalgrid(0)
+    : skparser(skparser_i), ptclPool(*OHMMS::Controller), myRcut(0.0), myConst(0.0), P(NULL), h(0.0), sphericalgrid(0)
 {
   mtheta     = 80;
   mphi       = 80;

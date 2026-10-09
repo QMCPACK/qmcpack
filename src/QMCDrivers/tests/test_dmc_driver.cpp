@@ -100,7 +100,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  DMC dmc_omp(project_data, elec, psi, h, rngs, &c, false);
+  DMC dmc_omp(project_data, elec, psi, h, rngs, c, false);
 
   const char* dmc_input = R"(<qmc method="dmc" checkpoint="-1">
    <parameter name="steps">1</parameter>
@@ -188,7 +188,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  DMC dmc_omp(project_data, elec, psi, h, rngs, &c, false);
+  DMC dmc_omp(project_data, elec, psi, h, rngs, c, false);
 
   const char* dmc_input = R"(<qmc method="dmc" checkpoint="-1">
    <parameter name="steps">1</parameter>
@@ -264,7 +264,7 @@ TEST_CASE("DMC move-all node-crossing mover selection", "[drivers][dmc]")
   h.addObservables(elec);
   elec.resetWalkerProperty();
 
-  DMC dmc(project_data, elec, psi, h, rngs, &c, false);
+  DMC dmc(project_data, elec, psi, h, rngs, c, false);
   dmc.setUpdateMode(false);
 
   const char* dmc_input = R"(<qmc method="dmc" checkpoint="-1">

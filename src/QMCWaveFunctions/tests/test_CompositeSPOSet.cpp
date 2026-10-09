@@ -27,9 +27,9 @@ TEST_CASE("CompositeSPO::diamond_1x1x1", "[wavefunction]")
   Communicate& comm(*OHMMS::Controller);
   outputManager.pause();
 
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
 
   std::vector<std::string> sposets{"spo_ud", "spo_dm"};

@@ -38,18 +38,18 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   xmlNodePtr node = doc.getRoot();
   QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(node);
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
 
-  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(&comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   WalkerConfigurations walker_confs;
   RandomNumberGeneratorPool rng_pool(1);
   QMCDriverNewTestWrapper qmcdriver(test_project, std::move(qmcdriver_input), walker_confs,
                                     MCPopulation(comm.size(), comm.rank(), *particle_pool.getParticleSet("e"),
                                                  wavefunction_pool.getWaveFunction().value(),
                                                  hamiltonian_pool.getHamiltonian().value()),
-                                    rng_pool.getRngRefs(), &comm);
+                                    rng_pool.getRngRefs(), comm);
 
   CHECK_FALSE(qmcdriver.allow_walker_logs);
   qmcdriver.requestWalkerLogs(true);
@@ -86,11 +86,11 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
   xmlNodePtr node = doc.getRoot();
   QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(node);
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
 
-  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(&comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
 
   QMCDriverInput qmcdriver_copy(qmcdriver_input);
   WalkerConfigurations walker_confs;
@@ -99,7 +99,7 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
                                       MCPopulation(comm.size(), comm.rank(), *particle_pool.getParticleSet("e"),
                                                    wavefunction_pool.getWaveFunction().value(),
                                                    hamiltonian_pool.getHamiltonian().value()),
-                                      rng_pool.getRngRefs(), &comm);
+                                      rng_pool.getRngRefs(), comm);
 
   qmc_batched.testAdjustGlobalWalkerCount();
   qmc_batched.testDetermintNumCrowds();
@@ -118,18 +118,18 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
 
   QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(node);
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
 
-  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(&comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   WalkerConfigurations walker_confs;
   RandomNumberGeneratorPool rng_pool(1);
   QMCDriverNewTestWrapper qmcdriver(test_project, std::move(qmcdriver_input), walker_confs,
                                     MCPopulation(comm.size(), comm.rank(), *particle_pool.getParticleSet("e"),
                                                  wavefunction_pool.getWaveFunction().value().get(),
                                                  hamiltonian_pool.getHamiltonian().value()),
-                                    rng_pool.getRngRefs(), &comm);
+                                    rng_pool.getRngRefs(), comm);
 
 
   auto tau       = 1.0;

@@ -29,7 +29,7 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 {
   Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -81,7 +81,7 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(jasxml));
   xmlNodePtr jas1 = doc.getRoot();
-  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), &c);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   RuntimeOptions runtime_options;
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
@@ -132,7 +132,7 @@ TEST_CASE("J1 spin evaluate derivatives multiparticle Jastrow", "[wavefunction]"
 {
   Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -198,7 +198,7 @@ TEST_CASE("J1 spin evaluate derivatives multiparticle Jastrow", "[wavefunction]"
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(jasxml));
   xmlNodePtr jas1 = doc.getRoot();
-  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), &c);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   RuntimeOptions runtime_options;
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);

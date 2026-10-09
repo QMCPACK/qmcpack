@@ -119,7 +119,7 @@ TEST_CASE("Legacy WalkerControlBase population inputs", "[drivers][walker_contro
   Communicate& comm(*OHMMS::Controller);
   REQUIRE(comm.size() == 1);
 
-  WalkerControlBase walker_control(&comm);
+  WalkerControlBase walker_control(comm);
   walker_control.set_method(0);
 
   const char* const input = R"(
@@ -272,7 +272,7 @@ struct WalkerControlMPITest
   void operator()(bool use_nonblocking)
   {
     Communicate& c(*OHMMS::Controller);
-    WalkerControlMPI wc(&c);
+    WalkerControlMPI wc(c);
 
     wc.use_nonblocking = use_nonblocking;
 
@@ -466,7 +466,7 @@ TEST_CASE("Walker control swap walkers nonblocking", "[drivers][walker_control]"
 TEST_CASE("Walker control reconfiguration", "[drivers][walker_control]")
 {
   Communicate& c(*OHMMS::Controller);
-  WalkerReconfigurationMPI wr(&c);
+  WalkerReconfigurationMPI wr(c);
 
   wr.dN.resize(c.size());
 

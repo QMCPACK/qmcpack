@@ -58,10 +58,10 @@ TEST_CASE("RandomNumberControl random in xml", "[ohmmsapp]")
   rnc.initialize(context);
 
 
-  rnc.write("rng_out", &c);
+  rnc.write("rng_out", c);
 
   RandomNumberControl rnc2;
-  rnc2.read("rng_out", &c);
+  rnc2.read("rng_out", c);
   // not sure what to test here - for now make sure it doesn't crash.
 }
 } // namespace qmcplusplus

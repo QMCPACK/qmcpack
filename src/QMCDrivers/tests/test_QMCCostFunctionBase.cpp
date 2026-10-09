@@ -23,7 +23,7 @@ class QMCCostFunctionTest : public QMCCostFunctionBase
 {
 public:
   QMCCostFunctionTest(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* c)
-      : QMCCostFunctionBase(w, psi, h, c)
+      : QMCCostFunctionBase(w, psi, h, *c)
   {}
 
   void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override

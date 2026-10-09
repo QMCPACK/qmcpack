@@ -45,7 +45,7 @@ TEST_CASE("WalkerLogManager::move", "[drivers]")
   xmlNodePtr node = doc.getRoot();
   WalkerLogInput walker_log_input{node};
   auto make_stuff = [&comm](WalkerLogInput& walker_log_input) -> LogAndStuff {
-    WalkerLogManager wlm{walker_log_input, true, "root_name", &comm};
+    WalkerLogManager wlm{walker_log_input, true, "root_name", comm};
     CollectorHolder ch;
     ch.setWalkerLogCollector(wlm.makeCollector());
     return {std::move(wlm), std::move(ch)};

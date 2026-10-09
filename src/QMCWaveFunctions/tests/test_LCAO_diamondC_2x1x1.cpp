@@ -121,7 +121,7 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
   xmlNodePtr bset_xml   = xmlFirstElementChild(root);
   xmlNodePtr sposet_xml = xmlNextElementSibling(bset_xml);
 
-  LCAOrbitalBuilder lcaoSet(elec_, ions_, &c, root);
+  LCAOrbitalBuilder lcaoSet(elec_, ions_, c, root);
   auto spo = lcaoSet.createSPOSetFromXML(sposet_xml);
   REQUIRE(spo);
   auto& lcao_spos = dynamic_cast<const LCAOrbitalSet&>(*spo);
@@ -537,7 +537,7 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
   xmlNodePtr bset_xml   = xmlFirstElementChild(root);
   xmlNodePtr sposet_xml = xmlNextElementSibling(bset_xml);
 
-  LCAOrbitalBuilder lcaoSet(elec_, ions_, &c, root);
+  LCAOrbitalBuilder lcaoSet(elec_, ions_, c, root);
   auto spo = lcaoSet.createSPOSetFromXML(sposet_xml);
   REQUIRE(spo);
   auto& lcao_spos = dynamic_cast<const LCAOrbitalSet&>(*spo);

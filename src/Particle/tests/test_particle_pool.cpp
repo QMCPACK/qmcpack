@@ -29,7 +29,7 @@ TEST_CASE("ParticleSetPool", "[qmcapp]")
 {
   Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool pp(&c);
+  ParticleSetPool pp(c);
 
   // See ParticleIO/tests/test_xml_io.cpp for particle parsing
   const char* particles = R"(
@@ -77,7 +77,7 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
 {
   Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool pp(&c);
+  ParticleSetPool pp(c);
 
   // See ParticleIO/tests/test_xml_io.cpp for particle parsing
   const char* particles = R"(
@@ -128,7 +128,7 @@ TEST_CASE("ParticleSetPool putLattice", "[qmcapp]")
 {
   Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool pp(&c);
+  ParticleSetPool pp(c);
 
   const char* lattice = R"(<parameter name="lattice"> </parameter>)";
 

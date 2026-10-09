@@ -58,11 +58,11 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   CHECK(emi.get_estimator_inputs().size() == 3);
   CHECK(emi.get_scalar_estimator_inputs().size() == 1);
 
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset            = *(particle_pool.getParticleSet("e"));
-  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(&comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   TrialWaveFunction& twf(wavefunction_pool.getWaveFunction().value());
   QMCHamiltonian& ham(hamiltonian_pool.getHamiltonian().value());
   EstimatorManagerNew emn(ham, &comm);
@@ -105,11 +105,11 @@ TEST_CASE("EstimatorManagerNew_estimator_naming", "[estimators]")
 
   CHECK(emi.get_estimator_inputs().size() == n_opest_new_vmc_xml + n_opest_new_global_input_xml);
 
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset            = *(particle_pool.getParticleSet("e"));
-  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(&comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   TrialWaveFunction& twf(wavefunction_pool.getWaveFunction().value());
   QMCHamiltonian& ham(hamiltonian_pool.getHamiltonian().value());
   EstimatorManagerNew emn(ham, &comm);

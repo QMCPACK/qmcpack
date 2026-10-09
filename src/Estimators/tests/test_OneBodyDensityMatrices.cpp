@@ -246,9 +246,9 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate& comm(*OHMMS::Controller);
 
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
   auto& spo_map = psi.getSPOMap();
@@ -274,9 +274,9 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate& comm(*OHMMS::Controller);
 
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& species_set = pset_target.getSpeciesSet();
   TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
@@ -347,9 +347,9 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate& comm(*OHMMS::Controller);
 
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& species_set = pset_target.getSpeciesSet();
   TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
@@ -379,9 +379,9 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   REQUIRE(doc.parseFromString(Input::getXml(Input::valid::VANILLA)));
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
   auto& spo_map     = psi.getSPOMap();
   auto& pset_target = *(particle_pool.getParticleSet("e"));
@@ -475,9 +475,9 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
         InputSection::reverseLookupInputEnumMap(obdmi.get_integrator(), testing::OBDMI::lookup_input_enum_value);
     app_log() << "Test evaluateMatrix for: " << integrator_str << '\n';
 
-    auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+    auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
     auto wavefunction_pool =
-        MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+        MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
     auto& pset_target = *(particle_pool.getParticleSet("e"));
     auto& species_set = pset_target.getSpeciesSet();
     TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
@@ -525,9 +525,9 @@ TEST_CASE("OneBodyDensityMatrices::registerAndWrite", "[estimators]")
       InputSection::reverseLookupInputEnumMap(obdmi.get_integrator(), testing::OBDMI::lookup_input_enum_value);
   app_log() << "Test registerAndWrite for: " << integrator_str << '\n';
 
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& species_set = pset_target.getSpeciesSet();
   TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());

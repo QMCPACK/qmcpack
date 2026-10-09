@@ -158,7 +158,7 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   // This took some time to sort out from the multistage mess of put and clones
   // but this accomplishes in a straight forward way what I interpret to be done by that code.
   Communicate& comm(*OHMMS::Controller);
-  ECPComponentBuilder ecp_comp_builder("test_read_ecp", &comm, 4, 1);
+  ECPComponentBuilder ecp_comp_builder("test_read_ecp", comm, 4, 1);
 
   bool okay = ecp_comp_builder.read_pp_file("Na.BFD.xml");
   REQUIRE(okay);
@@ -293,7 +293,7 @@ ParticleSet makeTmoveV1Elec(const SimulationCell& simulation_cell,
 UPtr<NonLocalECPComponent> readTmoveV1PPComponent()
 {
   Communicate& comm(*OHMMS::Controller);
-  ECPComponentBuilder ecp_comp_builder("test_read_ecp", &comm, 4, 1);
+  ECPComponentBuilder ecp_comp_builder("test_read_ecp", comm, 4, 1);
   bool okay = ecp_comp_builder.read_pp_file("Na.BFD.xml");
   REQUIRE(okay);
   return std::move(ecp_comp_builder.pp_nonloc);
@@ -680,7 +680,7 @@ TEST_CASE("NonLocalECPotential mw_evaluate ragged job counts", "[hamiltonian]")
   NonLocalECPotential nl_ecp(ions, elec, false /*use_DLA*/, false /*use_VP*/);
 
   Communicate& comm(*OHMMS::Controller);
-  ECPComponentBuilder ecp_comp_builder("test_read_ecp", &comm, 4, 1);
+  ECPComponentBuilder ecp_comp_builder("test_read_ecp", comm, 4, 1);
 
   bool okay = ecp_comp_builder.read_pp_file("Na.BFD.xml");
   REQUIRE(okay);

@@ -61,7 +61,7 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
 
   elec.addTable(ions);
 
-  WaveFunctionFactory wff(elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, *c);
 
   const char* wavefunction_xml = R"(<wavefunction name="psi0" target="e">
      <jastrow name="Jee" type="Two-Body" function="pade">

@@ -61,7 +61,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options, "psi0");
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi, &c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
          <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
@@ -91,8 +91,8 @@ TEST_CASE("OrbitalImages rejects one-past-end orbital index", "[hamiltonian]")
 {
   Communicate& comm(*OHMMS::Controller);
   RuntimeOptions runtime_options;
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(&comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, &comm, particle_pool);
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);
   auto& electrons        = *particle_pool.getParticleSet("e");
   auto& wavefunction     = wavefunction_pool.getWaveFunction().value().get();
 
@@ -135,7 +135,7 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options, "psi0");
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi, &c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   const char* hamilonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
     <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">

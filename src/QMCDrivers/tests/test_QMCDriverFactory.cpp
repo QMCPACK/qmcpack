@@ -40,9 +40,9 @@ class QMCDriverPools
 {
 public:
   QMCDriverPools(const RuntimeOptions& runtime_options, Communicate* comm)
-      : particle(MinimalParticlePool::make_diamondC_1x1x1(comm)),
-        wavefunction(MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle)),
-        hamiltonian(MinimalHamiltonianPool::make_hamWithEE(comm, particle, wavefunction))
+      : particle(MinimalParticlePool::make_diamondC_1x1x1(*comm)),
+        wavefunction(MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, *comm, particle)),
+        hamiltonian(MinimalHamiltonianPool::make_hamWithEE(*comm, particle, wavefunction))
   {}
   ParticleSetPool particle;
   WaveFunctionPool wavefunction;

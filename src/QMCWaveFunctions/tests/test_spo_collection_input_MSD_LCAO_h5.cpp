@@ -34,7 +34,7 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string,
 {
   Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -69,7 +69,7 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string,
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), &c);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   RuntimeOptions runtime_options;
   auto twf_ptr = wf_factory.buildTWF(ein_xml, runtime_options);
 
@@ -203,7 +203,7 @@ void test_LiH_msd_xml_input_with_positron(const std::string& spo_xml_string,
 {
   Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -245,7 +245,7 @@ void test_LiH_msd_xml_input_with_positron(const std::string& spo_xml_string,
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), &c);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   RuntimeOptions runtime_options;
   auto twf_ptr = wf_factory.buildTWF(ein_xml, runtime_options);
 

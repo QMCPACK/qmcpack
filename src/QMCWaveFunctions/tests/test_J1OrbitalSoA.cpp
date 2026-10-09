@@ -24,7 +24,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
 {
   Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -81,7 +81,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
   // update all distance tables
   elec_.update();
   RuntimeOptions runtime_options;
-  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), &c);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
   twf.evaluateLog(elec_);
@@ -114,7 +114,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
 TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 {
   Communicate& c(*OHMMS::Controller);
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -180,7 +180,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
   // update all distance tables
   elec_.update();
   RuntimeOptions runtime_options;
-  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), &c);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
   twf.evaluateLog(elec_);
@@ -213,7 +213,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 TEST_CASE("J1 evaluate derivatives Jastrow with two species one without Jastrow", "[wavefunction]")
 {
   Communicate& c(*OHMMS::Controller);
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -276,7 +276,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species one without Jastrow"
   // update all distance tables
   elec_.update();
   RuntimeOptions runtime_options;
-  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), &c);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
   twf.evaluateLog(elec_);

@@ -34,7 +34,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   lattice.R = {3.77945227, 0.0, 0.0, 0.0, 3.77945227, 0.0, 0.0, 0.0, 3.77945227};
   lattice.reset();
 
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -80,7 +80,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   xmlNodePtr pw1  = xmlFirstElementChild(root);
 
 
-  PWOrbitalSetBuilder pw_builder(elec, &c, root);
+  PWOrbitalSetBuilder pw_builder(elec, c, root);
   auto spo = pw_builder.createSPOSet(pw1);
   REQUIRE(spo);
 
@@ -135,7 +135,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   lattice.R = {-3.55, 0.0, 3.55, 0.0, 3.55, 3.55, -3.55, 3.55, 0.0};
   lattice.reset();
 
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -183,7 +183,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   xmlNodePtr pw1  = xmlFirstElementChild(root);
 
 
-  PWOrbitalSetBuilder pw_builder(elec, &c, root);
+  PWOrbitalSetBuilder pw_builder(elec, c, root);
   auto spo = pw_builder.createSPOSet(pw1);
   REQUIRE(spo);
 

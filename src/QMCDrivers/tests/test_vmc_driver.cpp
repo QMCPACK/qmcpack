@@ -85,7 +85,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  VMC vmc_omp(project_data, elec, psi, h, rngs, &c, false);
+  VMC vmc_omp(project_data, elec, psi, h, rngs, c, false);
 
   const char* vmc_input = R"(<qmc method="vmc" move="pbyp" checkpoint="-1">
    <parameter name="substeps">1</parameter>
@@ -169,7 +169,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  VMC vmc_omp(project_data, elec, psi, h, rngs, &c, false);
+  VMC vmc_omp(project_data, elec, psi, h, rngs, c, false);
 
   const char* vmc_input = R"(<qmc method="vmc" move="pbyp" checkpoint="-1">
    <parameter name="substeps">1</parameter>
@@ -258,7 +258,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  VMC vmc_omp(project_data, elec, psi, h, rngs, &c, false);
+  VMC vmc_omp(project_data, elec, psi, h, rngs, c, false);
 
   const char* vmc_input = R"(<qmc method="vmc" move="alle" checkpoint="-1">
    <parameter name="substeps">1</parameter>

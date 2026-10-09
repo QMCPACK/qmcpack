@@ -37,7 +37,7 @@ TEST_CASE("DescentEngine RMSprop update", "[drivers][descent]")
 
   xmlNodePtr fakeXML = doc.getRoot();
 
-  std::unique_ptr<DescentEngine> descentEngineObj = std::make_unique<DescentEngine>(&c, fakeXML);
+  std::unique_ptr<DescentEngine> descentEngineObj = std::make_unique<DescentEngine>(c, fakeXML);
 
   optimize::VariableSet myVars;
 

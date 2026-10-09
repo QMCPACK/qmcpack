@@ -31,7 +31,7 @@ namespace qmcplusplus
 {
 namespace testing
 {
-UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpools_.comm, Random)
+UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(*dpools_.comm, Random)
 {
   int num_ranks = dpools_.comm->size();
   pop_ = std::make_unique<MCPopulation>(num_ranks, dpools_.comm->rank(), *dpools_.particle_pool->getParticleSet("e"),

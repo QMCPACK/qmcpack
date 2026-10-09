@@ -84,10 +84,10 @@ TEST_CASE("WaveFunctionPool", "[wavefunction]")
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate& c(*OHMMS::Controller);
 
-  ParticleSetPool pp(&c);
+  ParticleSetPool pp(c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, &c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
 
   REQUIRE(wp.empty() == true);
   CHECK_THROWS_WITH(wp.getWaveFunction("abc"),

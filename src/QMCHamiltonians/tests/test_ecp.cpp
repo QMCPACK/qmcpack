@@ -82,7 +82,7 @@ TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
 {
   Communicate& c(*OHMMS::Controller);
 
-  ECPComponentBuilder ecp("test_read_ecp", &c, 4, 1);
+  ECPComponentBuilder ecp("test_read_ecp", c, 4, 1);
 
   bool okay = ecp.read_pp_file("C.BFD.xml");
   REQUIRE(okay);
@@ -95,7 +95,7 @@ TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
 TEST_CASE("ECPComponentBuilder grid input controls", "[hamiltonian]")
 {
   Communicate& c(*OHMMS::Controller);
-  ECPComponentBuilder ecp("test_ecp_grid_input", &c);
+  ECPComponentBuilder ecp("test_ecp_grid_input", c);
   Libxml2Document doc;
 
   SECTION("omitted-input defaults")
@@ -200,7 +200,7 @@ TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
 {
   Communicate& c(*OHMMS::Controller);
 
-  ECPComponentBuilder ecp("test_read_sorep", &c);
+  ECPComponentBuilder ecp("test_read_sorep", c);
 
   bool okay = ecp.read_pp_file("so_ecp_test.xml");
   REQUIRE(okay);
@@ -331,7 +331,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   xmlNodePtr jas2 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow(&c, elec);
+  RadialJastrowBuilder jastrow(c, elec);
   psi.addComponent(jastrow.buildComponent(jas2));
   // Done with two body jastrow.
 
@@ -350,11 +350,11 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow1bdy(&c, elec, ions);
+  RadialJastrowBuilder jastrow1bdy(c, elec, ions);
   psi.addComponent(jastrow1bdy.buildComponent(jas1));
 
   //Now we set up the nonlocal ECP component.
-  ECPComponentBuilder ecp("test_read_ecp", &c);
+  ECPComponentBuilder ecp("test_read_ecp", c);
 
   REQUIRE(ecp.read_pp_file("Na.BFD.xml"));
 

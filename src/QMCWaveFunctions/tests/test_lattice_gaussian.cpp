@@ -96,7 +96,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  LatticeGaussianProductBuilder jastrow(&c, elec, pp);
+  LatticeGaussianProductBuilder jastrow(c, elec, pp);
   auto LGP_uptr = jastrow.buildComponent(jas1);
   auto LGP      = dynamic_cast<LatticeGaussianProduct*>(LGP_uptr.get());
   double width  = 0.5;

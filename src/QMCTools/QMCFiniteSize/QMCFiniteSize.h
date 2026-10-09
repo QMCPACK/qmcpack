@@ -52,6 +52,7 @@ public:
   RealType calcPotentialInt(std::vector<RealType> sk);
 
 private:
+  Communicate comm_null;
   SkParserBase* skparser;
   ParticleSetPool ptclPool;
   RealType myRcut;

@@ -37,7 +37,7 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
   Lattice lattice;
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -74,7 +74,7 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
   REQUIRE(doc.parseFromString(particles));
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), &c, root);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
@@ -174,7 +174,7 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
   Lattice lattice;
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -211,7 +211,7 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
   REQUIRE(doc.parseFromString(particles));
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), &c, root);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
@@ -384,7 +384,7 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
   Lattice lattice;
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -421,7 +421,7 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
   REQUIRE(doc.parseFromString(particles));
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), &c, root);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 

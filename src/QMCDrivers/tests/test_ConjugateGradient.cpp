@@ -23,7 +23,7 @@ class LinearSystem : public QMCCostFunctionBase
 {
 public:
   LinearSystem(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
-      : QMCCostFunctionBase(w, psi, h, comm) {};
+      : QMCCostFunctionBase(w, psi, h, *comm) {};
   void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override
   {}
 

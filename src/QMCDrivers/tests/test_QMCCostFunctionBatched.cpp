@@ -63,7 +63,7 @@ public:
   QMCCostFunctionBatched costFn;
 
   LinearMethodTestSupport(const std::vector<int>& walkers_per_crowd, Communicate* comm)
-      : w(simulation_cell), costFn(w, psi, h, samples, walkers_per_crowd, comm)
+      : w(simulation_cell), costFn(w, psi, h, samples, walkers_per_crowd, *comm)
   {}
 
   std::vector<QMCCostFunctionBase::Return_rt>& getSumValue() { return costFn.SumValue; }

@@ -53,7 +53,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   // diamondC_1x1x1
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.createSimulationCellByLattice(lattice);
   // LAttice seems fine after this point...
 
@@ -94,7 +94,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), &c, root);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
@@ -572,7 +572,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   lattice.R = {4.32747284, 0.00000000, 0.00000000, -2.16373642, 3.74770142,
                0.00000000, 0.00000000, 0.00000000, 6.78114995};
 
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -613,7 +613,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   xmlNodePtr sposet_builder = xmlFirstElementChild(root);
   xmlNodePtr sposet_ptr     = xmlFirstElementChild(sposet_builder);
 
-  EinsplineSetBuilder einSet(elec, ptcl.getPool(), &c, sposet_builder);
+  EinsplineSetBuilder einSet(elec, ptcl.getPool(), c, sposet_builder);
   auto spo = einSet.createSPOSetFromXML(sposet_ptr);
   REQUIRE(spo);
 

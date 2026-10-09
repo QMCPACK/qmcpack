@@ -63,10 +63,10 @@ TEST_CASE("QMCDriverFactory rejects invalid L2 diffusion configurations for DMCB
   REQUIRE(doc.parseFromString(R"(<qmc method="dmc"><parameter name="L2_diffusion">yes</parameter></qmc>)"));
   xmlNodePtr node = doc.getRoot();
 
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
-  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(&comm, particle_pool, wavefunction_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
 
   std::string expected_error;
   SECTION("spinor ParticleSet")
@@ -108,11 +108,11 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   qmcdriver_input.readXML(node);
   DMCDriverInput dmcdriver_input;
   dmcdriver_input.readXML(node);
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
 
-  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(&comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   SampleStack samples;
   WalkerConfigurations walker_confs;
 
@@ -120,7 +120,7 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
                        MCPopulation(comm.size(), comm.rank(), *particle_pool.getParticleSet("e"),
                                     wavefunction_pool.getWaveFunction().value(),
                                     hamiltonian_pool.getHamiltonian().value()),
-                       rng_pool.getRngRefs(), &comm);
+                       rng_pool.getRngRefs(), comm);
 
   // setStatus must be called before process
   std::string root_name{"Test"};

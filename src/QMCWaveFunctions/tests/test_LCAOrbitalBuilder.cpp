@@ -32,7 +32,7 @@ namespace qmcplusplus
 class TestLCAOrbitalBuilder : public LCAOrbitalBuilder
 {
 public:
-  TestLCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur)
+  TestLCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate& comm, xmlNodePtr cur)
       : LCAOrbitalBuilder(els, ions, comm, cur)
   {}
   void setH5Path(const std::string& path) { h5_path = path; }
@@ -79,7 +79,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
   REQUIRE(doc.parseFromString(wf_xml_num_cart));
 
   using BasisSet_t = LCAOrbitalBuilder::BasisSet_t;
-  LCAOrbitalBuilder lcaob_num_cart(elec, ions, &c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_num_cart(elec, ions, c, doc.getRoot());
   const auto& bs = lcaob_num_cart.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<
             SoaLocalizedBasisSet<SoaAtomicBasisSet<MultiQuinticSpline1D<Real>, SoaCartesianTensor<Real>>, ValueType>*>(
@@ -101,7 +101,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 
   REQUIRE(doc.parseFromString(wf_xml_num_sph));
 
-  LCAOrbitalBuilder lcaob_num_sph(elec, ions, &c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_num_sph(elec, ions, c, doc.getRoot());
   const auto& bs2 = lcaob_num_sph.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<
             SoaLocalizedBasisSet<SoaAtomicBasisSet<MultiQuinticSpline1D<Real>, SoaSphericalTensor<Real>>, ValueType>*>(
@@ -125,7 +125,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 
   REQUIRE(doc.parseFromString(wf_xml_gto_cart));
 
-  LCAOrbitalBuilder lcaob_gto_cart(elec, ions, &c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_gto_cart(elec, ions, c, doc.getRoot());
   const auto& bs3 = lcaob_gto_cart.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<SoaLocalizedBasisSet<
             SoaAtomicBasisSet<MultiFunctorAdapter<GaussianCombo<Real>>, SoaCartesianTensor<Real>>, ValueType>*>(
@@ -149,7 +149,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 
   REQUIRE(doc.parseFromString(wf_xml_gto_sph));
 
-  LCAOrbitalBuilder lcaob_gto_sph(elec, ions, &c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_gto_sph(elec, ions, c, doc.getRoot());
   const auto& bs4 = lcaob_gto_sph.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<SoaLocalizedBasisSet<
             SoaAtomicBasisSet<MultiFunctorAdapter<GaussianCombo<Real>>, SoaSphericalTensor<Real>>, ValueType>*>(
@@ -171,7 +171,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 
   REQUIRE(doc.parseFromString(wf_xml_sto_cart));
 
-  LCAOrbitalBuilder lcaob_sto_cart(elec, ions, &c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_sto_cart(elec, ions, c, doc.getRoot());
   const auto& bs5 = lcaob_sto_cart.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<SoaLocalizedBasisSet<
             SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<Real>>, SoaCartesianTensor<Real>>, ValueType>*>(
@@ -193,7 +193,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 
   REQUIRE(doc.parseFromString(wf_xml_sto_sph));
 
-  LCAOrbitalBuilder lcaob_sto_sph(elec, ions, &c, doc.getRoot());
+  LCAOrbitalBuilder lcaob_sto_sph(elec, ions, c, doc.getRoot());
   const auto& bs6 = lcaob_sto_sph.getBasissetMap().at("LCAOBSet");
   CHECK(dynamic_cast<SoaLocalizedBasisSet<
             SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<Real>>, SoaSphericalTensor<Real>>, ValueType>*>(
@@ -228,7 +228,7 @@ TEST_CASE("LCAOrbitalBuilder HDF5 Exceptions", "[wavefunction][LCAO]")
   )";
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(wf_xml_valid));
-  TestLCAOrbitalBuilder lcaob(elec, ions, &c, doc.getRoot());
+  TestLCAOrbitalBuilder lcaob(elec, ions, c, doc.getRoot());
 
   SECTION("Nb_Elements > species size")
   {

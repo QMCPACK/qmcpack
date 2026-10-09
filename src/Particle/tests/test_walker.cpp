@@ -97,7 +97,7 @@ TEST_CASE("walker HDF read and write", "[particle]")
   wc_list.setWalkerOffsets(walker_offset);
 
   c.setName("walker_test");
-  HDFWalkerOutput hout(num_ptcls, "this string apparently does nothing", &c);
+  HDFWalkerOutput hout(num_ptcls, "this string apparently does nothing", c);
   hout.dump(wc_list, 0);
 
   c.barrier();
@@ -105,7 +105,7 @@ TEST_CASE("walker HDF read and write", "[particle]")
   WalkerConfigurations wc_list2;
 
   HDFVersion version(0, 4);
-  HDFWalkerInput_0_4 hinp(wc_list2, num_ptcls, &c, version);
+  HDFWalkerInput_0_4 hinp(wc_list2, num_ptcls, c, version);
   bool okay = hinp.read_hdf5("walker_test.config.h5");
   REQUIRE(okay);
 

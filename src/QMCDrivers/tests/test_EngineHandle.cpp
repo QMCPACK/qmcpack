@@ -34,7 +34,7 @@ TEST_CASE("EngineHandle construction", "[drivers]")
 
   xmlNodePtr fakeXML = doc.getRoot();
 
-  DescentEngine descentEngineObj = DescentEngine(&c, fakeXML);
+  DescentEngine descentEngineObj = DescentEngine(c, fakeXML);
 
   descentEngineObj.processXML(fakeXML);
 

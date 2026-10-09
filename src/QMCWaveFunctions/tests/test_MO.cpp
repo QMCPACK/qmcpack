@@ -67,7 +67,7 @@ void test_He(bool transform)
     particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
     particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
-    SPOSetBuilderFactory bf(&c, elec, particle_set_map);
+    SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
     OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
     REQUIRE(MO_base.size() == 1);
@@ -171,7 +171,7 @@ void test_He_mw(bool transform)
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
-  SPOSetBuilderFactory bf(&c, elec, particle_set_map);
+  SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
   OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
   REQUIRE(MO_base.size() == 1);
@@ -319,7 +319,7 @@ void test_EtOH_mw(bool transform)
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
-  SPOSetBuilderFactory bf(&c, elec, particle_set_map);
+  SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
   OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
   REQUIRE(MO_base.size() == 1);
@@ -500,7 +500,7 @@ void test_Ne(bool transform)
     particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
     particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
-    SPOSetBuilderFactory bf(&c, elec, particle_set_map);
+    SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
     OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
     REQUIRE(MO_base.size() == 1);
@@ -627,7 +627,7 @@ void test_HCN(bool transform)
     particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
     particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
-    SPOSetBuilderFactory bf(&c, elec, particle_set_map);
+    SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
     OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
     REQUIRE(MO_base.size() == 1);

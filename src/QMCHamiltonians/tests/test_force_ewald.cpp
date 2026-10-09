@@ -65,7 +65,7 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 
   elec.createSK();
 
-  ParticleSetPool ptcl = ParticleSetPool(&c);
+  ParticleSetPool ptcl = ParticleSetPool(c);
 
   ions.resetGroups();
 

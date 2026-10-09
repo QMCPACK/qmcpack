@@ -147,7 +147,7 @@ TEST_CASE("SlaterDet mw_ APIs", "[wavefunction]")
 
   Communicate& comm(*OHMMS::Controller);
 
-  auto particle_pool = MinimalParticlePool::make_O2_spinor(&comm);
+  auto particle_pool = MinimalParticlePool::make_O2_spinor(comm);
   auto& elec0        = *(particle_pool).getParticleSet("e");
   auto& elec1        = *(particle_pool).getParticleSet("e");
   RefVectorWithLeader<ParticleSet> p_list(elec0, {elec0, elec1});

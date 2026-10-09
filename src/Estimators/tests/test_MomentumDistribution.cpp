@@ -76,9 +76,9 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate& comm(*OHMMS::Controller);
 
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset      = *(particle_pool.getParticleSet("e"));
   DataLocality dl = DataLocality::crowd;
 
@@ -121,9 +121,9 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate& comm(*OHMMS::Controller);
   outputManager.pause();
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset      = *(particle_pool.getParticleSet("e"));
   DataLocality dl = DataLocality::crowd;
 
@@ -228,9 +228,9 @@ TEST_CASE("MomentumDistribution::spawnCrowdClone", "[estimators]")
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate& comm(*OHMMS::Controller);
 
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(&comm);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), &comm, particle_pool);
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset      = *(particle_pool.getParticleSet("e"));
   DataLocality dl = DataLocality::crowd;
 

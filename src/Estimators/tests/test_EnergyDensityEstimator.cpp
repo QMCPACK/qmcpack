@@ -35,7 +35,7 @@ TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
 {
   Communicate& comm(*OHMMS::Controller);
 
-  ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(&comm)};
+  ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(comm)};
 
   ParticleSet pset_elec{*(particle_pool.getParticleSet("e"))};
   ParticleSet pset_ions{*(particle_pool.getParticleSet("ion"))};
@@ -64,7 +64,7 @@ TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
 {
   Communicate& comm(*OHMMS::Controller);
 
-  ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(&comm)};
+  ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(comm)};
 
   ParticleSet pset_elec{*(particle_pool.getParticleSet("e"))};
   ParticleSet pset_ions{*(particle_pool.getParticleSet("ion"))};
