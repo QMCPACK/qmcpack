@@ -20,15 +20,16 @@ Import order is intentional.  The standalone miniapp found that importing
 DeepQMC before JAX avoids initialization problems.
 """
 
-import deepqmc  # noqa: F401  keep before jax
-import jax
-import jax.numpy as jnp
-import jax_dataclasses as jdc
 import os
 import pickle
 import sys
 import types
 from pathlib import Path
+
+import deepqmc
+import jax
+import jax.numpy as jnp
+import jax_dataclasses as jdc
 from hydra import compose, initialize_config_dir
 from hydra.utils import instantiate
 
@@ -42,8 +43,8 @@ _h5py_stub.File = type("File", (), {})
 sys.modules.setdefault("h5py", _h5py_stub)
 
 from deepqmc.app import instantiate_ansatz
-from deepqmc.molecule import Molecule
 from deepqmc.hamil import MolecularHamiltonian
+from deepqmc.molecule import Molecule
 from deepqmc.parallel import replicate_on_devices, scatter_electrons_to_devices
 from deepqmc.types import PhysicalConfiguration
 

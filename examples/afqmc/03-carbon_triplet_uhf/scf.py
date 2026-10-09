@@ -2,9 +2,6 @@
 # Triplet UHF ground state of carbon atom.
 
 from pyscf import gto, scf
-import numpy
-
-import h5py
 
 mol = gto.Mole()
 mol.basis = "cc-pvtz"

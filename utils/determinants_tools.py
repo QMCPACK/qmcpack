@@ -8,25 +8,21 @@ determinants_tools.py ./tests/molecules/C2_pp/C2.h5    # Summary excitation info
 determinants_tools.py -v ./tests/molecules/C2_pp/C2.h5 # Verbose. Gives details of each determinant
 """
 
-from __future__ import print_function
 from builtins import zip
-
+from collections import namedtuple
 from functools import partial
 
 # A detspin is a list of integers that represent the alpha or beta part of determinant
 # A determinant is a pair of detspin alpha and detspin beta
 # A CSF is represented as a pair of list of integers coding respectively for the double and single occupied state.
-
 # A bitmask is a `n_state` length binary representation of a list of integers encoded in `bit_kind_size` bits.
 #   Note that this representation is 'reversed'. This allows the first bit to represent the first orbital, and so on.
 #   For performance and convenience, if `n_state` < `bit_kind_size` * `n_integer`,
 #      we assume that the bits coding for excessive state of the last integer are set to 0.
 #      To be clearer, if we have `n_state` = 1 with one alpha electron and `bit_kind_size` = 64
 #      the only valid integer representation of this determinants is ( (1,), (0,) )
-
 # Assume that each integer is unsigned. If not they should be converted before using the sanitize function.
 import numpy as np
-from collections import namedtuple
 
 Determinants = namedtuple("Determinants", ["alpha", "beta"])
 CSF = namedtuple("CSF", ["double", "single"])
@@ -130,11 +126,11 @@ def csf_to_string(csf, bit_kind_size, size):
 
 
 if __name__ == "__main__":
-    import h5py
     import argparse
-
     from collections import Counter
     from itertools import chain
+
+    import h5py
 
     parser = argparse.ArgumentParser(
         description="Provide information about a multideterminant wavefunction stored in HDF5 format."
@@ -230,7 +226,7 @@ if __name__ == "__main__":
                 print("beta  ", str_beta)
                 print("scf   ", csf_to_string(c, bit_kind_size, nstate))
                 print("excitation degree ", e)
-                print("")
+                print()
 
         # Display computed data
         n_det = sum(c_e.values())
@@ -240,6 +236,6 @@ if __name__ == "__main__":
         for e, i in sorted(c_e.items()):
             print("excitation degree", e, "count:", i)
 
-        print("")
+        print()
         print("n_det", n_det)
         print("n_csf", n_csf)

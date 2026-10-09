@@ -16,9 +16,10 @@
 import os
 import sys
 from copy import deepcopy
-import numpy as np
-import h5py
 from optparse import OptionParser
+
+import h5py
+import numpy as np
 
 
 # Returns failure error code to OS.
@@ -78,7 +79,7 @@ def error(msg, header=None, n=0):
 # end def error
 
 
-class object_interface(object):
+class object_interface:
     _logfile = sys.stdout
 
     def __len__(self):
@@ -119,9 +120,9 @@ class object_interface(object):
             if not isinstance(k, str) or k[0] != "_":
                 v = self.__dict__[k]
                 if hasattr(v, "__class__"):
-                    s += "  {0:<20}  {1:<20}\n".format(str(k), v.__class__.__name__)
+                    s += f"  {k!s:<20}  {v.__class__.__name__:<20}\n"
                 else:
-                    s += "  {0:<20}  {1:<20}\n".format(str(k), type(v))
+                    s += f"  {k!s:<20}  {type(v):<20}\n"
                 # end if
             # end if
         # end for
@@ -150,7 +151,7 @@ class object_interface(object):
         for k in normal:
             v = self[k]
             vstr = str(v).replace("\n", "\n" + indent)
-            s += npad + "{0:<15} = ".format(str(k)) + vstr + "\n"
+            s += npad + f"{k!s:<15} = " + vstr + "\n"
         # end for
         for k in qable:
             v = self[k]
@@ -282,20 +283,17 @@ class HDFgroup(DevBase):
 
     def _set_parent(self, parent):
         self._parent = parent
-        return
 
     # end def set_parent
 
     def _add_dataset(self, name, dataset):
         self._datasets[name] = dataset
-        return
 
     # end def add_dataset
 
     def _add_group(self, name, group):
         group._name = name
         self._groups[name] = group
-        return
 
     # end def add_group
 
@@ -318,7 +316,6 @@ class HDFgroup(DevBase):
 
         self._escape_names = None
         self._escape_names = set(dict(getmembers(self)).keys()) | set(keyword.kwlist)
-        return
 
     # end def __init__
 
@@ -385,7 +382,7 @@ class HDFreader(DevBase):
 
         try:
             self.hdf = h5py.File(fpath, "r")
-        except IOError:
+        except OSError:
             self._success = False
             self.hdf = obj(obj=obj())
         else:
@@ -423,7 +420,6 @@ class HDFreader(DevBase):
             print("  end HDFreader Initialization")
         # end if
 
-        return
 
     # end def __init__
 
@@ -435,14 +431,12 @@ class HDFreader(DevBase):
             self.hcur.append(None)
         # end if
         self.pad = self.ilevel * "  "
-        return
 
     # end def increment_level
 
     def decrement_level(self):
         self.ilevel -= 1
         self.pad = self.ilevel * "  "
-        return
 
     # end def decrement_level
 
@@ -453,7 +447,6 @@ class HDFreader(DevBase):
             cur[k] = v
         # end if
         cur._add_dataset(k, cur[k])
-        return
 
     # end def add_dataset
 
@@ -512,9 +505,7 @@ class DataFile(DevBase):
                 missing = set(quantities) - set(self.data.keys())
                 if len(missing) > 0:
                     self.error(
-                        'some quantities are missing from file "{}"\nquantities present: {}\nquantities missing: {}'.format(
-                            self.filepath, sorted(self.data.keys()), sorted(missing)
-                        )
+                        f'some quantities are missing from file "{self.filepath}"\nquantities present: {sorted(self.data.keys())}\nquantities missing: {sorted(missing)}'
                     )
                 # end if
             # end if
@@ -685,7 +676,7 @@ class TracesFileHDF(DataFile):
             # end for
             trace[dname] = domain
         else:
-            self.error('traces are missing in file "{}"'.format(self.filepath))
+            self.error(f'traces are missing in file "{self.filepath}"')
         # end if
         # rename "int_data" and "real_data" as "int_traces" and "real_traces"
         self[aliases[name]] = trace
@@ -730,9 +721,9 @@ class TracesFileHDF(DataFile):
             # Compare total and summed quantities
             qsame = (abs(q - qs) < tol).all()
             if qsame:
-                log("{:<16} matches".format(qname), n=3)
+                log(f"{qname:<16} matches", n=3)
             else:
-                log("{:<16} does not match".format(qname), n=3)
+                log(f"{qname:<16} does not match", n=3)
             # end if
             same = same and qsame
         # end for
@@ -804,9 +795,7 @@ class TracesFileHDF(DataFile):
             qt = tr.scalars[qname]
             if len(qt) != len(wt):
                 self.error(
-                    "quantity {0} trace is not commensurate with weight and steps traces".format(
-                        qname
-                    )
+                    f"quantity {qname} trace is not commensurate with weight and steps traces"
                 )
             # end if
             qs[:] = 0
@@ -912,7 +901,7 @@ class TracesAnalyzer(DevBase):
         files.extend(trace_files)
         for filepath in files:
             if not os.path.exists(filepath):
-                self.error("filepath {} does not exist".format(filepath))
+                self.error(f"filepath {filepath} does not exist")
             # end if
         # end for
 
@@ -947,9 +936,7 @@ class TracesAnalyzer(DevBase):
         same = True
         for trace_file in self.data:
             log(
-                "Checking traces file: {}".format(
-                    os.path.basename(trace_file.filepath)
-                ),
+                f"Checking traces file: {os.path.basename(trace_file.filepath)}",
                 n=2,
             )
             same &= trace_file.check_particle_sums(tol=tol)
@@ -988,9 +975,7 @@ class TracesAnalyzer(DevBase):
         missing = set(qnames) - trace_names
         if len(missing) > 0:
             self.error(
-                "{} file check failed for series {}\ntraces file is missing some quantities\nquantities present: {}\nquantities missing: {}".format(
-                    file_type, self.options.series, sorted(trace_names), sorted(missing)
-                )
+                f"{file_type} file check failed for series {self.options.series}\ntraces file is missing some quantities\nquantities present: {sorted(trace_names)}\nquantities missing: {sorted(missing)}"
             )
         # end if
 
@@ -1028,15 +1013,13 @@ class TracesAnalyzer(DevBase):
             match = abs(qb - qscalar) < tol
             all_match = match.all()
             self.log(
-                "{:<16} {}/{} blocks match".format(qname, match.sum(), len(match)), n=2
+                f"{qname:<16} {match.sum()}/{len(match)} blocks match", n=2
             )
             if not all_match:
                 for b, (m, qfile, qtrace) in enumerate(zip(match, qscalar, qb)):
                     if not m:
                         log(
-                            "{:>3}  {: 16.12f}  {: 16.12f}  {: 16.12f}".format(
-                                b, qfile, qtrace, qfile - qtrace
-                            ),
+                            f"{b:>3}  {qfile: 16.12f}  {qtrace: 16.12f}  {qfile - qtrace: 16.12f}",
                             n=3,
                         )
                     # end if
@@ -1064,9 +1047,7 @@ class TracesAnalyzer(DevBase):
         missing = set(qnames) - trace_names
         if len(missing) > 0:
             self.error(
-                "dmc.dat check failed for series {}\ntraces file is missing some quantities\nquantities present: {}\nquantities missing: {}".format(
-                    self.options.series, sorted(trace_names), sorted(missing)
-                )
+                f"dmc.dat check failed for series {self.options.series}\ntraces file is missing some quantities\nquantities present: {sorted(trace_names)}\nquantities missing: {sorted(missing)}"
             )
         # end if
         weighted = set(["LocalEnergy"])
@@ -1105,15 +1086,13 @@ class TracesAnalyzer(DevBase):
             match = abs(qb - qdmc) < tol
             all_match = match.all()
             self.log(
-                "{:<16} {}/{} steps match".format(qname, match.sum(), len(match)), n=2
+                f"{qname:<16} {match.sum()}/{len(match)} steps match", n=2
             )
             if not all_match:
                 for s, (m, qfile, qtrace) in enumerate(zip(match, qdmc, qb)):
                     if not m:
                         log(
-                            "{:>3}  {: 16.12f}  {: 16.12f}  {: 16.12f}".format(
-                                s, qfile, qtrace, qfile - qtrace
-                            ),
+                            f"{s:>3}  {qfile: 16.12f}  {qtrace: 16.12f}  {qfile - qtrace: 16.12f}",
                             n=3,
                         )
                     # end if
@@ -1127,9 +1106,7 @@ class TracesAnalyzer(DevBase):
 
         if dmc_steps_exclude > 0:
             log(
-                "\nExcluding first {} DMC steps from match check.".format(
-                    dmc_steps_exclude
-                ),
+                f"\nExcluding first {dmc_steps_exclude} DMC steps from match check.",
                 n=2,
             )
         # end if
@@ -1268,22 +1245,16 @@ if __name__ == "__main__":
         options.path = paths[0]
     else:
         error(
-            "Only a single path is accepted as input.\nPaths provided:\n{}".format(
-                paths
-            )
+            f"Only a single path is accepted as input.\nPaths provided:\n{paths}"
         )
     # end if
     if not os.path.exists(options.path):
         error(
-            "Path to QMCPACK run does not exist.\nPath provided: {}".format(
-                options.path
-            )
+            f"Path to QMCPACK run does not exist.\nPath provided: {options.path}"
         )
     elif os.path.isfile(options.path):
         error(
-            "Path to QMCPACK run is actually a file.\nOnly directory paths are accepted.\nPath provided: {}".format(
-                options.path
-            )
+            f"Path to QMCPACK run is actually a file.\nOnly directory paths are accepted.\nPath provided: {options.path}"
         )
     # end if
 
@@ -1311,22 +1282,16 @@ if __name__ == "__main__":
     invalid = set(options.methods) - set(valid_methods)
     if len(invalid) > 0:
         error(
-            'Invalid entries given for "methods".\nValid options are: {}\nYou provided: {}'.format(
-                valid_methods, sorted(invalid)
-            )
+            f'Invalid entries given for "methods".\nValid options are: {valid_methods}\nYou provided: {sorted(invalid)}'
         )
     # end if
 
-    valid_quantities = """
-        LocalEnergy Kinetic LocalPotential ElecElec ElecIon LocalECP NonLocalECP
-        """.split()
+    valid_quantities = ["LocalEnergy", "Kinetic", "LocalPotential", "ElecElec", "ElecIon", "LocalECP", "NonLocalECP"]
     if options.quantities is not None:
         invalid = set(options.quantities) - set(valid_quantities)
         if len(invalid) > 0:
             error(
-                'Invalid entries given for "quantities".\nValid options are: {}\nYou provided: {}'.format(
-                    valid_quantities, sorted(invalid)
-                )
+                f'Invalid entries given for "quantities".\nValid options are: {valid_quantities}\nYou provided: {sorted(invalid)}'
             )
         # end if
     # end if
@@ -1350,7 +1315,7 @@ if __name__ == "__main__":
         options.series = series
         options.method = method
 
-        log("\n\nChecking series {} method={}".format(series, method))
+        log(f"\n\nChecking series {series} method={method}")
 
         # Read scalar.dat, stat.h5, dmc.dat, and *wlogs.h5 for the series
         ta = TracesAnalyzer(options)

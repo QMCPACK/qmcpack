@@ -1,5 +1,5 @@
-import sys
 import subprocess
+import sys
 
 
 class dotdict(dict):
@@ -31,7 +31,7 @@ def get_git_hash():
         ).strip()
     except:
         suffix = False
-        sha1 = "none".encode()
+        sha1 = b"none"
     if suffix:
         return sha1.decode("utf-8") + "-dirty"
     else:

@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
-import h5py
-from pyscf.pbc import gto, scf, df
 from numpy import array
+from pyscf.pbc import df, gto, scf
 
 cell = gto.Cell()
 cell.a = """

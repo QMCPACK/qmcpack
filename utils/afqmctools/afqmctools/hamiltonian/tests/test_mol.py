@@ -1,9 +1,11 @@
-import numpy
 import os
 import unittest
-from pyscf import gto, ao2mo, scf, mcscf
+
+import numpy
+from pyscf import gto, mcscf, scf
+
+from afqmctools.hamiltonian import mol
 from afqmctools.hamiltonian.converter import read_qmcpack_sparse
-import afqmctools.hamiltonian.mol as mol
 from afqmctools.utils.linalg import modified_cholesky_direct
 from afqmctools.utils.testing import generate_hamiltonian
 

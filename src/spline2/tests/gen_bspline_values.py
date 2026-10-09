@@ -5,9 +5,8 @@
 
 # This file can get slow when computing the 3D coefficients - run under Pypy to speed it up
 
-from sympy import Symbol, IndexedBase, Matrix, S, sin, diff
-
 from bspline_funcs import create_spline
+from sympy import IndexedBase, Matrix, S, Symbol, diff, sin
 
 
 # Construct and solve the matrix equation for the coefficients

@@ -1,18 +1,16 @@
 """Generate AFQMC data from PYSCF (molecular) simulation."""
 
-import h5py
-import numpy
-from pyscf import fci
-import scipy.sparse
 import sys
 import time
+
+import numpy
+import scipy.sparse
+
+from afqmctools.hamiltonian.io import write_qmcpack_dense, write_qmcpack_sparse
 from afqmctools.utils.io import (
     format_fixed_width_floats,
     format_fixed_width_strings,
-    to_qmcpack_complex,
 )
-from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
-from afqmctools.hamiltonian.io import write_qmcpack_sparse, write_qmcpack_dense
 
 
 def write_hamil_mol(
@@ -98,7 +96,7 @@ def generate_hamiltonian(
     h1e = numpy.dot(X.T, numpy.dot(hcore, X))
     nbasis = h1e.shape[-1]
     if verbose:
-        print(" # Number of basis functions: {}.".format(nbasis))
+        print(f" # Number of basis functions: {nbasis}.")
     # Step 2. Genrate Cholesky decomposed ERIs in non-orthogonal AO basis.
     if df_ints is not None and df:
         chol_vecs = df_ints
@@ -212,13 +210,13 @@ def chunked_cholesky(mol, max_error=1e-6, verbose=False, cmax=10):
     ndiag = 0
     dims = [0]
     nao_per_i = 0
-    for i in range(0, mol.nbas):
+    for i in range(mol.nbas):
         l = mol.bas_angular(i)
         nc = mol.bas_nctr(i)
         nao_per_i += (2 * l + 1) * nc
         dims.append(nao_per_i)
     start = time.time()
-    for i in range(0, mol.nbas):
+    for i in range(mol.nbas):
         shls = (i, i + 1, 0, mol.nbas, i, i + 1, 0, mol.nbas)
         buf = mol.intor("int2e_sph", shls_slice=shls)
         di, dk, dj, dl = buf.shape
@@ -234,7 +232,7 @@ def chunked_cholesky(mol, max_error=1e-6, verbose=False, cmax=10):
         header = ["iteration", "max_residual", "time"]
         print(format_fixed_width_strings(header))
         init = [delta_max, time.time() - start]
-        print("{:17d} ".format(0) + format_fixed_width_floats(init))
+        print(f"{0:17d} " + format_fixed_width_floats(init))
     j = nu // nao
     l = nu % nao
     sj = numpy.searchsorted(dims, j)
@@ -291,7 +289,7 @@ def chunked_cholesky(mol, max_error=1e-6, verbose=False, cmax=10):
             step_time = time.time() - start
 
             out = [delta_max, step_time]
-            print("{:17d} ".format(nchol) + format_fixed_width_floats(out))
+            print(f"{nchol:17d} " + format_fixed_width_floats(out))
 
     return chol_vecs[:nchol]
 
@@ -315,8 +313,8 @@ def write_qmcpack_trial_wfn(wfn, nelec, filename="wfn.dat"):
 
 
 def write_qmcpack_wfn_single(out, mos, nao):
-    for i in range(0, nao):
-        for j in range(0, nao):
+    for i in range(nao):
+        for j in range(nao):
             val = mos[i, j]
             out.write("(%.10e,%.10e) " % (val.real, val.imag))
         out.write("\n")

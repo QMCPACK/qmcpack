@@ -327,17 +327,7 @@ def create_label_sets():
                 "short-c_no-sj_dmc",  # variance fails
             ]
         )
-    elif aos and cpu and comp and full:
-        None
-    elif aos and cpu and comp and mixed:
-        None
-    elif aos and gpu and real and full:
-        None
-    elif aos and gpu and real and mixed:
-        None
-    elif aos and gpu and comp and full:
-        None
-    elif aos and gpu and comp and mixed:
+    elif aos and cpu and comp and full or aos and cpu and comp and mixed or aos and gpu and real and full or aos and gpu and real and mixed or aos and gpu and comp and full or aos and gpu and comp and mixed:
         None
     # end if
 
@@ -374,17 +364,7 @@ def create_label_sets():
                 "short-diamondC_2x1x1_pp-vmc_gaussian_sdj",  # ionion fails
             ]
         )
-    elif soa and cpu and comp and full:
-        None
-    elif soa and cpu and comp and mixed:
-        None
-    elif soa and gpu and real and full:
-        None
-    elif soa and gpu and real and mixed:
-        None
-    elif soa and gpu and comp and full:
-        None
-    elif soa and gpu and comp and mixed:
+    elif soa and cpu and comp and full or soa and cpu and comp and mixed or soa and gpu and real and full or soa and gpu and real and mixed or soa and gpu and comp and full or soa and gpu and comp and mixed:
         None
     # end if
 
@@ -470,9 +450,7 @@ def check_exclusive(*labels):
                 overlap = lsets[i] & lsets[j]
                 if len(overlap) > 0:
                     error(
-                        "label sets {0} and {1} are not mutually exclusive\n  overlap: {2}".format(
-                            labels[i], labels[j], sorted(overlap)
-                        )
+                        f"label sets {labels[i]} and {labels[j]} are not mutually exclusive\n  overlap: {sorted(overlap)}"
                     )
                 # end if
             # end for
@@ -490,9 +468,7 @@ def check_comprehensive(full_label, *other_labels):
     # end for
     if len(full) > 0:
         error(
-            "the following sets are not comprehensive:\n  {0}\nthese should equate to set: {1}\nbut the following tests are not labeled: {2}".format(
-                other_labels, full_label, sorted(full)
-            )
+            f"the following sets are not comprehensive:\n  {other_labels}\nthese should equate to set: {full_label}\nbut the following tests are not labeled: {sorted(full)}"
         )
     # end if
 

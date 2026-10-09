@@ -237,12 +237,12 @@ class EshdfFilePw(EshdfFileBase):
                 data=array([self.rho_gv.shape[0]], dtype=int_dtype),
             )
             for s in range(self.num_spin):
-                gd0 = gd.create_group("spin_{}".format(s))
+                gd0 = gd.create_group(f"spin_{s}")
                 gd0.create_dataset("density_g", data=self.rho_g[s])
             # end for
         # end if
         for k, kpt in enumerate(self.kpts):
-            kp0 = g.create_group("kpoint_{}".format(k))
+            kp0 = g.create_group(f"kpoint_{k}")
             if k == 0:
                 kp0.create_dataset("gvectors", data=self.gvectors)
                 kp0.create_dataset(
@@ -253,14 +253,14 @@ class EshdfFilePw(EshdfFileBase):
             kp0.create_dataset("numsym", data=array([self.numsym[k]], dtype=int_dtype))
             kp0.create_dataset("reduced_k", data=kpt)
             for s in range(self.num_spin):
-                kp00 = kp0.create_group("spin_{}".format(s))
+                kp00 = kp0.create_group(f"spin_{s}")
                 kp00.create_dataset("eigenvalues", data=self.eps[k][s])
                 kp00.create_dataset(
                     "number_of_states",
                     data=array([self.num_bands[k][s]], dtype=int_dtype),
                 )
                 for n in range(self.num_bands[k][s]):
-                    kp00s = kp00.create_group("state_{}".format(n))
+                    kp00s = kp00.create_group(f"state_{n}")
                     kp00s.create_dataset("psi_g", data=self.psi_g[k][s][n])
                 # end for
             # end for

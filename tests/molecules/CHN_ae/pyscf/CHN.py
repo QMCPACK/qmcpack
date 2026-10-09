@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
-from pyscf import gto
-from pyscf import scf, dft, df
+from pyscf import dft, gto
 
 mol = gto.Mole()
 mol.verbose = 5

@@ -1,14 +1,12 @@
 # Evaluate STO's starting from a symbolic representation
 
-from sympy import *
-from sympy.utilities.lambdify import lambdastr
-from collections import namedtuple, defaultdict
+from collections import namedtuple
+
+import autograd.numpy as np
 
 # import numpy as np
-from autograd import grad
-import autograd.numpy as np
-import math
-
+from sympy import *
+from sympy.utilities.lambdify import lambdastr
 
 # n, zeta, and contraction_coeff are lists of size nbasis
 CG_basis = namedtuple(

@@ -1,15 +1,15 @@
 import numpy as np
 
 A = np.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # lattice
-print("Direct Lattice:\n{}".format(A))
+print(f"Direct Lattice:\n{A}")
 
 B = 2 * np.pi * (np.linalg.inv(A)).H  # recip lattice
-print("Recip Lattice:\n{}".format(B))
+print(f"Recip Lattice:\n{B}")
 
 rc = 0.5 * np.min(np.sqrt(np.sum(np.square(A), 1)))
 lrdimcut = 40
 kc = lrdimcut / rc
-print("lrdim: {}, rc: {}, kc: {}".format(lrdimcut, rc, kc))
+print(f"lrdim: {lrdimcut}, rc: {rc}, kc: {kc}")
 
 # electronic structure, p. 85
 mmax = np.floor(np.sqrt(np.sum(np.square(A), 1)) * (kc / (2 * np.pi))) + 1
@@ -46,7 +46,7 @@ with open("simple_Sk.dat", "w") as f:
         k = np.linalg.norm(kunit)
         sk = 1 - np.exp(-0.075 * k * k)
         sks.append(sk)
-        f.write("{0} {1} {2} {3} {4}\n".format(kcart[0], kcart[1], kcart[2], sk, 0.01))
+        f.write(f"{kcart[0]} {kcart[1]} {kcart[2]} {sk} {0.01}\n")
 
 
 print("Ewald Handler Corrections: ")
@@ -58,6 +58,6 @@ for i in range(len(kpts)):
     k2 = kmag[i] * kmag[i]
     vk = 4 * np.pi / (k2 * vol) * np.exp(-0.25 * k2 / sigma2)
     vsum += 0.5 * vk * sks[i]
-print("  Discrete: {}".format(vsum))
+print(f"  Discrete: {vsum}")
 
 vint = 1.066688342657357  # from analytic mathematica calculation
