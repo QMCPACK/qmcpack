@@ -382,11 +382,11 @@ struct WalkerControlMPITest
       wc.NumPerRank[0] = 6;
       wc.Cur_pop += 5;
 
-      reportWalkersPerRank(&c, wc);
+      reportWalkersPerRank(c, wc);
 
       wc.swapWalkersSimple(W);
 
-      reportWalkersPerRank(&c, wc);
+      reportWalkersPerRank(c, wc);
 
 
       // These are unique walkers
@@ -405,7 +405,7 @@ struct WalkerControlMPITest
 
       int walker_count = wc.copyWalkers(W);
 
-      reportWalkersPerRank(&c, wc);
+      reportWalkersPerRank(c, wc);
 
       if (c.rank() == c.size() - 2)
       {
@@ -423,12 +423,12 @@ struct WalkerControlMPITest
   }
 
 private:
-  void reportWalkersPerRank(Communicate* c, WalkerControlMPI& wc)
+  void reportWalkersPerRank(Communicate& c, WalkerControlMPI& wc)
   {
-    std::vector<int> rank_walker_count(c->size(), 0);
-    rank_walker_count[c->rank()] = wc.good_w.size();
-    c->allreduce(rank_walker_count);
-    if (c->rank() == 0)
+    std::vector<int> rank_walker_count(c.size(), 0);
+    rank_walker_count[c.rank()] = wc.good_w.size();
+    c.allreduce(rank_walker_count);
+    if (c.rank() == 0)
     {
       app_log() << "Walkers Per Rank (Total: " << wc.Cur_pop << ")\n";
       for (int i = 0; i < rank_walker_count.size(); ++i)

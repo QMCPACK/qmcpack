@@ -26,7 +26,7 @@
 namespace qmcplusplus
 {
 
-WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodePtr cur, bool reconfig)
+WalkerControlBase* createWalkerController(int nwtot, Communicate& comm, xmlNodePtr cur, bool reconfig)
 {
   app_log() << "  Creating WalkerController: target  number of walkers = " << nwtot << std::endl;
   ///set of parameters
@@ -41,7 +41,7 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   //if(nmax<0) nmax=2*nideal;
   //if(nmin<0) nmin=nideal/2;
   WalkerControlBase* wc = 0;
-  int ncontexts         = comm->size();
+  int ncontexts         = comm.size();
   if (reconfigopt != "no" && reconfigopt != "runwhileincorrect")
     throw std::runtime_error("Reconfiguration is currently broken and gives incorrect results. Use dynamic "
                              "population control by setting reconfiguration=\"no\" or removing the reconfiguration "
@@ -60,12 +60,12 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
     if (fixw)
     {
       app_log() << "  Using WalkerReconfigurationMPI for population control." << std::endl;
-      wc = new WalkerReconfigurationMPI(*comm);
+      wc = new WalkerReconfigurationMPI(comm);
     }
     else
     {
       app_log() << "  Using WalkerControlMPI for dynamic population control." << std::endl;
-      wc = new WalkerControlMPI(*comm);
+      wc = new WalkerControlMPI(comm);
     }
   }
   else
@@ -74,12 +74,12 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
     if (fixw)
     {
       app_log() << "  Using WalkerReconfiguration for population control." << std::endl;
-      wc = new WalkerReconfiguration(*comm);
+      wc = new WalkerReconfiguration(comm);
     }
     else
     {
       app_log() << "  Using WalkerControlBase for dynamic population control." << std::endl;
-      wc = new WalkerControlBase(*comm);
+      wc = new WalkerControlBase(comm);
     }
   }
   wc->set_method(fixw);

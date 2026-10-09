@@ -33,8 +33,8 @@ class EnergyDensityTest
 public:
   using MCPWalker = typename OperatorEstBase::MCPWalker;
 
-  EnergyDensityTest(Communicate* comm, int num_walkers, bool generate_test_data = false);
-  EnergyDensityTest(Communicate* comm,
+  EnergyDensityTest(Communicate& comm, int num_walkers, bool generate_test_data = false);
+  EnergyDensityTest(Communicate& comm,
                     int num_walkers,
                     std::function<MockGoldWalkerElements(Communicate&, RuntimeOptions)> make_gold_elem,
                     bool generate_test_data = false);

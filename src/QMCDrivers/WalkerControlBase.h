@@ -129,7 +129,7 @@ public:
    */
   int sortWalkers(MCWalkerConfiguration& W);
 
-  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
+  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate& comm, IndexType n_walkers);
 
   /** legacy: apply per rank limit Nmax and Nmin
    */

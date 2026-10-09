@@ -486,7 +486,7 @@ protected:
   WalkerConfigurations& walker_configs_ref_;
 
   /// update the global offsets of walker configurations after active walkers being touched.
-  static void setWalkerOffsets(WalkerConfigurations&, Communicate* comm);
+  static void setWalkerOffsets(WalkerConfigurations&, Communicate& comm);
 
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);

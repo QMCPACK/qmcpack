@@ -28,9 +28,9 @@ namespace qmcplusplus
 {
 ///handles i/o and bcast, testing for now
 template<typename T>
-inline void chunked_bcast(Communicate* comm, T* buffer, size_t ntot)
+inline void chunked_bcast(Communicate& comm, T* buffer, size_t ntot)
 {
-  if (comm->size() == 1)
+  if (comm.size() == 1)
     return;
 
   size_t chunk_size = (1 << 30) / sizeof(T); //256 MB
@@ -39,21 +39,21 @@ inline void chunked_bcast(Communicate* comm, T* buffer, size_t ntot)
   size_t offset = 0;
   for (int i = 0; i < n; ++i, offset += chunk_size)
   {
-    comm->bcast(buffer + offset, static_cast<int>(chunk_size));
+    comm.bcast(buffer + offset, static_cast<int>(chunk_size));
   }
 
   if (offset < ntot)
   {
-    comm->bcast(buffer + offset, static_cast<int>(ntot - offset));
+    comm.bcast(buffer + offset, static_cast<int>(ntot - offset));
   }
 }
 
 template<typename ENGT>
-inline void chunked_bcast(Communicate* comm, ENGT* buffer)
+inline void chunked_bcast(Communicate& comm, ENGT* buffer)
 { chunked_bcast(comm, buffer->coefs, buffer->coefs_size); }
 
 template<typename T, unsigned D>
-inline void gatherv(Communicate* comm,
+inline void gatherv(Communicate& comm,
                     typename bspline_traits<T, D>::SplineType* buffer,
                     const int ncol,
                     const std::vector<int>& offset)
@@ -75,14 +75,14 @@ inline void gatherv(Communicate* comm,
     const int nrow          = buffer->coefs_size / (ncol * nx);
     auto columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
     for (size_t iz = 0; iz < nx; iz++)
-      comm->gatherv_in_place(buffer->coefs + xs * iz, columntype, counts_const, offset);
+      comm.gatherv_in_place(buffer->coefs + xs * iz, columntype, counts_const, offset);
     mpi::free_column_type(columntype);
   }
   else
   {
     const int nrow          = buffer->coefs_size / ncol;
     auto columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
-    comm->gatherv_in_place(buffer->coefs, columntype, counts_const, offset);
+    comm.gatherv_in_place(buffer->coefs, columntype, counts_const, offset);
     mpi::free_column_type(columntype);
   }
 }

@@ -41,12 +41,12 @@ UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(*dp
   pop_->createWalkers(1, walker_confs);
 }
 
-void UnifiedDriverWalkerControlMPITest::reportWalkersPerRank(Communicate* c, MCPopulation& pop)
+void UnifiedDriverWalkerControlMPITest::reportWalkersPerRank(Communicate& c, MCPopulation& pop)
 {
 #if !defined(NDEBUG)
-  std::vector<int> rank_walker_count(c->size(), 0);
-  rank_walker_count[c->rank()] = pop.get_num_local_walkers();
-  c->allreduce(rank_walker_count);
+  std::vector<int> rank_walker_count(c.size(), 0);
+  rank_walker_count[c.rank()] = pop.get_num_local_walkers();
+  c.allreduce(rank_walker_count);
 
   const int current_population = std::accumulate(rank_walker_count.begin(), rank_walker_count.end(), 0);
 
@@ -139,7 +139,7 @@ void testing::UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<
   wc_.swapWalkersSimple(*pop_);
   wc_.killDeadWalkersOnRank(*pop_);
   pop_->fissionHighMultiplicityWalkers();
-  reportWalkersPerRank(dpools_.comm, *pop_);
+  reportWalkersPerRank(*dpools_.comm, *pop_);
   CHECK(pop_->get_num_local_walkers() == rank_counts_after[rank]);
 }
 

@@ -137,7 +137,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
                                                                       ParticleSetPool& particle_pool,
                                                                       WaveFunctionPool& wavefunction_pool,
                                                                       HamiltonianPool& hamiltonian_pool,
-                                                                      Communicate* comm) const
+                                                                      Communicate& comm) const
 {
   std::unique_ptr<QMCDriverInterface> new_driver;
 
@@ -170,7 +170,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
       multi_psi.emplace_back(&getPsi(name_pair.first));
       multi_ham.emplace_back(&getHam(name_pair.second));
     }
-    new_driver = std::make_unique<CSVMC>(project_data_, qmc_system, std::move(multi_psi), std::move(multi_ham), *comm);
+    new_driver = std::make_unique<CSVMC>(project_data_, qmc_system, std::move(multi_psi), std::move(multi_ham), comm);
     new_driver->setUpdateMode(das.what_to_do[UPDATE_MODE]);
   }
   else
@@ -197,7 +197,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
           return {};
       };
 
-      auto estimator_manager = std::make_unique<EstimatorManagerNew>(primaryH, comm);
+      auto estimator_manager = std::make_unique<EstimatorManagerNew>(primaryH, &comm);
       estimator_manager->constructEstimators(makeEstimatorManagerInput(global_emi, driver_emi), qmc_system, primaryPsi,
                                              primaryH, particle_pool.getPool());
       return estimator_manager;
@@ -206,7 +206,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
     if (das.new_run_type == QMCRunType::VMC)
     {
       new_driver = std::make_unique<VMC>(project_data_, qmc_system, primaryPsi, primaryH,
-                                         RandomNumberControl::getChildren(), *comm, das.enable_profiling);
+                                         RandomNumberControl::getChildren(), comm, das.enable_profiling);
       new_driver->setUpdateMode(das.what_to_do[UPDATE_MODE]);
     }
     else if (das.new_run_type == QMCRunType::VMC_BATCH)
@@ -238,15 +238,15 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
           std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input),
                                        makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input()),
                                        std::move(vmcdriver_input), qmc_system,
-                                       MCPopulation(comm->size(), comm->rank(), qmc_system, primaryPsi, primaryH),
-                                       RandomNumberControl::getChildrenRefs(), qmc_system.getSampleStack(), *comm);
+                                       MCPopulation(comm.size(), comm.rank(), qmc_system, primaryPsi, primaryH),
+                                       RandomNumberControl::getChildrenRefs(), qmc_system.getSampleStack(), comm);
 
       new_driver->setUpdateMode(1);
     }
     else if (das.new_run_type == QMCRunType::DMC)
     {
       DMCFactory fac(das.what_to_do[UPDATE_MODE], das.what_to_do[GPU_MODE], cur);
-      new_driver = fac.create(project_data_, qmc_system, primaryPsi, primaryH, *comm, das.enable_profiling);
+      new_driver = fac.create(project_data_, qmc_system, primaryPsi, primaryH, comm, das.enable_profiling);
     }
     else if (das.new_run_type == QMCRunType::DMC_BATCH)
     {
@@ -279,13 +279,13 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
           std::make_unique<DMCBatched>(project_data_, std::move(qmcdriver_input),
                                        makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input()),
                                        std::move(dmcdriver_input), qmc_system,
-                                       MCPopulation(comm->size(), comm->rank(), qmc_system, primaryPsi, primaryH),
-                                       RandomNumberControl::getChildrenRefs(), *comm);
+                                       MCPopulation(comm.size(), comm.rank(), qmc_system, primaryPsi, primaryH),
+                                       RandomNumberControl::getChildrenRefs(), comm);
     }
     else if (das.new_run_type == QMCRunType::RMC)
     {
       RMCFactory fac(das.what_to_do[UPDATE_MODE], cur);
-      new_driver = fac.create(project_data_, qmc_system, primaryPsi, primaryH, *comm);
+      new_driver = fac.create(project_data_, qmc_system, primaryPsi, primaryH, comm);
     }
     else if (das.new_run_type == QMCRunType::LINEAR_OPTIMIZE)
     {
@@ -295,7 +295,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
           "full precision build instead.");
 #endif
       QMCFixedSampleLinearOptimize* opt =
-          new QMCFixedSampleLinearOptimize(project_data_, qmc_system, primaryPsi, primaryH, *comm);
+          new QMCFixedSampleLinearOptimize(project_data_, qmc_system, primaryPsi, primaryH, comm);
       //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(qmc_system,primaryPsi,primaryH );
       opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
       new_driver.reset(opt);
@@ -330,10 +330,10 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
 
       auto opt = std::make_unique<QMCFixedSampleLinearOptimizeBatched>(project_data_, std::move(qmcdriver_input),
                                                                        std::move(vmcdriver_input), qmc_system,
-                                                                       MCPopulation(comm->size(), comm->rank(),
+                                                                       MCPopulation(comm.size(), comm.rank(),
                                                                                     qmc_system, primaryPsi, primaryH),
                                                                        RandomNumberControl::getChildrenRefs(),
-                                                                       qmc_system.getSampleStack(), *comm);
+                                                                       qmc_system.getSampleStack(), comm);
       opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
       new_driver = std::move(opt);
     }
@@ -341,7 +341,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
     {
       app_log() << "Testing wavefunctions." << std::endl;
       QMCDriverInterface* temp_ptr =
-          new WaveFunctionTester(project_data_, qmc_system, primaryPsi, primaryH, particle_pool, *comm);
+          new WaveFunctionTester(project_data_, qmc_system, primaryPsi, primaryH, particle_pool, comm);
       new_driver.reset(temp_ptr);
     }
     else

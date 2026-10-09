@@ -22,8 +22,8 @@ namespace qmcplusplus
 class QMCCostFunctionTest : public QMCCostFunctionBase
 {
 public:
-  QMCCostFunctionTest(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* c)
-      : QMCCostFunctionBase(w, psi, h, *c)
+  QMCCostFunctionTest(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate& c)
+      : QMCCostFunctionBase(w, psi, h, c)
   {}
 
   void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override
@@ -66,7 +66,7 @@ TEST_CASE("updateXmlNodes", "[drivers]")
 
   Communicate& comm(*OHMMS::Controller);
 
-  QMCCostFunctionTest cost(w, psi, h, &comm);
+  QMCCostFunctionTest cost(w, psi, h, comm);
 
   cost.setRootName("tmp");
 
@@ -101,7 +101,7 @@ TEST_CASE("updateXmlNodes with existing element", "[drivers]")
 
   Communicate& comm(*OHMMS::Controller);
 
-  QMCCostFunctionTest cost(w, psi, h, &comm);
+  QMCCostFunctionTest cost(w, psi, h, comm);
   cost.setRootName("tmp2");
 
   const char* wf_xml = R"(

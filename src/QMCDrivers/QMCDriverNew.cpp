@@ -192,7 +192,7 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
   int nwtot = walker_configs_ref_.getActiveWalkers();
   myComm.bcast(nwtot);
   if (nwtot)
-    setWalkerOffsets(walker_configs_ref_, &myComm);
+    setWalkerOffsets(walker_configs_ref_, myComm);
 }
 
 void QMCDriverNew::recordBlock(int block)
@@ -201,7 +201,7 @@ void QMCDriverNew::recordBlock(int block)
   {
     ScopedTimer local_timer(timers_.checkpoint_timer);
     population_.saveWalkerConfigurations(walker_configs_ref_);
-    setWalkerOffsets(walker_configs_ref_, &myComm);
+    setWalkerOffsets(walker_configs_ref_, myComm);
     wOut->dump(walker_configs_ref_, block);
   }
 }
@@ -209,7 +209,7 @@ void QMCDriverNew::recordBlock(int block)
 void QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
   population_.saveWalkerConfigurations(walker_configs_ref_);
-  setWalkerOffsets(walker_configs_ref_, &myComm);
+  setWalkerOffsets(walker_configs_ref_, myComm);
   app_log() << "  Carry over " << walker_configs_ref_.getGlobalNumWalkers()
             << " walker configurations to the next QMC driver." << std::endl;
 
@@ -573,13 +573,13 @@ void QMCDriverNew::measureImbalance(const std::string& tag) const
   }
 }
 
-void QMCDriverNew::setWalkerOffsets(WalkerConfigurations& walker_configs, Communicate* comm)
+void QMCDriverNew::setWalkerOffsets(WalkerConfigurations& walker_configs, Communicate& comm)
 {
-  std::vector<int> nw(comm->size(), 0);
-  std::vector<int> nwoff(comm->size() + 1, 0);
-  nw[comm->rank()] = walker_configs.getActiveWalkers();
-  comm->allreduce(nw);
-  for (int ip = 0; ip < comm->size(); ip++)
+  std::vector<int> nw(comm.size(), 0);
+  std::vector<int> nwoff(comm.size() + 1, 0);
+  nw[comm.rank()] = walker_configs.getActiveWalkers();
+  comm.allreduce(nw);
+  for (int ip = 0; ip < comm.size(); ip++)
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
 
   walker_configs.setWalkerOffsets(nwoff);

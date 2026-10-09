@@ -72,8 +72,8 @@ void SpaceGridEnv<ValidSpaceGridInput::valid::CYLINDRICAL>::setDefaultStartingPo
 {}
 
 template<ValidSpaceGridInput::valid VALID>
-SpaceGridEnv<VALID>::SpaceGridEnv(Communicate* comm)
-    : particle_pool_(MinimalParticlePool::make_diamondC_1x1x1(*comm)),
+SpaceGridEnv<VALID>::SpaceGridEnv(Communicate& comm)
+    : particle_pool_(MinimalParticlePool::make_diamondC_1x1x1(comm)),
       pset_elec_(*(particle_pool_.getParticleSet("e"))),
       pset_ions_(*(particle_pool_.getParticleSet("ion")))
 {
@@ -97,8 +97,8 @@ SpaceGridEnv<VALID>::SpaceGridEnv(Communicate* comm)
 }
 
 template<>
-SpaceGridEnv<ValidSpaceGridInput::valid::CYLINDRICAL>::SpaceGridEnv(Communicate* comm)
-    : particle_pool_(MinimalParticlePool::make_H2(*comm)),
+SpaceGridEnv<ValidSpaceGridInput::valid::CYLINDRICAL>::SpaceGridEnv(Communicate& comm)
+    : particle_pool_(MinimalParticlePool::make_H2(comm)),
       pset_elec_(*(particle_pool_.getParticleSet("e"))),
       pset_ions_(*(particle_pool_.getParticleSet("ion")))
 {

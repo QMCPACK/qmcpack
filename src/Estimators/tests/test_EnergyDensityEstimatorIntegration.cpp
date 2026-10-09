@@ -42,9 +42,9 @@ TEST_CASE("EnergyDensityEstimatorIntegration::multirank_reduction", "[estimators
 
   int num_walkers = 4;
 #ifndef ENABLE_OFFLOAD
-  testing::EnergyDensityTest eden_test(&comm, num_walkers, generate_test_data);
+  testing::EnergyDensityTest eden_test(comm, num_walkers, generate_test_data);
 #else
-  testing::EnergyDensityTest eden_test(&comm, num_walkers, &testing::makeGoldWalkerElementsWithEI, generate_test_data);
+  testing::EnergyDensityTest eden_test(comm, num_walkers, &testing::makeGoldWalkerElementsWithEI, generate_test_data);
 #endif
 
   auto doc = testing::createEstimatorManagerEnergyDenistyInputXML();
@@ -120,10 +120,10 @@ TEST_CASE("EnergyDensityEstimatorIntegration::operator_reporting", "[estimators]
   Communicate& comm(*OHMMS::Controller);
   int num_walkers = 4;
 #ifndef ENABLE_OFFLOAD
-  testing::EnergyDensityTest eden_test(&comm, num_walkers, &testing::makeGoldWalkerElementsWithEEEIPS,
+  testing::EnergyDensityTest eden_test(comm, num_walkers, &testing::makeGoldWalkerElementsWithEEEIPS,
                                        generate_test_data);
 #else
-  testing::EnergyDensityTest eden_test(&comm, num_walkers, &testing::makeGoldWalkerElementsWithEI, generate_test_data);
+  testing::EnergyDensityTest eden_test(comm, num_walkers, &testing::makeGoldWalkerElementsWithEI, generate_test_data);
 #endif
   auto doc = testing::createEstimatorManagerEnergyDenistyInputXML();
   EstimatorManagerInput emi(doc.getRoot());
@@ -212,7 +212,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
 {
   int num_walkers = 4;
   Communicate& comm(*OHMMS::Controller);
-  testing::EDenEstimatorManagerIntegrationTest eden_emn_integration_test(&comm, num_walkers);
+  testing::EDenEstimatorManagerIntegrationTest eden_emn_integration_test(comm, num_walkers);
   auto walker_list = eden_emn_integration_test.getWalkerList();
   auto ham_list    = eden_emn_integration_test.getHamList();
 

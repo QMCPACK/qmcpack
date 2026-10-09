@@ -151,7 +151,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       iParam[B_TARGETWALKERS] = nwoff[ncontexts];
     }
     // \todo reparsing XML nodes is an antipattern, remove.
-    WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode));
+    WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], *MyEstimator->getCommunicator(), myNode));
     if (!BranchMode[B_RESTART])
     {
       fromscratch = true;
@@ -167,7 +167,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
         BackupWalkerController = std::move(WalkerController); //save the main controller
         // \todo: Not likely to be ok to call reset on a moved from WalkerController!
         WalkerController.reset(
-            createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode, true));
+            createWalkerController(iParam[B_TARGETWALKERS], *MyEstimator->getCommunicator(), myNode, true));
         BranchMode.set(B_POPCONTROL, 0);
       }
       //PopHist.clear();
@@ -598,7 +598,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   {
     app_log() << "Destroy WalkerController. Existing method " << WalkerController->get_method() << std::endl;
     ;
-    WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode));
+    WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], *MyEstimator->getCommunicator(), myNode));
     app_log().flush();
 
     BranchMode[B_POPCONTROL] = (WalkerController->get_method() == 0);

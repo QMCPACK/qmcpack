@@ -26,7 +26,7 @@
 
 namespace qmcplusplus
 {
-std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
+std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate& c,
                                                          ParticleSet& elec,
                                                          ParticleSet& ions,
                                                          const WaveFunctionFactory::PSetMap& particle_set_map)
@@ -61,7 +61,7 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
 
   elec.addTable(ions);
 
-  WaveFunctionFactory wff(elec, particle_set_map, *c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   const char* wavefunction_xml = R"(<wavefunction name="psi0" target="e">
      <jastrow name="Jee" type="Two-Body" function="pade">
@@ -122,7 +122,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
-  auto psi_ptr = setup_He_wavefunction(&c, elec, ions, particle_set_map);
+  auto psi_ptr = setup_He_wavefunction(c, elec, ions, particle_set_map);
   TrialWaveFunction& psi(*psi_ptr);
 
   ions.update();
@@ -231,7 +231,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   // This He wavefunction has two components
   // The orbitals are fixed and have not optimizable parameters.
   // The Jastrow factor does have an optimizable parameter.
-  auto psi_ptr = setup_He_wavefunction(&c, elec1, ions, particle_set_map);
+  auto psi_ptr = setup_He_wavefunction(c, elec1, ions, particle_set_map);
   TrialWaveFunction& psi(*psi_ptr);
   ions.update();
   elec1.update();

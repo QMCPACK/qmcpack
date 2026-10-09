@@ -22,8 +22,8 @@ namespace testing
 class LinearSystem : public QMCCostFunctionBase
 {
 public:
-  LinearSystem(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
-      : QMCCostFunctionBase(w, psi, h, *comm) {};
+  LinearSystem(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate& comm)
+      : QMCCostFunctionBase(w, psi, h, comm) {};
   void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override
   {}
 
@@ -112,7 +112,7 @@ TEST_CASE("ConjugateGradient", "[drivers]")
   TrialWaveFunction psi(runtime_options);
   Communicate& comm(*OHMMS::Controller);
 
-  testing::LinearSystem ls(w, psi, h, &comm);
+  testing::LinearSystem ls(w, psi, h, comm);
   ls.setAMatrix(Amat);
 
   ConjugateGradient cg;

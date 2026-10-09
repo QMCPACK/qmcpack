@@ -549,12 +549,12 @@ void WalkerControl::killDeadWalkersOnRank(MCPopulation& pop)
 #endif
 }
 
-std::vector<WalkerControl::IndexType> WalkerControl::syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers)
+std::vector<WalkerControl::IndexType> WalkerControl::syncFutureWalkersPerRank(Communicate& comm, IndexType n_walkers)
 {
-  int ncontexts = comm->size();
+  int ncontexts = comm.size();
   std::vector<IndexType> future_walkers(ncontexts, 0);
-  future_walkers[comm->rank()] = n_walkers;
-  comm->allreduce(future_walkers);
+  future_walkers[comm.rank()] = n_walkers;
+  comm.allreduce(future_walkers);
   return future_walkers;
 }
 

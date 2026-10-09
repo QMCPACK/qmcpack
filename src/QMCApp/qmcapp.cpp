@@ -32,7 +32,7 @@
 
 #include <array>
 
-void output_hardware_info(Communicate* comm, Libxml2Document& doc, xmlNodePtr root);
+void output_hardware_info(Communicate& comm, Libxml2Document& doc, xmlNodePtr root);
 
 /** @file qmcapp.cpp
  *@brief a main function for QMC simulation.
@@ -205,7 +205,7 @@ int main(int argc, char** argv)
 
     Libxml2Document timingDoc;
     timingDoc.newDoc("resources");
-    output_hardware_info(qmcComm, timingDoc, timingDoc.getRoot());
+    output_hardware_info(*qmcComm, timingDoc, timingDoc.getRoot());
     getGlobalTimerManager().output_timing(*qmcComm, timingDoc, timingDoc.getRoot());
     qmc->getParticlePool().output_particleset_info(timingDoc, timingDoc.getRoot());
     if (OHMMS::Controller->rank() == 0)
@@ -236,14 +236,14 @@ int main(int argc, char** argv)
   return 0;
 }
 
-void output_hardware_info(Communicate* comm, Libxml2Document& doc, xmlNodePtr root)
+void output_hardware_info(Communicate& comm, Libxml2Document& doc, xmlNodePtr root)
 {
   xmlNodePtr hardware = doc.addChild(root, "hardware");
 
   bool using_mpi = false;
 #ifdef HAVE_MPI
   using_mpi = true;
-  doc.addChild(hardware, "mpi_size", comm->size());
+  doc.addChild(hardware, "mpi_size", comm.size());
 #endif
   doc.addChild(hardware, "mpi", using_mpi);
 

@@ -22,7 +22,7 @@ namespace qmcplusplus
 class DeepQMCWaveFunctionBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  DeepQMCWaveFunctionBuilder(Communicate* comm, ParticleSet& target, const PSetMap& psets);
+  DeepQMCWaveFunctionBuilder(Communicate& comm, ParticleSet& target, const PSetMap& psets);
 
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 

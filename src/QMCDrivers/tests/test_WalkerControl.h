@@ -63,7 +63,7 @@ public:
   int getNumRanks() const { return dpools_.comm->size(); }
 
 private:
-  void reportWalkersPerRank(Communicate* c, MCPopulation& pop);
+  void reportWalkersPerRank(Communicate& c, MCPopulation& pop);
 
   SetupPools dpools_;
   WalkerConfigurations walker_confs;

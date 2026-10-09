@@ -23,16 +23,16 @@ namespace testing
 std::function<MockGoldWalkerElements(Communicate&, RuntimeOptions)> make_gold_walker_elem_ee =
     makeGoldWalkerElementsWithEE;
 
-EnergyDensityTest::EnergyDensityTest(Communicate* comm, int num_walkers, bool generate_test_data)
+EnergyDensityTest::EnergyDensityTest(Communicate& comm, int num_walkers, bool generate_test_data)
     : EnergyDensityTest(comm, num_walkers, make_gold_walker_elem_ee, generate_test_data)
 {}
 
-EnergyDensityTest::EnergyDensityTest(Communicate* comm,
+EnergyDensityTest::EnergyDensityTest(Communicate& comm,
                                      int num_walkers,
                                      std::function<MockGoldWalkerElements(Communicate&, RuntimeOptions)> make_gold_elem,
                                      bool generate_test_data)
     : test_project_("test", ProjectData::DriverVersion::BATCH),
-      gold_elem_(make_gold_elem(*comm, test_project_.getRuntimeOptions())),
+      gold_elem_(make_gold_elem(comm, test_project_.getRuntimeOptions())),
       walkers_(num_walkers, MCPWalker(gold_elem_.pset_elec.getTotalNum()))
 {
   // This has to be first because before the golden Hamiltonian is copied

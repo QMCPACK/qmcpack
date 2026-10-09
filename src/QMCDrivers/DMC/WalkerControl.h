@@ -94,7 +94,7 @@ private:
   /// kill dead walkers in the population
   static void killDeadWalkersOnRank(MCPopulation& pop);
 
-  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
+  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate& comm, IndexType n_walkers);
 
   /** update the curData state buffer.
    *  weighted sum over walker properties then all reduce.  see discussion #curData

@@ -82,7 +82,7 @@ TEST_CASE("QMCDriverFactory rejects invalid L2 diffusion configurations for DMCB
 
   auto construct_driver = [&]() {
     driver_factory.createQMCDriver(node, das, std::nullopt, *particle_pool.getWalkerSet("e"), particle_pool,
-                                   wavefunction_pool, hamiltonian_pool, &comm);
+                                   wavefunction_pool, hamiltonian_pool, comm);
   };
 
   CHECK_THROWS_MATCHES(construct_driver(), UniformCommunicateError, Catch::Matchers::Message(expected_error));

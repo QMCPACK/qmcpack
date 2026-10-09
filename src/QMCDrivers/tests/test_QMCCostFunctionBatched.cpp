@@ -62,8 +62,8 @@ public:
   TrialWaveFunction psi = TrialWaveFunction(runtime_options_);
   QMCCostFunctionBatched costFn;
 
-  LinearMethodTestSupport(const std::vector<int>& walkers_per_crowd, Communicate* comm)
-      : w(simulation_cell), costFn(w, psi, h, samples, walkers_per_crowd, *comm)
+  LinearMethodTestSupport(const std::vector<int>& walkers_per_crowd, Communicate& comm)
+      : w(simulation_cell), costFn(w, psi, h, samples, walkers_per_crowd, comm)
   {}
 
   std::vector<QMCCostFunctionBase::Return_rt>& getSumValue() { return costFn.SumValue; }
@@ -100,7 +100,7 @@ TEST_CASE("fillOverlapAndHamiltonianMatrices", "[drivers]")
 
   Communicate& comm(*OHMMS::Controller);
 
-  testing::LinearMethodTestSupport lin(walkers_per_crowd, &comm);
+  testing::LinearMethodTestSupport lin(walkers_per_crowd, comm);
 
   int numSamples = 1;
   int numParam   = 1;
@@ -150,7 +150,7 @@ void fill_from_text(int num_opt_crowds, FillData& fd)
 
   Communicate& comm(*OHMMS::Controller);
 
-  testing::LinearMethodTestSupport lin(walkers_per_crowd, &comm);
+  testing::LinearMethodTestSupport lin(walkers_per_crowd, comm);
 
   int numSamples = fd.numSamples;
   int numParam   = fd.numParam;

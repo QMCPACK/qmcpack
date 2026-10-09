@@ -101,7 +101,7 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   Communicate& comm(*OHMMS::Controller);
 
 #ifndef ENABLE_OFFLOAD
-  testing::EnergyDensityTest eden_test(&comm, 4 /*num_walkers*/, generate_test_data);
+  testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
 #else
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, &testing::makeGoldWalkerElementsWithEI,
                                        generate_test_data);
@@ -175,7 +175,7 @@ TEST_CASE("NEEnergyDensityEstimator::Collect", "[estimators]")
   Communicate& comm(*OHMMS::Controller);
 
 #ifndef ENABLE_OFFLOAD
-  testing::EnergyDensityTest eden_test(&comm, 4 /*num_walkers*/, generate_test_data);
+  testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
 #else
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, &testing::makeGoldWalkerElementsWithEI,
                                        generate_test_data);
