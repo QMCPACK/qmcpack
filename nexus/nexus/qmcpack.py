@@ -27,7 +27,7 @@
 import os
 from copy import deepcopy
 import numpy as np
-from .simulation import Simulation, NullSimulationAnalyzer
+from .simulation import Simulation, NullSimulationAnalyzer, AppResult
 from .qmcpack_input import (  # noqa: F401
     QmcpackInput,
     TracedQmcpackInput,
@@ -623,10 +623,20 @@ class Qmcpack(Simulation):
     infile_extension   = '.in.xml'
     application   = 'qmcpack'
     application_properties = frozenset({'serial','omp','mpi'})
-    application_results    = frozenset({'jastrow','cuspcorr','restart','wavefunction'})
+    application_results = (
+        AppResult.JASTROW
+        | AppResult.CUSPCORR
+        | AppResult.RESTART
+        | AppResult.WAVEFUNCTION
+    )
 
     # dynamic workflow support
-    allowed_requirements = ('none','pwscf_orbitals','jastrow','wavefunction')
+    allowed_requirements = (
+        AppResult.NONE
+        | AppResult.PWSCF_ORBITALS
+        | AppResult.JASTROW
+        | AppResult.WAVEFUNCTION
+    )
 
     def has_afqmc_input(self):
         afqmc_input = False
@@ -791,12 +801,12 @@ class Qmcpack(Simulation):
 
     def check_result(self,result_name,sim):
         calculating_result = False
-        if result_name=='jastrow' or result_name=='wavefunction':
+        if result_name in AppResult.JASTROW | AppResult.WAVEFUNCTION:
             calctypes = self.input.get_output_info('calctypes')
             calculating_result = 'opt' in calctypes
-        elif result_name=='cuspcorr':
+        elif result_name is AppResult.CUSPCORR:
             calculating_result = self.input.cusp_correction()
-        elif result_name=='restart':
+        elif result_name is AppResult.RESTART:
             calculating_result = not self.has_afqmc_input() and self.restartable_input(self.input)
         #end if
         return calculating_result
@@ -805,7 +815,7 @@ class Qmcpack(Simulation):
 
     def get_result(self,result_name,sim):
         result = obj()
-        if result_name=='jastrow' or result_name=='wavefunction':
+        if result_name in AppResult.JASTROW | AppResult.WAVEFUNCTION:
             analyzer = self.load_analyzer_image()
             if 'results' not in analyzer or 'optimization' not in analyzer.results:
                 if self.should_twist_average:
@@ -826,12 +836,12 @@ class Qmcpack(Simulation):
             opt_file = str(opt_file)
             result.opt_file = os.path.join(self.locdir,opt_file)
             del analyzer
-        elif result_name=='cuspcorr':
+        elif result_name is AppResult.CUSPCORR:
             result.spo_up_cusps = os.path.join(self.locdir,self.identifier+'.spo-up.cuspInfo.xml')
             result.spo_dn_cusps = os.path.join(self.locdir,self.identifier+'.spo-dn.cuspInfo.xml')
             result.updet_cusps = os.path.join(self.locdir,'updet.cuspInfo.xml')
             result.dndet_cusps = os.path.join(self.locdir,'downdet.cuspInfo.xml')
-        elif result_name=='restart':
+        elif result_name is AppResult.RESTART:
             result.restarts = []
             if isinstance(self.input,TracedQmcpackInput):
                 for group,inp in self.input.inputs.items():
@@ -843,7 +853,7 @@ class Qmcpack(Simulation):
                 result.restarts.append(self.get_restart_entry(self.input))
             #end if
         else:
-            msg = 'ability to get result '+result_name+' has not been implemented'
+            msg = f"Ability to get result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if
         return result
@@ -853,7 +863,7 @@ class Qmcpack(Simulation):
     def incorporate_result(self,result_name,result,sim):
         input = self.input
         system = self.system
-        if result_name=='restart':
+        if result_name is AppResult.RESTART:
             nrestart = len(result.restarts)
             downstream_bundled = self.should_twist_average
             upstream_bundled = nrestart>1
@@ -885,7 +895,7 @@ class Qmcpack(Simulation):
                 input.simulation.project.id = project_ids.pop()
                 input.simulation.project.series = project_series.pop()
             #end if
-        elif result_name=='orbitals':
+        elif result_name is AppResult.ORBITALS:
             gcta_possible = False
             if isinstance(sim,Pw2qmcpack) or isinstance(sim,Convertpw4qmc):
 
@@ -1041,7 +1051,7 @@ class Qmcpack(Simulation):
                 ds.twistnum = -1 # set during twist average
                 self.twist_average(twist_updates)
             else:
-                msg = 'incorporating orbitals from '+type(sim).__name__+' has not been implemented'
+                msg = f'Incorporating orbitals from {type(sim).__name__} has not been implemented'
                 raise NotImplementedError(msg)
             #end if
 
@@ -1133,7 +1143,7 @@ class Qmcpack(Simulation):
                 self.nelecs_at_twist = deepcopy(gcta_obj.nelecs_at_twist)
             #end if (GCTA preprocessing is done)
 
-        elif result_name=='jastrow':
+        elif result_name is AppResult.JASTROW:
             if isinstance(sim,Qmcpack):
                 opt_file = result.opt_file
                 opt = QmcpackInput(opt_file)
@@ -1217,23 +1227,23 @@ class Qmcpack(Simulation):
                     #end if
                 #end if
                 del optwf
-        elif result_name=='particles':
+        elif result_name is AppResult.PARTICLES:
             if isinstance(sim,Convert4qmc):
                 ptcl_file = result.location
                 qi = QmcpackInput(ptcl_file)
                 self.input.simulation.qmcsystem.particlesets = qi.qmcsystem.particlesets
             else:
-                msg = 'incorporating particles from '+type(sim).__name__+' has not been implemented'
+                msg = f'Incorporating particles from {type(sim).__name__} has not been implemented'
                 raise NotImplementedError(msg)
             # end if
-        elif result_name=='structure':
+        elif result_name is AppResult.STRUCTURE:
             relstruct = deepcopy(result.structure)
             relstruct.change_units('B')
             self.system.structure = relstruct
             self.system.remove_folded()
             self.input.incorporate_system(self.system)
 
-        elif result_name=='cuspcorr':
+        elif result_name is AppResult.CUSPCORR:
 
             ds = self.input.get('determinantset')
             ds.cuspcorrection = True
@@ -1246,7 +1256,7 @@ class Qmcpack(Simulation):
                 sd.determinants['downdet'].cuspinfo = os.path.relpath(result.dndet_cusps,self.locdir)
             #end try
 
-        elif result_name=='wavefunction':
+        elif result_name is AppResult.WAVEFUNCTION:
             if isinstance(sim,Qmcpack):
                 opt = QmcpackInput(result.opt_file)
                 qs = input.get('qmcsystem')
@@ -1291,10 +1301,10 @@ class Qmcpack(Simulation):
                     #end if
                 #end if
             else:
-                msg = 'incorporating wavefunction from '+type(sim).__name__+' has not been implemented'
+                msg = f'Incorporating wavefunction from {type(sim).__name__} has not been implemented'
                 raise NotImplementedError(msg)
             #end if
-        elif result_name=='gc_occupation':
+        elif result_name is AppResult.GC_OCCUPATION:
             from .qmcpack_converters import gcta_occupation
             if not isinstance(sim,Pw2qmcpack):
                 msg = 'grand-canonical occupation requires Pw2qmcpack'
@@ -1327,7 +1337,7 @@ class Qmcpack(Simulation):
             ntwist = len(s1.kpoints)
             nelecs_at_twist = gcta_occupation(pa.wfh5, ntwist)
             self.nelecs_at_twist = nelecs_at_twist
-        elif result_name=='determinantset':
+        elif result_name is AppResult.DETERMINANTSET:
             # This should be removed someday far in the future,
             # when QMCPACK can actually read its HDF5 files all by itself.
             if isinstance(sim,Convert4qmc):
@@ -1356,11 +1366,11 @@ class Qmcpack(Simulation):
                 #end if
                 wf.determinantset = ds
             else:
-                msg = 'incorporating determinantset from '+type(sim).__name__+' has not been implemented'
+                msg = f'Incorporating determinantset from {type(sim).__name__} has not been implemented'
                 raise NotImplementedError(msg)
             #end if
         else:
-            msg = 'ability to incorporate result '+result_name+' has not been implemented'
+            msg = f"Ability to incorporate result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if
     #end def incorporate_result
@@ -1850,24 +1860,24 @@ class Qmcpack(Simulation):
         calctypes = self.input.get_output_info('calctypes')
         if 'opt' in calctypes:
             if self.input.has_jastrows():
-                self.produces.add('jastrows')
-            self.produces.add('wavefunction')
+                self.produces |= AppResult.JASTROW
+            self.produces |= AppResult.WAVEFUNCTION
     #end def fill_produces
 
 
     def fill_products(self):
-        if len(self.produces)==0:
+        if self.produces is AppResult(0):
             return
-        if 'jastrow' in self.produces or 'wavefunction' in self.produces:
+        if AppResult.JASTROW in self.produces or AppResult.WAVEFUNCTION in self.produces:
             analyzer = self.load_analyzer_image()
             if 'results' not in analyzer or 'optimization' not in analyzer.results:
                 msg = 'analyzer did not compute results required to determine jastrow or wavefunction'
                 raise RuntimeError(msg)
             opt_file = str(analyzer.results.optimization.optimal_file)
             opt_file = os.path.join(self.locdir,opt_file)
-            if 'jastrow' in self.produces:
+            if AppResult.JASTROW in self.produces:
                 self.products.jastrow = opt_file
-            if 'wavefunction' in self.produces:
+            if AppResult.WAVEFUNCTION in self.produces:
                 self.products.wavefunction = opt_file
     #end def fill_products
 
