@@ -49,9 +49,7 @@ public:
   inline bool is_manager() const { return !myComm.rank(); }
 
 protected:
-  /** pointer to Communicate
-   * @todo use smart pointer
-   */
+  /// reference to Communicate
   Communicate& myComm;
 };
 

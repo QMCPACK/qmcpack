@@ -227,18 +227,6 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
   //this is the first time DMC is used
   if (WalkerController == 0)
   {
-    //  if(iParam[B_TARGETWALKERS]==0)
-    //  {
-    //    Communicate* acomm=MyEstimator->getCommunicator();
-    //    int ncontexts=acomm->size();
-    //    std::vector<int> nw(ncontexts,0),nwoff(ncontexts+1,0);
-    //    nw[acomm->rank()]=W.getActiveWalkers();
-    //   acomm->allreduce(nw);
-    //    for(int ip=0; ip<ncontexts; ++ip)
-    //      nwoff[ip+1]=nwoff[ip]+nw[ip];
-    //    W.setWalkerOffsets(nwoff);
-    //    iParam[B_TARGETWALKERS]=nwoff[ncontexts];
-    //  }
     if (!BranchMode[B_RESTART])
     {
       fromscratch = true;
