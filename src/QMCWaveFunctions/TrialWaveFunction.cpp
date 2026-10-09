@@ -212,6 +212,111 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
   }
 }
 
+void TrialWaveFunction::mw_evaluateLogAllParticles(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                    const RefVectorWithLeader<ParticleSet>& p_list,
+                                                    const std::vector<bool>& evaluate_mask)
+{
+  assert(wf_list.size() == p_list.size());
+  assert(wf_list.size() == evaluate_mask.size());
+  if (wf_list.empty())
+    return;
+
+  auto& wf_leader = wf_list.getLeader();
+  ScopedTimer local_timer(wf_leader.TWF_timers_[RECOMPUTE_TIMER]);
+  constexpr RealType czero(0);
+  const auto g_list(TrialWaveFunction::extractGRefList(wf_list));
+  const auto l_list(TrialWaveFunction::extractLRefList(wf_list));
+
+  // Keep all RefVector lists in their original crowd order. Only selected walkers are reset.
+  for (int iw = 0; iw < wf_list.size(); ++iw)
+    if (evaluate_mask[iw])
+    {
+      const int num_particles = p_list[iw].getTotalNum();
+      g_list[iw].get().resize(num_particles);
+      l_list[iw].get().resize(num_particles);
+      g_list[iw].get()       = czero;
+      l_list[iw].get()       = czero;
+      wf_list[iw].log_real_  = czero;
+      wf_list[iw].PhaseValue = czero;
+    }
+
+  auto& wavefunction_components = wf_leader.Z;
+  const int num_wfc             = wavefunction_components.size();
+  for (int i = 0; i < num_wfc; ++i)
+  {
+    ScopedTimer z_timer(wf_leader.WFC_timers_[RECOMPUTE_TIMER + TIMER_SKIP * i]);
+    const auto wfc_list(extractWFCRefList(wf_list, i));
+    wavefunction_components[i]->mw_evaluateLogAllParticles(wfc_list, p_list, g_list, l_list, evaluate_mask);
+  }
+
+  for (int iw = 0; iw < wf_list.size(); ++iw)
+    if (evaluate_mask[iw])
+    {
+      ParticleSet& pset      = p_list[iw];
+      TrialWaveFunction& twf = wf_list[iw];
+      for (int i = 0; i < num_wfc; ++i)
+      {
+        twf.log_real_ += std::real(twf.Z[i]->get_log_value());
+        twf.PhaseValue += std::imag(twf.Z[i]->get_log_value());
+      }
+      pset.G = twf.G;
+      pset.L = twf.L;
+    }
+}
+
+void TrialWaveFunction::mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                                          const std::vector<bool>& accepted)
+{
+  assert(wf_list.size() == p_list.size());
+  assert(wf_list.size() == accepted.size());
+  if (wf_list.empty())
+    return;
+
+  auto& wf_leader = wf_list.getLeader();
+  ScopedTimer local_timer(wf_leader.TWF_timers_[RECOMPUTE_TIMER]);
+  constexpr RealType czero(0);
+  const auto g_list(TrialWaveFunction::extractGRefList(wf_list));
+  const auto l_list(TrialWaveFunction::extractLRefList(wf_list));
+
+  // ParticleSet must already have restored rejected walkers before this call.
+  // Accepted walker state, including its proposed TWF value, is deliberately retained.
+  for (int iw = 0; iw < wf_list.size(); ++iw)
+    if (!accepted[iw])
+    {
+      const int num_particles = p_list[iw].getTotalNum();
+      g_list[iw].get().resize(num_particles);
+      l_list[iw].get().resize(num_particles);
+      g_list[iw].get()       = czero;
+      l_list[iw].get()       = czero;
+      wf_list[iw].log_real_  = czero;
+      wf_list[iw].PhaseValue = czero;
+    }
+
+  auto& wavefunction_components = wf_leader.Z;
+  const int num_wfc             = wavefunction_components.size();
+  for (int i = 0; i < num_wfc; ++i)
+  {
+    ScopedTimer z_timer(wf_leader.WFC_timers_[RECOMPUTE_TIMER + TIMER_SKIP * i]);
+    const auto wfc_list(extractWFCRefList(wf_list, i));
+    wavefunction_components[i]->mw_accept_rejectMoveAllParticles(wfc_list, p_list, g_list, l_list, accepted);
+  }
+
+  for (int iw = 0; iw < wf_list.size(); ++iw)
+    if (!accepted[iw])
+    {
+      ParticleSet& pset      = p_list[iw];
+      TrialWaveFunction& twf = wf_list[iw];
+      for (int i = 0; i < num_wfc; ++i)
+      {
+        twf.log_real_ += std::real(twf.Z[i]->get_log_value());
+        twf.PhaseValue += std::imag(twf.Z[i]->get_log_value());
+      }
+      pset.G = twf.G;
+      pset.L = twf.L;
+    }
+}
+
 void TrialWaveFunction::recompute(const ParticleSet& P)
 {
   ScopedTimer local_timer(TWF_timers_[RECOMPUTE_TIMER]);

@@ -17,6 +17,8 @@
 
 #include "WaveFunctionComponent.h"
 
+#include <stdexcept>
+
 namespace qmcplusplus
 {
 // for return types
@@ -36,6 +38,24 @@ void WaveFunctionComponent::mw_evaluateLog(const RefVectorWithLeader<WaveFunctio
   assert(this == &wfc_list.getLeader());
   for (int iw = 0; iw < wfc_list.size(); iw++)
     wfc_list[iw].evaluateLog(p_list[iw], G_list[iw], L_list[iw]);
+}
+
+void WaveFunctionComponent::mw_evaluateLogAllParticles(const RefVectorWithLeader<WaveFunctionComponent>&,
+                                                       const RefVectorWithLeader<ParticleSet>&,
+                                                       const RefVector<ParticleSet::ParticleGradient>&,
+                                                       const RefVector<ParticleSet::ParticleLaplacian>&,
+                                                       const std::vector<bool>&) const
+{
+  throw std::runtime_error("All-particle batched evaluation is not implemented for " + getClassName());
+}
+
+void WaveFunctionComponent::mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<WaveFunctionComponent>&,
+                                                             const RefVectorWithLeader<ParticleSet>&,
+                                                             const RefVector<ParticleSet::ParticleGradient>&,
+                                                             const RefVector<ParticleSet::ParticleLaplacian>&,
+                                                             const std::vector<bool>&) const
+{
+  throw std::runtime_error("All-particle batched accept/reject is not implemented for " + getClassName());
 }
 
 void WaveFunctionComponent::recompute(const ParticleSet& P)

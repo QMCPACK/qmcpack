@@ -95,6 +95,42 @@ DeepQMCBridge::BatchResult DeepQMCWF::evaluateBatch(const RefVectorWithLeader<Wa
   return result;
 }
 
+DeepQMCBridge::BatchResult DeepQMCWF::evaluateBatchAllParticles(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    const std::vector<bool>& evaluate_mask)
+{
+  if (wfc_list.size() != p_list.size() || wfc_list.size() != evaluate_mask.size())
+    throw std::runtime_error("DeepQMCWF::evaluateBatchAllParticles list size mismatch");
+  if (wfc_list.empty())
+    return {};
+
+  const auto& leader = wfc_list.getCastedLeader<DeepQMCWF>();
+  const int n_elec   = static_cast<int>(p_list[0].getTotalNum());
+  int batch_size     = 0;
+  for (int iw = 0; iw < wfc_list.size(); ++iw)
+  {
+    if (p_list[iw].getTotalNum() != n_elec)
+      throw std::runtime_error("DeepQMCWF requires all walkers in a batch to have the same electron count");
+    if (evaluate_mask[iw])
+      ++batch_size;
+  }
+  if (batch_size == 0)
+    return {};
+
+  std::vector<RealType> electron_coords;
+  electron_coords.reserve(static_cast<std::size_t>(batch_size) * static_cast<std::size_t>(n_elec) * OHMMS_DIM);
+  for (int iw = 0; iw < wfc_list.size(); ++iw)
+    if (evaluate_mask[iw])
+      appendElectronCoords(p_list[iw], electron_coords);
+
+  const std::vector<RealType> ion_coords = flattenIonCoords(leader.ions_);
+  DeepQMCBridge::BatchResult result =
+      leader.bridge_->evaluateLogBatch(ion_coords, electron_coords, leader.mol_idx_, batch_size, n_elec);
+  validateResultShape(result, batch_size, n_elec);
+  return result;
+}
+
 DeepQMCBridge::BatchResult DeepQMCWF::evaluateOne(const ParticleSet& electrons, int active_iat) const
 {
   auto& mutable_p = const_cast<ParticleSet&>(electrons);
@@ -128,37 +164,69 @@ void DeepQMCWF::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>&
                                const RefVector<ParticleSet::ParticleGradient>& G_list,
                                const RefVector<ParticleSet::ParticleLaplacian>& L_list) const
 {
-  if (wfc_list.size() != p_list.size() || wfc_list.size() != G_list.size() || wfc_list.size() != L_list.size())
-    throw std::runtime_error("DeepQMCWF::mw_evaluateLog list size mismatch");
+  mw_evaluateLogAllParticles(wfc_list, p_list, G_list, L_list, std::vector<bool>(wfc_list.size(), true));
+}
+
+void DeepQMCWF::mw_evaluateLogAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                           const RefVectorWithLeader<ParticleSet>& p_list,
+                                           const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                           const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                           const std::vector<bool>& evaluate_mask) const
+{
+  if (wfc_list.size() != p_list.size() || wfc_list.size() != G_list.size() || wfc_list.size() != L_list.size() ||
+      wfc_list.size() != evaluate_mask.size())
+    throw std::runtime_error("DeepQMCWF::mw_evaluateLogAllParticles list size mismatch");
   if (wfc_list.empty())
     return;
 
-  const int batch_size              = static_cast<int>(wfc_list.size());
   const int n_elec                  = static_cast<int>(p_list[0].getTotalNum());
-  DeepQMCBridge::BatchResult result = evaluateBatch(wfc_list, p_list);
-
-  for (int iw = 0; iw < batch_size; ++iw)
-  {
-    auto& component      = wfc_list.getCastedElement<DeepQMCWF>(iw);
-    component.log_value_ = LogValue(result.log_values[iw]);
-
-    auto& G = G_list[iw].get();
-    auto& L = L_list[iw].get();
-    if (G.size() < n_elec)
-      G.resize(n_elec);
-    if (L.size() < n_elec)
-      L.resize(n_elec);
-
-    for (int iat = 0; iat < n_elec; ++iat)
+  DeepQMCBridge::BatchResult result = evaluateBatchAllParticles(wfc_list, p_list, evaluate_mask);
+  int result_iw                     = 0;
+  for (int iw = 0; iw < wfc_list.size(); ++iw)
+    if (evaluate_mask[iw])
     {
-      const std::size_t particle_offset = (static_cast<std::size_t>(iw) * n_elec + iat);
-      GradType grad;
-      for (int d = 0; d < OHMMS_DIM; ++d)
-        grad[d] = result.grad_log_values[particle_offset * OHMMS_DIM + d];
-      G[iat] += grad;
-      L[iat] += result.lap_log_values[particle_offset];
+      auto& component      = wfc_list.getCastedElement<DeepQMCWF>(iw);
+      component.log_value_ = LogValue(result.log_values[result_iw]);
+
+      auto& G = G_list[iw].get();
+      auto& L = L_list[iw].get();
+      if (G.size() < n_elec)
+        G.resize(n_elec);
+      if (L.size() < n_elec)
+        L.resize(n_elec);
+
+      for (int iat = 0; iat < n_elec; ++iat)
+      {
+        const std::size_t particle_offset = static_cast<std::size_t>(result_iw) * n_elec + iat;
+        GradType grad;
+        for (int d = 0; d < OHMMS_DIM; ++d)
+          grad[d] = result.grad_log_values[particle_offset * OHMMS_DIM + d];
+        G[iat] += grad;
+        L[iat] += result.lap_log_values[particle_offset];
+      }
+      ++result_iw;
     }
+}
+
+void DeepQMCWF::mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                 const RefVectorWithLeader<ParticleSet>& p_list,
+                                                 const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                                 const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                                 const std::vector<bool>& accepted) const
+{
+  if (wfc_list.size() != p_list.size() || wfc_list.size() != G_list.size() || wfc_list.size() != L_list.size() ||
+      wfc_list.size() != accepted.size())
+    throw std::runtime_error("DeepQMCWF::mw_accept_rejectMoveAllParticles list size mismatch");
+
+  std::vector<bool> rejected(accepted.size());
+  bool any_rejected = false;
+  for (int iw = 0; iw < accepted.size(); ++iw)
+  {
+    rejected[iw] = !accepted[iw];
+    any_rejected = any_rejected || rejected[iw];
   }
+  if (any_rejected)
+    mw_evaluateLogAllParticles(wfc_list, p_list, G_list, L_list, rejected);
 }
 
 void DeepQMCWF::mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
