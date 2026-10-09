@@ -34,17 +34,15 @@ namespace testing
 class SetupSimpleFixedNodeBranch
 {
 public:
-  SetupSimpleFixedNodeBranch(Communicate* comm)
+  SetupSimpleFixedNodeBranch(Communicate& comm) : comm_(comm)
   {
-    comm_ = comm;
-    emb_  = std::make_unique<EstimatorManagerBase>(comm_);
+    emb_ = std::make_unique<EstimatorManagerBase>(&comm_);
     emb_->add(std::make_unique<FakeEstimator>(), "fake");
   }
 
-  SetupSimpleFixedNodeBranch()
+  SetupSimpleFixedNodeBranch() : comm_(*OHMMS::Controller)
   {
-    comm_ = OHMMS::Controller.get();
-    emb_  = std::make_unique<EstimatorManagerBase>(comm_);
+    emb_ = std::make_unique<EstimatorManagerBase>(&comm_);
     emb_->add(std::make_unique<FakeEstimator>(), "fake");
   }
 
@@ -93,7 +91,7 @@ private:
     sfnb.myNode = doc_->getRoot();
   }
 
-  Communicate* comm_;
+  Communicate& comm_;
   UPtr<EstimatorManagerBase> emb_;
   UPtr<MCPopulation> pop_;
   UPtr<Libxml2Document> doc_;

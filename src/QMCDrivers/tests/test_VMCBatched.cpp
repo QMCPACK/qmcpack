@@ -30,10 +30,9 @@ namespace testing
 class VMCBatchedTest
 {
 public:
-  VMCBatchedTest(const ProjectData& project_data) : project_data_(project_data)
+  VMCBatchedTest(const ProjectData& project_data) : comm_(*OHMMS::Controller), project_data_(project_data)
   {
     Concurrency::OverrideMaxCapacity<> override(8);
-    comm_ = OHMMS::Controller.get();
   }
 
   void testCalcDefaultLocalWalkers()
@@ -47,14 +46,14 @@ public:
     QMCDriverInput qmcdriver_input;
     qmcdriver_input.readXML(node);
 
-    auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(*comm_);
+    auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm_);
     auto wavefunction_pool =
-        MinimalWaveFunctionPool::make_diamondC_1x1x1(project_data_.getRuntimeOptions(), *comm_, particle_pool);
-    auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(*comm_, particle_pool, wavefunction_pool);
+        MinimalWaveFunctionPool::make_diamondC_1x1x1(project_data_.getRuntimeOptions(), comm_, particle_pool);
+    auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm_, particle_pool, wavefunction_pool);
   }
 
 private:
-  Communicate* comm_;
+  Communicate& comm_;
   const ProjectData& project_data_;
 };
 } // namespace testing

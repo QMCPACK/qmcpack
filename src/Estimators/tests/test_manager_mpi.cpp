@@ -67,7 +67,7 @@ TEST_CASE("EstimatorManagerNew::makeBlockAverages()", "[estimators]")
   Communicate& c(*OHMMS::Controller);
   int num_ranks = c.size();
   QMCHamiltonian ham;
-  testing::EstimatorManagerNewTest embt(ham, &c, num_ranks);
+  testing::EstimatorManagerNewTest embt(ham, c, num_ranks);
 
   embt.fakeMainScalarSamples();
   embt.testMakeBlockAverages();
@@ -91,7 +91,7 @@ TEST_CASE("EstimatorManagerNew::reduceOperatorestimators()", "[estimators]")
   Communicate& c(*OHMMS::Controller);
   int num_ranks = c.size();
   QMCHamiltonian ham;
-  testing::EstimatorManagerNewTest embt(ham, &c, num_ranks);
+  testing::EstimatorManagerNewTest embt(ham, c, num_ranks);
 
   embt.fakeSomeOperatorEstimatorSamples(c.rank());
   std::vector<QMCTraits::RealType> good_data = embt.generateGoodOperatorData(num_ranks);

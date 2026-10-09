@@ -38,7 +38,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManager(comm)", "[estimators]")
   using namespace testing;
 
   QMCHamiltonian ham;
-  testing::EstimatorManagerNewTest embt(ham, &c, 1);
+  testing::EstimatorManagerNewTest embt(ham, c, 1);
 
   // Just checking here that we have an empty estimator manager in embt.
 
@@ -130,7 +130,7 @@ TEST_CASE("EstimatorManagerNew::collectMainEstimators", "[estimators]")
   Communicate& c(*OHMMS::Controller);
 
   QMCHamiltonian ham;
-  testing::EstimatorManagerNewTest embt(ham, &c, 1);
+  testing::EstimatorManagerNewTest embt(ham, c, 1);
   // by design we have done no averaging here
   // the division by total weight happens only when a block is over and the
   // accumulated data has been reduced down.  So here there should just be simple sums.
@@ -154,7 +154,7 @@ TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")
   Communicate& c(*OHMMS::Controller);
 
   QMCHamiltonian ham;
-  testing::EstimatorManagerNewTest embt(ham, &c, 1);
+  testing::EstimatorManagerNewTest embt(ham, c, 1);
   // by design we have done no averaging here
   // the division by total weight happens only when a block is over and the
   // accumulated data has been reduced down.  So here there should just be simple sums.

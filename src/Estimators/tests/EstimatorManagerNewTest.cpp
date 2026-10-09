@@ -21,10 +21,10 @@ namespace qmcplusplus
 {
 namespace testing
 {
-EstimatorManagerNewTest::EstimatorManagerNewTest(const QMCHamiltonian& ham, Communicate* comm, int ranks)
-    : em(ham, *comm), comm_(comm)
+EstimatorManagerNewTest::EstimatorManagerNewTest(const QMCHamiltonian& ham, Communicate& comm, int ranks)
+    : em(ham, comm), comm_(comm)
 {
-  int num_ranks = comm_->size();
+  int num_ranks = comm_.size();
   if (num_ranks != ranks)
     throw std::runtime_error("Bad Rank Count, test expects different number of ranks.");
 
@@ -119,7 +119,7 @@ void EstimatorManagerNewTest::fakeScalarSamplesAndCollect()
 
 void EstimatorManagerNewTest::fakeSomeOperatorEstimatorSamples(int rank)
 {
-  em.operator_ests_.emplace_back(new FakeOperatorEstimator(comm_->size(), DataLocality::crowd));
+  em.operator_ests_.emplace_back(new FakeOperatorEstimator(comm_.size(), DataLocality::crowd));
   FakeOperatorEstimator& foe        = dynamic_cast<FakeOperatorEstimator&>(*(em.operator_ests_.back()));
   std::vector<QMCT::RealType>& data = foe.get_data();
   for (int id = 0; id < data.size(); ++id)

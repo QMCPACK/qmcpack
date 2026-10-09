@@ -16,9 +16,9 @@
 namespace qmcplusplus {
 namespace testing {
 
-EstimatorManagerBaseTest::EstimatorManagerBaseTest(Communicate* comm, int ranks) : em(comm), comm_(comm)
+EstimatorManagerBaseTest::EstimatorManagerBaseTest(Communicate& comm, int ranks) : em(&comm), comm_(comm)
 {
-  int num_ranks = comm_->size();
+  int num_ranks = comm_.size();
   if (num_ranks != ranks)
     throw std::runtime_error("Bad Rank Count, test expects different number of ranks.");
 
