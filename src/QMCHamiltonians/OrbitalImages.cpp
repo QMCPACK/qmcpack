@@ -19,14 +19,11 @@
 
 namespace qmcplusplus
 {
-OrbitalImages::OrbitalImages(ParticleSet& P, const PSPool& PSP, Communicate* mpicomm, const SPOMap& spomap)
-    : psetpool(PSP), sposet_indices(std::make_shared<std::vector<std::vector<int>>>()), spomap_(spomap)
+OrbitalImages::OrbitalImages(ParticleSet& P, const PSPool& PSP, Communicate& mpicomm, const SPOMap& spomap)
+    : psetpool(PSP), sposet_indices(std::make_shared<std::vector<std::vector<int>>>()), spomap_(spomap), comm_(mpicomm)
 {
   //keep the electron particle to get the cell later, if necessary
   Peln = &P;
-
-  //keep the communicator to select master task for file write
-  comm = mpicomm;
 }
 
 OrbitalImages::OrbitalImages(const OrbitalImages& other)
@@ -34,7 +31,6 @@ OrbitalImages::OrbitalImages(const OrbitalImages& other)
       psetpool(other.psetpool),
       Peln(other.Peln),
       Pion(other.Pion),
-      comm(other.comm),
       format(other.format),
       value_types(other.value_types),
       derivatives(other.derivatives),
@@ -54,7 +50,8 @@ OrbitalImages::OrbitalImages(const OrbitalImages& other)
       batch_gradients(other.batch_gradients),
       batch_laplacians(other.batch_laplacians),
       orbital(other.orbital),
-      spomap_(other.spomap_)
+      spomap_(other.spomap_),
+      comm_(other.comm_)
 {
   for (auto& element : other.sposets)
     sposets.push_back(element->makeClone());
@@ -311,7 +308,7 @@ OrbitalImages::Return_t OrbitalImages::evaluate(TrialWaveFunction& psi, Particle
 #else
   #pragma omp master
 #endif
-  if (comm->rank() == 0)
+  if (comm_.rank() == 0)
   {
     app_log() << std::endl;
     app_log() << "OrbitalImages::evaluate  writing orbital images" << std::endl;
@@ -436,7 +433,7 @@ OrbitalImages::Return_t OrbitalImages::evaluate(TrialWaveFunction& psi, Particle
   }
 
   //make sure no other process runs off
-  comm->barrier();
+  comm_.barrier();
 
   return 0.0;
 }

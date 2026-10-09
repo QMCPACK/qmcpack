@@ -256,7 +256,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
         else
         {
           std::unique_ptr<OrbitalImages> apot =
-              std::make_unique<OrbitalImages>(targetPtcl, ptclPool, &myComm, psi_optional_->get().getSPOMap());
+              std::make_unique<OrbitalImages>(targetPtcl, ptclPool, myComm, psi_optional_->get().getSPOMap());
           apot->put(element);
           targetH->addOperator(std::move(apot), potName, false);
         }

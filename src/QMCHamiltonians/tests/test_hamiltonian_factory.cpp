@@ -96,7 +96,7 @@ TEST_CASE("OrbitalImages rejects one-past-end orbital index", "[hamiltonian]")
   auto& electrons        = *particle_pool.getParticleSet("e");
   auto& wavefunction     = wavefunction_pool.getWaveFunction().value().get();
 
-  OrbitalImages orbital_images(electrons, particle_pool.getPool(), &comm, wavefunction.getSPOMap());
+  OrbitalImages orbital_images(electrons, particle_pool.getPool(), comm, wavefunction.getSPOMap());
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(R"(<estimator name="orbital_images" ions="ion">
     <parameter name="sposets">spo_ud</parameter>
