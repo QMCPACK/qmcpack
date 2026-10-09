@@ -212,7 +212,7 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
 {
   std::vector<std::unique_ptr<Walker_t>> good_rn;
   std::vector<int> ncopy_rn;
-  NumWalkers = 0;
+  NumWalkers            = 0;
   FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, besum = 0.0, bwgtsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
   int nrn(0), ncr(0);

@@ -129,9 +129,7 @@ SpaceGridTest<REAL, VALID>::SpaceGridTest(const SpaceGridEnv<VALID>& env, int nu
 
 template<typename REAL, ValidSpaceGridInput::valid VALID>
 RefVectorWithLeader<ParticleSet> SpaceGridTest<REAL, VALID>::getPSetList()
-{
-  return {psets_[0], makeRefVector<ParticleSet>(psets_)};
-}
+{ return {psets_[0], makeRefVector<ParticleSet>(psets_)}; }
 
 
 template class SpaceGridEnv<ValidSpaceGridInput::valid::DEFAULT>;

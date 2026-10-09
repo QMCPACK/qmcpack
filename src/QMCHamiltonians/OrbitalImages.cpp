@@ -224,8 +224,7 @@ bool OrbitalImages::put(xmlNodePtr cur)
       if (index < 0 || index >= sposet->size())
       {
         throw std::runtime_error("OrbitalImages::put  index " + std::to_string(index) + " for sposet " +
-                                 sposet_names[i] + " is out of range [0, " +
-                                 std::to_string(sposet->size() - 1) + "]");
+                                 sposet_names[i] + " is out of range [0, " + std::to_string(sposet->size() - 1) + "]");
       }
     }
   }
@@ -304,9 +303,9 @@ OrbitalImages::Return_t OrbitalImages::evaluate(TrialWaveFunction& psi, Particle
 {
   //only the first thread of the master task writes the orbitals
 #if _OPENMP >= 202011
-  #pragma omp masked
+#pragma omp masked
 #else
-  #pragma omp master
+#pragma omp master
 #endif
   if (comm_.rank() == 0)
   {

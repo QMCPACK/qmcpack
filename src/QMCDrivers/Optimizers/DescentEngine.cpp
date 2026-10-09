@@ -109,28 +109,25 @@ void DescentEngine::prepareStorage(const int num_replicas, const int num_optimiz
   replica_w_history_.resize(num_replicas);
   replica_lev_history_.resize(num_replicas);
 
-  if(engine_target_excited_)
+  if (engine_target_excited_)
   {
     replica_tnv_history_.resize(num_replicas);
     replica_tdv_history_.resize(num_replicas);
-  
   }
-  
- 
+
+
   //Also resize the history vectors for descent finalization if necessary
   if (final_descent_num_ > collection_step_ && collect_count_)
   {
-  replica_final_vg_history_.resize(num_replicas);
-  replica_final_w_history_.resize(num_replicas);
-  replica_final_lev_history_.resize(num_replicas);
-  
-  
+    replica_final_vg_history_.resize(num_replicas);
+    replica_final_w_history_.resize(num_replicas);
+    replica_final_lev_history_.resize(num_replicas);
 
-    if(engine_target_excited_)
+
+    if (engine_target_excited_)
     {
-        replica_final_tnv_history_.resize(num_replicas);
-        replica_final_tdv_history_.resize(num_replicas);
-    
+      replica_final_tnv_history_.resize(num_replicas);
+      replica_final_tdv_history_.resize(num_replicas);
     }
   }
 
@@ -218,8 +215,7 @@ void DescentEngine::takeSample(const int replica_id,
                                ValueType vgs_samp,
                                ValueType weight_samp)
 {
-
-    const size_t num_optimizables = der_rat_samp.size() - 1;
+  const size_t num_optimizables = der_rat_samp.size() - 1;
 
   ValueType etmp = static_cast<ValueType>(le_der_samp.at(0));
 
@@ -291,56 +287,58 @@ void DescentEngine::takeSample(const int replica_id,
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DescentEngine::sample_finish()
 {
-
   //After a potentially multithreaded section, cocatenate the replica history vectors
   int num_threads = replica_vg_history_.size();
-  for(int i =0; i< num_threads; i++)
+  for (int i = 0; i < num_threads; i++)
   {
-    vg_history_.insert(vg_history_.end(), replica_vg_history_[i].begin(),replica_vg_history_[i].end());
-    w_history_.insert(w_history_.end(), replica_w_history_[i].begin(),replica_w_history_[i].end());
-    lev_history_.insert(lev_history_.end(),replica_lev_history_[i].begin(),replica_lev_history_[i].end());
-  
+    vg_history_.insert(vg_history_.end(), replica_vg_history_[i].begin(), replica_vg_history_[i].end());
+    w_history_.insert(w_history_.end(), replica_w_history_[i].begin(), replica_w_history_[i].end());
+    lev_history_.insert(lev_history_.end(), replica_lev_history_[i].begin(), replica_lev_history_[i].end());
+
     //Clear the individual thread history vectors for the next iteration after their values have been collected
     replica_vg_history_[i].clear();
     replica_w_history_[i].clear();
     replica_lev_history_[i].clear();
 
 
-    if(engine_target_excited_)
+    if (engine_target_excited_)
     {
-        
-        tnv_history_.insert(tnv_history_.end(), replica_tnv_history_[i].begin(),replica_tnv_history_[i].end());
-        tdv_history_.insert(tdv_history_.end(), replica_tdv_history_[i].begin(),replica_tdv_history_[i].end());
-   
-       replica_tnv_history_[i].clear();
-      replica_tdv_history_[i].clear(); 
+      tnv_history_.insert(tnv_history_.end(), replica_tnv_history_[i].begin(), replica_tnv_history_[i].end());
+      tdv_history_.insert(tdv_history_.end(), replica_tdv_history_[i].begin(), replica_tdv_history_[i].end());
+
+      replica_tnv_history_[i].clear();
+      replica_tdv_history_[i].clear();
     }
   }
 
   //Do the same for finalization histories if necessary
   if (final_descent_num_ > collection_step_ && collect_count_)
   {
-     for(int i =0; i< num_threads; i++)
-     {
-        final_vg_history_.insert(final_vg_history_.end(), replica_final_vg_history_[i].begin(),replica_final_vg_history_[i].end());
-        final_w_history_.insert(final_w_history_.end(), replica_final_w_history_[i].begin(),replica_final_w_history_[i].end());
-        final_lev_history_.insert(final_lev_history_.end(),replica_final_lev_history_[i].begin(),replica_final_lev_history_[i].end());
+    for (int i = 0; i < num_threads; i++)
+    {
+      final_vg_history_.insert(final_vg_history_.end(), replica_final_vg_history_[i].begin(),
+                               replica_final_vg_history_[i].end());
+      final_w_history_.insert(final_w_history_.end(), replica_final_w_history_[i].begin(),
+                              replica_final_w_history_[i].end());
+      final_lev_history_.insert(final_lev_history_.end(), replica_final_lev_history_[i].begin(),
+                                replica_final_lev_history_[i].end());
 
-     replica_final_vg_history_[i].clear();
-     replica_final_w_history_[i].clear();
-     replica_final_lev_history_[i].clear();
+      replica_final_vg_history_[i].clear();
+      replica_final_w_history_[i].clear();
+      replica_final_lev_history_[i].clear();
 
 
-        if(engine_target_excited_)
-        {
-            
-            final_tnv_history_.insert(final_tnv_history_.end(), replica_final_tnv_history_[i].begin(),replica_final_tnv_history_[i].end());
-            final_tdv_history_.insert(final_tdv_history_.end(), replica_final_tdv_history_[i].begin(),replica_final_tdv_history_[i].end());
- 
-            replica_final_tnv_history_[i].clear();
-            replica_final_tdv_history_[i].clear();       
-        }
-     }  
+      if (engine_target_excited_)
+      {
+        final_tnv_history_.insert(final_tnv_history_.end(), replica_final_tnv_history_[i].begin(),
+                                  replica_final_tnv_history_[i].end());
+        final_tdv_history_.insert(final_tdv_history_.end(), replica_final_tdv_history_[i].begin(),
+                                  replica_final_tdv_history_[i].end());
+
+        replica_final_tnv_history_[i].clear();
+        replica_final_tdv_history_[i].clear();
+      }
+    }
   }
 
 

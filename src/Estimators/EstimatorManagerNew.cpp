@@ -223,8 +223,8 @@ void EstimatorManagerNew::startDriverRun()
   if (!DebugArchive)
   {
     std::array<char, 128> fname;
-    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", my_comm_.getName().c_str(),
-                      my_comm_.rank()) < 0)
+    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", my_comm_.getName().c_str(), my_comm_.rank()) <
+        0)
       throw std::runtime_error("Error generating filename");
     DebugArchive = std::make_unique<std::ofstream>(fname.data());
     addHeader(*DebugArchive);
@@ -357,7 +357,7 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   // a pack into and out of an fp type that can be assured to hold the integral type exactly
   // IMHO they should not be primarily stored in a vector with magic indexes
   std::vector<unsigned long> accepts_and_rejects(my_comm_.size() * 2, 0);
-  accepts_and_rejects[my_comm_.rank()]                    = accepts;
+  accepts_and_rejects[my_comm_.rank()]                   = accepts;
   accepts_and_rejects[my_comm_.size() + my_comm_.rank()] = rejects;
   my_comm_.allreduce(accepts_and_rejects);
   int64_t total_block_accept =
@@ -430,7 +430,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       // This is necessary to use mpi3's C++ style reduce
 #ifdef HAVE_MPI
       my_comm_.comm.reduce_n(operator_send_buffer.begin(), adjusted_size, operator_recv_buffer.begin(), std::plus<>{},
-                              0);
+                             0);
 #else
       operator_recv_buffer = operator_send_buffer;
       operator_recv_buffer.rewind();

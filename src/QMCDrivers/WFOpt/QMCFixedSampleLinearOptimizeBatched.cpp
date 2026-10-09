@@ -465,7 +465,6 @@ void QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
   }
 
   finish();
-
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction
@@ -544,9 +543,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   processOptXML(q, vmcMove, ReportToH5 == "yes");
 }
 
-bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
-                                                        const std::string& vmcMove,
-                                                        bool reportH5)
+bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5)
 {
   m_param.put(opt_xml);
 
@@ -834,8 +831,6 @@ void QMCFixedSampleLinearOptimizeBatched::one_shift_run()
 
   // perform some finishing touches for this linear method iteration
   finish();
-
-
 }
 
 void QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_gradient()
@@ -988,7 +983,6 @@ void QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
   finish();
 
   // return whether the cost function's report counter is positive
-
 }
 
 //Function for optimizing using gradient descent
@@ -1015,7 +1009,6 @@ void QMCFixedSampleLinearOptimizeBatched::descent_run()
   }
 
   finish();
-
 }
 
 } // namespace qmcplusplus

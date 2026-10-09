@@ -43,6 +43,7 @@ class HDFWalkerOutput
   ///rootname
   std::string RootName;
   std::string prevFile;
+
 public:
   ///constructor
   HDFWalkerOutput(size_t num_ptcls, const std::string& fname, Communicate& c);

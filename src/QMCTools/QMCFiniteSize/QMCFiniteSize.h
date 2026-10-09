@@ -29,7 +29,7 @@ public:
   using PosType          = QMCTraits::PosType;
   QMCFiniteSize();
   QMCFiniteSize(SkParserBase* skparser_i);
-  ~QMCFiniteSize(){};
+  ~QMCFiniteSize() {};
 
 
   inline void setSkParser(SkParserBase* skparser_i) { skparser = skparser_i; };

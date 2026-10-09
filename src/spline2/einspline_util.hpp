@@ -71,8 +71,8 @@ inline void gatherv(Communicate& comm,
     if (xs * coef_type_bytes >= std::numeric_limits<int>::max())
       app_warning() << "Large single message even after splitting by the number of grid points in x direction! "
                     << "Some MPI libraries may not work!" << std::endl;
-    const size_t nx         = buffer->coefs_size / xs;
-    const int nrow          = buffer->coefs_size / (ncol * nx);
+    const size_t nx = buffer->coefs_size / xs;
+    const int nrow  = buffer->coefs_size / (ncol * nx);
     auto columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
     for (size_t iz = 0; iz < nx; iz++)
       comm.gatherv_in_place(buffer->coefs + xs * iz, columntype, counts_const, offset);
@@ -80,7 +80,7 @@ inline void gatherv(Communicate& comm,
   }
   else
   {
-    const int nrow          = buffer->coefs_size / ncol;
+    const int nrow  = buffer->coefs_size / ncol;
     auto columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
     comm.gatherv_in_place(buffer->coefs, columntype, counts_const, offset);
     mpi::free_column_type(columntype);

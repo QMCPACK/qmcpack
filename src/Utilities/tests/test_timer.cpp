@@ -25,29 +25,21 @@ using FakeTimerManager = TimerManager<FakeTimer>;
 
 template<class CLOCK>
 void set_total_time(TimerType<CLOCK>* timer, double total_time_input)
-{
-  timer->total_time = total_time_input;
-}
+{ timer->total_time = total_time_input; }
 
 template<class CLOCK>
 void set_num_calls(TimerType<CLOCK>* timer, long num_calls_input)
-{
-  timer->num_calls = num_calls_input;
-}
+{ timer->num_calls = num_calls_input; }
 
 // Convert duration input type to nanosecond duration
 template<typename T>
 FakeChronoClock::duration convert_to_ns(T in)
-{
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(in);
-}
+{ return std::chrono::duration_cast<std::chrono::nanoseconds>(in); }
 
 // Convert duration input type to seconds as double precision type
 template<typename T>
 double convert_to_s(T in)
-{
-  return std::chrono::duration_cast<std::chrono::duration<double>>(in).count();
-}
+{ return std::chrono::duration_cast<std::chrono::duration<double>>(in).count(); }
 
 TEST_CASE("test_timer_stack", "[utilities]")
 {

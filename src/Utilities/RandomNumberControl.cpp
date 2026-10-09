@@ -216,7 +216,7 @@ void RandomNumberControl::read_parallel(hdf_archive& hin, Communicate& comm)
 
   std::vector<uint_type> vt, mt;
   TinyVector<int, 3> shape_now(comm.size(), nthreads, Random.state_size()); //cur configuration
-  TinyVector<int, 3> shape_hdf5(3, 0);                                       //configuration when file was written
+  TinyVector<int, 3> shape_hdf5(3, 0);                                      //configuration when file was written
 
   //grab shape and Random.state_size() used to create hdf5 file
   hin.push(hdf::main_state);
@@ -247,7 +247,7 @@ void RandomNumberControl::read_parallel(hdf_archive& hin, Communicate& comm)
 
   hin.pop();
   hin.push("random_master"); //group that holds Random_th random nums
-  shape[0]   = comm.size(); //reset shape, counts and offset for non-multiple threads
+  shape[0]   = comm.size();  //reset shape, counts and offset for non-multiple threads
   counts[0]  = 1;
   offsets[0] = comm.rank();
   hyperslab_proxy<std::vector<uint_type>, 2> slab2(mt, shape, counts, offsets);
@@ -420,7 +420,7 @@ void RandomNumberControl::write_rank_0(const RefVector<Generator>& rng, hdf_arch
     hout.writeSlabReshaped(vt_tot, shape, Random.EngineName);
     hout.pop();
 
-    shape[0] = comm.size();    //reset dims for single thread use
+    shape[0] = comm.size();     //reset dims for single thread use
     hout.push("random_master"); //group for random_th object
     hout.writeSlabReshaped(mt_tot, shape, Random.EngineName);
     hout.close();

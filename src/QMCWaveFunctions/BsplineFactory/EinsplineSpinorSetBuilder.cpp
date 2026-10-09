@@ -119,7 +119,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
         putContent(Occ, cur);
       else if (occ_mode != "ground")
         myComm.barrier_and_abort("EinsplineSetBuilder::createSPOSet Only ground state occupation currently "
-                                  "supported in EinsplineSetBuilder.");
+                                 "supported in EinsplineSetBuilder.");
     }
     cur = cur->next;
   }

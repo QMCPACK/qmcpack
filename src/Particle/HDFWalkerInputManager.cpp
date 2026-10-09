@@ -22,7 +22,9 @@
 
 namespace qmcplusplus
 {
-HDFWalkerInputManager::HDFWalkerInputManager(WalkerConfigurations& wc_list, size_t num_ptcls, Communicate& c) : wc_list_(wc_list), num_ptcls_(num_ptcls), myComm(c) {}
+HDFWalkerInputManager::HDFWalkerInputManager(WalkerConfigurations& wc_list, size_t num_ptcls, Communicate& c)
+    : wc_list_(wc_list), num_ptcls_(num_ptcls), myComm(c)
+{}
 
 HDFWalkerInputManager::~HDFWalkerInputManager() {}
 

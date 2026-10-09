@@ -115,7 +115,7 @@ TEST_CASE("WalkerControl::determineNewWalkerPopulation", "[drivers][walker_contr
 }
 
 void testing::UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& rank_counts_before,
-                                                                   std::vector<int>& rank_counts_after)
+                                                                    std::vector<int>& rank_counts_after)
 {
   using MCPWalker = MCPopulation::MCPWalker;
 

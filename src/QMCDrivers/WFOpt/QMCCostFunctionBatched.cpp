@@ -618,7 +618,6 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
 }
 
 
-
 void QMCCostFunctionBatched::resetPsi(bool final_reset) { resetOptimizableObjects(Psi, opt_vars); }
 
 QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampling(bool needGrad)

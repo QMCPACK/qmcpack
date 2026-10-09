@@ -32,12 +32,12 @@ JastrowBuilder::JastrowBuilder(Communicate& comm, ParticleSet& p, const PSetMap&
 
 void JastrowBuilder::resetOptions()
 {
-  JastrowType  = 0;
-  nameOpt      = "0";
-  typeOpt      = "Two";
-  funcOpt      = "any";
-  spinOpt      = "yes";
-  sourceOpt    = targetPtcl.getName();
+  JastrowType = 0;
+  nameOpt     = "0";
+  typeOpt     = "Two";
+  funcOpt     = "any";
+  spinOpt     = "yes";
+  sourceOpt   = targetPtcl.getName();
 }
 
 std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildComponent(xmlNodePtr cur)

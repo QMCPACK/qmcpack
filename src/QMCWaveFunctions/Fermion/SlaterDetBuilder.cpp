@@ -99,7 +99,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       // in the xml file
       if (BFTrans)
         myComm.barrier_and_abort("Only a single backflow block is allowed in the xml. "
-                                  "Please collect all transformations into a single block.");
+                                 "Please collect all transformations into a single block.");
 
       BackflowBuilder bfbuilder(targetPtcl, ptclPool);
       BFTrans = bfbuilder.buildBackflowTransformation(element);
@@ -583,7 +583,7 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
       }
       if (const std::string msg = err_msg.str(); msg.length())
         myComm.barrier_and_abort("SlaterDetBuilder::createMSDFast Issues found in the particle group " +
-                                  std::to_string(grp) + " :\n" + msg);
+                                 std::to_string(grp) + " :\n" + msg);
     }
 
     dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor, targetPtcl.first(grp),

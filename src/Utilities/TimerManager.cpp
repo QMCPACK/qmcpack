@@ -50,9 +50,7 @@ TimerManager<NewTimer>& getGlobalTimerManager()
 }
 
 NewTimer& createGlobalTimer(const std::string& myname, timer_levels mylevel)
-{
-  return *getGlobalTimerManager().createTimer(myname, mylevel);
-}
+{ return *getGlobalTimerManager().createTimer(myname, mylevel); }
 
 template<class TIMER>
 void TimerManager<TIMER>::initializeTimer(TIMER& t)
@@ -160,9 +158,7 @@ void TimerManager<TIMER>::set_timer_threshold(const std::string& threshold)
 
 template<class TIMER>
 std::string TimerManager<TIMER>::get_timer_threshold_string() const
-{
-  return timer_level_names[timer_threshold];
-}
+{ return timer_level_names[timer_threshold]; }
 
 
 template<class TIMER>

@@ -63,14 +63,10 @@ struct h5data_proxy<accumulator_set<T>> : public h5_space_type<T, 1>
   inline h5data_proxy(const data_type& a) { dims[0] = CAPACITY; }
 
   inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
-  {
-    return h5d_read(grp, aname, get_address(ref.properties), xfer_plist);
-  }
+  { return h5d_read(grp, aname, get_address(ref.properties), xfer_plist); }
 
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
-  {
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(ref.properties), xfer_plist);
-  }
+  { return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(ref.properties), xfer_plist); }
 };
 
 template<class SFNB>

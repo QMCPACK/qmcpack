@@ -29,9 +29,7 @@ using WP = WalkerProperties::Indexes;
  * set SwapMode
  */
 WalkerReconfigurationMPI::WalkerReconfigurationMPI(Communicate& c) : WalkerControlBase(c), TotalWalkers(0)
-{
-  SwapMode = 1;
-}
+{ SwapMode = 1; }
 
 int WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger)
 {

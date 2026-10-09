@@ -13,8 +13,10 @@
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Platforms/Host/OutputManager.h"
 
-namespace qmcplusplus {
-namespace testing {
+namespace qmcplusplus
+{
+namespace testing
+{
 
 EstimatorManagerBaseTest::EstimatorManagerBaseTest(Communicate& comm, int ranks) : em(&comm), comm_(comm)
 {
@@ -23,7 +25,6 @@ EstimatorManagerBaseTest::EstimatorManagerBaseTest(Communicate& comm, int ranks)
     throw std::runtime_error("Bad Rank Count, test expects different number of ranks.");
 
   app_log() << "running on " << num_ranks << '\n';
-  
 }
 
 void EstimatorManagerBaseTest::fakeSomeScalarSamples()
@@ -50,5 +51,5 @@ void EstimatorManagerBaseTest::fakeSomeScalarSamples()
   em.get_SquaredAverageCache().resize(4);
 }
 
-}
-}
+} // namespace testing
+} // namespace qmcplusplus

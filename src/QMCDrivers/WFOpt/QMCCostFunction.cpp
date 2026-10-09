@@ -27,10 +27,7 @@ namespace qmcplusplus
 QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate& comm)
     : QMCCostFunctionBase(w, psi, h, comm),
       fill_timer_(createGlobalTimer("QMCCostFunction::fillOverlapHamiltonianMatrices", timer_level_medium))
-{
-
-  app_log() << " Using QMCCostFunction::QMCCostFunction" << std::endl;
-}
+{ app_log() << " Using QMCCostFunction::QMCCostFunction" << std::endl; }
 
 
 /** Clean up the vector */
@@ -333,7 +330,6 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
   SumValue[SUM_ESQ_BARE]  = etemp[2];
   SumValue[SUM_ABSE_BARE] = 0.0;
 }
-
 
 
 void QMCCostFunction::resetPsi(bool final_reset)

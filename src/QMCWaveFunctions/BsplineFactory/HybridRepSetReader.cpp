@@ -171,7 +171,7 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
   typename bspline_traits<ST, 3>::BCType xyz_bc[3];
   set_grid(mybuilder->MeshSize, half_g, xyz_grid, xyz_bc);
 
-  const int N = bandgroup.getNumDistinctOrbitals();
+  const int N              = bandgroup.getNumDistinctOrbitals();
   const size_t num_splines = getAlignedSize<ST>(use_duplex_splines_ ? N * 2 : N);
   auto multi_splines_ptr   = std::make_unique<MultiBspline<ST>>(xyz_grid, xyz_bc, num_splines);
 
@@ -395,7 +395,7 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
 
     if (!success)
       myComm.barrier_and_abort("initialize_hybridrep_atomic_centers Failed to initialize atomic centers "
-                                "in hybrid orbital representation!");
+                               "in hybrid orbital representation!");
 
     for (int center_idx = 0; center_idx < ACInfo.Ncenters; center_idx++)
     {

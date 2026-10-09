@@ -78,9 +78,9 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   aAttrib.add(das.traces_tag, "trace");
   aAttrib.add(das.walkerlogs_tag, "walkerlog");
   aAttrib.put(cur);
-  das.append_run                 = (append_tag == "yes");
-  das.enable_profiling           = (profiling_tag == "yes");
-  das.what_to_do[UPDATE_MODE]    = (update_mode == "pbyp");
+  das.append_run              = (append_tag == "yes");
+  das.enable_profiling        = (profiling_tag == "yes");
+  das.what_to_do[UPDATE_MODE] = (update_mode == "pbyp");
   infoSummary.flush();
   infoLog.flush();
 

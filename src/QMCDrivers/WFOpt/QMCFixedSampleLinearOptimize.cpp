@@ -359,7 +359,6 @@ void QMCFixedSampleLinearOptimize::run()
   }
 
   finish();
-
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction
@@ -643,8 +642,6 @@ void QMCFixedSampleLinearOptimize::one_shift_run()
 
   // perform some finishing touches for this linear method iteration
   finish();
-
-
 }
 
 void QMCFixedSampleLinearOptimize::start()

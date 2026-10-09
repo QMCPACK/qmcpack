@@ -87,7 +87,8 @@ bool QMCFiniteSize::validateXML()
     {
       processPWH(cur);
     }
-    else {}
+    else
+    {}
     cur = cur->next;
   }
 

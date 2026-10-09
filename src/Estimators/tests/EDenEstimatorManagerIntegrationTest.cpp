@@ -80,24 +80,16 @@ void EDenEstimatorManagerIntegrationTest::updateAndEvaluate()
 }
 
 RefVectorWithLeader<MCPWalker> EDenEstimatorManagerIntegrationTest::getWalkerList()
-{
-  return eden_test_->getWalkerList();
-}
+{ return eden_test_->getWalkerList(); }
 
 RefVectorWithLeader<ParticleSet> EDenEstimatorManagerIntegrationTest::getPSetList()
-{
-  return eden_test_->getPSetList();
-}
+{ return eden_test_->getPSetList(); }
 
 RefVectorWithLeader<QMCHamiltonian> EDenEstimatorManagerIntegrationTest::getHamList()
-{
-  return eden_test_->getHamList();
-}
+{ return eden_test_->getHamList(); }
 
 RefVectorWithLeader<TrialWaveFunction> EDenEstimatorManagerIntegrationTest::getTwfList()
-{
-  return eden_test_->getTwfList();
-}
+{ return eden_test_->getTwfList(); }
 
 MockGoldWalkerElements& EDenEstimatorManagerIntegrationTest::getGoldElements() { return eden_test_->getGoldElements(); }
 

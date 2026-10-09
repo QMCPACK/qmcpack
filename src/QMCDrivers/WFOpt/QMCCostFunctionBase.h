@@ -277,7 +277,6 @@ protected:
   UniqueOptObjRefs extractOptimizableObjects(TrialWaveFunction& psi) const;
 
   void resetOptimizableObjects(TrialWaveFunction& psi, const OptVariables& opt_variables) const;
-
 };
 } // namespace qmcplusplus
 #endif

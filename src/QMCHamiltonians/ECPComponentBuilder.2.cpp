@@ -42,7 +42,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   std::string eunits("hartree");
   std::string format("r*V");
   std::string lloc;
-  int nso   = 0;
+  int nso = 0;
   OhmmsAttributeSet aAttrib;
   int quad_rule     = -1;
   int local_channel = -1;

@@ -60,11 +60,11 @@ void HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
 
   if (targetPtcl.Density_G.size() == 0)
     myComm.barrier_and_abort("HamiltonianFactory::addMPCPotential\n"
-                              "************************\n"
-                              "** Error in MPC setup **\n"
-                              "************************\n"
-                              "    The electron density was not setup by the "
-                              "wave function builder.\n");
+                             "************************\n"
+                             "** Error in MPC setup **\n"
+                             "************************\n"
+                             "    The electron density was not setup by the "
+                             "wave function builder.\n");
 
   auto mpc = std::make_unique<MPC>(targetPtcl, cutoff);
   targetH->addOperator(std::move(mpc), "MPC", isphysical);

@@ -81,9 +81,7 @@ public:
 
   MCDataType<FullPrecRealType>& get_ensemble_property() { return ensemble_property_; }
   void set_ensemble_property(MCDataType<FullPrecRealType>& ensemble_property)
-  {
-    ensemble_property_ = ensemble_property;
-  }
+  { ensemble_property_ = ensemble_property; }
   IndexType get_num_contexts() const { return num_ranks_; }
   const std::vector<int>& getNumPerRank() { return num_per_rank_; }
 

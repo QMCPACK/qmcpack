@@ -297,9 +297,7 @@ void VMCBatched::process(xmlNodePtr node)
 size_t VMCBatched::compute_samples_per_rank(const size_t num_blocks,
                                             const size_t samples_per_block,
                                             const size_t local_walkers)
-{
-  return num_blocks * samples_per_block * local_walkers;
-}
+{ return num_blocks * samples_per_block * local_walkers; }
 
 
 /** Runs the actual VMC section

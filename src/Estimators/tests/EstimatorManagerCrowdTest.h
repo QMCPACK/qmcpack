@@ -41,13 +41,13 @@ public:
    */
   bool testMakeBlockAverages();
   EstimatorManagerBase em;
+
 private:
   Communicate& comm_;
   std::vector<FakeEstimator> estimators_;
-
 };
 
-}
-}
+} // namespace testing
+} // namespace qmcplusplus
 
 #endif /* QMCPLUSPLUS_ESTIMATORMANAGERBASETEST_HPP */
