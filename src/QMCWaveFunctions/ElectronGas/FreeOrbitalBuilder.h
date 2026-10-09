@@ -8,7 +8,7 @@ namespace qmcplusplus
 class FreeOrbitalBuilder : public SPOSetBuilder
 {
 public:
-  FreeOrbitalBuilder(ParticleSet& els, Communicate* comm, xmlNodePtr cur);
+  FreeOrbitalBuilder(ParticleSet& els, Communicate& comm, xmlNodePtr cur);
   ~FreeOrbitalBuilder() {}
 
   std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;

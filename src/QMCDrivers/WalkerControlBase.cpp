@@ -30,12 +30,12 @@ namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
 
-WalkerControlBase::WalkerControlBase(Communicate* c)
+WalkerControlBase::WalkerControlBase(Communicate& c)
     : MPIObjectBase(c), n_min_(1), n_max_(10), MaxCopy(2), target_sigma_(10), NumWalkersCreated(0), SwapMode(0)
 {
   method_       = -1; //assign invalid method
-  num_contexts_ = myComm->size();
-  MyContext     = myComm->rank();
+  num_contexts_ = myComm.size();
+  MyContext     = myComm.rank();
   curData.resize(LE_MAX + num_contexts_);
   NumPerRank.resize(num_contexts_);
   OffSet.resize(num_contexts_ + 1);
@@ -48,8 +48,8 @@ WalkerControlBase::~WalkerControlBase() = default;
 //disable it: everything is done by a constructor
 //void WalkerControlBase::setCommunicator(Communicate* c)
 //{
-//  NumContexts=myComm->size();
-//  MyContext=myComm->rank();
+//  NumContexts=myComm.size();
+//  MyContext=myComm.rank();
 //  curData.resize(LE_MAX+NumContexts);
 //  NumPerRank.resize(NumContexts);
 //  OffSet.resize(NumContexts+1);
@@ -61,7 +61,7 @@ void WalkerControlBase::start()
 {
   if (MyContext == 0)
   {
-    std::filesystem::path hname(myComm->getName());
+    std::filesystem::path hname(myComm.getName());
     hname.concat(".dmc.dat");
     if (hname != dmcFname)
     {
@@ -179,7 +179,7 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
   curData[B_ENERGY_INDEX]   = besum;
   curData[B_WGT_INDEX]      = bwgtsum;
 
-  myComm->allreduce(curData);
+  myComm.allreduce(curData);
   measureProperties(iter);
   trialEnergy        = ensemble_property_.Energy;
   W.EnsembleProperty = ensemble_property_;

@@ -31,7 +31,7 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(ParticleSet& w,
                                                QMCHamiltonian& h,
                                                SampleStack& samples,
                                                const std::vector<int>& walkers_per_crowd,
-                                               Communicate* comm)
+                                               Communicate& comm)
     : QMCCostFunctionBase(w, psi, h, comm),
       samples_(samples),
       walkers_per_crowd_(walkers_per_crowd),
@@ -97,8 +97,8 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
           HD_avg[pm] += HDsaved[pm];
       }
     }
-    myComm->allreduce(HD_avg);
-    myComm->allreduce(delE_bar);
+    myComm.allreduce(HD_avg);
+    myComm.allreduce(delE_bar);
     for (int pm = 0; pm < num_opt_vars; pm++)
       HD_avg[pm] *= 1.0 / static_cast<Return_rt>(NumSamples);
     {
@@ -128,9 +128,9 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
         }
       }
     }
-    myComm->allreduce(EDtotals);
-    myComm->allreduce(EDtotals_w);
-    myComm->allreduce(URV);
+    myComm.allreduce(EDtotals);
+    myComm.allreduce(EDtotals_w);
+    myComm.allreduce(URV);
     Return_rt smpinv = 1.0 / static_cast<Return_rt>(NumSamples);
     {
       for (int iw = 0; iw < rank_local_num_samples_; iw++)
@@ -149,7 +149,7 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
         }
       }
     }
-    myComm->allreduce(E2Dtotals_w);
+    myComm.allreduce(E2Dtotals_w);
     for (int pm = 0; pm < num_opt_vars; pm++)
       URV[pm] *= smpinv;
     for (int j = 0; j < num_opt_vars; j++)
@@ -400,7 +400,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   etemp[1] = static_cast<Return_rt>(rank_local_num_samples_);
   etemp[2] = e2_tot;
   // Sum energy values over nodes
-  myComm->allreduce(etemp);
+  myComm.allreduce(etemp);
   Etarget    = static_cast<Return_rt>(etemp[0] / etemp[1]);
   NumSamples = static_cast<int>(etemp[1]);
   app_log() << "  VMC Eavg = " << Etarget << std::endl;
@@ -594,7 +594,7 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
   etemp[1] = static_cast<Return_rt>(rank_local_num_samples_);
   etemp[2] = e2_tot;
   // Sum energy values over nodes
-  myComm->allreduce(etemp);
+  myComm.allreduce(etemp);
   Etarget    = static_cast<Return_rt>(etemp[0] / etemp[1]);
   NumSamples = static_cast<int>(etemp[1]);
   app_log() << "  VMC Eavg = " << Etarget << std::endl;
@@ -779,14 +779,14 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
 
   // Sum weights over crowds
   Return_rt wgt_tot       = 0.0;
-  Return_rt inv_n_samples = 1.0 / (samples_.getNumSamples() * myComm->size());
+  Return_rt inv_n_samples = 1.0 / (samples_.getNumSamples() * myComm.size());
   for (int i = 0; i < opt_eval.size(); i++)
     wgt_tot += opt_eval[i]->get_wgt() * inv_n_samples;
 
   //this is MPI barrier
   OHMMS::Controller->barrier();
   //collect the total weight for normalization and apply maximum weight
-  myComm->allreduce(wgt_tot);
+  myComm.allreduce(wgt_tot);
   Return_rt wgtnorm = (wgt_tot == 0) ? 0 : wgt_tot;
   wgt_tot           = 0.0;
   {
@@ -798,7 +798,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
       wgt_tot += inv_n_samples * saved[REWEIGHT];
     }
   }
-  myComm->allreduce(wgt_tot);
+  myComm.allreduce(wgt_tot);
 
   wgtnorm = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
   wgt_tot = 0.0;
@@ -810,7 +810,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
       wgt_tot += inv_n_samples * saved[REWEIGHT];
     }
   }
-  myComm->allreduce(wgt_tot);
+  myComm.allreduce(wgt_tot);
   //    app_log()<<"After Purge"<<wgt_tot<<" "<< std::endl;
   for (int i = 0; i < SumValue.size(); i++)
     SumValue[i] = 0.0;
@@ -832,7 +832,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
     }
   }
   //collect everything
-  myComm->allreduce(SumValue);
+  myComm.allreduce(SumValue);
   return inv_n_samples * SumValue[SUM_WGT] * SumValue[SUM_WGT] / SumValue[SUM_WGTSQ];
 }
 
@@ -873,7 +873,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
     }
   }
 
-  myComm->allreduce(D_avg);
+  myComm.allreduce(D_avg);
 
   for (int iw = 0; iw < rank_local_num_samples_; iw++)
   {
@@ -928,8 +928,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
     crowd_tasks(opt_num_crowds, constructMatrices, params_per_crowd, getNumParams(), Dsaved, HDsaved, weight, eloc_new,
                 V_avg, D_avg, w_beta, curAvg_w, Left, Right);
   }
-  myComm->allreduce(Right);
-  myComm->allreduce(Left);
+  myComm.allreduce(Right);
+  myComm.allreduce(Left);
   Left(0, 0)  = (1 - w_beta) * curAvg_w + w_beta * V_avg;
   Right(0, 0) = 1.0;
 
@@ -957,7 +957,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillHamVec(std::vector
     }
   }
 
-  myComm->allreduce(D_avg);
+  myComm.allreduce(D_avg);
 
   for (int iw = 0; iw < rank_local_num_samples_; iw++)
   {
@@ -988,7 +988,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillHamVec(std::vector
     crowd_tasks(opt_num_crowds, constructMatrices, params_per_crowd, getNumParams(), Dsaved, weight, eloc_new, D_avg,
                 curAvg_w, ham);
   }
-  myComm->allreduce(ham);
+  myComm.allreduce(ham);
   ham[0] = curAvg_w;
 
   return 1.0;
@@ -1012,7 +1012,7 @@ void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& param,
       D_avg[pm] += Dsaved[pm] * weight;
   }
 
-  myComm->allreduce(D_avg);
+  myComm.allreduce(D_avg);
 
   std::vector<Return_t> prod(rank_local_num_samples_, 0.0);
   for (int iw = 0; iw < rank_local_num_samples_; iw++)
@@ -1052,6 +1052,6 @@ void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& param,
     crowd_tasks(opt_num_crowds, constructMatrices, params_per_crowd, getNumParams(), Dsaved, weight, D_avg, prod[iw],
                 ovlParmVec);
   }
-  myComm->allreduce(ovlParmVec);
+  myComm.allreduce(ovlParmVec);
 }
 } // namespace qmcplusplus

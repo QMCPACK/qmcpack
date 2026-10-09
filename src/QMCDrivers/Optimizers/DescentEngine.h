@@ -243,7 +243,7 @@ private:
 
 public:
   /// Constructor for engine
-  DescentEngine(Communicate* comm, const xmlNodePtr cur);
+  DescentEngine(Communicate& comm, const xmlNodePtr cur);
 
   /// process xml node
   bool processXML(const xmlNodePtr cur);

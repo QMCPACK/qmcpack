@@ -37,7 +37,7 @@ namespace qmcplusplus
 ////std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
-EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PSetMap& psets, Communicate* comm, xmlNodePtr cur)
+EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PSetMap& psets, Communicate& comm, xmlNodePtr cur)
     : SPOSetBuilder("spline", comm, "EinsplineSetBuilder"),
       ParticleSets(psets),
       TargetPtcl(p),
@@ -112,27 +112,27 @@ bool EinsplineSetBuilder::CheckLattice()
 
 void EinsplineSetBuilder::BroadcastOrbitalInfo()
 {
-  if (myComm->size() == 1)
+  if (myComm.size() == 1)
     return;
   int numIons         = IonTypes.size();
   int numDensityGvecs = TargetPtcl.DensityReducedGvecs.size();
   PooledData<double> abuffer;
   PooledData<int> aibuffer;
-  aibuffer.add(Version.begin(), Version.end());          //myComm->bcast(Version);
-  abuffer.add(Lattice.begin(), Lattice.end());           //myComm->bcast(Lattice);
-  abuffer.add(RecipLattice.begin(), RecipLattice.end()); //myComm->bcast(RecipLattice);
-  abuffer.add(SuperLattice.begin(), SuperLattice.end()); //myComm->bcast(SuperLattice);
-  abuffer.add(LatticeInv.begin(), LatticeInv.end());     //myComm->bcast(LatticeInv);
-  aibuffer.add(NumBands);                                //myComm->bcast(NumBands);
-  aibuffer.add(NumElectrons);                            //myComm->bcast(NumElectrons);
-  aibuffer.add(NumSpins);                                //myComm->bcast(NumSpins);
-  aibuffer.add(NumTwists);                               //myComm->bcast(NumTwists);
-  aibuffer.add(numIons);                                 //myComm->bcast(numIons);
+  aibuffer.add(Version.begin(), Version.end());          //myComm.bcast(Version);
+  abuffer.add(Lattice.begin(), Lattice.end());           //myComm.bcast(Lattice);
+  abuffer.add(RecipLattice.begin(), RecipLattice.end()); //myComm.bcast(RecipLattice);
+  abuffer.add(SuperLattice.begin(), SuperLattice.end()); //myComm.bcast(SuperLattice);
+  abuffer.add(LatticeInv.begin(), LatticeInv.end());     //myComm.bcast(LatticeInv);
+  aibuffer.add(NumBands);                                //myComm.bcast(NumBands);
+  aibuffer.add(NumElectrons);                            //myComm.bcast(NumElectrons);
+  aibuffer.add(NumSpins);                                //myComm.bcast(NumSpins);
+  aibuffer.add(NumTwists);                               //myComm.bcast(NumTwists);
+  aibuffer.add(numIons);                                 //myComm.bcast(numIons);
   aibuffer.add(numDensityGvecs);
   aibuffer.add(HaveOrbDerivs);
-  myComm->bcast(abuffer);
-  myComm->bcast(aibuffer);
-  if (myComm->rank())
+  myComm.bcast(abuffer);
+  myComm.bcast(aibuffer);
+  if (myComm.rank())
   {
     abuffer.rewind();
     aibuffer.rewind();
@@ -161,9 +161,9 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
   PooledData<int> bibuffer;
   for (int i = 0; i < numIons; ++i)
     bibuffer.add(IonTypes[i]);
-  //myComm->bcast(IonTypes);
+  //myComm.bcast(IonTypes);
   bbuffer.add(&IonPos[0][0], &IonPos[0][0] + OHMMS_DIM * numIons);
-  //myComm->bcast(IonPos);
+  //myComm.bcast(IonPos);
   if (primcell_kpoints.size() != NumTwists)
     primcell_kpoints.resize(NumTwists);
   bbuffer.add(&primcell_kpoints[0][0], &primcell_kpoints[0][0] + OHMMS_DIM * NumTwists);
@@ -177,9 +177,9 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
                  &(TargetPtcl.DensityReducedGvecs[0][0]) + numDensityGvecs * OHMMS_DIM);
     bbuffer.add(&(TargetPtcl.Density_G[0]), &(TargetPtcl.Density_G[0]) + numDensityGvecs);
   }
-  myComm->bcast(bbuffer);
-  myComm->bcast(bibuffer);
-  if (myComm->rank())
+  myComm.bcast(bbuffer);
+  myComm.bcast(bibuffer);
+  if (myComm.rank())
   {
     bbuffer.rewind();
     bibuffer.rewind();
@@ -197,8 +197,8 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
   //buffer to bcast hybrid representation atomic orbital info
   PooledData<double> cbuffer;
   PooledData<int> cibuffer;
-  myComm->bcast(cbuffer);
-  myComm->bcast(cibuffer);
+  myComm.bcast(cbuffer);
+  myComm.bcast(cibuffer);
   AtomicCentersInfo.resize(numIons);
   Super2Prim.resize(SourcePtcl->R.size());
   cbuffer.add(AtomicCentersInfo.inner_cutoff.begin(), AtomicCentersInfo.inner_cutoff.end());
@@ -209,9 +209,9 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
   cibuffer.add(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
   cibuffer.add(AtomicCentersInfo.GroupID.begin(), AtomicCentersInfo.GroupID.end());
   cibuffer.add(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
-  myComm->bcast(cbuffer);
-  myComm->bcast(cibuffer);
-  if (myComm->rank())
+  myComm.bcast(cbuffer);
+  myComm.bcast(cibuffer);
+  if (myComm.rank())
   {
     cbuffer.rewind();
     cibuffer.rewind();
@@ -297,7 +297,7 @@ void EinsplineSetBuilder::TileIons()
   //                << primPos.size()*numCopies << " or the index "<< index <<".  Aborting.\n";
   //    APP_ABORT("EinsplineSetBuilder::TileIons()");
   //  }
-  //  if (myComm->rank() == 0)
+  //  if (myComm.rank() == 0)
   //  {
   //    char buf[1000];
   //    snprintf (buf, 1000, "Supercell reduced ion positions = \n");
@@ -382,7 +382,7 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
     app_log() << "Found " << numSuperTwists << " distinct supercell twist" << (numSuperTwists > 1 ? "s" : "")
               << " based on " << num_prim_kpoints << " primitive cell k-point" << (num_prim_kpoints > 1 ? "s" : "")
               << std::endl;
-    if (myComm->rank() == 0)
+    if (myComm.rank() == 0)
     {
       int n_tot_irred(0);
       for (int si = 0; si < numSuperTwists; si++)
@@ -569,7 +569,7 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
       if (TwistPair(twist_i, twist_j))
         MakeTwoCopies[i] = true;
     }
-    if (myComm->rank() == 0)
+    if (myComm.rank() == 0)
     {
       std::array<char, 1000> buf;
       int length = std::snprintf(buf.data(), buf.size(), "Using %d copies of twist angle [%6.3f, %6.3f, %6.3f]\n",
@@ -625,13 +625,13 @@ void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool
            "calculations. "
         << "If this is your intent, please replace 'spindataset=1' with 'spindataset=0' in the input file."
         << std::endl;
-    myComm->barrier_and_abort(msg.str());
+    myComm.barrier_and_abort(msg.str());
   }
 
   std::string exception_msg;
   try
   {
-    if (myComm->rank() == 0)
+    if (myComm.rank() == 0)
       NumDistinctOrbitals = OccupyBands_ESHDF(H5File, spin, sortBands, numOrbs, *FullBands[spin]);
   }
   catch (std::exception& e)
@@ -640,18 +640,18 @@ void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool
     exception_msg       = e.what();
   }
 
-  myComm->bcast(NumDistinctOrbitals);
+  myComm.bcast(NumDistinctOrbitals);
   if (NumDistinctOrbitals == 0)
-    myComm->barrier_and_abort(exception_msg);
+    myComm.barrier_and_abort(exception_msg);
 
   bcastBandInfoSet(*FullBands[spin]);
 }
 
 void EinsplineSetBuilder::bcastBandInfoSet(std::vector<BandInfo>& sorted_bands) const
 {
-  const bool root = myComm->rank() == 0;
+  const bool root = myComm.rank() == 0;
   int nbands      = sorted_bands.size();
-  myComm->bcast(nbands);
+  myComm.bcast(nbands);
 
   //buffer to serialize BandInfo
   PooledData<OHMMS_PRECISION_FULL> misc(nbands * 4);
@@ -668,7 +668,7 @@ void EinsplineSetBuilder::bcastBandInfoSet(std::vector<BandInfo>& sorted_bands) 
     }
   }
 
-  myComm->bcast(misc);
+  myComm.bcast(misc);
 
   if (!root)
   {

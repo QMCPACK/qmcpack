@@ -34,9 +34,9 @@ class MockGoldWalkerElements
 {
 public:
   using WaveFunctionPoolFactoryFunc =
-      std::function<WaveFunctionPool(RuntimeOptions run_time_opt, Communicate* comm, ParticleSetPool& psp)>;
+      std::function<WaveFunctionPool(RuntimeOptions run_time_opt, Communicate& comm, ParticleSetPool& psp)>;
   using HamPoolFactoryFunc =
-      std::function<HamiltonianPool(Communicate* comm, ParticleSetPool& psp, WaveFunctionPool& wfp)>;
+      std::function<HamiltonianPool(Communicate& comm, ParticleSetPool& psp, WaveFunctionPool& wfp)>;
   MockGoldWalkerElements(Communicate* comm,
                          RuntimeOptions& runtime_opt,
                          WaveFunctionPoolFactoryFunc wfp_func,

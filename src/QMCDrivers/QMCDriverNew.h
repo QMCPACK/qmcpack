@@ -163,7 +163,7 @@ public:
                MCPopulation&& population,
                const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                const std::string timer_prefix,
-               Communicate* comm,
+               Communicate& comm,
                const std::string& QMC_driver_type);
 
   ///Move Constructor

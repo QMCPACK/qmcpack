@@ -26,8 +26,8 @@
 
 namespace qmcplusplus
 {
-DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
-    : my_comm_(comm),
+DescentEngine::DescentEngine(Communicate& comm, const xmlNodePtr cur)
+    : my_comm_(&comm),
       engine_target_excited_(false),
       num_params_(0),
       flavor_("RMSprop"),

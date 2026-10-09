@@ -49,7 +49,7 @@ public:
                                MCWalkerConfiguration& w,
                                TrialWaveFunction& psi,
                                QMCHamiltonian& h,
-                               Communicate*);
+                               Communicate&);
 
   ///Destructor
   ~QMCFixedSampleLinearOptimize() override;

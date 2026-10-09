@@ -35,7 +35,7 @@ public:
                      ParticleSet& qp,
                      const PSetMap& pset,
                      OptionalRef<TrialWaveFunction>&& psi_optional,
-                     Communicate* c);
+                     Communicate& c);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);

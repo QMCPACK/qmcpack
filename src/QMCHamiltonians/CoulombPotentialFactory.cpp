@@ -59,7 +59,7 @@ void HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
   app_summary() << std::endl;
 
   if (targetPtcl.Density_G.size() == 0)
-    myComm->barrier_and_abort("HamiltonianFactory::addMPCPotential\n"
+    myComm.barrier_and_abort("HamiltonianFactory::addMPCPotential\n"
                               "************************\n"
                               "** Error in MPC setup **\n"
                               "************************\n"

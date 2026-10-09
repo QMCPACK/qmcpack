@@ -44,7 +44,7 @@ int main(int argc, char** argv)
   //using PosType = ParticleSet::PosType         ;
   //use the global generator
 
-  bool ionode  = (myComm->rank() == 0);
+  bool ionode  = (myComm.rank() == 0);
   int na       = 4;
   int lmax     = 4;
   int nsamples = 5;

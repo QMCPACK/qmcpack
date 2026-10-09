@@ -25,7 +25,7 @@ std::unique_ptr<QMCDriver> DMCFactory::create(const ProjectData& project_data,
                                               MCWalkerConfiguration& w,
                                               TrialWaveFunction& psi,
                                               QMCHamiltonian& h,
-                                              Communicate* comm,
+                                              Communicate& comm,
                                               bool enable_profiling)
 {
   auto qmc = std::make_unique<DMC>(project_data, w, psi, h, RandomNumberControl::getChildren(), comm, enable_profiling);

@@ -28,7 +28,7 @@
 
 namespace qmcplusplus
 {
-ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule, int llocal, int srule)
+ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate& c, int nrule, int llocal, int srule)
     : MPIObjectBase(c),
       NumNonLocal(0),
       Lmax(0),
@@ -135,28 +135,28 @@ bool ReadFileBuffer::read_contents()
 
 bool ECPComponentBuilder::read_pp_file(const std::string& fname)
 {
-  ReadFileBuffer buf(myComm);
+  ReadFileBuffer buf(&myComm);
   bool okay = buf.open_file(fname);
   if (!okay)
-    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
+    myComm.barrier_and_abort("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
 
   okay = buf.read_contents();
   if (!okay)
-    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
+    myComm.barrier_and_abort("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
 
   xmlDocPtr m_doc = xmlReadMemory(buf.contents(), buf.length, NULL, NULL, 0);
 
   if (m_doc == NULL)
   {
     xmlFreeDoc(m_doc);
-    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file xml file " + fname + " is invalid");
+    myComm.barrier_and_abort("ECPComponentBuilder::read_pp_file xml file " + fname + " is invalid");
   }
   // Check the document is of the right kind
   xmlNodePtr cur = xmlDocGetRootElement(m_doc);
   if (cur == NULL)
   {
     xmlFreeDoc(m_doc);
-    myComm->barrier_and_abort("Empty document");
+    myComm.barrier_and_abort("Empty document");
   }
   bool success = put(cur);
   xmlFreeDoc(m_doc);

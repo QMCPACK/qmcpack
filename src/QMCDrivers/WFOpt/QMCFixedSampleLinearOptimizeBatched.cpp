@@ -52,7 +52,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
     MCPopulation&& population,
     const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
     SampleStack& samples,
-    Communicate* comm)
+    Communicate& comm)
     : QMCDriverNew(
           project_data,
           std::move(qmcdriver_input),
@@ -598,7 +598,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   vmcEngine =
       std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), nullptr,
                                    std::move(vmcdriver_input_copy), walker_configs_ref_,
-                                   MCPopulation(myComm->size(), myComm->rank(), population_.get_golden_electrons(),
+                                   MCPopulation(myComm.size(), myComm.rank(), population_.get_golden_electrons(),
                                                 population_.get_golden_twf(), population_.get_golden_hamiltonian()),
                                    rngs_, samples_, myComm);
 
@@ -613,7 +613,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   auto& qmcdriver_input = vmcEngine->getQMCDriverInput();
   QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
+      adjustGlobalWalkerCount(myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
                               qmcdriver_input_.get_walkers_per_rank(), 1.0,
                               determineNumCrowds(qmcdriver_input_.get_num_crowds(), rngs_.size()));
 
@@ -765,7 +765,7 @@ void QMCFixedSampleLinearOptimizeBatched::one_shift_run()
     for (int i = 0; i < numParams; i++)
       parameterDirections.at(i + 1) *= lambda;
   }
-  myComm->bcast(parameterDirections);
+  myComm.bcast(parameterDirections);
 
   // now that we are done building the matrices, prevent further computation of derivative vectors
   optTarget->setneedGrads(false);

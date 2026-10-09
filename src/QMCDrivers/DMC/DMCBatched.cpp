@@ -53,7 +53,7 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
                        WalkerConfigurations& wc,
                        MCPopulation&& pop,
                        const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
-                       Communicate* comm)
+                       Communicate& comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    std::move(estimator_manager),
@@ -406,7 +406,7 @@ void DMCBatched::process(xmlNodePtr node)
   try
   {
     QMCDriverNew::AdjustedWalkerCounts awc =
-        adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
+        adjustGlobalWalkerCount(myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), dmcdriver_input_.get_reserve(),
                                 determineNumCrowds(qmcdriver_input_.get_num_crowds(), rngs_.size()));
 
@@ -419,7 +419,7 @@ void DMCBatched::process(xmlNodePtr node)
   }
   catch (const UniformCommunicateError& ue)
   {
-    myComm->barrier_and_abort(ue.what());
+    myComm.barrier_and_abort(ue.what());
   }
 
   {
@@ -476,7 +476,7 @@ void DMCBatched::run()
 
   LoopTimer<> dmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
-                                  myComm->rank() == 0);
+                                  myComm.rank() == 0);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
@@ -485,7 +485,7 @@ void DMCBatched::run()
     section_start_task(crowds_.size(), initialLogEvaluation, crowds_, step_contexts_refs, serializing_crowd_walkers_);
 
     FullPrecRealType energy, variance;
-    population_.measureGlobalEnergyVariance(*myComm, energy, variance);
+    population_.measureGlobalEnergyVariance(myComm, energy, variance);
     // false indicates we do not support kill at node crossings.
     branch_engine_->initParam(population_, energy, variance, dmcdriver_input_.get_reconfiguration(), false);
     walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
@@ -496,7 +496,7 @@ void DMCBatched::run()
   }
 
   // this barrier fences all previous load imbalance. Avoid block 0 timing pollution.
-  myComm->barrier();
+  myComm.barrier();
 
   ScopedTimer local_timer(timers_.production_timer);
   ParallelExecutor<> crowd_task;
@@ -546,15 +546,15 @@ void DMCBatched::run()
 
     bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached
-    if (!myComm->rank())
+    if (!myComm.rank())
       stop_requested = runtimeControl.checkStop(dmc_loop);
-    myComm->bcast(stop_requested);
+    myComm.bcast(stop_requested);
     // Progress messages before possibly stopping
-    if (!myComm->rank())
+    if (!myComm.rank())
       app_log() << runtimeControl.generateProgressMessage("DMCBatched", block, num_blocks);
     if (stop_requested)
     {
-      if (!myComm->rank())
+      if (!myComm.rank())
         app_log() << runtimeControl.generateStopMessage("DMCBatched", block);
       run_time_manager.markStop();
       break;

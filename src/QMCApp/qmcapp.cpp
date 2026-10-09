@@ -189,7 +189,7 @@ int main(int argc, char** argv)
       app_log() << inputs[k] << " ";
     app_log() << std::endl;
 
-    auto qmc = std::make_unique<QMCMain>(qmcComm);
+    auto qmc = std::make_unique<QMCMain>(*qmcComm);
 
     if (inputs.size() > 1)
       validInput = qmc->parse(inputs[qmcComm->getGroupID()]);

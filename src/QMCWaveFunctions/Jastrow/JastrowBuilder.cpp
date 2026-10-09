@@ -26,7 +26,7 @@
 
 namespace qmcplusplus
 {
-JastrowBuilder::JastrowBuilder(Communicate* comm, ParticleSet& p, const PSetMap& psets)
+JastrowBuilder::JastrowBuilder(Communicate& comm, ParticleSet& p, const PSetMap& psets)
     : WaveFunctionComponentBuilder(comm, p, "JastrowBuilder"), ptclPool(psets)
 { resetOptions(); }
 

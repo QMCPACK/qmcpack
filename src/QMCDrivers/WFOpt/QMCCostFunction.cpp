@@ -24,7 +24,7 @@
 
 namespace qmcplusplus
 {
-QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
+QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate& comm)
     : QMCCostFunctionBase(w, psi, h, comm),
       fill_timer_(createGlobalTimer("QMCCostFunction::fillOverlapHamiltonianMatrices", timer_level_medium))
 {
@@ -95,8 +95,8 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
           HD_avg[pm] += HDsaved[pm];
       }
     }
-    myComm->allreduce(HD_avg);
-    myComm->allreduce(delE_bar);
+    myComm.allreduce(HD_avg);
+    myComm.allreduce(delE_bar);
     for (int pm = 0; pm < num_opt_vars; pm++)
       HD_avg[pm] *= 1.0 / static_cast<Return_rt>(NumSamples);
     for (int ip = 0; ip < NumThreads; ip++)
@@ -126,9 +126,9 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
         }
       }
     }
-    myComm->allreduce(EDtotals);
-    myComm->allreduce(EDtotals_w);
-    myComm->allreduce(URV);
+    myComm.allreduce(EDtotals);
+    myComm.allreduce(EDtotals_w);
+    myComm.allreduce(URV);
     Return_rt smpinv = 1.0 / static_cast<Return_rt>(NumSamples);
     for (int ip = 0; ip < NumThreads; ip++)
     {
@@ -149,7 +149,7 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
         }
       }
     }
-    myComm->allreduce(E2Dtotals_w);
+    myComm.allreduce(E2Dtotals_w);
     for (int pm = 0; pm < num_opt_vars; pm++)
       URV[pm] *= smpinv;
     for (int j = 0; j < num_opt_vars; j++)
@@ -315,7 +315,7 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
   etemp[0] = et_tot;
   etemp[1] = static_cast<Return_rt>(wPerRank[NumThreads]);
   etemp[2] = e2_tot;
-  myComm->allreduce(etemp);
+  myComm.allreduce(etemp);
   Etarget    = static_cast<Return_rt>(etemp[0] / etemp[1]);
   NumSamples = static_cast<int>(etemp[1]);
   app_log() << "  VMC Eavg = " << Etarget << std::endl;
@@ -407,8 +407,8 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
   //this is MPI barrier
   OHMMS::Controller->barrier();
   //collect the total weight for normalization and apply maximum weight
-  myComm->allreduce(wgt_tot);
-  myComm->allreduce(wgt_tot2);
+  myComm.allreduce(wgt_tot);
+  myComm.allreduce(wgt_tot2);
   //    app_log()<<"Before Purge"<<wgt_tot<<" "<<wgt_tot2<< std::endl;
   Return_rt wgtnorm = (wgt_tot == 0) ? 0 : wgt_tot;
   wgt_tot           = 0.0;
@@ -423,7 +423,7 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
       wgt_tot += inv_n_samples * saved[REWEIGHT];
     }
   }
-  myComm->allreduce(wgt_tot);
+  myComm.allreduce(wgt_tot);
   //    app_log()<<"During Purge"<<wgt_tot<<" "<< std::endl;
   wgtnorm = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
   wgt_tot = 0.0;
@@ -437,7 +437,7 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
       wgt_tot += inv_n_samples * saved[REWEIGHT];
     }
   }
-  myComm->allreduce(wgt_tot);
+  myComm.allreduce(wgt_tot);
   //    app_log()<<"After Purge"<<wgt_tot<<" "<< std::endl;
   for (int i = 0; i < SumValue.size(); i++)
     SumValue[i] = 0.0;
@@ -462,7 +462,7 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
     }
   }
   //collect everything
-  myComm->allreduce(SumValue);
+  myComm.allreduce(SumValue);
   return SumValue[SUM_WGT] * SumValue[SUM_WGT] / (SumValue[SUM_WGTSQ] * NumSamples);
 }
 
@@ -497,7 +497,7 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
     }
   }
 
-  myComm->allreduce(D_avg);
+  myComm.allreduce(D_avg);
 
   for (int ip = 0; ip < NumThreads; ip++)
   {
@@ -542,8 +542,8 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
       }
     }
   }
-  myComm->allreduce(Right);
-  myComm->allreduce(Left);
+  myComm.allreduce(Right);
+  myComm.allreduce(Left);
   Left(0, 0)  = (1 - b2) * curAvg_w + b2 * V_avg;
   Right(0, 0) = 1.0;
 

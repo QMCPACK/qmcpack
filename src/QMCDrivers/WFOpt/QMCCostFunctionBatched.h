@@ -45,7 +45,7 @@ public:
                          QMCHamiltonian& h,
                          SampleStack& samples,
                          const std::vector<int>& walkers_per_crowd,
-                         Communicate* comm);
+                         Communicate& comm);
 
   ///Destructor
   ~QMCCostFunctionBatched() override;

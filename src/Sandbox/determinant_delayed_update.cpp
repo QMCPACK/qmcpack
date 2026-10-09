@@ -53,7 +53,7 @@ int main(int argc, char** argv)
 #endif
   //use the global generator
 
-  bool ionode   = (myComm->rank() == 0);
+  bool ionode   = (myComm.rank() == 0);
   int nels      = 128;
   int iseed     = 11;
   int nsteps    = 100;
@@ -247,12 +247,12 @@ int main(int argc, char** argv)
     nthreads_nested = omp_get_max_threads();
   }
 
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     cout << "# determinant " << nels << " rank " << delay << " Total accepted " << naccepted << " /" << nels * nsteps
          << " " << naccepted / static_cast<double>(nels * nsteps) << " error " << error * omp_fac << endl;
     cout << "# N K MPI OMP-walker OMP-det T_accept T_ratio T_total T_accept/call T_ratio/call T_total/step " << endl;
-    cout << "Det " << nels << " " << delay << " " << myComm->size() << " " << nthreads << " " << nthreads_nested << " "
+    cout << "Det " << nels << " " << delay << " " << myComm.size() << " " << nthreads << " " << nthreads_nested << " "
          << t_accept << " " << t_ratio << " " << (t_ratio + t_accept) << " " << t_accept / naccepted << " "
          << t_ratio / (nsteps * nels) << " " << (t_ratio + t_accept) / (nsteps / nsubsteps) << endl;
   }

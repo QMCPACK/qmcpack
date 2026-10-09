@@ -43,7 +43,7 @@ class WaveFunctionPool : public MPIObjectBase, public ObjectPool<TrialWaveFuncti
 public:
   using PoolType = typename ObjectPool<TrialWaveFunction>::Pool;
 
-  WaveFunctionPool(const RuntimeOptions& runtime_options, ParticleSetPool& pset_pool, Communicate* c);
+  WaveFunctionPool(const RuntimeOptions& runtime_options, ParticleSetPool& pset_pool, Communicate& c);
   WaveFunctionPool(const WaveFunctionPool&)            = delete;
   WaveFunctionPool& operator=(const WaveFunctionPool&) = delete;
   WaveFunctionPool(WaveFunctionPool&&)                 = default;

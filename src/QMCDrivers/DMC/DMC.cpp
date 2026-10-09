@@ -46,7 +46,7 @@ DMC::DMC(const ProjectData& project_data,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
          const UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
-         Communicate* comm,
+         Communicate& comm,
          bool enable_profiling)
     : QMCDriver(project_data, w, psi, h, comm, "DMC", enable_profiling),
       rngs_(rngs),
@@ -242,7 +242,7 @@ void DMC::run()
   IndexType block = 0;
   int sample      = 0;
 
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm.getName(), myComm.rank() == 0);
 
   do // block
   {
@@ -293,13 +293,13 @@ void DMC::run()
 
     bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached
-    if (!myComm->rank())
+    if (!myComm.rank())
       stop_requested = runtimeControl.checkStop(dmc_loop);
-    myComm->bcast(stop_requested);
+    myComm.bcast(stop_requested);
 
     if (stop_requested)
     {
-      if (!myComm->rank())
+      if (!myComm.rank())
         app_log() << runtimeControl.generateStopMessage("DMC", block - 1);
       run_time_manager.markStop();
       break;

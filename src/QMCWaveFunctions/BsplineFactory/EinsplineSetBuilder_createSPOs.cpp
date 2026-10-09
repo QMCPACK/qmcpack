@@ -62,7 +62,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
     for (int i = 0; i < 3; i++)
       for (int j = 0; j < 3; j++)
         TileMatrix(i, j) = (i == j) ? 1 : 0;
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     std::array<char, 1000> buff;
     int length =
@@ -74,7 +74,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
     app_log() << std::string_view(buff.data(), length);
   }
   if (numOrbs == 0)
-    myComm->barrier_and_abort(
+    myComm.barrier_and_abort(
         "EinsplineSetBuilder::createSPOSet You must specify the number of orbitals in the input file.");
   else
     app_log() << "  Reading " << numOrbs << " orbitals from HDF5 file.\n";
@@ -84,10 +84,10 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
   // orbitals themselves.                                        //
   /////////////////////////////////////////////////////////////////
   orb_info_timer.restart();
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
     ReadOrbitalInfo(skipChecks);
   app_log() << "TIMER  EinsplineSetBuilder::ReadOrbitalInfo " << orb_info_timer.elapsed() << std::endl;
-  myComm->barrier();
+  myComm.barrier();
 
   orb_info_timer.restart();
   BroadcastOrbitalInfo();
@@ -183,11 +183,11 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(const xmlNodePt
     skipChecks = true;
 
   if (numOrbs < 1)
-    myComm->barrier_and_abort("Non-positive orbital set size! Please correct attribute \"size\".");
+    myComm.barrier_and_abort("Non-positive orbital set size! Please correct attribute \"size\".");
 
   auto pit(ParticleSets.find(sourceName));
   if (pit == ParticleSets.end())
-    myComm->barrier_and_abort("Einspline needs the source particleset");
+    myComm.barrier_and_abort("Einspline needs the source particleset");
   else
     SourcePtcl = pit->second.get();
 
@@ -213,7 +213,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(const xmlNodePt
       if (occ_mode == "excited")
         putContent(Occ, element);
       else if (occ_mode != "ground")
-        myComm->barrier_and_abort("EinsplineSetBuilder::createSPOSet Only ground state occupation "
+        myComm.barrier_and_abort("EinsplineSetBuilder::createSPOSet Only ground state occupation "
                                   "currently supported in EinsplineSetBuilder.");
     }
   });
@@ -245,7 +245,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(const xmlNodePt
   // Ensure the first SPO set must be spinSet==0
   // to correctly initialize key data of EinsplineSetBuilder
   if (SPOSetMap.size() == 0 && spinSet != 0)
-    myComm->barrier_and_abort("The first SPO set must have spindataset=\"0\"");
+    myComm.barrier_and_abort("The first SPO set must have spindataset=\"0\"");
 
   // set the internal parameters
   if (spinSet == 0)
@@ -262,7 +262,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(const xmlNodePt
 
   //read g-vectors and set MeshSize based on g-vectors and meshfactor
   if (!ReadGvectors_ESHDF())
-    myComm->barrier_and_abort("Failed to load g-vectors.");
+    myComm.barrier_and_abort("Failed to load g-vectors.");
 
   const bool use_single = (spo_prec == "single" || spo_prec == "float");
   app_summary() << "    Using " << (use_single ? "single" : "double") << " precision B-spline coefficients."
@@ -274,7 +274,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(const xmlNodePt
 
   // safeguard for a removed feature
   if (truncate == "yes")
-    myComm->barrier_and_abort(
+    myComm.barrier_and_abort(
         "The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
 
   if (!MixedSplineReader)
@@ -294,7 +294,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(const xmlNodePt
   auto OrbitalSet =
       MixedSplineReader->create_spline_set(spo_object_name, spinSet, obtainMemoryAttributes(cur), numOrbs);
   if (!OrbitalSet)
-    myComm->barrier_and_abort("Failed to create SPOSet*");
+    myComm.barrier_and_abort("Failed to create SPOSet*");
   app_log() << "Time spent in creating B-spline SPOs " << mytimer.elapsed() << " sec" << std::endl;
   OrbitalSet->finalizeConstruction();
   SPOSetMap[aset] = OrbitalSet.get();
@@ -304,7 +304,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(const xmlNodePt
 std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
   if (MixedSplineReader == 0)
-    myComm->barrier_and_abort("EinsplineSetExtended<T> cannot create a SPOSet");
+    myComm.barrier_and_abort("EinsplineSetExtended<T> cannot create a SPOSet");
 
   std::string spo_object_name;
   int spinSet(0);

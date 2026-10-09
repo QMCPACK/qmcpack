@@ -84,7 +84,7 @@ public:
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerControlBase(Communicate* c);
+  WalkerControlBase(Communicate& c);
 
   /** empty destructor to clean up the derived classes */
   virtual ~WalkerControlBase();

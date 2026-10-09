@@ -57,7 +57,7 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
                                        ParticleSet& qp,
                                        const PSetMap& pset,
                                        OptionalRef<TrialWaveFunction>&& psi_optional,
-                                       Communicate* c)
+                                       Communicate& c)
     : MPIObjectBase(c),
       targetH(std::make_unique<QMCHamiltonian>(hName)),
       targetPtcl(qp),
@@ -256,7 +256,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
         else
         {
           std::unique_ptr<OrbitalImages> apot =
-              std::make_unique<OrbitalImages>(targetPtcl, ptclPool, myComm, psi_optional_->get().getSPOMap());
+              std::make_unique<OrbitalImages>(targetPtcl, ptclPool, &myComm, psi_optional_->get().getSPOMap());
           apot->put(element);
           targetH->addOperator(std::move(apot), potName, false);
         }
@@ -373,7 +373,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
       {
         app_log() << "  Adding Momentum Estimator" << std::endl;
         std::unique_ptr<MomentumEstimator> ME = std::make_unique<MomentumEstimator>(targetPtcl);
-        bool rt(myComm->rank() == 0);
+        bool rt(myComm.rank() == 0);
         ME->putSpecial(element, targetPtcl, rt);
         targetH->addOperator(std::move(ME), "MomentumEstimator", false);
       }

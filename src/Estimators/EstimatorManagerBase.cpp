@@ -92,7 +92,7 @@ void EstimatorManagerBase::setCommunicator(Communicate* c)
   myComm = c ? c : OHMMS::Controller.get();
   //set the default options
   // This is a flag to tell manager if there is more than one rank
-  // running walkers, its discovered by smelly query of myComm.
+  // running walkers, its discovered by smelly query of myComm->
   Options.set(COLLECT, myComm->size() > 1);
   Options.set(MANAGE, myComm->rank() == 0);
   if (RemoteData.empty())

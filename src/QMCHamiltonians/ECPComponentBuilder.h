@@ -50,7 +50,7 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
   /** constructor
    * spin grid used for numerical integration. use 0 for exact integration.
    */
-  ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule = -1, int llocal = -1, int srule = 8);
+  ECPComponentBuilder(const std::string& aname, Communicate& c, int nrule = -1, int llocal = -1, int srule = 8);
 
   bool parse(const std::string& fname, xmlNodePtr cur);
   bool put(xmlNodePtr cur);

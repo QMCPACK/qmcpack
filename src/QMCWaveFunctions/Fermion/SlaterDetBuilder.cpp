@@ -40,7 +40,7 @@
 
 namespace qmcplusplus
 {
-SlaterDetBuilder::SlaterDetBuilder(Communicate* comm,
+SlaterDetBuilder::SlaterDetBuilder(Communicate& comm,
                                    SPOSetBuilderFactory& factory,
                                    ParticleSet& els,
                                    TrialWaveFunction& psi,
@@ -98,7 +98,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       // I'm requiring that only a single <backflow> block appears
       // in the xml file
       if (BFTrans)
-        myComm->barrier_and_abort("Only a single backflow block is allowed in the xml. "
+        myComm.barrier_and_abort("Only a single backflow block is allowed in the xml. "
                                   "Please collect all transformations into a single block.");
 
       BackflowBuilder bfbuilder(targetPtcl, ptclPool);
@@ -145,7 +145,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       app_summary() << "   -------------------------" << std::endl;
 
       if (built_singledet_or_multidets)
-        myComm->barrier_and_abort("Only one slaterdeterminant or multideterminant entry allowed in XML");
+        myComm.barrier_and_abort("Only one slaterdeterminant or multideterminant entry allowed in XML");
 
       std::vector<std::unique_ptr<DiracDeterminantBase>> dirac_dets;
       size_t spin_group = 0;
@@ -193,7 +193,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       app_summary() << std::endl;
 
       if (built_singledet_or_multidets)
-        myComm->barrier_and_abort("Only one slaterdeterminant or multideterminant entry allowed in XML");
+        myComm.barrier_and_abort("Only one slaterdeterminant or multideterminant entry allowed in XML");
 
       const int nGroups = targetPtcl.groups();
       std::vector<std::string> spoNames(nGroups);
@@ -222,7 +222,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
           std::stringstream err_msg;
           err_msg << "In SlaterDetBuilder: SPOSet \"" << spoNames[grp]
                   << "\" is not found. Expected for MultiSlaterDeterminant." << std::endl;
-          myComm->barrier_and_abort(err_msg.str());
+          myComm.barrier_and_abort(err_msg.str());
         }
         spo_clones.emplace_back(spo_tmp->makeClone());
       }
@@ -231,7 +231,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
                     << "    See B. K. Clark et al. J. Chem. Phys. 135 244105 (2011) https://doi.org/10.1063/1.3665391"
                     << std::endl;
       if (BFTrans)
-        myComm->barrier_and_abort("Backflow is not supported by Multi-Slater determinants using the table method!");
+        myComm.barrier_and_abort("Backflow is not supported by Multi-Slater determinants using the table method!");
 
       if (msd_algorithm == "precomputed_table_method")
         app_summary() << "    Using precomputing for faster evaluation" << std::endl;
@@ -369,7 +369,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
     std::ostringstream err_msg;
     err_msg << "The SPOSet " << psi_ref.getName() << " only has " << psi_ref.getOrbitalSetSize() << " orbitals "
             << "but this determinant needs at least " << nptcl_group << std::endl;
-    myComm->barrier_and_abort(err_msg.str());
+    myComm.barrier_and_abort(err_msg.str());
   }
 
   const int firstIndex = targetPtcl.first(spin_group);
@@ -382,7 +382,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
             << "and no larger than the electron count within a determinant!\n"
             << "Acceptable value [1," << lastIndex - firstIndex << "], "
             << "user input " + std::to_string(delay_rank);
-    myComm->barrier_and_abort(err_msg.str());
+    myComm.barrier_and_abort(err_msg.str());
   }
   else if (delay_rank == 0)
   {
@@ -582,7 +582,7 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
                   << " occupied orbitals not matching " << nptcl_group << " particles." << std::endl;
       }
       if (const std::string msg = err_msg.str(); msg.length())
-        myComm->barrier_and_abort("SlaterDetBuilder::createMSDFast Issues found in the particle group " +
+        myComm.barrier_and_abort("SlaterDetBuilder::createMSDFast Issues found in the particle group " +
                                   std::to_string(grp) + " :\n" + msg);
     }
 
@@ -802,7 +802,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         ci = ValueType(ci_real, ci_imag);
 #else
         if (ci_imag != RealType(0))
-          myComm->barrier_and_abort(
+          myComm.barrier_and_abort(
               "SlaterDetBuilder::readDetList. Build with QMC_COMPLEX if using complex CI expansion coefficients.");
         ci = ci_real;
 #endif
@@ -963,7 +963,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         ci = ValueType(ci_real, ci_imag);
 #else
         if (ci_imag != RealType(0))
-          myComm->barrier_and_abort(
+          myComm.barrier_and_abort(
               "SlaterDetBuilder::readDetList. Build with QMC_COMPLEX if using complex CI expansion coefficients.");
         ci = ci_real;
 #endif

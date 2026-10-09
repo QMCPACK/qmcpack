@@ -46,7 +46,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
                                                            MCWalkerConfiguration& w,
                                                            TrialWaveFunction& psi,
                                                            QMCHamiltonian& h,
-                                                           Communicate* comm)
+                                                           Communicate& comm)
     : QMCDriver(project_data, w, psi, h, comm, "QMCFixedSampleLinearOptimize"),
       nstabilizers(3),
       stabilizerScale(2.0),

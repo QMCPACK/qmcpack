@@ -55,7 +55,7 @@
 
 namespace qmcplusplus
 {
-QMCMain::QMCMain(Communicate* c)
+QMCMain::QMCMain(Communicate& c)
     : MPIObjectBase(c),
       QMCAppBase(),
       particle_set_pool_(std::make_unique<ParticleSetPool>(myComm)),
@@ -94,9 +94,9 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  Built without MPI. Running in serial or with OMP threads." << std::endl
 #endif
       << "\n  Total number of MPI ranks = " << OHMMS::Controller->size()
-      << "\n  Number of MPI groups      = " << myComm->getNumGroups()
-      << "\n  MPI group ID              = " << myComm->getGroupID()
-      << "\n  Number of ranks in group  = " << myComm->size()
+      << "\n  Number of MPI groups      = " << myComm.getNumGroups()
+      << "\n  MPI group ID              = " << myComm.getGroupID()
+      << "\n  Number of ranks in group  = " << myComm.size()
       << "\n  MPI ranks per node        = " << node_comm.size()
 #if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM) || defined(ENABLE_SYCL)
       << "\n  Accelerators per rank     = " << DeviceManager::getGlobal().getNumDevices()
@@ -211,7 +211,7 @@ bool QMCMain::execute()
   //validate the input file
   bool success = validateXML();
   if (!success)
-    myComm->barrier_and_abort("QMCMain::execute. Input document does not contain valid objects");
+    myComm.barrier_and_abort("QMCMain::execute. Input document does not contain valid objects");
 
   //initialize all the instances of distance tables and evaluate them
   particle_set_pool_->reset();
@@ -273,7 +273,7 @@ bool QMCMain::execute()
     }
     walker_set_.clear(); //empty the container
     std::ostringstream np_str, v_str;
-    np_str << myComm->size();
+    np_str << myComm.size();
     HDFVersion cur_version;
     v_str << cur_version[0] << " " << cur_version[1];
     xmlNodePtr newmcptr = xmlNewNode(NULL, (const xmlChar*)"mcwalkerset");
@@ -348,7 +348,7 @@ bool QMCMain::validateXML()
 {
   xmlXPathContextPtr m_context = xml_doc_stack_.top()->getXPathContext();
   OhmmsXPathObject result("//project", m_context);
-  my_project_.setCommunicator(myComm);
+  my_project_.setCommunicator(&myComm);
   if (result.empty())
   {
     app_warning() << "Project is not defined" << std::endl;
@@ -362,7 +362,7 @@ bool QMCMain::validateXML()
     }
     catch (const UniformCommunicateError& ue)
     {
-      myComm->barrier_and_abort(ue.what());
+      myComm.barrier_and_abort(ue.what());
     }
   }
   app_summary() << std::endl;
@@ -431,10 +431,10 @@ bool QMCMain::validateXML()
           popDocument();
         }
         else
-          myComm->barrier_and_abort("Invalid XML document");
+          myComm.barrier_and_abort("Invalid XML document");
       }
       else
-        myComm->barrier_and_abort(R"(tag "include" must include an "href" attribute.)");
+        myComm.barrier_and_abort(R"(tag "include" must include an "href" attribute.)");
     }
     else if (cname == "qmcsystem")
     {
@@ -467,13 +467,13 @@ bool QMCMain::validateXML()
   }
 
   if (particle_set_pool_->empty())
-    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing particleset.");
+    myComm.barrier_and_abort("QMCMain::validateXML. Illegal input. Missing particleset.");
 
   if (psi_pool_->empty())
-    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing wavefunction.");
+    myComm.barrier_and_abort("QMCMain::validateXML. Illegal input. Missing wavefunction.");
 
   if (ham_pool_->empty())
-    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");
+    myComm.barrier_and_abort("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");
 
   //randomize any particleset with random="yes" && random_source="ion0"
   particle_set_pool_->randomize();
@@ -534,7 +534,7 @@ bool QMCMain::processPWH(xmlNodePtr cur)
       }
       catch (const UniformCommunicateError& ue)
       {
-        myComm->barrier_and_abort(ue.what());
+        myComm.barrier_and_abort(ue.what());
       }
     }
     else
@@ -568,12 +568,12 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     {
       QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
       qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmc_system_, *particle_set_pool_,
-                                                  *psi_pool_, *ham_pool_, myComm);
+                                                  *psi_pool_, *ham_pool_, &myComm);
       append_run = das.append_run;
     }
     catch (const UniformCommunicateError& ue)
     {
-      myComm->barrier_and_abort(ue.what());
+      myComm.barrier_and_abort(ue.what());
     }
   }
 
@@ -650,7 +650,7 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
     a.add(fname, "src");
     a.put(result[result.size() - 1]);
     if (fname.size())
-      RandomNumberControl::read(fname, *myComm);
+      RandomNumberControl::read(fname, myComm);
   }
   return true;
 }

@@ -39,7 +39,7 @@ int main(int argc, char** argv)
 
   //use the global generator
 
-  bool ionode   = (myComm->rank() == 0);
+  bool ionode   = (myComm.rank() == 0);
   int nels      = 8;
   int iseed     = 11;
   int nsteps    = 100;

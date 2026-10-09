@@ -46,7 +46,7 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
                      MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
-                     Communicate* comm,
+                     Communicate& comm,
                      const std::string& QMC_driver_type,
                      bool enable_profiling)
     : MPIObjectBase(comm),
@@ -179,17 +179,17 @@ void QMCDriver::process(xmlNodePtr cur)
   Estimators = branchEngine->getEstimatorManager();
   if (Estimators == nullptr)
   {
-    branchEngine->setEstimatorManager(std::make_unique<EstimatorManagerBase>(myComm));
+    branchEngine->setEstimatorManager(std::make_unique<EstimatorManagerBase>(&myComm));
     Estimators = branchEngine->getEstimatorManager();
     branchEngine->read(h5FileRoot);
   }
   if (DriftModifier == 0)
-    DriftModifier = createDriftModifier(cur, myComm);
+    DriftModifier = createDriftModifier(cur, &myComm);
   DriftModifier->parseXML(cur);
 #if !defined(REMOVE_TRACEMANAGER)
   //create and initialize traces
   if (!Traces)
-    Traces = std::make_unique<TraceManager>(myComm);
+    Traces = std::make_unique<TraceManager>(&myComm);
   Traces->put(traces_xml, allow_traces, RootName);
 #endif
   //create and initialize traces
@@ -201,7 +201,7 @@ void QMCDriver::process(xmlNodePtr cur)
   branchEngine->put(cur);
   Estimators->put(H, cur);
   if (!wOut)
-    wOut = std::make_unique<HDFWalkerOutput>(W.getTotalNum(), RootName, *myComm);
+    wOut = std::make_unique<HDFWalkerOutput>(W.getTotalNum(), RootName, myComm);
   branchEngine->start(RootName);
   branchEngine->write(RootName);
   //use new random seeds
@@ -242,20 +242,20 @@ void QMCDriver::putWalkers(std::vector<xmlNodePtr>& wset)
   if (wset.empty())
     return;
   int nfile = wset.size();
-  HDFWalkerInputManager W_in(W, W.getTotalNum(), *myComm);
+  HDFWalkerInputManager W_in(W, W.getTotalNum(), myComm);
   for (int i = 0; i < wset.size(); i++)
     if (W_in.put(wset[i]))
       h5FileRoot = W_in.getFileRoot();
   //clear the walker set
   wset.clear();
   int nwtot = W.getActiveWalkers();
-  myComm->bcast(nwtot);
+  myComm.bcast(nwtot);
   if (nwtot)
   {
-    int np = myComm->size();
+    int np = myComm.size();
     std::vector<int> nw(np, 0), nwoff(np + 1, 0);
-    nw[myComm->rank()] = W.getActiveWalkers();
-    myComm->allreduce(nw);
+    nw[myComm.rank()] = W.getActiveWalkers();
+    myComm.allreduce(nw);
     for (int ip = 0; ip < np; ++ip)
       nwoff[ip + 1] = nwoff[ip] + nw[ip];
     W.setWalkerOffsets(nwoff);
@@ -298,7 +298,7 @@ void QMCDriver::recordBlock(int block)
     ScopedTimer local(checkpoint_timer_);
     wOut->dump(W, block);
     branchEngine->write(RootName, true); //save energy_history
-    RandomNumberControl::write(RootName, *myComm);
+    RandomNumberControl::write(RootName, myComm);
   }
 }
 
@@ -314,7 +314,7 @@ void QMCDriver::finalize(int block, bool dumpwalkers)
   branchEngine->finalize(W);
 
   if (DumpConfig)
-    RandomNumberControl::write(RootName, *myComm);
+    RandomNumberControl::write(RootName, myComm);
 }
 
 /** Add walkers to the end of the ensemble of walkers.
@@ -349,28 +349,28 @@ void QMCDriver::addWalkers(int nwalkers)
 
   ////update the global number of walkers
   ////int nw=W.getActiveWalkers();
-  ////myComm->allreduce(nw);
+  ////myComm.allreduce(nw);
 }
 
 void QMCDriver::setWalkerOffsets()
 {
-  std::vector<int> nw(myComm->size(), 0), nwoff(myComm->size() + 1, 0);
-  nw[myComm->rank()] = W.getActiveWalkers();
-  myComm->allreduce(nw);
-  for (int ip = 0; ip < myComm->size(); ip++)
+  std::vector<int> nw(myComm.size(), 0), nwoff(myComm.size() + 1, 0);
+  nw[myComm.rank()] = W.getActiveWalkers();
+  myComm.allreduce(nw);
+  for (int ip = 0; ip < myComm.size(); ip++)
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
   W.setWalkerOffsets(nwoff);
-  long id = nwoff[myComm->rank()];
-  for (int iw = 0; iw < nw[myComm->rank()]; ++iw, ++id)
+  long id = nwoff[myComm.rank()];
+  for (int iw = 0; iw < nw[myComm.rank()]; ++iw, ++id)
   {
     W[iw]->setWalkerID(id);
     W[iw]->setParentID(id);
   }
   // Compute total walker weights and counts. W.EnsembleProperty.NumSamples and W.EnsembleProperty.Weight are only set during branching / measureProperties.
   QMCTraits::FullPrecRealType total_weight = 0;
-  for (int iw = 0; iw < nw[myComm->rank()]; ++iw)
+  for (int iw = 0; iw < nw[myComm.rank()]; ++iw)
     total_weight += W[iw]->Weight;
-  myComm->allreduce(total_weight);
+  myComm.allreduce(total_weight);
 
   app_log() << "  Total number of walkers: " << nwoff.back() << std::endl;
   app_log() << "  Total weight: " << total_weight << std::endl;

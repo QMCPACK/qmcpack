@@ -41,7 +41,7 @@ int main(int argc, char** argv)
     outputManager.shutOff();
   }
 
-  bool ionode = (myComm->rank() == 0);
+  bool ionode = (myComm.rank() == 0);
   int na      = 4;
   int nb      = 4;
   int nc      = 1;

@@ -18,11 +18,11 @@
 
 namespace qmcplusplus
 {
-LCAOSpinorBuilder::LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur)
+LCAOSpinorBuilder::LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Communicate& comm, xmlNodePtr cur)
     : LCAOrbitalBuilder(els, ions, comm, cur)
 {
   if (h5_path == "")
-    myComm->barrier_and_abort("LCAOSpinorBuilder only works with href");
+    myComm.barrier_and_abort("LCAOSpinorBuilder only works with href");
 }
 
 std::unique_ptr<SPOSet> LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
@@ -40,7 +40,7 @@ std::unique_ptr<SPOSet> LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   BasisSet_t* myBasisSet = nullptr;
   if (basisset_map_.find(basisset_name) == basisset_map_.end())
-    myComm->barrier_and_abort("basisset \"" + basisset_name + "\" cannot be found\n");
+    myComm.barrier_and_abort("basisset \"" + basisset_name + "\" cannot be found\n");
   else
     myBasisSet = basisset_map_[basisset_name].get();
 
@@ -81,18 +81,18 @@ bool LCAOSpinorBuilder::loadMO(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr 
   }
 
   hdf_archive hin(*myComm);
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
-      myComm->barrier_and_abort("LCAOSpinorBuilder::loadMO missing or incorrect path to H5 file.");
+      myComm.barrier_and_abort("LCAOSpinorBuilder::loadMO missing or incorrect path to H5 file.");
     hin.push("PBC");
     PBC = false;
     hin.read(PBC, "PBC");
     hin.close();
   }
-  myComm->bcast(PBC);
+  myComm.bcast(PBC);
   if (PBC)
-    myComm->barrier_and_abort("LCAOSpinorBuilder::loadMO lcao spinors not implemented in PBC");
+    myComm.barrier_and_abort("LCAOSpinorBuilder::loadMO lcao spinors not implemented in PBC");
 
   bool success = putFromH5(up, dn, occ_ptr);
 
@@ -114,16 +114,16 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
 #ifdef QMC_COMPLEX
   if (up.getBasisSetSize() == 0 || dn.getBasisSetSize() == 0)
   {
-    myComm->barrier_and_abort("LCASpinorBuilder::loadMO  detected ZERO BasisSetSize");
+    myComm.barrier_and_abort("LCASpinorBuilder::loadMO  detected ZERO BasisSetSize");
     return false;
   }
 
   bool success = true;
   hdf_archive hin(*myComm);
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
-      myComm->barrier_and_abort("LCAOSpinorBuilder::putFromH5 missing or incorrect path to H5 file");
+      myComm.barrier_and_abort("LCAOSpinorBuilder::putFromH5 missing or incorrect path to H5 file");
 
     Matrix<RealType> upReal;
     Matrix<RealType> upImag;
@@ -186,11 +186,11 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
     hin.close();
   }
 
-  myComm->bcast(*up.C);
-  myComm->bcast(*dn.C);
+  myComm.bcast(*up.C);
+  myComm.bcast(*dn.C);
 
 #else
-  myComm->barrier_and_abort("LCAOSpinorBuilder::putFromH5 Must build with QMC_COMPLEX");
+  myComm.barrier_and_abort("LCAOSpinorBuilder::putFromH5 Must build with QMC_COMPLEX");
 #endif
 
   return success;

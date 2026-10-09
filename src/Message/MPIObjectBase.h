@@ -30,32 +30,32 @@ public:
   using mpi_comm_type = Communicate::mpi_comm_type;
 
   ///constructor with communicator
-  MPIObjectBase(Communicate* c);
+  MPIObjectBase(Communicate& c);
 
   ///return the rank of the communicator
-  inline int rank() const { return myComm->rank(); }
+  inline int rank() const { return myComm.rank(); }
 
   ///return the group id of the communicator
-  inline int getGroupID() const { return myComm->getGroupID(); }
+  inline int getGroupID() const { return myComm.getGroupID(); }
 
   ///return myComm
-  inline Communicate* getCommunicator() const { return myComm; }
+  inline Communicate* getCommunicator() const { return &myComm; }
 
   ///return a TEMPORARY reference to Communicate
-  inline Communicate& getCommRef() const { return *myComm; }
+  inline Communicate& getCommRef() const { return myComm; }
 
   ///return MPI communicator if one wants to use MPI directly
-  inline mpi_comm_type getMPI() const { return myComm->getMPI(); }
+  inline mpi_comm_type getMPI() const { return myComm.getMPI(); }
 
   /** return true if the rank == 0
   */
-  inline bool is_manager() const { return !myComm->rank(); }
+  inline bool is_manager() const { return !myComm.rank(); }
 
 protected:
   /** pointer to Communicate
    * @todo use smart pointer
    */
-  Communicate* myComm;
+  Communicate& myComm;
 };
 
 } // namespace qmcplusplus

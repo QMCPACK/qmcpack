@@ -53,7 +53,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            MCPopulation&& population,
                            const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                            const std::string timer_prefix,
-                           Communicate* comm,
+                           Communicate& comm,
                            const std::string& QMC_driver_type)
     : MPIObjectBase(comm),
       qmcdriver_input_(std::move(input)),
@@ -70,12 +70,12 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
   if (estimator_manager)
     estimator_manager_ = std::move(estimator_manager);
   else
-    estimator_manager_ = std::make_unique<EstimatorManagerNew>(population_.get_golden_hamiltonian(), comm);
+    estimator_manager_ = std::make_unique<EstimatorManagerNew>(population_.get_golden_hamiltonian(), &comm);
 
   drift_modifier_.reset(
       createDriftModifier(qmcdriver_input_.get_drift_modifier(), qmcdriver_input_.get_drift_modifier_unr_a()));
 
-  wOut = std::make_unique<HDFWalkerOutput>(population.get_golden_electrons().getTotalNum(), get_root_name(), *myComm);
+  wOut = std::make_unique<HDFWalkerOutput>(population.get_golden_electrons().getTotalNum(), get_root_name(), myComm);
 }
 
 QMCDriverNew::~QMCDriverNew() = default;
@@ -137,7 +137,7 @@ void QMCDriverNew::initPopulationAndCrowds(const AdjustedWalkerCounts& awc)
     app_debug() << "Multi walker shared resources creation completed" << std::endl;
   }
 
-  makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers);
+  makeLocalWalkers(awc.walkers_per_rank[myComm.rank()], awc.reserve_walkers);
 
   crowds_.resize(awc.walkers_per_crowd.size());
 
@@ -183,16 +183,16 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
     return;
   const int nfile = wset.size();
 
-  HDFWalkerInputManager W_in(walker_configs_ref_, population_.get_golden_electrons().getTotalNum(), *myComm);
+  HDFWalkerInputManager W_in(walker_configs_ref_, population_.get_golden_electrons().getTotalNum(), myComm);
   for (int i = 0; i < wset.size(); i++)
     if (W_in.put(wset[i]))
       h5_file_root_ = W_in.getFileRoot();
   //clear the walker set
   wset.clear();
   int nwtot = walker_configs_ref_.getActiveWalkers();
-  myComm->bcast(nwtot);
+  myComm.bcast(nwtot);
   if (nwtot)
-    setWalkerOffsets(walker_configs_ref_, myComm);
+    setWalkerOffsets(walker_configs_ref_, &myComm);
 }
 
 void QMCDriverNew::recordBlock(int block)
@@ -201,7 +201,7 @@ void QMCDriverNew::recordBlock(int block)
   {
     ScopedTimer local_timer(timers_.checkpoint_timer);
     population_.saveWalkerConfigurations(walker_configs_ref_);
-    setWalkerOffsets(walker_configs_ref_, myComm);
+    setWalkerOffsets(walker_configs_ref_, &myComm);
     wOut->dump(walker_configs_ref_, block);
   }
 }
@@ -209,7 +209,7 @@ void QMCDriverNew::recordBlock(int block)
 void QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
   population_.saveWalkerConfigurations(walker_configs_ref_);
-  setWalkerOffsets(walker_configs_ref_, myComm);
+  setWalkerOffsets(walker_configs_ref_, &myComm);
   app_log() << "  Carry over " << walker_configs_ref_.getGlobalNumWalkers()
             << " walker configurations to the next QMC driver." << std::endl;
 
@@ -221,7 +221,7 @@ void QMCDriverNew::finalize(int block, bool dumpwalkers)
   infoLog.flush();
 
   if (DumpConfig)
-    RandomNumberControl::write(rngs_, get_root_name(), *myComm);
+    RandomNumberControl::write(rngs_, get_root_name(), myComm);
 }
 
 void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
@@ -553,11 +553,11 @@ void QMCDriverNew::measureImbalance(const std::string& tag) const
 {
   ScopedTimer local_timer(timers_.imbalance_timer);
   Timer only_this_barrier;
-  myComm->barrier();
+  myComm.barrier();
   std::vector<double> my_barrier_time(1, only_this_barrier.elapsed());
-  std::vector<double> barrier_time_all_ranks(myComm->size(), 0.0);
-  myComm->gather(my_barrier_time, barrier_time_all_ranks, 0);
-  if (!myComm->rank())
+  std::vector<double> barrier_time_all_ranks(myComm.size(), 0.0);
+  myComm.gather(my_barrier_time, barrier_time_all_ranks, 0);
+  if (!myComm.rank())
   {
     auto const count  = static_cast<double>(barrier_time_all_ranks.size());
     const auto max_it = std::max_element(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end());

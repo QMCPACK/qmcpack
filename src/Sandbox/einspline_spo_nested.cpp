@@ -48,7 +48,7 @@ int main(int argc, char** argv)
 
   //use the global generator
 
-  bool ionode = (myComm->rank() == 0);
+  bool ionode = (myComm.rank() == 0);
   int na      = 4;
   int nb      = 4;
   int nc      = 1;
@@ -292,10 +292,10 @@ int main(int argc, char** argv)
   timer_type global_t(t0, vgh_t, val_t, 0.0);
   timer_type global_t_1(tInit, tBigClock, 0.0, 0.0);
 
-  myComm->reduce(global_t);
-  myComm->reduce(global_t_1);
+  myComm.reduce(global_t);
+  myComm.reduce(global_t_1);
 
-  const int nmpi = myComm->size();
+  const int nmpi = myComm.size();
   t0             = global_t[0] / nmpi;
   vgh_t          = global_t[1] / nmpi;
   val_t          = global_t[2] / nmpi;

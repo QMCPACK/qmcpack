@@ -84,11 +84,11 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   }
 
   if (numOrbs < 1)
-    myComm->barrier_and_abort("Non-positive orbital set size! Please correct attribute \"size\".");
+    myComm.barrier_and_abort("Non-positive orbital set size! Please correct attribute \"size\".");
 
   auto pit(ParticleSets.find(sourceName));
   if (pit == ParticleSets.end())
-    myComm->barrier_and_abort("Einspline needs the source particleset");
+    myComm.barrier_and_abort("Einspline needs the source particleset");
   else
     SourcePtcl = pit->second.get();
 
@@ -118,7 +118,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
       if (occ_mode == "excited")
         putContent(Occ, cur);
       else if (occ_mode != "ground")
-        myComm->barrier_and_abort("EinsplineSetBuilder::createSPOSet Only ground state occupation currently "
+        myComm.barrier_and_abort("EinsplineSetBuilder::createSPOSet Only ground state occupation currently "
                                   "supported in EinsplineSetBuilder.");
     }
     cur = cur->next;
@@ -165,7 +165,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
 
   //read g-vectors and set MeshSize based on g-vectors and meshfactor
   if (!ReadGvectors_ESHDF())
-    myComm->barrier_and_abort("Failed to load g-vectors.");
+    myComm.barrier_and_abort("Failed to load g-vectors.");
 
   const bool use_single = (spo_prec == "single" || spo_prec == "float");
   app_summary() << "    Using " << (use_single ? "single" : "double") << " precision B-spline coefficients."
@@ -178,7 +178,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
 
   // safeguard for a removed feature
   if (truncate == "yes")
-    myComm->barrier_and_abort(
+    myComm.barrier_and_abort(
         "The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
 
   if (!MixedSplineReader)
