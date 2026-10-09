@@ -219,10 +219,10 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
   initialize_hybridrep_atomic_centers(hybrid_center_orbs);
   bool foundspline = lookforSplineDataDumpFile(bandgroup, bspline->getKeyword(), sizeof(ST));
   hybrid_center_orbs.resizeStorage(num_splines);
-  if (foundspline && myComm->rank() == 0)
+  if (foundspline && myComm.rank() == 0)
   {
     Timer now;
-    hdf_archive h5f(*myComm);
+    hdf_archive h5f(myComm);
     const auto splinefile = getSplineDumpFileName(bandgroup);
     h5f.open(splinefile, H5F_ACC_RDONLY);
     foundspline = SplineUtils<ST>::read(multi_splines, h5f) && hybrid_center_orbs.read_atomic_splines(h5f);
@@ -237,7 +237,7 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
     hybrid_center_orbs.flush_zero();
     initialize_hybrid_pio_gather(spin, bandgroup, half_g, bspline->BandIndexMap, hybrid_center_orbs, multi_splines);
 
-    if (saveSplineCoefs && myComm->rank() == 0)
+    if (saveSplineCoefs && myComm.rank() == 0)
     {
       Timer now;
       const std::string splinefile(getSplineDumpFileName(bandgroup));
@@ -257,8 +257,8 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
 
   {
     Timer now;
-    SplineUtils<ST>::bcast(multi_splines, 0, *myComm);
-    hybrid_center_orbs.bcast_atomic_tables(*myComm);
+    SplineUtils<ST>::bcast(multi_splines, 0, myComm);
+    hybrid_center_orbs.bcast_atomic_tables(myComm);
     app_log() << "  Time to bcast the table = " << now.elapsed() << std::endl;
   }
   return bspline;
@@ -394,7 +394,7 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
     }
 
     if (!success)
-      myComm->barrier_and_abort("initialize_hybridrep_atomic_centers Failed to initialize atomic centers "
+      myComm.barrier_and_abort("initialize_hybridrep_atomic_centers Failed to initialize atomic centers "
                                 "in hybrid orbital representation!");
 
     for (int center_idx = 0; center_idx < ACInfo.Ncenters; center_idx++)
@@ -691,9 +691,9 @@ void HybridRepSetReader<ST>::initialize_hybrid_pio_gather(const int spin,
 {
   //distribute bands over processor groups
   int Nbands            = bandgroup.getNumDistinctOrbitals();
-  const int Nprocs      = myComm->size();
+  const int Nprocs      = myComm.size();
   const int Nbandgroups = std::min(Nbands, Nprocs);
-  Communicate band_group_comm(*myComm, Nbandgroups);
+  Communicate band_group_comm(myComm, Nbandgroups);
   std::vector<int> band_groups(Nbandgroups + 1, 0);
   FairDivideLow(Nbands, Nbandgroups, band_groups);
   int iorb_first = band_groups[band_group_comm.getGroupID()];
@@ -726,7 +726,7 @@ void HybridRepSetReader<ST>::initialize_hybrid_pio_gather(const int spin,
     create_atomic_centers_Gspace(cG, band_group_comm, iorb, oneband.getRotatePhase(), half_g, multi_atomic_splines);
   }
 
-  myComm->barrier();
+  myComm.barrier();
   if (band_group_comm.isGroupLeader())
   {
     auto& group_leader_comm = band_group_comm.getInterGroupComm();
