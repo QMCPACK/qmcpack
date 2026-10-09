@@ -108,7 +108,7 @@ public:
    *        if true and PHDF5 is not available, hdf_archive is in master-only IO mode
    *        if false, hdf_archive is in independent IO mode
    */
-  template<class Comm>
+  template<class Comm, typename = std::enable_if_t<!std::is_same_v<std::decay_t<Comm>, hdf_archive>>>
   hdf_archive(Comm& c, bool request_pio = false) : file_id(is_closed)
   {
     if (!hdf_error_suppression::enabled)

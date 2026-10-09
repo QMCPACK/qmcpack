@@ -485,7 +485,7 @@ hdf_archive EshdfFile::openHdfFileForRead(const string& fname)
     cout << "wf_collect=.false. in your input" << endl;
     exit(1);
   }
-  return std::move(file);
+  return file;
 }
 
 // need to be in the electrons group when entering this
