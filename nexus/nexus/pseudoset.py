@@ -508,14 +508,14 @@ class PseudoSet(DevBase):
                         warn(msg)
                     else:
                         raise ValueError(msg)
-                elif symbol in self.pseudos:
-                    msg = (
-                        "Can not provide multiple pseudos for the same element!\n"
-                       f"Duplicate pseudo is at index {pseudos.index(psp)}\n"
-                       f"    Existing pseudo file:  {self.pseudos[symbol]}\n"
-                       f"    Duplicate pseudo file: {psp}"
-                        )
-                    raise ValueError(msg)
+#                elif symbol in self.pseudos:
+#                    msg = (
+#                        "Can not provide multiple pseudos for the same element!\n"
+#                       f"Duplicate pseudo is at index {pseudos.index(psp)}\n"
+#                       f"    Existing pseudo file:  {self.pseudos[symbol]}\n"
+#                       f"    Duplicate pseudo file: {psp}"
+#                        )
+#                    raise ValueError(msg)
                 else:
                     self.pseudos[symbol] = psp
 
