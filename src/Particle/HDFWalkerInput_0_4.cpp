@@ -196,7 +196,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
   bool success = false;
   if (myComm.rank() == 0)
   {
-    hdf_archive hin(myComm); //everone reads this
+    hdf_archive hin(myComm, false); // master rank reads this
     success = hin.open(h5name, H5F_ACC_RDONLY);
     if (success)
     {
@@ -261,7 +261,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
   bool success2 = false;
   if (myComm.rank() == 0)
   {
-    hdf_archive hin(myComm);
+    hdf_archive hin(myComm, false);
     success2 = hin.open(h5name, H5F_ACC_RDONLY);
     if (success2)
     {
@@ -275,14 +275,14 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
     return false;
 
   Buffer_t posout(counts[myComm.rank()]);
-  std::vector<QMCTraits::FullPrecRealType> weights_out(counts[myComm.rank()]);
+  std::vector<QMCTraits::FullPrecRealType> weights_out(counts_weights[myComm.rank()]);
   myComm.scatterv(posin, posout, counts, woffsets);
 
   myComm.bcast(has_weights);
   if (has_weights)
     myComm.scatterv(weights_in, weights_out, counts_weights, woffsets_weights);
 
-  const size_t nw_loc = woffsets[myComm.rank() + 1] - woffsets[myComm.rank()];
+  const size_t nw_loc = counts_weights[myComm.rank()];
   const int curWalker = wc_list_.getActiveWalkers();
   wc_list_.createWalkers(nw_loc, num_ptcls_);
 
@@ -290,7 +290,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
   for (int i = 0; i < nw_loc; ++i, it += nitems)
     std::copy(it, it + nitems, get_first_address(wc_list_[i + curWalker]->R));
   if (has_weights)
-    for (int i = 0; i < nw_in; ++i)
+    for (int i = 0; i < nw_loc; ++i)
       wc_list_[i + curWalker]->Weight = weights_out[i];
   return true;
 }
