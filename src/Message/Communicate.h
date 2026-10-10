@@ -93,6 +93,9 @@ public:
   ///disable copy constructor
   Communicate(const Communicate&) = delete;
 
+  /** Move constructor
+   *  Transfers ownership of communicators and state from another Communicate instance.
+   */
   Communicate(Communicate&&);
 
   /** provide a node/shared-memory communicator from current (parent) communicator
