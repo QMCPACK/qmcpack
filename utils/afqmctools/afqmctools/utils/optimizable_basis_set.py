@@ -1,5 +1,6 @@
-import numpy
 import os.path
+
+import numpy
 
 
 # Simple class
@@ -77,21 +78,21 @@ class BasisBlock:
                     self.sym
                     + "   "
                     + self.L
-                    + " \n  {}  1.00\n".format(self.exponents[0])
+                    + f" \n  {self.exponents[0]}  1.00\n"
                 )
             else:
-                return self.sym + "   " + self.L + " \n  {}  1.00\n".format(x[0])
+                return self.sym + "   " + self.L + f" \n  {x[0]}  1.00\n"
         else:
             gto_basis = self.sym + "   " + self.L + " \n"
             n = 0
             for i in range(self.n_gauss):
                 if self.fix_exponents:
-                    gto_basis += "  {}  ".format(self.exponents[i])
+                    gto_basis += f"  {self.exponents[i]}  "
                 else:
-                    gto_basis += "  {}  ".format(x[n])
+                    gto_basis += f"  {x[n]}  "
                     n += 1
                 for j in range(self.n_fun):
-                    gto_basis += "  {}  ".format(x[n])
+                    gto_basis += f"  {x[n]}  "
                     n += 1
                 gto_basis += "\n"
 
@@ -176,9 +177,9 @@ class EvenTemperedBasisBlock:
             beta = x[0]
             n = 1
         for i in range(self.n_gauss):
-            gto_basis += "  {}  ".format(self.alpha * beta ** (i))
+            gto_basis += f"  {self.alpha * beta ** (i)}  "
             for j in range(self.n_fun):
-                gto_basis += "  {}  ".format(x[n])
+                gto_basis += f"  {x[n]}  "
                 n += 1
             gto_basis += "\n"
         return gto_basis
@@ -412,7 +413,7 @@ def default_basis_set(Lmax, atoms):
     def get_shell(sym, L, x):
         labels = ["S", "P", "D", "F", "G", "H", "I"]
         bblk_list = []
-        for i in range(0, L + 1):
+        for i in range(L + 1):
             # single uncontracted gaussians
             bblk_list.append(BasisBlock(sym, labels[i]))
         if L == 2:

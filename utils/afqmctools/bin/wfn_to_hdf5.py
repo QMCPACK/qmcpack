@@ -1,14 +1,13 @@
 #! /usr/bin/env python3
 
 import argparse
-import scipy.sparse
 import sys
-import time
-from afqmctools.wavefunction.mol import write_qmcpack_wfn
+
 from afqmctools.wavefunction.converter import (
-    read_qmcpack_ascii_wavefunction,
     read_dmc_ci_wavefunction,
+    read_qmcpack_ascii_wavefunction,
 )
+from afqmctools.wavefunction.mol import write_qmcpack_wfn
 
 
 def parse_args(args):

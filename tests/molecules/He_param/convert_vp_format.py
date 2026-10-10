@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import sys
+import argparse
+
 import h5py
 import numpy as np
-import argparse
 
 # Converts variational parameter files from HDF to text and back.
 # The suffix of the input determines the conversion direction

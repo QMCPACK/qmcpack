@@ -3,12 +3,11 @@
 # Reads spline coefficients from HDF file of saved coefficients
 
 import autograd.numpy as np
-from autograd import hessian, grad
-from run_qmc import run_qmc
-import read_qmcpack
 import h5py
+import read_qmcpack
+from autograd import grad, hessian
+from run_qmc import run_qmc
 from scipy.interpolate import interp1d
-
 
 # Integration on a sphere
 

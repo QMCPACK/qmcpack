@@ -1,5 +1,6 @@
 import h5py
 import numpy
+
 from afqmctools.utils.io import to_qmcpack_complex
 
 
@@ -59,8 +60,8 @@ def write_qmcpack_sparse(
             [not int(real_chol)], dtype=numpy.int32
         )
         # TODO: FDM This is deprecated, remove eventually.
-        occups = [i for i in range(0, nalpha)]
-        occups += [i + nmo for i in range(0, nbeta)]
+        occups = [i for i in range(nalpha)]
+        occups += [i + nmo for i in range(nbeta)]
         fh5["Hamiltonian/occups"] = numpy.array(occups)
 
 
@@ -68,11 +69,11 @@ def write_sparse_chol_chunk(
     ixs, vals, chunk, filename="hamiltonian.h5", real_chol=False
 ):
     with h5py.File(filename, "a") as fh5:
-        fh5["Hamiltonian/Factorized/index_{:d}".format(chunk)] = numpy.array(ixs)
+        fh5[f"Hamiltonian/Factorized/index_{chunk:d}"] = numpy.array(ixs)
         if real_chol:
-            fh5["Hamiltonian/Factorized/vals_{:d}".format(chunk)] = numpy.array(chunk)
+            fh5[f"Hamiltonian/Factorized/vals_{chunk:d}"] = numpy.array(chunk)
         else:
-            fh5["Hamiltonian/Factorized/vals_{:d}".format(chunk)] = to_qmcpack_complex(
+            fh5[f"Hamiltonian/Factorized/vals_{chunk:d}"] = to_qmcpack_complex(
                 numpy.array(vals, dtype=numpy.complex128)
             )
 
@@ -89,8 +90,8 @@ def write_sparse_basic(filename, hcore, e0, nelec, real_chol=False):
             hcore = hcore.astype(numpy.complex128).view(numpy.float64)
             hcore = hcore.reshape(shape + (2,))
             fh5["Hamiltonian/hcore"] = hcore
-        occups = [i for i in range(0, nalpha)]
-        occups += [i + nmo for i in range(0, nbeta)]
+        occups = [i for i in range(nalpha)]
+        occups += [i + nmo for i in range(nbeta)]
         fh5["Hamiltonian/occups"] = numpy.array(occups)
 
 

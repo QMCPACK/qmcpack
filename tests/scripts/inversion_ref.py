@@ -14,12 +14,12 @@
 # this python code was used to generate the reference data used in
 # test_cuBLAS_LU.cpp
 
-import numpy as np
-import scipy as sp
-import scipy.linalg as sl
 import cmath
-import math
 import itertools as it
+import math
+
+import numpy as np
+import scipy.linalg as sl
 
 
 def complex_det_log(lu_diag, pivots):
@@ -32,16 +32,14 @@ def complex_cplusplus_format(a_mat):
     for i in range(a_mat.shape[0]):
         for j in range(a_mat.shape[1]):
             print(
-                "a({},{}) = {{ {}, {} }};".format(
-                    i, j, a_mat[i, j].real, a_mat[i, j].imag
-                )
+                f"a({i},{j}) = {{ {a_mat[i, j].real}, {a_mat[i, j].imag} }};"
             )
 
 
 def double_cplusplus_format(a_mat):
     for i in range(a_mat.shape[0]):
         for j in range(a_mat.shape[1]):
-            print("a({},{}) = {};".format(i, j, a_mat[i, j]))
+            print(f"a({i},{j}) = {a_mat[i, j]};")
 
 
 # note that OhmmsMatrix is row major and by default so is numpy
@@ -54,13 +52,13 @@ def double_cplusplus_format(a_mat):
 def print_real_col_major(a_mat):
     for j in range(a_mat.shape[1]):
         for i in range(a_mat.shape[0]):
-            print("{} ".format(a_mat[i, j]), end="")
+            print(f"{a_mat[i, j]} ", end="")
 
 
 def print_complex_col_major(a_mat):
     for j in range(a_mat.shape[1]):
         for i in range(a_mat.shape[0]):
-            print("{}, {}, ".format(a_mat[i, j].real, a_mat[i, j].imag), end="")
+            print(f"{a_mat[i, j].real}, {a_mat[i, j].imag}, ", end="")
 
 
 # lapack and cuBLAS use 1 based indexing for pivots

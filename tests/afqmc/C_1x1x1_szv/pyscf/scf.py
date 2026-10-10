@@ -1,11 +1,8 @@
 #! /usr/bin/env python3
 
-import sys
-import os
-from pyscf.pbc import scf, gto, tools
-import numpy
-import time
 import h5py
+import numpy
+from pyscf.pbc import gto, scf
 
 alat0 = 3.6
 nks = 1

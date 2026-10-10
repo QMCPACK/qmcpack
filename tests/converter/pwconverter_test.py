@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
 import argparse
-import filecmp
 import glob
 import os
 import subprocess

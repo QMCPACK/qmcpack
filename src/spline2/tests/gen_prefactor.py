@@ -3,13 +3,12 @@
 # For code in test_prefactors() in test_multi_spline.cpp
 
 
+from bspline_funcs import get_base_interval, transpose_interval_and_coefficients
 from sympy import (
     Symbol,
     bspline_basis_set,
     diff,
 )
-
-from bspline_funcs import transpose_interval_and_coefficients, get_base_interval
 
 
 def gen_prefactor():

@@ -1,13 +1,13 @@
 """Simple extraction of afqmc rdms."""
 
-import h5py
-import math
-import numpy
 from math import sqrt
-import scipy.stats
-import scipy.integrate
-from afqmctools.analysis.extraction import get_metadata, extract_observable
 
+import h5py
+import numpy
+import scipy.integrate
+import scipy.stats
+
+from afqmctools.analysis.extraction import extract_observable, get_metadata
 
 # enumish
 WALKER_TYPE = ["undefined", "closed", "collinear", "non_collinear"]
@@ -50,7 +50,7 @@ def average_one_rdm(filename, estimator="back_propagated", eqlb=1, skip=1, ix=No
     try:
         walker = WALKER_TYPE[wt]
     except IndexError:
-        print("Unknown walker type {}".format(wt))
+        print(f"Unknown walker type {wt}")
 
     if walker == "closed":
         return mean.reshape(1, nbasis, nbasis), err.reshape(1, nbasis, nbasis)
@@ -105,7 +105,7 @@ def average_two_rdm(filename, estimator="back_propagated", eqlb=1, skip=1, ix=No
     try:
         walker = WALKER_TYPE[wt]
     except IndexError:
-        print("Unknown walker type {}".format(wt))
+        print(f"Unknown walker type {wt}")
 
     if walker == "closed":
         return mean.reshape(2, nbasis, nbasis, nbasis, nbasis), err.reshape(
@@ -163,7 +163,7 @@ def average_diag_two_rdm(
     try:
         walker = WALKER_TYPE[wt]
     except IndexError:
-        print("Unknown walker type {}".format(wt))
+        print(f"Unknown walker type {wt}")
 
     if walker == "closed":
         dm_size = nbasis * (2 * nbasis - 1) - nbasis * (nbasis - 1) // 2
@@ -469,7 +469,7 @@ def average_gen_fock(
     try:
         walker = WALKER_TYPE[wt]
     except IndexError:
-        print("Unknown walker type {}".format(wt))
+        print(f"Unknown walker type {wt}")
 
     if walker == "closed":
         return mean.reshape(1, nbasis, nbasis), err.reshape(1, nbasis, nbasis)
@@ -530,7 +530,7 @@ def get_noons(
     )
     if Perr.shape[0] == 2:
         # Collinear
-        Perr = numpy.sqrt((Perr[0] ** 2 + Perr[1] ** 2))
+        Perr = numpy.sqrt(Perr[0] ** 2 + Perr[1] ** 2)
     else:
         # Non-collinear / Closed
         Perr = Perr[0]

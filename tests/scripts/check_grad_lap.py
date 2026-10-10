@@ -35,7 +35,7 @@ def check_next_particle_grad_lap(mm, rel_tot, val_thr=1e-2, header="For particle
     success = True  # determine success with the following checks
 
     # 1. gradient error
-    idx = mm.find("Gradient".encode())
+    idx = mm.find(b"Gradient")
     mm.seek(idx)
     grad_line = mm.readline().decode()
     grad_xyz = grad_line.split("=")[-1]
@@ -49,7 +49,7 @@ def check_next_particle_grad_lap(mm, rel_tot, val_thr=1e-2, header="For particle
             )
         grad_val = [complex(float(real), float(imag)) for real, imag in components]
     # end try
-    idx = mm.find("Relative Error".encode())
+    idx = mm.find(b"Relative Error")
     mm.seek(idx)
     grad_line = mm.readline().decode()
     grad_re = map(float, grad_line.split()[-3:])  # relative error
@@ -60,7 +60,7 @@ def check_next_particle_grad_lap(mm, rel_tot, val_thr=1e-2, header="For particle
     # end if
 
     # 2. laplacian error
-    idx = mm.find("Laplacian".encode())
+    idx = mm.find(b"Laplacian")
     mm.seek(idx)
     lap_valt = mm.readline().decode().split("=")[-1]
     try:  # real
@@ -69,7 +69,7 @@ def check_next_particle_grad_lap(mm, rel_tot, val_thr=1e-2, header="For particle
         lapl = re.split(r"[(,)]", lap_valt.strip("\n"))
         lap_val = float(lapl[1]) + 1j * float(lapl[2])
     # end try
-    idx = mm.find("Relative Error".encode())
+    idx = mm.find(b"Relative Error")
     mm.seek(idx)
     lap_line = mm.readline()
     tokens = lap_line.split()

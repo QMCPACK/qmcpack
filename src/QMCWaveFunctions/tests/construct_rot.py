@@ -78,7 +78,7 @@ def print_anti(rot_mat):
             if idx == 0:
                 print(" 0", end="")
             else:
-                print(" {}p[{}]".format(sign, idx - 1), end="")
+                print(f" {sign}p[{idx - 1}]", end="")
             if j != rot_mat.shape[1] - 1:
                 print(",", end="")
         print("]", end="")

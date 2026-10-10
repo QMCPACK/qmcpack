@@ -1,9 +1,9 @@
 # Compute values for Gaussian Type Orbitals
 # Used in test_MO.cpp
 
-import read_qmcpack
 import gaussian_orbitals
 import numpy as np
+import read_qmcpack
 
 
 def gen_He():
@@ -14,7 +14,7 @@ def gen_He():
 
         print("  // Generated from gen_mo.py for position %s" % str(pos))
         print("  CHECK(values[%d] == Approx(%15.10g));" % (0, atomic_orbs[0]))
-        print("")
+        print()
 
         v, g, l = gto.eval_vgl(*pos)
         print("  // Generated from gen_mo.py for position %s" % str(pos))
@@ -23,7 +23,7 @@ def gen_He():
         print("  CHECK(dpsi[%d][1] == Approx(%15.10g));" % (0, g[0][1]))
         print("  CHECK(dpsi[%d][2] == Approx(%15.10g));" % (0, g[0][2]))
         print("  CHECK(d2psi[%d] == Approx(%15.10g));" % (0, l[0]))
-        print("")
+        print()
 
         v, g, h = gto.eval_vgh(*pos)
         gh = gto.eval_gradhess(*pos)
@@ -50,7 +50,7 @@ def gen_He():
         print("  CHECK(dghpsi[%d][7] == Approx(%15.10g));" % (0, gh[0][7]))
         print("  CHECK(dghpsi[%d][8] == Approx(%15.10g));" % (0, gh[0][8]))
         print("  CHECK(dghpsi[%d][9] == Approx(%15.10g));" % (0, gh[0][9]))
-        print("")
+        print()
 
 
 def gen_Ne():
@@ -103,7 +103,7 @@ def gen_Ne():
         print("  CHECK(dghpsi[%d][7] == Approx(%15.10g));" % (0, mo_gh[0][7]))
         print("  CHECK(dghpsi[%d][8] == Approx(%15.10g));" % (0, mo_gh[0][8]))
         print("  CHECK(dghpsi[%d][9] == Approx(%15.10g));" % (0, mo_gh[0][9]))
-        print("")
+        print()
 
 
 def gen_HCN():
@@ -131,7 +131,7 @@ def gen_HCN():
         print("  CHECK(dpsi[%d][1] == Approx(%15.10g));" % (i, mo_g[i][1]))
         print("  CHECK(dpsi[%d][2] == Approx(%15.10g));" % (i, mo_g[i][2]))
         print("  CHECK(d2psi[%d] == Approx(%15.10g));" % (i, mo_l[i]))
-        print("")
+        print()
 
     v, g, h = gtos.eval_vgh(*pos)
     gh = gtos.eval_gradhess(*pos)
@@ -163,7 +163,7 @@ def gen_HCN():
         print("  CHECK(dghpsi[%d][7] == Approx(%15.10g));" % (i, mo_gh[i][7]))
         print("  CHECK(dghpsi[%d][8] == Approx(%15.10g));" % (i, mo_gh[i][8]))
         print("  CHECK(dghpsi[%d][9] == Approx(%15.10g));" % (i, mo_gh[i][9]))
-        print("")
+        print()
 
 
 def gen_HCN_force():
@@ -180,8 +180,8 @@ def gen_HCN_force():
 
     print("  // Generated from gen_mo.py for position %s" % str(pos))
 
-    for iat in range(0, Natom):
-        for idim in range(0, 3):
+    for iat in range(Natom):
+        for idim in range(3):
             ionpos_p = np.array(ionpos)
             ionpos_m = np.array(ionpos)
 
@@ -213,7 +213,7 @@ def gen_HCN_force():
             print(
                 "//============== Ion ", iat, " Component ", idim, "==================="
             )
-            for iorb in range(0, norb):
+            for iorb in range(norb):
                 print(
                     "  CHECK( dionpsi[0][%d][%d]       == Approx(%15.10g) );  "
                     % (iorb, idim, dmo_v[iorb])

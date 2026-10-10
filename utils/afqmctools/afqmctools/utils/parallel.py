@@ -1,7 +1,3 @@
-import h5py
-import numpy
-import math
-import struct
 
 
 def fair_share(N, npr, rk):

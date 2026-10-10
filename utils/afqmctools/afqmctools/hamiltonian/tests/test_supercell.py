@@ -1,12 +1,11 @@
+import os
+import unittest
+
 import h5py
 import numpy
-import os
-import scipy.linalg
-import scipy.sparse
-import unittest
-from pyscf.pbc import gto, dft, df, tools
+from pyscf.pbc import df, dft, gto, tools
+
 import afqmctools.hamiltonian.supercell as sc
-from afqmctools.utils.linalg import get_ortho_ao
 
 try:
     from mpi4py import MPI

@@ -1,8 +1,8 @@
-from __future__ import print_function
 import sys
+
 from codegen_extras import *
 from sympy import *
-from sympy.codegen.ast import For, CodeBlock, Comment
+from sympy.codegen.ast import CodeBlock, Comment, For
 from sympy.codegen.cnodes import void
 
 sys.path.append("../tests")
@@ -67,7 +67,7 @@ n = Symbol("n", integer=True)
 y = IndexedBase("y", shape=(n,))
 
 # Coefficients of the spline function
-a, b, c, d = [IndexedBase(s, shape=(n,)) for s in "a b c d".split()]
+a, b, c, d = [IndexedBase(s, shape=(n,)) for s in ["a", "b", "c", "d"]]
 
 # Knot locations
 x = IndexedBase("x", shape=(n,))

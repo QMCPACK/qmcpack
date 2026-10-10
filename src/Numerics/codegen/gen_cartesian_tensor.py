@@ -12,7 +12,7 @@
 #      C. Apply clang-format on modified source files.
 
 
-from sympy import sympify, Symbol, symbols, diff
+from sympy import Symbol, diff, symbols, sympify
 
 # See the GaussianOrbitals notebook in the qmc_algorithms repo for more explanation,
 #  especially about the normalization.
@@ -128,8 +128,7 @@ def gen_lmax(ijk_list):
     lmax = -1
     for i, j, k, s in ijk_list:
         current_l = i + j + k
-        if current_l > lmax:
-            lmax = current_l
+        lmax = max(lmax, current_l)
         list_with_lmax.append((i, j, k, s, lmax))
     return list_with_lmax
 
@@ -869,7 +868,7 @@ void SoaCartesianTensor<T>::evaluateVGHGH(T x, T y, T z)
         for ii, si in enumerate(axis_syms):
             for jj, sj in enumerate(axis_syms):
                 for kk, sk in enumerate(axis_syms):
-                    if ii <= jj and jj <= kk:
+                    if ii <= jj <= kk:
                         # Compute Grad Hessian elements symbolically
                         ghess_s = diff(diff(diff(gto_s, si), sj), sk)
                         ghess_val = replace_common_subexpressions(ghess_s, slist)
