@@ -49,14 +49,9 @@ Communicate::Communicate(Communicate&&) = default;
 //exclusive:  MPI or Serial
 #ifdef HAVE_MPI
 
-// in_comm needs to be mutable to be duplicated
-Communicate::Communicate(mpi3::communicator& in_comm) : d_groupid(0), d_ngroups(1), comm{in_comm.duplicate()}
-{
-  myMPI       = comm.get();
-  d_mycontext = comm.rank();
-  d_ncontexts = comm.size();
-}
 
+// Takes ownership of a communicator (e.g. from split or split_shared) via move semantics,
+// avoiding the collective overhead and extra context allocation of MPI_Comm_dup.
 Communicate::Communicate(mpi3::communicator&& in_comm) : d_groupid(0), d_ngroups(1), comm{std::move(in_comm)}
 {
   myMPI       = comm.get();

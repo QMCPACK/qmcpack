@@ -66,8 +66,11 @@ public:
   Communicate();
 
 #ifdef HAVE_MPI
-  ///constructor with communicator
-  Communicate(mpi3::communicator& in_comm);
+  /** Constructor that takes ownership of an existing or temporary communicator.
+   *  @param in_comm Communicator to move from (e.g., returned by env.world(), split(), or split_shared()).
+   *  Transfers ownership via move semantics directly without the collective overhead of `MPI_Comm_dup`.
+   *  `in_comm` is left in an empty/null state.
+   */
   Communicate(mpi3::communicator&& in_comm);
 #endif
 
@@ -87,7 +90,7 @@ public:
    */
   virtual ~Communicate();
 
-  ///disable constructor
+  ///disable copy constructor
   Communicate(const Communicate&) = delete;
 
   Communicate(Communicate&&);
