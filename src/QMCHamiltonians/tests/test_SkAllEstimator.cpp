@@ -43,8 +43,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   app_log() << std::setprecision(8);
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // XML parser
   Libxml2Document doc;

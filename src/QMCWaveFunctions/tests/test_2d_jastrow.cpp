@@ -28,7 +28,7 @@ using PosType   = QMCTraits::PosType;
 
 TEST_CASE("Jastrow 2D", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
   Libxml2Document doc;
   xmlNodePtr root, node;
 

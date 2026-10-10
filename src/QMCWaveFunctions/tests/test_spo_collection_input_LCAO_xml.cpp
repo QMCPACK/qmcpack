@@ -28,7 +28,7 @@ namespace qmcplusplus
 {
 void test_He_sto3g_xml_input(const std::string& spo_xml_string)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());

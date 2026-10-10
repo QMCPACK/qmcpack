@@ -20,7 +20,7 @@
 namespace qmcplusplus
 {
 
-DeepQMCWaveFunctionBuilder::DeepQMCWaveFunctionBuilder(Communicate* comm, ParticleSet& target, const PSetMap& psets)
+DeepQMCWaveFunctionBuilder::DeepQMCWaveFunctionBuilder(Communicate& comm, ParticleSet& target, const PSetMap& psets)
     : WaveFunctionComponentBuilder(comm, target), ptcl_pool_(psets)
 {}
 

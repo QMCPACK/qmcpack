@@ -73,7 +73,7 @@ void SplineUtils<ST>::gatherv(MultiBsplineBase<ST>& spline,
   if (comm.size() == 1)
     return;
   auto& spline_block = spline.getBlock(iblock);
-  qmcplusplus::gatherv<ST, 3>(&comm, &spline_block, spline_block.z_stride, offset);
+  qmcplusplus::gatherv<ST, 3>(comm, &spline_block, spline_block.z_stride, offset);
 }
 
 template<typename ST>
@@ -81,7 +81,7 @@ void SplineUtils<ST>::bcast(MultiBsplineBase<ST>& spline, size_t iblock, Communi
 {
   if (comm.size() == 1)
     return;
-  chunked_bcast(&comm, &spline.getBlock(iblock));
+  chunked_bcast(comm, &spline.getBlock(iblock));
 }
 
 template<typename ST>
@@ -92,7 +92,7 @@ void SplineUtils<ST>::gatherv(MultiBspline1D<ST>& spline,
 {
   if (comm.size() == 1)
     return;
-  qmcplusplus::gatherv<ST, 1>(&comm, spline.getSplinePtr(), stride, offset);
+  qmcplusplus::gatherv<ST, 1>(comm, spline.getSplinePtr(), stride, offset);
 }
 
 template<typename ST>
@@ -100,7 +100,7 @@ void SplineUtils<ST>::bcast(MultiBspline1D<ST>& spline, Communicate& comm)
 {
   if (comm.size() == 1)
     return;
-  chunked_bcast(&comm, spline.getSplinePtr());
+  chunked_bcast(comm, spline.getSplinePtr());
 }
 
 template class SplineUtils<float>;

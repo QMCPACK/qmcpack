@@ -14,7 +14,6 @@
 #include "Utilities/for_testing/Catch2Approx.h"
 
 
-
 #include "ProjectData.h"
 
 #include <stdio.h>
@@ -64,9 +63,6 @@ using namespace afqmc;
 /*
 TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
 {
-  Communicate *c;
-  //c = OHMMS::Controller;
-
   const int NMO = 4;
   const int NEL = 3;
 
@@ -207,7 +203,7 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
 TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
 {
 
-  Communicate *c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   using boost::mpi3::shared_communicator;
   auto world = boost::mpi3::environment::get_world_instance();

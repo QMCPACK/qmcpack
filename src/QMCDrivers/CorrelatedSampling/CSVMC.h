@@ -39,7 +39,7 @@ public:
         MCWalkerConfiguration& w,
         std::vector<TrialWaveFunction*>&& multi_psi,
         std::vector<QMCHamiltonian*>&& multi_ham,
-        Communicate* comm);
+        Communicate& comm);
 
   void run() override;
   bool put(xmlNodePtr cur) override;

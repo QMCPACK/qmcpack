@@ -444,7 +444,7 @@ class DeepQMCInferBridge:
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(wavefunction_xml.c_str()));
 
-  WaveFunctionFactory wff(*particle_set_map["e"], particle_set_map, OHMMS::Controller);
+  WaveFunctionFactory wff(*particle_set_map["e"], particle_set_map, *OHMMS::Controller);
   RuntimeOptions runtime_options;
   auto twf0 = wff.buildTWF(doc.getRoot(), runtime_options);
   REQUIRE(twf0 != nullptr);

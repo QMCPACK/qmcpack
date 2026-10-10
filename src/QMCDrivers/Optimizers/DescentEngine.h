@@ -150,7 +150,7 @@ private:
   std::vector<ValueType> lderivs_;
 
   /// Communicator handles MPI reduction
-  Communicate* my_comm_;
+  Communicate& my_comm_;
 
   /// Whether to target excited state
   bool engine_target_excited_;
@@ -243,7 +243,7 @@ private:
 
 public:
   /// Constructor for engine
-  DescentEngine(Communicate* comm, const xmlNodePtr cur);
+  DescentEngine(Communicate& comm, const xmlNodePtr cur);
 
   /// process xml node
   bool processXML(const xmlNodePtr cur);

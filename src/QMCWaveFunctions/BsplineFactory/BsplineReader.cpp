@@ -30,8 +30,13 @@
 namespace qmcplusplus
 {
 BsplineReader::BsplineReader(EinsplineSetBuilder* e, bool use_duplex_splines)
-    : mybuilder(e), checkNorm(true), saveSplineCoefs(false), rotate(true), use_duplex_splines_(use_duplex_splines)
-{ myComm = mybuilder->getCommunicator(); }
+    : mybuilder(e),
+      myComm(mybuilder->getCommunicator()),
+      checkNorm(true),
+      saveSplineCoefs(false),
+      rotate(true),
+      use_duplex_splines_(use_duplex_splines)
+{}
 
 BsplineReader::~BsplineReader() = default;
 
@@ -119,7 +124,7 @@ bool BsplineReader::lookforSplineDataDumpFile(const BandInfoGroup& bandgroup,
                                               size_t datatype_size) const
 {
   int foundspline = 0;
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     hdf_archive h5f(myComm);
     foundspline = h5f.open(getSplineDumpFileName(bandgroup), H5F_ACC_RDONLY);
@@ -137,7 +142,7 @@ bool BsplineReader::lookforSplineDataDumpFile(const BandInfoGroup& bandgroup,
     }
     h5f.close();
   }
-  myComm->bcast(foundspline);
+  myComm.bcast(foundspline);
   return foundspline;
 }
 
@@ -221,12 +226,11 @@ void BsplineReader::initialize_spo2band(const std::string& spo_name,
   }
 
   //write to a file
-  const Communicate* comm = myComm;
-  if (comm->rank())
+  if (myComm.rank())
     return;
 
   std::filesystem::path aname =
-      make_bandinfo_filename(spo_name, spin, mybuilder->twist_num_, mybuilder->TileMatrix, comm->getGroupID());
+      make_bandinfo_filename(spo_name, spin, mybuilder->twist_num_, mybuilder->TileMatrix, myComm.getGroupID());
   aname += ".bandinfo.dat";
 
   std::ofstream o(aname.c_str());

@@ -31,7 +31,7 @@ class EDenEstimatorManagerIntegrationTest
 public:
   using MCPWalker = typename OperatorEstBase::MCPWalker;
 
-  EDenEstimatorManagerIntegrationTest(Communicate* comm, int num_walkers);
+  EDenEstimatorManagerIntegrationTest(Communicate& comm, int num_walkers);
 
   RefVectorWithLeader<MCPWalker> getWalkerList();
   RefVectorWithLeader<ParticleSet> getPSetList();

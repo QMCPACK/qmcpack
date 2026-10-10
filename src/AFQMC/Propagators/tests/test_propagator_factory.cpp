@@ -18,6 +18,7 @@
 #include "hdf/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/TimerManager.h"
+#include "Message/Communicate.h"
 
 #include <string>
 #include <vector>
@@ -218,7 +219,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
       wfn.Orthogonalize(wset, true);
     }
 
-    getGlobalTimerManager().print(nullptr);
+    getGlobalTimerManager().print(*OHMMS::Controller);
   }
 }
 
@@ -393,7 +394,7 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
       app_log() << " -- " << i << " " << tot_time << " " << (eav / ov).real() << " Time: " << t1 << std::endl;
     }
 
-    getGlobalTimerManager().print(nullptr);
+    getGlobalTimerManager().print(*OHMMS::Controller);
   }
 }
 

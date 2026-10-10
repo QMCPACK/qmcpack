@@ -28,10 +28,8 @@ using WP = WalkerProperties::Indexes;
  *
  * set SwapMode
  */
-WalkerReconfigurationMPI::WalkerReconfigurationMPI(Communicate* c) : WalkerControlBase(c), TotalWalkers(0)
-{
-  SwapMode = 1;
-}
+WalkerReconfigurationMPI::WalkerReconfigurationMPI(Communicate& c) : WalkerControlBase(c), TotalWalkers(0)
+{ SwapMode = 1; }
 
 int WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger)
 {
@@ -74,7 +72,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
     dN.resize(num_contexts_ + 4);
   }
   UnitZeta = Random();
-  myComm->bcast(UnitZeta);
+  myComm.bcast(UnitZeta);
   DeltaStep = UnitZeta * nwInv;
   //std::fill(wSum.begin(),wSum.end(),0.0);
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
@@ -105,7 +103,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   std::fill(curData.begin() + LE_MAX, curData.end(), 0.0);
   curData[LE_MAX + MyContext] = wtot;
   //collect everything
-  myComm->allreduce(curData);
+  myComm.allreduce(curData);
   //update EnsembleProperty
   W.EnsembleProperty.NumSamples = curData[WALKERSIZE_INDEX];
   W.EnsembleProperty.Weight     = curData[WEIGHT_INDEX];
@@ -199,7 +197,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   dN[num_contexts_ + 2] = plus.size();
   dN[num_contexts_ + 3] = minus.size();
   //collect the data
-  myComm->allreduce(dN);
+  myComm.allreduce(dN);
   //Each task will send or recv not both.
   if (plus.size())
     sendWalkers(W, plus);
@@ -241,7 +239,7 @@ void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W, const std::
       int im          = plus[last];
       size_t byteSize = W[im]->byteSize();
       W[im]->updateBuffer();
-      myComm->comm.send_n(W[im]->DataSet.data(), byteSize, minusN[ic]);
+      myComm.comm.send_n(W[im]->DataSet.data(), byteSize, minusN[ic]);
       --last;
     }
     ++ic;
@@ -271,7 +269,7 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W, const std::
     {
       int im          = minus[last];
       size_t byteSize = W[im]->byteSize();
-      myComm->comm.receive_n(W[im]->DataSet.data(), byteSize, plusN[ic]);
+      myComm.comm.receive_n(W[im]->DataSet.data(), byteSize, plusN[ic]);
       W[im]->copyFromBuffer();
       W[im]->setParentID(W[im]->getWalkerID());
       W[im]->setWalkerID((++NumWalkersCreated) * num_contexts_ + MyContext);

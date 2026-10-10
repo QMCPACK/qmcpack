@@ -38,7 +38,7 @@ extern "C" void __gcov_dump();
 #endif
 
 //Global Communicator is created without initialization
-Communicate* OHMMS::Controller = new Communicate;
+std::unique_ptr<Communicate> OHMMS::Controller = std::make_unique<Communicate>();
 
 //default constructor: ready for a serial execution
 Communicate::Communicate() : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1) {}
@@ -67,8 +67,8 @@ Communicate::Communicate(const Communicate& in_comm, int nparts, int stripe)
 {
   std::vector<int> nplist(nparts + 1);
   // group index
-  const int gid = stripe == 0 ? FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist) :
-	     in_comm.rank() / stripe % nparts;
+  const int gid =
+      stripe == 0 ? FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist) : in_comm.rank() / stripe % nparts;
   // comm is mutable member
   comm  = in_comm.comm.split(gid, in_comm.rank());
   myMPI = comm.get();

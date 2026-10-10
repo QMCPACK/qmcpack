@@ -28,18 +28,18 @@ int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
-  OHMMS::Controller = new Communicate(env.world());
+  OHMMS::Controller = std::make_unique<Communicate>(env.world());
 #endif
-  Communicate* myComm = OHMMS::Controller;
+  Communicate& myComm = *OHMMS::Controller;
 
-  if (OHMMS::Controller->rank() != 0)
+  if (myComm.rank() != 0)
   {
     outputManager.shutOff();
   }
 
   //use the global generator
 
-  bool ionode   = (myComm->rank() == 0);
+  bool ionode   = (myComm.rank() == 0);
   int nels      = 8;
   int iseed     = 11;
   int nsteps    = 100;
@@ -57,6 +57,7 @@ int main(int argc, char** argv)
     {
     case 'h':
       printf("[-n int=64]\n");
+      OHMMS::Controller.reset();
       return 1;
     case 'd': //debug
       debug = true;
@@ -163,5 +164,6 @@ int main(int argc, char** argv)
   //cout << "#per MC step steps " << nsteps << " substeps " << nsubsteps << endl;
   //cout << "diffusion_mc " << t_diffusion << " pseudo_mc  " << t_pseudo << endl;
 
+  OHMMS::Controller.reset();
   return 0;
 }

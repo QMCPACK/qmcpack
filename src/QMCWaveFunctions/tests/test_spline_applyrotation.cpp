@@ -31,7 +31,7 @@ namespace qmcplusplus
 TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
 {
   // How to get rid of all this annoying boilerplate?
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // diamondC_1x1x1
   Lattice lattice;
@@ -168,7 +168,7 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
 TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
 {
   // How to get rid of all this annoying boilerplate?
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // diamondC_1x1x1
   Lattice lattice;
@@ -378,7 +378,7 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
 TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
 {
   // How to get rid of all this annoying boilerplate?
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // diamondC_1x1x1
   Lattice lattice;
@@ -683,7 +683,7 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
 TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
 {
   // How to get rid of all this annoying boilerplate?
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // diamondC_1x1x1
   Lattice lattice;

@@ -34,7 +34,7 @@ namespace qmcplusplus
 
 TEST_CASE("EstimatorManagerNew::EstimatorManager(comm)", "[estimators]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
   using namespace testing;
 
   QMCHamiltonian ham;
@@ -49,7 +49,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManager(comm)", "[estimators]")
 TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)", "[estimators]")
 {
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   using namespace testing;
   Libxml2Document estimators_doc = createEstimatorManagerNewVMCInputXML();
@@ -94,7 +94,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
 TEST_CASE("EstimatorManagerNew_estimator_naming", "[estimators]")
 {
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   using namespace testing;
   Libxml2Document estimators_doc = createEstimatorManagerNewVMCInputXML();
@@ -127,7 +127,7 @@ TEST_CASE("EstimatorManagerNew_estimator_naming", "[estimators]")
 
 TEST_CASE("EstimatorManagerNew::collectMainEstimators", "[estimators]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   QMCHamiltonian ham;
   testing::EstimatorManagerNewTest embt(ham, c, 1);
@@ -151,7 +151,7 @@ TEST_CASE("EstimatorManagerNew::collectMainEstimators", "[estimators]")
 
 TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   QMCHamiltonian ham;
   testing::EstimatorManagerNewTest embt(ham, c, 1);

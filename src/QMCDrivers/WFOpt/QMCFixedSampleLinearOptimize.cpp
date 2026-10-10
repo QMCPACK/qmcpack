@@ -46,7 +46,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
                                                            MCWalkerConfiguration& w,
                                                            TrialWaveFunction& psi,
                                                            QMCHamiltonian& h,
-                                                           Communicate* comm)
+                                                           Communicate& comm)
     : QMCDriver(project_data, w, psi, h, comm, "QMCFixedSampleLinearOptimize"),
       nstabilizers(3),
       stabilizerScale(2.0),
@@ -359,7 +359,6 @@ void QMCFixedSampleLinearOptimize::run()
   }
 
   finish();
-
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction
@@ -643,8 +642,6 @@ void QMCFixedSampleLinearOptimize::one_shift_run()
 
   // perform some finishing touches for this linear method iteration
   finish();
-
-
 }
 
 void QMCFixedSampleLinearOptimize::start()

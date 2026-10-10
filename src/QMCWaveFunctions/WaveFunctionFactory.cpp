@@ -33,7 +33,7 @@
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus
 {
-WaveFunctionFactory::WaveFunctionFactory(ParticleSet& qp, const PSetMap& pset, Communicate* c)
+WaveFunctionFactory::WaveFunctionFactory(ParticleSet& qp, const PSetMap& pset, Communicate& c)
     : MPIObjectBase(c), targetPtcl(qp), ptclPool(pset), class_name_("WaveFunctionFactory")
 {}
 

@@ -59,11 +59,11 @@ public:
    */
   void testWalkerIDs(std::vector<std::vector<int>> walker_ids_after, std::vector<std::vector<int>> parent_ids_after);
 
-  int getRank() const { return dpools_.comm->rank(); }
-  int getNumRanks() const { return dpools_.comm->size(); }
+  int getRank() const { return dpools_.comm.rank(); }
+  int getNumRanks() const { return dpools_.comm.size(); }
 
 private:
-  void reportWalkersPerRank(Communicate* c, MCPopulation& pop);
+  void reportWalkersPerRank(Communicate& c, MCPopulation& pop);
 
   SetupPools dpools_;
   WalkerConfigurations walker_confs;

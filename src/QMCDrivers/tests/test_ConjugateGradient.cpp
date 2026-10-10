@@ -22,12 +22,12 @@ namespace testing
 class LinearSystem : public QMCCostFunctionBase
 {
 public:
-  LinearSystem(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
-      : QMCCostFunctionBase(w, psi, h, comm){};
+  LinearSystem(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate& comm)
+      : QMCCostFunctionBase(w, psi, h, comm) {};
   void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override
   {}
 
-  void resetPsi(bool final_reset) override{};
+  void resetPsi(bool final_reset) override {};
   Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override { return 0; }
   void getConfigurations(const std::string& aroot) override {}
   void checkConfigurations(EngineHandle& handle) override {}
@@ -110,7 +110,7 @@ TEST_CASE("ConjugateGradient", "[drivers]")
   QMCHamiltonian h;
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   testing::LinearSystem ls(w, psi, h, comm);
   ls.setAMatrix(Amat);

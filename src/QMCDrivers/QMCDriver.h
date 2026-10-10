@@ -106,7 +106,7 @@ public:
             MCWalkerConfiguration& w,
             TrialWaveFunction& psi,
             QMCHamiltonian& h,
-            Communicate* comm,
+            Communicate& comm,
             const std::string& QMC_driver_type,
             bool enable_profiling = false);
 

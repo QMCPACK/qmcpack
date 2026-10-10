@@ -19,7 +19,7 @@ namespace qmcplusplus
 {
 TEST_CASE("WaveFunctionFactory", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto qp = std::make_unique<ParticleSet>(simulation_cell);

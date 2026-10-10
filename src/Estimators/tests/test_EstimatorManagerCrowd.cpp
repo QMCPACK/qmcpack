@@ -31,7 +31,7 @@ namespace qmcplusplus
 TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
 {
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   using namespace testing;
   Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
@@ -57,7 +57,7 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
 TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[estimators]")
 {
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   using namespace testing;
   Libxml2Document estimators_doc = createEstimatorManagerNewVMCInputXML();

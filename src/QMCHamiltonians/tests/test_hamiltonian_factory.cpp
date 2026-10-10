@@ -43,7 +43,7 @@ std::unique_ptr<ParticleSet> createElectronParticleSet(const SimulationCell& sim
 
 TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto elec_ptr = createElectronParticleSet(simulation_cell);
@@ -89,7 +89,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 
 TEST_CASE("OrbitalImages rejects one-past-end orbital index", "[hamiltonian]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
   RuntimeOptions runtime_options;
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);
@@ -109,7 +109,7 @@ TEST_CASE("OrbitalImages rejects one-past-end orbital index", "[hamiltonian]")
 
 TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto elec_ptr = createElectronParticleSet(simulation_cell);

@@ -239,7 +239,7 @@ bool Libxml2Document::parseFromString(const std::string_view data)
 //      xmlDocDumpFormatMemory(m_doc,&xmlbuff,&buffersize,1);
 //    }
 //
-//    OHMMS::Controller()->bcast(buffersize);
+//    OHMMS::Controller.get()()->bcast(buffersize);
 //
 //    if(OHMMS::Controler()->master()) {
 //      charbuff = (char*)xmlbuff;
@@ -247,9 +247,9 @@ bool Libxml2Document::parseFromString(const std::string_view data)
 //      charbuff = new char[buffersize];
 //    }
 //
-//    OHMMS::Controller()->bcast(charbuff,buffersize);
+//    OHMMS::Controller.get()()->bcast(charbuff,buffersize);
 //
-//    if(OHMMS::Controller()->master()) {
+//    if(OHMMS::Controller.get()()->master()) {
 //      xmlFreeDoc(xmlbuff);
 //    } else {
 //      m_doc = xmlReadMemory(charbuff, buffersize,

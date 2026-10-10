@@ -24,7 +24,7 @@ using ValueType         = qmcplusplus::QMCTraits::ValueType;
 ///This provides a basic test of constructing an EngineHandle object and checking information in it
 TEST_CASE("EngineHandle construction", "[drivers]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
 
   const std::string engine_input("<tmp> </tmp>");

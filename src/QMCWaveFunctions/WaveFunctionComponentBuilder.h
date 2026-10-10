@@ -82,7 +82,7 @@ public:
    *
    * Each builder class builds an object for composing a many-body wavefunction.
    */
-  WaveFunctionComponentBuilder(Communicate* comm, ParticleSet& p, const std::string_view class_name = "")
+  WaveFunctionComponentBuilder(Communicate& comm, ParticleSet& p, const std::string_view class_name = "")
       : MPIObjectBase(comm), targetPtcl(p), myNode(NULL), class_name_(class_name)
   {}
 

@@ -41,9 +41,9 @@ public:
   };
 
   // one body constructor
-  RadialJastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source);
+  RadialJastrowBuilder(Communicate& comm, ParticleSet& target, ParticleSet& source);
   // two body constructor
-  RadialJastrowBuilder(Communicate* comm, ParticleSet& target);
+  RadialJastrowBuilder(Communicate& comm, ParticleSet& target);
 
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 

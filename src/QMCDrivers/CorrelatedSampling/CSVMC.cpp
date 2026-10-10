@@ -38,7 +38,7 @@ CSVMC::CSVMC(const ProjectData& project_data,
              MCWalkerConfiguration& w,
              std::vector<TrialWaveFunction*>&& multi_psi,
              std::vector<QMCHamiltonian*>&& multi_ham,
-             Communicate* comm)
+             Communicate& comm)
     : QMCDriver(project_data, w, *multi_psi[0], *multi_ham[0], comm, "CSVMC"),
       UseDrift("yes"),
       Psi1(std::move(multi_psi)),
@@ -78,7 +78,7 @@ bool CSVMC::put(xmlNodePtr q)
     int nw = W.getActiveWalkers();
     //compute samples and overwrite steps for the given samples
     int Nthreads = omp_get_max_threads();
-    int Nprocs   = myComm->size();
+    int Nprocs   = myComm.size();
     //target samples set by samples or samplesperthread/dmcwalkersperthread
     nTargetPopulation = std::max(nTargetPopulation, nSamplesPerThread * Nprocs * Nthreads);
     nTargetSamples    = static_cast<int>(std::ceil(nTargetPopulation));
@@ -201,7 +201,7 @@ void CSVMC::run()
   bool wrotesamples = DumpConfig;
   if (DumpConfig)
   {
-    wrotesamples = MCWalkerConfiguration::dumpEnsemble(wClones, *wOut, myComm->size(), nBlocks);
+    wrotesamples = MCWalkerConfiguration::dumpEnsemble(wClones, *wOut, myComm.size(), nBlocks);
     if (wrotesamples)
       app_log() << "  samples are written to the config.h5" << std::endl;
   }

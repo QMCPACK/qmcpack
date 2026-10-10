@@ -35,7 +35,7 @@ namespace qmcplusplus
 class QMCMain : public MPIObjectBase, public QMCAppBase
 {
 public:
-  QMCMain(Communicate* c);
+  QMCMain(Communicate& c);
 
   ~QMCMain() override;
 

@@ -202,7 +202,7 @@ bool AFQMCFactory::execute(xmlNodePtr cur)
   if (cur == nullptr)
     return false;
 
-  int groupid = 0; //myComm->getGroupID();
+  int groupid = 0; //myComm.getGroupID();
   std::array<char, 256> fileroot;
 
   bool no_gtag = (qmc_common.mpi_groups == 1);

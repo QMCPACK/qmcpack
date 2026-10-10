@@ -163,7 +163,7 @@ public:
                MCPopulation&& population,
                const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                const std::string timer_prefix,
-               Communicate* comm,
+               Communicate& comm,
                const std::string& QMC_driver_type);
 
   ///Move Constructor
@@ -486,7 +486,7 @@ protected:
   WalkerConfigurations& walker_configs_ref_;
 
   /// update the global offsets of walker configurations after active walkers being touched.
-  static void setWalkerOffsets(WalkerConfigurations&, Communicate* comm);
+  static void setWalkerOffsets(WalkerConfigurations&, Communicate& comm);
 
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);

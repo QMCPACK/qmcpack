@@ -31,7 +31,7 @@ namespace qmcplusplus
  *\param els the positions of the electrons
  *\param psi trial wavefunction
  */
-ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h, ParticleSet& ions, ParticleSet& els, Communicate* c)
+ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h, ParticleSet& ions, ParticleSet& els, Communicate& c)
     : MPIObjectBase(c),
       hasLocalPot(false),
       hasNonLocalPot(false),
@@ -310,7 +310,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       if (!success)
       {
         app_error() << "  Failed to add pseudopotential for element " << ionName << std::endl;
-        myComm->barrier_and_abort("ECPotentialBuilder::useXmlFormat failed!");
+        myComm.barrier_and_abort("ECPotentialBuilder::useXmlFormat failed!");
       }
     }
     cur = cur->next;

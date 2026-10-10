@@ -175,28 +175,28 @@ void MinimalParticlePool::parseParticleSetXML(const char* xml_string, ParticleSe
   pp.randomize();
 }
 
-ParticleSetPool MinimalParticlePool::make_diamondC_1x1x1(Communicate* c)
+ParticleSetPool MinimalParticlePool::make_diamondC_1x1x1(Communicate& c)
 {
   ParticleSetPool pp(c);
   parseParticleSetXML(particles_xml, pp);
   return pp;
 }
 
-ParticleSetPool MinimalParticlePool::make_O2_spinor(Communicate* c)
+ParticleSetPool MinimalParticlePool::make_O2_spinor(Communicate& c)
 {
   ParticleSetPool pp(c);
   parseParticleSetXML(particles_xml_spinor, pp);
   return pp;
 }
 
-ParticleSetPool MinimalParticlePool::make_NiO_a4(Communicate* c)
+ParticleSetPool MinimalParticlePool::make_NiO_a4(Communicate& c)
 {
   ParticleSetPool pp(c);
   parseParticleSetXML(particles_xml_NiO_a4, pp);
   return pp;
 }
 
-ParticleSetPool MinimalParticlePool::make_H2(Communicate* c)
+ParticleSetPool MinimalParticlePool::make_H2(Communicate& c)
 {
   Libxml2Document doc;
 

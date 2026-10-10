@@ -35,8 +35,8 @@ using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
 
 void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
 {
-  using VT       = SPOSet::ValueType;
-  Communicate* c = OHMMS::Controller;
+  using VT = SPOSet::ValueType;
+  Communicate& c(*OHMMS::Controller);
 
   const char* particles = R"(<simulationcell>
      <parameter name="lattice" units="bohr">
@@ -451,8 +451,8 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
 
 void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
 {
-  using VT       = SPOSet::ValueType;
-  Communicate* c = OHMMS::Controller;
+  using VT = SPOSet::ValueType;
+  Communicate& c(*OHMMS::Controller);
 
   const char* particles = R"(<simulationcell>
      <parameter name="lattice" units="bohr">

@@ -32,7 +32,7 @@
 
 #include <array>
 
-void output_hardware_info(Communicate* comm, Libxml2Document& doc, xmlNodePtr root);
+void output_hardware_info(Communicate& comm, Libxml2Document& doc, xmlNodePtr root);
 
 /** @file qmcapp.cpp
  *@brief a main function for QMC simulation.
@@ -48,7 +48,7 @@ int main(int argc, char** argv)
   using namespace qmcplusplus;
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
-  OHMMS::Controller = new Communicate(env.world());
+  OHMMS::Controller = std::make_unique<Communicate>(env.world());
 #endif
   try
   {
@@ -120,7 +120,7 @@ int main(int argc, char** argv)
             if (words.size())
             {
               if (words[0].find(".xml") == words[0].size() - 4)
-                  fgroup_names_txt.push_back(words[0]);
+                fgroup_names_txt.push_back(words[0]);
             }
             else
               valid = false;
@@ -147,7 +147,7 @@ int main(int argc, char** argv)
       return 1;
     }
     //safe to move on
-    Communicate* qmcComm = OHMMS::Controller;
+    std::unique_ptr<Communicate> comm_job;
     if (inputs.size() > 1)
     {
       if (inputs.size() > OHMMS::Controller->size())
@@ -158,24 +158,25 @@ int main(int argc, char** argv)
             << "Increase the number of MPI ranks or reduce the number of calculations." << std::endl;
         OHMMS::Controller->barrier_and_abort(msg.str());
       }
-      qmcComm               = new Communicate(*OHMMS::Controller, inputs.size());
+      comm_job              = std::make_unique<Communicate>(*OHMMS::Controller, inputs.size());
       qmc_common.mpi_groups = inputs.size();
     }
+    Communicate& qmcComm = inputs.size() > 1 ? *comm_job : *OHMMS::Controller;
     std::stringstream logname;
-    int inpnum          = (inputs.size() > 1) ? qmcComm->getGroupID() : 0;
-    std::string myinput = inputs[qmcComm->getGroupID()];
+    int inpnum          = (inputs.size() > 1) ? qmcComm.getGroupID() : 0;
+    std::string myinput = inputs[qmcComm.getGroupID()];
     myinput             = myinput.substr(0, myinput.size() - 4);
     logname << myinput;
 
-    if (qmcComm->rank() != 0)
+    if (qmcComm.rank() != 0)
     {
       outputManager.shutOff();
       // might need to redirect debug stream to a file per rank if debugging is enabled
     }
-    if (inputs.size() > 1 && qmcComm->rank() == 0)
+    if (inputs.size() > 1 && qmcComm.rank() == 0)
     {
       std::array<char, 128> fn;
-      if (std::snprintf(fn.data(), fn.size(), "%s.g%03d.qmc", logname.str().c_str(), qmcComm->getGroupID()) < 0)
+      if (std::snprintf(fn.data(), fn.size(), "%s.g%03d.qmc", logname.str().c_str(), qmcComm.getGroupID()) < 0)
         throw std::runtime_error("Error generating filename");
       infoSummary.redirectToFile(fn.data());
       infoLog.redirectToSameStream(infoSummary);
@@ -191,16 +192,16 @@ int main(int argc, char** argv)
     auto qmc = std::make_unique<QMCMain>(qmcComm);
 
     if (inputs.size() > 1)
-      validInput = qmc->parse(inputs[qmcComm->getGroupID()]);
+      validInput = qmc->parse(inputs[qmcComm.getGroupID()]);
     else
       validInput = qmc->parse(inputs[0]);
 
     if (!validInput)
-      qmcComm->barrier_and_abort("main(). Input invalid.");
+      qmcComm.barrier_and_abort("main(). Input invalid.");
 
     bool qmcSuccess = qmc->execute();
     if (!qmcSuccess)
-      qmcComm->barrier_and_abort("main(). QMC Execution failed.");
+      qmcComm.barrier_and_abort("main(). QMC Execution failed.");
 
     Libxml2Document timingDoc;
     timingDoc.newDoc("resources");
@@ -230,17 +231,19 @@ int main(int argc, char** argv)
   if (OHMMS::Controller->rank() == 0)
     std::cout << std::endl << "QMCPACK execution completed successfully" << std::endl;
 
+  // OHMMS::Controller holds duplicated (linked) mpi3::environment and must be freed first.
+  OHMMS::Controller.reset();
   return 0;
 }
 
-void output_hardware_info(Communicate* comm, Libxml2Document& doc, xmlNodePtr root)
+void output_hardware_info(Communicate& comm, Libxml2Document& doc, xmlNodePtr root)
 {
   xmlNodePtr hardware = doc.addChild(root, "hardware");
 
   bool using_mpi = false;
 #ifdef HAVE_MPI
   using_mpi = true;
-  doc.addChild(hardware, "mpi_size", comm->size());
+  doc.addChild(hardware, "mpi_size", comm.size());
 #endif
   doc.addChild(hardware, "mpi", using_mpi);
 

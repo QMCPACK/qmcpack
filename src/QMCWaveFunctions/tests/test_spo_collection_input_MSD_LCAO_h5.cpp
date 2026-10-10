@@ -32,7 +32,7 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string,
                             int check_spo_size,
                             int check_basisset_size)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -201,7 +201,7 @@ void test_LiH_msd_xml_input_with_positron(const std::string& spo_xml_string,
                                           int check_spo_size,
                                           int check_basisset_size)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());

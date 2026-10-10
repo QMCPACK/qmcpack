@@ -32,8 +32,7 @@ using LogValue = std::complex<QMCTraits::QTFull::RealType>;
 
 TEST_CASE("lattice gaussian", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   // initialize simulationcell for kvectors

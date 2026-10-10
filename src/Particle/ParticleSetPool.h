@@ -39,7 +39,7 @@ public:
   /** constructor
    * @param aname xml tag
    */
-  ParticleSetPool(Communicate* c, const char* aname = "particleset");
+  ParticleSetPool(Communicate& c, const char* aname = "particleset");
   ~ParticleSetPool();
 
   ParticleSetPool(const ParticleSetPool&)            = delete;

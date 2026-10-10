@@ -162,7 +162,7 @@ public:
    */
   void fissionHighMultiplicityWalkers();
 
-  void syncWalkersPerRank(Communicate* comm);
+  void syncWalkersPerRank(Communicate& comm);
   void measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const;
 
   /**@name accessors

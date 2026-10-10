@@ -27,9 +27,9 @@ namespace qmcplusplus
 {
 TEST_CASE("EstimatorManagerBase", "[estimators]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  EstimatorManagerBase em(c);
+  EstimatorManagerBase em(&c);
 
   REQUIRE(em.size() == 0);
 

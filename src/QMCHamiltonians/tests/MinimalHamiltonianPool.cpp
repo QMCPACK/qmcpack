@@ -13,7 +13,7 @@
 namespace qmcplusplus
 {
 
-HamiltonianPool MinimalHamiltonianPool::make_hamWithEE(Communicate* comm,
+HamiltonianPool MinimalHamiltonianPool::make_hamWithEE(Communicate& comm,
                                                        ParticleSetPool& particle_pool,
                                                        WaveFunctionPool& wavefunction_pool)
 {
@@ -27,7 +27,7 @@ HamiltonianPool MinimalHamiltonianPool::make_hamWithEE(Communicate* comm,
   return hpool;
 }
 
-HamiltonianPool MinimalHamiltonianPool::makeHamWithEI(Communicate* comm,
+HamiltonianPool MinimalHamiltonianPool::makeHamWithEI(Communicate& comm,
                                                       ParticleSetPool& particle_pool,
                                                       WaveFunctionPool& wavefunction_pool)
 {
@@ -41,7 +41,7 @@ HamiltonianPool MinimalHamiltonianPool::makeHamWithEI(Communicate* comm,
   return hpool;
 }
 
-HamiltonianPool MinimalHamiltonianPool::makeHamWithEEEI(Communicate* comm,
+HamiltonianPool MinimalHamiltonianPool::makeHamWithEEEI(Communicate& comm,
                                                         ParticleSetPool& particle_pool,
                                                         WaveFunctionPool& wavefunction_pool)
 {
@@ -55,7 +55,7 @@ HamiltonianPool MinimalHamiltonianPool::makeHamWithEEEI(Communicate* comm,
   return hpool;
 }
 
-HamiltonianPool MinimalHamiltonianPool::makeHamWithEEEIII(Communicate* comm,
+HamiltonianPool MinimalHamiltonianPool::makeHamWithEEEIII(Communicate& comm,
                                                           ParticleSetPool& particle_pool,
                                                           WaveFunctionPool& wavefunction_pool)
 {
@@ -69,7 +69,7 @@ HamiltonianPool MinimalHamiltonianPool::makeHamWithEEEIII(Communicate* comm,
   return hpool;
 }
 
-HamiltonianPool MinimalHamiltonianPool::makeHamWithEEEIPS(Communicate* comm,
+HamiltonianPool MinimalHamiltonianPool::makeHamWithEEEIPS(Communicate& comm,
                                                           ParticleSetPool& particle_pool,
                                                           WaveFunctionPool& wavefunction_pool)
 {

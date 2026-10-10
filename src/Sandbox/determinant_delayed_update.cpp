@@ -40,9 +40,9 @@ int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
-  OHMMS::Controller = new Communicate(env.world());
+  OHMMS::Controller = std::make_unique<Communicate>(env.world());
 #endif
-  Communicate* myComm = OHMMS::Controller;
+  Communicate& myComm = *OHMMS::Controller;
 
   using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
@@ -53,7 +53,7 @@ int main(int argc, char** argv)
 #endif
   //use the global generator
 
-  bool ionode   = (myComm->rank() == 0);
+  bool ionode   = (myComm.rank() == 0);
   int nels      = 128;
   int iseed     = 11;
   int nsteps    = 100;
@@ -72,6 +72,7 @@ int main(int argc, char** argv)
     {
     case 'h':
       printf("[-n int=64]\n");
+      OHMMS::Controller.reset();
       return 1;
     case 'd': //debug
       debug = true;
@@ -247,12 +248,12 @@ int main(int argc, char** argv)
     nthreads_nested = omp_get_max_threads();
   }
 
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     cout << "# determinant " << nels << " rank " << delay << " Total accepted " << naccepted << " /" << nels * nsteps
          << " " << naccepted / static_cast<double>(nels * nsteps) << " error " << error * omp_fac << endl;
     cout << "# N K MPI OMP-walker OMP-det T_accept T_ratio T_total T_accept/call T_ratio/call T_total/step " << endl;
-    cout << "Det " << nels << " " << delay << " " << myComm->size() << " " << nthreads << " " << nthreads_nested << " "
+    cout << "Det " << nels << " " << delay << " " << myComm.size() << " " << nthreads << " " << nthreads_nested << " "
          << t_accept << " " << t_ratio << " " << (t_ratio + t_accept) << " " << t_accept / naccepted << " "
          << t_ratio / (nsteps * nels) << " " << (t_ratio + t_accept) / (nsteps / nsubsteps) << endl;
   }
@@ -261,5 +262,6 @@ int main(int argc, char** argv)
   //cout << "#per MC step steps " << nsteps << " substeps " << nsubsteps << endl;
   //cout << "diffusion_mc " << t_diffusion << " pseudo_mc  " << t_pseudo << endl;
 
+  OHMMS::Controller.reset();
   return 0;
 }

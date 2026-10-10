@@ -30,7 +30,7 @@
 
 namespace qmcplusplus
 {
-QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
+QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate& comm)
     : MPIObjectBase(comm),
       reportH5(false),
       CI_Opt(false),
@@ -158,7 +158,7 @@ void QMCCostFunctionBase::reportParameters()
 {
   //final reset
   resetPsi(true);
-  if (!myComm->rank())
+  if (!myComm.rank())
   {
     // Pretty print the wave function parameters.
     *msg_stream << "  Updated wave function parameters:\n";
@@ -195,7 +195,7 @@ void QMCCostFunctionBase::reportParameters()
 */
 void QMCCostFunctionBase::reportParametersH5()
 {
-  if (!myComm->rank())
+  if (!myComm.rank())
   {
     int ci_size = 0;
     std::vector<OptVariables::real_type> CIcoeff;

@@ -92,7 +92,7 @@ public:
              WalkerConfigurations& wc,
              MCPopulation&& pop,
              const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
-             Communicate* comm);
+             Communicate& comm);
 
   /// Copy Constructor (disabled)
   DMCBatched(const DMCBatched&) = delete;

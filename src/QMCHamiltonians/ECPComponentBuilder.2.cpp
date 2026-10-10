@@ -28,21 +28,21 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
 {
   app_log() << "    ECPComponentBuilder::buildSemiLocalAndLocal " << std::endl;
   if (grid_global == 0)
-    myComm->barrier_and_abort("ECPComponentBuilder::buildSemiLocalAndLocal. Global grid needs to be defined.\n");
+    myComm.barrier_and_abort("ECPComponentBuilder::buildSemiLocalAndLocal. Global grid needs to be defined.\n");
   // There should only be one semilocal tag
   if (semiPtr.size() > 1)
   {
     std::stringstream err_msg;
     err_msg << "ECPComponentBuilder::buildSemiLocalAndLocal. "
             << "We have more than one semilocal sections in the PP xml file";
-    myComm->barrier_and_abort(err_msg.str());
+    myComm.barrier_and_abort(err_msg.str());
   }
   RealType rmax = -1;
   //attributes: initailize by defaults
   std::string eunits("hartree");
   std::string format("r*V");
   std::string lloc;
-  int nso   = 0;
+  int nso = 0;
   OhmmsAttributeSet aAttrib;
   int quad_rule     = -1;
   int local_channel = -1;
@@ -97,7 +97,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
       Nrule = 7;
       break;
     default:
-      myComm->barrier_and_abort("Default value for pseudopotential nrule not determined.");
+      myComm.barrier_and_abort("Default value for pseudopotential nrule not determined.");
       break;
     }
     app_warning() << "Nrule was not determined from qmcpack input or pseudopotential file. Setting sensible default."
@@ -125,7 +125,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     std::stringstream err_msg;
     err_msg << "ECPComponentBuilder::buildSemiLocalAndLocal."
             << "Unrecognized format \"" << format << "\" in PP file.\n";
-    myComm->barrier_and_abort(err_msg.str());
+    myComm.barrier_and_abort(err_msg.str());
   }
   // We cannot construct the potentials as we construct them since
   // we may not know which one is local yet.
@@ -155,7 +155,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
         std::stringstream err_msg;
         err_msg << "ECPComponentBuilder::buildSemiLocalAndLocal. "
                 << "Requested angular momentum " << lstr << " not available.\n";
-        myComm->barrier_and_abort(err_msg.str());
+        myComm.barrier_and_abort(err_msg.str());
       }
       int l = angMon[lstr];
       angList.push_back(l);
@@ -176,7 +176,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
         std::stringstream err_msg;
         err_msg << "ECPComponentBuilder::buildSemiLocalAndLocal. "
                 << "Requested angular momentum " << lstr << " not available for SO.\n";
-        myComm->barrier_and_abort(err_msg.str());
+        myComm.barrier_and_abort(err_msg.str());
       }
       int l = angMon[lstr];
       angListSO.push_back(l);
@@ -212,7 +212,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   {
     app_error() << "The local channel is specified in neither the pseudopotential file nor the input file.\n"
                 << "Please add \'l-local=\"n\"\' attribute to either file.\n";
-    myComm->barrier_and_abort("ECPComponentBuilder::doBreakUp");
+    myComm.barrier_and_abort("ECPComponentBuilder::doBreakUp");
   }
 
   if (angListSO.size() != nso)
@@ -222,7 +222,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     std::string outstring("");
     outstring = ssout.str();
 
-    myComm->barrier_and_abort(outstring.c_str());
+    myComm.barrier_and_abort(outstring.c_str());
   }
   int npts = grid_global->size();
   Matrix<mRealType> vnn(angList.size(), npts);
@@ -381,7 +381,7 @@ bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
   if (!fin)
   {
     app_error() << "Could not open file " << fname << std::endl;
-    myComm->barrier_and_abort("ECPComponentBuilder::parseCasino");
+    myComm.barrier_and_abort("ECPComponentBuilder::parseCasino");
   }
   if (!pp_nonloc)
     pp_nonloc = std::make_unique<NonLocalECPComponent>();

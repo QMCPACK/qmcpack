@@ -54,7 +54,7 @@ public:
   using J2Type      = TwoBodyJastrow<RadFuncType>;
 };
 
-RadialJastrowBuilder::RadialJastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source)
+RadialJastrowBuilder::RadialJastrowBuilder(Communicate& comm, ParticleSet& target, ParticleSet& source)
     : WaveFunctionComponentBuilder(comm, target, "RadialJastrowBuilder"), SourcePtcl(&source)
 {
   NameOpt      = "0";
@@ -63,7 +63,7 @@ RadialJastrowBuilder::RadialJastrowBuilder(Communicate* comm, ParticleSet& targe
   SpinOpt      = "no";
 }
 
-RadialJastrowBuilder::RadialJastrowBuilder(Communicate* comm, ParticleSet& target)
+RadialJastrowBuilder::RadialJastrowBuilder(Communicate& comm, ParticleSet& target)
     : WaveFunctionComponentBuilder(comm, target, "RadialJastrowBuilder"), SourcePtcl(NULL)
 {
   NameOpt      = "0";
@@ -338,7 +338,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
       std::ostringstream msg;
       msg << R"(Offload enabled Jastrow needs the gpu="yes" attribute in the ")" << SourcePtcl->getName()
           << "\" particleset" << std::endl;
-      myComm->barrier_and_abort(msg.str());
+      myComm.barrier_and_abort(msg.str());
     }
     app_summary() << "    Running OpenMP offload code path." << std::endl;
     use_offload = true;
@@ -590,7 +590,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
           std::ostringstream msg;
           msg << R"(Offload enabled Jastrow needs the gpu="yes" attribute in the ")" << targetPtcl.getName()
               << "\" particleset" << std::endl;
-          myComm->barrier_and_abort(msg.str());
+          myComm.barrier_and_abort(msg.str());
         }
         app_summary() << "    Running OpenMP offload code path." << std::endl;
         return createJ2<BsplineFunctor<RealType>, detail::OMPTARGET>(cur);

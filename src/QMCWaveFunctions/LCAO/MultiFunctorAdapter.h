@@ -200,7 +200,7 @@ public:
   COT& m_orbitals;
 
   ///constructor
-  RadialOrbitalSetBuilder(Communicate* comm, COT& aos) : MPIObjectBase(comm), Normalized(true), m_orbitals(aos) {}
+  RadialOrbitalSetBuilder(Communicate& comm, COT& aos) : MPIObjectBase(comm), Normalized(true), m_orbitals(aos) {}
 
   ///implement functions used by AOBasisBuilder
   bool addGrid(xmlNodePtr cur, const std::string& rad_type) { return true; }
@@ -227,7 +227,7 @@ public:
   bool addRadialOrbitalH5(hdf_archive& hin, const std::string& rad_type, const QuantumNumberType& nlms)
   {
     auto radorb = std::make_unique<single_type>(nlms[q_l], Normalized);
-    radorb->putBasisGroupH5(hin, *myComm);
+    radorb->putBasisGroupH5(hin, myComm);
 
     m_orbitals.RnlID.push_back(nlms);
     m_orbitals.MultiRnl.Rnl.push_back(std::move(radorb));

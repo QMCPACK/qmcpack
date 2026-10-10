@@ -29,7 +29,7 @@ namespace qmcplusplus
 // PBC case
 TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   lattice.BoxBConds = true; // periodic

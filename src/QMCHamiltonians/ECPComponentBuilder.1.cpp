@@ -144,7 +144,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
   if (grid_local_inp == nullptr)
   {
     if (grid_global == nullptr)
-      myComm->barrier_and_abort("ECPComponentBuilder::buildLocal Missing grid information. ");
+      myComm.barrier_and_abort("ECPComponentBuilder::buildLocal Missing grid information. ");
     grid_local = std::make_unique<LinearGrid<RealType>>();
     grid_local->set(grid_global->rmin(), grid_global->rmax(), grid_global->size());
   }
@@ -154,7 +154,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
     grid_local->set(grid_local_inp->rmin(), grid_local_inp->rmax(), grid_local_inp->size());
   }
   if (grid_local->GridTag == CUSTOM_1DGRID)
-    myComm->barrier_and_abort("ECPComponentBuilder::buildLocal Custom grid is used. Need to recast to the linear grid");
+    myComm.barrier_and_abort("ECPComponentBuilder::buildLocal Custom grid is used. Need to recast to the linear grid");
   else
   {
     std::vector<RealType> v;
@@ -183,7 +183,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
         --last;
       }
       if (last == 0)
-        myComm->barrier_and_abort("ECPComponentBuilder::buildLocal. Illegal Local Pseudopotential");
+        myComm.barrier_and_abort("ECPComponentBuilder::buildLocal. Illegal Local Pseudopotential");
       //Add the reset values here
       int ng = static_cast<int>(r / 1e-3) + 1;
       app_log() << "     Use a Linear Grid: [0," << r << "] Number of points = " << ng << std::endl;

@@ -31,7 +31,7 @@ class SpaceGridEnv
 {
 public:
   using Input = ValidSpaceGridInput;
-  SpaceGridEnv(Communicate* comm);
+  SpaceGridEnv(Communicate& comm);
 
   SpaceGridEnv(const SpaceGridEnv& env);
 

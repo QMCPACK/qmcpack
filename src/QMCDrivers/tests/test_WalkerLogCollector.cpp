@@ -31,7 +31,7 @@ TEST_CASE("WalkerLogCollector::collect", "[estimators]")
   app_log() << "test WalkerLogCollector::collect\n";
 
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);

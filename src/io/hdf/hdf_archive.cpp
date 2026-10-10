@@ -90,10 +90,10 @@ void hdf_archive::create_basic_plist()
   }
 }
 
-void hdf_archive::set_access_plist(Communicate* comm, bool request_pio)
+void hdf_archive::set_access_plist(Communicate& comm, bool request_pio)
 {
   create_basic_plist();
-  if (comm && comm->size() > 1) //for parallel communicator
+  if (comm.size() > 1) //for parallel communicator
   {
     bool use_phdf5 = false;
 #if defined(ENABLE_PHDF5)
@@ -105,7 +105,7 @@ void hdf_archive::set_access_plist(Communicate* comm, bool request_pio)
       // optimization of using the global H5P_DEFAULT instead of just
       // having hdf_archive own its access plist.
       if (H5Pset_all_coll_metadata_ops(file_apl_, true) < 0 || H5Pset_coll_metadata_write(file_apl_, true) < 0 ||
-          H5Pset_fapl_mpio(file_apl_, comm->getMPI(), info) < 0 ||
+          H5Pset_fapl_mpio(file_apl_, comm.getMPI(), info) < 0 ||
           H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE) < 0)
       {
         H5Pclose(file_apl_);
@@ -118,9 +118,9 @@ void hdf_archive::set_access_plist(Communicate* comm, bool request_pio)
     }
 #endif
     Mode.set(IS_PARALLEL, use_phdf5);
-    Mode.set(IS_MASTER, !comm->rank());
+    Mode.set(IS_MASTER, !comm.rank());
     if (request_pio && !use_phdf5)
-      Mode.set(NOIO, comm->rank()); // master only
+      Mode.set(NOIO, comm.rank()); // master only
     else
       Mode.set(NOIO, false); // pio or all.
   }
