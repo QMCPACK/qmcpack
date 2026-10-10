@@ -24,9 +24,11 @@
 #include "QMCWaveFunctions/DeepQMC/DeepQMCBridge.h"
 #include "QMCWaveFunctions/DeepQMC/DeepQMCWF.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCWaveFunctions/TWFdispatcher.h"
 #include "QMCWaveFunctions/TWFGrads.hpp"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "Utilities/RuntimeOptions.h"
+#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
@@ -70,7 +72,9 @@ public:
   }
 
   virtual RealType logValue(const std::vector<RealType>& electron_coords, int iw, int n_elec) const
-  { return 10.0 + iw; }
+  {
+    return 10.0 + iw;
+  }
 
   mutable int call_count = 0;
   mutable std::vector<RealType> last_ion_coords;
@@ -115,6 +119,23 @@ ParticleSet makeIons(const SimulationCell& simulation_cell)
   ions.update();
   return ions;
 }
+
+class UnsupportedAllParticleWF : public WaveFunctionComponent
+{
+public:
+  std::string getClassName() const override { return "UnsupportedAllParticleWF"; }
+  LogValue evaluateLog(const ParticleSet&, ParticleSet::ParticleGradient&, ParticleSet::ParticleLaplacian&) override
+  {
+    return LogValue(0);
+  }
+  void acceptMove(ParticleSet&, int, bool) override {}
+  void restore(int) override {}
+  PsiValue ratio(ParticleSet&, int) override { return PsiValue(1); }
+  void registerData(ParticleSet&, WFBufferType&) override {}
+  LogValue updateBuffer(ParticleSet&, WFBufferType&, bool) override { return LogValue(0); }
+  void copyFromBuffer(ParticleSet&, WFBufferType&) override {}
+  void evaluateDerivatives(ParticleSet&, const OptVariables&, Vector<ValueType>&, Vector<ValueType>&) override {}
+};
 } // namespace
 
 TEST_CASE("DeepQMCWF batched evaluateLog", "[wavefunction][deepqmc]")
@@ -189,6 +210,114 @@ TEST_CASE("DeepQMCWF batched evaluateLog", "[wavefunction][deepqmc]")
   CHECK(G1[1][2] == Approx(112.0));
   CHECK(L1[0] == Approx(1000.0));
   CHECK(L1[1] == Approx(1001.0));
+}
+
+TEST_CASE("DeepQMCWF all-particle masked evaluation scatters into the full crowd", "[wavefunction][deepqmc]")
+{
+  const SimulationCell simulation_cell;
+  ParticleSet ions  = makeIons(simulation_cell);
+  ParticleSet elec0 = makeElectrons(simulation_cell, {{0.0, 0.0, 0.0}});
+  ParticleSet elec1 = makeElectrons(simulation_cell, {{1.0, 0.0, 0.0}});
+  ParticleSet elec2 = makeElectrons(simulation_cell, {{2.0, 0.0, 0.0}});
+  auto bridge_owner = std::make_unique<RecordingDeepQMCBridge>();
+  auto* bridge      = bridge_owner.get();
+  DeepQMCWF comp0("deep", ions, std::move(bridge_owner), 7);
+  DeepQMCWF comp1("deep", ions, std::make_unique<RecordingDeepQMCBridge>(), 7);
+  DeepQMCWF comp2("deep", ions, std::make_unique<RecordingDeepQMCBridge>(), 7);
+  ParticleSet::ParticleGradient G0(1), G1(1), G2(1);
+  ParticleSet::ParticleLaplacian L0(1), L1(1), L2(1);
+  G0 = 0.0;
+  G1 = 17.0;
+  G2 = 0.0;
+  L0 = 0.0;
+  L1 = 19.0;
+  L2 = 0.0;
+  RefVectorWithLeader<WaveFunctionComponent> wfc_list(comp0, {comp0, comp1, comp2});
+  RefVectorWithLeader<ParticleSet> p_list(elec0, {elec0, elec1, elec2});
+  RefVector<ParticleSet::ParticleGradient> G_list;
+  G_list.push_back(G0);
+  G_list.push_back(G1);
+  G_list.push_back(G2);
+  RefVector<ParticleSet::ParticleLaplacian> L_list;
+  L_list.push_back(L0);
+  L_list.push_back(L1);
+  L_list.push_back(L2);
+
+  comp0.mw_evaluateLogAllParticles(wfc_list, p_list, G_list, L_list, {true, false, true});
+
+  CHECK(bridge->call_count == 1);
+  CHECK(bridge->last_batch_size == 2);
+  CHECK(bridge->last_electron_coords[0] == Approx(0.0));
+  CHECK(bridge->last_electron_coords[3] == Approx(2.0));
+  CHECK(std::real(comp0.get_log_value()) == Approx(10.0));
+  CHECK(std::real(comp1.get_log_value()) == Approx(0.0));
+  CHECK(std::real(comp2.get_log_value()) == Approx(11.0));
+  CHECK(G0[0][0] == Approx(0.0));
+  CHECK(G1[0][0] == Approx(17.0));
+  CHECK(G2[0][0] == Approx(100.0));
+  CHECK(L1[0] == Approx(19.0));
+  CHECK(L2[0] == Approx(1000.0));
+}
+
+TEST_CASE("all-particle TWF dispatch recovers rejected walkers only", "[wavefunction][deepqmc]")
+{
+  const SimulationCell simulation_cell;
+  RuntimeOptions runtime_options;
+  ParticleSet ions  = makeIons(simulation_cell);
+  ParticleSet elec0 = makeElectrons(simulation_cell, {{0.0, 0.0, 0.0}});
+  ParticleSet elec1 = makeElectrons(simulation_cell, {{2.0, 0.0, 0.0}});
+  auto bridge_owner = std::make_unique<CoordinateLogDeepQMCBridge>();
+  auto* bridge      = bridge_owner.get();
+  TrialWaveFunction twf0(runtime_options, "deep0");
+  twf0.addComponent(std::make_unique<DeepQMCWF>("DNN", ions, std::move(bridge_owner), 7));
+  TrialWaveFunction twf1(runtime_options, "deep1");
+  twf1.addComponent(std::make_unique<DeepQMCWF>("DNN", ions, std::make_unique<CoordinateLogDeepQMCBridge>(), 7));
+  RefVectorWithLeader<TrialWaveFunction> wf_list(twf0, {twf0, twf1});
+  RefVectorWithLeader<ParticleSet> p_list(elec0, {elec0, elec1});
+  ResourceCollection resources("deepqmc_all_particle_resources");
+  elec0.createResource(resources);
+  ResourceCollectionTeamLock<ParticleSet> lock(resources, p_list);
+  MCCoords<CoordsType::POS> displacements(2);
+  displacements.positions = {{1.0, 0.0, 0.0}, {1.0, 0.0, 0.0}};
+  std::vector<bool> valid(2);
+  ParticleSet::mw_makeMoveAllParticles(p_list, displacements, valid);
+  TWFdispatcher dispatcher(true);
+  dispatcher.flex_evaluateLogAllParticles(wf_list, p_list, {true, true});
+  const auto accepted_log = twf0.getLogPsi();
+  const ParticleSet::ParticleGradient accepted_g(elec0.G);
+  const ParticleSet::ParticleLaplacian accepted_l(elec0.L);
+  ParticleSet::mw_accept_rejectMoveAllParticles(p_list, {true, false});
+  dispatcher.flex_accept_rejectMoveAllParticles(wf_list, p_list, {true, false});
+  CHECK(bridge->call_count == 2);
+  CHECK(bridge->last_batch_size == 1);
+  CHECK(twf0.getLogPsi() == Approx(accepted_log));
+  CHECK(twf1.getLogPsi() == Approx(2.0));
+  for (int idim = 0; idim < OHMMS_DIM; ++idim)
+    CHECK(elec0.G[0][idim] == Approx(accepted_g[0][idim]));
+  CHECK(elec0.L[0] == Approx(accepted_l[0]));
+
+  ParticleSet::mw_makeMoveAllParticles(p_list, displacements, valid);
+  dispatcher.flex_evaluateLogAllParticles(wf_list, p_list, {true, true});
+  const int calls_before_accept = bridge->call_count;
+  ParticleSet::mw_accept_rejectMoveAllParticles(p_list, {true, true});
+  dispatcher.flex_accept_rejectMoveAllParticles(wf_list, p_list, {true, true});
+  CHECK(bridge->call_count == calls_before_accept);
+}
+
+TEST_CASE("all-particle WFC capability and TWF dispatcher are gated", "[wavefunction][deepqmc]")
+{
+  const SimulationCell simulation_cell;
+  RuntimeOptions runtime_options;
+  ParticleSet elec = makeElectrons(simulation_cell, {{0.0, 0.0, 0.0}});
+  TrialWaveFunction twf(runtime_options, "unsupported");
+  twf.addComponent(std::make_unique<UnsupportedAllParticleWF>());
+  RefVectorWithLeader<TrialWaveFunction> wf_list(twf, {twf});
+  RefVectorWithLeader<ParticleSet> p_list(elec, {elec});
+  REQUIRE_THROWS_AS(TrialWaveFunction::mw_evaluateLogAllParticles(wf_list, p_list, {true}), std::runtime_error);
+  REQUIRE_THROWS_AS(TrialWaveFunction::mw_accept_rejectMoveAllParticles(wf_list, p_list, {false}), std::runtime_error);
+  TWFdispatcher dispatcher(false);
+  REQUIRE_THROWS_AS(dispatcher.flex_evaluateLogAllParticles(wf_list, p_list, {true}), std::runtime_error);
+  REQUIRE_THROWS_AS(dispatcher.flex_accept_rejectMoveAllParticles(wf_list, p_list, {true}), std::runtime_error);
 }
 
 TEST_CASE("DeepQMCWF batched PbyP methods", "[wavefunction][deepqmc]")

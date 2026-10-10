@@ -163,6 +163,25 @@ public:
                               const RefVector<ParticleSet::ParticleGradient>& G_list,
                               const RefVector<ParticleSet::ParticleLaplacian>& L_list) const;
 
+  /** Evaluate selected walkers after an all-particle move.
+   * All lists retain their complete crowd ordering; evaluate_mask selects the walkers to evaluate.
+   * Components must override this before they can participate in all-particle batched moves.
+   */
+  virtual void mw_evaluateLogAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                          const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                          const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                          const std::vector<bool>& evaluate_mask) const;
+
+  /** Resolve an all-particle move after the ParticleSet transaction is resolved.
+   * All lists retain their complete crowd ordering; accepted selects accepted walkers.
+   */
+  virtual void mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                const RefVectorWithLeader<ParticleSet>& p_list,
+                                                const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                                const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                                const std::vector<bool>& accepted) const;
+
   /** recompute the value of the WaveFunctionComponents which require critical accuracy.
    * needed for Slater Determinants but not needed for most types of WaveFunctionComponents
    */
@@ -178,7 +197,9 @@ public:
   // }
 
   virtual void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi_all)
-  { APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in " + getClassName() + " class."); }
+  {
+    APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in " + getClassName() + " class.");
+  }
 
   /** Prepare internal data for updating WFC correspond to a particle group
    * It should be called before moving particles of a given group.
@@ -262,7 +283,9 @@ public:
                                   int iat,
                                   TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
                                   TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad)
-  { return GradType(); }
+  {
+    return GradType();
+  }
 
 
   /** evaluate the ratio of the new to old WaveFunctionComponent value and the new gradient
@@ -280,7 +303,9 @@ public:
    * @param spingrad_iat spin gradient for the active particle
    */
   virtual PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat)
-  { return ratioGrad(P, iat, grad_iat); }
+  {
+    return ratioGrad(P, iat, grad_iat);
+  }
 
   template<CoordsType CT>
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
