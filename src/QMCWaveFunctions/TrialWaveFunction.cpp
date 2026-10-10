@@ -174,7 +174,7 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
   // to be compatible with legacy use pattern.
   const int num_particles = p_leader.getTotalNum();
   auto initGandL          = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient& grad,
-                                                   ParticleSet::ParticleLaplacian& lapl) {
+                                          ParticleSet::ParticleLaplacian& lapl) {
     grad.resize(num_particles);
     lapl.resize(num_particles);
     grad           = czero;
@@ -213,8 +213,8 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
 }
 
 void TrialWaveFunction::mw_evaluateLogAllParticles(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                                    const RefVectorWithLeader<ParticleSet>& p_list,
-                                                    const std::vector<bool>& evaluate_mask)
+                                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                                   const std::vector<bool>& evaluate_mask)
 {
   assert(wf_list.size() == p_list.size());
   assert(wf_list.size() == evaluate_mask.size());
@@ -265,8 +265,8 @@ void TrialWaveFunction::mw_evaluateLogAllParticles(const RefVectorWithLeader<Tri
 }
 
 void TrialWaveFunction::mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                                          const RefVectorWithLeader<ParticleSet>& p_list,
-                                                          const std::vector<bool>& accepted)
+                                                         const RefVectorWithLeader<ParticleSet>& p_list,
+                                                         const std::vector<bool>& accepted)
 {
   assert(wf_list.size() == p_list.size());
   assert(wf_list.size() == accepted.size());

@@ -147,14 +147,13 @@ TEST_CASE("TrialWaveFunction all-particle APIs require component support", "[wav
   laplacian_list.push_back(laplacians);
 
   REQUIRE_THROWS_AS(twf.getOrbitals()[0]->mw_evaluateLogAllParticles(wfc_list, p_list, gradient_list, laplacian_list,
-                                                                      {true}),
+                                                                     {true}),
                     std::runtime_error);
   REQUIRE_THROWS_AS(twf.getOrbitals()[0]->mw_accept_rejectMoveAllParticles(wfc_list, p_list, gradient_list,
-                                                                            laplacian_list, {false}),
+                                                                           laplacian_list, {false}),
                     std::runtime_error);
   REQUIRE_THROWS_AS(TrialWaveFunction::mw_evaluateLogAllParticles(wf_list, p_list, {true}), std::runtime_error);
-  REQUIRE_THROWS_AS(TrialWaveFunction::mw_accept_rejectMoveAllParticles(wf_list, p_list, {false}),
-                    std::runtime_error);
+  REQUIRE_THROWS_AS(TrialWaveFunction::mw_accept_rejectMoveAllParticles(wf_list, p_list, {false}), std::runtime_error);
 
   TWFdispatcher dispatcher(/*use_batch=*/false);
   REQUIRE_THROWS_AS(dispatcher.flex_evaluateLogAllParticles(wf_list, p_list, {true}), std::runtime_error);

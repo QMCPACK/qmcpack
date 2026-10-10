@@ -72,7 +72,9 @@ public:
   }
 
   virtual RealType logValue(const std::vector<RealType>& electron_coords, int iw, int n_elec) const
-  { return 10.0 + iw; }
+  {
+    return 10.0 + iw;
+  }
 
   mutable int call_count = 0;
   mutable std::vector<RealType> last_ion_coords;
@@ -123,7 +125,9 @@ class UnsupportedAllParticleWF : public WaveFunctionComponent
 public:
   std::string getClassName() const override { return "UnsupportedAllParticleWF"; }
   LogValue evaluateLog(const ParticleSet&, ParticleSet::ParticleGradient&, ParticleSet::ParticleLaplacian&) override
-  { return LogValue(0); }
+  {
+    return LogValue(0);
+  }
   void acceptMove(ParticleSet&, int, bool) override {}
   void restore(int) override {}
   PsiValue ratio(ParticleSet&, int) override { return PsiValue(1); }
