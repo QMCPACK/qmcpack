@@ -99,6 +99,20 @@ TEST_CASE("communicate_collectives_complex_pointer_bcast", "[message][collective
 
   CHECK(values[0] == Complex{1, -2});
   CHECK(values[1] == Complex{3, -4});
+
+  if (comm.size() > 1)
+  {
+    const int root = comm.size() - 1;
+    std::vector<double> dvalues(3, -100.0);
+    if (comm.rank() == root)
+      dvalues = {10.5, 20.5, 30.5};
+
+    comm.bcast(dvalues.data(), static_cast<int>(dvalues.size()), root);
+
+    CHECK(dvalues[0] == 10.5);
+    CHECK(dvalues[1] == 20.5);
+    CHECK(dvalues[2] == 30.5);
+  }
 }
 
 // =======================================================================
@@ -134,6 +148,19 @@ TEST_CASE("communicate_collectives_scalar_reduce", "[message][collectives]")
     double expected_real = static_cast<double>(comm.size() * (comm.size() + 1) / 2);
     double expected_imag = static_cast<double>(comm.size() * (comm.size() + 1) / 2 + comm.size());
     CHECK(val_c == Complex{expected_real, expected_imag});
+  }
+
+  // Reduce to non-zero root
+  if (comm.size() > 1)
+  {
+    const int dest = comm.size() - 1;
+    int val_dest = comm.rank() + 1;
+    comm.reduce(val_dest, dest);
+    if (comm.rank() == dest)
+    {
+      int expected_dest = comm.size() * (comm.size() + 1) / 2;
+      CHECK(val_dest == expected_dest);
+    }
   }
 }
 
@@ -182,6 +209,61 @@ TEST_CASE("test_communicate_complex_pointer_reduce_in_place", "[message]")
     }
     REQUIRE(values[0] == Complex{expected_real_0, expected_imag_0});
     REQUIRE(values[1] == Complex{expected_real_1, expected_imag_1});
+  }
+
+  // Reduce in place to non-zero dest
+  if (c.size() > 1)
+  {
+    const int dest = c.size() - 1;
+    std::vector<Complex> values_dest{{(double)(c.rank() + 1), (double)(c.rank() + 2)},
+                                     {(double)(c.rank() + 3), (double)(c.rank() + 4)}};
+    c.reduce_in_place(values_dest.data(), values_dest.size(), dest);
+    if (c.rank() == dest)
+    {
+      double expected_real_0 = 0.0, expected_imag_0 = 0.0;
+      double expected_real_1 = 0.0, expected_imag_1 = 0.0;
+      for (int i = 0; i < c.size(); i++)
+      {
+        expected_real_0 += (double)(i + 1);
+        expected_imag_0 += (double)(i + 2);
+        expected_real_1 += (double)(i + 3);
+        expected_imag_1 += (double)(i + 4);
+      }
+      REQUIRE(values_dest[0] == Complex{expected_real_0, expected_imag_0});
+      REQUIRE(values_dest[1] == Complex{expected_real_1, expected_imag_1});
+    }
+  }
+}
+
+TEST_CASE("communicate_collectives_pointer_reduce", "[message][collectives]")
+{
+  Communicate& c(*OHMMS::Controller);
+  const std::vector<double> send_buf{static_cast<double>(c.rank() + 1), static_cast<double>(2 * (c.rank() + 1))};
+  std::vector<double> recv_buf(2, 0.0);
+
+  // dest = 0 (default)
+  c.reduce(send_buf.data(), recv_buf.data(), static_cast<int>(send_buf.size()));
+
+  const double expected_0 = static_cast<double>(c.size() * (c.size() + 1) / 2);
+  const double expected_1 = 2.0 * expected_0;
+
+  if (c.rank() == 0)
+  {
+    CHECK(recv_buf[0] == expected_0);
+    CHECK(recv_buf[1] == expected_1);
+  }
+
+  // Non-zero destination
+  if (c.size() > 1)
+  {
+    const int dest = c.size() - 1;
+    std::fill(recv_buf.begin(), recv_buf.end(), 0.0);
+    c.reduce(send_buf.data(), recv_buf.data(), static_cast<int>(send_buf.size()), dest);
+    if (c.rank() == dest)
+    {
+      CHECK(recv_buf[0] == expected_0);
+      CHECK(recv_buf[1] == expected_1);
+    }
   }
 }
 

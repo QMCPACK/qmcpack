@@ -123,6 +123,9 @@ TEST_CASE("test_communicate_node_comm", "[message]")
   REQUIRE(inter_group_comm.size() >= 1);
   REQUIRE(inter_group_comm.rank() >= 0);
   REQUIRE(inter_group_comm.rank() < inter_group_comm.size());
+
+  Communicate default_comm;
+  REQUIRE_THROWS_AS(default_comm.getInterGroupComm(), std::runtime_error);
 }
 
 #ifdef HAVE_MPI

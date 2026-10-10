@@ -35,7 +35,7 @@ TEST_CASE("hdf_archive_parallel", "[hdf]")
 TEST_CASE("hdf_archive_parallel_mpi3", "[hdf]")
 {
   Communicate& c(*OHMMS::Controller);
-  hdf_archive hd(c.comm);
+  hdf_archive hd(c.getCommMPI3());
   hd.create("test_mpi3_communicator.hdf");
   int i     = 23;
   bool okay = hd.writeEntry(i, "int");

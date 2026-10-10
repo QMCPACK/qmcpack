@@ -23,6 +23,7 @@
 #include <string>
 #include <cstdio>
 #include <fstream>
+#include <stdexcept>
 #include "config.h"
 #include "Utilities/FairDivide.h"
 
@@ -127,4 +128,11 @@ void Communicate::barrier_and_abort(const std::string& msg) const
 #endif
 #endif
   Communicate::abort();
+}
+
+Communicate& Communicate::getInterGroupComm() const
+{
+  if (!inter_group_comm_)
+    throw std::runtime_error("Communicate::getInterGroupComm(): inter_group_comm_ is not initialized.");
+  return *inter_group_comm_;
 }
