@@ -98,12 +98,12 @@ public:
    */
   Communicate(Communicate&&);
 
-  /** provide a node/shared-memory communicator from current (parent) communicator
+  /** create a node/shared-memory communicator from current (parent) communicator
    *
    *  The inter_group_comm_ is created across nodes for ranks sharing the same intra-node rank.
    *  Note: the size of the node communicator and its inter_group_comm_ may differ on different nodes.
    */
-  Communicate NodeComm() const;
+  Communicate createNodeComm() const;
 
   void barrier() const;
   void abort() const;

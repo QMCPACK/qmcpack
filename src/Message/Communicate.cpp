@@ -84,7 +84,7 @@ Communicate::Communicate(const Communicate& in_comm, int nparts, int stripe)
  *  The inter_group_comm_ is created across nodes for ranks sharing the same intra-node rank.
  *  Note: the size of the node communicator and its inter_group_comm_ may differ on different nodes.
  */
-Communicate Communicate::NodeComm() const
+Communicate Communicate::createNodeComm() const
 {
   Communicate node_comm{comm.split_shared()};
   node_comm.inter_group_comm_ = std::make_unique<Communicate>(comm.split(node_comm.rank(), comm.rank()));
@@ -100,7 +100,7 @@ void Communicate::barrier() const { comm.barrier(); }
  *
  *  Note: in non-MPI (serial) builds, this returns a single-rank communicator.
  */
-Communicate Communicate::NodeComm() const
+Communicate Communicate::createNodeComm() const
 {
   Communicate node_comm;
   node_comm.inter_group_comm_ = std::make_unique<Communicate>();

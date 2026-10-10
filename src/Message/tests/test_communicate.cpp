@@ -114,7 +114,7 @@ TEST_CASE("test_communicate_split_two_stripe_three", "[message]")
 TEST_CASE("test_communicate_node_comm", "[message]")
 {
   Communicate& c(*OHMMS::Controller);
-  auto node_comm = c.NodeComm();
+  auto node_comm = c.createNodeComm();
 
   REQUIRE(node_comm.size() >= 1);
   REQUIRE(node_comm.rank() >= 0);
@@ -142,7 +142,7 @@ TEST_CASE("test_communicate_node_comm", "[message]")
   // Verify node_comm.size() * inter_group_comm.size() == c.size() when nodes are homogeneous (e.g. running on local machine)
   REQUIRE(node_comm.size() * inter_group_comm.size() == c.size());
 
-  // Communicate created without NodeComm() does not initialize inter_group_comm_
+  // Communicate created without createNodeComm() does not initialize inter_group_comm_
   Communicate default_comm;
   REQUIRE_THROWS_AS(default_comm.getInterGroupComm(), std::runtime_error);
 }

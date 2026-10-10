@@ -69,7 +69,7 @@ QMCMain::QMCMain(Communicate& c)
       traces_xml_(NULL)
 #endif
 {
-  Communicate node_comm{OHMMS::Controller->NodeComm()};
+  Communicate node_comm{OHMMS::Controller->createNodeComm()};
   // assign accelerators within a node
   DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
