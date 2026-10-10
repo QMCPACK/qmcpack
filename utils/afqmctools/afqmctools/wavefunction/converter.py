@@ -1,8 +1,10 @@
 import ast
+import struct
+
 import h5py
 import numpy
 import scipy.sparse
-import struct
+
 from afqmctools.utils.io import from_qmcpack_complex
 
 
@@ -28,9 +30,7 @@ def read_qmcpack_ascii_wavefunction(filename, nmo, nelec):
                     cmajor = True
                 elif line[0] == "FullMO":
                     fullmo = True
-                elif line[0] == "&END" or line[0] == "/":
-                    break
-                elif len(line) == 0:
+                elif line[0] == "&END" or line[0] == "/" or len(line) == 0:
                     break
         if wfn_type == "occ":
             uhf = True
@@ -294,11 +294,11 @@ def read_qmcpack_nomsd_hdf5(wgroup):
     wfn = numpy.zeros((nci, nmo, na + nb), dtype=numpy.complex128)
     for idet in range(nci):
         ix = 2 * idet if uhf else idet
-        pa = orbs_from_dset(wgroup["PsiT_{:d}/".format(idet)])
+        pa = orbs_from_dset(wgroup[f"PsiT_{idet:d}/"])
         wfn[idet, :, :na] = pa
         if uhf:
             ix = 2 * idet + 1
-            wfn[idet, :, na:] = orbs_from_dset(wgroup["PsiT_{:d}/".format(ix)])
+            wfn[idet, :, na:] = orbs_from_dset(wgroup[f"PsiT_{ix:d}/"])
         else:
             wfn[idet, :, na:] = pa[:, :nb]
     return (coeffs, wfn), psi0, (na, nb)

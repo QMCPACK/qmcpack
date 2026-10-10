@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
-from math import cos, sin, pi, acos
+from math import acos, cos, pi, sin
+
 import numpy
 from pyscf import gto, scf
 

@@ -1,14 +1,15 @@
-import numpy
 import os
-import scipy.sparse
 import unittest
+
+import numpy
+
 from afqmctools.hamiltonian.converter import (
-    read_qmcpack_hamiltonian,
     read_fcidump,
+    read_qmcpack_hamiltonian,
     write_fcidump,
 )
-from afqmctools.utils.linalg import modified_cholesky_direct
 from afqmctools.hamiltonian.io import write_qmcpack_sparse
+from afqmctools.utils.linalg import modified_cholesky_direct
 from afqmctools.utils.testing import generate_hamiltonian
 
 numpy.random.seed(7)

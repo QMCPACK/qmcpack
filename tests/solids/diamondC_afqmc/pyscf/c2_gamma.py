@@ -1,7 +1,8 @@
 #! /usr/bin/env python3
 
-import numpy
 from functools import reduce
+
+import numpy
 from pyscf.pbc import gto, scf
 from pyscf.pbc import tools as pbctools
 

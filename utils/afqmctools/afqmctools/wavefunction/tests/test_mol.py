@@ -1,8 +1,10 @@
-import h5py
-import numpy
 import os
 import unittest
+
+import h5py
+import numpy
 from pyscf import gto, scf
+
 from afqmctools.wavefunction import mol
 
 

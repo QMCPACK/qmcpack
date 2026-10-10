@@ -6,23 +6,13 @@ Methods implemented in finite-size system can be directly used here without
 any modification.
 """
 
-import numpy as np
-from pyscf import lib
-from pyscf.pbc import gto, scf, dft
-from pyscf import gto as Mgto
-from pyscf.pbc import df
-from pyscf.pbc import ao2mo
-from pyscf.pbc import tools
-from pyscf.pbc.tools.pbc import super_cell
-from functools import reduce
-import scipy.linalg as la
-import os
+
+from pyscf.pbc import df, scf
 
 restart = False
 
 
 ### generated system text ###
-from numpy import array
 from pyscf.pbc import gto as gto_loc
 
 cell = gto_loc.Cell()

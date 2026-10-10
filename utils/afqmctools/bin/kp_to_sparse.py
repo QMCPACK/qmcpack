@@ -2,7 +2,8 @@
 
 import argparse
 import sys
-from afqmctools.hamiltonian.converter import read_qmcpack_hamiltonian, kpoint_to_sparse
+
+from afqmctools.hamiltonian.converter import kpoint_to_sparse
 
 
 def parse_args(args):

@@ -1,21 +1,19 @@
-from h5py import File
+import os
+
 import numpy
+from h5py import File
+from mpi4py import MPI
+from pyscf import gto as molgto
 from pyscf.pbc import gto, tools
 from pyscf.pbc.dft import numint
-from pyscf import gto as molgto
-import os
-import sys
-import numpy
-from mpi4py import MPI
-from afqmctools.utils.gto_basis_utils import extend_gto_id
 
 try:
     from pyscf_driver import (
-        pyscf_driver_init,
-        pyscf_driver_get_info,
         pyscf_driver_end,
-        pyscf_driver_mp2,
+        pyscf_driver_get_info,
         pyscf_driver_hamil,
+        pyscf_driver_init,
+        pyscf_driver_mp2,
         pyscf_driver_mp2no,
     )
 except ImportError:
@@ -63,25 +61,13 @@ def make_cell(
     assert atpos.ndim == 2
     assert atpos.shape[1] == 3
     cell = gto.Cell()
-    cell.a = """
-       {} {} {}
-       {} {} {}
-       {} {} {}""".format(
-        latt[0, 0],
-        latt[0, 1],
-        latt[0, 2],
-        latt[1, 0],
-        latt[1, 1],
-        latt[1, 2],
-        latt[2, 0],
-        latt[2, 1],
-        latt[2, 2],
-    )
+    cell.a = f"""
+       {latt[0, 0]} {latt[0, 1]} {latt[0, 2]}
+       {latt[1, 0]} {latt[1, 1]} {latt[1, 2]}
+       {latt[2, 0]} {latt[2, 1]} {latt[2, 2]}"""
     atom = ""
     for i in range(len(atid)):
-        atom += """{} {} {} {} \n""".format(
-            sp_label[atid[i] - 1], atpos[i, 0], atpos[i, 1], atpos[i, 2]
-        )
+        atom += f"""{sp_label[atid[i] - 1]} {atpos[i, 0]} {atpos[i, 1]} {atpos[i, 2]} \n"""
     cell.atom = atom
     cell.basis = basis_
     cell.pseudo = pseudo_
@@ -131,7 +117,7 @@ def write_esh5_orbitals(cell, name, kpts=numpy.zeros((1, 3), dtype=numpy.float64
     dset = grp.create_dataset("kpoints", data=kpts)
     dset = grp.create_dataset("number_of_orbitals", data=norbs)
     dset = grp.create_dataset("fft_grid", data=cell.mesh)
-    dset = grp.create_dataset("grid_type", data=int(0))
+    dset = grp.create_dataset("grid_type", data=0)
     nnr = cell.mesh[0] * cell.mesh[1] * cell.mesh[2]
     # loop over kpoints later
     for ik, k in enumerate(kpts):

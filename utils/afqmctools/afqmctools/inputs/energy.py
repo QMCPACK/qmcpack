@@ -1,4 +1,5 @@
 import numpy
+
 from afqmctools.hamiltonian.converter import read_qmcpack_hamiltonian
 from afqmctools.wavefunction.converter import read_qmcpack_wavefunction
 

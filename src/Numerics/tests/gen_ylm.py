@@ -3,8 +3,9 @@
 # Redirect output to ylm.inc ("python gen_ylm.py > ylm.inc") and adjust
 # the #ifdef in test_ylm.cpp
 
-import mpmath
 import math
+
+import mpmath
 
 
 def gen_spherical_harmonics():
@@ -21,7 +22,7 @@ def gen_spherical_harmonics():
     h_phi = (b_phi - a_phi) / n_phi
 
     vals = []
-    for l in range(0, 5):
+    for l in range(5):
         for m in range(-l, l + 1):
             for i in range(n_theta + 1):
                 theta = a_theta + h_theta * i

@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-from __future__ import print_function
 
 # Statical error checking code for use by testing framework
 # Jaron Krogel/ORNL
@@ -7,10 +6,10 @@ from __future__ import print_function
 # To maximize portability, only standard Python modules should
 # be used (that is, no numpy)
 
+import math
 import os
 import sys
 from optparse import OptionParser
-import math
 
 
 # standalone definition of error function from Abramowitz & Stegun
@@ -378,7 +377,7 @@ def process_scalar_files(options, quants_check):
                         svals[q] = mean, error
                     else:
                         exit_fail(
-                            "{0} is not present in file {1}".format(q, scalar_file)
+                            f"{q} is not present in file {scalar_file}"
                         )
                     # end if
                 # end for
@@ -411,9 +410,9 @@ def check_values(options, quants_check, values):
     try:
         ns = 0
         for s in options.series:
-            msg += "Tests for series {0}\n".format(s)
+            msg += f"Tests for series {s}\n"
             for q in quants_check:
-                msg += "  Testing quantity: {0}\n".format(q)
+                msg += f"  Testing quantity: {q}\n"
 
                 ref = options.__dict__[q]
                 mean_ref = ref[2 * ns]
@@ -427,25 +426,17 @@ def check_values(options, quants_check, values):
                 delta = mean_comp - mean_ref
                 delta_err = math.sqrt(error_comp**2 + error_ref**2)
 
-                msg += "    reference mean value     : {0: 12.8f}\n".format(mean_ref)
-                msg += "    reference error bar      : {0: 12.8f}\n".format(error_ref)
-                msg += "    computed  mean value     : {0: 12.8f}\n".format(mean_comp)
-                msg += "    computed  error bar      : {0: 12.8f}\n".format(error_comp)
-                msg += "    pass tolerance           : {0: 12.8f}  ({1: 12.8f} sigma)\n".format(
-                    options.nsigma * error_ref, options.nsigma
-                )
+                msg += f"    reference mean value     : {mean_ref: 12.8f}\n"
+                msg += f"    reference error bar      : {error_ref: 12.8f}\n"
+                msg += f"    computed  mean value     : {mean_comp: 12.8f}\n"
+                msg += f"    computed  error bar      : {error_comp: 12.8f}\n"
+                msg += f"    pass tolerance           : {options.nsigma * error_ref: 12.8f}  ({options.nsigma: 12.8f} sigma)\n"
                 if error_ref > 0.0:
-                    msg += "    deviation from reference : {0: 12.8f}  ({1: 12.8f} sigma)\n".format(
-                        delta, delta / error_ref
-                    )
-                msg += "    error bar of deviation   : {0: 12.8f}\n".format(delta_err)
+                    msg += f"    deviation from reference : {delta: 12.8f}  ({delta / error_ref: 12.8f} sigma)\n"
+                msg += f"    error bar of deviation   : {delta_err: 12.8f}\n"
                 if error_ref > 0.0:
-                    msg += "    significance probability : {0: 12.8f}  (gaussian statistics)\n".format(
-                        erf(abs(delta / error_ref) / math.sqrt(2.0))
-                    )
-                msg += "    status of this test      :   {0}\n".format(
-                    passfail[quant_success]
-                )
+                    msg += f"    significance probability : {erf(abs(delta / error_ref) / math.sqrt(2.0)): 12.8f}  (gaussian statistics)\n"
+                msg += f"    status of this test      :   {passfail[quant_success]}\n"
             # end for
             ns += 1
         # end for

@@ -2,11 +2,11 @@
 
 import re
 import sys
-import numpy as np
+import xml.etree.ElementTree as et
 from copy import deepcopy
 from functools import reduce
-import xml.etree.ElementTree as et
 
+import numpy as np
 
 ## reads in a qmcpack particle file
 ## places a single atom-centered gaussian around each atom
@@ -111,13 +111,7 @@ class gaussian:
             s = s.format(name, *val_array)
             return s
         else:
-            return "incomplete gaussian definition: A: {}, B: {}, C: {}, D: {}, K: {}".format(
-                A is not None,
-                B is not None,
-                C is not None,
-                D is not None,
-                K is not None,
-            )
+            return f"incomplete gaussian definition: A: {A is not None}, B: {B is not None}, C: {C is not None}, D: {D is not None}, K: {K is not None}"
 
     # build and return xml tag structure
     def xml_tag(self, var_list=["A", "B", "C"], opt=True):
@@ -294,7 +288,7 @@ def atomic_coords(ptclfile):
     posblock = posnode.text
     pts = []
     re_num = r"(-?\d\.\d+e[+-]\d\d)"
-    re_pos = r"{re_num}\s+{re_num}\s+{re_num}".format(re_num=re_num)
+    re_pos = rf"{re_num}\s+{re_num}\s+{re_num}"
     for pos in re.finditer(re_pos, posblock):
         pts.append(np.array(pos.groups(), dtype=np.float64))
     return pts
@@ -355,7 +349,7 @@ def write_ncjf(outpath, g_list, F, ncjf_name, gref=None):
         region_tag.append(gaussian_tag)
     # indent and write to file
     indent(cjf_tag)
-    print("  writing cjf tags to file: {}".format(outpath))
+    print(f"  writing cjf tags to file: {outpath}")
     et.ElementTree(cjf_tag).write(outpath)
 
 
