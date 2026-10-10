@@ -110,6 +110,21 @@ TEST_CASE("test_communicate_split_two_stripe_three", "[message]")
   REQUIRE(c2->getGroupID() == (c.rank() / 3 % 2));
 }
 
+TEST_CASE("test_communicate_node_comm", "[message]")
+{
+  Communicate& c(*OHMMS::Controller);
+  auto node_comm = c.NodeComm();
+
+  REQUIRE(node_comm.size() >= 1);
+  REQUIRE(node_comm.rank() >= 0);
+  REQUIRE(node_comm.rank() < node_comm.size());
+
+  auto& inter_group_comm = node_comm.getInterGroupComm();
+  REQUIRE(inter_group_comm.size() >= 1);
+  REQUIRE(inter_group_comm.rank() >= 0);
+  REQUIRE(inter_group_comm.rank() < inter_group_comm.size());
+}
+
 #ifdef HAVE_MPI
 TEST_CASE("mpi_thread_level", "[message]")
 { CHECK(boost::mpi3::environment::thread_support() >= boost::mpi3::thread_level::funneled); }
