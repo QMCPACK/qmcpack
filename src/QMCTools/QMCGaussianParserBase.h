@@ -144,6 +144,7 @@ struct QMCGaussianParserBase
 
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createMultiDeterminantSet();
+  void addMultiDeterminantSpinAttributes(xmlNodePtr multidet, xmlNodePtr detlist) const;
   xmlNodePtr createDeterminantSetWithHDF5();
   xmlNodePtr createMultiDeterminantSetFromH5();
   xmlNodePtr createMultiDeterminantSetCIHDF5();
