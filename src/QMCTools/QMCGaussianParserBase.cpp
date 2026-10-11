@@ -2521,9 +2521,10 @@ int QMCGaussianParserBase::numberOfExcitationsCSF(std::string& occ)
   int res = 0;
   for (int i = ci_neb; i < ci_nstates; i++)
   {
-    if (i < ci_nea && occ[i] == '2')
+    if (i < ci_nea)
     {
-      res++; //excitation into singly occupied alpha states in the reference
+      if (occ[i] == '2')
+        res++; //excitation into singly occupied alpha states in the reference
     }
     else
     {

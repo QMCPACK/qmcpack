@@ -186,5 +186,12 @@ set_tests_properties(
              PROCESSOR_AFFINITY
              TRUE)
 
+add_executable(test_csf_excitation test_csf_excitation.cpp ../QMCGaussianParserBase.cpp)
+target_link_libraries(test_csf_excitation PRIVATE catch_main qmcparticle qmcwfs sposets_for_testing)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(test_csf_excitation PRIVATE qmcutil qmcparticle_omptarget qmcwfs_omptarget)
+endif()
+add_unit_test(BASENAME deterministic-unit_test_csf_excitation TEST_BINARY $<TARGET_FILE:test_csf_excitation>)
+
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
 add_labels_for_tests("${CURRENT_TESTS}")
