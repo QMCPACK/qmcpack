@@ -216,11 +216,6 @@ void TrialWaveFunction::mw_evaluateLogAllParticles(const RefVectorWithLeader<Tri
                                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                                    const std::vector<bool>& evaluate_mask)
 {
-  assert(wf_list.size() == p_list.size());
-  assert(wf_list.size() == evaluate_mask.size());
-  if (wf_list.empty())
-    return;
-
   auto& wf_leader = wf_list.getLeader();
   ScopedTimer local_timer(wf_leader.TWF_timers_[RECOMPUTE_TIMER]);
   constexpr RealType czero(0);
@@ -268,11 +263,6 @@ void TrialWaveFunction::mw_accept_rejectMoveAllParticles(const RefVectorWithLead
                                                          const RefVectorWithLeader<ParticleSet>& p_list,
                                                          const std::vector<bool>& accepted)
 {
-  assert(wf_list.size() == p_list.size());
-  assert(wf_list.size() == accepted.size());
-  if (wf_list.empty())
-    return;
-
   auto& wf_leader = wf_list.getLeader();
   ScopedTimer local_timer(wf_leader.TWF_timers_[RECOMPUTE_TIMER]);
   constexpr RealType czero(0);

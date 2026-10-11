@@ -109,10 +109,10 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
 
 namespace
 {
-class UnsupportedAllParticleWF : public WaveFunctionComponent
+class SerialAllParticleWF : public WaveFunctionComponent
 {
 public:
-  std::string getClassName() const override { return "UnsupportedAllParticleWF"; }
+  std::string getClassName() const override { return "SerialAllParticleWF"; }
   LogValue evaluateLog(const ParticleSet&, ParticleSet::ParticleGradient&, ParticleSet::ParticleLaplacian&) override
   {
     return LogValue(0);
@@ -127,7 +127,7 @@ public:
 };
 } // namespace
 
-TEST_CASE("TrialWaveFunction all-particle APIs require component support", "[wavefunction]")
+TEST_CASE("TrialWaveFunction all-particle APIs use serial component fallback", "[wavefunction]")
 {
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
@@ -135,25 +135,24 @@ TEST_CASE("TrialWaveFunction all-particle APIs require component support", "[wav
   elec.update();
   RuntimeOptions runtime_options;
   TrialWaveFunction twf(runtime_options);
-  twf.addComponent(std::make_unique<UnsupportedAllParticleWF>());
+  twf.addComponent(std::make_unique<SerialAllParticleWF>());
   RefVectorWithLeader<TrialWaveFunction> wf_list(twf, {twf});
   RefVectorWithLeader<ParticleSet> p_list(elec, {elec});
-  ParticleSet::ParticleGradient gradients(1);
-  ParticleSet::ParticleLaplacian laplacians(1);
-  RefVectorWithLeader<WaveFunctionComponent> wfc_list(*twf.getOrbitals()[0], {*twf.getOrbitals()[0]});
-  RefVector<ParticleSet::ParticleGradient> gradient_list;
-  gradient_list.push_back(gradients);
-  RefVector<ParticleSet::ParticleLaplacian> laplacian_list;
-  laplacian_list.push_back(laplacians);
+  ResourceCollection resources("serial_all_particle_resources");
+  elec.createResource(resources);
+  ResourceCollectionTeamLock<ParticleSet> lock(resources, p_list);
 
-  REQUIRE_THROWS_AS(twf.getOrbitals()[0]->mw_evaluateLogAllParticles(wfc_list, p_list, gradient_list, laplacian_list,
-                                                                     {true}),
-                    std::runtime_error);
-  REQUIRE_THROWS_AS(twf.getOrbitals()[0]->mw_accept_rejectMoveAllParticles(wfc_list, p_list, gradient_list,
-                                                                           laplacian_list, {false}),
-                    std::runtime_error);
-  REQUIRE_THROWS_AS(TrialWaveFunction::mw_evaluateLogAllParticles(wf_list, p_list, {true}), std::runtime_error);
-  REQUIRE_THROWS_AS(TrialWaveFunction::mw_accept_rejectMoveAllParticles(wf_list, p_list, {false}), std::runtime_error);
+  TrialWaveFunction::mw_evaluateLogAllParticles(wf_list, p_list, {true});
+  CHECK(twf.getLogPsi() == Approx(0.0));
+
+  MCCoords<CoordsType::POS> displacement(1);
+  displacement.positions = {{1.0, 0.0, 0.0}};
+  std::vector<bool> valid(1);
+  ParticleSet::mw_makeMoveAllParticles(p_list, displacement, valid);
+  TrialWaveFunction::mw_evaluateLogAllParticles(wf_list, p_list, {true});
+  ParticleSet::mw_accept_rejectMoveAllParticles(p_list, {false});
+  TrialWaveFunction::mw_accept_rejectMoveAllParticles(wf_list, p_list, {false});
+  CHECK(twf.getLogPsi() == Approx(0.0));
 
   TWFdispatcher dispatcher(/*use_batch=*/false);
   REQUIRE_THROWS_AS(dispatcher.flex_evaluateLogAllParticles(wf_list, p_list, {true}), std::runtime_error);

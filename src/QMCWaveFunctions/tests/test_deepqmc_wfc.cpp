@@ -120,10 +120,10 @@ ParticleSet makeIons(const SimulationCell& simulation_cell)
   return ions;
 }
 
-class UnsupportedAllParticleWF : public WaveFunctionComponent
+class SerialAllParticleWF : public WaveFunctionComponent
 {
 public:
-  std::string getClassName() const override { return "UnsupportedAllParticleWF"; }
+  std::string getClassName() const override { return "SerialAllParticleWF"; }
   LogValue evaluateLog(const ParticleSet&, ParticleSet::ParticleGradient&, ParticleSet::ParticleLaplacian&) override
   {
     return LogValue(0);
@@ -304,17 +304,17 @@ TEST_CASE("all-particle TWF dispatch recovers rejected walkers only", "[wavefunc
   CHECK(bridge->call_count == calls_before_accept);
 }
 
-TEST_CASE("all-particle WFC capability and TWF dispatcher are gated", "[wavefunction][deepqmc]")
+TEST_CASE("all-particle WFC serial fallback and TWF dispatcher are gated", "[wavefunction][deepqmc]")
 {
   const SimulationCell simulation_cell;
   RuntimeOptions runtime_options;
   ParticleSet elec = makeElectrons(simulation_cell, {{0.0, 0.0, 0.0}});
-  TrialWaveFunction twf(runtime_options, "unsupported");
-  twf.addComponent(std::make_unique<UnsupportedAllParticleWF>());
+  TrialWaveFunction twf(runtime_options, "serial_fallback");
+  twf.addComponent(std::make_unique<SerialAllParticleWF>());
   RefVectorWithLeader<TrialWaveFunction> wf_list(twf, {twf});
   RefVectorWithLeader<ParticleSet> p_list(elec, {elec});
-  REQUIRE_THROWS_AS(TrialWaveFunction::mw_evaluateLogAllParticles(wf_list, p_list, {true}), std::runtime_error);
-  REQUIRE_THROWS_AS(TrialWaveFunction::mw_accept_rejectMoveAllParticles(wf_list, p_list, {false}), std::runtime_error);
+  TrialWaveFunction::mw_evaluateLogAllParticles(wf_list, p_list, {true});
+  TrialWaveFunction::mw_accept_rejectMoveAllParticles(wf_list, p_list, {false});
   TWFdispatcher dispatcher(false);
   REQUIRE_THROWS_AS(dispatcher.flex_evaluateLogAllParticles(wf_list, p_list, {true}), std::runtime_error);
   REQUIRE_THROWS_AS(dispatcher.flex_accept_rejectMoveAllParticles(wf_list, p_list, {true}), std::runtime_error);

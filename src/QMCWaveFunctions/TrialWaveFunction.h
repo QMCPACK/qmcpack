@@ -192,13 +192,16 @@ public:
                              const RefVectorWithLeader<ParticleSet>& p_list);
 
   /** Evaluate selected walkers after an all-particle move.
-   * wf_list, p_list, and evaluate_mask retain complete, index-aligned crowd ordering.
+   * The nonempty wf_list, p_list, and evaluate_mask are complete, same-size,
+   * index-aligned lists from the all-particle ParticleSet transaction.
    */
   static void mw_evaluateLogAllParticles(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                          const RefVectorWithLeader<ParticleSet>& p_list,
                                          const std::vector<bool>& evaluate_mask);
 
   /** Resolve a TrialWaveFunction all-particle move after ParticleSet resolution.
+   * The nonempty wf_list, p_list, and accepted lists are complete, same-size,
+   * index-aligned lists from the all-particle ParticleSet transaction.
    * Rejected walkers are re-evaluated; accepted walker state is retained.
    */
   static void mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<TrialWaveFunction>& wf_list,

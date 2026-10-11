@@ -40,22 +40,26 @@ void WaveFunctionComponent::mw_evaluateLog(const RefVectorWithLeader<WaveFunctio
     wfc_list[iw].evaluateLog(p_list[iw], G_list[iw], L_list[iw]);
 }
 
-void WaveFunctionComponent::mw_evaluateLogAllParticles(const RefVectorWithLeader<WaveFunctionComponent>&,
-                                                       const RefVectorWithLeader<ParticleSet>&,
-                                                       const RefVector<ParticleSet::ParticleGradient>&,
-                                                       const RefVector<ParticleSet::ParticleLaplacian>&,
-                                                       const std::vector<bool>&) const
+void WaveFunctionComponent::mw_evaluateLogAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                                       const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                                       const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                                       const std::vector<bool>& evaluate_mask) const
 {
-  throw std::runtime_error("All-particle batched evaluation is not implemented for " + getClassName());
+  for (int iw = 0; iw < wfc_list.size(); ++iw)
+    if (evaluate_mask[iw])
+      wfc_list[iw].evaluateLog(p_list[iw], G_list[iw], L_list[iw]);
 }
 
-void WaveFunctionComponent::mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<WaveFunctionComponent>&,
-                                                             const RefVectorWithLeader<ParticleSet>&,
-                                                             const RefVector<ParticleSet::ParticleGradient>&,
-                                                             const RefVector<ParticleSet::ParticleLaplacian>&,
-                                                             const std::vector<bool>&) const
+void WaveFunctionComponent::mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                             const RefVectorWithLeader<ParticleSet>& p_list,
+                                                             const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                                             const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                                             const std::vector<bool>& accepted) const
 {
-  throw std::runtime_error("All-particle batched accept/reject is not implemented for " + getClassName());
+  for (int iw = 0; iw < wfc_list.size(); ++iw)
+    if (!accepted[iw])
+      wfc_list[iw].evaluateLog(p_list[iw], G_list[iw], L_list[iw]);
 }
 
 void WaveFunctionComponent::recompute(const ParticleSet& P)

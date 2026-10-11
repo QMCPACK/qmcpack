@@ -165,7 +165,8 @@ public:
 
   /** Evaluate selected walkers after an all-particle move.
    * All lists retain their complete crowd ordering; evaluate_mask selects the walkers to evaluate.
-   * Components must override this before they can participate in all-particle batched moves.
+   * The default implementation evaluates selected walkers serially; components can override it
+   * with a batched implementation.
    */
   virtual void mw_evaluateLogAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                           const RefVectorWithLeader<ParticleSet>& p_list,
@@ -175,6 +176,8 @@ public:
 
   /** Resolve an all-particle move after the ParticleSet transaction is resolved.
    * All lists retain their complete crowd ordering; accepted selects accepted walkers.
+   * The default implementation re-evaluates rejected walkers serially; components can override
+   * it with a batched implementation.
    */
   virtual void mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                                 const RefVectorWithLeader<ParticleSet>& p_list,
