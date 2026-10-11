@@ -571,7 +571,7 @@ config directory. For example, on Cray systems these scripts might
 load the appropriate modules to set the appropriate programming
 environment, specific library versions, etc.
 
-An example script build.sh is given below. It is much more complex
+An example helper script is given below. It is much more complex
 than usually needed for comprehensiveness:
 
 ::
