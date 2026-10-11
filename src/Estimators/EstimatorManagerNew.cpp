@@ -332,10 +332,7 @@ void EstimatorManagerNew::reduceBlockData()
     copy(PropertyCache.begin(), PropertyCache.end(), cur + n1);
   }
 
-  // This is necessary to use mpi3's C++ style reduce
-#ifdef HAVE_MPI
-  my_comm_.comm.reduce_in_place_n(reduce_buffer.begin(), reduce_buffer.size(), std::plus<>{});
-#endif
+  my_comm_.reduce_in_place(reduce_buffer.data(), reduce_buffer.size());
   if (my_comm_.rank() == 0)
   {
     auto cur = reduce_buffer.begin();
@@ -427,14 +424,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       operator_send_buffer.add(weight);
       assert(operator_send_buffer.size() == adjusted_size);
       operator_recv_buffer.resize(adjusted_size);
-      // This is necessary to use mpi3's C++ style reduce
-#ifdef HAVE_MPI
-      my_comm_.comm.reduce_n(operator_send_buffer.begin(), adjusted_size, operator_recv_buffer.begin(), std::plus<>{},
-                             0);
-#else
-      operator_recv_buffer = operator_send_buffer;
-      operator_recv_buffer.rewind();
-#endif
+      my_comm_.reduce(operator_send_buffer.data(), operator_recv_buffer.data(), adjusted_size, 0);
       // This is a crucial step where summed over weighted observable is normalized by the total weight.  For correctness this should be done
       // only after the full weighted sum is done.
       // i.e.  (1 / Sum(w_1 + ... + w_n)) * (w_1 * S_1 + ... + w_n * S_n) != (1/w_1) * w_1 * S_1 + ... + (1/w_n) * w_n * S_n

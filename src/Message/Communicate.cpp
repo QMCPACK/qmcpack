@@ -23,6 +23,7 @@
 #include <string>
 #include <cstdio>
 #include <fstream>
+#include <stdexcept>
 #include "config.h"
 #include "Utilities/FairDivide.h"
 
@@ -44,18 +45,14 @@ std::unique_ptr<Communicate> OHMMS::Controller = std::make_unique<Communicate>()
 Communicate::Communicate() : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1) {}
 
 Communicate::~Communicate() = default;
+Communicate::Communicate(Communicate&&) = default;
 
 //exclusive:  MPI or Serial
 #ifdef HAVE_MPI
 
-// in_comm needs to be mutable to be duplicated
-Communicate::Communicate(mpi3::communicator& in_comm) : d_groupid(0), d_ngroups(1), comm{in_comm.duplicate()}
-{
-  myMPI       = comm.get();
-  d_mycontext = comm.rank();
-  d_ncontexts = comm.size();
-}
 
+// Takes ownership of a communicator (e.g. from split or split_shared) via move semantics,
+// avoiding the collective overhead and extra context allocation of MPI_Comm_dup.
 Communicate::Communicate(mpi3::communicator&& in_comm) : d_groupid(0), d_ngroups(1), comm{std::move(in_comm)}
 {
   myMPI       = comm.get();
@@ -82,10 +79,16 @@ Communicate::Communicate(const Communicate& in_comm, int nparts, int stripe)
   inter_group_comm_ = std::make_unique<Communicate>(in_comm.comm.split(comm.rank(), in_comm.rank()));
 }
 
+/** provide a node/shared-memory communicator from current (parent) communicator
+ *
+ *  The inter_group_comm_ is created across nodes for ranks sharing the same intra-node rank.
+ *  Note: the size of the node communicator and its inter_group_comm_ may differ on different nodes.
+ */
 Communicate Communicate::NodeComm() const
 {
-  // comm is mutable member
-  return Communicate{comm.split_shared()};
+  Communicate node_comm{comm.split_shared()};
+  node_comm.inter_group_comm_ = std::make_unique<Communicate>(comm.split(node_comm.rank(), comm.rank()));
+  return node_comm;
 }
 
 void Communicate::abort() const { comm.abort(1); }
@@ -93,7 +96,16 @@ void Communicate::abort() const { comm.abort(1); }
 void Communicate::barrier() const { comm.barrier(); }
 #else
 
-Communicate Communicate::NodeComm() const { return Communicate{}; }
+/** provide a node/shared-memory communicator from current (parent) communicator
+ *
+ *  Note: in non-MPI (serial) builds, this returns a single-rank communicator.
+ */
+Communicate Communicate::NodeComm() const
+{
+  Communicate node_comm;
+  node_comm.inter_group_comm_ = std::make_unique<Communicate>();
+  return node_comm;
+}
 
 void Communicate::abort() const { std::_Exit(EXIT_FAILURE); }
 
@@ -116,4 +128,11 @@ void Communicate::barrier_and_abort(const std::string& msg) const
 #endif
 #endif
   Communicate::abort();
+}
+
+Communicate& Communicate::getInterGroupComm() const
+{
+  if (!inter_group_comm_)
+    throw std::runtime_error("Communicate::getInterGroupComm(): inter_group_comm_ is not initialized.");
+  return *inter_group_comm_;
 }

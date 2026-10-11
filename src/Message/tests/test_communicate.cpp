@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
 #include "Message/Communicate.h"
+#include "Message/CommOperators.h"
 
 namespace qmcplusplus
 {
@@ -108,6 +109,42 @@ TEST_CASE("test_communicate_split_two_stripe_three", "[message]")
   REQUIRE(c2->size() == group_size);
   REQUIRE(c2->rank() == new_rank);
   REQUIRE(c2->getGroupID() == (c.rank() / 3 % 2));
+}
+
+TEST_CASE("test_communicate_node_comm", "[message]")
+{
+  Communicate& c(*OHMMS::Controller);
+  auto node_comm = c.NodeComm();
+
+  REQUIRE(node_comm.size() >= 1);
+  REQUIRE(node_comm.rank() >= 0);
+  REQUIRE(node_comm.rank() < node_comm.size());
+
+  auto& inter_group_comm = node_comm.getInterGroupComm();
+  REQUIRE(inter_group_comm.size() >= 1);
+  REQUIRE(inter_group_comm.rank() >= 0);
+  REQUIRE(inter_group_comm.rank() < inter_group_comm.size());
+
+  // Ranks on the same node share the same inter_group_comm.rank()
+  // and ranks in the same inter_group_comm share the same node_comm.rank().
+  // Verify with bcast across node_comm and across inter_group_comm.
+  int node_lead_rank = (node_comm.rank() == 0) ? c.rank() : -1;
+  node_comm.bcast(node_lead_rank, 0);
+  REQUIRE(node_lead_rank >= 0);
+  REQUIRE(node_lead_rank < c.size());
+
+  // Verify inter-group broadcast from group root
+  int inter_group_root_rank = (inter_group_comm.rank() == 0) ? c.rank() : -1;
+  inter_group_comm.bcast(inter_group_root_rank, 0);
+  REQUIRE(inter_group_root_rank >= 0);
+  REQUIRE(inter_group_root_rank < c.size());
+
+  // Verify node_comm.size() * inter_group_comm.size() == c.size() when nodes are homogeneous (e.g. running on local machine)
+  REQUIRE(node_comm.size() * inter_group_comm.size() == c.size());
+
+  // Communicate created without NodeComm() does not initialize inter_group_comm_
+  Communicate default_comm;
+  REQUIRE_THROWS_AS(default_comm.getInterGroupComm(), std::runtime_error);
 }
 
 #ifdef HAVE_MPI

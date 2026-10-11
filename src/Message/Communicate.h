@@ -66,8 +66,11 @@ public:
   Communicate();
 
 #ifdef HAVE_MPI
-  ///constructor with communicator
-  Communicate(mpi3::communicator& in_comm);
+  /** Constructor that takes ownership of an existing or temporary communicator.
+   *  @param in_comm Communicator to move from (e.g., returned by env.world(), split(), or split_shared()).
+   *  Transfers ownership via move semantics directly without the collective overhead of `MPI_Comm_dup`.
+   *  `in_comm` is left in an empty/null state.
+   */
   Communicate(mpi3::communicator&& in_comm);
 #endif
 
@@ -85,12 +88,21 @@ public:
   /**destructor
    * Call proper finalization of Communication library
    */
-  virtual ~Communicate();
+  ~Communicate();
 
-  ///disable constructor
+  ///disable copy constructor
   Communicate(const Communicate&) = delete;
 
-  /// provide a node/shared-memory communicator from current (parent) communicator
+  /** Move constructor
+   *  Transfers ownership of communicators and state from another Communicate instance.
+   */
+  Communicate(Communicate&&);
+
+  /** provide a node/shared-memory communicator from current (parent) communicator
+   *
+   *  The inter_group_comm_ is created across nodes for ranks sharing the same intra-node rank.
+   *  Note: the size of the node communicator and its inter_group_comm_ may differ on different nodes.
+   */
   Communicate NodeComm() const;
 
   void barrier() const;
@@ -101,6 +113,9 @@ public:
 #if defined(HAVE_MPI)
   ///operator for implicit conversion to MPI_Comm
   operator MPI_Comm() const { return myMPI; }
+  ///return reference to mpi3::communicator
+  mpi3::communicator& getCommMPI3() { return comm; }
+  const mpi3::communicator& getCommMPI3() const { return comm; }
 #endif
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
@@ -115,6 +130,8 @@ public:
   int getGroupID() const { return d_groupid; }
   ///return the number of intra_comms which belong to the same group
   int getNumGroups() const { return d_ngroups; }
+  // Avoid public access to unique_ptr.
+  Communicate& getInterGroupComm() const;
   void setName(const std::string& aname) { myName = aname; }
   void setName(const char* aname, int alen) { myName = std::string(aname, alen); }
   const std::string& getName() const { return myName; }
@@ -154,13 +171,15 @@ public:
   template<typename T>
   void allreduce(T&);
   template<typename T>
-  void reduce(T&);
+  void reduce(T&, int dest = 0);
   template<typename T>
-  void reduce_in_place(T* restrict, int n);
+  void reduce(const T* sb, T* rb, int n, int dest = 0);
   template<typename T>
-  void bcast(T&);
+  void reduce_in_place(T*, int n, int dest = 0);
   template<typename T>
-  void bcast(T* restrict, int n);
+  void bcast(T&, int root = 0);
+  template<typename T>
+  void bcast(T*, int n, int root = 0);
   template<typename T>
   void gather(T& sb, T& rb, int dest = 0);
   template<typename T, typename IT>
@@ -179,7 +198,7 @@ public:
   void allgather(T* sb, T* rb, int count);
 
 
-protected:
+private:
   /** Raw communicator
    *
    *  Currently it is only owned by Communicate which manages its creation and destruction
@@ -198,10 +217,6 @@ protected:
   int d_ngroups;
   /// inter group communicator
   std::unique_ptr<Communicate> inter_group_comm_;
-
-public:
-  // Avoid public access to unique_ptr.
-  Communicate& getInterGroupComm() const { return *inter_group_comm_; }
 
 #ifdef HAVE_MPI
   /// mpi3 communicator wrapper

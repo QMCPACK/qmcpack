@@ -250,7 +250,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
         }
 
       // send the number of copies to the target
-      myComm.comm.send_value(nsentcopy, minus[ic]);
+      myComm.getCommMPI3().send_value(nsentcopy, minus[ic]);
       job_list.push_back(job(ncopy_pairs.back().second, minus[ic]));
 #ifdef MCWALKERSET_MPI_DEBUG
       fout << "rank " << plus[ic] << " sends a walker with " << nsentcopy << " copies to rank " << minus[ic]
@@ -284,7 +284,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 
       int nsentcopy = 0;
       // recv the number of copies from the target
-      myComm.comm.receive_n(&nsentcopy, 1, plus[ic]);
+      myComm.getCommMPI3().receive_n(&nsentcopy, 1, plus[ic]);
       job_list.push_back(job(newW.size(), plus[ic]));
       if (plus[ic] != plus[ic + nsentcopy] || minus[ic] != minus[ic + nsentcopy])
         APP_ABORT("WalkerControlMPI::swapWalkersSimple send/recv pair checking failed!");
@@ -325,11 +325,11 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
         awalker->SendInProgress = true;
       }
       if (use_nonblocking)
-        requests.push_back(myComm.comm.isend_n(awalker->DataSet.data(), byteSize, jobit->target));
+        requests.push_back(myComm.getCommMPI3().isend_n(awalker->DataSet.data(), byteSize, jobit->target));
       else
       {
         ScopedTimer local_timer(myTimers[DMC_MPI_send]);
-        myComm.comm.send_n(awalker->DataSet.data(), byteSize, jobit->target);
+        myComm.getCommMPI3().send_n(awalker->DataSet.data(), byteSize, jobit->target);
       }
     }
     if (use_nonblocking)
@@ -354,11 +354,11 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
         awalker = std::make_unique<Walker_t>(wRef);
       size_t byteSize = awalker->byteSize();
       if (use_nonblocking)
-        requests.push_back(myComm.comm.ireceive_n(awalker->DataSet.data(), byteSize, jobit->target));
+        requests.push_back(myComm.getCommMPI3().ireceive_n(awalker->DataSet.data(), byteSize, jobit->target));
       else
       {
         ScopedTimer local_timer(myTimers[DMC_MPI_recv]);
-        myComm.comm.receive_n(awalker->DataSet.data(), byteSize, jobit->target);
+        myComm.getCommMPI3().receive_n(awalker->DataSet.data(), byteSize, jobit->target);
         awalker->copyFromBuffer();
       }
     }

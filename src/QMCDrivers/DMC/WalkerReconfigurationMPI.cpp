@@ -239,7 +239,7 @@ void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W, const std::
       int im          = plus[last];
       size_t byteSize = W[im]->byteSize();
       W[im]->updateBuffer();
-      myComm.comm.send_n(W[im]->DataSet.data(), byteSize, minusN[ic]);
+      myComm.getCommMPI3().send_n(W[im]->DataSet.data(), byteSize, minusN[ic]);
       --last;
     }
     ++ic;
@@ -269,7 +269,7 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W, const std::
     {
       int im          = minus[last];
       size_t byteSize = W[im]->byteSize();
-      myComm.comm.receive_n(W[im]->DataSet.data(), byteSize, plusN[ic]);
+      myComm.getCommMPI3().receive_n(W[im]->DataSet.data(), byteSize, plusN[ic]);
       W[im]->copyFromBuffer();
       W[im]->setParentID(W[im]->getWalkerID());
       W[im]->setWalkerID((++NumWalkersCreated) * num_contexts_ + MyContext);
