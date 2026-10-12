@@ -103,7 +103,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
 }
 
 
-std::pair<int, int> EinsplineSetBuilder::obtainMemoryAttributes(const xmlNodePtr cur)
+std::pair<int, int> EinsplineSetBuilder::obtainMemoryAttributes(const xmlNodePtr cur) const
 {
   int distributed_ranks = 0;
   int shared_ranks      = 0;
@@ -123,10 +123,14 @@ std::pair<int, int> EinsplineSetBuilder::obtainMemoryAttributes(const xmlNodePtr
   if (shared_ranks < 1)
     shared_ranks = 1;
 
-  if (auto node_comm_size = OHMMS::Controller->createNodeComm().size(); node_comm_size % distributed_ranks * shared_ranks > 0)
-    throw std::runtime_error("The number of MPI ranks per node (" + std::to_string(node_comm_size) +
-                             ") is not divisible by the product of distributed_ranks and shared_ranks (" +
-                             std::to_string(distributed_ranks * shared_ranks) + ").");
+  if (const int uniform_size = myComm.getUniformNodeRankCount(); uniform_size % (distributed_ranks * shared_ranks) > 0)
+    throw std::runtime_error("The uniform node rank count (" + std::to_string(uniform_size) +
+                             ") is not divisible by the product of distributed_ranks (" +
+                             std::to_string(distributed_ranks) + ") and shared_ranks (" +
+                             std::to_string(shared_ranks) + ") = " +
+                             std::to_string(distributed_ranks * shared_ranks) + ".");
+  else if (distributed_ranks * shared_ranks > 1)
+    app_log() << "  Uniform node rank count: " << uniform_size << std::endl;
 
   return {distributed_ranks, shared_ranks};
 }

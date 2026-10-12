@@ -105,13 +105,21 @@ public:
    */
   Communicate createNodeComm() const;
 
-  /** create a uniform node communicator from current (parent) communicator
+
+  /** return the rank count of a uniform node
    *
-   *  First creates a local node communicator via createNodeComm().
-   *  Then splits the current communicator into sub-groups each of size equal to
-   *  the greatest common divisor (GCD) of the node_comm sizes across all nodes.
+   *  A "uniform node" is defined as a logical grouping of ranks that resides entirely within
+   *  a single physical node, where all uniform nodes across the communicator have an identical
+   *  number of ranks.
+   *
+   *  Because different physical nodes may host varying numbers of ranks, the rank count of a
+   *  uniform node is determined by the greatest common divisor (GCD) of all local node communicator
+   *  sizes across the communicator. This ensures every physical node can be partitioned into an
+   *  integer number of identically sized sub-node groups.
+   *
+   *  In non-MPI (serial) builds, this returns 1.
    */
-  Communicate createUniformNodeComm() const;
+  int getUniformNodeRankCount() const;
 
   void barrier() const;
   void abort() const;

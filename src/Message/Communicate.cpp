@@ -92,7 +92,7 @@ Communicate Communicate::createNodeComm() const
   return node_comm;
 }
 
-Communicate Communicate::createUniformNodeComm() const
+int Communicate::getUniformNodeRankCount() const
 {
   Communicate node_comm = createNodeComm();
   const int local_node_size = node_comm.size();
@@ -102,8 +102,9 @@ Communicate Communicate::createUniformNodeComm() const
   for (int s : all_node_sizes)
     gcd_size = std::gcd(gcd_size, s);
 
-  return Communicate(*this, size() / gcd_size, gcd_size);
+  return gcd_size;
 }
+
 
 void Communicate::abort() const { comm.abort(1); }
 
@@ -121,10 +122,11 @@ Communicate Communicate::createNodeComm() const
   return node_comm;
 }
 
-Communicate Communicate::createUniformNodeComm() const
+int Communicate::getUniformNodeRankCount() const
 {
-  return createNodeComm();
+  return 1;
 }
+
 
 void Communicate::abort() const { std::_Exit(EXIT_FAILURE); }
 
