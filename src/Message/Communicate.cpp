@@ -24,6 +24,7 @@
 #include <cstdio>
 #include <fstream>
 #include <stdexcept>
+#include <numeric>
 #include "config.h"
 #include "Utilities/FairDivide.h"
 
@@ -91,6 +92,19 @@ Communicate Communicate::createNodeComm() const
   return node_comm;
 }
 
+Communicate Communicate::createUniformNodeComm() const
+{
+  Communicate node_comm = createNodeComm();
+  const int local_node_size = node_comm.size();
+  std::vector<int> all_node_sizes(size());
+  MPI_Allgather(&local_node_size, 1, MPI_INT, all_node_sizes.data(), 1, MPI_INT, myMPI);
+  int gcd_size = all_node_sizes.empty() ? 1 : all_node_sizes.front();
+  for (int s : all_node_sizes)
+    gcd_size = std::gcd(gcd_size, s);
+
+  return Communicate(*this, size() / gcd_size, gcd_size);
+}
+
 void Communicate::abort() const { comm.abort(1); }
 
 void Communicate::barrier() const { comm.barrier(); }
@@ -105,6 +119,11 @@ Communicate Communicate::createNodeComm() const
   Communicate node_comm;
   node_comm.inter_group_comm_ = std::make_unique<Communicate>();
   return node_comm;
+}
+
+Communicate Communicate::createUniformNodeComm() const
+{
+  return createNodeComm();
 }
 
 void Communicate::abort() const { std::_Exit(EXIT_FAILURE); }

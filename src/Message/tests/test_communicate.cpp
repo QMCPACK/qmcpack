@@ -147,6 +147,38 @@ TEST_CASE("test_communicate_node_comm", "[message]")
   REQUIRE_THROWS_AS(default_comm.getInterGroupComm(), std::runtime_error);
 }
 
+TEST_CASE("test_communicate_uniform_node_comm", "[message]")
+{
+  Communicate& c(*OHMMS::Controller);
+  auto uniform_comm = c.createUniformNodeComm();
+
+  REQUIRE(uniform_comm.size() >= 1);
+  REQUIRE(uniform_comm.rank() >= 0);
+  REQUIRE(uniform_comm.rank() < uniform_comm.size());
+
+  auto& inter_group_comm = uniform_comm.getInterGroupComm();
+  REQUIRE(inter_group_comm.size() >= 1);
+  REQUIRE(inter_group_comm.rank() >= 0);
+  REQUIRE(inter_group_comm.rank() < inter_group_comm.size());
+
+  // In a homogeneous environment (such as local test machine), uniform_comm matches createNodeComm
+  auto node_comm = c.createNodeComm();
+  REQUIRE(uniform_comm.size() == node_comm.size());
+  REQUIRE(uniform_comm.rank() == node_comm.rank());
+  REQUIRE(uniform_comm.size() * inter_group_comm.size() == c.size());
+
+  // Verify collectives within uniform node comm and inter-group comm
+  int group_lead_rank = (uniform_comm.rank() == 0) ? c.rank() : -1;
+  uniform_comm.bcast(group_lead_rank, 0);
+  REQUIRE(group_lead_rank >= 0);
+  REQUIRE(group_lead_rank < c.size());
+
+  int inter_root = (inter_group_comm.rank() == 0) ? c.rank() : -1;
+  inter_group_comm.bcast(inter_root, 0);
+  REQUIRE(inter_root >= 0);
+  REQUIRE(inter_root < c.size());
+}
+
 #ifdef HAVE_MPI
 TEST_CASE("mpi_thread_level", "[message]")
 { CHECK(boost::mpi3::environment::thread_support() >= boost::mpi3::thread_level::funneled); }

@@ -43,7 +43,17 @@ struct scalar_traits
   };
   using real_type = T;
   static inline T* get_address(T* a) { return a; }
-  static inline const T* get_address(const T* a) { return a; }
+};
+
+template<typename T>
+struct scalar_traits<const T>
+{
+  enum
+  {
+    DIM = scalar_traits<T>::DIM
+  };
+  using real_type = std::add_const_t<typename scalar_traits<T>::real_type>;
+  static inline real_type* get_address(const T* a) { return scalar_traits<T>::get_address(const_cast<T*>(a)); }
 };
 
 template<typename T>
@@ -55,7 +65,6 @@ struct scalar_traits<std::complex<T>>
   };
   using real_type = T;
   static inline T* get_address(std::complex<T>* a) { return reinterpret_cast<T*>(a); }
-  static inline const T* get_address(const std::complex<T>* a) { return reinterpret_cast<const T*>(a); }
 };
 
 template<typename T, unsigned D>
@@ -67,7 +76,6 @@ struct scalar_traits<TinyVector<T, D>>
   };
   using real_type = typename scalar_traits<T>::real_type;
   static inline real_type* get_address(TinyVector<T, D>* a) { return scalar_traits<T>::get_address(a->data()); }
-  static inline const real_type* get_address(const TinyVector<T, D>* a) { return scalar_traits<T>::get_address(a->data()); }
 };
 
 template<typename T, unsigned D>
@@ -79,8 +87,8 @@ struct scalar_traits<Tensor<T, D>>
   };
   using real_type = typename scalar_traits<T>::real_type;
   static inline real_type* get_address(Tensor<T, D>* a) { return scalar_traits<T>::get_address(a->data()); }
-  static inline const real_type* get_address(const Tensor<T, D>* a) { return scalar_traits<T>::get_address(a->data()); }
 };
+
 
 
 /** @brief A proxy class to adapt dynamically sized containers for MPI communication.

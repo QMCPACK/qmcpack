@@ -89,7 +89,7 @@ inline void Communicate::reduce(const T* sb, T* rb, int n, int dest)
       std::copy_n(sb, n, rb);
     return;
   }
-  auto* s_addr         = qmcplusplus::scalar_traits<T>::get_address(sb);
+  auto* s_addr         = qmcplusplus::scalar_traits<const T>::get_address(sb);
   auto* r_addr         = qmcplusplus::scalar_traits<T>::get_address(rb);
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*s_addr);
   MPI_Reduce(s_addr, r_addr, n * qmcplusplus::scalar_traits<T>::DIM, type_id, MPI_SUM, dest, myMPI);
@@ -169,7 +169,7 @@ inline void Communicate::scatterv(T& sb, T& rb, IT& counts, IT& displ, int sourc
 
 
 template<typename T>
-inline void Communicate::allgather(T* sb, T* rb, int count)
+inline void Communicate::allgather(const T* sb, T* rb, int count)
 {
   if (d_ncontexts == 1)
   {
@@ -177,7 +177,7 @@ inline void Communicate::allgather(T* sb, T* rb, int count)
       rb[i] = sb[i];
     return;
   }
-  auto* addr_sb        = qmcplusplus::scalar_traits<T>::get_address(sb);
+  auto* addr_sb        = qmcplusplus::scalar_traits<const T>::get_address(sb);
   auto* addr_rb        = qmcplusplus::scalar_traits<T>::get_address(rb);
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*addr_sb);
   MPI_Allgather(addr_sb, count * qmcplusplus::scalar_traits<T>::DIM, type_id, addr_rb,

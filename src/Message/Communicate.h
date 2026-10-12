@@ -105,6 +105,14 @@ public:
    */
   Communicate createNodeComm() const;
 
+  /** create a uniform node communicator from current (parent) communicator
+   *
+   *  First creates a local node communicator via createNodeComm().
+   *  Then splits the current communicator into sub-groups each of size equal to
+   *  the greatest common divisor (GCD) of the node_comm sizes across all nodes.
+   */
+  Communicate createUniformNodeComm() const;
+
   void barrier() const;
   void abort() const;
   void barrier_and_abort(const std::string& msg) const;
@@ -185,8 +193,6 @@ public:
   template<typename T, typename IT>
   void gatherv(T& sb, T& rb, IT& counts, IT& displ, int dest = 0);
   template<typename T>
-  void allgather(T& sb, T& rb);
-  template<typename T>
   void scatter(T& sb, T& rb, int dest = 0);
   template<typename T, typename IT>
   void scatterv(T& sb, T& rb, IT& counts, IT& displ, int source = 0);
@@ -195,7 +201,9 @@ public:
   template<typename T, typename TMPI, typename IT>
   void gatherv_in_place(T* buf, const TMPI& datatype, IT& counts, IT& displ, int dest = 0);
   template<typename T>
-  void allgather(T* sb, T* rb, int count);
+  void allgather(T& sb, T& rb);
+  template<typename T>
+  void allgather(const T* sb, T* rb, int count);
 
 
 private:
