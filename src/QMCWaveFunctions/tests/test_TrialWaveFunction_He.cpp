@@ -16,6 +16,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCWaveFunctions/TWFdispatcher.h"
 #include "BsplineFactory/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
@@ -104,6 +105,58 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate& c,
   REQUIRE(twf_ptr->size() == 2);
 
   return twf_ptr;
+}
+
+namespace
+{
+class SerialAllParticleWF : public WaveFunctionComponent
+{
+public:
+  std::string getClassName() const override { return "SerialAllParticleWF"; }
+  LogValue evaluateLog(const ParticleSet&, ParticleSet::ParticleGradient&, ParticleSet::ParticleLaplacian&) override
+  {
+    return LogValue(0);
+  }
+  void acceptMove(ParticleSet&, int, bool) override {}
+  void restore(int) override {}
+  PsiValue ratio(ParticleSet&, int) override { return PsiValue(1); }
+  void registerData(ParticleSet&, WFBufferType&) override {}
+  LogValue updateBuffer(ParticleSet&, WFBufferType&, bool) override { return LogValue(0); }
+  void copyFromBuffer(ParticleSet&, WFBufferType&) override {}
+  void evaluateDerivatives(ParticleSet&, const OptVariables&, Vector<ValueType>&, Vector<ValueType>&) override {}
+};
+} // namespace
+
+TEST_CASE("TrialWaveFunction all-particle APIs use serial component fallback", "[wavefunction]")
+{
+  const SimulationCell simulation_cell;
+  ParticleSet elec(simulation_cell);
+  elec.create({1});
+  elec.update();
+  RuntimeOptions runtime_options;
+  TrialWaveFunction twf(runtime_options);
+  twf.addComponent(std::make_unique<SerialAllParticleWF>());
+  RefVectorWithLeader<TrialWaveFunction> wf_list(twf, {twf});
+  RefVectorWithLeader<ParticleSet> p_list(elec, {elec});
+  ResourceCollection resources("serial_all_particle_resources");
+  elec.createResource(resources);
+  ResourceCollectionTeamLock<ParticleSet> lock(resources, p_list);
+
+  TrialWaveFunction::mw_evaluateLogAllParticles(wf_list, p_list, {true});
+  CHECK(twf.getLogPsi() == Approx(0.0));
+
+  MCCoords<CoordsType::POS> displacement(1);
+  displacement.positions = {{1.0, 0.0, 0.0}};
+  std::vector<bool> valid(1);
+  ParticleSet::mw_makeMoveAllParticles(p_list, displacement, valid);
+  TrialWaveFunction::mw_evaluateLogAllParticles(wf_list, p_list, {true});
+  ParticleSet::mw_accept_rejectMoveAllParticles(p_list, {false});
+  TrialWaveFunction::mw_accept_rejectMoveAllParticles(wf_list, p_list, {false});
+  CHECK(twf.getLogPsi() == Approx(0.0));
+
+  TWFdispatcher dispatcher(/*use_batch=*/false);
+  REQUIRE_THROWS_AS(dispatcher.flex_evaluateLogAllParticles(wf_list, p_list, {true}), std::runtime_error);
+  REQUIRE_THROWS_AS(dispatcher.flex_accept_rejectMoveAllParticles(wf_list, p_list, {true}), std::runtime_error);
 }
 
 TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]")

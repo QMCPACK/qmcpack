@@ -66,6 +66,16 @@ public:
                       const RefVectorWithLeader<ParticleSet>& p_list,
                       const RefVector<ParticleSet::ParticleGradient>& G_list,
                       const RefVector<ParticleSet::ParticleLaplacian>& L_list) const override;
+  void mw_evaluateLogAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                  const RefVectorWithLeader<ParticleSet>& p_list,
+                                  const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                  const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                  const std::vector<bool>& evaluate_mask) const override;
+  void mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                        const RefVectorWithLeader<ParticleSet>& p_list,
+                                        const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                        const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                        const std::vector<bool>& accepted) const override;
 
   void mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                        const RefVectorWithLeader<ParticleSet>& p_list,
@@ -131,6 +141,11 @@ private:
   static DeepQMCBridge::BatchResult evaluateBatch(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                                   const RefVectorWithLeader<ParticleSet>& p_list,
                                                   int active_iat = -1);
+  /// Evaluate selected full-crowd walkers and return results in mask-selection order.
+  static DeepQMCBridge::BatchResult evaluateBatchAllParticles(
+      const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+      const RefVectorWithLeader<ParticleSet>& p_list,
+      const std::vector<bool>& evaluate_mask);
   /// Evaluate a single walker by forwarding through the batched path.
   DeepQMCBridge::BatchResult evaluateOne(const ParticleSet& electrons, int active_iat = -1) const;
 
