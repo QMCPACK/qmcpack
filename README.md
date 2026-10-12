@@ -242,7 +242,7 @@ environment variables, packages are installed in custom locations,
 or the configure line may be long or complex.  In this case it is
 recommended to add "rm -rf CMake*" before the configure line to remove
 existing CMake configure files to ensure a fresh configure each time
-that the script is called.  and example script build.sh is given
+that the script is called.  An example helper script is given
 below:
 ```
 export CXX=mpic++
