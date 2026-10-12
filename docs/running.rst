@@ -21,6 +21,7 @@ option is disabled:
   files are available or to check memory usage.
 
 - ``--enable-timers=none|coarse|medium|fine`` Control the timer granularity when the build option ``ENABLE_TIMERS`` is enabled.
+  The initial output summary prints the current timer level.
 
 - ``--help`` Print version information as well as a list of optional
   command-line arguments.
@@ -32,6 +33,7 @@ option is disabled:
   of the Jastrow, for example.
 
 - ``--verbosity=low|high|debug`` Control the output verbosity. The default low verbosity is concise and, for example, does not include all electron or atomic positions for large systems to reduce output size. Use "high" to see this information and more details of initialization, allocations, QMC method settings, etc.
+  The initial output summary prints the current verbosity.
 
 - ``--version`` Print version information and optional arguments. Same as ``help``.
 
