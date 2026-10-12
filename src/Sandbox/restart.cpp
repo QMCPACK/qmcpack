@@ -301,7 +301,7 @@ int main(int argc, char** argv)
 
   if (myComm.size() > 1)
   {
-    Communicate subComm(myComm, 2);
+    Communicate subComm(myComm.split(2));
     subComm.setName("restart2");
 
     if (subComm.getGroupID() == 0)

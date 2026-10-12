@@ -158,7 +158,7 @@ int main(int argc, char** argv)
             << "Increase the number of MPI ranks or reduce the number of calculations." << std::endl;
         OHMMS::Controller->barrier_and_abort(msg.str());
       }
-      comm_job              = std::make_unique<Communicate>(*OHMMS::Controller, inputs.size());
+      comm_job              = std::make_unique<Communicate>(OHMMS::Controller->split(inputs.size()));
       qmc_common.mpi_groups = inputs.size();
     }
     Communicate& qmcComm = inputs.size() > 1 ? *comm_job : *OHMMS::Controller;

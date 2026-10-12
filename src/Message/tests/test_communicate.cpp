@@ -18,7 +18,7 @@ TEST_CASE("test_communicate_split_one", "[message]")
 {
   Communicate& c(*OHMMS::Controller);
 
-  auto c2 = std::make_unique<Communicate>(c, 1);
+  auto c2 = std::make_unique<Communicate>(c.split(1));
 
   REQUIRE(c2->size() == c.size());
   REQUIRE(c2->rank() == c.rank());
@@ -47,7 +47,7 @@ TEST_CASE("test_communicate_split_two", "[message]")
   Communicate& c(*OHMMS::Controller);
   if (c.size() >= 2)
   {
-    auto c2 = std::make_unique<Communicate>(c, 2);
+    auto c2 = std::make_unique<Communicate>(c.split(2));
 
     std::vector<int> new_size(2);
     new_size[0] = c.size() / 2;
@@ -83,7 +83,7 @@ TEST_CASE("test_communicate_split_four", "[message]")
   // For simplicity, only test the case where the number of processes is divisible by 4.
   if (c.size() % 4 == 0)
   {
-    auto c2 = std::make_unique<Communicate>(c, 4);
+    auto c2 = std::make_unique<Communicate>(c.split(4));
 
     const int group_size = c.size() / 4;
     const int new_rank   = c.rank() % group_size;
@@ -96,6 +96,27 @@ TEST_CASE("test_communicate_split_four", "[message]")
   }
 }
 
+TEST_CASE("test_communicate_split_multiple", "[message]")
+{
+  Communicate& c(*OHMMS::Controller);
+  // Test with multiple = 2 when number of processes is divisible by 2
+  if (c.size() % 2 == 0)
+  {
+    const int multiple = 2;
+    const int nparts   = 2;
+    Communicate c_sub  = c.split(nparts, multiple);
+    REQUIRE(c_sub.size() % multiple == 0);
+  }
+  // Test with multiple = 3 when number of processes is divisible by 3
+  if (c.size() % 3 == 0)
+  {
+    const int multiple = 3;
+    const int nparts   = 2;
+    Communicate c_sub  = c.split(nparts, multiple);
+    REQUIRE(c_sub.size() % multiple == 0);
+  }
+}
+
 TEST_CASE("test_communicate_split_two_stripe_three", "[message]")
 {
   Communicate& c(*OHMMS::Controller);
@@ -103,7 +124,7 @@ TEST_CASE("test_communicate_split_two_stripe_three", "[message]")
   if (c.size() % 6 != 0)
     return;
 
-  auto c2              = std::make_unique<Communicate>(c, 2, 3);
+  auto c2              = std::make_unique<Communicate>(c.splitByStride(2, 3));
   const int group_size = c.size() / 2;
   const int new_rank   = c.rank() % 3 + c.rank() / 6 * 3;
   REQUIRE(c2->size() == group_size);
