@@ -32,6 +32,11 @@ option is disabled:
   factors (one per Jastrow factor). These file might be useful for visual inspection
   of the Jastrow, for example.
 
+- ``--ranks-per-group-multiple=<int>`` Constrain the number of MPI ranks assigned to each calculation
+  in an ensemble run to be a multiple of this value. Defaults to 1. The total number of MPI ranks
+  must be divisible by this multiple. Available blocks of ranks are partitioned fairly in contiguous blocks
+  among the individual calculations in the ensemble.
+
 - ``--verbosity=low|high|debug`` Control the output verbosity. The default low verbosity is concise and, for example, does not include all electron or atomic positions for large systems to reduce output size. Use "high" to see this information and more details of initialization, allocations, QMC method settings, etc.
   The initial output summary prints the current verbosity.
 
@@ -46,7 +51,7 @@ The input is one or more XML file(s), documented in :ref:`input-overview`. Input
 
 An ensemble of calculations can be run by specifying multiple input XML files or text files containing a list of valid XML input
 files. In the latter case, a single filename of an XML input should be specified on each line. Ensemble runs split available MPI
-tasks evenly between all the specified inputs. Because QMCPACK will only exit when all calculations are completed, it is recommended
+tasks fairly between all the specified inputs (which can be constrained using ``--ranks-per-group-multiple``). Because QMCPACK will only exit when all calculations are completed, it is recommended
 for computational efficiency that either all calculations have similar costs and runtimes, or the ``max_seconds`` input parameter
 should be used to enforce similar runtimes.
 
