@@ -120,31 +120,13 @@ TEST_CASE("test_communicate_node_comm", "[message]")
   REQUIRE(node_comm.rank() >= 0);
   REQUIRE(node_comm.rank() < node_comm.size());
 
-  auto& inter_group_comm = node_comm.getInterGroupComm();
-  REQUIRE(inter_group_comm.size() >= 1);
-  REQUIRE(inter_group_comm.rank() >= 0);
-  REQUIRE(inter_group_comm.rank() < inter_group_comm.size());
-
-  // Ranks on the same node share the same inter_group_comm.rank()
-  // and ranks in the same inter_group_comm share the same node_comm.rank().
-  // Verify with bcast across node_comm and across inter_group_comm.
   int node_lead_rank = (node_comm.rank() == 0) ? c.rank() : -1;
   node_comm.bcast(node_lead_rank, 0);
   REQUIRE(node_lead_rank >= 0);
   REQUIRE(node_lead_rank < c.size());
 
-  // Verify inter-group broadcast from group root
-  int inter_group_root_rank = (inter_group_comm.rank() == 0) ? c.rank() : -1;
-  inter_group_comm.bcast(inter_group_root_rank, 0);
-  REQUIRE(inter_group_root_rank >= 0);
-  REQUIRE(inter_group_root_rank < c.size());
-
-  // Verify node_comm.size() * inter_group_comm.size() == c.size() when nodes are homogeneous (e.g. running on local machine)
-  REQUIRE(node_comm.size() * inter_group_comm.size() == c.size());
-
-  // Communicate created without createNodeComm() does not initialize inter_group_comm_
-  Communicate default_comm;
-  REQUIRE_THROWS_AS(default_comm.getInterGroupComm(), std::runtime_error);
+  // Communicate created via createNodeComm() does not initialize inter_group_comm_
+  REQUIRE_THROWS_AS(node_comm.getInterGroupComm(), std::runtime_error);
 }
 
 TEST_CASE("test_communicate_uniform_node_rank_count", "[message]")

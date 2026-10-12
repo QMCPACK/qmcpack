@@ -93,15 +93,10 @@ public:
   ///disable copy constructor
   Communicate(const Communicate&) = delete;
 
-  /** Move constructor
-   *  Transfers ownership of communicators and state from another Communicate instance.
-   */
-  Communicate(Communicate&&);
 
   /** create a node/shared-memory communicator from current (parent) communicator
    *
-   *  The inter_group_comm_ is created across nodes for ranks sharing the same intra-node rank.
-   *  Note: the size of the node communicator and its inter_group_comm_ may differ on different nodes.
+   *  Note: the size of the node communicator may differ on different nodes.
    */
   Communicate createNodeComm() const;
 

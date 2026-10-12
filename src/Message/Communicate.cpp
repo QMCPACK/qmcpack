@@ -46,7 +46,6 @@ std::unique_ptr<Communicate> OHMMS::Controller = std::make_unique<Communicate>()
 Communicate::Communicate() : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1) {}
 
 Communicate::~Communicate() = default;
-Communicate::Communicate(Communicate&&) = default;
 
 //exclusive:  MPI or Serial
 #ifdef HAVE_MPI
@@ -82,14 +81,11 @@ Communicate::Communicate(const Communicate& in_comm, int nparts, int stripe)
 
 /** provide a node/shared-memory communicator from current (parent) communicator
  *
- *  The inter_group_comm_ is created across nodes for ranks sharing the same intra-node rank.
- *  Note: the size of the node communicator and its inter_group_comm_ may differ on different nodes.
+ *  Note: the size of the node communicator may differ on different nodes.
  */
 Communicate Communicate::createNodeComm() const
 {
-  Communicate node_comm{comm.split_shared()};
-  node_comm.inter_group_comm_ = std::make_unique<Communicate>(comm.split(node_comm.rank(), comm.rank()));
-  return node_comm;
+  return Communicate{comm.split_shared()};
 }
 
 int Communicate::getUniformNodeRankCount() const
@@ -117,9 +113,7 @@ void Communicate::barrier() const { comm.barrier(); }
  */
 Communicate Communicate::createNodeComm() const
 {
-  Communicate node_comm;
-  node_comm.inter_group_comm_ = std::make_unique<Communicate>();
-  return node_comm;
+  return Communicate{};
 }
 
 int Communicate::getUniformNodeRankCount() const
