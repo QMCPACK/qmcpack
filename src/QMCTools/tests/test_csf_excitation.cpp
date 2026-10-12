@@ -178,7 +178,7 @@ TEST_CASE("CSF zero excitation cutoff retains the open-shell reference", "[tools
     REQUIRE(particle_reader.readXML(electron_xml.get()));
     REQUIRE(electrons.groups() == 2);
     for (int electron = 0; electron < electrons.getTotalNum(); ++electron)
-      electrons.R[electron] = {static_cast<double>(electron), 0.0, 0.0};
+      electrons.R[electron] = {static_cast<QMCTraits::RealType>(electron), 0.0, 0.0};
     electrons.update();
     SPOSetBuilderFactory::PSetMap particles;
     SPOSetBuilderFactory factory(*OHMMS::Controller, electrons, particles);

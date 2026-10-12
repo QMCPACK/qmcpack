@@ -189,7 +189,7 @@ set_tests_properties(
 add_executable(test_csf_excitation test_csf_excitation.cpp ../QMCGaussianParserBase.cpp)
 target_link_libraries(test_csf_excitation PRIVATE catch_main qmcparticle qmcwfs sposets_for_testing)
 if(USE_OBJECT_TARGET)
-  target_link_libraries(test_csf_excitation PRIVATE qmcutil qmcparticle_omptarget qmcwfs_omptarget)
+  target_link_libraries(test_csf_excitation PRIVATE qmcutil qmcparticle_omptarget qmcwfs_omptarget spline2 spline2_omptarget platform_omptarget_LA)
 endif()
 add_unit_test(BASENAME deterministic-unit_test_csf_excitation TEST_BINARY $<TARGET_FILE:test_csf_excitation>)
 
