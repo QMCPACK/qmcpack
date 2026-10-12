@@ -55,6 +55,7 @@ int main(int argc, char** argv)
     //qmc_common  and MPI is initialized
     qmcplusplus::qmc_common.initialize(argc, argv);
     std::vector<std::string> fgroup_names_cmd, fgroup_names_txt;
+    int ranks_per_group_multiple = 1;
     int i = 1;
     while (i < argc)
     {
@@ -104,6 +105,24 @@ int main(int argc, char** argv)
             }
           }
         }
+        if (c.find("ranks-per-group-multiple") < c.size())
+        {
+          int pos = c.find("=");
+          if (pos != std::string::npos)
+          {
+            ranks_per_group_multiple = std::stoi(c.substr(pos + 1));
+          }
+          else if (i + 1 < argc)
+          {
+            ranks_per_group_multiple = std::stoi(argv[++i]);
+          }
+          else
+          {
+            throw std::runtime_error("Missing argument for --ranks-per-group-multiple");
+          }
+          if (ranks_per_group_multiple <= 0)
+            throw std::runtime_error("--ranks-per-group-multiple must be a positive integer.");
+        }
       }
       else
       {
@@ -147,18 +166,28 @@ int main(int argc, char** argv)
       return 1;
     }
     //safe to move on
+    if (OHMMS::Controller->size() % ranks_per_group_multiple != 0)
+    {
+      std::ostringstream msg;
+      msg << "main(). Current " << OHMMS::Controller->size()
+          << " MPI ranks is not a multiple of --ranks-per-group-multiple " << ranks_per_group_multiple << "."
+          << std::endl;
+      OHMMS::Controller->barrier_and_abort(msg.str());
+    }
     std::unique_ptr<Communicate> comm_job;
     if (inputs.size() > 1)
     {
-      if (inputs.size() > OHMMS::Controller->size())
+      const int total_blocks = OHMMS::Controller->size() / ranks_per_group_multiple;
+      if (total_blocks < inputs.size())
       {
         std::ostringstream msg;
-        msg << "main(). Current " << OHMMS::Controller->size() << " MPI ranks cannot accommodate all the "
-            << inputs.size() << " individual calculations in the ensemble. "
+        msg << "main(). Current " << OHMMS::Controller->size() << " MPI ranks (" << total_blocks << " blocks of size "
+            << ranks_per_group_multiple << ") cannot accommodate all the " << inputs.size()
+            << " individual calculations in the ensemble. "
             << "Increase the number of MPI ranks or reduce the number of calculations." << std::endl;
         OHMMS::Controller->barrier_and_abort(msg.str());
       }
-      comm_job              = std::make_unique<Communicate>(OHMMS::Controller->split(inputs.size()));
+      comm_job              = std::make_unique<Communicate>(OHMMS::Controller->split(inputs.size(), ranks_per_group_multiple));
       qmc_common.mpi_groups = inputs.size();
     }
     Communicate& qmcComm = inputs.size() > 1 ? *comm_job : *OHMMS::Controller;
