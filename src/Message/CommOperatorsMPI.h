@@ -23,22 +23,22 @@
 
 
 template<typename T>
-inline void Communicate::bcast(T& inout)
+inline void Communicate::bcast(T& inout, int root)
 {
   if (d_ncontexts == 1)
     return;
   qmcplusplus::container_proxy<T> t_in(inout);
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*t_in.data());
-  MPI_Bcast(t_in.data(), t_in.size(), type_id, 0, myMPI);
+  MPI_Bcast(t_in.data(), t_in.size(), type_id, root, myMPI);
 }
 
 template<typename T>
-inline void Communicate::bcast(T* restrict inout, int n)
+inline void Communicate::bcast(T* inout, int n, int root)
 {
   if (d_ncontexts == 1)
     return;
   auto* addr = qmcplusplus::scalar_traits<T>::get_address(inout);
-  MPI_Bcast(addr, n * qmcplusplus::scalar_traits<T>::DIM, qmcplusplus::mpi::get_mpi_datatype(*addr), 0, myMPI);
+  MPI_Bcast(addr, n * qmcplusplus::scalar_traits<T>::DIM, qmcplusplus::mpi::get_mpi_datatype(*addr), root, myMPI);
 }
 
 
@@ -68,30 +68,45 @@ inline void Communicate::allreduce(T& g)
 }
 
 template<typename T>
-inline void Communicate::reduce(T& g)
+inline void Communicate::reduce(T& g, int dest)
 {
   if (d_ncontexts == 1)
     return;
   T gt(g);
   qmcplusplus::container_proxy<T> t_in(g), t_out(gt);
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*t_in.data());
-  MPI_Reduce(t_in.data(), t_out.data(), t_in.size(), type_id, MPI_SUM, 0, myMPI);
-  if (!d_mycontext)
+  MPI_Reduce(t_in.data(), t_out.data(), t_in.size(), type_id, MPI_SUM, dest, myMPI);
+  if (d_mycontext == dest)
     g = gt;
+}
+
+template<typename T>
+inline void Communicate::reduce(const T* sb, T* rb, int n, int dest)
+{
+  if (d_ncontexts == 1)
+  {
+    if (d_mycontext == dest)
+      std::copy_n(sb, n, rb);
+    return;
+  }
+  auto* s_addr         = qmcplusplus::scalar_traits<T>::get_address(sb);
+  auto* r_addr         = qmcplusplus::scalar_traits<T>::get_address(rb);
+  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*s_addr);
+  MPI_Reduce(s_addr, r_addr, n * qmcplusplus::scalar_traits<T>::DIM, type_id, MPI_SUM, dest, myMPI);
 }
 
 
 template<typename T>
-inline void Communicate::reduce_in_place(T* restrict res, int n)
+inline void Communicate::reduce_in_place(T* res, int n, int dest)
 {
   if (d_ncontexts == 1)
     return;
   auto* addr           = qmcplusplus::scalar_traits<T>::get_address(res);
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*addr);
-  if (!d_mycontext)
-    MPI_Reduce(MPI_IN_PLACE, addr, n * qmcplusplus::scalar_traits<T>::DIM, type_id, MPI_SUM, 0, myMPI);
+  if (d_mycontext == dest)
+    MPI_Reduce(MPI_IN_PLACE, addr, n * qmcplusplus::scalar_traits<T>::DIM, type_id, MPI_SUM, dest, myMPI);
   else
-    MPI_Reduce(addr, NULL, n * qmcplusplus::scalar_traits<T>::DIM, type_id, MPI_SUM, 0, myMPI);
+    MPI_Reduce(addr, NULL, n * qmcplusplus::scalar_traits<T>::DIM, type_id, MPI_SUM, dest, myMPI);
 }
 
 
@@ -185,36 +200,36 @@ inline void Communicate::gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int
 
 
 template<>
-inline void Communicate::bcast(bool& g)
+inline void Communicate::bcast(bool& g, int root)
 {
   int val = g ? 1 : 0;
-  MPI_Bcast(&val, 1, MPI_INT, 0, myMPI);
+  MPI_Bcast(&val, 1, MPI_INT, root, myMPI);
   g = val != 0;
 }
 
 
 template<>
-inline void Communicate::bcast(std::vector<bool>& g)
+inline void Communicate::bcast(std::vector<bool>& g, int root)
 {
   std::vector<int> intVec(g.size());
   for (int i = 0; i < g.size(); i++)
     intVec[i] = g[i] ? 1 : 0;
-  MPI_Bcast(&(intVec[0]), g.size(), MPI_INT, 0, myMPI);
+  MPI_Bcast(&(intVec[0]), g.size(), MPI_INT, root, myMPI);
   for (int i = 0; i < g.size(); i++)
     g[i] = intVec[i] != 0;
 }
 
 
 template<>
-inline void Communicate::bcast(std::string& g)
+inline void Communicate::bcast(std::string& g, int root)
 {
   int string_size = g.size();
 
-  bcast(string_size);
-  if (rank() != 0)
+  bcast(string_size, root);
+  if (rank() != root)
     g.resize(string_size);
 
-  bcast(g.data(), g.size());
+  bcast(g.data(), g.size(), root);
 }
 
 

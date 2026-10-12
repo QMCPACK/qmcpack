@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
-import numpy as np
 import h5py
+import numpy as np
 
 
 def print_fail_2d(a1_name, a1, a2_name, a2):

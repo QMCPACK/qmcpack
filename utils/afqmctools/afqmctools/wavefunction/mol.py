@@ -1,10 +1,11 @@
-import ast
+import sys
+
 import h5py
 import numpy
 import scipy.linalg
-import sys
 from pyscf import fci
-from afqmctools.utils.io import to_qmcpack_complex, add_group, add_dataset
+
+from afqmctools.utils.io import add_dataset, add_group, to_qmcpack_complex
 
 
 def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None, init=None, verbose=False):
@@ -178,7 +179,7 @@ def write_nomsd_single(fh5, psi, idet):
     idet : int
         Determinant number.
     """
-    base = "PsiT_{:d}/".format(idet)
+    base = f"PsiT_{idet:d}/"
     dims = [psi.shape[0], psi.shape[1], psi.nnz]
     fh5[base + "dims"] = numpy.array(dims, dtype=numpy.int32)
     fh5[base + "data_"] = to_qmcpack_complex(psi.data)
@@ -234,7 +235,7 @@ def write_nomsd_wfn(filename, wfn, nalpha, uhf, coeffs=[1.0]):
         f.write(namelist)
         f.write("Coefficients: " + " ".join(str(c) for c in coeffs) + "\n")
         for i, d in enumerate(wfn):
-            f.write("Determinant: {}\n".format(i + 1))
+            f.write(f"Determinant: {i + 1}\n")
             if uhf:
                 write_single(f, d[:, :nalpha])
                 write_single(f, d[:, nalpha:])
@@ -243,14 +244,12 @@ def write_nomsd_wfn(filename, wfn, nalpha, uhf, coeffs=[1.0]):
 
 
 def qmcpack_wfn_namelist(nci, uhf):
-    return "&FCI\n UHF = {}\n CMajor\n NCI = {}\n TYPE = matrix\n/\n".format(
-        int(uhf), nci
-    )
+    return f"&FCI\n UHF = {int(uhf)}\n CMajor\n NCI = {nci}\n TYPE = matrix\n/\n"
 
 
 def write_single(out, mos):
-    for j in range(0, mos.shape[1]):
-        for i in range(0, mos.shape[0]):
+    for j in range(mos.shape[1]):
+        for i in range(mos.shape[0]):
             val = mos[i, j]
             out.write("(%.10e,%.10e) " % (val.real, val.imag))
         out.write("\n")
@@ -290,7 +289,7 @@ def gen_multi_det_wavefunction(
     ci_coeffs = ci_coeffs[ix_sort]
     ndets = min(max_det, max_ndets)
     if verbose:
-        print(" # Number of dets in CI expansion: {:d}".format(ndets))
+        print(f" # Number of dets in CI expansion: {ndets:d}")
 
     output = open(filename, "w")
     namelist = "&FCI\n UHF = 0\n NCI = %d\n TYPE = occ\n&END" % ndets
@@ -304,8 +303,8 @@ def gen_multi_det_wavefunction(
     coeffs = []
     for idet in range(min(max_det, max_ndets)):
         if mc.ncore > 0:
-            ocore_up = " ".join("{:d}".format(x + 1) for x in range(mc.ncore))
-            ocore_dn = " ".join("{:d}".format(x + 1 + norb) for x in range(mc.ncore))
+            ocore_up = " ".join(f"{x + 1:d}" for x in range(mc.ncore))
+            ocore_dn = " ".join(f"{x + 1 + norb:d}" for x in range(mc.ncore))
         else:
             ocore_up = " "
             ocore_dn = " "
@@ -315,8 +314,8 @@ def gen_multi_det_wavefunction(
         ix_beta = ix_sort[idet] % len(occlists)
         ia = occlists[ix_alpha]
         ib = occlists[ix_beta]
-        oup = " ".join("{:d}".format(x + 1 + mc.ncore) for x in ia)
-        odown = " ".join("{:d}".format(x + norb + 1 + mc.ncore) for x in ib)
+        oup = " ".join(f"{x + 1 + mc.ncore:d}" for x in ia)
+        odown = " ".join(f"{x + norb + 1 + mc.ncore:d}" for x in ib)
         occups.append([int(o) for o in oup.split()])
         occdns.append([int(o) for o in odown.split()])
         output.write(
@@ -336,6 +335,6 @@ def write_phmsd_wfn(filename, occs, nmo, ncore=0):
         # occup = corea + [ncore + oa + 1 for oa in da.tolist()]
         # occdn = coreb + [ncore + nmo + ob + 1 for ob in db.tolist()]
         # print(occup, occdn)
-        occstra = " ".join("{:d} ".format(x + 1) for x in occup)
-        occstrb = " ".join("{:d}".format(x + 1) for x in occdn)
+        occstra = " ".join(f"{x + 1:d} " for x in occup)
+        occstrb = " ".join(f"{x + 1:d}" for x in occdn)
         output.write("%13.8e " % c + occstra + occstrb + "\n")

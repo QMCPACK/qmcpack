@@ -3,8 +3,9 @@
 # The rotation matrix is used for random rotations of the spherical integration grid
 # for the non-local pseudopotential.
 
+from math import acos, pi
+
 from sympy import *
-from math import pi, acos
 
 
 # Make a 2x2 rotation matrix.
@@ -66,9 +67,7 @@ def print_matrix_for_check(m, matrix_name):
     for i in range(m.rows):
         for j in range(m.cols):
             print(
-                "  CHECK({matrix_name}({row}, {col}) == Approx({val:15g}));".format(
-                    matrix_name=matrix_name, row=i, col=j, val=m[i, j]
-                )
+                f"  CHECK({matrix_name}({i}, {j}) == Approx({m[i, j]:15g}));"
             )
 
 

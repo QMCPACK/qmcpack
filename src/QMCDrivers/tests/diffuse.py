@@ -3,9 +3,10 @@
 
 #  Generate values for test_vmc.cpp and test_vmc_omp.cpp
 #
-import numpy as np
 import math
 import sys
+
+import numpy as np
 
 
 # Box-Muller, copies Utilties/RandomGenerator.h

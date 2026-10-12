@@ -1,5 +1,6 @@
-from collections import namedtuple, defaultdict
-from functools import lru_cache
+from collections import defaultdict, namedtuple
+from functools import cache
+
 from sympy import *
 
 # See the GaussianOrbitals notebook in the qmc_algorithms repo for more explanation,
@@ -407,7 +408,7 @@ SPH_R, SPH_RHO = Symbol("r_sph", positive=True), Symbol("rho_sph", positive=True
 SPH_THETA, SPH_PHI = symbols("theta_sph phi_sph", real=True)
 
 
-@lru_cache(maxsize=None)
+@cache
 def create_real_solid_harmonic(l, m, addsign=True):
     """Construct r**l S_l^m directly from SymPy's complex spherical harmonic."""
     if m == 0:
@@ -442,7 +443,7 @@ def create_real_solid_harmonic(l, m, addsign=True):
     return regular
 
 
-@lru_cache(maxsize=None)
+@cache
 def create_spherical_tensor_components(l, m, addsign=True):
     """Return V, G, L, and the six unique Hessian components."""
     expression = create_real_solid_harmonic(l, m, addsign)

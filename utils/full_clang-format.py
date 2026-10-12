@@ -11,13 +11,12 @@
 ## Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 ################################################################################
 
-import os
-import sys
 import hashlib
-import subprocess
+import os
 import re
-
-from os.path import join, getsize
+import subprocess
+import sys
+from os.path import join
 
 help_flag = re.compile(r"(-h|--help|-\?)")
 for arg in sys.argv:

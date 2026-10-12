@@ -1,11 +1,9 @@
 #! /usr/bin/env python3
 
-from __future__ import print_function
 
-from optparse import OptionParser
-import xml.etree.ElementTree as ET
-import sys
 import os
+import xml.etree.ElementTree as ET
+from optparse import OptionParser
 
 
 def exit_fail(msg=None):
@@ -61,7 +59,7 @@ def run_opt_test(options):
 
     # Set default for the reference
     ref_file = (
-        "./qmc-ref/{0}".format(prefix_file) if options.ref is None else options.ref
+        f"./qmc-ref/{prefix_file}" if options.ref is None else options.ref
     )
 
     if not os.path.exists(prefix_file):
@@ -75,9 +73,7 @@ def run_opt_test(options):
 
     if len(j_output) != len(j_reference):
         exit_fail(
-            "Number of coefficient in test({0}) does not match with the reference({1})".format(
-                len(j_output), len(j_reference)
-            )
+            f"Number of coefficient in test({len(j_output)}) does not match with the reference({len(j_reference)})"
         )
 
     success = True
@@ -94,19 +90,17 @@ def run_opt_test(options):
         # end if
     # end for
 
-    msg = "\n  Testing Series: {0}\n".format(options.series)
-    msg += "   reference Jastrow coefficients   : {0}\n".format(j_reference)
-    msg += "   computed  Jastrow coefficients   : {0}\n".format(j_output)
-    msg += "   pass tolerance           : {0: 12.6f}\n".format(j_tolerance)
-    msg += "   deviation from reference : {0}\n".format(j_deviation)
-    msg += "   status of this test      :   {0}\n".format(passfail[success])
+    msg = f"\n  Testing Series: {options.series}\n"
+    msg += f"   reference Jastrow coefficients   : {j_reference}\n"
+    msg += f"   computed  Jastrow coefficients   : {j_output}\n"
+    msg += f"   pass tolerance           : {j_tolerance: 12.6f}\n"
+    msg += f"   deviation from reference : {j_deviation}\n"
+    msg += f"   status of this test      :   {passfail[success]}\n"
 
     if bf_output or bf_reference:
         if len(bf_output) != len(bf_reference):
             exit_fail(
-                "Number of coefficient in test({0}) does not match with the reference({1})".format(
-                    len(bf_output), len(bf_reference)
-                )
+                f"Number of coefficient in test({len(bf_output)}) does not match with the reference({len(bf_reference)})"
             )
 
         for i in range(len(bf_output)):
@@ -117,12 +111,12 @@ def run_opt_test(options):
             # end if
         # end for
 
-        msg += "\n  Testing Series: {0}\n".format(options.series)
-        msg += "   reference Backflow coefficients   : {0}\n".format(bf_reference)
-        msg += "   computed  Backflow coefficients   : {0}\n".format(bf_output)
-        msg += "   pass tolerance           : {0: 12.6f}\n".format(bf_tolerance)
-        msg += "   deviation from reference : {0}\n".format(bf_deviation)
-        msg += "   status of this test      :   {0}\n".format(passfail[success])
+        msg += f"\n  Testing Series: {options.series}\n"
+        msg += f"   reference Backflow coefficients   : {bf_reference}\n"
+        msg += f"   computed  Backflow coefficients   : {bf_output}\n"
+        msg += f"   pass tolerance           : {bf_tolerance: 12.6f}\n"
+        msg += f"   deviation from reference : {bf_deviation}\n"
+        msg += f"   status of this test      :   {passfail[success]}\n"
 
     return success, msg
 

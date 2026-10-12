@@ -1,7 +1,9 @@
-import h5py
 import os
 import unittest
 import xml.etree.ElementTree as et
+
+import h5py
+
 from afqmctools.utils.qmcpack_utils import write_xml_input
 
 

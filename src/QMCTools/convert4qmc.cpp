@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
-  OHMMS::Controller = new Communicate(env.world());
+  OHMMS::Controller = std::make_unique<Communicate>(env.world());
 #endif
 
   if (argc < 2)
@@ -48,6 +48,7 @@ int main(int argc, char** argv)
     std::cout << "When the input format is missing, the  extension of filename is used to determine the format "
               << std::endl;
     std::cout << " *.Fchk -> gaussian; *.out -> gamess; *.h5 -> HDF5" << std::endl;
+    OHMMS::Controller.reset();
     return 0;
   }
   else
@@ -329,5 +330,7 @@ int main(int argc, char** argv)
       APP_ABORT("Unhandled Exception");
     }
   }
+  // OHMMS::Controller holds duplicated (linked) mpi3::environment and must be freed first.
+  OHMMS::Controller.reset();
   return 0;
 }

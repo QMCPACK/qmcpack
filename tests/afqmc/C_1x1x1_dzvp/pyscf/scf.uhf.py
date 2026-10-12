@@ -1,9 +1,8 @@
 #! /usr/bin/env python3
 
+
 import numpy
-from functools import reduce
 from pyscf.pbc import gto, scf
-from pyscf.pbc import tools as pbctools
 
 alat0 = 3.6
 
@@ -24,7 +23,6 @@ mf.chkfile = "scf.dump"
 ehf = mf.kernel()
 
 import h5py
-
 from pyscftools import integrals_from_chkfile
 
 hcore = mf.get_hcore()  # obtain and store core hamiltonian

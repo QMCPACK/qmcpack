@@ -1,12 +1,11 @@
 #! /usr/bin/env python3
 
 import argparse
-import scipy.sparse
 import sys
-import time
+
 import numpy
-from afqmctools.hamiltonian.mol import write_qmcpack_sparse
 from afqmctools.hamiltonian.converter import read_fcidump
+from afqmctools.hamiltonian.mol import write_qmcpack_sparse
 from afqmctools.utils.linalg import modified_cholesky_direct
 
 

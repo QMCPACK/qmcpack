@@ -1,5 +1,6 @@
-import numpy
 import os.path
+
+import numpy
 
 
 def extend_gto(fname, sym="X", expo=None):
@@ -13,7 +14,7 @@ def extend_gto(fname, sym="X", expo=None):
     assert len(expo) <= 7
     lname = numpy.array(["S", "P", "D", "F", "G", "H", "I"])
     for i in range(len(expo)):
-        base_gto += sym + "   " + lname[i] + " \n  {}  1.00\n".format(expo[i])
+        base_gto += sym + "   " + lname[i] + f" \n  {expo[i]}  1.00\n"
     return base_gto
 
 
@@ -27,7 +28,7 @@ def extend_gto_id(fname, sym, expo, ids):
     assert len(expo) <= len(ids)
     assert len(expo) > 0
     for i in range(len(expo)):
-        base_gto += sym + "   " + ids[i] + " \n  {}  1.00\n".format(expo[i])
+        base_gto += sym + "   " + ids[i] + f" \n  {expo[i]}  1.00\n"
     return base_gto
 
 
@@ -39,7 +40,7 @@ def default_basis_map(Lmax, atoms):
 
     def add_shell(L, bmap, x):
         labels = ["S", "P", "D", "F", "G", "H", "I"]
-        for i in range(0, L + 1):
+        for i in range(L + 1):
             bmap.append(labels[i])
         if L == 2:
             x.append(0.5)
@@ -89,7 +90,7 @@ def double_basis_map(Lmax, atoms):
 
     def add_shell(L, bmap, x):
         labels = ["S", "P", "D", "F", "G", "H", "I"]
-        for i in range(0, L + 1):
+        for i in range(L + 1):
             bmap.append(labels[i])
             bmap.append(labels[i])
         if L == 2:

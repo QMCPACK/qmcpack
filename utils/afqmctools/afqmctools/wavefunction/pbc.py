@@ -1,12 +1,13 @@
 """Write mean-field trial wavefunctions to file."""
 
-import numpy
-import h5py
 import itertools
-import time
 import sys
+import time
+
+import numpy
 import scipy.linalg
-from afqmctools.wavefunction.mol import write_qmcpack_wfn, write_nomsd_wfn
+
+from afqmctools.wavefunction.mol import write_qmcpack_wfn
 
 
 def write_wfn_pbc(
@@ -62,7 +63,7 @@ def write_wfn_pbc(
             print(" # RHF-like trial wavefunction.")
         print(" # k-points: ")
         for i, k in enumerate(kpts):
-            print(" # {:d} {}".format(i, k))
+            print(f" # {i:d} {k}")
     (eigs, orbs, ks, bands) = generate_orbitals(
         fock, X, nmo_pk, rediag, ortho_ao, mo_energy, uhf, verbose=verbose
     )
@@ -109,7 +110,7 @@ def generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao, mo_energy, uhf, verbose
     nk = len(X)
     for k in range(nk):
         if verbose:
-            print(" # Generating trial wavefunction for kpoint: {:d}".format(k))
+            print(f" # Generating trial wavefunction for kpoint: {k:d}")
         if ortho_ao:
             start = time.time()
             ea, orb_a = rediag_fock(fock[0, k], X[k][:, : nmo_pk[k]])
@@ -123,9 +124,7 @@ def generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao, mo_energy, uhf, verbose
             bands.append([i for i in range(len(ea))])
             if verbose:
                 print(
-                    " # Time to rediagonalise fock:   {:13.8e} s".format(
-                        time.time() - start
-                    )
+                    f" # Time to rediagonalise fock:   {time.time() - start:13.8e} s"
                 )
         else:
             if uhf:
@@ -149,11 +148,9 @@ def create_wavefunction(orbs, occs, nmo_pk, nelec, uhf, verbose):
     nmo_tot = sum(nmo_pk)
     if verbose:
         print(
-            " # Shape of supercell wavefunction ({:d},{:d})".format(
-                nmo_tot, (nalpha + nbeta) if uhf else nalpha
-            )
+            f" # Shape of supercell wavefunction ({nmo_tot:d},{(nalpha + nbeta) if uhf else nalpha:d})"
         )
-        print(" # Number of electrons (nalpha, nbeta) = ({}, {})".format(nalpha, nbeta))
+        print(f" # Number of electrons (nalpha, nbeta) = ({nalpha}, {nbeta})")
     wfn = numpy.zeros((1, nmo_tot, nalpha + nbeta), dtype=numpy.complex128)
     row = 0
     col = 0
@@ -194,7 +191,7 @@ def print_eigenvalues(ks, bands, eigs, uhf, srt, nelec, verbose):
                 tag = " <--- HOMO(alpha)"
             elif i == nelec[1] - 1:
                 tag += " <--- HOMO(beta) "
-            print(" # {:5d}  ".format(i) + fmt.format(*t) + tag)
+            print(f" # {i:5d}  " + fmt.format(*t) + tag)
             if verbose < 2 and i >= max(nelec[0] - 1, nelec[1] - 1):
                 break
     else:
@@ -209,7 +206,7 @@ def print_eigenvalues(ks, bands, eigs, uhf, srt, nelec, verbose):
             tag = ""
             if i == nelec[0] - 1:
                 tag = " <--- HOMO(alpha)"
-            print(" # {:5d}  ".format(i) + fmt.format(*t) + tag)
+            print(f" # {i:5d}  " + fmt.format(*t) + tag)
             if verbose < 2 and i >= nelec[0] - 1:
                 break
 
@@ -257,9 +254,7 @@ def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25, high=0.95, ndet_max=1):
         if msd_a is not None and msd_b is not None:
             if verbose:
                 print(
-                    " # Maximum number of determinants:  {}".format(
-                        len(msd_a) * len(msd_b)
-                    )
+                    f" # Maximum number of determinants:  {len(msd_a) * len(msd_b)}"
                 )
             if ndet_max == 1:
                 trial = (1.0, msd_a[0], msd_b[0])
@@ -323,31 +318,27 @@ def determine_occupancies(
         ndeg = sum(deg)
         if ndeg == 0:
             print(
-                " # Warning: trying to occupy {} electrons in {} orbitals.".format(
-                    nleft, ndeg
-                )
+                f" # Warning: trying to occupy {nleft} electrons in {ndeg} orbitals."
             )
             low = 0.5 * mo_order[(mo_order < low) & (mo_order > 1e-10)][0]
-            print(" # Decreasing low parameter to {:13.8e}".format(low))
+            print(f" # Decreasing low parameter to {low:13.8e}")
             deg = (mo_order < high) & (mo_order > low)
             poccs = mo_order[deg]
             ndeg = sum(deg)
             if ndeg == 0:
                 print(
-                    " # Error: trying to occupy {} electrons in {} orbitals.".format(
-                        nleft, ndeg
-                    )
+                    f" # Error: trying to occupy {nleft} electrons in {ndeg} orbitals."
                 )
                 print(" # MO occupancies > 0: ")
                 for i, o in enumerate(mo_order[(mo_order < low) & (mo_order > 1e-10)]):
-                    print(" # {:4d} {:13.8e}".format(i, o))
+                    print(f" # {i:4d} {o:13.8e}")
                 sys.exit()
         # Supercell indexed.
         deg_orb = numpy.where(deg)[0]
         combs = [c for c in itertools.combinations(deg_orb, int(nleft))]
         pcomb = numpy.array([numpy.prod(poccs[numpy.array(c) - nocc]) for c in combs])
         if verbose:
-            print(" # Distributing {} electrons in {} orbitals.".format(nleft, ndeg))
+            print(f" # Distributing {nleft} electrons in {ndeg} orbitals.")
         core = list(numpy.where(mo_order > high)[0])
         core = [c for c in core]
         msd = [core + list(d) for d in combs]

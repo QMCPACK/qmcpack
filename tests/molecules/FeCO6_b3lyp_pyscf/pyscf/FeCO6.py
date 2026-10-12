@@ -8,9 +8,7 @@ In most scenario, it should be used with pseudo potential.
 
 # Note import path which is different to molecule code
 # from pyscf.pbc import gto, scf, df, dft
-from pyscf import gto, df, dft
-import numpy
-
+from pyscf import dft, gto
 
 cell = gto.M(
     atom="""

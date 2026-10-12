@@ -1,6 +1,6 @@
 import h5py
 import numpy as np
-from scipy.special import sph_harm, factorial2
+from scipy.special import factorial2
 
 
 def write_h5_file():
@@ -154,8 +154,8 @@ def get_reference_values(pos, s):
     eis = cs + 1.0j * ss
     emis = cs - 1.0j * ss
 
-    print("Position: {}".format(pos))
-    print("Spin: {}".format(s))
+    print(f"Position: {pos}")
+    print(f"Spin: {s}")
 
     g0 = cartGauss(2.5, 0, 0, 0, 0)
     g1 = cartGauss(2.5, 0, 0, 0, 0)
@@ -211,7 +211,7 @@ def get_reference_values(pos, s):
     spdy = upcoef * updy * eis + dncoef * dndy * emis
     spdz = upcoef * updz * eis + dncoef * dndz * emis
 
-    print("grad atom 0: {}, {}, {}".format(spdx, spdy, spdz))
+    print(f"grad atom 0: {spdx}, {spdy}, {spdz}")
 
     # atom 1
     uppx = c0 * g0val + c1 * g1px
@@ -237,7 +237,7 @@ def get_reference_values(pos, s):
     spdy = upcoef * updy * eis + dncoef * dndy * emis
     spdz = upcoef * updz * eis + dncoef * dndz * emis
 
-    print("grad atom 1: {}, {}, {}".format(spdx, spdy, spdz))
+    print(f"grad atom 1: {spdx}, {spdy}, {spdz}")
 
 
 if __name__ == "__main__":

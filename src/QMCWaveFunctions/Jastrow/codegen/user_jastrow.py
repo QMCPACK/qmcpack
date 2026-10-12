@@ -1,8 +1,8 @@
-from __future__ import print_function
 
-from sympy import Symbol, diff, exp, Piecewise
-from sympy.printing.cxxcode import CXX11CodePrinter
 import sys
+
+from sympy import Piecewise, Symbol, diff, exp
+from sympy.printing.cxxcode import CXX11CodePrinter
 
 # Generate code for a radial function for Jastrow factors from a symbolic expression.
 # This script creates ../UserFunctor.h from UserFunctor.h.in.
@@ -97,13 +97,13 @@ def check_free_symbols(f, variational_parameters, input_parameters):
 
 class NoPowCodePrinter(CXX11CodePrinter):
     def __init__(self, settings=None):
-        super(NoPowCodePrinter, self).__init__(settings=settings)
+        super().__init__(settings=settings)
 
     def _print_Pow(self, expr):
         if expr.exp == 2:
             e = self._print(expr.base)
             return "((%s)*(%s))" % (e, e)
-        return super(NoPowCodePrinter, self)._print_Pow(expr)
+        return super()._print_Pow(expr)
 
 
 CP = NoPowCodePrinter()
@@ -152,7 +152,7 @@ def gen_param_defs(param_list, input_param=None):
 
     print("Creating parameter variable definitions")
     print(s)
-    print("")
+    print()
 
     return s
 
@@ -194,7 +194,7 @@ def gen_evaluate(f):
     s = out_str % val_str
     print("Creating evaluate function")
     print(s)
-    print("")
+    print()
     return s
 
 
@@ -216,7 +216,7 @@ def gen_evaluate_2nd_deriv(f, df, ddf):
     s = out_str % {"val": val_str, "df": df_str, "ddf": ddf_str}
     print("Creating evaluate 1st and 2nd derivatives function")
     print(s)
-    print("")
+    print()
 
     return s
 
@@ -241,7 +241,7 @@ def gen_evaluate_3rd_deriv(f, df, ddf, d3f):
     s = out_str % {"val": val_str, "df": df_str, "ddf": ddf_str, "d3f": d3f_str}
     print("Creating evaluate 1st, 2nd, and 3rd derivatives function")
     print(s)
-    print("")
+    print()
 
     return s
 
@@ -278,7 +278,7 @@ def gen_evaluate_parameter_derivatives(variational_parameters, param_derivs):
 
     print("Creating evaluate parameter derivative function")
     print(s)
-    print("")
+    print()
 
     return s
 
@@ -316,7 +316,7 @@ def gen_evaluate_all_parameter_derivatives(variational_parameters, param_derivs)
 
     print("Creating evaluate all parameter derivatives function")
     print(s)
-    print("")
+    print()
 
     return s
 
@@ -381,7 +381,7 @@ def gen_xml_input(param_list, input_param_list=None):
 
     print("Creating XML input function")
     print(s)
-    print("")
+    print()
 
     return s
 
@@ -418,7 +418,7 @@ def gen_reset_parameters(param_list):
 
     print("Creating reset parameters function")
     print(s)
-    print("")
+    print()
 
     return s
 

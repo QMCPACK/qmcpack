@@ -3,9 +3,7 @@
 
 # Note import path which is different to molecule code
 # from pyscf.pbc import gto, scf, df, dft
-from pyscf import gto, scf, df, dft, mcscf
-import numpy
-
+from pyscf import gto, mcscf, scf
 
 cell = gto.M(
     atom="""Li  0.0 0.0 0.0

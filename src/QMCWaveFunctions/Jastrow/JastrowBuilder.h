@@ -27,7 +27,7 @@ class OrbitalConstraintsBase;
 class JastrowBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  JastrowBuilder(Communicate* comm, ParticleSet& p, const PSetMap& psets);
+  JastrowBuilder(Communicate& comm, ParticleSet& p, const PSetMap& psets);
 
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 

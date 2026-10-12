@@ -32,7 +32,7 @@ namespace qmcplusplus
 class TestLCAOrbitalBuilder : public LCAOrbitalBuilder
 {
 public:
-  TestLCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur)
+  TestLCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate& comm, xmlNodePtr cur)
       : LCAOrbitalBuilder(els, ions, comm, cur)
   {}
   void setH5Path(const std::string& path) { h5_path = path; }
@@ -45,7 +45,7 @@ public:
 
 TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   using Real      = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
@@ -203,7 +203,7 @@ TEST_CASE("LCAOrbitalBuilder", "[wavefunction][LCAO]")
 
 TEST_CASE("LCAOrbitalBuilder HDF5 Exceptions", "[wavefunction][LCAO]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell sim_cell;
   ParticleSet elec(sim_cell);
@@ -232,7 +232,7 @@ TEST_CASE("LCAOrbitalBuilder HDF5 Exceptions", "[wavefunction][LCAO]")
 
   SECTION("Nb_Elements > species size")
   {
-    if (c->rank() == 0)
+    if (c.rank() == 0)
     {
       hdf_archive hout(c);
       hout.create("test_trap_nb_elements.h5");
@@ -242,15 +242,17 @@ TEST_CASE("LCAOrbitalBuilder HDF5 Exceptions", "[wavefunction][LCAO]")
       hout.pop();
       hout.close();
     }
-    c->barrier();
+    c.barrier();
 
     lcaob.setH5Path("test_trap_nb_elements.h5");
-    REQUIRE_THROWS_WITH((lcaob.testCreateBasisSetH5<0, 0>()), "Number of elements in the HDF5 basis set (2) is more than the number of species (1) in the particleset.");
+    REQUIRE_THROWS_WITH((lcaob.testCreateBasisSetH5<0, 0>()),
+                        "Number of elements in the HDF5 basis set (2) is more than the number of species (1) in the "
+                        "particleset.");
   }
 
   SECTION("Missing species in HDF5")
   {
-    if (c->rank() == 0)
+    if (c.rank() == 0)
     {
       hdf_archive hout(c);
       hout.create("test_trap_missing_species.h5");
@@ -266,7 +268,7 @@ TEST_CASE("LCAOrbitalBuilder HDF5 Exceptions", "[wavefunction][LCAO]")
       hout.pop();
       hout.close();
     }
-    c->barrier();
+    c.barrier();
 
     lcaob.setH5Path("test_trap_missing_species.h5");
     REQUIRE_THROWS_WITH((lcaob.testCreateBasisSetH5<0, 0>()), "Species O not found.");

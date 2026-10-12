@@ -1,4 +1,5 @@
 import numpy
+
 from afqmctools.utils.linalg import modified_cholesky_direct
 
 

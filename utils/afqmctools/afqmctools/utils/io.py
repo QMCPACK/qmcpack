@@ -2,11 +2,11 @@ import numpy
 
 
 def format_fixed_width_strings(strings):
-    return " ".join("{:>17}".format(s) for s in strings)
+    return " ".join(f"{s:>17}" for s in strings)
 
 
 def format_fixed_width_floats(floats):
-    return " ".join("{: .10e}".format(f) for f in floats)
+    return " ".join(f"{f: .10e}" for f in floats)
 
 
 def to_qmcpack_complex(array):

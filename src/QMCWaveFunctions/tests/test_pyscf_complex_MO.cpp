@@ -36,7 +36,7 @@ void test_C_diamond()
 
   SECTION(section_name.str())
   {
-    Communicate* c = OHMMS::Controller;
+    Communicate& c(*OHMMS::Controller);
 
     Libxml2Document doc;
     REQUIRE(doc.parse("C_diamond-twist-third.structure.xml"));

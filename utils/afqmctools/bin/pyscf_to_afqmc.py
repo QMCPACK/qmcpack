@@ -1,16 +1,15 @@
 #! /usr/bin/env python3
 
 import argparse
-import h5py
 import json
-from mpi4py import MPI
-import numpy
 import os
-import scipy.sparse
 import sys
 import time
+
+import h5py
 from afqmctools.inputs.from_pyscf import write_qmcpack
 from afqmctools.utils.misc import get_git_hash
+from mpi4py import MPI
 
 
 def parse_args(args, comm):
@@ -205,9 +204,9 @@ def main(args):
         sha1 = get_git_hash()
         date_time = time.asctime()
         print(" # Generating QMCPACK input from PYSCF checkpoint file.")
-        print(" # git sha1: {}".format(sha1))
-        print(" # Date/Time: {}".format(date_time))
-        print(" # Working directory: {}".format(cwd))
+        print(f" # git sha1: {sha1}")
+        print(f" # Date/Time: {date_time}")
+        print(f" # Working directory: {cwd}")
 
     if options.wfn_file is None:
         if options.disable_ham:

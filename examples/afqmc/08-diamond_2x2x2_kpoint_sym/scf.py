@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
-import numpy
-import pyscf.pbc.gto as gto
-from pyscf.pbc import scf, dft
+
 import h5py
-import sys
+import numpy
+from pyscf.pbc import gto, scf
 
 cell = gto.Cell()
 cell.verbose = 5

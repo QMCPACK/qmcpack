@@ -51,7 +51,7 @@ def main(args):
         if v is None:
             nerror += 1
     if nerror > 0:
-        print("Found {:} non fatal error reading Hamiltonian file.".format(nerror))
+        print(f"Found {nerror} non fatal error reading Hamiltonian file.")
         sys.exit(1)
     else:
         sys.exit(0)

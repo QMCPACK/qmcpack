@@ -84,7 +84,7 @@ public:
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerControlBase(Communicate* c);
+  WalkerControlBase(Communicate& c);
 
   /** empty destructor to clean up the derived classes */
   virtual ~WalkerControlBase();
@@ -129,7 +129,7 @@ public:
    */
   int sortWalkers(MCWalkerConfiguration& W);
 
-  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
+  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate& comm, IndexType n_walkers);
 
   /** legacy: apply per rank limit Nmax and Nmin
    */
@@ -157,9 +157,7 @@ public:
   FullPrecRealType get_target_sigma() const { return target_sigma_; }
   MCDataType<FullPrecRealType>& get_ensemble_property() { return ensemble_property_; }
   void set_ensemble_property(MCDataType<FullPrecRealType>& ensemble_property)
-  {
-    ensemble_property_ = ensemble_property;
-  }
+  { ensemble_property_ = ensemble_property; }
   IndexType get_num_contexts() const { return num_contexts_; }
   IndexType get_method() const { return method_; }
   void set_method(IndexType method) { method_ = method; }

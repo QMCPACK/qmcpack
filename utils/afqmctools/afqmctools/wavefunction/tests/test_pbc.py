@@ -1,8 +1,10 @@
-import h5py
-import numpy
 import os
 import unittest
-from pyscf.pbc import gto, scf, dft
+
+import h5py
+import numpy
+from pyscf.pbc import dft, gto
+
 from afqmctools.wavefunction import pbc
 
 

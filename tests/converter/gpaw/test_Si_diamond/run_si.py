@@ -4,7 +4,7 @@
 
 from ase.build import bulk
 from ase.units import Ry
-from gpaw import GPAW, PW, FermiDirac, setup_paths
+from gpaw import GPAW, PW, FermiDirac
 
 silicon = bulk("Si", "diamond", a=5.459)
 

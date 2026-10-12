@@ -1,6 +1,6 @@
 import h5py
 import numpy as np
-from scipy.special import sph_harm, factorial2
+from scipy.special import factorial2
 
 
 def write_h5_file():
@@ -152,8 +152,8 @@ def get_reference_values(pos, s):
     cs = np.cos(s)
     ss = np.sin(s)
 
-    print("Position: {}".format(pos))
-    print("Spin: {}".format(s))
+    print(f"Position: {pos}")
+    print(f"Spin: {s}")
 
     # gaussian basis function values
     g = cartGauss(2.5, 0, 0, 0, 0)  # s function
@@ -174,9 +174,9 @@ def get_reference_values(pos, s):
     lap = ddx + ddy + ddz
 
     print("Basis ")
-    print("  Val : {}".format(val))
-    print("  Grad: {}  {}  {}".format(dx, dy, dz))
-    print("  Lap : {}".format(lap))
+    print(f"  Val : {val}")
+    print(f"  Grad: {dx}  {dy}  {dz}")
+    print(f"  Lap : {lap}")
 
     # build spinor info
     upcoef = 0.25 + 0.75j
@@ -201,10 +201,10 @@ def get_reference_values(pos, s):
     spds = (-ss + 1j * cs) * upval + (-ss - 1j * cs) * dnval
 
     print(" 1st Spinor:")
-    print("  Val     : {}".format(spval))
-    print("  Grad    : {} {} {}".format(spdx, spdy, spdz))
-    print("  Lap     : {}".format(splap))
-    print("  SpinGrad: {}".format(spds))
+    print(f"  Val     : {spval}")
+    print(f"  Grad    : {spdx} {spdy} {spdz}")
+    print(f"  Lap     : {splap}")
+    print(f"  SpinGrad: {spds}")
 
     upcoef = 0.75 + 0.25j
     dncoef = 0.8 - 0.2j
@@ -228,10 +228,10 @@ def get_reference_values(pos, s):
     spds = (-ss + 1j * cs) * upval + (-ss - 1j * cs) * dnval
 
     print(" 2nd Spinor:")
-    print("  Val     : {}".format(spval))
-    print("  Grad    : {} {} {}".format(spdx, spdy, spdz))
-    print("  Lap     : {}".format(splap))
-    print("  SpinGrad: {}".format(spds))
+    print(f"  Val     : {spval}")
+    print(f"  Grad    : {spdx} {spdy} {spdz}")
+    print(f"  Lap     : {splap}")
+    print(f"  SpinGrad: {spds}")
 
     print()
     print()

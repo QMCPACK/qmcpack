@@ -1,6 +1,5 @@
-from __future__ import print_function
-from sympy import *
 from eqn_manip import *
+from sympy import *
 
 # Solve for cubic spline coefficients using a straightforward (but inefficient) derivation
 #  from the defining equations.
@@ -31,7 +30,7 @@ def create_solution_for_val(nknots, naturalBC=(True, True), firstDeriv=(0.0, 0.0
     n = Symbol("n", integer=True)
     i = Symbol("i", integer=True)
 
-    a, b, c, d = [IndexedBase(s) for s in "a b c d".split()]
+    a, b, c, d = [IndexedBase(s) for s in ["a", "b", "c", "d"]]
     # Non-uniform knots
     si = a[i] + b[i] * t[i] + c[i] * t[i] * t[i] + d[i] * t[i] ** 3
 

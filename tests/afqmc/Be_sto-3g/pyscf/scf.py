@@ -1,8 +1,8 @@
 import numpy
-from pyscf import scf, fci, gto, ao2mo
 from afqmctools.hamiltonian.mol import write_hamil_mol
-from afqmctools.wavefunction.mol import write_qmcpack_wfn
 from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
+from afqmctools.wavefunction.mol import write_qmcpack_wfn
+from pyscf import ao2mo, fci, gto, scf
 
 mol = gto.M(atom=[("Be", 0, 0, 0)], basis="sto-3g", verbose=0)
 mf = scf.RHF(mol)

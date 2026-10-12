@@ -30,7 +30,7 @@ namespace qmcplusplus
 {
 HamiltonianPool::HamiltonianPool(ParticleSetPool& pset_pool,
                                  WaveFunctionPool& psi_pool,
-                                 Communicate* c,
+                                 Communicate& c,
                                  const char* aname)
     : MPIObjectBase(c), ptcl_pool_(pset_pool), psi_pool_(psi_pool)
 {}

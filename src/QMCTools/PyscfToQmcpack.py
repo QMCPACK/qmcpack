@@ -10,7 +10,6 @@
 ## File created by: Anouar Benali, benali@anl.gov, Argonne National Laboratory
 #######################################################################################
 
-from __future__ import print_function
 
 
 def savetoqmcpack(
@@ -24,13 +23,14 @@ def savetoqmcpack(
     cas_idx=None,
     kmap=None,
 ):
-    import h5py, re, sys
+    import re
+    import sys
     from collections import defaultdict
-    from pyscf.pbc import gto, scf, df, dft
-    from pyscf import lib, mcscf, fci
-    from pyscf.pbc import tools
-    from numpy import empty
+
+    import h5py
     import numpy
+    from pyscf import lib, mcscf
+    from pyscf.pbc import tools
 
     PBC = False
     Gamma = False
@@ -485,7 +485,7 @@ def savetoqmcpack(
             for line in zip(*contracted_coeffs):
                 BasisGroup = atomicBasisSetGroup.create_group("basisGroup" + str(n))
 
-                mylen = "S" + str(len((uniq_atoms[x][0] + str(n) + str(l))))
+                mylen = "S" + str(len(uniq_atoms[x][0] + str(n) + str(l)))
                 if Python3:
                     strList = ["Gaussian"]
                     asciiList = [n.encode("ascii", "ignore") for n in strList]
@@ -826,15 +826,14 @@ def savetoqmcpack(
 
     print("Wavefunction successfully saved to QMCPACK HDF5 Format")
     print(
-        'Use: "convert4qmc -orbitals  {}.h5" to generate QMCPACK input files'.format(
-            title
-        )
+        f'Use: "convert4qmc -orbitals  {title}.h5" to generate QMCPACK input files'
     )
 
 
 def make_multidet(cell, mf, title, h5_handle):
+
+    import h5py
     import numpy
-    import h5py, re, sys
 
     a = mf.fcisolver.large_ci(mf.ci, mf.ncas, mf.nelecas, tol=0.0, return_strs=True)
 

@@ -1,9 +1,9 @@
 # Use sympy to verify the matrix exponential for some concrete numerical cases
 # Output used in test_RotatedSPOs.cpp
 
-from sympy import *
-import scipy.linalg
 import numpy as np
+import scipy.linalg
+from sympy import *
 
 
 # Create 2x2 skew symmetric matrix
@@ -77,9 +77,7 @@ def print_matrix_for_check(m, matrix_name):
     for i in range(m.rows):
         for j in range(m.cols):
             print(
-                "  CHECK({matrix_name}({row},{col}) == ValueApprox({val:15g}));".format(
-                    matrix_name=matrix_name, row=i, col=j, val=m[i, j]
-                )
+                f"  CHECK({matrix_name}({i},{j}) == ValueApprox({m[i, j]:15g}));"
             )
 
 
@@ -102,7 +100,7 @@ def print_matrix_as_initializer_list(m):
             # Skip comma after the last entry
             if i == rows - 1 and j == cols - 1:
                 comma = ""
-            print(" {:>18.15g}{comma}".format(float(m[i, j]), comma=comma), end="")
+            print(f" {float(m[i, j]):>18.15g}{comma}", end="")
         if i == rows - 1:
             print(" };")
         else:
@@ -128,9 +126,7 @@ def print_matrix_as_initializer_list_complex(m):
             if i == rows - 1 and j == cols - 1:
                 comma = ""
             print(
-                " cmplx_t({:>12.9g}{comma}{:>12.9g}){comma}".format(
-                    float(m[i, j].real), float(m[i, j].imag), comma=comma
-                ),
+                f" cmplx_t({float(m[i, j].real):>12.9g}{comma}{float(m[i, j].imag):>12.9g}){comma}",
                 end="",
             )
         if i == rows - 1:

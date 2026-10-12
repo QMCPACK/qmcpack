@@ -23,7 +23,7 @@ namespace testing
 {
 bool EstimatorManagerNewTest::testMakeBlockAverages()
 {
-  if (em.my_comm_->rank() == 0)
+  if (em.my_comm_.rank() == 0)
   {
     estimators_[1].scalars[0](3.0);
     estimators_[1].scalars[1](3.0);
@@ -64,8 +64,8 @@ bool EstimatorManagerNewTest::testMakeBlockAverages()
 
 TEST_CASE("EstimatorManagerNew::makeBlockAverages()", "[estimators]")
 {
-  Communicate* c = OHMMS::Controller;
-  int num_ranks  = c->size();
+  Communicate& c(*OHMMS::Controller);
+  int num_ranks = c.size();
   QMCHamiltonian ham;
   testing::EstimatorManagerNewTest embt(ham, c, num_ranks);
 
@@ -73,7 +73,7 @@ TEST_CASE("EstimatorManagerNew::makeBlockAverages()", "[estimators]")
   embt.testMakeBlockAverages();
 
   // right now only rank() == 0 gets the actual averages
-  if (c->rank() == 0)
+  if (c.rank() == 0)
   {
     double correct_value = (5.0 * num_ranks + 3.0) / (4 * (num_ranks - 1) + 5);
     CHECK(embt.em.get_AverageCache()[0] == Approx(correct_value));
@@ -88,19 +88,19 @@ TEST_CASE("EstimatorManagerNew::makeBlockAverages()", "[estimators]")
 
 TEST_CASE("EstimatorManagerNew::reduceOperatorestimators()", "[estimators]")
 {
-  Communicate* c = OHMMS::Controller;
-  int num_ranks  = c->size();
+  Communicate& c(*OHMMS::Controller);
+  int num_ranks = c.size();
   QMCHamiltonian ham;
   testing::EstimatorManagerNewTest embt(ham, c, num_ranks);
 
-  embt.fakeSomeOperatorEstimatorSamples(c->rank());
+  embt.fakeSomeOperatorEstimatorSamples(c.rank());
   std::vector<QMCTraits::RealType> good_data = embt.generateGoodOperatorData(num_ranks);
 
   // Normalization is done by reduceOperatorEstimators based on the the total weight of the
   // estimators for that block.
   embt.testReduceOperatorEstimators();
 
-  if (c->rank() == 0)
+  if (c.rank() == 0)
   {
     auto& test_data = embt.get_operator_data();
 

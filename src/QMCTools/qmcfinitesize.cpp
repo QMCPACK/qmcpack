@@ -52,7 +52,7 @@ int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
-  OHMMS::Controller = new Communicate(env.world());
+  OHMMS::Controller = std::make_unique<Communicate>(env.world());
 #endif
   Random.init(-1);
   std::cout.setf(std::ios::scientific, std::ios::floatfield);
@@ -139,6 +139,7 @@ int main(int argc, char** argv)
     std::cout << "Examples:\n";
     std::cout << "  qmcfinitesize qmc.in.xml --hdf5 qmc.g000.s000.stat.h5 --skname SkAll\n";
     std::cout << "  qmcfinitesize qmc.in.xml --ascii processed_sk.dat\n";
+    OHMMS::Controller.reset();
     return 0;
   }
 
@@ -160,5 +161,6 @@ int main(int argc, char** argv)
   qmcfs.execute();
 
   // Jobs done.
+  OHMMS::Controller.reset();
   return 0;
 }

@@ -26,7 +26,7 @@ using WP = WalkerProperties::Indexes;
  *
  * set SwapMode
  */
-WalkerReconfiguration::WalkerReconfiguration(Communicate* c) : WalkerControlBase(c)
+WalkerReconfiguration::WalkerReconfiguration(Communicate& c) : WalkerControlBase(c)
 {
   SwapMode = 1;
   //ofstream fout("check.dat");

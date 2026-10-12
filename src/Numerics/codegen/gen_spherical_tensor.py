@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # Generate SoaSphericalTensor using the solid-harmonic derivative recurrence.
 
-import subprocess
 import shutil
+import subprocess
 import sys
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 
 from sympy import (
@@ -26,8 +26,6 @@ from sympy import (
     sympify,
 )
 from sympy.functions.special.spherical_harmonics import Ynm
-from sympy.printing.cxx import cxxcode
-
 
 X, Y, Z = Symbol("x", real=True), Symbol("y", real=True), Symbol("z", real=True)
 R, RHO = Symbol("r", positive=True), Symbol("rho", positive=True)
@@ -39,7 +37,7 @@ def index(l, m):
     return l * (l + 1) + m
 
 
-@lru_cache(maxsize=None)
+@cache
 def create_solid_harmonic_symbolic(l, m):
     """Construct r**l S_l^m in the Gaussian real-harmonic convention.
 
@@ -78,7 +76,7 @@ def create_solid_harmonic_symbolic(l, m):
     return regular
 
 
-@lru_cache(maxsize=None)
+@cache
 def create_raw_solid_harmonic_symbolic(l, m):
     """Construct the solid harmonic before norm_factor is applied."""
     solid_harmonic = create_solid_harmonic_symbolic(l, m)

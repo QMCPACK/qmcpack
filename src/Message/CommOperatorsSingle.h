@@ -23,20 +23,26 @@ inline void Communicate::allreduce(T&)
 {}
 
 template<typename T>
-inline void Communicate::reduce(T&)
-{}
-
-
-template<typename T>
-inline void Communicate::reduce_in_place(T* restrict res, int n)
+inline void Communicate::reduce(T&, int)
 {}
 
 template<typename T>
-inline void Communicate::bcast(T&)
+inline void Communicate::reduce(const T* sb, T* rb, int n, int dest)
+{
+  if (d_mycontext == dest)
+    std::copy_n(sb, n, rb);
+}
+
+template<typename T>
+inline void Communicate::reduce_in_place(T* res, int n, int)
 {}
 
 template<typename T>
-inline void Communicate::bcast(T* restrict, int n)
+inline void Communicate::bcast(T&, int)
+{}
+
+template<typename T>
+inline void Communicate::bcast(T*, int, int)
 {}
 
 

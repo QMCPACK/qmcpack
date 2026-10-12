@@ -6,8 +6,9 @@
 # Will change the Value of SpinUnResticted to SpinRestricted
 
 
-import h5py
 import sys
+
+import h5py
 
 file_name = sys.argv[1]
 f = h5py.File(file_name, "r+")  # open the file

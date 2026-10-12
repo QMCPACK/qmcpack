@@ -50,7 +50,7 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
   /** constructor
    * spin grid used for numerical integration. use 0 for exact integration.
    */
-  ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule = -1, int llocal = -1, int srule = 8);
+  ECPComponentBuilder(const std::string& aname, Communicate& c, int nrule = -1, int llocal = -1, int srule = 8);
 
   bool parse(const std::string& fname, xmlNodePtr cur);
   bool put(xmlNodePtr cur);
@@ -109,13 +109,13 @@ class ReadFileBuffer
 {
   char* cbuffer;
   std::ifstream* fin;
-  Communicate* myComm;
+  Communicate& myComm;
   int get_file_length(std::ifstream* f) const;
 
 public:
   bool is_open;
   int length;
-  ReadFileBuffer(Communicate* c) : cbuffer(NULL), fin(NULL), myComm(c), is_open(false), length(0) {}
+  ReadFileBuffer(Communicate& c) : cbuffer(NULL), fin(NULL), myComm(c), is_open(false), length(0) {}
   bool open_file(const std::string& fname);
   bool read_contents();
   char* contents() { return cbuffer; }

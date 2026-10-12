@@ -45,8 +45,7 @@ TEST_CASE("RandomNumberControl no random in xml", "[ohmmsapp]")
 
 TEST_CASE("RandomNumberControl random in xml", "[ohmmsapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const char* xml_input = R"(<tmp><random seed="0"></random></tmp>)";
 

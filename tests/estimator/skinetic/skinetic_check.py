@@ -1,9 +1,10 @@
 #! /usr/bin/env python3
 
-from sys import exit
-import numpy as np
-import h5py
 import xml.etree.ElementTree as ET
+from sys import exit
+
+import h5py
+import numpy as np
 
 
 def grab_stat_entries(stat_file_name, name):

@@ -361,7 +361,7 @@ void EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
 
 bool EinsplineSetBuilder::ReadGvectors_ESHDF()
 {
-  bool root = myComm->rank() == 0;
+  bool root = myComm.rank() == 0;
   //this is always ugly
   MeshSize    = 0;
   int hasPsig = 1;
@@ -370,7 +370,7 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
     H5File.readEntry(MeshSize, "/electrons/psi_r_mesh");
     H5File.readEntry(MeshSize, "/electrons/mesh");
   }
-  myComm->bcast(MeshSize);
+  myComm.bcast(MeshSize);
   hasPsig = (MeshSize[0] == 0);
   if (hasPsig)
   {
@@ -408,10 +408,10 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
         H5File.read(Gvecs[0], Gpath.str());
         numg = Gvecs[0].size();
       }
-      myComm->bcast(numg);
+      myComm.bcast(numg);
       if (!root)
         Gvecs[0].resize(numg);
-      myComm->bcast(Gvecs[0]);
+      myComm.bcast(Gvecs[0]);
       MaxNumGvecs = Gvecs[0].size();
       for (int ig = 0; ig < Gvecs[0].size(); ig++)
       {
@@ -452,7 +452,7 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
           H5File.read(Gvecs[ik], Gpath.str());
           numg = Gvecs[ik].size();
         }
-        myComm->bcast(numg);
+        myComm.bcast(numg);
         if (numg == 0)
         {
           //copy kpoint_0, default
@@ -469,7 +469,7 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
           }
           if (!root)
             Gvecs[ik].resize(numg);
-          myComm->bcast(Gvecs[ik]);
+          myComm.bcast(Gvecs[ik]);
         }
       }
     }

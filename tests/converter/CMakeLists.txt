@@ -23,6 +23,12 @@ function(ADD_CONVERTER_TEST test_name)
                120
                LABELS
                "converter;deterministic")
+  if("asan" IN_LIST ENABLE_SANITIZER)
+    set_property(
+      TEST converter_${test_name}
+      APPEND
+      PROPERTY ENVIRONMENT LSAN_OPTIONS=${LSAN_OPTIONS})
+  endif()
 endfunction()
 
 function(ADD_CONVERTER_JASTROW_TEST test_name)
@@ -48,6 +54,12 @@ function(ADD_CONVERTER_JASTROW_TEST test_name)
                120
                LABELS
                "converter;deterministic")
+  if("asan" IN_LIST ENABLE_SANITIZER)
+    set_property(
+      TEST converter_${test_instance}
+      APPEND
+      PROPERTY ENVIRONMENT LSAN_OPTIONS=${LSAN_OPTIONS})
+  endif()
 endfunction()
 
 function(ADD_PWCONVERTER_TEST test_name)
@@ -67,6 +79,12 @@ function(ADD_PWCONVERTER_TEST test_name)
                120
                LABELS
                "converter;deterministic")
+  if("asan" IN_LIST ENABLE_SANITIZER)
+    set_property(
+      TEST converter_${test_name}
+      APPEND
+      PROPERTY ENVIRONMENT LSAN_OPTIONS=${LSAN_OPTIONS})
+  endif()
 endfunction()
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/converter_test.py"

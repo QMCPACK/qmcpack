@@ -36,23 +36,17 @@ class TestNonLocalECPotential
 
 public:
   static void copyGridUnrotatedForTest(NonLocalECPotential& nl_ecp)
-  {
-    nl_ecp.PPset[0]->rrotsgrid_m = nl_ecp.PPset[0]->sgridxyz_m;
-  }
+  { nl_ecp.PPset[0]->rrotsgrid_m = nl_ecp.PPset[0]->sgridxyz_m; }
 
   static bool didGridChange(NonLocalECPotential& nl_ecp)
-  {
-    return nl_ecp.PPset[0]->rrotsgrid_m != nl_ecp.PPset[0]->sgridxyz_m;
-  }
+  { return nl_ecp.PPset[0]->rrotsgrid_m != nl_ecp.PPset[0]->sgridxyz_m; }
 
   static void evaluateImpl(NonLocalECPotential& nl_ecp,
                            TrialWaveFunction& psi,
                            ParticleSet& P,
                            bool compute_txy_all,
                            bool keep_grid)
-  {
-    nl_ecp.evaluateImpl(psi, P, compute_txy_all, keep_grid);
-  }
+  { nl_ecp.evaluateImpl(psi, P, compute_txy_all, keep_grid); }
 
   static void mw_evaluateImpl(NonLocalECPotential& nl_ecp,
                               const RefVectorWithLeader<OperatorBase>& o_list,
@@ -61,14 +55,10 @@ public:
                               bool compute_txy_all,
                               const std::optional<ListenerOption<Real>> listener_opt,
                               bool keep_grid)
-  {
-    nl_ecp.mw_evaluateImpl(o_list, twf_list, p_list, compute_txy_all, listener_opt, keep_grid);
-  }
+  { nl_ecp.mw_evaluateImpl(o_list, twf_list, p_list, compute_txy_all, listener_opt, keep_grid); }
 
   static size_t numNeighboringIons(NonLocalECPotential& nl_ecp, int jel)
-  {
-    return nl_ecp.neighbor_lists.getNeighboringIons(jel).size();
-  }
+  { return nl_ecp.neighbor_lists.getNeighboringIons(jel).size(); }
 };
 
 } // namespace testing
@@ -167,7 +157,7 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
 
   // This took some time to sort out from the multistage mess of put and clones
   // but this accomplishes in a straight forward way what I interpret to be done by that code.
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
   ECPComponentBuilder ecp_comp_builder("test_read_ecp", comm, 4, 1);
 
   bool okay = ecp_comp_builder.read_pp_file("Na.BFD.xml");
@@ -302,7 +292,7 @@ ParticleSet makeTmoveV1Elec(const SimulationCell& simulation_cell,
 /// reads the same Na.BFD.xml component all three v1 T-move tests attach
 UPtr<NonLocalECPComponent> readTmoveV1PPComponent()
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
   ECPComponentBuilder ecp_comp_builder("test_read_ecp", comm, 4, 1);
   bool okay = ecp_comp_builder.read_pp_file("Na.BFD.xml");
   REQUIRE(okay);
@@ -689,7 +679,7 @@ TEST_CASE("NonLocalECPotential mw_evaluate ragged job counts", "[hamiltonian]")
 
   NonLocalECPotential nl_ecp(ions, elec, false /*use_DLA*/, false /*use_VP*/);
 
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
   ECPComponentBuilder ecp_comp_builder("test_read_ecp", comm, 4, 1);
 
   bool okay = ecp_comp_builder.read_pp_file("Na.BFD.xml");

@@ -1,14 +1,13 @@
 #! /usr/bin/env python3
 
-import sys
 import h5py
-import scipy.linalg
 import numpy
-from pyscf import gto, scf, lib
-from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
-from afqmctools.utils.linalg import get_ortho_ao_mol
+import scipy.linalg
 from afqmctools.hamiltonian.mol import write_hamil_mol
+from afqmctools.utils.linalg import get_ortho_ao_mol
+from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
 from afqmctools.wavefunction.mol import write_qmcpack_wfn
+from pyscf import gto, scf
 
 # 1. We will first generate a fake 2 determinant NOMSD trial wavefunction
 # expansion made up of the RHF solutions replicated twice. This is nonsense but

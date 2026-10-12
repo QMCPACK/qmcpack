@@ -1,11 +1,11 @@
 import os
 import unittest
+
 import h5py
 from pyscf import gto, scf
-from afqmctools.hamiltonian.mol import generate_hamiltonian
-from afqmctools.inputs.from_pyscf import write_qmcpack
+
 from afqmctools.inputs.energy import calculate_hf_energy
-from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
+from afqmctools.inputs.from_pyscf import write_qmcpack
 from afqmctools.utils.linalg import get_ortho_ao_mol
 
 

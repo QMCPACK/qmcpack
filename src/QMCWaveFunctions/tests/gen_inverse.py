@@ -29,7 +29,7 @@ print(Ainv)
 
 output_for_cpp(Ainv)
 
-print("")
+print()
 row = np.array([1.9, 2.0, 3.1])
 # row  = np.array([[1.9, 2.0, 3.1],
 #                 [0.1, 4.2, 1.4]])
@@ -50,5 +50,5 @@ print("log det B", np.log(np.abs(np.linalg.det(B))))
 print("det ratio", np.linalg.det(B) / np.linalg.det(A))
 Binv = np.linalg.inv(B)
 
-print("")
+print()
 output_for_cpp(Binv, var_name="b")

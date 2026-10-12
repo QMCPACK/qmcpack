@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
   int parser_err = session.applyCommandLine(argc, argv);
 #ifdef CATCH_MAIN_HAVE_MPI
   mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
-  OHMMS::Controller = new Communicate(env.world());
+  OHMMS::Controller = std::make_unique<Communicate>(env.world());
   if (OHMMS::Controller->rank())
     outputManager.shutOff();
   Communicate node_comm{OHMMS::Controller->NodeComm()};
@@ -62,6 +62,10 @@ int main(int argc, char* argv[])
   qmcplusplus::print_mem("Before running tests", qmcplusplus::app_log());
   // Run the tests.
   int result = session.run();
+#ifdef CATCH_MAIN_HAVE_MPI
+  // OHMMS::Controller holds duplicated (linked) mpi3::environment and must be freed first.
+  OHMMS::Controller.reset();
+#endif
   if (parser_err != 0)
   {
     return parser_err;

@@ -27,7 +27,7 @@
 
 namespace qmcplusplus
 {
-std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
+std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate& c,
                                                          ParticleSet& elec,
                                                          ParticleSet& ions,
                                                          const WaveFunctionFactory::PSetMap& particle_set_map)
@@ -163,7 +163,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 {
   using ValueType = QMCTraits::ValueType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -270,7 +270,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   using ValueType = QMCTraits::ValueType;
   using RealType  = QMCTraits::RealType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
   const SimulationCell simulation_cell;
   auto ions_ptr  = std::make_unique<ParticleSet>(simulation_cell);
   auto elec1_ptr = std::make_unique<ParticleSet>(simulation_cell);

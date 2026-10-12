@@ -1,10 +1,11 @@
+
 import h5py
 import numpy
-import scipy.sparse
 import scipy.linalg
-import sys
-from afqmctools.utils.io import to_qmcpack_complex, from_qmcpack_complex
+import scipy.sparse
+
 from afqmctools.hamiltonian.io import write_sparse_basic, write_sparse_chol_chunk
+from afqmctools.utils.io import from_qmcpack_complex, to_qmcpack_complex
 
 
 def get_dset_simple(fh5, name):
@@ -12,7 +13,7 @@ def get_dset_simple(fh5, name):
         dset = fh5[name][:]
         return dset
     except KeyError:
-        print("Error reading {:} dataset".format(name))
+        print(f"Error reading {name} dataset")
         return None
 
 
@@ -55,8 +56,8 @@ def read_fcidump(filename, symmetry=8, verbose=True):
                 elif "MS2" in i:
                     ms2 = int(i.split("=")[1])
         if verbose:
-            print("# Number of orbitals: {}".format(nbasis))
-            print("# Number of electrons: {}".format(nelec))
+            print(f"# Number of orbitals: {nbasis}")
+            print(f"# Number of electrons: {nelec}")
         h1e = numpy.zeros((nbasis, nbasis), dtype=numpy.complex128)
         h2e = numpy.zeros((nbasis, nbasis, nbasis, nbasis), dtype=numpy.complex128)
         lines = f.readlines()
@@ -266,7 +267,7 @@ def get_chunk(fh5, ichunk, real_ints):
         try:
             vals = fh5["Hamiltonian/Factorized/vals_%i" % ichunk][:].ravel()
         except KeyError:
-            print(" Error reading Hamiltonian/Factorized/vals_{:}".format(ichunk))
+            print(f" Error reading Hamiltonian/Factorized/vals_{ichunk}")
     else:
         try:
             vals = (
@@ -275,7 +276,7 @@ def get_chunk(fh5, ichunk, real_ints):
                 .ravel()
             )
         except KeyError:
-            print(" Error reading Hamiltonian/Factorized/vals_{:}".format(ichunk))
+            print(f" Error reading Hamiltonian/Factorized/vals_{ichunk}")
     return ixs, vals
 
 
@@ -367,10 +368,10 @@ def write_fcidump(
         f.write(header)
         # Generate M_{(ik),(lj)} = (ik|jl)
         eris = chol.dot(chol.conj().T).toarray().reshape((nmo, nmo, nmo, nmo))
-        for i in range(0, nmo):
-            for k in range(0, nmo):
-                for j in range(0, nmo):
-                    for l in range(0, nmo):
+        for i in range(nmo):
+            for k in range(nmo):
+                for j in range(nmo):
+                    for l in range(nmo):
                         sym_allowed = check_sym((i, k, j, l), nmo, sym)
                         if abs(eris[i, k, l, j]) > tol and sym_allowed:
                             if not cplx:
@@ -381,8 +382,8 @@ def write_fcidump(
                                 eris[i, k, l, j], i, k, j, l, cplx, paren=paren
                             )
                             f.write(out)
-        for i in range(0, nmo):
-            for j in range(0, i + 1):
+        for i in range(nmo):
+            for j in range(i + 1):
                 if abs(hcore[i, j]) > tol:
                     out = fmt_integral(hcore[i, j], i, j, -1, -1, cplx, paren=paren)
                     f.write(out)
@@ -429,8 +430,8 @@ def read_qmcpack_cholesky_kpoint(filename, get_chol=True):
         nbeta = dims[5]
         if nmo_pk is None:
             raise KeyError("Could not read NMOPerKP dataset.")
-        for i in range(0, nkp):
-            hk = get_dset_simple(fh5, "Hamiltonian/H1_kp{}".format(i))
+        for i in range(nkp):
+            hk = get_dset_simple(fh5, f"Hamiltonian/H1_kp{i}")
             if hk is None:
                 raise KeyError("Could not read one-body hamiltonian.")
             nmo = nmo_pk[i]
@@ -444,7 +445,7 @@ def read_qmcpack_cholesky_kpoint(filename, get_chol=True):
     if nchol_pk is None:
         raise KeyError("Error NCholPerKP dataset does not exist.")
     if get_chol:
-        for i in range(0, nkp):
+        for i in range(nkp):
             chol_vecs.append(get_kpoint_chol(filename, nchol_pk, minus_k, i))
     else:
         chol_vecs = None
@@ -465,13 +466,13 @@ def read_qmcpack_cholesky_kpoint(filename, get_chol=True):
 def get_kpoint_chol(filename, nchol_pk, minus_k, i):
     with h5py.File(filename, "r") as fh5:
         try:
-            Lk = get_dset_simple(fh5, "Hamiltonian/KPFactorized/L{}".format(i))
+            Lk = get_dset_simple(fh5, f"Hamiltonian/KPFactorized/L{i}")
             if Lk is None:
                 raise TypeError("Could not read Cholesky integrals from file.")
             nchol = nchol_pk[i]
             Lk = Lk.view(numpy.complex128)[:, :, 0]
         except KeyError:
-            Lk = get_dset_simple(fh5, "Hamiltonian/KPFactorized/L{}".format(i))
+            Lk = get_dset_simple(fh5, f"Hamiltonian/KPFactorized/L{i}")
             if Lk is None:
                 raise TypeError("Could not read Cholesky integrals from file.")
             nchol = nchol_pk[minus_k[i]]
@@ -541,7 +542,6 @@ def read_common_input(filename, get_hcore=True):
                 real_ints = True
             except KeyError:
                 hcore = None
-                pass
             if hcore is None:
                 try:
                     # old sparse format only for complex.
@@ -566,7 +566,7 @@ def read_common_input(filename, get_hcore=True):
                     hc_type = type(hcore)
                 msg = (
                     "ComplexIntegrals flag conflicts with integral data type. "
-                    "dtype = {:} ComplexIntegrals = {:}.".format(hc_type, complex_ints)
+                    f"dtype = {hc_type} ComplexIntegrals = {complex_ints}."
                 )
                 assert real_ints ^ complex_ints, msg
         else:
@@ -577,9 +577,9 @@ def read_common_input(filename, get_hcore=True):
 def fcidump_header(nel, norb, spin):
     header = (
         "&FCI "
-        + "NORB={:d}, ".format(norb)
-        + "NELEC={:d}, ".format(nel)
-        + "MS2={:d},\n".format(spin)
+        + f"NORB={norb:d}, "
+        + f"NELEC={nel:d}, "
+        + f"MS2={spin:d},\n"
         + "ORBSYM="
         + ",".join([str(1)] * norb)
         + ",\n"
@@ -649,16 +649,16 @@ def write_fcidump_kpoint(
                             print("# Found complex integrals with cplx==False.")
                             # sys.exit()
                     ik = 0
-                    for i in range(0, nmo_pk[ki]):
+                    for i in range(nmo_pk[ki]):
                         kk = qk_k2[iq, ki]
                         I = i + offsets[ki]
-                        for k in range(0, nmo_pk[kk]):
+                        for k in range(nmo_pk[kk]):
                             kj = qk_k2[iq, kl]
                             K = k + offsets[kk]
                             lj = 0
-                            for l in range(0, nmo_pk[kl]):
+                            for l in range(nmo_pk[kl]):
                                 L = l + offsets[kl]
-                                for j in range(0, nmo_pk[kj]):
+                                for j in range(nmo_pk[kj]):
                                     J = j + offsets[kj]
                                     sym_allowed = check_sym((I, K, J, L), nmo_tot, sym)
                                     if abs(eri[ik, lj]) > tol and sym_allowed:
@@ -757,12 +757,12 @@ def kpoint_to_sparse(kp_file, sp_file, real_chol=False, verbose=False, thresh=1e
         vals = []
         ixs = []
         for ki in range(nkp):
-            for i in range(0, nmo_pk[ki]):
+            for i in range(nmo_pk[ki]):
                 kk = qk_k2[iq, ki]
                 I = i + orb_offset[ki]
-                for k in range(0, nmo_pk[kk]):
+                for k in range(nmo_pk[kk]):
                     K = k + orb_offset[kk]
-                    for nc in range(0, nchol_pk[iq]):
+                    for nc in range(nchol_pk[iq]):
                         ll = lq[ki, (i * nmo_pk[ki] + k) * nchol_pk[iq] + nc]
                         if abs(ll) > thresh:
                             vals.append(ll)

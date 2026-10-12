@@ -1,8 +1,5 @@
 #! /usr/bin/env python3
-import numpy
-import h5py
-from pyscf.pbc import gto, scf, dft, df
-from pyscf.pbc import df
+from pyscf.pbc import gto, scf
 
 cell = gto.Cell()
 cell.a = """

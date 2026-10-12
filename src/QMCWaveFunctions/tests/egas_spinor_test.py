@@ -50,8 +50,8 @@ def spinor_spingrad(r, s, k1, k2):
 
 def spinor_matrix(R, s, kup, kdn):
     M = np.zeros((len(R), len(kup)), dtype=complex)
-    for iat in range(0, len(R)):
-        for norb in range(0, len(kup)):
+    for iat in range(len(R)):
+        for norb in range(len(kup)):
             M[iat][norb] = spinor_val(R[iat], s[iat], kup[norb], kdn[norb])
 
     return M
@@ -59,7 +59,7 @@ def spinor_matrix(R, s, kup, kdn):
 
 def compute_row_spinor_val(r, s, kup, kdn):
     row = np.zeros(len(kup), dtype=complex)
-    for norb in range(0, len(kup)):
+    for norb in range(len(kup)):
         row[norb] = spinor_val(r, s, kup[norb], kdn[norb])
     return row
 
@@ -68,7 +68,7 @@ def compute_row_spinor_grad(r, s, kup, kdn):
     rowx = np.zeros(len(kup), dtype=complex)
     rowy = np.zeros(len(kup), dtype=complex)
     rowz = np.zeros(len(kup), dtype=complex)
-    for norb in range(0, len(kup)):
+    for norb in range(len(kup)):
         g = spinor_grad(r, s, kup[norb], kdn[norb])
         rowx[norb] = g[0]
         rowy[norb] = g[1]
@@ -78,14 +78,14 @@ def compute_row_spinor_grad(r, s, kup, kdn):
 
 def compute_row_spinor_lapl(r, s, kup, kdn):
     row = np.zeros(len(kup), dtype=complex)
-    for norb in range(0, len(kup)):
+    for norb in range(len(kup)):
         row[norb] = spinor_lapl(r, s, kup[norb], kdn[norb])
     return row
 
 
 def compute_row_spinor_spingrad(r, s, kup, kdn):
     row = np.zeros(len(kup), dtype=complex)
-    for norb in range(0, len(kup)):
+    for norb in range(len(kup)):
         row[norb] = spinor_spingrad(r, s, kup[norb], kdn[norb])
     return row
 
@@ -126,7 +126,7 @@ G = np.zeros((3, 3), dtype=complex)
 L = np.zeros(3, dtype=complex)
 SG = np.zeros(3, dtype=complex)
 
-for iat in range(0, 3):
+for iat in range(3):
     r = R[iat]
     s = spins[iat]
     gxr, gyr, gzr = compute_row_spinor_grad(r, s, kup, kdn)

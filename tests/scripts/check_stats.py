@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 
-from __future__ import print_function, division
 
 # Statical error checking code for use by testing framework (stat.h5 files)
 # Jaron Krogel/ORNL
@@ -14,10 +13,10 @@ from __future__ import print_function, division
 # from generic.py
 ######################################################################
 
+import pickle
 import sys
 import traceback
 from copy import deepcopy
-import pickle
 from random import randint
 
 
@@ -74,12 +73,10 @@ def log(*items, **kwargs):
             n += 1
         # end if
         if n != len(kwargs):
-            valid = "indent logfile".split()
+            valid = ["indent", "logfile"]
             invalid = set(kwargs.keys()) - set(valid)
             error(
-                "invalid keyword arguments provided\ninvalid keywords: {0}\nvalid options are: {1}".format(
-                    sorted(invalid), valid
-                )
+                f"invalid keyword arguments provided\ninvalid keywords: {sorted(invalid)}\nvalid options are: {valid}"
             )
         # end if
     # end if
@@ -151,7 +148,7 @@ def error(msg, header=None, exit=True, trace=True, indent="    ", logfile=None):
 # end def error
 
 
-class object_interface(object):
+class object_interface:
     _logfile = sys.stdout
 
     def __len__(self):
@@ -192,9 +189,9 @@ class object_interface(object):
             if not isinstance(k, str) or k[0] != "_":
                 v = self.__dict__[k]
                 if hasattr(v, "__class__"):
-                    s += "  {0:<20}  {1:<20}\n".format(k, v.__class__.__name__)
+                    s += f"  {k:<20}  {v.__class__.__name__:<20}\n"
                 else:
-                    s += "  {0:<20}  {1:<20}\n".format(k, type(v))
+                    s += f"  {k:<20}  {type(v):<20}\n"
                 # end if
             # end if
         # end for
@@ -223,7 +220,7 @@ class object_interface(object):
         for k in normal:
             v = self[k]
             vstr = str(v).replace("\n", "\n" + indent)
-            s += npad + "{0:<15} = ".format(k) + vstr + "\n"
+            s += npad + f"{k:<15} = " + vstr + "\n"
         # end for
         for k in qable:
             v = self[k]
@@ -293,11 +290,11 @@ class object_interface(object):
             for k in normal:
                 v = self[k]
                 if types:
-                    s += npad + "{0:<15} = ".format(k)
+                    s += npad + f"{k:<15} = "
                     if hasattr(v, "__class__"):
-                        s += "{0:<20}".format(v.__class__.__name__)
+                        s += f"{v.__class__.__name__:<20}"
                     else:
-                        s += "{0:<20}".format(type(v))
+                        s += f"{type(v):<20}"
                     # end if
                 else:
                     s += npad + str(k)
@@ -318,11 +315,11 @@ class object_interface(object):
             for k in qable:
                 v = self[k]
                 if types:
-                    s += npad + "{0:<15} = ".format(k)
+                    s += npad + f"{k:<15} = "
                     if hasattr(v, "__class__"):
-                        s += "{0:<20}".format(v.__class__.__name__)
+                        s += f"{v.__class__.__name__:<20}"
                     else:
-                        s += "{0:<20}".format(type(v))
+                        s += f"{type(v):<20}"
                     # end if
                 else:
                     s += npad + str(k)
@@ -372,7 +369,6 @@ class object_interface(object):
         fobj.close()
         del fobj
         del binary
-        return
 
     # end def save
 
@@ -390,7 +386,6 @@ class object_interface(object):
         # end for
         del fobj
         del tmp
-        return
 
     # end def load
 
@@ -738,9 +733,7 @@ class obj(object_interface):
         else:
             obj.error(
                 self,
-                "a required key is not present\nkey required: {0}\nkeys present: {1}".format(
-                    key, sorted(self._keys())
-                ),
+                f"a required key is not present\nkey required: {key}\nkeys present: {sorted(self._keys())}",
             )
         # end if
         return value
@@ -786,9 +779,7 @@ class obj(object_interface):
         else:
             obj.error(
                 self,
-                "a required key is not present\nkey required: {0}\nkeys present: {1}".format(
-                    key, sorted(self._keys())
-                ),
+                f"a required key is not present\nkey required: {key}\nkeys present: {sorted(self._keys())}",
             )
         # end if
         return value
@@ -1161,11 +1152,12 @@ def valid_variable_name(s):
 ######################################################################
 # from hdfreader.py
 ######################################################################
-from numpy import array, ndarray, minimum, abs, ix_, resize
-import sys
 import keyword
+import sys
 from inspect import getmembers
+
 import h5py
+from numpy import abs, array
 
 
 class HDFglobals(DevBase):
@@ -1186,20 +1178,17 @@ class HDFgroup(DevBase):
 
     def _set_parent(self, parent):
         self._parent = parent
-        return
 
     # end def set_parent
 
     def _add_dataset(self, name, dataset):
         self._datasets[name] = dataset
-        return
 
     # end def add_dataset
 
     def _add_group(self, name, group):
         group._name = name
         self._groups[name] = group
-        return
 
     # end def add_group
 
@@ -1248,7 +1237,6 @@ class HDFgroup(DevBase):
 
         self._escape_names = None
         self._escape_names = set(dict(getmembers(self)).keys()) | set(keyword.kwlist)
-        return
 
     # end def __init__
 
@@ -1328,7 +1316,7 @@ class HDFreader(DevBase):
 
         try:
             self.hdf = h5py.File(fpath, "r")
-        except IOError:
+        except OSError:
             self._success = False
             self.hdf = obj(obj=obj())
         else:
@@ -1374,7 +1362,6 @@ class HDFreader(DevBase):
         if verbose:
             print("  end HDFreader Initialization")
 
-        return
 
     # end def __init__
 
@@ -1386,14 +1373,12 @@ class HDFreader(DevBase):
             self.hcur.append(None)
         # end if
         self.pad = self.ilevel * "  "
-        return
 
     # end def increment_level
 
     def decrement_level(self):
         self.ilevel -= 1
         self.pad = self.ilevel * "  "
-        return
 
     # end def decrement_level
 
@@ -1404,7 +1389,6 @@ class HDFreader(DevBase):
             cur[k] = v
         # end if
         cur._add_dataset(k, cur[k])
-        return
 
     # end def add_dataset
 
@@ -1436,7 +1420,6 @@ class HDFreader(DevBase):
             # end if
         # end for
 
-        return
 
     # end def add_group
 
@@ -1458,7 +1441,8 @@ def read_hdf(fpath, verbose=False, view=False):
 import os
 import sys
 from optparse import OptionParser
-from numpy import zeros, sqrt, longdouble, loadtxt
+
+from numpy import loadtxt, longdouble, sqrt, zeros
 
 can_plot = False
 try:
@@ -1477,27 +1461,27 @@ try:
         # end try
     # end for
     from matplotlib.pyplot import (
+        bar,
+        errorbar,
         figure,
-        plot,
-        xlabel,
-        ylabel,
-        title,
-        show,
-        ylim,
+        grid,
         legend,
-        xlim,
+        loglog,
+        plot,
         rcParams,
         savefig,
-        bar,
-        xticks,
-        subplot,
-        grid,
-        setp,
-        errorbar,
-        loglog,
         semilogx,
         semilogy,
+        setp,
+        show,
+        subplot,
         text,
+        title,
+        xlabel,
+        xlim,
+        xticks,
+        ylabel,
+        ylim,
     )
 
     params = {
@@ -1516,9 +1500,9 @@ except (ImportError, RuntimeError):
 
 class ColorWheel(DevBase):
     def __init__(self):
-        colors = "Black Maroon DarkOrange Green DarkBlue Purple Gray Firebrick Orange MediumSeaGreen DodgerBlue MediumOrchid".split()
-        lines = "- -- -. :".split()
-        markers = ". v s o ^ d p".split()
+        colors = ["Black", "Maroon", "DarkOrange", "Green", "DarkBlue", "Purple", "Gray", "Firebrick", "Orange", "MediumSeaGreen", "DodgerBlue", "MediumOrchid"]
+        lines = ["-", "--", "-.", ":"]
+        markers = [".", "v", "s", "o", "^", "d", "p"]
         ls = []
         for line in lines:
             for color in colors:
@@ -1949,16 +1933,12 @@ def load_scalar_file(options, selector):
         # end if
     elif selector not in ("scalar", "dmc"):
         exit_fail(
-            "could not load scalar file, invalid selector\ninvalid selector: {0}\nvalid options: scalar, dmc".format(
-                selector
-            )
+            f"could not load scalar file, invalid selector\ninvalid selector: {selector}\nvalid options: scalar, dmc"
         )
     # end if
     if selector not in output_files:
         exit_fail(
-            "could not load scalar file, file is not present\nfile type requested: {0}".format(
-                selector
-            )
+            f"could not load scalar file, file is not present\nfile type requested: {selector}"
         )
     # end if
     filepath = os.path.join(options.path, output_files[selector])
@@ -2159,9 +2139,7 @@ def read_command_line():
 
         if len(files_in) > 0:
             exit_fail(
-                "check_stats does not accept file as input, only command line arguments\nfiles provided: {0}".format(
-                    files_in
-                )
+                f"check_stats does not accept file as input, only command line arguments\nfiles provided: {files_in}"
             )
         # end if
 
@@ -2191,9 +2169,7 @@ def read_command_line():
             qlist = options.quantity.strip('"').strip("'").replace(",", " ").split()
             if len(qlist) != 2:
                 exit_fail(
-                    "quantity can accept only one or two values\nyou provided {0}: {1}".format(
-                        len(qlist), qlist
-                    )
+                    f"quantity can accept only one or two values\nyou provided {len(qlist)}: {qlist}"
                 )
             # end if
             options.quantity, options.qlabel = qlist
@@ -2205,9 +2181,7 @@ def read_command_line():
             exit_fail("must provide quantity")
         elif options.quantity not in allowed_quantities:
             exit_fail(
-                "unrecognized quantity provided\nallowed quantities: {0}\nquantity provided: {1}".format(
-                    allowed_quantities, options.quantity
-                )
+                f"unrecognized quantity provided\nallowed quantities: {allowed_quantities}\nquantity provided: {options.quantity}"
             )
         # end if
 
@@ -2219,9 +2193,7 @@ def read_command_line():
         if options.reference_file != "none":
             if not os.path.exists(options.reference_file):
                 exit_fail(
-                    "reference file does not exist\nreference file provided: {0}".format(
-                        options.reference_file
-                    )
+                    f"reference file does not exist\nreference file provided: {options.reference_file}"
                 )
             # end if
             options.make_reference = False
@@ -2230,9 +2202,7 @@ def read_command_line():
                 mr = array(options.make_reference.split(), dtype=int)
             except:
                 exit_fail(
-                    "make_reference must be a list of integers\nyou provided: {0}".format(
-                        options.make_reference
-                    )
+                    f"make_reference must be a list of integers\nyou provided: {options.make_reference}"
                 )
             # end try
             if len(mr) < 1:
@@ -2254,14 +2224,12 @@ def read_command_line():
                 options.abs_err = float(options.abs_err)
             except:
                 exit_fail(
-                    "abs_err must be a real number\nyou provided: {}".format(
-                        options.abs_err
-                    )
+                    f"abs_err must be a real number\nyou provided: {options.abs_err}"
                 )
             # end try
             if options.abs_err < 0:
                 exit_fail(
-                    "abs_err must be positive\nyou provided: {}".format(options.abs_err)
+                    f"abs_err must be positive\nyou provided: {options.abs_err}"
                 )
             # end if
         else:
@@ -2270,9 +2238,9 @@ def read_command_line():
 
         vlog("inputted options:\n" + str(options), n=1)
 
-    except Exception as e:
-        import traceback
+    except Exception:
         import io
+        import traceback
 
         ftmp = io.StringIO()
         traceback.print_exc(file=ftmp)
@@ -2312,9 +2280,7 @@ def process_stat_file(options):
         vlog("files found:\n" + str(output_files).rstrip(), n=2)
         if "stat" not in output_files:
             exit_fail(
-                "stat.h5 file matching prefix {0} was not found\nsearch path: {1}".format(
-                    prefix, options.path
-                )
+                f"stat.h5 file matching prefix {prefix} was not found\nsearch path: {options.path}"
             )
         # end if
 
@@ -2326,28 +2292,24 @@ def process_stat_file(options):
             view=True,
         )
         vlog("file contents:\n" + repr(stat).rstrip(), n=2)
-        vlog("extracting {0} data".format(options.quantity), n=1)
+        vlog(f"extracting {options.quantity} data", n=1)
         vlog(
-            "searching for {0} with label {1}".format(options.quantity, options.qlabel),
+            f"searching for {options.quantity} with label {options.qlabel}",
             n=2,
         )
         if options.qlabel in stat:
             qstat = stat[options.qlabel]
             vlog(
-                "{0} data contents:\n{1}".format(
-                    options.quantity, repr(qstat).rstrip()
-                ),
+                f"{options.quantity} data contents:\n{repr(qstat).rstrip()}",
                 n=2,
             )
         else:
             exit_fail(
-                "could not find {0} data with label {1}".format(
-                    options.quantity, options.qlabel
-                )
+                f"could not find {options.quantity} data with label {options.qlabel}"
             )
         # end if
         qpaths = stat_info[options.quantity].data_paths
-        vlog("search paths:\n{0}".format(str(qpaths).rstrip()), n=2)
+        vlog(f"search paths:\n{str(qpaths).rstrip()}", n=2)
         qdata = obj()
         dfull = None
         for dname, dpath in qpaths.items():
@@ -2357,9 +2319,7 @@ def process_stat_file(options):
             # end if
             if not qstat.path_exists(dpath):
                 exit_fail(
-                    "{0} data not found in file {1}\npath searched: {2}".format(
-                        options.quantity, output_files.stat, dpath
-                    )
+                    f"{options.quantity} data not found in file {output_files.stat}\npath searched: {dpath}"
                 )
             # end if
             if not packed:
@@ -2373,46 +2333,42 @@ def process_stat_file(options):
                 d.shape = dfull.shape[0], dfull.shape[1]
             # end if
             qdata[dname] = d
-            vlog("{0} data found with shape {1}".format(dname, d.shape), n=2)
+            vlog(f"{dname} data found with shape {d.shape}", n=2)
             if len(d.shape) > 2:
                 d.shape = d.shape[0], d.size // d.shape[0]
-                vlog("reshaped {0} data to {1}".format(dname, d.shape), n=2)
+                vlog(f"reshaped {dname} data to {d.shape}", n=2)
             # end if
             options.nblocks = d.shape[0]
         # end for
 
         # process the data, taking full and partial sums
-        vlog("processing {0} data".format(options.quantity), n=1)
+        vlog(f"processing {options.quantity} data", n=1)
         for dname, d in qdata.items():
-            vlog("processing {0} data".format(dname), n=2)
+            vlog(f"processing {dname} data", n=2)
             if d.shape[1] % options.npartial_sums != 0:
                 exit_fail(
-                    "cannot make partial sums\nnumber of requested partial sums does not divide evenly into the number of values available\nrequested partial sums: {0}\nnumber of values present: {1}\nnvalue/npartial_sums: {2}".format(
-                        options.npartial_sums,
-                        d.shape[1],
-                        float(d.shape[1]) / options.npartial_sums,
-                    )
+                    f"cannot make partial sums\nnumber of requested partial sums does not divide evenly into the number of values available\nrequested partial sums: {options.npartial_sums}\nnumber of values present: {d.shape[1]}\nnvalue/npartial_sums: {float(d.shape[1]) / options.npartial_sums}"
                 )
             # end if
             data = obj()
             data.full_sum = d.sum(1)
-            vlog("full sum data shape: {0}".format(data.full_sum.shape), n=3)
+            vlog(f"full sum data shape: {data.full_sum.shape}", n=3)
             data.partial_sums = zeros((d.shape[0], options.npartial_sums))
             psize = d.shape[1] // options.npartial_sums
             for p in range(options.npartial_sums):
                 data.partial_sums[:, p] = d[:, p * psize : (p + 1) * psize].sum(1)
             # end for
-            vlog("partial sum data shape: {0}".format(data.partial_sums.shape), n=3)
+            vlog(f"partial sum data shape: {data.partial_sums.shape}", n=3)
             fmean, var, ferror, kappa = simstats(
                 data.full_sum, exclude=options.equilibration
             )
-            vlog("full sum mean : {0}".format(fmean), n=3)
-            vlog("full sum error: {0}".format(ferror), n=3)
+            vlog(f"full sum mean : {fmean}", n=3)
+            vlog(f"full sum error: {ferror}", n=3)
             pmean, var, perror, kappa = simstats(
                 data.partial_sums, dim=0, exclude=options.equilibration
             )
-            vlog("partial sum mean : {0}".format(pmean), n=3)
-            vlog("partial sum error: {0}".format(perror), n=3)
+            vlog(f"partial sum mean : {pmean}", n=3)
+            vlog(f"partial sum error: {perror}", n=3)
             values[dname] = obj(
                 full_mean=fmean,
                 full_error=ferror,
@@ -2426,7 +2382,7 @@ def process_stat_file(options):
         missing = set(qpaths.keys()) - set(values.keys())
         if len(missing) > 0:
             exit_fail(
-                "some values not processed\nvalues missing: {0}".format(sorted(missing))
+                f"some values not processed\nvalues missing: {sorted(missing)}"
             )
         # end if
 
@@ -2441,18 +2397,18 @@ def process_stat_file(options):
                 data = dvalues.data
                 figure()
                 plot(data.full_sum)
-                title("Trace of {0} full sum".format(label))
+                title(f"Trace of {label} full sum")
                 xlabel("Block index")
                 figure()
                 plot(data.partial_sums)
-                title("Trace of {0} partial sums".format(label))
+                title(f"Trace of {label} partial sums")
                 xlabel("Block index")
             # end for
             show()
         # end if
-    except Exception as e:
-        import traceback
+    except Exception:
         import io
+        import traceback
 
         ftmp = io.StringIO()
         traceback.print_exc(file=ftmp)
@@ -2471,11 +2427,9 @@ def make_reference_files(options, values):
     # create a reference file for each Monte Carlo sample factor
     for mcfac in options.mc_factors:
         errfac = sqrt(1.0 + mcfac)
-        filename = "{0}.s{1}.stat_ref_{2}_{3}.dat".format(
-            options.prefix, str(options.series).zfill(3), options.quantity, mcfac
-        )
+        filename = f"{options.prefix}.s{str(options.series).zfill(3)}.stat_ref_{options.quantity}_{mcfac}.dat"
         filepath = os.path.join(options.path, filename)
-        vlog("writing reference file for {0}x shorter test runs".format(mcfac), n=1)
+        vlog(f"writing reference file for {mcfac}x shorter test runs", n=1)
         vlog("reference file location: " + filepath, n=2)
         f = open(filepath, "w")
         # write descriptive header line
@@ -2495,7 +2449,7 @@ def make_reference_files(options, values):
             else:
                 err = errfac * ferror
             # end if
-            line += "  {0: 16.12e}  {1: 16.12e}".format(fmean, err)
+            line += f"  {fmean: 16.12e}  {err: 16.12e}"
         # end for
         f.write(line + "\n")
         # write means and errors of partial sums
@@ -2510,7 +2464,7 @@ def make_reference_files(options, values):
                 else:
                     err = errfac * perror[p]
                 # end if
-                line += "  {0: 16.12e}  {1: 16.12e}".format(pmean[p], err)
+                line += f"  {pmean[p]: 16.12e}  {err: 16.12e}"
             # end for
             f.write(line + "\n")
         # end for
@@ -2518,9 +2472,7 @@ def make_reference_files(options, values):
     # end for
 
     # create a trace file containing full and partial sum data per block
-    filename = "{0}.s{1}.stat_trace_{2}.dat".format(
-        options.prefix, str(options.series).zfill(3), options.quantity
-    )
+    filename = f"{options.prefix}.s{str(options.series).zfill(3)}.stat_trace_{options.quantity}.dat"
     filepath = os.path.join(options.path, filename)
     vlog("writing trace file containing full and partial sums per block", n=1)
     vlog("trace file location: " + filepath, n=2)
@@ -2536,14 +2488,14 @@ def make_reference_files(options, values):
     f.write(line + "\n")
     # write full and partial sum data per block
     for b in range(options.nblocks):
-        line = " {0:>6}".format(b)
+        line = f" {b:>6}"
         for dname in sorted(values.keys()):
             dvalues = values[dname].data
             fsum = dvalues.full_sum
             psums = dvalues.partial_sums[b]
-            line += "  {0: 16.12e}".format(fsum[b])
+            line += f"  {fsum[b]: 16.12e}"
             for psum in psums:
-                line += "  {0: 16.12e}".format(psum)
+                line += f"  {psum: 16.12e}"
             # end for
         # end for
         f.write(line + "\n")
@@ -2557,24 +2509,20 @@ def make_reference_files(options, values):
 
 def read_reference_file(filepath):
     vlog("reading reference file", n=1)
-    vlog("reference file location: {0}".format(options.reference_file), n=2)
+    vlog(f"reference file location: {options.reference_file}", n=2)
     f = open(options.reference_file, "r")
     dnames = f.readline().split()[1::2]
-    vlog("sub-quantities found: {0}".format(dnames), n=2)
+    vlog(f"sub-quantities found: {dnames}", n=2)
     if set(dnames) != set(values.keys()):
         missing = set(values.keys()) - set(dnames)
         extra = set(dnames) - set(values.keys())
         if missing > 0:
             exit_fail(
-                "some sub-quantities are missing\npresent in test files: {0}\npresent in reference files: {1}\nmissing: {2}".format(
-                    sorted(values.keys()), sorted(dnames), sorted(missing)
-                )
+                f"some sub-quantities are missing\npresent in test files: {sorted(values.keys())}\npresent in reference files: {sorted(dnames)}\nmissing: {sorted(missing)}"
             )
         elif extra > 0:
             exit_fail(
-                "some sub-quantities are extra\npresent in test files: {0}\npresent in reference files: {1}\nextra: {2}".format(
-                    sorted(values.keys()), sorted(dnames), sorted(extra)
-                )
+                f"some sub-quantities are extra\npresent in test files: {sorted(values.keys())}\npresent in reference files: {sorted(dnames)}\nextra: {sorted(extra)}"
             )
         else:
             exit_fail("developer error, this point should be impossible to reach")
@@ -2586,12 +2534,10 @@ def read_reference_file(filepath):
     partial = ref[1:, :].T
     if len(ref) - 1 != options.npartial_sums:
         exit_fail(
-            "test and reference partial sum counts do not match\ntest partial sum count: {0}\nreference partial sum count: {1}".format(
-                options.npartial_sums, len(ref) - 1
-            )
+            f"test and reference partial sum counts do not match\ntest partial sum count: {options.npartial_sums}\nreference partial sum count: {len(ref) - 1}"
         )
     # end if
-    vlog("partial sum count found: {0}".format(len(ref) - 1), n=2)
+    vlog(f"partial sum count found: {len(ref) - 1}", n=2)
     ref_values = obj()
     for dname in dnames:
         ref_values[dname] = obj()
@@ -2628,9 +2574,7 @@ def check_values(options, values):
     msg = ""
 
     try:
-        msg += '\nTests for series {0} quantity "{1}"\n'.format(
-            options.series, options.quantity
-        )
+        msg += f'\nTests for series {options.series} quantity "{options.quantity}"\n'
 
         # find nsigma for each partial sum
         #   overall probability of partial sum failure is according to original nsigma
@@ -2638,8 +2582,8 @@ def check_values(options, values):
         x = longdouble(options.nsigma / sqrt(2.0))
         N = options.npartial_sums
         nsigma_partial = sqrt(2.0) * erfinv(erf(x) ** (1.0 / N))
-        vlog("overall full/partial test nsigma: {0}".format(options.nsigma), n=2)
-        vlog("adjusted per partial sum nsigma : {0}".format(nsigma_partial), n=2)
+        vlog(f"overall full/partial test nsigma: {options.nsigma}", n=2)
+        vlog(f"adjusted per partial sum nsigma : {nsigma_partial}", n=2)
 
         # read in the reference file
         ref_values, dnames = read_reference_file(options)
@@ -2668,7 +2612,7 @@ def check_values(options, values):
                 for i, v in enumerate(test_vals[eq:]):
                     if abs((v - ref_mean) / ref_mean) > ftol:
                         fixed_sum_success = False
-                        msg += "    {0} {1} {2}!={3}\n".format(dname, i, v, ref_mean)
+                        msg += f"    {dname} {i} {v}!={ref_mean}\n"
                     # end if
                 # end for
             # end for
@@ -2679,7 +2623,7 @@ def check_values(options, values):
             # end if
             vlog(fmsg, n=2)
             msg += "    " + fmsg + "\n"
-            msg += "    status of this test: {0}\n".format(passfail[fixed_sum_success])
+            msg += f"    status of this test: {passfail[fixed_sum_success]}\n"
             success &= fixed_sum_success
         # end if
 
@@ -2706,7 +2650,7 @@ def check_values(options, values):
                 comparisons = obj(E="LocalEnergy")
             else:
                 exit_fail(
-                    "unrecognized scalar file type: {0}".format(scalars.file_type)
+                    f"unrecognized scalar file type: {scalars.file_type}"
                 )
             # end if
             print("Checking block sums of hdf5 and dat files", comparisons.values())
@@ -2746,9 +2690,7 @@ def check_values(options, values):
 
                 if len(ed_vals) != len(sc_vals):
                     exit_fail(
-                        "energy density per block test cannot be completed\nnumber of energy density and scalar blocks do not match\nenergy density blocks: {0}\nscalar file blocks: {1}".format(
-                            len(ed_vals), len(sc_vals)
-                        )
+                        f"energy density per block test cannot be completed\nnumber of energy density and scalar blocks do not match\nenergy density blocks: {len(ed_vals)}\nscalar file blocks: {len(sc_vals)}"
                     )
                 # end if
 
@@ -2758,7 +2700,7 @@ def check_values(options, values):
                 for i, (edv, scv) in enumerate(zip(ed_vals, sc_vals)):
                     if abs((edv - scv) / scv) > ftol:
                         ed_success = False
-                        msg += "    {0} {1} {2}!={3}\n".format(k, i, edv, scv)
+                        msg += f"    {k} {i} {edv}!={scv}\n"
                     # end if
                 # end for
             # end for
@@ -2769,13 +2711,13 @@ def check_values(options, values):
             # end if
             vlog(fmsg, n=2)
             msg += "    " + fmsg + "\n"
-            msg += "    status of this test: {0}\n".format(passfail[ed_success])
+            msg += f"    status of this test: {passfail[ed_success]}\n"
             success &= ed_success
         # end if
 
         # function used immediately below to test a mean value vs reference
         def check_mean(label, mean_comp, error_comp, mean_ref, error_ref, nsigma):
-            msg = "\n  Testing quantity: {0}\n".format(label)
+            msg = f"\n  Testing quantity: {label}\n"
 
             # ensure error_ref is large enough for non-statistical quantities
             ctol = 1e-12
@@ -2788,27 +2730,19 @@ def check_values(options, values):
             delta = mean_comp - mean_ref
             delta_err = sqrt(error_comp**2 + error_ref**2)
 
-            msg += "    reference mean value     : {0: 12.8f}\n".format(mean_ref)
-            msg += "    reference error bar      : {0: 12.8f}\n".format(error_ref)
-            msg += "    computed  mean value     : {0: 12.8f}\n".format(mean_comp)
-            msg += "    computed  error bar      : {0: 12.8f}\n".format(error_comp)
-            msg += "    pass tolerance           : {0: 12.8f}  ({1: 12.8f} sigma)\n".format(
-                nsigma * error_ref, nsigma
-            )
+            msg += f"    reference mean value     : {mean_ref: 12.8f}\n"
+            msg += f"    reference error bar      : {error_ref: 12.8f}\n"
+            msg += f"    computed  mean value     : {mean_comp: 12.8f}\n"
+            msg += f"    computed  error bar      : {error_comp: 12.8f}\n"
+            msg += f"    pass tolerance           : {nsigma * error_ref: 12.8f}  ({nsigma: 12.8f} sigma)\n"
             if error_ref > 0.0:
-                msg += "    deviation from reference : {0: 12.8f}  ({1: 12.8f} sigma)\n".format(
-                    delta, delta / error_ref
-                )
+                msg += f"    deviation from reference : {delta: 12.8f}  ({delta / error_ref: 12.8f} sigma)\n"
             # end if
-            msg += "    error bar of deviation   : {0: 12.8f}\n".format(delta_err)
+            msg += f"    error bar of deviation   : {delta_err: 12.8f}\n"
             if error_ref > 0.0:
-                msg += "    significance probability : {0: 12.8f}  (gaussian statistics)\n".format(
-                    erf(abs(delta / error_ref) / math.sqrt(2.0))
-                )
+                msg += f"    significance probability : {erf(abs(delta / error_ref) / math.sqrt(2.0)): 12.8f}  (gaussian statistics)\n"
             # end if
-            msg += "    status of this test      :   {0}\n".format(
-                passfail[quant_success]
-            )
+            msg += f"    status of this test      :   {passfail[quant_success]}\n"
 
             return quant_success, msg
 
@@ -2820,23 +2754,23 @@ def check_values(options, values):
             vals = values[dname]
             ref_vals = ref_values[dname]
             # check full sum
-            vlog('checking full sum mean for "{0}"'.format(dname), n=2)
+            vlog(f'checking full sum mean for "{dname}"', n=2)
             qsuccess, qmsg = check_mean(
-                label="{0} full sum".format(dname),
+                label=f"{dname} full sum",
                 mean_comp=vals.full_mean,
                 error_comp=vals.full_error,
                 mean_ref=ref_vals.full_mean,
                 error_ref=ref_vals.full_error,
                 nsigma=options.nsigma,
             )
-            vlog("status for full sum: {0}".format(passfail[qsuccess]), n=3)
+            vlog(f"status for full sum: {passfail[qsuccess]}", n=3)
             msg += qmsg
             success &= qsuccess
             # check partial sums
-            vlog('checking partial sum means for "{0}"'.format(dname), n=2)
+            vlog(f'checking partial sum means for "{dname}"', n=2)
             for p in range(len(ref_vals.partial_mean)):
                 qsuccess, qmsg = check_mean(
-                    label="{0} partial sum {1}".format(dname, p),
+                    label=f"{dname} partial sum {p}",
                     mean_comp=vals.partial_mean[p],
                     error_comp=vals.partial_error[p],
                     mean_ref=ref_vals.partial_mean[p],
@@ -2844,15 +2778,15 @@ def check_values(options, values):
                     nsigma=nsigma_partial,
                 )
                 vlog(
-                    "status for partial sum {0}: {1}".format(p, passfail[qsuccess]), n=3
+                    f"status for partial sum {p}: {passfail[qsuccess]}", n=3
                 )
                 msg += qmsg
                 success &= qsuccess
             # end for
         # end for
-    except Exception as e:
-        import traceback
+    except Exception:
         import io
+        import traceback
 
         ftmp = io.StringIO()
         traceback.print_exc(file=ftmp)
@@ -2873,9 +2807,7 @@ def check_values_abs_err(options, values):
     msg = ""
 
     try:
-        msg += '\nTests for series {0} quantity "{1}"\n'.format(
-            options.series, options.quantity
-        )
+        msg += f'\nTests for series {options.series} quantity "{options.quantity}"\n'
         N = options.npartial_sums
 
         # read in the reference file
@@ -2883,21 +2815,17 @@ def check_values_abs_err(options, values):
 
         # function used immediately below to test a value vs reference
         def check_abs_err(label, value_comp, value_ref, abs_tol):
-            msg = "\n  Testing quantity: {0}\n".format(label)
+            msg = f"\n  Testing quantity: {label}\n"
 
             vdiff = float_diff(value_comp, value_ref, atol=abs_tol, rtol=0.0)
             quant_success = not vdiff
 
-            msg += "    reference value          : {0: 16.12f}\n".format(value_ref)
-            msg += "    computed  value          : {0: 16.12f}\n".format(value_comp)
-            msg += "    pass tolerance           : {0: 16.12f}\n".format(abs_tol)
-            msg += "    deviation from reference : {0: 16.12f}\n".format(
-                value_comp - value_ref
-            )
+            msg += f"    reference value          : {value_ref: 16.12f}\n"
+            msg += f"    computed  value          : {value_comp: 16.12f}\n"
+            msg += f"    pass tolerance           : {abs_tol: 16.12f}\n"
+            msg += f"    deviation from reference : {value_comp - value_ref: 16.12f}\n"
             # end if
-            msg += "    status of this test      :   {0}\n".format(
-                passfail[quant_success]
-            )
+            msg += f"    status of this test      :   {passfail[quant_success]}\n"
 
             return quant_success, msg
 
@@ -2909,35 +2837,35 @@ def check_values_abs_err(options, values):
             vals = values[dname]
             ref_vals = ref_values[dname]
             # check full sum
-            vlog('checking full sum absolute error for "{0}"'.format(dname), n=2)
+            vlog(f'checking full sum absolute error for "{dname}"', n=2)
             qsuccess, qmsg = check_abs_err(
-                label="{0} full sum".format(dname),
+                label=f"{dname} full sum",
                 value_comp=vals.full_mean,
                 value_ref=ref_vals.full_mean,
                 abs_tol=max(ref_vals.full_error, options.abs_err),
             )
-            vlog("status for full sum: {0}".format(passfail[qsuccess]), n=3)
+            vlog(f"status for full sum: {passfail[qsuccess]}", n=3)
             msg += qmsg
             success &= qsuccess
             # check partial sums
-            vlog('checking partial sum absolute errors for "{0}"'.format(dname), n=2)
+            vlog(f'checking partial sum absolute errors for "{dname}"', n=2)
             for p in range(len(ref_vals.partial_mean)):
                 qsuccess, qmsg = check_abs_err(
-                    label="{0} partial sum {1}".format(dname, p),
+                    label=f"{dname} partial sum {p}",
                     value_comp=vals.partial_mean[p],
                     value_ref=ref_vals.partial_mean[p],
                     abs_tol=max(ref_vals.partial_error[p], options.abs_err),
                 )
                 vlog(
-                    "status for partial sum {0}: {1}".format(p, passfail[qsuccess]), n=3
+                    f"status for partial sum {p}: {passfail[qsuccess]}", n=3
                 )
                 msg += qmsg
                 success &= qsuccess
             # end for
         # end for
-    except Exception as e:
-        import traceback
+    except Exception:
         import io
+        import traceback
 
         ftmp = io.StringIO()
         traceback.print_exc(file=ftmp)

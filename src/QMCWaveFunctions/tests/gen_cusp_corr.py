@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 # Cusp corrections for gaussian orbitals
 
@@ -7,12 +6,12 @@ from __future__ import print_function
 # Also qmc_algorithms/Wavefunctions/CuspCorrection.ipynb
 
 
-from sympy import *
-import gaussian_orbitals
-import read_qmcpack
 import math
-import numpy as np
 
+import gaussian_orbitals
+import numpy as np
+import read_qmcpack
+from sympy import *
 
 alpha = IndexedBase("alpha")
 rc = Symbol("r_c")

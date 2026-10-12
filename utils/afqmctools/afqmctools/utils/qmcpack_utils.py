@@ -1,5 +1,6 @@
-import h5py
 import xml.etree.ElementTree as et
+
+import h5py
 
 
 def write_xml_input(
@@ -64,34 +65,34 @@ def write_xml_input(
         nmo = dims[0]
         walker_type = walker_types[dims[3]]
 
-    base = """<simulation method="afqmc">
-    <project id="{:s}" series="{:d}"/>
-    """.format(id_name, series)
+    base = f"""<simulation method="afqmc">
+    <project id="{id_name:s}" series="{series:d}"/>
+    """
     if rng_seed is not None:
-        base += """<random seed="{:d}"/>""".format(rng_seed)
-    base += """<AFQMCInfo name="info0">
-        <parameter name="NMO">{:d}</parameter>
-        <parameter name="NAEA">{:d}</parameter>
-        <parameter name="NAEB">{:d}</parameter>
+        base += f"""<random seed="{rng_seed:d}"/>"""
+    base += f"""<AFQMCInfo name="info0">
+        <parameter name="NMO">{nmo:d}</parameter>
+        <parameter name="NAEA">{nalpha:d}</parameter>
+        <parameter name="NAEB">{nbeta:d}</parameter>
     </AFQMCInfo>
     <Hamiltonian name="ham0" info="info0">
       <parameter name="filetype">hdf5</parameter>
-      <parameter name="filename">{:s}</parameter>
+      <parameter name="filename">{hamil_file:s}</parameter>
     </Hamiltonian>
-    <Wavefunction name="wfn0" type="{:s}" info="info0">
+    <Wavefunction name="wfn0" type="{wfn_type:s}" info="info0">
       <parameter name="filetype">hdf5</parameter>
-      <parameter name="filename">{:s}</parameter>
+      <parameter name="filename">{wfn_file:s}</parameter>
       <parameter name="cutoff">1e-8</parameter>
     </Wavefunction>
     <WalkerSet name="wset0" type="shared">
-      <parameter name="walker_type">{:s}</parameter>
+      <parameter name="walker_type">{walker_type:s}</parameter>
     </WalkerSet>
     <Propagator name="prop0" info="info0">
       <parameter name="hybrid">yes</parameter>
     </Propagator>
     <execute wset="wset0" ham="ham0" wfn="wfn0" prop="prop0" info="info0">
    </execute>
-</simulation>""".format(nmo, nalpha, nbeta, hamil_file, wfn_type, wfn_file, walker_type)
+</simulation>"""
     basic = {
         "execute": {
             "ncores": 1,
@@ -123,7 +124,7 @@ def write_xml_input(
 
 def add_param(root, block, name, val):
     node = root.find(block)
-    assert node is not None, "{} not found.".format(block)
+    assert node is not None, f"{block} not found."
     param = et.Element("parameter", name=name)
     param.text = str(val)
     node.append(param)
@@ -135,7 +136,7 @@ def add_estimator(root, name, vals, block="execute", est_name="Estimator"):
         param = et.Element(est_name, name=name)
     else:
         param = et.Element(est_name)
-    base_name = "execute/Estimator[@name='{:s}']".format(name)
+    base_name = f"execute/Estimator[@name='{name:s}']"
     node.append(param)
     for k, v in vals.items():
         # Add list of observables

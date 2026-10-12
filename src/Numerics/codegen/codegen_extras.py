@@ -1,12 +1,18 @@
-from __future__ import print_function
 
 # Extensions to Sympy code generation to support C++ with templates and more
 
 # Used in gen_cubic_spline_solver.py
 
-from sympy import Set, Basic, Tuple, IndexedBase
-from sympy.codegen.ast import Assignment, Pointer, Node, Type
-from sympy.codegen.ast import String, Declaration, Variable
+from sympy import Basic, IndexedBase, Set, Tuple
+from sympy.codegen.ast import (
+    Assignment,
+    Declaration,
+    Node,
+    Pointer,
+    String,
+    Type,
+    Variable,
+)
 from sympy.printing.cxxcode import CXX11CodePrinter
 
 
@@ -46,7 +52,6 @@ def convert_eq_to_assignment(expr):
 class Reference(Pointer):
     """Represents a C++ reference"""
 
-    pass
 
 
 # Specify direct initialization (with parentheses)
@@ -57,7 +62,7 @@ class VariableWithInit(Variable):
 
 # Templated function definition
 class TemplateFunctionDefinition(Node):
-    __slots__ = ["return_type", "name", "parameters", "template_types", "body", "attrs"]
+    __slots__ = ["attrs", "body", "name", "parameters", "return_type", "template_types"]
     _construct_return_type = Type
     _construct_name = String
 
@@ -81,7 +86,7 @@ class TemplateFunctionDefinition(Node):
 # Code printer for extended features
 class ACodePrinter(CXX11CodePrinter):
     def __init__(self, settings=None):
-        super(ACodePrinter, self).__init__(settings=settings)
+        super().__init__(settings=settings)
 
     def _print_Assignment(self, expr):
         lhs = expr.lhs
@@ -89,16 +94,16 @@ class ACodePrinter(CXX11CodePrinter):
         if lhs.has(IndexedBase) or rhs.has(IndexedBase):
             return self._get_statement("%s = %s" % (self._print(lhs), self._print(rhs)))
         else:
-            return super(ACodePrinter, self)._print_Assignment(expr)
+            return super()._print_Assignment(expr)
 
     def _print_Pow(self, expr):
         if expr.exp == 2:
             e = self._print(expr.base)
             return "%s*%s" % (e, e)
-        return super(ACodePrinter, self)._print_Pow(expr)
+        return super()._print_Pow(expr)
 
     def _print_Symbol(self, expr):
-        name = super(ACodePrinter, self)._print_Symbol(expr)
+        name = super()._print_Symbol(expr)
         # Replace prime marker in symbol name with something acceptable in C++
         #  Maybe should generalize to a lookup from symbol name to code name?
         if "'" in name:
@@ -110,19 +115,13 @@ class ACodePrinter(CXX11CodePrinter):
         var = decl.variable
         val = var.value
         if isinstance(var, Reference):
-            result = "{t}& {s}".format(
-                t=self._print(var.type), s=self._print(var.symbol)
-            )
+            result = f"{self._print(var.type)}& {self._print(var.symbol)}"
             return result
         elif isinstance(var, VariableWithInit):
-            result = "{t} {s}({init})".format(
-                t=self._print(var.type),
-                s=self._print(var.symbol),
-                init=self._print(var.type_init),
-            )
+            result = f"{self._print(var.type)} {self._print(var.symbol)}({self._print(var.type_init)})"
             return result
         else:
-            return super(ACodePrinter, self)._print_Declaration(decl)
+            return super()._print_Declaration(decl)
 
     def _print_TemplateFunctionDefinition(self, expr):
         decl = "template<{template_args}>\n{ret_type} {name}({params}){body}".format(
@@ -150,25 +149,11 @@ class ACodePrinter(CXX11CodePrinter):
                 end_compare = "="
             if it.step > 0:
                 return (
-                    "for (auto {target} = {start}; {target} <{end_compare} {stop}; {target} += {step}) {{\n{body}\n}}"
-                ).format(
-                    target=target,
-                    start=it.start,
-                    stop=it.stop,
-                    step=it.step,
-                    body=body,
-                    end_compare=end_compare,
+                    f"for (auto {target} = {it.start}; {target} <{end_compare} {it.stop}; {target} += {it.step}) {{\n{body}\n}}"
                 )
             else:
                 return (
-                    "for (auto {target} = {start}; {target} >{end_compare} {stop}; {target} += {step}) {{\n{body}\n}}"
-                ).format(
-                    target=target,
-                    start=it.start,
-                    stop=it.stop,
-                    step=it.step,
-                    body=body,
-                    end_compare=end_compare,
+                    f"for (auto {target} = {it.start}; {target} >{end_compare} {it.stop}; {target} += {it.step}) {{\n{body}\n}}"
                 )
         else:
-            return super(ACodePrinter, self)._print_For(expr)
+            return super()._print_For(expr)

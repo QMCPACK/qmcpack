@@ -1,7 +1,5 @@
+
 import lldb
-import commands
-import optparse
-import shlex
 
 
 def __lldb_init_module(debugger, internal_dict):
@@ -31,5 +29,5 @@ def walker_property_print(valobj, internal_dict):
     ]
     str_out = "\nWalkerProperties:\n"
     for n, v in zip(names, values):
-        str_out += "{} {:4.12f}\n".format(n, v)
-    return "{}".format(str_out)
+        str_out += f"{n} {v:4.12f}\n"
+    return f"{str_out}"

@@ -1,9 +1,9 @@
 #! /usr/bin/env python3
-import numpy
-import h5py
-from pyscf.pbc import gto, scf, dft, df
-from pyscf import __version__
 import datetime
+
+import numpy
+from pyscf import __version__
+from pyscf.pbc import gto, scf
 
 # Author: Chandler Bennett
 # This file is modified from tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx/dft-inputs/Carbon1x1x1-tw1.py

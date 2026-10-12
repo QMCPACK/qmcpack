@@ -11,8 +11,8 @@
 
 # This file implements Eshdf bindings (Eshdf.py) for reading GPAW orbitals
 
-from numpy import array, pi, dot, real, imag, concatenate, unique, zeros
 from Eshdf import EshdfFilePw
+from numpy import array, concatenate, dot, imag, pi, real, unique, zeros
 
 
 # Calculate vector norm of 2-float representation of a complex vector
@@ -75,7 +75,7 @@ class EshdfFilePwGpaw(EshdfFilePw):
             if ".gpw" in infile:
                 self.load_gpaw_restart(infile, **kwargs)
             else:
-                print("Unsupported file {} not loaded.".format(infile))
+                print(f"Unsupported file {infile} not loaded.")
             # end if
         elif calc is not None and atoms is not None:
             self.load_gpaw_calc(calc, atoms)
@@ -98,9 +98,7 @@ class EshdfFilePwGpaw(EshdfFilePw):
             wfs = calc.wfs
         except:
             print(
-                "ERROR: No wavefunctions found in the GPAW restart file {}".format(
-                    filename
-                )
+                f"ERROR: No wavefunctions found in the GPAW restart file {filename}"
             )
             print("Make sure to write the GPAW file with mode='all'!")
             raise NoWavefunctionFound
@@ -130,9 +128,7 @@ class EshdfFilePwGpaw(EshdfFilePw):
             self._load_electrons(calc, atoms)
         else:
             print(
-                "Could not load data from GPAW Calculator in mode={}. Only pw mode is currently supported.".format(
-                    mode
-                )
+                f"Could not load data from GPAW Calculator in mode={mode}. Only pw mode is currently supported."
             )
         # end if
         self.loaded = True
@@ -141,11 +137,12 @@ class EshdfFilePwGpaw(EshdfFilePw):
 
     # GPAW: load "application" data
     def _load_application(self):
-        from gpaw import __version__ as gpaw_version
         from re import sub
 
+        from gpaw import __version__ as gpaw_version
+
         self.application = "gpaw"
-        self.app_version = sub("\D", " ", gpaw_version).split()[:3]
+        self.app_version = sub(r"\D", " ", gpaw_version).split()[:3]
 
     # end def
 

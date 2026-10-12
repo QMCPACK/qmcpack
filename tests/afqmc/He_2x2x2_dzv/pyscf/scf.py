@@ -1,12 +1,10 @@
 #! /usr/bin/env python3
 
+import h5py
 import numpy
 from pyscf.pbc import gto, scf
-from pyscf.pbc import tools as pbctools
-import h5py
 from pyscftools.integrals_from_chkfile import eri_to_h5
 from pyscftools.integrals_from_chkfile_kpfftdf import eri_to_h5, getOrthoAORotation
-
 
 alat0 = 3.6
 

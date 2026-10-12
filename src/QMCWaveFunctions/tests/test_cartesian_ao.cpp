@@ -28,7 +28,7 @@ void test_cartesian_ao()
 
   SECTION(section_name.str())
   {
-    Communicate* c = OHMMS::Controller;
+    Communicate& c(*OHMMS::Controller);
 
     const SimulationCell simulation_cell;
     auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -95,7 +95,7 @@ void test_dirac_ao()
 
   SECTION(section_name.str())
   {
-    Communicate* c = OHMMS::Controller;
+    Communicate& c(*OHMMS::Controller);
 
     const SimulationCell simulation_cell;
     auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);

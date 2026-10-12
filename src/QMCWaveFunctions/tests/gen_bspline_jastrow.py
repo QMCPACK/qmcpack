@@ -2,9 +2,10 @@
 
 # Cut and paste the relevant part of the output into test_bspline_jastrow.cpp
 
-from sympy import *
 from collections import defaultdict
+
 import numpy as np
+from sympy import *
 
 
 def put_variable_on_lhs(cond, var_name):
@@ -31,16 +32,10 @@ def to_interval(ival, var_name):
     if isinstance(ival, And):
         for rel in ival.args:
             rel = put_variable_on_lhs(rel, var_name)
-            if isinstance(rel, StrictGreaterThan):
-                min_val = rel.args[1]
-                # lower_open = True
-            elif isinstance(rel, GreaterThan):
+            if isinstance(rel, StrictGreaterThan) or isinstance(rel, GreaterThan):
                 min_val = rel.args[1]
                 # lower_open = False
-            elif isinstance(rel, StrictLessThan):
-                max_val = rel.args[1]
-                # upper_open = True
-            elif isinstance(rel, LessThan):
+            elif isinstance(rel, StrictLessThan) or isinstance(rel, LessThan):
                 max_val = rel.args[1]
                 # upper_open = False
             else:

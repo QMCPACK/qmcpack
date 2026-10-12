@@ -1,9 +1,9 @@
 #! /usr/bin/env python3
 
-import xml.etree.ElementTree as ET
+import os
 import os.path
 import sys
-import os
+import xml.etree.ElementTree as ET
 
 # Read timing information from the .info.xml file and output highlights
 # in a form that can be read by CDash.
@@ -61,7 +61,7 @@ def get_info_file(fname):
     info_fname = ""
     try:
         tree = ET.parse(fname)
-    except IOError as e:
+    except OSError as e:
         print("Assuming xml input file, unable to open:", fname)
         print("  Error ", e)
         return None

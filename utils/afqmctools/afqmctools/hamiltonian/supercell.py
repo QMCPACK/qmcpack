@@ -1,17 +1,13 @@
-import time
-import os
-import sys
 import math
+import sys
+import time
+
 import h5py
 import numpy
-from functools import reduce
-from pyscf import lib
-from pyscf.pbc import tools, df
-from mpi4py import MPI
-from afqmctools.utils.parallel import fair_share, bisect
-from afqmctools.utils.pyscf_utils import load_from_pyscf_chk
+from pyscf.pbc import df, tools
 
 from afqmctools.utils.io import format_fixed_width_floats, format_fixed_width_strings
+from afqmctools.utils.parallel import bisect, fair_share
 
 
 def write_hamil_supercell(
@@ -68,7 +64,7 @@ def write_hamil_supercell(
 
     if rank == 0 and verbose:
         print(
-            " # Time to reach cholesky: {:.2e} s".format(time.process_time()() - tstart)
+            f" # Time to reach cholesky: {time.process_time()() - tstart:.2e} s"
         )
         sys.stdout.flush()
     tstart = time.process_time()()
@@ -77,7 +73,7 @@ def write_hamil_supercell(
     part = Partition(comm, maxvecs, nmo_tot, nmo_max, nkpts)
     if comm.rank == 0 and verbose:
         print(
-            " # Each kpoint is distributed accross {} mpi tasks.".format(part.nproc_pk)
+            f" # Each kpoint is distributed accross {part.nproc_pk} mpi tasks."
         )
         sys.stdout.flush()
     maxvecs = part.maxvecs
@@ -85,7 +81,7 @@ def write_hamil_supercell(
     gmap, Qi, ngs = generate_grid_shifts(cell)
     if rank == 0 and verbose:
         app_mem = (nkpts * nkpts * nmo_max * nmo_max * 2 * ngs * 16) / 1024.0**3
-        print(" # Approx. total memory required: {:.2e} GB.".format(app_mem))
+        print(f" # Approx. total memory required: {app_mem:.2e} GB.")
         sys.stdout.flush()
 
     if rank == 0 and verbose:
@@ -97,7 +93,7 @@ def write_hamil_supercell(
     Xaoik, Xaolj = gen_orbital_products(cell, mydf, X, nmo_pk, ngs, part, kpts, nmo_max)
     t1 = time.process_time()()
     if part.rank == 0 and verbose:
-        print(" # Time to generate orbital products: {:.2e} s".format(t1 - t0))
+        print(f" # Time to generate orbital products: {t1 - t0:.2e} s")
         sys.stdout.flush()
     # Finally perform Cholesky decomposition.
     solver = Cholesky(part, kconserv, gtol_chol=chol_cut)
@@ -179,13 +175,13 @@ def write_rhoG_supercell(
     part = Partition(comm, 0, nmo_tot, nmo_max, nkpts)
     if comm.rank == 0 and verbose:
         print(
-            " # Each kpoint is distributed accross {} mpi tasks.".format(part.nproc_pk)
+            f" # Each kpoint is distributed accross {part.nproc_pk} mpi tasks."
         )
         sys.stdout.flush()
     # Set up mapping for shifted FFT grid.
     if rank == 0 and verbose:
         app_mem = (nmo_max * nmo_max * ngs * 16) / 1024.0**3
-        print(" # Approx. local memory required: {:.2e} GB.".format(app_mem))
+        print(f" # Approx. local memory required: {app_mem:.2e} GB.")
         sys.stdout.flush()
 
     if rank == 0 and verbose:
@@ -199,8 +195,7 @@ def write_rhoG_supercell(
         iN = part.ijN // nmo_pk[k2]
         if part.ijN % nmo_pk[k2] != 0:
             iN += 1
-        if iN > nmo_pk[k1]:
-            iN = nmo_pk[k1]
+        iN = min(iN, nmo_pk[k1])
         pij = part.ij0 % nmo_pk[k2]
         n_ = min(part.ijN, nmo_pk[k1] * nmo_pk[k2]) - part.ij0
         X_t = X[k1][:, i0:iN].copy()
@@ -236,7 +231,7 @@ def write_one_body(hcore, X, nkpts, nmo_pk, nmo_max, ik2n, h5grp, gtol=1e-8):
         )
         ij = 0
         for i in range(nmo_pk[ki]):
-            for j in range(0, i + 1):
+            for j in range(i + 1):
                 h1e_X[ki, ij] = h1[i, j]
                 ij += 1
         h1 = None
@@ -367,9 +362,7 @@ def write_info(
         madelung = tools.pbc.madelung(cell, kpts)
         e0 += madelung * nelectron * -0.5
         print(
-            " # Adding ewald correction to the energy: {:13.8e}".format(
-                -0.5 * madelung * nelectron
-            )
+            f" # Adding ewald correction to the energy: {-0.5 * madelung * nelectron:13.8e}"
         )
     h5grp.create_dataset("Energies", data=numpy.array([e0, 0]))
 
@@ -405,7 +398,7 @@ def generate_grid_shifts(cell):
     return gmap, Qi, ngs
 
 
-class Partition(object):
+class Partition:
     def __init__(self, comm, maxvecs, nmo_tot, nmo_max, nkpts, kp_sym=False):
         # to do:
         # keep usage of n2k1,n2k2 but assign entire rows of the (k1,k2) matrix
@@ -455,7 +448,7 @@ class Partition(object):
                 cnt += 1
 
 
-class PartitionOld(object):
+class PartitionOld:
     def __init__(self, comm, maxvecs, nmo_tot, nmo_max, nkpts):
         # to do:
         # keep usage of n2k1,n2k2 but assign entire rows of the (k1,k2) matrix
@@ -482,9 +475,7 @@ class PartitionOld(object):
             self.nproc_pk = comm.size // nkpts
             if comm.rank == 0:
                 print(
-                    " # Each kpoint is distributed accross {} mpi tasks.".format(
-                        self.nproc_pk
-                    )
+                    f" # Each kpoint is distributed accross {self.nproc_pk} mpi tasks."
                 )
                 sys.stdout.flush()
             self.mykpt = comm.rank // self.nproc_pk
@@ -513,7 +504,7 @@ def gen_orbital_products(cell, mydf, X, nmo_pk, ngs, part, kpts, nmo_max):
         Xaolj = numpy.zeros((part.nkk, ngs, part.nij), dtype=numpy.complex128)
     except:
         mem = part.nkk * ngs * part.nij * 16 * 2 / 1024.0**3
-        print(" # Problems allocating memory. Trying to allocate: {} GB.".format(mem))
+        print(f" # Problems allocating memory. Trying to allocate: {mem} GB.")
         sys.exit()
 
     for k in range(part.nkk):
@@ -523,8 +514,7 @@ def gen_orbital_products(cell, mydf, X, nmo_pk, ngs, part, kpts, nmo_max):
         iN = part.ijN // nmo_pk[k2]
         if part.ijN % nmo_pk[k2] != 0:
             iN += 1
-        if iN > nmo_pk[k1]:
-            iN = nmo_pk[k1]
+        iN = min(iN, nmo_pk[k1])
         pij = part.ij0 % nmo_pk[k2]
         n_ = min(part.ijN, nmo_pk[k1] * nmo_pk[k2]) - part.ij0
         X_t = X[k1][:, i0:iN].copy()
@@ -539,7 +529,7 @@ def gen_orbital_products(cell, mydf, X, nmo_pk, ngs, part, kpts, nmo_max):
     return Xaoik, Xaolj
 
 
-class Cholesky(object):
+class Cholesky:
     def __init__(self, part, kconserv, gtol_chol=1e-5, verbose=True):
         try:
             self.maxres_buff = numpy.zeros(5 * part.size, dtype=numpy.float64)
@@ -583,7 +573,7 @@ class Cholesky(object):
                     j = (ij + part.ij0) % part.nmo_pk[k2]
                     print(
                         " # ERROR: Negative or complex diagonal term: "
-                        "{} {} {} {} {:13.8e}".format(k1, i, k2, j, intg)
+                        f"{k1} {i} {k2} {j} {intg:13.8e}"
                     )
                 residual[k, ij] = intg.real
                 if abs(intg) > maxv:
@@ -606,9 +596,7 @@ class Cholesky(object):
         t1 = time.process_time()()
         if part.rank == 0 and self.verbose:
             print(
-                " # Time to generate diagonal (initial residual): {:.2e}".format(
-                    t1 - t0
-                )
+                f" # Time to generate diagonal (initial residual): {t1 - t0:.2e}"
             )
             sys.stdout.flush()
         comm.Allgather(
@@ -710,7 +698,7 @@ class Cholesky(object):
                                 ip = ii
                                 break
                         if ip < 0:
-                            print(" # Could not find Q: {} {} ".format(q1, Qi))
+                            print(f" # Could not find Q: {q1} {Qi} ")
                             sys.exit()
                         for ix in range(ngs):
                             Xkl[ix] = Xkl0[gmap[ip, ix]]
@@ -763,7 +751,7 @@ class Cholesky(object):
                 # print and evaluate stop condition
                 output = [vmax, t4 - t0, t3 - t2, t2 - t1, t1 - t0]
                 if self.verbose:
-                    print("{:17d} ".format(numv) + format_fixed_width_floats(output))
+                    print(f"{numv:17d} " + format_fixed_width_floats(output))
                 # print("{:8d}  {:13.8e}".format(numv, vmax))
                 tstart = time.process_time()()
 
@@ -799,7 +787,7 @@ def write_h1(h5grp, intgs, npk, ik2n, gtol=1e-6):
     for ki in range(nkpts):
         ij = 0
         for i in range(npk[ki]):
-            for j in range(0, i + 1):
+            for j in range(i + 1):
                 if abs(intgs[ki, ij]) > gtol:
                     cnt += 1
                 ij += 1
@@ -811,7 +799,7 @@ def write_h1(h5grp, intgs, npk, ik2n, gtol=1e-6):
         for ki in range(nkpts):
             ij = 0
             for i in range(npk[ki]):
-                for j in range(0, i + 1):
+                for j in range(i + 1):
                     if abs(intgs[ki, ij]) > gtol:
                         H1_indx[2 * cnt] = ik2n[i, ki]
                         H1_indx[2 * cnt + 1] = ik2n[j, ki]
@@ -825,7 +813,7 @@ def write_h1(h5grp, intgs, npk, ik2n, gtol=1e-6):
         for ki in range(nkpts):
             ij = 0
             for i in range(npk[ki]):
-                for j in range(0, i + 1):
+                for j in range(i + 1):
                     if abs(intgs[ki, ij]) > gtol:
                         H1_indx[2 * cnt] = ik2n[i, ki]
                         H1[cnt] = intgs[ki, ij]

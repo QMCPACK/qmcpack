@@ -6,17 +6,10 @@ Methods implemented in finite-size system can be directly used here without
 any modification.
 """
 
-import numpy as np
-from pyscf import lib
-from pyscf.pbc import gto, scf, dft
-from pyscf import gto as Mgto
-from pyscf.pbc import df
-from pyscf.pbc import ao2mo
-from pyscf.pbc import tools
-from pyscf.pbc.tools.pbc import super_cell
-from functools import reduce
-import scipy.linalg as la
 
+import numpy as np
+from pyscf import gto as Mgto
+from pyscf.pbc import df, gto, scf
 
 kmesh = [1, 1, 1]
 

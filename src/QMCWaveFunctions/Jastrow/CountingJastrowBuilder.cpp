@@ -17,7 +17,7 @@
 
 namespace qmcplusplus
 {
-CountingJastrowBuilder::CountingJastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source)
+CountingJastrowBuilder::CountingJastrowBuilder(Communicate& comm, ParticleSet& target, ParticleSet& source)
     : WaveFunctionComponentBuilder(comm, target, "CountingJastrowBuilder"), SourcePtcl(&source)
 {
   NameOpt   = "0";
@@ -26,7 +26,7 @@ CountingJastrowBuilder::CountingJastrowBuilder(Communicate* comm, ParticleSet& t
   SourceOpt = SourcePtcl->getName();
 }
 
-CountingJastrowBuilder::CountingJastrowBuilder(Communicate* comm, ParticleSet& target)
+CountingJastrowBuilder::CountingJastrowBuilder(Communicate& comm, ParticleSet& target)
     : WaveFunctionComponentBuilder(comm, target, "CountingJastrowBuilder")
 {
   NameOpt    = "0";

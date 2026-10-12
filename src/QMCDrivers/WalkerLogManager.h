@@ -47,7 +47,7 @@ class WalkerLogManager
 private:
   /// file prefix for the current driver
   std::string file_root;
-  Communicate* communicator;
+  Communicate& communicator;
   /// output state
   WalkerLogState state;
   /// access to HDF file
@@ -103,7 +103,7 @@ private:
   static TimerNameList_t<Timer> create_names(const std::string_view& my_name);
 
 public:
-  WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate* comm = 0);
+  WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate& comm);
   WalkerLogManager& operator=(WalkerLogManager&& other) = default;
   WalkerLogManager(WalkerLogManager&& other)            = default;
   /// create a WalkerLogCollector

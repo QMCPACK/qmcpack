@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 import sys
-import os
+
 import h5py
 import numpy as np
 from check_properties_h5dat import read

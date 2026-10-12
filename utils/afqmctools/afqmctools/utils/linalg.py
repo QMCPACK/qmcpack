@@ -1,6 +1,8 @@
-import numpy
 import time
+
+import numpy
 from pyscf import lib
+
 from afqmctools.utils.io import (
     format_fixed_width_floats,
     format_fixed_width_strings,
@@ -96,7 +98,7 @@ def modified_cholesky_direct(M, tol=1e-5, verbose=False, cmax=20):
         header = ["iteration", "max_residual", "time"]
         print(format_fixed_width_strings(header))
         init = [delta_max]
-        print("{:17d} ".format(0) + format_fixed_width_floats(init))
+        print(f"{0:17d} " + format_fixed_width_floats(init))
         # print ("# iteration %d: delta_max = %f"%(0, delta_max.real))
     # Store for current approximation to input matrix.
     Mapprox = numpy.zeros(M.shape[0], dtype=M.dtype)
@@ -116,6 +118,6 @@ def modified_cholesky_direct(M, tol=1e-5, verbose=False, cmax=20):
         if verbose:
             step_time = time.time() - start
             out = [delta_max, step_time]
-            print("{:17d} ".format(nchol) + format_fixed_width_floats(out))
+            print(f"{nchol:17d} " + format_fixed_width_floats(out))
 
     return numpy.array(chol_vecs[:nchol])

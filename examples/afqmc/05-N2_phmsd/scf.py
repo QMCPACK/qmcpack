@@ -1,12 +1,13 @@
 #! /usr/bin/env python3
 
 import sys
+
 import h5py
 import numpy
-from pyscf import gto, scf, mcscf, fci, lib
-from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
 from afqmctools.hamiltonian.mol import write_hamil_mol
+from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
 from afqmctools.wavefunction.mol import write_qmcpack_wfn
+from pyscf import fci, gto, mcscf, scf
 
 
 def gen_wavefunction_and_hamil(tol=0.02):

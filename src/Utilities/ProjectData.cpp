@@ -42,7 +42,7 @@ ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion d
       driver_version_(driver_version),
       runtime_options_(RuntimeOptions())
 {
-  my_comm_ = OHMMS::Controller;
+  my_comm_ = OHMMS::Controller.get();
   if (title_.empty())
     title_ = getDateAndTime("%Y%m%dT%H%M");
 }

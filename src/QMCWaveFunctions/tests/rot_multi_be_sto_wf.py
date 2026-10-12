@@ -2,13 +2,10 @@
 # for a wavefunction with STO Be orbitals, two determinants, and orbital rotation
 
 import autograd.numpy as np
-from autograd import hessian, grad
-
-from run_qmc import run_qmc
 import read_qmcpack
+from autograd import grad, hessian
+from run_qmc import run_qmc
 from slater_orbitals import STO
-
-import scipy.linalg
 
 
 # From construct_rot.py
@@ -170,7 +167,7 @@ def gen_point_derivatives():
     print("dlogpsi = ", dp / p)
     dlogpsi = dp / p
     for i in range(dlogpsi.shape[0]):
-        print("    CHECK(dlogpsi[{}] == ValueApprox({}));".format(i, dlogpsi[i]))
+        print(f"    CHECK(dlogpsi[{i}] == ValueApprox({dlogpsi[i]}));")
 
     en = wf.local_energy(r, VP)
     print("en = ", en)
@@ -179,7 +176,7 @@ def gen_point_derivatives():
     print("den = ", den)
 
     for i in range(den.shape[0]):
-        print("   CHECK(dhpsioverpsi[{}] == ValueApprox({}));".format(i, den[i]))
+        print(f"   CHECK(dhpsioverpsi[{i}] == ValueApprox({den[i]}));")
 
 
 def run():

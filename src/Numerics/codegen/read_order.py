@@ -162,8 +162,7 @@ def read_order(fname):
             if not line:
                 continue
             order = line[9:16].strip()
-            if order.startswith("1"):
-                order = order[1:]
+            order = order.removeprefix("1")
             if order not in already_seen:
                 x, y, z = count_vals(order.strip())
                 order_list.append((x, y, z, order.strip()))

@@ -30,7 +30,7 @@
 
 namespace qmcplusplus
 {
-ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
+ParticleSetPool::ParticleSetPool(Communicate& c, const char* aname)
     : MPIObjectBase(c), simulation_cell_(std::make_unique<SimulationCell>())
 {}
 
@@ -86,7 +86,7 @@ bool ParticleSetPool::readSimulationCellXML(xmlNodePtr cur)
   }
   catch (const UniformCommunicateError& ue)
   {
-    myComm->barrier_and_abort(ue.what());
+    myComm.barrier_and_abort(ue.what());
   }
 
   if (lattice_defined)
@@ -153,7 +153,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     }
     catch (const UniformCommunicateError& ue)
     {
-      myComm->barrier_and_abort(ue.what());
+      myComm.barrier_and_abort(ue.what());
     }
 
     //if random_source is given, create a node <init target="" soruce=""/>

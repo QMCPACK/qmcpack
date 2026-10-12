@@ -33,12 +33,12 @@
 using namespace std;
 using namespace qmcplusplus;
 
-void setWalkerOffsets(MCWalkerConfiguration& W, Communicate* myComm)
+void setWalkerOffsets(MCWalkerConfiguration& W, Communicate& myComm)
 {
-  std::vector<int> nw(myComm->size(), 0), nwoff(myComm->size() + 1, 0);
-  nw[myComm->rank()] = W.getActiveWalkers();
-  myComm->allreduce(nw);
-  for (int ip = 0; ip < myComm->size(); ip++)
+  std::vector<int> nw(myComm.size(), 0), nwoff(myComm.size() + 1, 0);
+  nw[myComm.rank()] = W.getActiveWalkers();
+  myComm.allreduce(nw);
+  for (int ip = 0; ip < myComm.size(); ip++)
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
   W.setWalkerOffsets(nwoff);
 }
@@ -47,10 +47,10 @@ int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
-  OHMMS::Controller = new Communicate(env.world());
+  OHMMS::Controller = std::make_unique<Communicate>(env.world());
 #endif
 
-  Communicate* myComm = OHMMS::Controller;
+  Communicate& myComm = *OHMMS::Controller;
 
   using RealType         = QMCTraits::RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
@@ -83,6 +83,7 @@ int main(int argc, char** argv)
     {
     case 'h':
       printf("[-g \"n0 n1 n2\"]\n");
+      OHMMS::Controller.reset();
       return 1;
     case 'g': //tiling1 tiling2 tiling3
       sscanf(optarg, "%d %d %d", &na, &nb, &nc);
@@ -107,21 +108,21 @@ int main(int argc, char** argv)
     }
   }
 
-  myComm->setName(directory + "restart");
-  myComm->barrier();
+  myComm.setName(directory + "restart");
+  myComm.barrier();
 
   // set the number of walkers equal to the threads.
   if (!AverageWalkersPerNode)
     AverageWalkersPerNode = NumThreads;
   //set nwtot, to be random
-  nwtot = std::max(1, AverageWalkersPerNode + myComm->rank() % 5 - 2);
+  nwtot = std::max(1, AverageWalkersPerNode + myComm.rank() % 5 - 2);
   FairDivideLow(nwtot, NumThreads, wPerNode);
 
   //Random.init(iseed);
   Tensor<int, 3> tmat(na, 0, 0, 0, nb, 0, 0, 0, nc);
 
   //turn off output
-  if (myComm->rank())
+  if (myComm.rank())
     outputManager.shutOff();
 
   double t0 = 0.0, t1 = 0.0;
@@ -174,10 +175,10 @@ int main(int argc, char** argv)
   Timer h5clock;                              //timer for the program
 
   // dump random seeds
-  myComm->barrier();
+  myComm.barrier();
   h5clock.restart(); //start timer
   RandomNumberControl::write(directory + "restart", myComm);
-  myComm->barrier();
+  myComm.barrier();
   h5write += h5clock.elapsed(); //store timer
 
   // flush random seeds to zero
@@ -190,10 +191,10 @@ int main(int argc, char** argv)
   Random.load(vt);
 
   // load random seeds
-  myComm->barrier();
+  myComm.barrier();
   h5clock.restart(); //start timer
   RandomNumberControl::read(directory + "restart", myComm);
-  myComm->barrier();
+  myComm.barrier();
   h5read += h5clock.elapsed(); //store timer
 
   // validate random seeds
@@ -213,9 +214,9 @@ int main(int argc, char** argv)
     if (vt[i] != mt[i])
       mismatch_count++;
 
-  myComm->allreduce(mismatch_count);
+  myComm.allreduce(mismatch_count);
 
-  if (!myComm->rank())
+  if (!myComm.rank())
   {
     if (mismatch_count != 0)
       std::cout << "Fail: random seeds mismatch between write and read!\n"
@@ -226,12 +227,12 @@ int main(int argc, char** argv)
 
   // dump electron coordinates.
   HDFWalkerOutput wOut(elecs_with_walkers.getTotalNum(), directory + "restart", myComm);
-  myComm->barrier();
+  myComm.barrier();
   h5clock.restart(); //start timer
   wOut.dump(elecs_with_walkers, 1);
-  myComm->barrier();
+  myComm.barrier();
   walkerWrite += h5clock.elapsed(); //store timer
-  if (!myComm->rank())
+  if (!myComm.rank())
     std::cout << "Walkers are dumped!\n";
 
   // save walkers before destroying them
@@ -255,14 +256,14 @@ int main(int argc, char** argv)
 
   HDFVersion in_version(0, 4);
   HDFWalkerInput_0_4 wIn(elecs_with_walkers, elecs_with_walkers.getTotalNum(), myComm, in_version);
-  myComm->barrier();
+  myComm.barrier();
   h5clock.restart(); //start timer
   wIn.put(restart_leaf);
-  myComm->barrier();
+  myComm.barrier();
   walkerRead += h5clock.elapsed(); //store time spent
 
   if (saved_walkers.size() != elecs_with_walkers.getActiveWalkers())
-    std::cout << "Fail: Rank " << myComm->rank() << " had " << saved_walkers.size() << "  walkers but loaded only "
+    std::cout << "Fail: Rank " << myComm.rank() << " had " << saved_walkers.size() << "  walkers but loaded only "
               << elecs_with_walkers.getActiveWalkers() << " walkers from file!" << std::endl;
 
   mismatch_count = 0;
@@ -272,9 +273,9 @@ int main(int argc, char** argv)
     if (Dot(saved_walkers[wi].R, saved_walkers[wi].R) > std::numeric_limits<RealType>::epsilon())
       mismatch_count++;
   }
-  myComm->allreduce(mismatch_count);
+  myComm.allreduce(mismatch_count);
 
-  if (!myComm->rank())
+  if (!myComm.rank())
   {
     if (mismatch_count != 0)
       std::cout << "Fail: electron coordinates mismatch between write and read!\n"
@@ -285,12 +286,12 @@ int main(int argc, char** argv)
 
   //print out hdf5 R/W times
   TinyVector<double, 4> timers(h5read, h5write, walkerRead, walkerWrite);
-  myComm->reduce(timers);
-  h5read      = timers[0] / myComm->size();
-  h5write     = timers[1] / myComm->size();
-  walkerRead  = timers[2] / myComm->size();
-  walkerWrite = timers[3] / myComm->size();
-  if (myComm->rank() == 0)
+  myComm.reduce(timers);
+  h5read      = timers[0] / myComm.size();
+  h5write     = timers[1] / myComm.size();
+  walkerRead  = timers[2] / myComm.size();
+  walkerWrite = timers[3] / myComm.size();
+  if (myComm.rank() == 0)
   {
     cout << "\nTotal time of writing random seeds to HDF5 file: " << setprecision(6) << h5write << "\n";
     cout << "\nTotal time of reading random seeds in HDF5 file: " << setprecision(6) << h5read << "\n";
@@ -298,27 +299,27 @@ int main(int argc, char** argv)
     cout << "\nTotal time of reading walkers in HDF5 file: " << setprecision(6) << walkerRead << "\n";
   }
 
-  if (myComm->size() > 1)
+  if (myComm.size() > 1)
   {
-    Communicate* subComm = new Communicate(*myComm, 2);
-    subComm->setName("restart2");
+    Communicate subComm(myComm, 2);
+    subComm.setName("restart2");
 
-    if (subComm->getGroupID() == 0)
+    if (subComm.getGroupID() == 0)
     {
       elecs_with_walkers.destroyWalkers(elecs_with_walkers.begin(), elecs_with_walkers.end());
       HDFWalkerInput_0_4 subwIn(elecs_with_walkers, elecs_with_walkers.getTotalNum(), subComm, in_version);
       subwIn.put(restart_leaf);
-      subComm->barrier();
-      if (!subComm->rank())
+      subComm.barrier();
+      if (!subComm.rank())
         std::cout << "Walkers are loaded again by the subgroup!\n";
       setWalkerOffsets(elecs_with_walkers, subComm);
       HDFWalkerOutput subwOut(elecs_with_walkers.getTotalNum(), "XXXX", subComm);
       subwOut.dump(elecs_with_walkers, 1);
-      if (!subComm->rank())
+      if (!subComm.rank())
         std::cout << "Walkers are dumped again by the subgroup!\n";
     }
-    delete subComm;
   }
 
+  OHMMS::Controller.reset();
   return 0;
 }

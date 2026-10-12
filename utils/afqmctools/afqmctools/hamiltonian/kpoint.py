@@ -1,19 +1,19 @@
-import h5py
 import math
-import numpy
+import os
 import sys
 import time
-import os
-from pyscf import lib
-from pyscf.pbc import tools, df
-from afqmctools.hamiltonian.supercell import generate_grid_shifts, Partition
-from afqmctools.utils.parallel import bisect, fair_share
+
+import h5py
+import numpy
+from pyscf.pbc import df, tools
+
+from afqmctools.hamiltonian.supercell import Partition, generate_grid_shifts
 from afqmctools.utils.io import (
     format_fixed_width_floats,
     format_fixed_width_strings,
     to_qmcpack_complex,
 )
-from afqmctools.utils.pyscf_utils import load_from_pyscf_chk
+from afqmctools.utils.parallel import bisect, fair_share
 
 
 def alloc_helper(shape, dtype=numpy.float64, name="array", verbose=False):
@@ -37,12 +37,12 @@ def alloc_helper(shape, dtype=numpy.float64, name="array", verbose=False):
     """
     mem = numpy.prod(shape) * numpy.dtype(dtype).itemsize / (1024.0**3)
     if verbose:
-        print(" # Allocating array: {:s} with size {:.2e} GB".format(name, mem))
-        print(" # Shape {}.".format(shape))
+        print(f" # Allocating array: {name:s} with size {mem:.2e} GB")
+        print(f" # Shape {shape}.")
     try:
         return numpy.zeros(shape, dtype=dtype)
     except MemoryError:
-        print(" # Problems allocating array: {:s} with size {:.2e}".format(name, mem))
+        print(f" # Problems allocating array: {name:s} with size {mem:.2e}")
         sys.exit()
 
 
@@ -98,9 +98,7 @@ def write_hamil_kpoints(
 
     if comm.rank == 0 and verbose:
         print(
-            " # Time to reach Cholesky: {:13.8e} s.".format(
-                time.process_time()() - tstart
-            )
+            f" # Time to reach Cholesky: {time.process_time()() - tstart:13.8e} s."
         )
         sys.stdout.flush()
     tstart = time.process_time()()
@@ -119,9 +117,7 @@ def write_hamil_kpoints(
     solver.run(comm, X, h5file)
     if comm.rank == 0 and verbose:
         print(
-            " # Time to perform Cholesky: {:13.8e} s.".format(
-                time.process_time()() - tstart
-            )
+            f" # Time to perform Cholesky: {time.process_time()() - tstart:13.8e} s."
         )
         sys.stdout.flush()
 
@@ -297,7 +293,7 @@ def write_basic(
             emad = -0.5 * nelectron * madelung
             e0 += emad
             if verbose:
-                print(" # Adding ewald correction to the energy: {}".format(emad))
+                print(f" # Adding ewald correction to the energy: {emad}")
         sys.stdout.flush()
 
     comm.barrier()
@@ -334,7 +330,7 @@ def write_basic(
     comm.barrier()
 
 
-class KPCholesky(object):
+class KPCholesky:
     def __init__(
         self,
         comm,
@@ -352,7 +348,7 @@ class KPCholesky(object):
         nmo_max = numpy.max(nmo_pk)
         nmo_tot = numpy.sum(nmo_pk)
         if comm.rank == 0 and verbose:
-            print(" # Total number of orbitals: {}".format(nmo_tot))
+            print(f" # Total number of orbitals: {nmo_tot}")
             sys.stdout.flush()
         assert nmo_max is not None
         nkpts = len(kpts)
@@ -366,9 +362,7 @@ class KPCholesky(object):
         self.gmap, self.Qi, self.ngs = generate_grid_shifts(cell)
         if comm.rank == 0 and verbose:
             print(
-                " # Each kpoint is distributed accross {} mpi tasks.".format(
-                    self.part.nproc_pk
-                )
+                f" # Each kpoint is distributed accross {self.part.nproc_pk} mpi tasks."
             )
             sys.stdout.flush()
         try:
@@ -410,8 +404,7 @@ class KPCholesky(object):
             iN = self.part.ijN // self.nmo_pk[k2]
             if self.part.ijN % self.nmo_pk[k2] != 0:
                 iN += 1
-            if iN > self.nmo_pk[k1]:
-                iN = self.nmo_pk[k1]
+            iN = min(iN, self.nmo_pk[k1])
             pij = self.part.ij0 % self.nmo_pk[k2]
             n_ = min(self.part.ijN, self.nmo_pk[k1] * self.nmo_pk[k2]) - self.part.ij0
             X_t = X[k1][:, i0:iN].copy()
@@ -444,7 +437,7 @@ class KPCholesky(object):
                     j = (ij + self.part.ij0) % self.nmo_pk[k2]
                     print(
                         "ERROR!!! Negative or complex diagonal term: "
-                        "{} {} {} {} {:13.8e}".format(k1, i, k2, j, intg)
+                        f"{k1} {i} {k2} {j} {intg:13.8e}"
                     )
                 residual[k, ij] = intg.real
                 if abs(intg) > maxv:
@@ -470,7 +463,7 @@ class KPCholesky(object):
         if self.verbose and comm.rank == 0:
             print(
                 " # Approx total memory required for orbital products: "
-                "{:.2e} GB.".format(mem)
+                f"{mem:.2e} GB."
             )
         mem_verbose = comm.rank == 0 and self.verbose > 1
         if mem_verbose:
@@ -531,7 +524,7 @@ class KPCholesky(object):
             if Q > self.kminus[Q]:
                 continue
             if comm.rank == 0 and self.verbose:
-                print(" # Calculating factorization for momentum: {}".format(Q))
+                print(f" # Calculating factorization for momentum: {Q}")
                 print(" # Generating orbital products")
                 sys.stdout.flush()
 
@@ -544,9 +537,7 @@ class KPCholesky(object):
             self.generate_orbital_products(Q, X, Xaoik, Xaolj)
             if self.verbose and comm.rank == 0:
                 print(
-                    " # Time to generate orbital products: {:13.8e}".format(
-                        time.time() - start
-                    )
+                    f" # Time to generate orbital products: {time.time() - start:13.8e}"
                 )
             residual, k1max, k2max, i1max, i2max, maxv = self.generate_diagonal(
                 Q, Xaoik, Xaolj
@@ -629,7 +620,7 @@ class KPCholesky(object):
                                 ip = ii
                                 break
                         if ip < 0:
-                            print("Could not find Q: {} {}".format(q1, self.Qi))
+                            print(f"Could not find Q: {q1} {self.Qi}")
                             sys.exit()
                         for ix in range(ngs):
                             Xkl[ix] = Xkl0[self.gmap[ip, ix]]
@@ -687,7 +678,7 @@ class KPCholesky(object):
                     output = [vmax, t4 - t0, t3 - t2, t2 - t1, t1 - t0]
                     if self.verbose:
                         print(
-                            "{:17d} ".format(numv) + format_fixed_width_floats(output)
+                            f"{numv:17d} " + format_fixed_width_floats(output)
                         )
                     tstart = time.process_time()()
 

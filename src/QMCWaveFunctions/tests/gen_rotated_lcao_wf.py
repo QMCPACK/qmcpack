@@ -3,8 +3,7 @@
 # Uses automatic differentiation via the autograd package to
 #  compute spatial and parameter derivatives
 import autograd.numpy as np
-from autograd import hessian, grad
-from stats import averager
+from autograd import grad, hessian
 from run_qmc import run_qmc
 
 # Point values used in test_RotatedSPOs_LCAO.cpp
@@ -191,7 +190,7 @@ def print_wf_values(theta1=0.0, theta2=0.0, use_j=False, B=0.0):
     deloc = wf.dlocal_energy(r, VP)
     print("  parameter derivative of local energy = ", deloc)
 
-    print("")
+    print()
 
 
 # Generate the wavefunction values for a single set of electron positions

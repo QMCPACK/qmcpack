@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 
 # By Raymond Clay, rclay@sandia.gov
 
@@ -18,10 +17,10 @@
 # trial function as stated previously.  Choosing a=cos(theta/2) b=e^(i*phi)sin(theta/2),
 # we find that the spin expectation value for each spin should be [0.5,0.5,1/sqrt(2)].
 
-import numpy as np
-import math
 import copy
+import math
 
+import numpy as np
 
 # Unit cell specification.
 L = np.zeros((3, 3))
@@ -103,7 +102,7 @@ def eval_det(R, spins, kup, kdn):
     phi = pi / 4.0
     up_phase = np.cos(theta / 2.0)
     dn_phase = np.exp(1j * phi) * np.sin(theta / 2.0)
-    for iat in range(0, nelec):
+    for iat in range(nelec):
         spo_up = up_phase * eval_pw_spo(R[iat], kup)
         spo_dn = dn_phase * eval_pw_spo(R[iat], kdn)
         spinor_row = (
@@ -143,7 +142,7 @@ def integrate(R, spins, iat, kup, kdn, ngrid=500):
 
     delt = twopi / (ngrid - 1.0)
     spins_ = copy.deepcopy(spins)
-    for i in range(0, ngrid):
+    for i in range(ngrid):
         s = delt * i
         spins_[iat] = s
 
@@ -187,7 +186,7 @@ sy = []
 sz = []
 
 twopi = 2.0 * math.pi
-for i in range(0, nsamps):
+for i in range(nsamps):
     x = np.random.uniform(low=0, high=twopi)
     y = np.random.uniform(low=0, high=twopi)
     # reference

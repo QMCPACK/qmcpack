@@ -1,8 +1,9 @@
-import h5py
-import numpy
 import os
 import unittest
-from pyscf.pbc import gto, dft, df, tools
+
+import numpy
+from pyscf.pbc import dft, gto
+
 import afqmctools.hamiltonian.kpoint as kp
 from afqmctools.utils.linalg import get_ortho_ao
 

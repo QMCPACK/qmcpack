@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import numpy
 import unittest
-from afqmctools.analysis.extraction import extract_observable
+
+import numpy
 from afqmctools.analysis.average import average_one_rdm
+from afqmctools.analysis.extraction import extract_observable
 
 
 class TestRDM(unittest.TestCase):
@@ -31,8 +32,8 @@ class TestRDM(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    import sys
     import os
+    import sys
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
     sys.path.append(os.path.join(dir_path, "../"))

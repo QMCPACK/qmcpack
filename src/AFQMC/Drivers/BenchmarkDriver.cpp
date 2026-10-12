@@ -80,16 +80,16 @@ bool BenchmarkDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
 
   // setup local-to-node MPI Comm
   // TGdata[0]: node_number
-  myComm->split_comm(TGdata[0], MPI_COMM_NODE_LOCAL);
+  myComm.split_comm(TGdata[0], MPI_COMM_NODE_LOCAL);
   TG.setNodeCommLocal(MPI_COMM_NODE_LOCAL);
   int key = TG.getTGNumber(); // This works because the TG used has nnodes_per_TG=1
-  myComm->split_comm(key, MPI_COMM_TG_LOCAL);
+  myComm.split_comm(key, MPI_COMM_TG_LOCAL);
   TG.setTGCommLocal(MPI_COMM_TG_LOCAL);
   key = TG.getCoreRank();
-  myComm->split_comm(key, MPI_COMM_TG_LOCAL_HEADS);
+  myComm.split_comm(key, MPI_COMM_TG_LOCAL_HEADS);
 
   key = TG.getCoreID();
-  myComm->split_comm(key, MPI_COMM_HEAD_OF_NODES);
+  myComm.split_comm(key, MPI_COMM_HEAD_OF_NODES);
   TG.setHeadOfNodesComm(MPI_COMM_HEAD_OF_NODES);
 
   CommBuffer.setup(TG.getCoreRank() == 0, std::string("COMMBuffer_") + std::to_string(TG.getTGNumber()),
@@ -163,7 +163,7 @@ bool BenchmarkDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
             << "****************************************************\n"
             << std::endl;
 
-  myComm->barrier();
+  myComm.barrier();
 
   return true;
 }

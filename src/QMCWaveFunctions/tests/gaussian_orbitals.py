@@ -1,10 +1,10 @@
 # Evaluate GTO's starting from a symbolic representation
 # see qmc_algorithms/Wavefunctions/GaussianOrbitals.ipynb
 
-from sympy import *
-from collections import namedtuple, defaultdict
+from collections import defaultdict, namedtuple
+
 import numpy as np
-import pdb
+from sympy import *
 
 CG_basis = namedtuple("CG_basis", ["orbtype", "nbasis", "zeta", "contraction_coeff"])
 

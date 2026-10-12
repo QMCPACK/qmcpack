@@ -147,7 +147,7 @@ def cartesian_ordering_test(order):
             gbf = cartGauss(1.0, l, i, j, k)
             print(i, j, k, gbf.val(pos))
             orbitalValue += coeffs[l][n] * gbf.val(pos)
-    print("Orbital Value: {}".format(orbitalValue))
+    print(f"Orbital Value: {orbitalValue}")
 
 
 if __name__ == "__main__":

@@ -12,9 +12,10 @@
 ## File created by: Thomas Applencourt, applencourt@anl.gov, Argonne National Laboratory
 #######################################################################################
 
-import numpy as np
-import h5py
 import os
+
+import h5py
+import numpy as np
 
 try:
     from lxml import etree
@@ -36,7 +37,8 @@ except:
 
 
 def pyscf2qmcpackspline(cell, mf, title="Default", kpts=[], kmesh=[], sp_twist=[]):
-    import sys, re
+    import re
+    import sys
 
     Restricted = True
     PBC = False
@@ -77,8 +79,8 @@ def pyscf2qmcpackspline(cell, mf, title="Default", kpts=[], kmesh=[], sp_twist=[
     else:
         loc_cell = cell
 
-    h5_fname = "{}.h5".format(title)
-    xml_fname = "{}.xml".format(title)
+    h5_fname = f"{title}.h5"
+    xml_fname = f"{title}.xml"
 
     tile = [1, 1, 1]
     tilematrix = [0] * 9
@@ -116,7 +118,7 @@ def pyscf2qmcpackspline(cell, mf, title="Default", kpts=[], kmesh=[], sp_twist=[
     root = etree.Element("simulation")
     doc = etree.ElementTree(root)
     # Change name!!!
-    root.append(etree.fromstring('<project id="{}" series="0"/>'.format(title)))
+    root.append(etree.fromstring(f'<project id="{title}" series="0"/>'))
     root.append(sys_node)
 
     for node in [pset_node, psedinit_node, wavefunction_node, hamiltonien_node]:
@@ -584,7 +586,7 @@ class PwscfH5:
             spec_grp = h5_handle.create_group("atoms/species_%d" % ispec)
 
             # write name
-            if name not in species_map.keys():
+            if name not in species_map:
                 raise NotImplementedError("unknown element %s" % name)
             # end if
             spec_grp.create_dataset("name", data=[np.bytes_(name)])
@@ -806,7 +808,7 @@ class InputXml:
         ionid_node.text = self.arr2text(
             np.array(
                 [
-                    atom_grp.get("species_{}/name".format(id_))[(0)]
+                    atom_grp.get(f"species_{id_}/name")[(0)]
                     for id_ in species_ids
                 ]
             )
@@ -844,8 +846,8 @@ class InputXml:
             groupe_node = etree.Element(
                 "group",
                 {
-                    "name": "{}".format(name),
-                    "size": "{}".format(electron),
+                    "name": f"{name}",
+                    "size": f"{electron}",
                 },
             )
             param_node = etree.Element("parameter", {"name": "charge"})
@@ -867,9 +869,9 @@ class InputXml:
             "determinantset",
             {
                 "type": "einspline",
-                "href": "{}".format(h5_path),
+                "href": f"{h5_path}",
                 "source": "ion0",
-                "tilematrix": "{}".format(tilematrix),
+                "tilematrix": f"{tilematrix}",
                 "twistnum": "0",
                 "meshfactor": "1.0",
             },
@@ -882,18 +884,18 @@ class InputXml:
 
         # Slaterdet,imamt
         slaterdet_node = etree.fromstring(
-            """
+            f"""
         <slaterdeterminant>
-            <determinant id="updet" size="{}" ref="updet">
+            <determinant id="updet" size="{alpha}" ref="updet">
               <occupation mode="ground" spindataset="0">
               </occupation>
             </determinant>
-            <determinant id="downdet" size="{}" ref="downdet">
+            <determinant id="downdet" size="{beta}" ref="downdet">
               <occupation mode="ground" spindataset="0">
               </occupation>
             </determinant>
         </slaterdeterminant>
-        """.format(alpha, beta)
+        """
         )
 
         determinantset_node.append(slaterdet_node)
@@ -916,7 +918,7 @@ class InputXml:
         species_ids = atom_grp.get("species_ids")[()]
         list_atom = sorted(
             set(
-                atom_grp.get("species_{}/name".format(id_))[(0)].decode()
+                atom_grp.get(f"species_{id_}/name")[(0)].decode()
                 for id_ in species_ids
             )
         )
@@ -935,10 +937,10 @@ class InputXml:
         for atom in list_atom:
             jastrow_node.append(
                 etree.fromstring(
-                    """
-                <correlation elementType="{}" cusp="0.0" size="10">
-                  <coefficients id="{}" type="Array"> 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0</coefficients>
-                </correlation>""".format(atom, atom)
+                    f"""
+                <correlation elementType="{atom}" cusp="0.0" size="10">
+                  <coefficients id="{atom}" type="Array"> 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0</coefficients>
+                </correlation>"""
                 )
             )
 
@@ -951,7 +953,7 @@ class InputXml:
         species_ids = atom_grp.get("species_ids")[()]
         list_atom = sorted(
             set(
-                atom_grp.get("species_{}/name".format(id_))[(0)].decode()
+                atom_grp.get(f"species_{id_}/name")[(0)].decode()
                 for id_ in species_ids
             )
         )
@@ -968,7 +970,7 @@ class InputXml:
             for element in list_atom:
                 pset_node = etree.Element(
                     "pseudo",
-                    {"elementType": element, "href": "{}.qmcpp.xml".format(element)},
+                    {"elementType": element, "href": f"{element}.qmcpp.xml"},
                 )
                 hamiltonian_node[-1].append(pset_node)
         else:

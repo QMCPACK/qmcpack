@@ -2,7 +2,8 @@
 
 import argparse
 import sys
-from afqmctools.hamiltonian.converter import read_qmcpack_hamiltonian, sparse_to_dense
+
+from afqmctools.hamiltonian.converter import sparse_to_dense
 
 
 def parse_args(args):

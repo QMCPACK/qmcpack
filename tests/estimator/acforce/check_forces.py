@@ -1,8 +1,8 @@
 #! /usr/bin/env python3
 
-import sys
-import numpy as np
 import math
+
+import numpy as np
 
 # Ray Clay:
 # This integration test is based on the same initial system as was used for the unit tests in
@@ -146,8 +146,8 @@ if __name__ == "__main__":
         )
         all_pass = False
 
-    for iat in range(0, natom):
-        for idim in range(0, ndim):
+    for iat in range(natom):
+        for idim in range(ndim):
             totforce = (
                 result[reference_key["ACForce_hf_%d_%d" % (iat, idim)]]
                 + result[reference_key["ACForce_pulay_%d_%d" % (iat, idim)]]

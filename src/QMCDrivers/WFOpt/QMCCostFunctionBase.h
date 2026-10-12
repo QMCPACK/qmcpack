@@ -68,7 +68,7 @@ public:
   using EffectiveWeight  = QMCTraits::QTFull::RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   ///Constructor.
-  QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
+  QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate& comm);
 
   ///Destructor
   virtual ~QMCCostFunctionBase();
@@ -277,7 +277,6 @@ protected:
   UniqueOptObjRefs extractOptimizableObjects(TrialWaveFunction& psi) const;
 
   void resetOptimizableObjects(TrialWaveFunction& psi, const OptVariables& opt_variables) const;
-
 };
 } // namespace qmcplusplus
 #endif

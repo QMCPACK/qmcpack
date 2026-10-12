@@ -82,7 +82,7 @@ public:
   ///pointer to the EinsplineSetBuilder
   EinsplineSetBuilder* mybuilder;
   ///communicator
-  Communicate* myComm;
+  Communicate& myComm;
 
 protected:
   ///check the norm of orbitals

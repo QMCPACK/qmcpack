@@ -3,8 +3,8 @@
 # Uses automatic differentiation via the autograd package to
 #  compute spatial and parameter derivatives.
 # The autodiff is performed in the wavefunction class
-from stats import averager
 import autograd.numpy as np
+from stats import averager
 
 # Parameters for run_qmc
 # r - numpy array of shape (number of electrons, 3)

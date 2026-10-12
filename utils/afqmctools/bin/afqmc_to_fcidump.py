@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+
 from afqmctools.hamiltonian.converter import (
     read_qmcpack_hamiltonian,
     write_fcidump,

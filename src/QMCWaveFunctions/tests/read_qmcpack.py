@@ -1,11 +1,11 @@
 # Read parts of the QMCPACK XML input file
 
 import xml.etree.ElementTree as ET
-from collections import namedtuple, defaultdict
-import math
+from collections import defaultdict, namedtuple
+
 import gaussian_orbitals
-import slater_orbitals
 import numpy as np
+import slater_orbitals
 
 
 # Get the total number of basis functions after expanding the angular parts

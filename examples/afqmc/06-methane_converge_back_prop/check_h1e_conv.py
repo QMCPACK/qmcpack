@@ -1,5 +1,4 @@
 # Analyse the AFQMC back propagated RDM.
-import glob
 import h5py
 import numpy
 

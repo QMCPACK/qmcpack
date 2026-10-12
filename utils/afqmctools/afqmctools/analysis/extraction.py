@@ -1,5 +1,6 @@
 import h5py
 import numpy
+
 from afqmctools.utils.io import from_qmcpack_complex
 
 # Map user names to QMCPACK names.
@@ -93,13 +94,13 @@ def extract_observable(
             bp_md = get_metadata(filename, path=base)
             ix = bp_md["NumAverages"] - 1
         ename = MAP[name]
-        base += ename["group"] + "/Average_{}".format(ix)
+        base += ename["group"] + f"/Average_{ix}"
     elif estimator == "mixed":
         base = "Observables/Mixed/"
         ename = MAP[name]
         base += ename["group"]
     else:
-        print("Unknown estimator type: {} ".format(estimator))
+        print(f"Unknown estimator type: {estimator} ")
         return None
     numer, denom = extract_data(filename, base, ename["numer"], sample=sample)
     if free_proj:
