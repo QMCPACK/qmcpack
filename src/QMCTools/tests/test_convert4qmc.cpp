@@ -401,7 +401,7 @@ TEST_CASE("convert4qmc J3 references only occupied electron species", "[tools][c
     REQUIRE(parsed_electrons != nullptr);
     auto& electrons = *parsed_electrons;
     for (int electron = 0; electron < electrons.getTotalNum(); ++electron)
-      electrons.R[electron] = {static_cast<double>(electron), 0.0, 0.0};
+      electrons.R[electron] = {static_cast<QMCTraits::RealType>(electron), 0.0, 0.0};
     electrons.update();
     Node jastrow_xml(converter.createJ3(), xmlFreeNode);
     auto& species    = electrons.getSpeciesSet();

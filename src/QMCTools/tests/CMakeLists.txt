@@ -28,7 +28,7 @@ add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INP
 add_executable(test_convert4qmc test_convert4qmc.cpp ../QMCGaussianParserBase.cpp)
 target_link_libraries(test_convert4qmc PRIVATE catch_main qmcparticle qmcwfs sposets_for_testing)
 if(USE_OBJECT_TARGET)
-  target_link_libraries(test_convert4qmc PRIVATE qmcutil qmcparticle_omptarget qmcwfs_omptarget)
+  target_link_libraries(test_convert4qmc PRIVATE qmcutil qmcparticle_omptarget qmcwfs_omptarget spline2 spline2_omptarget platform_omptarget_LA)
 endif()
 add_unit_test(BASENAME deterministic-unit_test_convert4qmc TEST_BINARY $<TARGET_FILE:test_convert4qmc>)
 
