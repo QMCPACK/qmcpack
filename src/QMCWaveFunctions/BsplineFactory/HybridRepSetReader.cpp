@@ -425,7 +425,7 @@ void HybridRepSetReader<ST>::create_atomic_centers_Gspace(const Vector<std::comp
   const int Ngvecs      = mybuilder->Gvecs[0].size();
   const int Nprocs      = band_group_comm.size();
   const int Ngvecgroups = std::min(Ngvecs, Nprocs);
-  Communicate gvec_group_comm(band_group_comm, Ngvecgroups);
+  Communicate gvec_group_comm(band_group_comm.split(Ngvecgroups));
   std::vector<int> gvec_groups(Ngvecgroups + 1, 0);
   FairDivideLow(Ngvecs, Ngvecgroups, gvec_groups);
   const int gvec_first = gvec_groups[gvec_group_comm.getGroupID()];
@@ -693,7 +693,7 @@ void HybridRepSetReader<ST>::initialize_hybrid_pio_gather(const int spin,
   int Nbands            = bandgroup.getNumDistinctOrbitals();
   const int Nprocs      = myComm.size();
   const int Nbandgroups = std::min(Nbands, Nprocs);
-  Communicate band_group_comm(myComm, Nbandgroups);
+  Communicate band_group_comm(myComm.split(Nbandgroups));
   std::vector<int> band_groups(Nbandgroups + 1, 0);
   FairDivideLow(Nbands, Nbandgroups, band_groups);
   int iorb_first = band_groups[band_group_comm.getGroupID()];

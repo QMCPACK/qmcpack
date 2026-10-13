@@ -62,7 +62,8 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
     distributed_ranks = 1;
   }
 
-  auto dist_comm_ptr = std::make_unique<Communicate>(myComm, myComm.size() / (distributed_ranks * shared_ranks));
+  auto dist_comm_ptr =
+      std::make_unique<Communicate>(myComm.split(myComm.size() / (distributed_ranks * shared_ranks)));
 
   app_log() << "  Using " << (use_duplex_splines_ ? "complex" : "real") << " einspline table." << std::endl;
   if (distributed_ranks > 1)
@@ -142,8 +143,8 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
    *          |  0 1 2  |  3 4 5  |
    *          |  6 7 8  | 9 10 11 |
    */
-  Communicate shared_comm(myComm, shared_ranks, distributed_ranks);
-  Communicate dist_comm(shared_comm, shared_comm.size() / distributed_ranks);
+  Communicate shared_comm(myComm.splitByStride(shared_ranks, distributed_ranks));
+  Communicate dist_comm(shared_comm.split(shared_comm.size() / distributed_ranks));
 
   if (!foundspline)
   {
@@ -202,7 +203,7 @@ void SplineSetReader<ST>::initialize_spline_pio_gather(const int spin,
   const int Nprocs          = comm.size();
   const int Nbandgroups     = Nbands > 0 ? std::min(Nbands, Nprocs) : 1;
 
-  Communicate band_group_comm(comm, Nbandgroups);
+  Communicate band_group_comm(comm.split(Nbandgroups));
   std::vector<int> band_groups(Nbandgroups + 1, 0);
   FairDivideLow(Nbands, Nbandgroups, band_groups);
   const int iorb_first = orb_block_start + band_groups[band_group_comm.getGroupID()];

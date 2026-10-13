@@ -74,17 +74,6 @@ public:
   Communicate(mpi3::communicator&& in_comm);
 #endif
 
-  /** constructor that splits in_comm
-   * in_comm.size() == 12 ; nparts = 2; stripe = 0
-   *   | group 0      | group 1       |
-   *   |  0 1 2 3 4 5 | 6 7 8 9 10 11 |
-   * in_comm.size() == 12 ; nparts = 2; stripe = 3;
-   *   | group 0 | group 1 |
-   *   |  0 1 2  |  3 4 5  |
-   *   |  6 7 8  | 9 10 11 |
-   */
-  Communicate(const Communicate& in_comm, int nparts, int stripe = 0);
-
   /**destructor
    * Call proper finalization of Communication library
    */
@@ -93,6 +82,36 @@ public:
   ///disable copy constructor
   Communicate(const Communicate&) = delete;
 
+  Communicate(Communicate&&);
+
+  /** Create a new communicator by partitioning the current communicator into `nparts` subgroups.
+   *
+   *  The ranks are partitioned fairly using FairDivideLow. When `multiple` > 1 is specified,
+   *  ranks are grouped in contiguous chunks of size `multiple` so that the size of each
+   *  resulting sub-communicator is guaranteed to be a multiple of `multiple`.
+   *
+   *  @param nparts   The number of sub-communicator groups to divide into.
+   *  @param multiple The granularity of each sub-communicator size. `size()` must be divisible
+   *                  by `multiple`, and `multiple` must be >= 1. Defaults to 1.
+   *  @return The sub-communicator corresponding to the calling rank's subgroup.
+   *
+   *  Example 1: size() == 12, nparts = 2, multiple = 1
+   *    | group 0      | group 1       |
+   *    |  0 1 2 3 4 5 | 6 7 8 9 10 11 |
+   *
+   *  Example 2: size() == 10, nparts = 3, multiple = 2
+   *    | group 0 | group 1 | group 2 |
+   *    |  0 1    |  2 3 4 5 | 6 7 8 9 |
+   */
+  Communicate split(int nparts, int multiple = 1) const;
+
+  /** create a new communicator by splitting the current communicator with stride
+   * size() == 12 ; nparts = 2; stride = 3;
+   *   | group 0 | group 1 |
+   *   |  0 1 2  |  3 4 5  |
+   *   |  6 7 8  | 9 10 11 |
+   */
+  Communicate splitByStride(int nparts, int stride) const;
 
   /** create a node/shared-memory communicator from current (parent) communicator
    *
