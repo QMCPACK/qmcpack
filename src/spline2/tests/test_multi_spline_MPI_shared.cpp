@@ -98,7 +98,8 @@ struct test_splines : public test_splines_base<T, GRID_SIZE>
 
   void test(size_t num_splines)
   {
-    auto comm_distributed = std::make_unique<Communicate>(*OHMMS::Controller, OHMMS::Controller->size());
+    auto comm_distributed =
+        std::make_unique<Communicate>(OHMMS::Controller->split(OHMMS::Controller->size()));
     auto& comm(*comm_distributed);
     MultiBsplineMPIShared<T> bs(grid, bc, num_splines, std::move(comm_distributed));
 
@@ -153,7 +154,8 @@ struct test_splines<T, 5> : public test_splines_base<T, 5>
 
   void test(size_t num_splines, unsigned shared_ranks)
   {
-    auto comm_distributed = std::make_unique<Communicate>(*OHMMS::Controller, OHMMS::Controller->size());
+    auto comm_distributed =
+        std::make_unique<Communicate>(OHMMS::Controller->split(OHMMS::Controller->size()));
 
     auto& comm(*comm_distributed);
 
