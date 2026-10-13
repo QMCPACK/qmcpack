@@ -1978,7 +1978,7 @@ def test_legacy_ppset(tmp_path):
 
     with pytest.raises(
         ValueError,
-        match='are not present in PseudoSet.pseudo_files',
+        match=re.escape('are not present in PseudoSet.pseudo_files'),
         ):
         ppset(label='missing',qmcpack=['Ne.missing.xml'])
 
@@ -2139,7 +2139,7 @@ def test_get_pseudos(tmp_path):
 
     with pytest.raises(
         FileNotFoundError,
-        match='are not present in PseudoSet.pseudo_files',
+        match=re.escape('are not present in PseudoSet.pseudo_files'),
         ):
         PseudoSet.get_pseudos(
             pseudos = ['Ne.missing.xml'],
@@ -2520,3 +2520,67 @@ def test_generate_pseudoset(tmp_path):
         ):
         generate_pseudoset(qmcpack=ref_qmcpack_pseudos["C"])
 #end def test_generate_pseudoset
+
+
+def test_check_same_Zeff(tmp_path):
+    pseudo_names = (
+        "C.BFD.xml",
+        "H.BFD.xml",
+        "O.BFD.xml",
+        "C.BFD.upf",
+        "H.BFD.upf",
+        "O.BFD.upf",
+        "Fe.BFD.upf",
+        "C/POTCAR",
+        "H/POTCAR",
+        "O/POTCAR",
+        )
+
+    psp_dir = tmp_path / "pseudos"
+    psp_dir.mkdir()
+    assert psp_dir.exists(), "Failed to create pseudo directory!"
+
+    pseudo_list = []
+    for psp in pseudo_names:
+        if "POTCAR" in psp:
+            potcar_dir = psp_dir / psp.split("/")[0]
+            potcar_dir.mkdir()
+            assert potcar_dir.exists(), "Failed to create POTCAR directory!"
+
+        pseudo = (psp_dir / psp).resolve()
+        pseudo.touch()
+        assert pseudo.exists(), "Failed to create pseudo file!"
+        pseudo_list.append(pseudo)
+
+    pseudoset = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        extensions = {"rmg": ".xml"},
+        code_Zeff_map = {
+            "qmcpack": {"C": 4, "H": 1, "O": 6},
+            "espresso": {"C": 4, "H": 1, "O": 6, "Fe": 16},
+            "rmg": {"C": 4, "H": 1, "O": 6},
+            "vasp": {"C": 4, "H": 1, "O": 6},
+        }
+    )
+    all_same, msg = PseudoSet.check_same_Zeff(
+        pseudos=pseudoset,
+        elements=["C", "H", "O"],
+    )
+    assert(all_same)
+    assert(len(msg) == 0)
+
+
+    ref_msg = (
+        "Zeffs are not consistent for element 'Fe'!\n"
+        "Please check the Z-valences in the following files:\n"
+        f"{psp_dir / 'Fe.BFD.upf'}\n"
+        "N/A - All Electron\n"
+    )
+    all_same, msg = PseudoSet.check_same_Zeff(
+        pseudos=pseudoset,
+        elements=["C", "H", "O", "Fe"],
+        missing_as_ae=True,
+    )
+    assert(not all_same)
+    assert(msg == ref_msg)
+#end def test_check_same_Zeff

@@ -17,6 +17,7 @@ from .generic import nxs_deprecate
 from .nexus_base import nexus_config
 from .periodic_table import Elements
 from .physical_system import PhysicalSystem
+from .structure import Structure
 from .utilities import is_valid_filename
 
 
@@ -1105,7 +1106,7 @@ class PseudoSet(DevBase):
 
     def _get_pseudos(
         self,
-        system: PhysicalSystem | Collection[str],
+        system: PhysicalSystem | Structure | Collection[str],
         code: Literal["espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf"],
         ) -> dict[str, str]:
         """Private helper function for getting the pseudo files for a given system."""
@@ -1127,8 +1128,7 @@ class PseudoSet(DevBase):
                     msg = f"Non-element in provided system: '{element}'"
                 else:
                     species.add(element.symbol)
-            #end for
-        #end if
+
         missing = species.difference(set(self.pseudos.keys()))
         if missing:
             msg = (
@@ -1328,7 +1328,7 @@ class PseudoSet(DevBase):
 
     def get_Zeff(
         self,
-        elem_labels: Collection[Elements | str] | PhysicalSystem,
+        elem_labels: Collection[Elements | str] | PhysicalSystem | Structure,
         *,
         missing_as_ae: bool = False,
         ) -> dict[str, int]:
@@ -1336,8 +1336,8 @@ class PseudoSet(DevBase):
 
         Parameters
         ----------
-        elem_labels : list of Elements or list of str or PhysicalSystem
-            The elements or system to get Z-valences for.
+        elem_labels : list of Elements or list of str or PhysicalSystem or Structure
+            The elements or system/structure to get Z-valences for.
         missing_as_ae : bool, default=False (keyword-only)
             Assume any elements for which a pseudopotential can not be found are
             all-electron, and use their atomic number as the value for the
@@ -1359,6 +1359,8 @@ class PseudoSet(DevBase):
         """
         if isinstance(elem_labels, PhysicalSystem):
             elem_labels = elem_labels.ion_labels
+        elif isinstance(elem_labels, Structure):
+            elem_labels = elem_labels.species()
 
         elem_labels = set(elem_labels) # Unique only, saves on iteration.
         Z_eff_map = {}
@@ -1426,6 +1428,48 @@ class PseudoSet(DevBase):
         rep += ")"
         return rep
     #end def __repr__
+
+
+    @staticmethod
+    def check_same_Zeff(
+        pseudos: dict[str, PseudoSet],
+        elements: Collection[str] | PhysicalSystem | Structure,
+        *,
+        missing_as_ae: bool = False,
+    ) -> tuple[bool, str]:
+        if isinstance(elements, PhysicalSystem):
+            elements = elements.ion_labels
+        elif isinstance(elements, Structure):
+            _, elements = elements.species(symbol=True)
+
+        elements = set(elements)
+        elem_Zeffs = {elem: set() for elem in elements}
+        for ps_set in pseudos.values():
+            if len(ps_set.pseudos) == 0:
+                continue
+            ps_Zeffs = ps_set.get_Zeff(elements, missing_as_ae=missing_as_ae)
+            for elem, Zeff in ps_Zeffs.items():
+                elem_Zeffs[elem].add(Zeff)
+
+        all_same = True
+        msg = ""
+        for elem, Zeff_set in elem_Zeffs.items():
+            if len(Zeff_set) > 1:
+                all_same = False
+                files = set()
+                for ps_set in pseudos.values():
+                    if len(ps_set.pseudos) == 0:
+                        continue
+                    files.add(str(ps_set.pseudos.get(elem, "N/A - All Electron\n")))
+                files = "\n".join(sorted(files))
+                msg += (
+                    f"Zeffs are not consistent for element '{elem}'!\n"
+                    f"Please check the Z-valences in the following files:\n"
+                    f"{files}"
+                )
+
+        return all_same, msg
+    #end def check_same_Zeff
 #end class PseudoSet
 
 
