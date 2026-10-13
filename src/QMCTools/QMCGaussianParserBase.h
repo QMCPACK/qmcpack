@@ -144,6 +144,12 @@ struct QMCGaussianParserBase
 
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createMultiDeterminantSet();
+  /*! Add the spin-related attributes expected by the multideterminant reader.
+   *
+   * Spinor calculations and calculations without beta electrons use the
+   * numbered attributes (`spo_0`, `nc0`, and `ne0`). Collinear calculations
+   * with beta electrons use separate up/down attributes on the two XML nodes.
+   */
   void addMultiDeterminantSpinAttributes(xmlNodePtr multidet, xmlNodePtr detlist) const;
   xmlNodePtr createDeterminantSetWithHDF5();
   xmlNodePtr createMultiDeterminantSetFromH5();
