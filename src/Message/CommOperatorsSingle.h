@@ -79,7 +79,7 @@ inline void Communicate::gatherv_in_place(T* buf, const TMPI& datatype, IT& coun
 {}
 
 template<typename T>
-inline void Communicate::allgather(T* sb, T* rb, int count)
+inline void Communicate::allgather(const T* sb, T* rb, int count)
 {
   for (int i = 0; i < count; ++i)
     rb[i] = sb[i];

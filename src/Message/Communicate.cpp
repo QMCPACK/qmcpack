@@ -24,6 +24,7 @@
 #include <cstdio>
 #include <fstream>
 #include <stdexcept>
+#include <numeric>
 #include "config.h"
 #include "Utilities/FairDivide.h"
 
@@ -45,7 +46,6 @@ std::unique_ptr<Communicate> OHMMS::Controller = std::make_unique<Communicate>()
 Communicate::Communicate() : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1) {}
 
 Communicate::~Communicate() = default;
-Communicate::Communicate(Communicate&&) = default;
 
 //exclusive:  MPI or Serial
 #ifdef HAVE_MPI
@@ -81,15 +81,26 @@ Communicate::Communicate(const Communicate& in_comm, int nparts, int stripe)
 
 /** provide a node/shared-memory communicator from current (parent) communicator
  *
- *  The inter_group_comm_ is created across nodes for ranks sharing the same intra-node rank.
- *  Note: the size of the node communicator and its inter_group_comm_ may differ on different nodes.
+ *  Note: the size of the node communicator may differ on different nodes.
  */
-Communicate Communicate::NodeComm() const
+Communicate Communicate::createNodeComm() const
 {
-  Communicate node_comm{comm.split_shared()};
-  node_comm.inter_group_comm_ = std::make_unique<Communicate>(comm.split(node_comm.rank(), comm.rank()));
-  return node_comm;
+  return Communicate{comm.split_shared()};
 }
+
+int Communicate::getUniformNodeRankCount() const
+{
+  Communicate node_comm = createNodeComm();
+  const int local_node_size = node_comm.size();
+  std::vector<int> all_node_sizes(size());
+  MPI_Allgather(&local_node_size, 1, MPI_INT, all_node_sizes.data(), 1, MPI_INT, myMPI);
+  int gcd_size = all_node_sizes.empty() ? 1 : all_node_sizes.front();
+  for (int s : all_node_sizes)
+    gcd_size = std::gcd(gcd_size, s);
+
+  return gcd_size;
+}
+
 
 void Communicate::abort() const { comm.abort(1); }
 
@@ -100,12 +111,16 @@ void Communicate::barrier() const { comm.barrier(); }
  *
  *  Note: in non-MPI (serial) builds, this returns a single-rank communicator.
  */
-Communicate Communicate::NodeComm() const
+Communicate Communicate::createNodeComm() const
 {
-  Communicate node_comm;
-  node_comm.inter_group_comm_ = std::make_unique<Communicate>();
-  return node_comm;
+  return Communicate{};
 }
+
+int Communicate::getUniformNodeRankCount() const
+{
+  return 1;
+}
+
 
 void Communicate::abort() const { std::_Exit(EXIT_FAILURE); }
 

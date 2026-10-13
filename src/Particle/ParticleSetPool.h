@@ -45,7 +45,7 @@ public:
   ParticleSetPool(const ParticleSetPool&)            = delete;
   ParticleSetPool& operator=(const ParticleSetPool&) = delete;
   ParticleSetPool(ParticleSetPool&& pset) noexcept;
-  ParticleSetPool& operator=(ParticleSetPool&&) = default;
+  ParticleSetPool& operator=(ParticleSetPool&&) = delete;
 
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;

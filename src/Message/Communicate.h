@@ -93,17 +93,28 @@ public:
   ///disable copy constructor
   Communicate(const Communicate&) = delete;
 
-  /** Move constructor
-   *  Transfers ownership of communicators and state from another Communicate instance.
-   */
-  Communicate(Communicate&&);
 
-  /** provide a node/shared-memory communicator from current (parent) communicator
+  /** create a node/shared-memory communicator from current (parent) communicator
    *
-   *  The inter_group_comm_ is created across nodes for ranks sharing the same intra-node rank.
-   *  Note: the size of the node communicator and its inter_group_comm_ may differ on different nodes.
+   *  Note: the size of the node communicator may differ on different nodes.
    */
-  Communicate NodeComm() const;
+  Communicate createNodeComm() const;
+
+
+  /** return the rank count of a uniform node
+   *
+   *  A "uniform node" is defined as a logical grouping of ranks that resides entirely within
+   *  a single physical node, where all uniform nodes across the communicator have an identical
+   *  number of ranks.
+   *
+   *  Because different physical nodes may host varying numbers of ranks, the rank count of a
+   *  uniform node is determined by the greatest common divisor (GCD) of all local node communicator
+   *  sizes across the communicator. This ensures every physical node can be partitioned into an
+   *  integer number of identically sized sub-node groups.
+   *
+   *  In non-MPI (serial) builds, this returns 1.
+   */
+  int getUniformNodeRankCount() const;
 
   void barrier() const;
   void abort() const;
@@ -185,8 +196,6 @@ public:
   template<typename T, typename IT>
   void gatherv(T& sb, T& rb, IT& counts, IT& displ, int dest = 0);
   template<typename T>
-  void allgather(T& sb, T& rb);
-  template<typename T>
   void scatter(T& sb, T& rb, int dest = 0);
   template<typename T, typename IT>
   void scatterv(T& sb, T& rb, IT& counts, IT& displ, int source = 0);
@@ -195,7 +204,9 @@ public:
   template<typename T, typename TMPI, typename IT>
   void gatherv_in_place(T* buf, const TMPI& datatype, IT& counts, IT& displ, int dest = 0);
   template<typename T>
-  void allgather(T* sb, T* rb, int count);
+  void allgather(T& sb, T& rb);
+  template<typename T>
+  void allgather(const T* sb, T* rb, int count);
 
 
 private:
