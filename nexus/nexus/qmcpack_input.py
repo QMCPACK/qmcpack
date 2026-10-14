@@ -2944,15 +2944,12 @@ class linear(QIxml):
                   'max_its','cgsteps','eigcg','stabilizermethod',
                   'rnwarmupsteps','walkersperthread','minke','gradtol','alpha',
                   'tries','min_walkers','samplesperthread',
-                  'shift_i','shift_s','max_relative_change','max_param_change',
-                  'chase_lowest','chase_closest','block_lm','nblocks','nolds',
-                  'nkept','max_seconds','spin_mass',
+                  'shift_i','shift_s','max_seconds','spin_mass',
                   'sr_tau','sr_tolerance','sr_regularization','line_search',
                   )
     costs      = ('energy','unreweightedvariance','reweightedvariance','variance','difference')
     write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,
-                      use_nonlocalpp_deriv=yesno,chase_lowest=yesno,
-                      chase_closest=yesno,block_lm=yesno,line_search=yesno)
+                      use_nonlocalpp_deriv=yesno,line_search=yesno)
 #end class linear
 
 class cslinear(QIxml):
@@ -3069,13 +3066,11 @@ class linear_batch(QIxml):
                   'max_its','cgsteps','eigcg','stabilizermethod',
                   'rnwarmupsteps','walkersperthread','minke','gradtol','alpha',
                   'tries','min_walkers','samplesperthread',
-                  'shift_i','shift_s','max_relative_change','max_param_change',
-                  'chase_lowest','chase_closest','block_lm','nblocks','nolds',
-                  'nkept',
+                  'shift_i','shift_s',
                   'crowds','opt_num_crowds'
                   )
     costs      = ('energy','unreweightedvariance','reweightedvariance','variance','difference')
-    write_types = obj(usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,use_nonlocalpp_deriv=yesno,chase_lowest=yesno,chase_closest=yesno,block_lm=yesno)
+    write_types = obj(usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,use_nonlocalpp_deriv=yesno)
 #end class linear_batch
 
 class wftest(QIxml):
@@ -5461,7 +5456,7 @@ class QmcpackInput(SimulationInput,Names):
             If ``'linear'``, use one of the versions of the linear method.
             If ``'cslinear'``, use the correlated sampling linear method.
 
-        minmethod : {'quartic' , 'rescale' , 'linemin', 'adaptive', 'oneshift', 'sr_cg'}, default='quartic'
+        minmethod : {'quartic' , 'rescale' , 'linemin', 'oneshift', 'sr_cg'}, default='quartic'
 
         minwalkers : float, default=0.3
             Minimum threshold to accept a parameter update based on the
@@ -5557,18 +5552,6 @@ class QmcpackInput(SimulationInput,Names):
         shift_i : float
             Set the ``shift_i`` parameter. See QMCPACK manual.
         shift_s : float
-            Set the ``shift_s`` parameter. See QMCPACK manual.
-
-        Case ``qmc='opt'`` ``method='linear'`` ``minmethod='adaptive'``
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-        max_relative_change : float, default=10.0
-            Sets ``max_relative_change`` parameter. See QMCPACK manual.
-        max_param_change : float, default=0.3
-            Sets ``max_param_change`` parameter. See QMCPACK manual.
-        shift_i : float, default=0.01
-            Set the ``shift_i`` parameter. See QMCPACK manual.
-        shift_s : float, default=1.0
             Set the ``shift_s`` parameter. See QMCPACK manual.
 
         Case ``qmc='opt'`` ``method='linear'`` ``minmethod='sr_cg'``
@@ -8367,15 +8350,6 @@ linear_oneshift_legacy_defaults = obj(
     #shift_s    = 1.00,
     **shared_opt_legacy_defaults
     )
-linear_adaptive_legacy_defaults = obj(
-    minwalkers          = 0.3,
-    max_relative_change = 10.0,
-    max_param_change    = 0.3,
-    shift_i             = 0.01,
-    shift_s             = 1.00,
-    **shared_opt_legacy_defaults
-    )
-
 opt_method_legacy_defaults = obj({
     ('linear'  ,'quartic' ) : linear_quartic_legacy_defaults,
     ('linear'  ,'rescale' ) : linear_quartic_legacy_defaults,
@@ -8383,14 +8357,12 @@ opt_method_legacy_defaults = obj({
     ('cslinear','quartic' ) : linear_quartic_legacy_defaults,
     ('cslinear','rescale' ) : linear_quartic_legacy_defaults,
     ('cslinear','linemin' ) : linear_quartic_legacy_defaults,
-    ('linear'  ,'adaptive') : linear_adaptive_legacy_defaults,
     ('linear'  ,'oneshift') : linear_oneshift_legacy_defaults,
     ('linear'  ,'oneshiftonly') : linear_oneshift_legacy_defaults,
     })
 del shared_opt_legacy_defaults
 del linear_quartic_legacy_defaults
 del linear_oneshift_legacy_defaults
-del linear_adaptive_legacy_defaults
 
 allowed_opt_method_legacy_inputs = set(linear.attributes+linear.parameters
                                        +cslinear.attributes+cslinear.parameters)
@@ -8523,14 +8495,6 @@ linear_oneshift_batched_defaults = obj(
     #shift_s    = 1.00,
     **shared_opt_batched_defaults
     )
-linear_adaptive_batched_defaults = obj(
-    minwalkers          = 0.3,
-    max_relative_change = 10.0,
-    max_param_change    = 0.3,
-    shift_i             = 0.01,
-    shift_s             = 1.00,
-    **shared_opt_batched_defaults
-    )
 linear_sr_cg_batched_defaults = obj(
     sr_tau            = None,  # projector: 1-tau*H  (0.01/0.1 if line_search=no/yes)
     sr_tolerance      = 0.001, # conjugate gradient convergence tolerance
@@ -8546,7 +8510,6 @@ opt_method_batched_defaults = obj({
     ('cslinear','quartic' ) : linear_quartic_batched_defaults,
     ('cslinear','rescale' ) : linear_quartic_batched_defaults,
     ('cslinear','linemin' ) : linear_quartic_batched_defaults,
-    ('linear'  ,'adaptive') : linear_adaptive_batched_defaults,
     ('linear'  ,'oneshift') : linear_oneshift_batched_defaults,
     ('linear'  ,'oneshiftonly') : linear_oneshift_batched_defaults,
     ('linear'  ,'sr_cg')    : linear_sr_cg_batched_defaults,
@@ -8554,7 +8517,6 @@ opt_method_batched_defaults = obj({
 del shared_opt_batched_defaults
 del linear_quartic_batched_defaults
 del linear_oneshift_batched_defaults
-del linear_adaptive_batched_defaults
 del linear_sr_cg_batched_defaults
 
 allowed_opt_method_batched_inputs = set(linear.attributes+linear.parameters

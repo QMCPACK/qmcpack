@@ -39,13 +39,13 @@ public:
   /** constructor
    * @param aname xml tag
    */
-  ParticleSetPool(Communicate* c, const char* aname = "particleset");
+  ParticleSetPool(Communicate& c, const char* aname = "particleset");
   ~ParticleSetPool();
 
   ParticleSetPool(const ParticleSetPool&)            = delete;
   ParticleSetPool& operator=(const ParticleSetPool&) = delete;
   ParticleSetPool(ParticleSetPool&& pset) noexcept;
-  ParticleSetPool& operator=(ParticleSetPool&&) = default;
+  ParticleSetPool& operator=(ParticleSetPool&&) = delete;
 
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;

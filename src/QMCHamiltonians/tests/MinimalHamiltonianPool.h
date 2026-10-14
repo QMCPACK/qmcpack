@@ -61,12 +61,12 @@ class MinimalHamiltonianPool
 
 public:
   /// make a HamitonianPool with a primary hamiltonian with Coulombic electron electron interaction
-  static HamiltonianPool make_hamWithEE(Communicate* comm,
+  static HamiltonianPool make_hamWithEE(Communicate& comm,
                                         ParticleSetPool& particle_pool,
                                         WaveFunctionPool& wavefunction_pool);
 
   /// make a HamitonianPool with a primary hamiltonian with Coulombic electron electron interaction
-  static HamiltonianPool makeHamWithEI(Communicate* comm,
+  static HamiltonianPool makeHamWithEI(Communicate& comm,
                                        ParticleSetPool& particle_pool,
                                        WaveFunctionPool& wavefunction_pool);
 
@@ -74,20 +74,20 @@ public:
   /** make a HamitonianPool with a primary hamiltonian with Coulombic electron
    *  electron interaction and electron ion interaction
    */
-  static HamiltonianPool makeHamWithEEEI(Communicate* comm,
+  static HamiltonianPool makeHamWithEEEI(Communicate& comm,
                                          ParticleSetPool& particle_pool,
                                          WaveFunctionPool& wavefunction_pool);
   /** make a HamitonianPool with a primary hamiltonian with Coulombic electron
   *   electron interaction and electron ion interaction and ion ion interaction.
   */
-  static HamiltonianPool makeHamWithEEEIII(Communicate* comm,
+  static HamiltonianPool makeHamWithEEEIII(Communicate& comm,
                                            ParticleSetPool& particle_pool,
                                            WaveFunctionPool& wavefunction_pool);
 
   /** make a HamitonianPool with a primary hamiltonian with Coulombic electron
   *   electron interaction and electron ion interaction and a pseudo potential component
   */
-  static HamiltonianPool makeHamWithEEEIPS(Communicate* comm,
+  static HamiltonianPool makeHamWithEEEIPS(Communicate& comm,
                                            ParticleSetPool& particle_pool,
                                            WaveFunctionPool& wavefunction_pool);
 };

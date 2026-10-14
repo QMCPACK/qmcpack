@@ -15,6 +15,6 @@
 
 namespace qmcplusplus
 {
-MPIObjectBase::MPIObjectBase(Communicate* c) : myComm(c) {}
+MPIObjectBase::MPIObjectBase(Communicate& c) : myComm(c) {}
 
 } // namespace qmcplusplus

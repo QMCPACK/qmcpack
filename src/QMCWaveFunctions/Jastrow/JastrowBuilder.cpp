@@ -26,18 +26,18 @@
 
 namespace qmcplusplus
 {
-JastrowBuilder::JastrowBuilder(Communicate* comm, ParticleSet& p, const PSetMap& psets)
+JastrowBuilder::JastrowBuilder(Communicate& comm, ParticleSet& p, const PSetMap& psets)
     : WaveFunctionComponentBuilder(comm, p, "JastrowBuilder"), ptclPool(psets)
 { resetOptions(); }
 
 void JastrowBuilder::resetOptions()
 {
-  JastrowType  = 0;
-  nameOpt      = "0";
-  typeOpt      = "Two";
-  funcOpt      = "any";
-  spinOpt      = "yes";
-  sourceOpt    = targetPtcl.getName();
+  JastrowType = 0;
+  nameOpt     = "0";
+  typeOpt     = "Two";
+  funcOpt     = "any";
+  spinOpt     = "yes";
+  sourceOpt   = targetPtcl.getName();
 }
 
 std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildComponent(xmlNodePtr cur)

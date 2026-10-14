@@ -60,7 +60,7 @@ const SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
  * \param psi reference to the wavefunction
  * \param ions reference to the ions
  */
-SPOSetBuilderFactory::SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, const PSetMap& psets)
+SPOSetBuilderFactory::SPOSetBuilderFactory(Communicate& comm, ParticleSet& els, const PSetMap& psets)
     : MPIObjectBase(comm), targetPtcl(els), ptclPool(psets)
 {}
 
@@ -153,7 +153,7 @@ std::unique_ptr<SPOSetBuilder> SPOSetBuilderFactory::createSPOSetBuilder(xmlNode
   PRE.flush();
 
   if (!bb)
-    myComm->barrier_and_abort("SPOSetBuilderFactory::createSPOSetBuilder SPOSetBuilder creation failed.");
+    myComm.barrier_and_abort("SPOSetBuilderFactory::createSPOSetBuilder SPOSetBuilder creation failed.");
 
   app_log() << "  Created SPOSet builder named '" << name << "' of type " << type << std::endl;
   return bb;
@@ -198,12 +198,12 @@ void SPOSetBuilderFactory::buildSPOSetCollection(xmlNodePtr cur)
   });
 
   if (nsposets == 0)
-    myComm->barrier_and_abort("SPOSetBuilderFactory::buildSPOSetCollection  no <sposet/> elements found");
+    myComm.barrier_and_abort("SPOSetBuilderFactory::buildSPOSetCollection  no <sposet/> elements found");
 
   // going through a list of spo_scanner entries
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "spo_scanner")
-      if (myComm->rank() == 0)
+      if (myComm.rank() == 0)
       {
         SPOSetScanner ascanner(sposets, targetPtcl, ptclPool);
         ascanner.put(element);
@@ -214,10 +214,10 @@ void SPOSetBuilderFactory::buildSPOSetCollection(xmlNodePtr cur)
 void SPOSetBuilderFactory::addSPOSet(std::unique_ptr<SPOSet> spo)
 {
   if (spo->getName().empty())
-    myComm->barrier_and_abort("sposet created in sposet_collection must have a name!");
+    myComm.barrier_and_abort("sposet created in sposet_collection must have a name!");
 
   if (sposets.find(spo->getName()) != sposets.end())
-    myComm->barrier_and_abort("The name of each sposet must be unique! '" + spo->getName() + "' exists.");
+    myComm.barrier_and_abort("The name of each sposet must be unique! '" + spo->getName() + "' exists.");
   else
     sposets.emplace(spo->getName(), std::move(spo));
 }

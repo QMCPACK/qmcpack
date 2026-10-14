@@ -42,7 +42,7 @@ VMC::VMC(const ProjectData& project_data,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
          const UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
-         Communicate* comm,
+         Communicate& comm,
          bool enable_profiling)
     : QMCDriver(project_data, w, psi, h, comm, "VMC", enable_profiling), UseDrift("yes"), rngs_(rngs)
 {
@@ -70,7 +70,7 @@ void VMC::run()
   wlog_manager_->startRun(getWalkerLogCollectorRefs());
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm.getName(), myComm.rank() == 0);
 
   const bool has_collectables = W.Collectables.size();
   for (int block = 0; block < nBlocks; ++block)
@@ -113,12 +113,12 @@ void VMC::run()
 
     bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached
-    if (!myComm->rank())
+    if (!myComm.rank())
       stop_requested = runtimeControl.checkStop(vmc_loop);
-    myComm->bcast(stop_requested);
+    myComm.bcast(stop_requested);
     if (stop_requested)
     {
-      if (!myComm->rank())
+      if (!myComm.rank())
         app_log() << runtimeControl.generateStopMessage("VMC", block);
       run_time_manager.markStop();
       break;
@@ -135,7 +135,7 @@ void VMC::run()
   bool wrotesamples = DumpConfig;
   if (DumpConfig)
   {
-    wrotesamples = MCWalkerConfiguration::dumpEnsemble(wClones, *wOut, myComm->size(), nBlocks);
+    wrotesamples = MCWalkerConfiguration::dumpEnsemble(wClones, *wOut, myComm.size(), nBlocks);
     if (wrotesamples)
       app_log() << "  samples are written to the config.h5" << std::endl;
   }
@@ -309,7 +309,7 @@ bool VMC::put(xmlNodePtr q)
     int nw = W.getActiveWalkers();
     //compute samples and overwrite steps for the given samples
     int Nthreads = omp_get_max_threads();
-    int Nprocs   = myComm->size();
+    int Nprocs   = myComm.size();
 
 
     //target samples set by samples or samplesperthread/dmcwalkersperthread

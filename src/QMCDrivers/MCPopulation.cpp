@@ -267,12 +267,12 @@ void MCPopulation::killWalker(MCPWalker& walker)
   throw std::runtime_error("Attempt to kill nonexistent walker in MCPopulation!");
 }
 
-void MCPopulation::syncWalkersPerRank(Communicate* comm)
+void MCPopulation::syncWalkersPerRank(Communicate& comm)
 {
-  std::vector<IndexType> num_local_walkers_per_rank(comm->size(), 0);
+  std::vector<IndexType> num_local_walkers_per_rank(comm.size(), 0);
 
-  num_local_walkers_per_rank[comm->rank()] = num_local_walkers_;
-  comm->allreduce(num_local_walkers_per_rank);
+  num_local_walkers_per_rank[comm.rank()] = num_local_walkers_;
+  comm.allreduce(num_local_walkers_per_rank);
 
   num_global_walkers_ = std::accumulate(num_local_walkers_per_rank.begin(), num_local_walkers_per_rank.end(), 0);
 }

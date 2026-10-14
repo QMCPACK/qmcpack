@@ -35,8 +35,7 @@ using Real  = RealAlias<Value>;
 TEST_CASE("StructureFactorEstimator::StructureFactorEstimator", "[estimators]")
 {
   using Input = qmcplusplus::testing::ValidStructureFactorInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(comm)};
 
@@ -64,8 +63,7 @@ TEST_CASE("StructureFactorEstimator::StructureFactorEstimator", "[estimators]")
 TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 {
   using Input = qmcplusplus::testing::ValidStructureFactorInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(Input::getXml(Input::valid::SKALL)));

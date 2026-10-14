@@ -45,7 +45,6 @@ feature that you are interested in, check the remainder of this manual or ask if
    coworkers, with an arbitrary mix of variance and energy in the objective
    function.
 
--  Blocked, low memory adaptive shift optimizer of Zhao and Neuscamman.
 
 -  Gaussian, Slater, plane-wave, and real-space spline basis sets for
    orbitals.

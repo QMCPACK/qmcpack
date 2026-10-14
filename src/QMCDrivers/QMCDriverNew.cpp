@@ -53,7 +53,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            MCPopulation&& population,
                            const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                            const std::string timer_prefix,
-                           Communicate* comm,
+                           Communicate& comm,
                            const std::string& QMC_driver_type)
     : MPIObjectBase(comm),
       qmcdriver_input_(std::move(input)),
@@ -137,7 +137,7 @@ void QMCDriverNew::initPopulationAndCrowds(const AdjustedWalkerCounts& awc)
     app_debug() << "Multi walker shared resources creation completed" << std::endl;
   }
 
-  makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers);
+  makeLocalWalkers(awc.walkers_per_rank[myComm.rank()], awc.reserve_walkers);
 
   crowds_.resize(awc.walkers_per_crowd.size());
 
@@ -190,7 +190,7 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
   //clear the walker set
   wset.clear();
   int nwtot = walker_configs_ref_.getActiveWalkers();
-  myComm->bcast(nwtot);
+  myComm.bcast(nwtot);
   if (nwtot)
     setWalkerOffsets(walker_configs_ref_, myComm);
 }
@@ -553,11 +553,11 @@ void QMCDriverNew::measureImbalance(const std::string& tag) const
 {
   ScopedTimer local_timer(timers_.imbalance_timer);
   Timer only_this_barrier;
-  myComm->barrier();
+  myComm.barrier();
   std::vector<double> my_barrier_time(1, only_this_barrier.elapsed());
-  std::vector<double> barrier_time_all_ranks(myComm->size(), 0.0);
-  myComm->gather(my_barrier_time, barrier_time_all_ranks, 0);
-  if (!myComm->rank())
+  std::vector<double> barrier_time_all_ranks(myComm.size(), 0.0);
+  myComm.gather(my_barrier_time, barrier_time_all_ranks, 0);
+  if (!myComm.rank())
   {
     auto const count  = static_cast<double>(barrier_time_all_ranks.size());
     const auto max_it = std::max_element(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end());
@@ -573,13 +573,13 @@ void QMCDriverNew::measureImbalance(const std::string& tag) const
   }
 }
 
-void QMCDriverNew::setWalkerOffsets(WalkerConfigurations& walker_configs, Communicate* comm)
+void QMCDriverNew::setWalkerOffsets(WalkerConfigurations& walker_configs, Communicate& comm)
 {
-  std::vector<int> nw(comm->size(), 0);
-  std::vector<int> nwoff(comm->size() + 1, 0);
-  nw[comm->rank()] = walker_configs.getActiveWalkers();
-  comm->allreduce(nw);
-  for (int ip = 0; ip < comm->size(); ip++)
+  std::vector<int> nw(comm.size(), 0);
+  std::vector<int> nwoff(comm.size() + 1, 0);
+  nw[comm.rank()] = walker_configs.getActiveWalkers();
+  comm.allreduce(nw);
+  for (int ip = 0; ip < comm.size(); ip++)
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
 
   walker_configs.setWalkerOffsets(nwoff);

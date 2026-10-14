@@ -34,13 +34,13 @@ namespace testing
 class SetupSFNBranch
 {
 public:
-  SetupSFNBranch(Communicate* comm) : comm_{comm} {}
+  SetupSFNBranch(Communicate& comm) : comm_{comm} {}
 
-  SetupSFNBranch() : comm_{OHMMS::Controller} {}
+  SetupSFNBranch() : comm_{*OHMMS::Controller} {}
 
   std::unique_ptr<SFNBranch> operator()(ParticleSet& pset, TrialWaveFunction& twf, QMCHamiltonian& ham)
   {
-    pop_ = std::make_unique<MCPopulation>(1, comm_->rank(), pset, twf, ham);
+    pop_ = std::make_unique<MCPopulation>(1, comm_.rank(), pset, twf, ham);
     // MCPopulation owns it walkers it cannot just take refs so we just create and then update its walkers.
     pop_->createWalkers(2, walker_confs_);
 
@@ -66,7 +66,7 @@ private:
     sfnb.put(doc_->getRoot());
   }
 
-  Communicate* comm_;
+  Communicate& comm_;
   UPtr<EstimatorManagerNew> emb_;
   WalkerConfigurations walker_confs_;
   UPtr<MCPopulation> pop_;

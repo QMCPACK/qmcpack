@@ -18,9 +18,7 @@
 #if defined(HAVE_AMD_LIBM)
 #include <amdlibm.h>
 #endif
-#if defined(HAVE_MASS)
-#include <mass.h>
-#endif
+
 
 namespace qmcplusplus
 {
@@ -44,16 +42,7 @@ inline void sincos(double a, double* restrict s, double* restrict c) { ::sincos(
 
 inline void sincos(float a, float* restrict s, float* restrict c)
 {
-#if defined(HAVE_MASS)
-  // there is no sincosf in libmass
-  // libmass sincos is faster than libm sincosf
-  double ds, dc;
-  ::sincos((double)a, &ds, &dc);
-  *s = ds;
-  *c = dc;
-#else
   ::sincosf(a, s, c);
-#endif
 }
 
 #else // fallback

@@ -2206,8 +2206,7 @@ PseudoSet(
         'C': 4,
         'O': 6,
     }},
-)
-"""
+)"""
     assert(repr(pseudoset) == ref_repr)
 #end def test_pseudoset_repr
 

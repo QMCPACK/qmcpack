@@ -38,14 +38,15 @@ class HDFWalkerOutput
   /** number of particles */
   const size_t number_of_particles_;
   ///communicator
-  Communicate* myComm;
+  Communicate& myComm;
   int currentConfigNumber;
   ///rootname
   std::string RootName;
   std::string prevFile;
+
 public:
   ///constructor
-  HDFWalkerOutput(size_t num_ptcls, const std::string& fname, Communicate* c);
+  HDFWalkerOutput(size_t num_ptcls, const std::string& fname, Communicate& c);
   ///destructor
   ~HDFWalkerOutput();
 

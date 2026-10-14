@@ -28,14 +28,14 @@ namespace qmcplusplus
 class HamiltonianFactory : public MPIObjectBase
 {
 public:
-  using PSetMap     = std::map<std::string, const std::unique_ptr<ParticleSet>>;
+  using PSetMap = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
   ///constructor
   HamiltonianFactory(const std::string& hName,
                      ParticleSet& qp,
                      const PSetMap& pset,
                      OptionalRef<TrialWaveFunction>&& psi_optional,
-                     Communicate* c);
+                     Communicate& c);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);

@@ -16,7 +16,7 @@ set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 add_executable(${UTEST_EXE} test_CUDAallocator.cpp)
 target_link_libraries(${UTEST_EXE} platform_runtime containers catch_main)
 
-add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
 add_labels_for_tests("${CURRENT_TESTS}")

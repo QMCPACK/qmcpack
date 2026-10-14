@@ -18,7 +18,9 @@ def read_parameters(filename):
     parameters = {}
 
     for coefficients in root.findall("wavefunction/jastrow/correlation/coefficients"):
-        parameters[coefficients.attrib["id"]] = [float(value) for value in coefficients.text.split()]
+        parameters[coefficients.attrib["id"]] = [
+            float(value) for value in coefficients.text.split()
+        ]
 
     for csf in root.findall("wavefunction/determinantset/multideterminant/detlist/csf"):
         parameters[csf.attrib["id"]] = [float(csf.attrib["coeff"])]
@@ -32,7 +34,9 @@ def main():
     reference_count = sum(len(values) for values in reference.values())
 
     if reference_count != EXPECTED_PARAMETER_COUNT:
-        print(f"Expected {EXPECTED_PARAMETER_COUNT} reference parameters, found {reference_count}")
+        print(
+            f"Expected {EXPECTED_PARAMETER_COUNT} reference parameters, found {reference_count}"
+        )
         return 1
 
     for name, expected_values in reference.items():
@@ -41,7 +45,9 @@ def main():
             print(f"Missing optimized parameter group: {name}")
             return 1
         if len(actual_values) != len(expected_values):
-            print(f"Parameter count differs for {name}: {len(actual_values)} != {len(expected_values)}")
+            print(
+                f"Parameter count differs for {name}: {len(actual_values)} != {len(expected_values)}"
+            )
             return 1
 
         for index, (actual, expected) in enumerate(zip(actual_values, expected_values)):

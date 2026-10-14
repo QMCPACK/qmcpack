@@ -32,17 +32,13 @@ class QMCCostFunction : public QMCCostFunctionBase, public CloneManager
 {
 public:
   ///Constructor.
-  QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
+  QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate& comm);
 
   ///Destructor
   ~QMCCostFunction() override;
 
   void getConfigurations(const std::string& aroot) override;
   void checkConfigurations(EngineHandle& handle) override;
-#ifdef HAVE_LMY_ENGINE
-  void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                  OptionalRef<DescentEngine> descentEngineObj) override;
-#endif
 
 
   void resetPsi(bool final_reset = false) override;
@@ -60,10 +56,6 @@ protected:
 
   EffectiveWeight correlatedSampling(bool needGrad = true) override;
 
-#ifdef HAVE_LMY_ENGINE
-  size_t total_samples();
-  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>& EngineObj) override;
-#endif
 
   NewTimer& fill_timer_;
 };

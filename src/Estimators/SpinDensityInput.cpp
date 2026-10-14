@@ -13,6 +13,7 @@
 #include <cmath>
 
 #include "EstimatorInput.h"
+#include <CPU/math.hpp>
 
 namespace qmcplusplus
 {
@@ -75,7 +76,7 @@ void SpinDensityInput::SpinDensityInputSection::checkParticularValidity()
       for (int j = 0; j < DIM; ++j)
         axes(i, j) = cell_values[i * DIM + j];
     const Real cell_volume = det(axes);
-    if (!std::isfinite(cell_volume) || cell_volume == 0.0)
+    if (!qmcplusplus::isfinite(cell_volume) || cell_volume == 0.0)
       throw UniformCommunicateError(error_tag + "cell must have a finite, nonzero volume");
 
     if (!has("corner") && !has("center"))
