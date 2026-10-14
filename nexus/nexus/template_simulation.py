@@ -30,7 +30,7 @@
 
 import os
 from .developer import obj
-from .simulation import Simulation,SimulationInput,SimulationAnalyzer
+from .simulation import Simulation,SimulationInput,SimulationAnalyzer, AppResult
 
 
 # PLEASE READ THIS
@@ -257,7 +257,7 @@ class TemplateSimulation(Simulation):
     generic_identifier = 'template_simulation'
     application        = 'template_simulation_exe' #replace with default name of template_simulation executable
     application_properties = frozenset({'serial','mpi'})
-    application_results    = frozenset({'orbitals'}) #what template_simulation produces that other simulations can use
+    application_results    = AppResult.ORBITALS #what template_simulation produces that other simulations can use
 
     def check_result(self,result_name,sim):
         # optional

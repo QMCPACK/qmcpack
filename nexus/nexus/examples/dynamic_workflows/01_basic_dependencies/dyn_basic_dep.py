@@ -128,6 +128,6 @@ elif relax.fail:
 elif scf.fail:
     print('\nSCF failed.')
 elif nscf.fail:
-    print('\nSCF failed.')
+    print('\nNSCF failed.')
 else:
     print('\nAll runs completed successfully!')

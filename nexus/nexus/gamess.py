@@ -34,7 +34,7 @@
 import os
 import numpy as np
 from .developer import obj
-from .simulation import Simulation
+from .simulation import Simulation, AppResult
 from .gamess_input import GamessInput, generate_gamess_input, FormattedGroup, GuessGroup, GIarray
 from .gamess_analyzer import GamessAnalyzer
 
@@ -46,7 +46,7 @@ class Gamess(Simulation):
     application        = 'gamess.x'
     infile_extension   = '.inp'
     application_properties = frozenset({'serial','mpi'})
-    application_results    = frozenset({'orbitals'})
+    application_results    = AppResult.ORBITALS
 
     ericfmt = None
     mcppath = None
@@ -95,7 +95,7 @@ class Gamess(Simulation):
 
     def check_result(self,result_name,sim):
         input = self.input
-        if result_name=='orbitals':
+        if result_name is AppResult.ORBITALS:
             calculating_result = 'contrl' in input and 'scftyp' in input.contrl and input.contrl.scftyp.lower() in {'rhf','rohf','uhf','mcscf','none'}
         else:
             calculating_result = False
@@ -108,7 +108,7 @@ class Gamess(Simulation):
         result = obj()
         input    = self.input
         analyzer = self.load_analyzer_image()
-        if result_name=='orbitals':
+        if result_name is AppResult.ORBITALS:
             result.location  = os.path.join(self.locdir,self.outfile)
             result.outfile   = result.location
             result.vec       = None # vec from punch
@@ -126,7 +126,7 @@ class Gamess(Simulation):
                 result.orbitals = analyzer.orbitals
             #end if
         else:
-            msg = 'ability to get result '+result_name+' has not been implemented'
+            msg = f"Ability to get result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if
         return result
@@ -135,7 +135,7 @@ class Gamess(Simulation):
 
     def incorporate_result(self,result_name,result,sim):
         input = self.input
-        if result_name=='orbitals':
+        if result_name is AppResult.ORBITALS:
             if result.vec is None or result.norbitals<1:
                 msg = 'could not obtain orbitals from previous GAMESS run'
                 raise RuntimeError(msg)
@@ -238,7 +238,7 @@ class Gamess(Simulation):
                 )
             input.vec = FormattedGroup(result.vec)
         else:
-            msg = 'ability to incorporate result '+result_name+' has not been implemented'
+            msg = f"Ability to incorporate result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if
     #end def incorporate_result
