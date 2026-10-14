@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
   OHMMS::Controller = std::make_unique<Communicate>(env.world());
   if (OHMMS::Controller->rank())
     outputManager.shutOff();
-  Communicate node_comm{OHMMS::Controller->NodeComm()};
+  Communicate node_comm{OHMMS::Controller->createNodeComm()};
   // assign accelerators within a node
   qmcplusplus::DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 #else

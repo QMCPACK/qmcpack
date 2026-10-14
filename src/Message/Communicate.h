@@ -74,17 +74,6 @@ public:
   Communicate(mpi3::communicator&& in_comm);
 #endif
 
-  /** constructor that splits in_comm
-   * in_comm.size() == 12 ; nparts = 2; stripe = 0
-   *   | group 0      | group 1       |
-   *   |  0 1 2 3 4 5 | 6 7 8 9 10 11 |
-   * in_comm.size() == 12 ; nparts = 2; stripe = 3;
-   *   | group 0 | group 1 |
-   *   |  0 1 2  |  3 4 5  |
-   *   |  6 7 8  | 9 10 11 |
-   */
-  Communicate(const Communicate& in_comm, int nparts, int stripe = 0);
-
   /**destructor
    * Call proper finalization of Communication library
    */
@@ -93,17 +82,58 @@ public:
   ///disable copy constructor
   Communicate(const Communicate&) = delete;
 
-  /** Move constructor
-   *  Transfers ownership of communicators and state from another Communicate instance.
-   */
   Communicate(Communicate&&);
 
-  /** provide a node/shared-memory communicator from current (parent) communicator
+  /** Create a new communicator by partitioning the current communicator into `nparts` subgroups.
    *
-   *  The inter_group_comm_ is created across nodes for ranks sharing the same intra-node rank.
-   *  Note: the size of the node communicator and its inter_group_comm_ may differ on different nodes.
+   *  The ranks are partitioned fairly using FairDivideLow. When `multiple` > 1 is specified,
+   *  ranks are grouped in contiguous chunks of size `multiple` so that the size of each
+   *  resulting sub-communicator is guaranteed to be a multiple of `multiple`.
+   *
+   *  @param nparts   The number of sub-communicator groups to divide into.
+   *  @param multiple The granularity of each sub-communicator size. `size()` must be divisible
+   *                  by `multiple`, and `multiple` must be >= 1. Defaults to 1.
+   *  @return The sub-communicator corresponding to the calling rank's subgroup.
+   *
+   *  Example 1: size() == 12, nparts = 2, multiple = 1
+   *    | group 0      | group 1       |
+   *    |  0 1 2 3 4 5 | 6 7 8 9 10 11 |
+   *
+   *  Example 2: size() == 10, nparts = 3, multiple = 2
+   *    | group 0 | group 1 | group 2 |
+   *    |  0 1    |  2 3 4 5 | 6 7 8 9 |
    */
-  Communicate NodeComm() const;
+  Communicate split(int nparts, int multiple = 1) const;
+
+  /** create a new communicator by splitting the current communicator with stride
+   * size() == 12 ; nparts = 2; stride = 3;
+   *   | group 0 | group 1 |
+   *   |  0 1 2  |  3 4 5  |
+   *   |  6 7 8  | 9 10 11 |
+   */
+  Communicate splitByStride(int nparts, int stride) const;
+
+  /** create a node/shared-memory communicator from current (parent) communicator
+   *
+   *  Note: the size of the node communicator may differ on different nodes.
+   */
+  Communicate createNodeComm() const;
+
+
+  /** return the rank count of a uniform node
+   *
+   *  A "uniform node" is defined as a logical grouping of ranks that resides entirely within
+   *  a single physical node, where all uniform nodes across the communicator have an identical
+   *  number of ranks.
+   *
+   *  Because different physical nodes may host varying numbers of ranks, the rank count of a
+   *  uniform node is determined by the greatest common divisor (GCD) of all local node communicator
+   *  sizes across the communicator. This ensures every physical node can be partitioned into an
+   *  integer number of identically sized sub-node groups.
+   *
+   *  In non-MPI (serial) builds, this returns 1.
+   */
+  int getUniformNodeRankCount() const;
 
   void barrier() const;
   void abort() const;
@@ -185,8 +215,6 @@ public:
   template<typename T, typename IT>
   void gatherv(T& sb, T& rb, IT& counts, IT& displ, int dest = 0);
   template<typename T>
-  void allgather(T& sb, T& rb);
-  template<typename T>
   void scatter(T& sb, T& rb, int dest = 0);
   template<typename T, typename IT>
   void scatterv(T& sb, T& rb, IT& counts, IT& displ, int source = 0);
@@ -195,7 +223,9 @@ public:
   template<typename T, typename TMPI, typename IT>
   void gatherv_in_place(T* buf, const TMPI& datatype, IT& counts, IT& displ, int dest = 0);
   template<typename T>
-  void allgather(T* sb, T* rb, int count);
+  void allgather(T& sb, T& rb);
+  template<typename T>
+  void allgather(const T* sb, T* rb, int count);
 
 
 private:

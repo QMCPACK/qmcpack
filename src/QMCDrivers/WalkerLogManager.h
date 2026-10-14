@@ -104,7 +104,7 @@ private:
 
 public:
   WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate& comm);
-  WalkerLogManager& operator=(WalkerLogManager&& other) = default;
+  WalkerLogManager& operator=(WalkerLogManager&& other) = delete;
   WalkerLogManager(WalkerLogManager&& other)            = default;
   /// create a WalkerLogCollector
   std::unique_ptr<WalkerLogCollector> makeCollector() const;

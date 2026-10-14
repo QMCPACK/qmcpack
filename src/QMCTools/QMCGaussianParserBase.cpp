@@ -351,7 +351,7 @@ xmlNodePtr QMCGaussianParserBase::createElectronSet(const std::string& ion_tag)
 {
   ParticleSet els(simulation_cell);
   els.setName("e");
-  if (!isSpinor)
+  if (!isSpinor && NumberOfBeta > 0)
   {
     std::vector<int> nel(2);
     nel[0] = NumberOfAlpha;
@@ -394,7 +394,7 @@ xmlNodePtr QMCGaussianParserBase::createElectronSet(const std::string& ion_tag)
     xmlAddChild(cur, g);
   }
   //Electron dn
-  if (!isSpinor)
+  if (!isSpinor && NumberOfBeta > 0)
   {
     std::ostringstream ng;
     ng << els.last(1) - els.first(1);
@@ -697,7 +697,10 @@ xmlNodePtr QMCGaussianParserBase::createDeterminantSetWithHDF5()
 
       hout.write(Ctemp, "eigenset_1");
     }
-    cur = xmlAddSibling(cur, ddet);
+    if (NumberOfBeta > 0)
+      cur = xmlAddSibling(cur, ddet);
+    else
+      xmlFreeNode(ddet);
   }
 
   hout.close();
@@ -731,6 +734,9 @@ xmlNodePtr QMCGaussianParserBase::PrepareDeterminantSetFromHDF5()
   xmlAddChild(udet, coeff_data);
   //add udet to slaterdet
   xmlNodePtr cur = xmlAddChild(slaterdet, udet);
+
+  if (NumberOfBeta == 0)
+    return slaterdet;
 
   xmlNodePtr ddet;
   if (SpinRestricted)
@@ -800,6 +806,8 @@ xmlNodePtr QMCGaussianParserBase::createDeterminantSet()
   xmlNewProp(det_data, (const xmlChar*)"size", (const xmlChar*)b_size.str().c_str());
   xmlNewProp(det_data, (const xmlChar*)"id", (const xmlChar*)"updetC");
   xmlNodePtr cur = xmlAddChild(slaterdet, adet);
+  if (NumberOfBeta == 0)
+    return slaterdet;
   adet           = xmlNewNode(NULL, (const xmlChar*)"determinant");
   xmlNewProp(adet, (const xmlChar*)"id", (const xmlChar*)"downdet");
   xmlNewProp(adet, (const xmlChar*)"size", (const xmlChar*)down_size.str().c_str());
@@ -1045,36 +1053,14 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"yes");
   else
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"no");
-  if (isSpinor)
-    xmlNewProp(multislaterdet, (const xmlChar*)"spo_0", (const xmlChar*)"spo-up");
-  else
-  {
-    xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
-    xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
-  }
   xmlNodePtr detlist = xmlNewNode(NULL, (const xmlChar*)"detlist");
-  std::ostringstream nstates, cisize, cinca, cincb, cinea, cineb, ci_thr;
+  std::ostringstream nstates, cisize, ci_thr;
   cisize << ci_size;
   nstates << ci_nstates;
-  cinca << ci_nca;
-  cincb << ci_ncb;
-  cinea << ci_nea;
-  cineb << ci_neb;
   ci_thr << ci_threshold;
   xmlNewProp(detlist, (const xmlChar*)"size", (const xmlChar*)cisize.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"type", (const xmlChar*)"DETS");
-  if (isSpinor)
-  {
-    xmlNewProp(detlist, (const xmlChar*)"nc0", (const xmlChar*)cinca.str().c_str());
-    xmlNewProp(detlist, (const xmlChar*)"ne0", (const xmlChar*)cinea.str().c_str());
-  }
-  else
-  {
-    xmlNewProp(detlist, (const xmlChar*)"nca", (const xmlChar*)cinca.str().c_str());
-    xmlNewProp(detlist, (const xmlChar*)"ncb", (const xmlChar*)cincb.str().c_str());
-    xmlNewProp(detlist, (const xmlChar*)"nea", (const xmlChar*)cinea.str().c_str());
-    xmlNewProp(detlist, (const xmlChar*)"neb", (const xmlChar*)cineb.str().c_str());
-  }
+  addMultiDeterminantSpinAttributes(multislaterdet, detlist);
   xmlNewProp(detlist, (const xmlChar*)"nstates", (const xmlChar*)nstates.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"cutoff", (const xmlChar*)ci_thr.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"href", (const xmlChar*)h5file.c_str());
@@ -1167,6 +1153,26 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
   return multislaterdet;
 }
 
+void QMCGaussianParserBase::addMultiDeterminantSpinAttributes(xmlNodePtr multidet, xmlNodePtr detlist) const
+{
+  // The reader's numbered attributes follow occupied particle groups, not spinor mode.
+  if (isSpinor || NumberOfBeta == 0)
+  {
+    xmlNewProp(multidet, BAD_CAST "spo_0", BAD_CAST "spo-up");
+    xmlNewProp(detlist, BAD_CAST "nc0", BAD_CAST std::to_string(ci_nca).c_str());
+    xmlNewProp(detlist, BAD_CAST "ne0", BAD_CAST std::to_string(ci_nea).c_str());
+  }
+  else
+  {
+    xmlNewProp(multidet, BAD_CAST "spo_up", BAD_CAST "spo-up");
+    xmlNewProp(multidet, BAD_CAST "spo_dn", BAD_CAST "spo-dn");
+    xmlNewProp(detlist, BAD_CAST "nca", BAD_CAST std::to_string(ci_nca).c_str());
+    xmlNewProp(detlist, BAD_CAST "ncb", BAD_CAST std::to_string(ci_ncb).c_str());
+    xmlNewProp(detlist, BAD_CAST "nea", BAD_CAST std::to_string(ci_nea).c_str());
+    xmlNewProp(detlist, BAD_CAST "neb", BAD_CAST std::to_string(ci_neb).c_str());
+  }
+}
+
 xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSet()
 {
   xmlNodePtr multislaterdet = xmlNewNode(NULL, (const xmlChar*)"multideterminant");
@@ -1174,25 +1180,16 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSet()
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"yes");
   else
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"no");
-  xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
-  xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
   if (usingCSF)
   {
     xmlNodePtr detlist = xmlNewNode(NULL, (const xmlChar*)"detlist");
-    std::ostringstream nstates, cisize, cinca, cincb, cinea, cineb, ci_thr;
+    std::ostringstream nstates, cisize, ci_thr;
     cisize << ci_size;
     nstates << ci_nstates;
-    cinca << ci_nca;
-    cincb << ci_ncb;
-    cinea << ci_nea;
-    cineb << ci_neb;
     ci_thr << ci_threshold;
     xmlNewProp(detlist, (const xmlChar*)"size", (const xmlChar*)cisize.str().c_str());
     xmlNewProp(detlist, (const xmlChar*)"type", (const xmlChar*)"CSF");
-    xmlNewProp(detlist, (const xmlChar*)"nca", (const xmlChar*)cinca.str().c_str());
-    xmlNewProp(detlist, (const xmlChar*)"ncb", (const xmlChar*)cincb.str().c_str());
-    xmlNewProp(detlist, (const xmlChar*)"nea", (const xmlChar*)cinea.str().c_str());
-    xmlNewProp(detlist, (const xmlChar*)"neb", (const xmlChar*)cineb.str().c_str());
+    addMultiDeterminantSpinAttributes(multislaterdet, detlist);
     xmlNewProp(detlist, (const xmlChar*)"nstates", (const xmlChar*)nstates.str().c_str());
     xmlNewProp(detlist, (const xmlChar*)"cutoff", (const xmlChar*)ci_thr.str().c_str());
     CIexcitLVL.clear();
@@ -1278,8 +1275,10 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSet()
         tag0 << "csf_" << iv << "-" << i;
         xmlNewProp(ci, (const xmlChar*)"id", (const xmlChar*)tag0.str().c_str());
         xmlNewProp(ci, (const xmlChar*)"coeff", (const xmlChar*)coeff0.str().c_str());
-        xmlNewProp(ci, (const xmlChar*)"alpha", (const xmlChar*)CSFalpha[nq][i].substr(0, ci_nstates).c_str());
-        xmlNewProp(ci, (const xmlChar*)"beta", (const xmlChar*)CSFbeta[nq][i].substr(0, ci_nstates).c_str());
+        xmlNewProp(ci, BAD_CAST(NumberOfBeta == 0 ? "occ0" : "alpha"),
+                   BAD_CAST CSFalpha[nq][i].substr(0, ci_nstates).c_str());
+        if (NumberOfBeta > 0)
+          xmlNewProp(ci, (const xmlChar*)"beta", (const xmlChar*)CSFbeta[nq][i].substr(0, ci_nstates).c_str());
         xmlAddChild(csf, ci);
       }
       xmlAddChild(detlist, csf);
@@ -1296,20 +1295,13 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSet()
     for (int i = 0; i < CIcoeff.size(); i++)
       if (std::abs(CIcoeff[i]) > ci_threshold)
         ci_size++;
-    std::ostringstream nstates, cisize, cinca, cincb, cinea, cineb, ci_thr;
+    std::ostringstream nstates, cisize, ci_thr;
     cisize << ci_size;
     nstates << ci_nstates;
-    cinca << ci_nca;
-    cincb << ci_ncb;
-    cinea << ci_nea;
-    cineb << ci_neb;
     ci_thr << ci_threshold;
     xmlNewProp(detlist, (const xmlChar*)"size", (const xmlChar*)cisize.str().c_str());
     xmlNewProp(detlist, (const xmlChar*)"type", (const xmlChar*)"DETS");
-    xmlNewProp(detlist, (const xmlChar*)"nca", (const xmlChar*)cinca.str().c_str());
-    xmlNewProp(detlist, (const xmlChar*)"ncb", (const xmlChar*)cincb.str().c_str());
-    xmlNewProp(detlist, (const xmlChar*)"nea", (const xmlChar*)cinea.str().c_str());
-    xmlNewProp(detlist, (const xmlChar*)"neb", (const xmlChar*)cineb.str().c_str());
+    addMultiDeterminantSpinAttributes(multislaterdet, detlist);
     xmlNewProp(detlist, (const xmlChar*)"nstates", (const xmlChar*)nstates.str().c_str());
     xmlNewProp(detlist, (const xmlChar*)"cutoff", (const xmlChar*)ci_thr.str().c_str());
     if (CIcoeff.size() == 0)
@@ -1348,8 +1340,10 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSet()
         xmlNewProp(ci, (const xmlChar*)"id", (const xmlChar*)tag.str().c_str());
         xmlNewProp(ci, (const xmlChar*)"coeff", (const xmlChar*)coeff.str().c_str());
         xmlNewProp(ci, (const xmlChar*)"qc_coeff", (const xmlChar*)qc_coeff.str().c_str());
-        xmlNewProp(ci, (const xmlChar*)"alpha", (const xmlChar*)CIalpha[i].substr(0, ci_nstates).c_str());
-        xmlNewProp(ci, (const xmlChar*)"beta", (const xmlChar*)CIbeta[i].substr(0, ci_nstates).c_str());
+        xmlNewProp(ci, BAD_CAST(NumberOfBeta == 0 ? "occ0" : "alpha"),
+                   BAD_CAST CIalpha[i].substr(0, ci_nstates).c_str());
+        if (NumberOfBeta > 0)
+          xmlNewProp(ci, (const xmlChar*)"beta", (const xmlChar*)CIbeta[i].substr(0, ci_nstates).c_str());
         xmlAddChild(detlist, ci);
       }
     }
@@ -1605,7 +1599,7 @@ xmlNodePtr QMCGaussianParserBase::createJ3()
     xmlNewProp(a, (const xmlChar*)"optimize", (const xmlChar*)"yes");
     xmlAddChild(j3, uuc);
 
-    if (!isSpinor)
+    if (!isSpinor && NumberOfBeta > 0)
     {
       xmlNodePtr udc = xmlNewNode(NULL, (const xmlChar*)"correlation");
       xmlNewProp(udc, (const xmlChar*)"ispecies", (const xmlChar*)ionSpecies.speciesName[i].c_str());
@@ -2606,23 +2600,14 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetFromH5()
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"yes");
   else
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"no");
-  xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
-  xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
   xmlNodePtr detlist = xmlNewNode(NULL, (const xmlChar*)"detlist");
-  std::ostringstream nstates, cisize, cinca, cincb, cinea, cineb, ci_thr;
+  std::ostringstream nstates, cisize, ci_thr;
   cisize << ci_size;
   nstates << ci_nstates;
-  cinca << ci_nca;
-  cincb << ci_ncb;
-  cinea << ci_nea;
-  cineb << ci_neb;
   ci_thr << ci_threshold;
   xmlNewProp(detlist, (const xmlChar*)"size", (const xmlChar*)cisize.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"type", (const xmlChar*)"DETS");
-  xmlNewProp(detlist, (const xmlChar*)"nca", (const xmlChar*)cinca.str().c_str());
-  xmlNewProp(detlist, (const xmlChar*)"ncb", (const xmlChar*)cincb.str().c_str());
-  xmlNewProp(detlist, (const xmlChar*)"nea", (const xmlChar*)cinea.str().c_str());
-  xmlNewProp(detlist, (const xmlChar*)"neb", (const xmlChar*)cineb.str().c_str());
+  addMultiDeterminantSpinAttributes(multislaterdet, detlist);
   xmlNewProp(detlist, (const xmlChar*)"nstates", (const xmlChar*)nstates.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"cutoff", (const xmlChar*)ci_thr.str().c_str());
   if (nbexcitedstates >= 1)
