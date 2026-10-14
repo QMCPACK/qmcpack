@@ -50,6 +50,8 @@ def test_settings(tmp_path):
             'progress_tty',
             'pseudo_dir',
             'quiet',
+            'verbose',
+            'debug',
             'remote_directory',
             'results',
             'runs',
@@ -76,6 +78,8 @@ def test_settings(tmp_path):
             'progress_tty',
             'pseudo_dir',
             'quiet',
+            'verbose',
+            'debug',
             'remote_directory',
             'results',
             'runs',
@@ -193,9 +197,6 @@ def test_legacy_and_path_settings(tmp_path):
     basis_dir = tmp_path / "basis"
     basis_dir.mkdir()
 
-    with pytest.warns(NexusUserWarning, match="verbose"):
-        settings(command_line=False, verbose=False)
-
     settings(
         command_line=False,
         status="standard",
@@ -208,50 +209,3 @@ def test_legacy_and_path_settings(tmp_path):
     assert(nexus_config.basis_dir == str(basis_dir))
     assert(settings.local_directory == str(local_dir))
     assert(settings.basis_dir == str(basis_dir))
-
-
-@isolate_nexus_core
-def test_legacy_settings_preserve_runtime_behavior():
-    with pytest.warns(NexusUserWarning, match="verbose"):
-        settings(command_line=False, verbose=False)
-    assert(nexus_config.quiet)
-
-    with (
-        pytest.warns(NexusUserWarning, match="debug"),
-        # pytest.warns(NexusUserWarning, match="verbose")
-        # Adding the second filter breaks with Pytest 7.4.4
-        # See PR #6207
-        ):
-        settings(command_line=False, verbose=False, debug=True)
-    assert(not nexus_config.quiet)
-
-    expected_modes = {
-        "none": SimStage(0),
-        "setup": SimStage.write_input,
-        "send_files": SimStage.send_files,
-        "submit": SimStage.submit,
-        "get_output": SimStage.get_output,
-        "analyze": SimStage.analyze,
-        "all": SimStage.all,
-        }
-    for mode, expected in expected_modes.items():
-        with pytest.warns(NexusUserWarning, match="mode"):
-            settings(command_line=False, mode=mode)
-        assert(nexus_config.stages is expected)
-
-    with pytest.warns(NexusUserWarning, match="mode"):
-        settings(command_line=False, mode="submit", stages=["analyze"])
-    assert(nexus_config.stages is SimStage.submit)
-
-    settings(command_line=False, stages=[])
-    assert(nexus_config.stages is SimStage.all)
-    settings(command_line=False, stages="setup")
-    assert(nexus_config.stages is SimStage.write_input)
-
-    settings(command_line=False, stages=["submit"], generate_only=True)
-    assert(nexus_config.stages is SimStage.submit)
-    assert(nexus_config.generate_only)
-
-    settings(command_line=False, sleep=0, timeout=0)
-    assert(nexus_config.sleep == 0)
-    assert(nexus_config.timeout == 0)

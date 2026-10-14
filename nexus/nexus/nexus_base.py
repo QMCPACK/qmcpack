@@ -109,6 +109,8 @@ class NexusConfig:
         "stages",
         "dependent_modes",
         "quiet",
+        "verbose",
+        "debug",
         "indent",
         "progress_tty",
         "graph_sims",
@@ -203,6 +205,27 @@ class NexusConfig:
     dependent_modes: SimStage
     """Set which stages are required for runtime execution."""
 
+    verbose: Literal[0, 1, 2]
+    """***NOT IMPLEMENTED***
+    Additional verbosity levels for simulation logging.
+
+    Overrides :attr:`quiet`.
+
+    ``0`` prints :const:`logging.INFO` to simulation log and
+    :const:`logging.WARN` to stdout.
+
+    ``1`` prints :const:`logging.INFO` to simulation log and stdout.
+
+    ``2`` currently has no effect beyond ``1``.
+    """
+
+    debug: bool
+    """***NOT IMPLEMENTED***
+    Make simulation logs print :const:`logging.DEBUG` to sim log and stdout.
+
+    Overrides :attr:`verbosity` and :attr:`quiet`.
+    """
+
     quiet: bool
     """Disable all Nexus output after initialization."""
 
@@ -277,6 +300,8 @@ class NexusConfig:
         self.load_images      = True
         self.stages           = SimStage.all
         self.dependent_modes  = SimStage.submit
+        self.verbose          = 0
+        self.debug            = False
         self.quiet            = False
         self.indent           = '  '
         self.progress_tty     = False
