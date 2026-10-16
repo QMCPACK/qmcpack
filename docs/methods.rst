@@ -226,6 +226,8 @@ Parameters:
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
   | ``estimator_period``           | integer      | :math:`> 0`             | 1           | Number of steps between estimator measurements       |
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
+  | ``write_vmc_dat``                    | boolean      | yes,no                  | no          | Write scalar quantities for every VMC step           |
+  +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
   | ``samples``                    | integer      | :math:`\geq 0`          | 0           | Total number of walker samples for this VMC run      |
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
   | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency                     |
@@ -294,6 +296,12 @@ Additional information:
 
 - ``estimator_period`` The period with which estimators are evaluated, measured in steps. If measurements have a significant
     correlation time, this can reduce the computational cost of unnecessarily frequent estimator evaluations.
+
+- ``write_vmc_dat`` When ``yes``, write one row of scalar quantities for every VMC step to
+  ``<project id>.s<series>.vmc.dat``. The columns match the corresponding
+  ``scalar.dat`` file and include the walker weight. Each VMC section has its
+  own series and therefore produces its own file. This optional output is
+  available only with the batched VMC driver.
 
 - ``samples`` The intended total number of samples that will be made in the QMC section. This is primarily intended for VMC
   wavefunction optimization. The implementation always obtains at least the requested number but may obtain slightly more samples

@@ -801,10 +801,12 @@ QMCA examples:
  all quantities single file
    qmca qmc.s000.scalar.dat
    qmca qmc.s000.dmc.dat
+   qmca qmc.s000.vmc.dat
 
  single quantity (local energy) single file
    qmca -q e qmc.s000.scalar.dat
    qmca -q e qmc.s000.dmc.dat
+   qmca -q e qmc.s000.vmc.dat
 
  single quantity (local energy) multiple files
   multiple series
@@ -1205,7 +1207,7 @@ QMCA examples:
 
 
     def load_data(self):
-        allowed_extensions = obj(scalar='scalar.dat',dmc='dmc.dat')
+        allowed_extensions = obj(scalar='scalar.dat',dmc='dmc.dat',vmc='vmc.dat')
         opt  = self.options
         data = self.data
         ifile = 0
