@@ -50,3 +50,8 @@ documentation:
       - any-glob-to-any-file:
           - "docs/**"
           - "nexus/docs/**"
+
+"GitHub Actions":
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**"
