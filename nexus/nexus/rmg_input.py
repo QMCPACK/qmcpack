@@ -4,6 +4,7 @@ from copy import deepcopy
 from .developer import DevBase, obj, FileFormatError, NexusError
 from .unit_converter import convert
 from .pseudoset import pp_elem_label, PseudoSet
+from .physical_system import PhysicalSystem
 from .structure import generate_structure
 from .simulation import SimulationInput
 from . import numpy_extensions as npe
@@ -4113,12 +4114,23 @@ def generate_any_rmg_input(**kwargs):
     ri.assign(**kw)
 
     # incorporate pseudopotentials details provided via "pseudos"
-    if pseudos is not None:
+    if isinstance(system, PhysicalSystem) and system.pseudos is not None:
+        if pseudos is not None and len(pseudos) > 0:
+            msg = "Can not pass explicit pseudos when they are bound to a PhysicalSystem!"
+            raise ValueError(msg)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = system.pseudos,
+            system = system,
+            code = "rmg",
+        )
+    elif pseudos is not None:
         pseudos = PseudoSet.get_pseudos(
             pseudos = pseudos,
             system = system,
-            code = 'rmg',
+            code = "rmg",
             )
+
+    if pseudos is not None:
         species = []
         pps     = []
         for ppname in pseudos:

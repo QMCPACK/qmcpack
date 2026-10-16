@@ -21,7 +21,7 @@ from __future__ import annotations
 import os
 from copy import deepcopy
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -30,7 +30,7 @@ from .periodic_table import Elements
 from .structure import Structure, generate_structure, read_structure
 
 if TYPE_CHECKING:
-    from .pseudoset import PseudoSet  # noqa: TC004
+    from .pseudoset import PseudoSet, PseudoSetCollection
 
 
 class PhysicalSystem(DevBase):
@@ -102,6 +102,7 @@ class PhysicalSystem(DevBase):
 
         if len(valency) > 0:
             self.pseudize(**valency)
+            self.pseudos = pseudos
         elif pseudos is not None:
             self.update_pseudos(pseudos)
         else:
@@ -340,27 +341,26 @@ class PhysicalSystem(DevBase):
     #end def kf_rpa
 
 
-    def update_pseudos(self, pseudos: PseudoSet | dict[str, PseudoSet]):
-        from .pseudoset import PseudoSet  # Here to avoid circular imports
+    def update_pseudos(self, pseudos: PseudoSet | PseudoSetCollection):
+        from .pseudoset import PseudoSet, PseudoSetCollection  # Here to avoid circular imports
         if isinstance(pseudos, PseudoSet):
-            self.pseudos = {next(iter(pseudos.codes)): pseudos}
-        elif (
-            isinstance(pseudos, dict)
-            and all(isinstance(i, PseudoSet) for i in pseudos.values())
-        ):
+            self.pseudos = PseudoSetCollection(
+                **{code: pseudos for code in pseudos.codes}
+            )
+        elif isinstance(pseudos, PseudoSetCollection):
             self.pseudos = pseudos
         else:
             msg = (
-                "Argument `pseudos` must be either a PseudoSet or dict of PseudoSet\n"
+                "Argument `pseudos` must be either a PseudoSet or a PseudoSetCollection\n"
                 f"but has type {type(pseudos).__name__}!"
             )
             raise TypeError(msg)
 
-        all_same, msg = PseudoSet.check_same_Zeff(self.pseudos, elements=self.structure)
+        all_same, msg = self.pseudos.check_same_Zeff(elements=self.structure)
         if not all_same:
             raise RuntimeError(msg)
 
-        pseudo_valency = next(iter(self.pseudos.values())).get_Zeff(self.structure)
+        pseudo_valency = self.pseudos.get_Zeff(self.structure)
         if self.pseudized:
             msg = ""
             for elem, current_valency in self.valency.items():
