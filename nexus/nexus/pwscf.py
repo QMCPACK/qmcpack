@@ -569,7 +569,6 @@ def generate_pwscf(**kwargs):
             # Guard so that the mutual exclusion of `pseudos` and a system with pseudos
             # does not get triggered in the input generator
             kwargs['pseudos'] = pseudos
-
     else:
         pseudos = PseudoSet.get_pseudos(
             pseudos = pseudos,

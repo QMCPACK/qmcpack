@@ -186,16 +186,10 @@ class Vasp(Simulation):
 def generate_vasp(**kwargs):
     pseudos = kwargs.get("pseudos")
     system = kwargs.get("system")
-
     if isinstance(system, PhysicalSystem) and system.pseudos is not None:
         if len(pseudos) > 0:
             msg = "Can not pass explicit pseudos when they are bound to a PhysicalSystem!"
             raise ValueError(msg)
-        kwargs["pseudos"] = PseudoSet.get_pseudos(
-            pseudos = system.pseudos,
-            system = system,
-            code = "vasp",
-        )
     elif pseudos is not None:
         kwargs["pseudos"] = PseudoSet.get_pseudos(
             pseudos = pseudos,

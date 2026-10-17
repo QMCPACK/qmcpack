@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Collection, Generator, Mapping
+from collections.abc import Collection, Mapping
 from copy import deepcopy
 from enum import StrEnum, auto
 from fnmatch import fnmatchcase
@@ -12,7 +12,7 @@ from os import PathLike
 from pathlib import Path
 from textwrap import indent
 from types import MappingProxyType
-from typing import ClassVar, Literal, Self
+from typing import ClassVar, Literal
 
 from .developer import DevBase, FileFormatError, warn
 from .generic import nxs_deprecate
@@ -25,17 +25,22 @@ from .utilities import is_valid_filename
 
 class CodeString(StrEnum):
     """Known codes that accept pseudopotentials."""
+
     QUANTUM_ESPRESSO = auto()
-    GAMESS           = auto()
-    VASP             = auto()
     QMCPACK          = auto()
-    RMG              = auto()
+    GAMESS           = auto()
     PYSCF            = auto()
+    VASP             = auto()
+    RMG              = auto()
 
     ESPRESSO = QUANTUM_ESPRESSO
-    PWSCF    = QUANTUM_ESPRESSO
-    QE       = QUANTUM_ESPRESSO
-    GMS      = GAMESS
+    """Alias for :attr:`QUANTUM_ESPRESSO`"""
+    PWSCF = QUANTUM_ESPRESSO
+    """Alias for :attr:`QUANTUM_ESPRESSO`"""
+    QE = QUANTUM_ESPRESSO
+    """Alias for :attr:`QUANTUM_ESPRESSO`"""
+    GMS = GAMESS
+    """Alias for :attr:`GAMESS`"""
 
 
 def pp_elem_label(
@@ -1453,6 +1458,14 @@ class PseudoSetCollection:
     accessible collection. For example, ccECP pseudos for Quantum ESPRESSO,
     QMCPACK, RMG, and PySCF would all be in one :class:`PseudoSetCollection`.
     """
+    __slots__ = (
+        "espresso",
+        "qmcpack",
+        "gamess",
+        "pyscf",
+        "vasp",
+        "rmg",
+    )
 
     espresso: PseudoSet | None
     qmcpack: PseudoSet | None
@@ -1463,20 +1476,11 @@ class PseudoSetCollection:
 
     def __init__(
         self,
+        *,
+        check_Zeff: bool = False,
         **pseudos: PseudoSet,
     ):
-        if not all(isinstance(i, PseudoSet) for i in pseudos.values()):
-            msg = "Must provide a dict of all PseudoSet values!"
-            raise TypeError(msg)
-
-        pseudos = PseudoSet._normalize_code_map_keys(pseudos)
-
-        self.espresso = pseudos.get(CodeString.ESPRESSO)
-        self.qmcpack  = pseudos.get(CodeString.QMCPACK)
-        self.gamess   = pseudos.get(CodeString.GAMESS)
-        self.pyscf    = pseudos.get(CodeString.PYSCF)
-        self.vasp     = pseudos.get(CodeString.VASP)
-        self.rmg      = pseudos.get(CodeString.RMG)
+        self.update_pseudos(check_Zeff=check_Zeff, **pseudos)
     #end def __init__
 
     @property
@@ -1495,6 +1499,21 @@ class PseudoSetCollection:
     def gms(self) -> PseudoSet | None:
         return self.gamess
 
+    @property
+    def pseudos(self) -> dict[CodeString, PseudoSet]:
+        return {
+            CodeString.ESPRESSO: self.espresso,
+            CodeString.QMCPACK: self.qmcpack,
+            CodeString.GAMESS: self.gamess,
+            CodeString.PYSCF: self.pyscf,
+            CodeString.VASP: self.vasp,
+            CodeString.RMG: self.rmg,
+        }
+
+    @pseudos.setter
+    def pseudos(self, pseudos: dict[CodeString | str, PseudoSet]) -> None:
+        self.update_pseudos(check_Zeff=True, **pseudos)
+
     def check_same_Zeff(
         self, elements: Collection[str] | PhysicalSystem | Structure | None,
     ) -> tuple[bool, str]:
@@ -1511,7 +1530,7 @@ class PseudoSetCollection:
             Z-valences. If ``all_same`` is ``True``, this is an empty string.
         """
         if elements is None:
-            elements = {elem for pseudos in self.values() for elem in pseudos.pseudos}
+            elements = {elem for pseudos in self.pseudos.values() for elem in pseudos.pseudos}
         elif isinstance(elements, PhysicalSystem):
             elements = elements.ion_labels
         elif isinstance(elements, Structure):
@@ -1519,7 +1538,7 @@ class PseudoSetCollection:
 
         elements = set(elements)
         elem_Zeffs = {elem: set() for elem in sorted(elements)}
-        for ps_set in self.__dict__.values():
+        for ps_set in self.pseudos.values():
             if ps_set is None or len(ps_set.pseudos) == 0:
                 continue
             ps_Zeffs = ps_set.get_Zeff(elements, missing_as_ae=True)
@@ -1531,54 +1550,72 @@ class PseudoSetCollection:
         for elem, Zeff_set in elem_Zeffs.items():
             if len(Zeff_set) > 1:
                 all_same = False
-                files = set()
-                for code, ps_set in self.__dict__.items():
+                messages = set()
+                for code, ps_set in self.pseudos.items():
                     if ps_set is None or len(ps_set.pseudos) == 0:
                         continue
-                    files.add(
-                        f"{code.lower():<8} - "
-                        + str(ps_set.pseudos.get(elem, "All Electron, No File"))
+                    elem_msg = (
+                        f"{code.lower():>16} - "
+                        + str(ps_set.pseudos.get(elem, "No File"))
                     )
-                files = "\n".join(sorted(files))
+                    if (Zeff := ps_set.Zeff_map.get(elem)) is not None:
+                        elem_msg += f" (Custom Zeff: {Zeff})"
+                    else:
+                        Zeff = ps_set.get_Zeff({elem}, missing_as_ae=True)[elem]
+                        elem_msg += f" (Zeff: {Zeff})"
+
+                    messages.add(elem_msg)
+                messages = "\n".join(sorted(messages))
                 msg += (
                     "\n"
                     f"Zeffs are not consistent for element '{elem}'!\n"
                     f"The Z-valences in the following files do not match:\n"
-                    f"{files}\n"
-                )
+                    f"{messages}"
+                ).strip()
+                msg += "\n"
 
-        return all_same, msg.strip()
+        return all_same, msg
     #end def check_same_Zeff
 
     def update_pseudos(
-        self, **pseudos: PseudoSet,
-    ) -> Self:
-        if not all(isinstance(i, PseudoSet) for i in pseudos.values()):
+        self, *, check_Zeff: bool = True, **pseudos: PseudoSet | None,
+    ) -> None:
+        """Update the pseudopotentials for each code in the collection.
+
+        Parameters
+        ----------
+        check_Zeff : bool, default=True
+            Toggle checking that all pseudosets have the same Z-valence for all
+            elements.
+        **pseudos
+            All keys must be a valid code name, all values must be either a
+            :class:`PseudoSet` or ``None``.
+
+        See Also
+        --------
+        check_same_Zeff : Called when ``check_Zeff`` is ``True``
+        CodeString : Enumeration of all valid code names
+        """
+        if not all(isinstance(i, PseudoSet | None) for i in pseudos.values()):
             msg = (
                 "Argument `pseudos` must be either a PseudoSet or dict of PseudoSet\n"
                 f"but has type {type(pseudos).__name__}!"
             )
             raise TypeError(msg)
 
-        all_same, msg = self.check_same_Zeff(self.pseudos)
-        if not all_same:
-            raise RuntimeError(msg)
+        pseudos = PseudoSet._normalize_code_map_keys(pseudos)
 
-        pseudo_valency = next(iter(self.pseudos.values())).get_Zeff(self.structure)
-        if self.pseudized:
-            msg = ""
-            for elem, current_valency in self.valency.items():
-                if (new_valency := pseudo_valency[elem]) != current_valency:
-                    msg += (
-                        f"The Z-valence for '{elem}' does not match the value in the provided pseudos!\n"
-                        f"    Existing: {current_valency}\n"
-                        f"    Provided: {new_valency}\n"
-                    )
-            if len(msg) > 0:
-                msg = f"\n{msg}"
+        self.espresso = pseudos.get(CodeString.ESPRESSO)
+        self.qmcpack = pseudos.get(CodeString.QMCPACK)
+        self.gamess = pseudos.get(CodeString.GAMESS)
+        self.pyscf = pseudos.get(CodeString.PYSCF)
+        self.vasp = pseudos.get(CodeString.VASP)
+        self.rmg = pseudos.get(CodeString.RMG)
+
+        if check_Zeff:
+            all_same, msg = self.check_same_Zeff(elements=None)
+            if not all_same:
                 raise RuntimeError(msg)
-        else:
-            self.pseudize(**pseudo_valency)
     #end def update_pseudos
 
     def get_Zeff(
@@ -1594,13 +1631,25 @@ class PseudoSetCollection:
         elif isinstance(elements, Structure):
             _, elements = elements.species(symbol=True)
 
+        all_same, msg = self.check_same_Zeff(elements)
+
+        if not all_same:
+            raise RuntimeError(msg)
+
         pseudoset = self.get_any_pseudoset()
 
         return pseudoset.get_Zeff(elements, missing_as_ae=missing_as_ae)
     #end def get_Zeff
 
     def get_any_pseudoset(self) -> PseudoSet:
-        return next(iter({i for i in self if (i is not None and len(i.pseudos) > 0)}))
+        return next(
+            iter(
+                {
+                    i for i in self.pseudos.values()
+                    if (i is not None and len(i.pseudos) > 0)
+                }
+            )
+        )
     #end def get_any_pseudo
 
     def __repr__(self) -> str:
@@ -1620,10 +1669,6 @@ class PseudoSetCollection:
             + ")"
         )
     #end def __repr__
-
-    def __iter__(self) -> Generator[PseudoSet | None]:
-        yield from self.__dict__.values()
-    #end def __iter__
 #end class PseudoSetCollection
 
 

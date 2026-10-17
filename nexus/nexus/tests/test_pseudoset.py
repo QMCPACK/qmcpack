@@ -1111,7 +1111,7 @@ def test_pseudoset_collection(tmp_path):
 #end def test_pseudoset_collection
 
 
-def test_pseudoset_collection_check_Zeff(tmp_path):
+def test_pseudoset_collection_Zeff(tmp_path):
     pseudo_names = (
         "C.BFD.xml",
         "H.BFD.xml",
@@ -1238,10 +1238,30 @@ def test_pseudoset_collection_check_Zeff(tmp_path):
     assert(all_same)
     assert(len(msg) == 0)
 
+    ref_msg = f"""\
+Zeffs are not consistent for element 'Fe'!
+The Z-valences in the following files do not match:
+             rmg - {psp_dir}/Fe.BFD.upf (Custom Zeff: 14)
+            vasp - No File (Zeff: 26)
+           pyscf - No File (Zeff: 26)
+          gamess - No File (Zeff: 26)
+         qmcpack - No File (Zeff: 26)
+quantum_espresso - {psp_dir}/Fe.BFD.upf (Custom Zeff: 14)
+"""
+
     all_same, msg = psp_coll.check_same_Zeff(elements=["C", "H", "O", "Fe"])
     assert(not all_same)
-    assert(len(msg) != 0)
-#end def test_pseudoset_collection_check_Zeff
+    assert(msg == ref_msg)
+
+    ref_Zeff_map = {
+        "C": 4,
+        "H": 1,
+        "O": 6,
+    }
+
+    Zeff_map = psp_coll.get_Zeff(elements=["C", "H", "O"])
+    assert(Zeff_map == ref_Zeff_map)
+#end def test_pseudoset_collection_Zeff
 
 
 def test_from_mixed_dir(tmp_path):
