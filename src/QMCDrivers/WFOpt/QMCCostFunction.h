@@ -32,7 +32,7 @@ class QMCCostFunction : public QMCCostFunctionBase, public CloneManager
 {
 public:
   ///Constructor.
-  QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
+  QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate& comm);
 
   ///Destructor
   ~QMCCostFunction() override;

@@ -23,6 +23,9 @@
 #include <string>
 #include <cstdio>
 #include <fstream>
+#include <stdexcept>
+#include <numeric>
+#include <cassert>
 #include "config.h"
 #include "Utilities/FairDivide.h"
 
@@ -38,24 +41,20 @@ extern "C" void __gcov_dump();
 #endif
 
 //Global Communicator is created without initialization
-Communicate* OHMMS::Controller = new Communicate;
+std::unique_ptr<Communicate> OHMMS::Controller = std::make_unique<Communicate>();
 
 //default constructor: ready for a serial execution
 Communicate::Communicate() : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1) {}
 
 Communicate::~Communicate() = default;
+Communicate::Communicate(Communicate&&) = default;
 
 //exclusive:  MPI or Serial
 #ifdef HAVE_MPI
 
-// in_comm needs to be mutable to be duplicated
-Communicate::Communicate(mpi3::communicator& in_comm) : d_groupid(0), d_ngroups(1), comm{in_comm.duplicate()}
-{
-  myMPI       = comm.get();
-  d_mycontext = comm.rank();
-  d_ncontexts = comm.size();
-}
 
+// Takes ownership of a communicator (e.g. from split or split_shared) via move semantics,
+// avoiding the collective overhead and extra context allocation of MPI_Comm_dup.
 Communicate::Communicate(mpi3::communicator&& in_comm) : d_groupid(0), d_ngroups(1), comm{std::move(in_comm)}
 {
   myMPI       = comm.get();
@@ -63,39 +62,56 @@ Communicate::Communicate(mpi3::communicator&& in_comm) : d_groupid(0), d_ngroups
   d_ncontexts = comm.size();
 }
 
-Communicate::Communicate(const Communicate& in_comm, int nparts, int stripe)
+Communicate Communicate::splitByStride(int nparts, int stride) const
 {
-  std::vector<int> nplist(nparts + 1);
+  assert(stride >= 1);
+  assert(size() % stride == 0);
+
   // group index
-  const int gid = stripe == 0 ? FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist) :
-	     in_comm.rank() / stripe % nparts;
-  // comm is mutable member
-  comm  = in_comm.comm.split(gid, in_comm.rank());
-  myMPI = comm.get();
-  // TODO: mpi3 needs to define comm
-  d_mycontext = comm.rank();
-  d_ncontexts = comm.size();
-  d_groupid   = gid;
-  d_ngroups   = nparts;
+  const int gid = rank() / stride % nparts;
+  Communicate comm_split(comm.split(gid, rank()));
+  comm_split.d_groupid = gid;
+  comm_split.d_ngroups = nparts;
 
   // create an inter group communicator
-  inter_group_comm_ = std::make_unique<Communicate>(in_comm.comm.split(comm.rank(), in_comm.rank()));
+  comm_split.inter_group_comm_ = std::make_unique<Communicate>(comm.split(comm_split.comm.rank(), rank()));
+  return comm_split;
 }
 
-Communicate Communicate::NodeComm() const
+Communicate Communicate::split(int nparts, int multiple) const
 {
-  // comm is mutable member
+  assert(multiple >= 1);
+  assert(size() % multiple == 0);
+  std::vector<int> nplist(nparts + 1);
+  const int gid = FairDivideLow(rank() / multiple, size() / multiple, nparts, nplist);
+  Communicate comm_split(comm.split(gid, rank()));
+  comm_split.d_groupid = gid;
+  comm_split.d_ngroups = nparts;
+
+  comm_split.inter_group_comm_ = std::make_unique<Communicate>(comm.split(comm_split.comm.rank(), rank()));
+  return comm_split;
+}
+
+/** provide a node/shared-memory communicator from current (parent) communicator
+ *
+ *  Note: the size of the node communicator may differ on different nodes.
+ */
+Communicate Communicate::createNodeComm() const
+{
   return Communicate{comm.split_shared()};
 }
 
-void Communicate::finalize()
+int Communicate::getUniformNodeRankCount() const
 {
-  static bool has_finalized = false;
+  Communicate node_comm = createNodeComm();
+  const int local_node_size = node_comm.size();
+  std::vector<int> all_node_sizes(size());
+  MPI_Allgather(&local_node_size, 1, MPI_INT, all_node_sizes.data(), 1, MPI_INT, myMPI);
+  int gcd_size = all_node_sizes.empty() ? 1 : all_node_sizes.front();
+  for (int s : all_node_sizes)
+    gcd_size = std::gcd(gcd_size, s);
 
-  if (!has_finalized)
-  {
-    has_finalized = true;
-  }
+  return gcd_size;
 }
 
 
@@ -104,18 +120,46 @@ void Communicate::abort() const { comm.abort(1); }
 void Communicate::barrier() const { comm.barrier(); }
 #else
 
-Communicate Communicate::NodeComm() const { return Communicate{}; }
+/** provide a node/shared-memory communicator from current (parent) communicator
+ *
+ *  Note: in non-MPI (serial) builds, this returns a single-rank communicator.
+ */
+Communicate Communicate::createNodeComm() const
+{
+  return Communicate{};
+}
 
-void Communicate::finalize() {}
+int Communicate::getUniformNodeRankCount() const
+{
+  return 1;
+}
+
 
 void Communicate::abort() const { std::_Exit(EXIT_FAILURE); }
 
 void Communicate::barrier() const {}
 
 
-Communicate::Communicate(const Communicate& in_comm, int nparts, int stripe)
-    : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(nparts)
-{ inter_group_comm_ = std::make_unique<Communicate>(); }
+Communicate Communicate::splitByStride(int nparts, int stride) const
+{
+  assert(stride >= 1);
+  assert(size() % stride == 0);
+
+  Communicate comm_split;
+  comm_split.d_ngroups = nparts;
+  comm_split.inter_group_comm_ = std::make_unique<Communicate>();
+  return comm_split;
+}
+
+Communicate Communicate::split(int nparts, int multiple) const
+{
+  assert(multiple >= 1);
+  assert(size() % multiple == 0);
+  Communicate comm_split;
+  comm_split.d_ngroups = nparts;
+  comm_split.inter_group_comm_ = std::make_unique<Communicate>();
+  return comm_split;
+}
 #endif // !HAVE_MPI
 
 void Communicate::barrier_and_abort(const std::string& msg) const
@@ -129,4 +173,11 @@ void Communicate::barrier_and_abort(const std::string& msg) const
 #endif
 #endif
   Communicate::abort();
+}
+
+Communicate& Communicate::getInterGroupComm() const
+{
+  if (!inter_group_comm_)
+    throw std::runtime_error("Communicate::getInterGroupComm(): inter_group_comm_ is not initialized.");
+  return *inter_group_comm_;
 }

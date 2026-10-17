@@ -46,7 +46,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   using ValueType = SPOSet::ValueType;
   using RealType  = SPOSet::RealType;
-  Communicate* c  = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   // O2 test example from pwscf non-collinear calculation.

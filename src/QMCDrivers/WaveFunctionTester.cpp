@@ -40,7 +40,7 @@ WaveFunctionTester::WaveFunctionTester(const ProjectData& project_data,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
                                        ParticleSetPool& ptclPool,
-                                       Communicate* comm)
+                                       Communicate& comm)
     : QMCDriver(project_data, w, psi, h, comm, "WaveFunctionTester"),
       PtclPool(ptclPool),
       checkRatio("no"),

@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.14"]
+        python-version: ["3.12", "3.14", "3.15"]
 
     runs-on: ubuntu-latest
 
@@ -26,10 +26,14 @@ jobs:
     - name: Setup Graphviz
       run: sudo apt-get install graphviz
 
+    - name: Install HDF5 Development Files (Python 3.15 only; h5py does not yet have suitable Python 3.15 wheels)
+      if: matrix.python-version == '3.15'
+      run: sudo apt-get install libhdf5-dev
+
     - name: Install uv and Setup Python ${{ matrix.python-version }}
-      uses: astral-sh/setup-uv@v10.2.0
+      uses: astral-sh/setup-uv@v10.3.0
       with:
-        version: "0.12.20"
+        version: "0.13.1"
         python-version: ${{ matrix.python-version }}
 
     - name: Install Project and All Dependencies
@@ -62,9 +66,9 @@ jobs:
       run: brew install graphviz
 
     - name: Install uv and Setup Python ${{ matrix.python-version }}
-      uses: astral-sh/setup-uv@v10.2.0
+      uses: astral-sh/setup-uv@v10.3.0
       with:
-        version: "0.12.20"
+        version: "0.13.1"
         python-version: ${{ matrix.python-version }}
 
     - name: Install Project and All Dependencies

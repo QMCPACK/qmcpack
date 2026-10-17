@@ -45,7 +45,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
     BEGIN Boilerplate stuff to make a simple SPOSet. Copied from test_einset.cpp
   */
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // We get a "Mismatched supercell lattices" error due to default ctor?
   Lattice lattice;
@@ -566,7 +566,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   //until the parameter passing issue gets worked out, we won't do this test, since ostensibly
   //theres a rotation coming from somewhere.
   using RealType = QMCTraits::RealType;
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   lattice.R = {4.32747284, 0.00000000, 0.00000000, -2.16373642, 3.74770142,

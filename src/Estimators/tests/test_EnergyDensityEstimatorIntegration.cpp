@@ -38,7 +38,7 @@ using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
 TEST_CASE("EnergyDensityEstimatorIntegration::multirank_reduction", "[estimators]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   int num_walkers = 4;
 #ifndef ENABLE_OFFLOAD
@@ -117,8 +117,8 @@ TEST_CASE("EnergyDensityEstimatorIntegration::multirank_reduction", "[estimators
 
 TEST_CASE("EnergyDensityEstimatorIntegration::operator_reporting", "[estimators]")
 {
-  Communicate* comm = OHMMS::Controller;
-  int num_walkers   = 4;
+  Communicate& comm(*OHMMS::Controller);
+  int num_walkers = 4;
 #ifndef ENABLE_OFFLOAD
   testing::EnergyDensityTest eden_test(comm, num_walkers, &testing::makeGoldWalkerElementsWithEEEIPS,
                                        generate_test_data);
@@ -210,8 +210,8 @@ TEST_CASE("EnergyDensityEstimatorIntegration::operator_reporting", "[estimators]
 
 TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
 {
-  int num_walkers   = 4;
-  Communicate* comm = OHMMS::Controller;
+  int num_walkers = 4;
+  Communicate& comm(*OHMMS::Controller);
   testing::EDenEstimatorManagerIntegrationTest eden_emn_integration_test(comm, num_walkers);
   auto walker_list = eden_emn_integration_test.getWalkerList();
   auto ham_list    = eden_emn_integration_test.getHamList();
@@ -316,7 +316,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
   emnta.stopBlockUpToWrite(accept, 0, block_weight);
   app_log() << "walkers weight after reduction: " << app_e_den_est.get_walkers_weight() << '\n';
 
-  if (comm->rank() == 0)
+  if (comm.rank() == 0)
   {
     summed_grid = 0;
     // grid memory layout is (W)eight (T) Kinetic (V) potential

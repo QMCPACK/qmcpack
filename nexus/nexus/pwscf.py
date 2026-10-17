@@ -369,6 +369,7 @@ class Pwscf(Simulation):
             )
 
         if err_err_found:
+            self.logger.error(f"Error detected in stderr ({errfile})")
             # This might happen at the end of a run even if it succeeds.
             # We can't actually know if it really indicates a failure.
             self.failed = any(
@@ -378,6 +379,9 @@ class Pwscf(Simulation):
 
         restartable = False
         if out_err_found: # No sense checking if we didn't find anything
+            self.logger.error(
+                f"Error detected in stdout ({os.path.join(self.locdir, self.outfile)})"
+            )
             output_errs = "".join(out_err_lines)
             not_converged    = 'convergence NOT achieved'  in output_errs
             error_in_routine = 'Error in routine' in output_errs
@@ -402,9 +406,12 @@ class Pwscf(Simulation):
         restart = run_finished and self.restartable and restartable
         self.finished = run_finished
         if restart:
+            self.logger.info("Run finished before converging and is restartable")
             self.save_attempt()
             self.input.control.restart_mode = 'restart'
             self.reset_indicators()
+        elif not run_finished:
+            self.logger.warning("Run finished before converging and is not restartable")
         #end if
     #end def check_sim_status
 

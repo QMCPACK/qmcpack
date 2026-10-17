@@ -27,7 +27,7 @@ namespace qmcplusplus
 {
 template class ObjectPool<TrialWaveFunction>;
 
-WaveFunctionPool::WaveFunctionPool(const RuntimeOptions& runtime_options, ParticleSetPool& pset_pool, Communicate* c)
+WaveFunctionPool::WaveFunctionPool(const RuntimeOptions& runtime_options, ParticleSetPool& pset_pool, Communicate& c)
     : MPIObjectBase(c), runtime_options_(runtime_options), ptcl_pool_(pset_pool)
 {}
 
@@ -46,7 +46,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   ParticleSet* qp = ptcl_pool_.getParticleSet(target);
 
   if (qp == nullptr)
-    myComm->barrier_and_abort("target particle set named '" + target + "' not found");
+    myComm.barrier_and_abort("target particle set named '" + target + "' not found");
 
   if (psi_name.empty())
     throw UniformCommunicateError(

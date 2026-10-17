@@ -39,7 +39,7 @@ RMC::RMC(const ProjectData& project_data,
          MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
-         Communicate* comm)
+         Communicate& comm)
     : QMCDriver(project_data, w, psi, h, comm, "RMC"),
       prestepsVMC(-1),
       rescaleDrift("no"),
@@ -78,7 +78,7 @@ void RMC::run()
   const bool has_collectables = W.Collectables.size();
 
   LoopTimer<> rmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm.getName(), myComm.rank() == 0);
   for (int block = 0; block < nBlocks; ++block)
   {
     rmc_loop.start();
@@ -119,13 +119,13 @@ void RMC::run()
 
     bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached
-    if (!myComm->rank())
+    if (!myComm.rank())
       stop_requested = runtimeControl.checkStop(rmc_loop);
-    myComm->bcast(stop_requested);
+    myComm.bcast(stop_requested);
 
     if (stop_requested)
     {
-      if (!myComm->rank())
+      if (!myComm.rank())
         app_log() << runtimeControl.generateStopMessage("RMC", block);
       run_time_manager.markStop();
       break;

@@ -27,7 +27,7 @@ using ValueType         = qmcplusplus::QMCTraits::ValueType;
 ///This provides a basic test of the descent engine's parameter update algorithm
 TEST_CASE("DescentEngine RMSprop update", "[drivers][descent]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
 
   const std::string engine_input("<tmp> </tmp>");

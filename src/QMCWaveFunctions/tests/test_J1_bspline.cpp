@@ -59,7 +59,7 @@ TEST_CASE("BSpline functor one", "[wavefunction]")
 
 void test_J1_spline(const DynamicCoordinateKind kind_selected)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   ParticleSet ions_(simulation_cell, kind_selected);

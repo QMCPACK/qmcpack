@@ -22,13 +22,13 @@ class MinimalWaveFunctionPool
 {
 public:
   static WaveFunctionPool make_diamondC_1x1x1(const RuntimeOptions& runtime_options,
-                                              Communicate* comm,
+                                              Communicate& comm,
                                               ParticleSetPool& particle_pool);
   static WaveFunctionPool make_O2_spinor(const RuntimeOptions& runtime_options,
-                                         Communicate* comm,
+                                         Communicate& comm,
                                          ParticleSetPool& particle_pool);
   static WaveFunctionPool make_O2_spinor_J12(const RuntimeOptions& runtime_options,
-                                             Communicate* comm,
+                                             Communicate& comm,
                                              ParticleSetPool& particle_pool);
 };
 

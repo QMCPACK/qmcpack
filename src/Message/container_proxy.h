@@ -46,6 +46,17 @@ struct scalar_traits
 };
 
 template<typename T>
+struct scalar_traits<const T>
+{
+  enum
+  {
+    DIM = scalar_traits<T>::DIM
+  };
+  using real_type = std::add_const_t<typename scalar_traits<T>::real_type>;
+  static inline real_type* get_address(const T* a) { return scalar_traits<T>::get_address(const_cast<T*>(a)); }
+};
+
+template<typename T>
 struct scalar_traits<std::complex<T>>
 {
   enum
@@ -77,6 +88,7 @@ struct scalar_traits<Tensor<T, D>>
   using real_type = typename scalar_traits<T>::real_type;
   static inline real_type* get_address(Tensor<T, D>* a) { return scalar_traits<T>::get_address(a->data()); }
 };
+
 
 
 /** @brief A proxy class to adapt dynamically sized containers for MPI communication.

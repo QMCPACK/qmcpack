@@ -395,6 +395,7 @@ def test_run_project(tmp_path):
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
+    nexus_config.disable_logging = True
 
     assert(nexus_config.stages is SimStage.all)
 

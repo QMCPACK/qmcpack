@@ -87,7 +87,7 @@ class RunTimeControl
     STOP_FILE,          // reqsuted stop from a file
   } stop_status_;
 
-  bool enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer);
+  bool enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer, bool check_time_limit);
   bool stop_file_requested();
 
 public:
@@ -100,14 +100,17 @@ public:
   RunTimeControl(RunTimeManager<CLOCK>& rm, int maxCPUSecs, const std::string& stop_file_prefix, bool cleanup = true);
 
   /** check if the run needs to stop because of walltime or stop control file.
-   * it should be called at the end of each block in a driver.
+   * Call at the end of each driver block or before additional loop iterations.
+   * @param check_time_limit false after the final block; still update timing and check the stop file.
    */
-  bool checkStop(LoopTimer<CLOCK>& loop_timer);
+  bool checkStop(LoopTimer<CLOCK>& loop_timer, bool check_time_limit = true);
 
   /// generate terse progress messages
   std::string generateProgressMessage(const std::string& driverName, int block, int num_blocks) const;
-  /// generate stop message explaining why
-  std::string generateStopMessage(const std::string& driverName, int block) const;
+  /// Generate a stop message with the completed block or iteration count.
+  std::string generateStopMessage(const std::string& driverName,
+                                  int completed_iterations,
+                                  const std::string& iteration_name = "block") const;
 
   // for testing
   void runtime_padding(int runtime_padding) { m_runtime_safety_padding = runtime_padding; }

@@ -71,7 +71,7 @@ def run_example_script(script: Path, test_path: Path) -> tuple[bool, str]:
     old_cwd = Path.cwd()
     os.chdir(test_path)
 
-    script_command = f"PYTHONPATH={nexus_root} {sys.executable} {script} --generate_only --sleep=0.01"
+    script_command = f"PYTHONPATH={nexus_root} {sys.executable} {script} --generate_only --sleep=0.01 --disable-logging"
     process = Popen(script_command, shell=True, stdout=PIPE, stderr=PIPE, close_fds=True)
     out, err = process.communicate()
     returncode = process.returncode

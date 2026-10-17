@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-PWParameterSet::PWParameterSet(Communicate* comm)
+PWParameterSet::PWParameterSet(Communicate& comm)
     : MPIObjectBase(comm),
       hasSpin(true),
       twistIndex(0),
@@ -81,7 +81,7 @@ bool PWParameterSet::getEigVectorType(hid_t h)
     rank            = H5Sget_simple_extent_ndims(dataspace);
     int status_n    = H5Sget_simple_extent_dims(dataspace, dimTot, NULL);
   }
-  myComm->bcast(rank);
+  myComm.bcast(rank);
   return rank == 4;
 }
 
@@ -98,7 +98,7 @@ bool PWParameterSet::hasComplexData(hdf_archive& h_file)
     h_file.read(iscomplex, oss.str());
   }
 #endif
-  myComm->bcast(iscomplex);
+  myComm.bcast(iscomplex);
   return iscomplex;
 }
 
@@ -205,7 +205,7 @@ void PWParameterSet::checkVersion(hdf_archive& h)
       APP_ABORT("PWParameterSet::checkVersion  The type of version is not integer or double.");
     }
   }
-  myComm->bcast(version);
+  myComm.bcast(version);
   app_log() << "\tWavefunction HDF version: " << version[0] << "." << version[1] << std::endl;
   if (version[0] == 0)
   {

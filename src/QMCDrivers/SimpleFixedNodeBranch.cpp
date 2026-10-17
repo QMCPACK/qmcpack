@@ -140,18 +140,18 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   {
     if (iParam[B_TARGETWALKERS] == 0)
     {
-      Communicate* acomm = MyEstimator->getCommunicator();
-      int ncontexts      = acomm->size();
+      Communicate& acomm = *MyEstimator->getCommunicator();
+      int ncontexts      = acomm.size();
       std::vector<int> nw(ncontexts, 0), nwoff(ncontexts + 1, 0);
-      nw[acomm->rank()] = walkers.getActiveWalkers();
-      acomm->allreduce(nw);
+      nw[acomm.rank()] = walkers.getActiveWalkers();
+      acomm.allreduce(nw);
       for (int ip = 0; ip < ncontexts; ++ip)
         nwoff[ip + 1] = nwoff[ip] + nw[ip];
       walkers.setWalkerOffsets(nwoff);
       iParam[B_TARGETWALKERS] = nwoff[ncontexts];
     }
     // \todo reparsing XML nodes is an antipattern, remove.
-    WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode));
+    WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], *MyEstimator->getCommunicator(), myNode));
     if (!BranchMode[B_RESTART])
     {
       fromscratch = true;
@@ -167,7 +167,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
         BackupWalkerController = std::move(WalkerController); //save the main controller
         // \todo: Not likely to be ok to call reset on a moved from WalkerController!
         WalkerController.reset(
-            createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode, true));
+            createWalkerController(iParam[B_TARGETWALKERS], *MyEstimator->getCommunicator(), myNode, true));
         BranchMode.set(B_POPCONTROL, 0);
       }
       //PopHist.clear();
@@ -227,18 +227,6 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
   //this is the first time DMC is used
   if (WalkerController == 0)
   {
-    //  if(iParam[B_TARGETWALKERS]==0)
-    //  {
-    //    Communicate* acomm=MyEstimator->getCommunicator();
-    //    int ncontexts=acomm->size();
-    //    std::vector<int> nw(ncontexts,0),nwoff(ncontexts+1,0);
-    //    nw[acomm->rank()]=W.getActiveWalkers();
-    //   acomm->allreduce(nw);
-    //    for(int ip=0; ip<ncontexts; ++ip)
-    //      nwoff[ip+1]=nwoff[ip]+nw[ip];
-    //    W.setWalkerOffsets(nwoff);
-    //    iParam[B_TARGETWALKERS]=nwoff[ncontexts];
-    //  }
     if (!BranchMode[B_RESTART])
     {
       fromscratch = true;
@@ -598,7 +586,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   {
     app_log() << "Destroy WalkerController. Existing method " << WalkerController->get_method() << std::endl;
     ;
-    WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode));
+    WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], *MyEstimator->getCommunicator(), myNode));
     app_log().flush();
 
     BranchMode[B_POPCONTROL] = (WalkerController->get_method() == 0);
@@ -748,7 +736,7 @@ void SimpleFixedNodeBranch::write(const std::string& fname, bool overwrite)
     //\since 2008-06-24
     vParam[SBVP::ACC_ENERGY]  = EnergyHist.result();
     vParam[SBVP::ACC_SAMPLES] = EnergyHist.count();
-    BranchIO<SimpleFixedNodeBranch> hh(*this, MyEstimator->getCommunicator());
+    BranchIO<SimpleFixedNodeBranch> hh(*this, *MyEstimator->getCommunicator());
     bool success = hh.write(fname);
   }
 }
@@ -760,7 +748,7 @@ void SimpleFixedNodeBranch::read(const std::string& fname)
     return;
   vParam[SBVP::ACC_ENERGY]  = EnergyHist.result();
   vParam[SBVP::ACC_SAMPLES] = EnergyHist.count();
-  BranchIO<SimpleFixedNodeBranch> hh(*this, MyEstimator->getCommunicator());
+  BranchIO<SimpleFixedNodeBranch> hh(*this, *MyEstimator->getCommunicator());
   BranchModeType bmode(BranchMode);
   bool success = hh.read(fname);
   if (success && R2Proposed.good() && bmode[B_POPCONTROL] == BranchMode[B_POPCONTROL])

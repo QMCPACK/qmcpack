@@ -249,6 +249,9 @@ cpu_limit_run("diamondC_1x1x1_pp-dmc-1-1" "${qmcpack_SOURCE_DIR}/tests/solids/di
 cpu_limit_run("diamondC_1x1x1_pp-dmc-4-4" "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp" 4 4 120
               qmc_cpu_limit_dmc.xml)
 
+cpu_limit_run("diamondC_1x1x1_pp-loop-vmcbatch-1-1" "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp" 1 1 180
+              qmc_cpu_limit_loop_vmcbatch.xml)
+
 #
 # Long tests
 #

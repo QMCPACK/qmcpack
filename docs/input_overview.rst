@@ -115,6 +115,11 @@ Time limits
 ~~~~~~~~~~~
 Batched drivers check against ``max_seconds`` and make efforts to stop the execution cleanly at the end of a block before reaching the maximum time. Classic drivers can also take the now-deprecated ``maxcpusecs`` parameter for the same effect in the per driver XML section.
 
+Input ``<loop>`` elements also honor the ``max_seconds`` parameter in ``<project>``. Before starting a new iteration, QMCPACK checks
+the time remaining since application startup against the average walltime of completed iterations of that loop. The estimate
+includes a 10% margin and 30 seconds for shutdown. If there is insufficient time, QMCPACK reports the reason and finalizes without
+running the next iteration or any later QMC sections.
+
 In addition, a file named by the project ``id`` plus ``.STOP``, in this case ``my_vmc.STOP``, stops QMCPACK execution on the fly cleanly at the end of the current block once being found in the working directory.
 
 

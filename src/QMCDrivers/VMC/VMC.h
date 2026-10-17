@@ -31,7 +31,7 @@ public:
       TrialWaveFunction& psi,
       QMCHamiltonian& h,
       const UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
-      Communicate* comm,
+      Communicate& comm,
       bool enable_profiling);
   void run() override;
   bool put(xmlNodePtr cur) override;

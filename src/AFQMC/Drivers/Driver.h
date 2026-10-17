@@ -24,7 +24,7 @@ public:
   using WSetPtr = WalkerHandlerBase*;
   using InfoPtr = AFQMCInfo*;
 
-  Driver(Communicate* c)
+  Driver(Communicate& c)
       : MPIObjectBase(c),
         TG(c, "DriverTG"),
         nBlock(100),

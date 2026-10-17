@@ -9,24 +9,27 @@ import sys
 
 # TODO: implement and test converter generated QMCPACK input
 
+
 def run_gpaw4qmcpack_test(test_name, g4q_exe, h5diff_exe):
     okay = True
 
     # Example invocation of converter
-    #gpaw4qmcpack infile.gpw outfile.h5 --density
+    # gpaw4qmcpack infile.gpw outfile.h5 --density
 
-    infile = 'restart.gpw'
-    outfile = 'test.orbs.h5'
-    cmd = [g4q_exe,infile,outfile]
+    infile = "restart.gpw"
+    outfile = "test.orbs.h5"
+    cmd = [g4q_exe, infile, outfile]
 
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    p = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
+    )
     stdout, stderr = p.communicate()
 
-    file_out = open('stdout.txt', 'w')
+    file_out = open("stdout.txt", "w")
     file_out.write(stdout)
     file_out.close()
-    if len(stderr) > 0 :
-        file_err = open('stderr.txt', 'w')
+    if len(stderr) > 0:
+        file_err = open("stderr.txt", "w")
         file_err.write(stderr)
         file_err.close()
 
@@ -40,9 +43,9 @@ def run_gpaw4qmcpack_test(test_name, g4q_exe, h5diff_exe):
         print("Stderr not empty:")
         print(stderr)
 
-    ret = os.system(h5diff_exe + ' -d 0.000001 gold.orbs.h5 test.orbs.h5')
+    ret = os.system(h5diff_exe + " -d 0.000001 gold.orbs.h5 test.orbs.h5")
     # if it's okay up to this point
-    if ret==0 and okay:
+    if ret == 0 and okay:
         print("  pass")
         return True
     else:
@@ -53,17 +56,19 @@ def run_gpaw4qmcpack_test(test_name, g4q_exe, h5diff_exe):
     return okay
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Test gpaw4qmcpck')
-    parser.add_argument('test_name',
-                        default='test_Si_diamond',
-                        help='Name of test to run (name of directory)')
-    parser.add_argument('--exe',
-                        default='gpaw4qmcpack',
-                        help='Location of gpaw4qmcpack executable')
-    parser.add_argument('--h5diff',
-                        default='h5diff',
-                        help='Location of h5diff executable')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Test gpaw4qmcpck")
+    parser.add_argument(
+        "test_name",
+        default="test_Si_diamond",
+        help="Name of test to run (name of directory)",
+    )
+    parser.add_argument(
+        "--exe", default="gpaw4qmcpack", help="Location of gpaw4qmcpack executable"
+    )
+    parser.add_argument(
+        "--h5diff", default="h5diff", help="Location of h5diff executable"
+    )
     args = parser.parse_args()
 
     test_dir = args.test_name
@@ -81,4 +86,3 @@ if __name__ == '__main__':
     if ret:
         sys.exit(0)
     sys.exit(1)
-
