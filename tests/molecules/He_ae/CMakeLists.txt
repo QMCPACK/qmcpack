@@ -185,7 +185,7 @@ else()
     set_tests_properties(
       ${HE_OPTBATCH_RUNTIME_TEST}
       PROPERTIES TIMEOUT 120 PASS_REGULAR_EXPRESSION
-                 "Insufficient time for next optimization cycle. Stopping after optimization cycle [1-9][0-9]*.*QMCPACK execution completed successfully")
+                 "Insufficient time for next optimization iteration. Stopping after optimization iteration [1-9][0-9]*.*QMCPACK execution completed successfully")
     add_test_check_file_existence(${HE_OPTBATCH_RUNTIME_TEST} det_He_optbatch_cpu_limit.s000.opt.xml TRUE)
   endif()
 endif()
