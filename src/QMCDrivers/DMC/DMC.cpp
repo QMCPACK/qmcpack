@@ -299,8 +299,7 @@ void DMC::run()
 
     if (stop_requested)
     {
-      if (!myComm.rank())
-        app_log() << runtimeControl.generateStopMessage("DMC", block - 1);
+      app_log() << runtimeControl.generateStopMessage("DMC", block - 1);
       run_time_manager.markStop();
       break;
     }

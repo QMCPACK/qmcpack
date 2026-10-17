@@ -510,8 +510,7 @@ void DMCBatched::run()
     myComm.bcast(stop_requested);
     if (stop_requested)
     {
-      if (!myComm.rank())
-        app_log() << runtimeControl.generateStopMessage("DMCBatched", block);
+      app_log() << runtimeControl.generateStopMessage("DMCBatched", block);
       run_time_manager.markStop();
       break;
     }
@@ -556,8 +555,7 @@ void DMCBatched::run()
       recordBlock(block);
     }
 
-    if (!myComm.rank())
-      app_log() << runtimeControl.generateProgressMessage(dmc_loop, "DMCBatched", block, num_blocks);
+    app_log() << runtimeControl.generateProgressMessage(dmc_loop, "DMCBatched", block, num_blocks);
   }
 
   branch_engine_->printStatus();
