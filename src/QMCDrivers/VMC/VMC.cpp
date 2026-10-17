@@ -75,7 +75,19 @@ void VMC::run()
   const bool has_collectables = W.Collectables.size();
   for (int block = 0; block < nBlocks; ++block)
   {
-    vmc_loop.start();
+    bool stop_requested = false;
+    // Rank 0 decides whether the time limit was reached
+    if (!myComm.rank())
+      stop_requested = runtimeControl.checkStop(vmc_loop);
+    myComm.bcast(stop_requested);
+    if (stop_requested)
+    {
+      app_log() << runtimeControl.generateStopMessage("VMC", block);
+      run_time_manager.markStop();
+      break;
+    }
+
+    ScopeGuard<LoopTimer<>> vmc_local_timer(vmc_loop);
 #pragma omp parallel
     {
       int ip = omp_get_thread_num();
@@ -109,19 +121,6 @@ void VMC::run()
 #endif
     wlog_manager_->writeBuffers();
     recordBlock(block);
-    vmc_loop.stop();
-
-    bool stop_requested = false;
-    // Rank 0 decides whether the time limit was reached
-    if (!myComm.rank())
-      stop_requested = runtimeControl.checkStop(vmc_loop);
-    myComm.bcast(stop_requested);
-    if (stop_requested)
-    {
-      app_log() << runtimeControl.generateStopMessage("VMC", block);
-      run_time_manager.markStop();
-      break;
-    }
   } //block
   Estimators->stop(estimatorClones);
   for (int ip = 0; ip < NumThreads; ++ip)
