@@ -133,7 +133,8 @@ bool RunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer, bool check_t
 }
 
 template<class CLOCK>
-std::string RunTimeControl<CLOCK>::generateProgressMessage(const std::string& driverName,
+std::string RunTimeControl<CLOCK>::generateProgressMessage(const LoopTimer<CLOCK>& loop_timer,
+                                                           const std::string& driverName,
                                                            int block,
                                                            int num_blocks) const
 {
@@ -142,8 +143,8 @@ std::string RunTimeControl<CLOCK>::generateProgressMessage(const std::string& dr
       block + 1 == num_blocks)
   {
     log << "Completed block " << std::setw(4) << block + 1 << " of " << num_blocks << " average "
-        << std::setprecision(4) << m_loop_time << " secs/block after " << std::setprecision(4) << m_elapsed << " secs"
-        << std::endl;
+        << std::setprecision(4) << loop_timer.get_time_per_iteration() << " secs/block after " << std::setprecision(4)
+        << runtimeManager.elapsed() << " secs" << std::endl;
   }
   return log.str();
 }

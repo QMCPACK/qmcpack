@@ -164,7 +164,7 @@ TEST_CASE("test_loop_control_final_block", "[utilities]")
   loop.stop();
 
   CHECK_FALSE(rc.checkStop(loop, false));
-  CHECK(rc.generateProgressMessage("QMC", 0, 1).find("average 1 secs/block after ") != std::string::npos);
+  CHECK(rc.generateProgressMessage(loop, "QMC", 0, 1).find("average 1 secs/block after ") != std::string::npos);
   CHECK(rc.checkStop(loop));
 }
 

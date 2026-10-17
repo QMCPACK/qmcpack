@@ -551,7 +551,7 @@ void DMCBatched::run()
     myComm.bcast(stop_requested);
     // Progress messages before possibly stopping
     if (!myComm.rank())
-      app_log() << runtimeControl.generateProgressMessage("DMCBatched", block, num_blocks);
+      app_log() << runtimeControl.generateProgressMessage(dmc_loop, "DMCBatched", block, num_blocks);
     if (stop_requested)
     {
       if (!myComm.rank())

@@ -37,7 +37,7 @@ public:
   /** @brief Get the elapsed wallclock time in seconds since this manager was initialized.
    *  @return Elapsed time in seconds.
    */
-  inline double elapsed()
+  inline double elapsed() const
   {
     std::chrono::duration<double> elapsed = CLOCK::now() - start_time;
     return elapsed.count();
@@ -138,7 +138,10 @@ public:
   bool checkStop(LoopTimer<CLOCK>& loop_timer, bool check_time_limit = true);
 
   /// generate terse progress messages
-  std::string generateProgressMessage(const std::string& driverName, int block, int num_blocks) const;
+  std::string generateProgressMessage(const LoopTimer<CLOCK>& loop_timer,
+                                      const std::string& driverName,
+                                      int block,
+                                      int num_blocks) const;
   /// Generate a stop message with the completed block or iteration count.
   std::string generateStopMessage(const std::string& driverName,
                                   int completed_iterations,
