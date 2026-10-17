@@ -151,35 +151,29 @@ TEST_CASE("test_loop_control_before_first_iteration", "[utilities]")
 }
 
 
-TEST_CASE("test_loop_control_final_block", "[utilities]")
+TEST_CASE("test_loop_control_progress_message", "[utilities]")
 {
-  int max_cpu_secs = 0;
-  SECTION("Time limit already reached") { max_cpu_secs = 0; }
-  SECTION("Insufficient time for another block") { max_cpu_secs = 30; }
-
   RunTimeManager<FakeChronoClock> rm;
-  RunTimeControl<FakeChronoClock> rc(rm, max_cpu_secs, "dummy", false);
+  RunTimeControl<FakeChronoClock> rc(rm, 100, "dummy", false);
   LoopTimer<FakeChronoClock> loop;
   loop.start();
   loop.stop();
 
-  CHECK_FALSE(rc.checkStop(loop, false));
   CHECK(rc.generateProgressMessage(loop, "QMC", 0, 1).find("average 1 secs/block after ") != std::string::npos);
-  CHECK(rc.checkStop(loop));
 }
 
-TEST_CASE("test_loop_control_final_block_stop_file", "[utilities]")
+TEST_CASE("test_loop_control_stop_file", "[utilities]")
 {
-  const std::string prefix    = "runtime_final_block_test";
+  const std::string prefix    = "runtime_stop_file_test";
   const std::string stop_file = prefix + ".STOP";
   RunTimeManager<FakeChronoClock> rm;
-  RunTimeControl<FakeChronoClock> rc(rm, 0, prefix);
+  RunTimeControl<FakeChronoClock> rc(rm, 1000, prefix);
   LoopTimer<FakeChronoClock> loop;
   {
     std::ofstream stop(stop_file);
     CHECK(stop.good());
   }
-  CHECK(rc.checkStop(loop, false));
+  CHECK(rc.checkStop(loop));
   CHECK(rc.generateStopMessage("QMC", 0).find("Stop requested from the control file") != std::string::npos);
   CHECK(std::remove(stop_file.c_str()) == 0);
 }

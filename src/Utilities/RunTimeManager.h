@@ -131,10 +131,9 @@ public:
   RunTimeControl(RunTimeManager<CLOCK>& rm, int maxCPUSecs, const std::string& stop_file_prefix, bool cleanup = true);
 
   /** check if the run needs to stop because of walltime or stop control file.
-   * Call at the end of each driver block or before additional loop iterations.
-   * @param check_time_limit false after the final block; still update timing and check the stop file.
+   * Call before each driver block or before additional loop iterations.
    */
-  bool checkStop(LoopTimer<CLOCK>& loop_timer, bool check_time_limit = true);
+  bool checkStop(LoopTimer<CLOCK>& loop_timer);
 
   /// generate terse progress messages
   std::string generateProgressMessage(const LoopTimer<CLOCK>& loop_timer,
