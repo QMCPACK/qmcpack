@@ -222,13 +222,13 @@ class SimulationImage(NexusCore):
             'files',
             'outputs',
             # simulation status flags
-            'setup',
-            'sent_files',
-            'submitted',
-            'finished',
-            'failed',
-            'got_output',
-            'analyzed',
+            '_setup',
+            '_sent_files',
+            '_submitted',
+            '_finished',
+            '_failed',
+            '_got_output',
+            '_analyzed',
             # event timestamps
             'timestamps',
             # cascade status flag
@@ -454,15 +454,17 @@ class Simulation(NexusCore):
                 )
             raise TypeError(msg)
 
-        self.created_directories = False
-        self.got_dependencies = False
-        self.setup      = False
-        self.sent_files = False
-        self.submitted  = False
-        self.finished   = False
-        self.failed     = False
-        self.got_output = False
-        self.analyzed   = False
+        self._created_directories = False
+        self._got_dependencies = False
+        self._setup      = False
+        self._sent_files = False
+        self._submitted  = False
+        self._finished   = False
+        self._failed     = False
+        self._got_output = False
+        self._analyzed   = False
+        self._exited_queue = False
+        self._timed_out = False
         self.timestamps = obj()
         self.subcascade_finished = False
         self.block            = block
@@ -583,6 +585,127 @@ class Simulation(NexusCore):
                 self.fill_products()
     #end def __init__
 
+    @property
+    def setup(self) -> bool:
+        return self._setup
+
+    @setup.setter
+    def setup(self, status: bool) -> None:
+        if status is not self.setup:
+            self._setup = status
+            if status:
+                self.record_timestamp("setup")
+
+    @property
+    def sent_files(self) -> bool:
+        return self._sent_files
+
+    @sent_files.setter
+    def sent_files(self, status: bool) -> None:
+        if status is not self.sent_files:
+            self._sent_files = status
+            if status:
+                self.record_timestamp("sent_files")
+
+    @property
+    def submitted(self) -> bool:
+        return self._submitted
+
+    @submitted.setter
+    def submitted(self, status: bool) -> None:
+        if status is not self.submitted:
+            self._submitted = status
+            if status:
+                self.record_timestamp("submitted")
+
+    @property
+    def exited_queue(self) -> bool:
+        return self._exited_queue
+
+    @exited_queue.setter
+    def exited_queue(self, status: bool) -> None:
+        if status is not self.exited_queue:
+            self._exited_queue = status
+            if status:
+                self.record_timestamp("exited_queue")
+
+    @property
+    def timed_out(self) -> bool:
+        return self._timed_out
+
+    @timed_out.setter
+    def timed_out(self, status: bool) -> None:
+        if status is not self.timed_out:
+            self._timed_out = status
+            if status:
+                self.record_timestamp("timed_out")
+
+    @property
+    def failed(self) -> bool:
+        return self._failed
+
+    @failed.setter
+    def failed(self, status: bool) -> None:
+        if status is not self.failed:
+            self._failed = status
+            if status:
+                self.record_timestamp("failed")
+
+    @property
+    def finished(self) -> bool:
+        return self._finished
+
+    @finished.setter
+    def finished(self, status: bool) -> None:
+        if status is not self.finished:
+            self._finished = status
+            if status:
+                self.record_timestamp("finished")
+
+    @property
+    def got_output(self) -> bool:
+        return self._got_output
+
+    @got_output.setter
+    def got_output(self, status: bool) -> None:
+        if status is not self.got_output:
+            self._got_output = status
+            if status:
+                self.record_timestamp("got_output")
+
+    @property
+    def analyzed(self) -> bool:
+        return self._analyzed
+
+    @analyzed.setter
+    def analyzed(self, status: bool) -> None:
+        if status is not self.analyzed:
+            self._analyzed = status
+            if status:
+                self.record_timestamp("analyzed")
+
+    @property
+    def created_directories(self) -> bool:
+        return self._created_directories
+
+    @created_directories.setter
+    def created_directories(self, status: bool) -> None:
+        if status is not self.created_directories:
+            self._created_directories = status
+            if status:
+                self.record_timestamp("created_directories")
+
+    @property
+    def got_dependencies(self) -> bool:
+        return self._got_dependencies
+
+    @got_dependencies.setter
+    def got_dependencies(self, status: bool) -> None:
+        if status is not self.got_dependencies:
+            self._got_dependencies = status
+            if status:
+                self.record_timestamp("got_dependencies")
+
 
     def fake(self):
         return self.fake_sim
@@ -643,14 +766,14 @@ class Simulation(NexusCore):
 
     def reset_indicators(self):
         #this is needed to support restarts
-        self.got_dependencies = False
-        self.setup          = False
-        self.sent_files     = False
-        self.submitted      = False
-        self.finished       = False
-        self.failed         = False
-        self.got_output     = False
-        self.analyzed       = False
+        self._got_dependencies = False
+        self._setup          = False
+        self._sent_files     = False
+        self._submitted      = False
+        self._finished       = False
+        self._failed         = False
+        self._got_output     = False
+        self._analyzed       = False
     #end def reset_indicators
 
 
@@ -666,7 +789,9 @@ class Simulation(NexusCore):
                 "failed":       ("Simulation Failed!",          logging.ERROR),
                 "finished":     ("Simulation Finished",         logging.INFO),
                 "got_output":   ("Got Simulation Output",       logging.INFO),
-                "analyzed":     ("Exited Queue",                logging.INFO),
+                "analyzed":     ("Simulation Analyzed",         logging.INFO),
+                "created_directories": ("Simulation Directories Created", logging.INFO),
+                "got_dependencies": ("Simulation Got Dependencies", logging.INFO),
             }
             msg, level = log_msgs.get(event, (event, logging.INFO))
             self.logger.log(level, msg)
@@ -1129,7 +1254,6 @@ class Simulation(NexusCore):
         #end if
         self.job.write(file=True)
         self.setup = True
-        self.record_timestamp('setup')
         if save_image:
             self.save_image()
             self.input.save(os.path.join(self.imlocdir,self.input_image))
@@ -1191,7 +1315,6 @@ class Simulation(NexusCore):
             #end if
         #end for
         self.sent_files = True
-        self.record_timestamp('sent_files')
         self.save_image()
         send_imfiles=[self.sim_image,self.input_image]
         remote = self.imremdir
@@ -1219,7 +1342,6 @@ class Simulation(NexusCore):
                 #end if
             #end if
             self.submitted = True
-            self.record_timestamp('submitted')
             if (self.job.batch_mode or not nexus_config.monitor) and not nexus_config.generate_only:
                 self.save_image()
             #end if
@@ -1242,8 +1364,8 @@ class Simulation(NexusCore):
         self.pre_check_status()
         newly_exited_queue = False
         if self.job.finished:
-            newly_exited_queue = 'exited_queue' not in self.timestamps
-            self.record_timestamp('exited_queue')
+            newly_exited_queue = not self.exited_queue
+            self.exited_queue = True
         #end if
         if nexus_config.generate_only:
             self.finished = self.job.finished
@@ -1263,7 +1385,7 @@ class Simulation(NexusCore):
                 exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
                 elapsed = datetime.now().astimezone() - exited_queue
                 if elapsed.total_seconds()>nexus_config.timeout:
-                    self.record_timestamp('timed_out')
+                    self.timed_out = True
                     self.failed = True
                 #end if
             #end if
@@ -1271,13 +1393,7 @@ class Simulation(NexusCore):
                 self.finished = True
             #end if
         #end if
-        if self.failed:
-            self.record_timestamp('failed')
-        #end if
-        if self.finished:
-            self.record_timestamp('finished')
-            self.save_image()
-        elif newly_exited_queue:
+        if self.finished or newly_exited_queue:
             self.save_image()
         #end if
     #end def check_status
@@ -1332,7 +1448,6 @@ class Simulation(NexusCore):
                 #end if
             #end if
             self.got_output = True
-            self.record_timestamp('got_output')
             self.save_image()
         #end if
     #end def get_output
@@ -1353,7 +1468,6 @@ class Simulation(NexusCore):
                 del analyzer
             #end if
             self.analyzed = True
-            self.record_timestamp('analyzed')
             self.save_image()
 
             # support dynamic workflows
@@ -1566,7 +1680,6 @@ class Simulation(NexusCore):
         #end if
         self.leave()
         self.submitted = True
-        self.record_timestamp('submitted')
         if self.job is not None:
             job.status = job.states.finished
             self.job.finished = True

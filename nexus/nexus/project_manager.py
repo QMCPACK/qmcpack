@@ -342,8 +342,14 @@ class ProjectManager(NexusCore):
 
 
     def status_line(self,sim,extra=''):
-        indicators = ('setup','sent_files','submitted','finished','got_output','analyzed')
-        stats = tuple([sim[k] for k in indicators])
+        stats = (
+            sim.setup,
+            sim.sent_files,
+            sim.submitted,
+            sim.finished,
+            sim.got_output,
+            sim.analyzed,
+        )
         status = ''
         for stat in stats:
             status+=str(int(stat))

@@ -401,7 +401,7 @@ def test_run_project(tmp_path):
 
     nexus_config.sleep = 0.1
 
-    flags = ['setup','sent_files','submitted','finished','got_output','analyzed']
+    flags = ['_setup','_sent_files','_submitted','_finished','_got_output','_analyzed']
 
     def finished(s):
         f = True

@@ -723,7 +723,7 @@ def test_init():
     from ..simulation import Simulation,SimulationInput
 
     se_ref = obj(
-        analyzed             = False,
+        _analyzed             = False,
         analyzer_image       = 'analyzer.p',
         app_name             = 'simapp',
         app_props            = ['serial'],
@@ -732,17 +732,17 @@ def test_init():
         bundleable           = True,
         bundled              = False,
         bundler              = None,
-        created_directories  = False,
+        _created_directories  = False,
         dependency_ids       = set(),
         errfile              = 'sim.err',
-        failed               = False,
+        _failed               = False,
         fake_sim             = False,
         files                = set(),
-        finished             = False,
+        _finished             = False,
         force_restart        = False,
         force_write          = False,
-        got_dependencies     = False,
-        got_output           = False,
+        _got_dependencies     = False,
+        _got_output           = False,
         identifier           = 'sim',
         image_dir            = 'sim_sim',
         imlocdir             = './runs/sim_sim',
@@ -761,13 +761,13 @@ def test_init():
         restartable          = False,
         remdir               = './runs/',
         resdir               = './runs/',
-        sent_files           = False,
-        setup                = False,
+        _sent_files           = False,
+        _setup                = False,
         sim_image            = 'sim.p',
         simlabel             = None,
         skip_submit          = False,
         subcascade_finished  = False,
-        submitted            = False,
+        _submitted            = False,
         system               = None,
         wait_ids             = set(),
         dependencies         = obj(),
@@ -907,16 +907,16 @@ def test_reset_indicators():
     from ..simulation import Simulation
     from ..machines import job
 
-    indicators = '''
-        got_dependencies
-        setup
-        sent_files
-        submitted
-        finished
-        failed
-        got_output
-        analyzed
-        '''.split()
+    indicators = (
+        "_got_dependencies",
+        "_setup",
+        "_sent_files",
+        "_submitted",
+        "_finished",
+        "_failed",
+        "_got_output",
+        "_analyzed",
+        )
 
     s = Simulation(
         job=job(machine='ws1',app_command='test.x')
@@ -1837,7 +1837,7 @@ a    = 1
     s.write_inputs()
 
     assert(s.setup)
-    assert(set(s.timestamps.keys())=={'setup'})
+    assert(set(s.timestamps.keys())=={"created_directories", 'setup'})
     assert(input_file.exists())
     assert(image_file.exists())
     assert(input_image_file.exists())
@@ -1890,7 +1890,7 @@ def test_send_files(tmp_path):
     s.send_files()
 
     assert(s.sent_files)
-    assert(set(s.timestamps.keys())=={'sent_files'})
+    assert(set(s.timestamps.keys())=={"created_directories", 'sent_files'})
     assert(loc_data_file1.exists())
     assert(loc_data_file2.exists())
 
@@ -1999,7 +1999,7 @@ def test_check_status(tmp_path):
     s.check_status()
 
     assert(s.finished)
-    assert(set(s.timestamps.keys())=={'exited_queue','finished'})
+    assert(set(s.timestamps.keys())=={"created_directories", 'exited_queue','finished'})
     for timestamp in s.timestamps.values():
         assert(datetime.fromisoformat(timestamp).tzinfo is not None)
     #end for
@@ -2035,7 +2035,7 @@ def test_check_status_timeout(tmp_path):
 
     assert(not s.failed)
     assert(not s.finished)
-    assert(set(s.timestamps.keys())=={'exited_queue'})
+    assert(set(s.timestamps.keys())=={"created_directories", 'exited_queue'})
     image_file = Path(s.imlocdir).resolve() / s.sim_image
     assert(image_file.exists())
 
@@ -2066,7 +2066,7 @@ def test_check_status_timeout(tmp_path):
     assert(s.finished)
     assert(s.timestamps.exited_queue==exited_queue)
     assert(set(s.timestamps.keys())=={
-        'exited_queue','timed_out','failed','finished'
+        "created_directories", 'exited_queue','timed_out','failed','finished'
         })
     assert(datetime.fromisoformat(s.timestamps.timed_out).tzinfo is not None)
 
@@ -2108,7 +2108,7 @@ def test_get_output(tmp_path):
     for loc_file in loc_files:
         loc_file.write_text('contents')
     #end for
-    s.finished = True
+    s._finished = True
 
     assert(not s.got_output)
     for loc_file,res_file in zip(loc_files,res_files):
@@ -2123,7 +2123,7 @@ def test_get_output(tmp_path):
     s.get_output()
 
     assert(s.got_output)
-    assert(set(s.timestamps.keys())=={'got_output'})
+    assert(set(s.timestamps.keys())=={"created_directories", 'got_output'})
     for loc_file,res_file in zip(loc_files,res_files):
         assert(loc_file.exists())
         assert(res_file.exists())
@@ -2150,7 +2150,7 @@ def test_analyze(tmp_path):
     s.create_directories()
 
     assert(not s.finished)
-    s.finished = True
+    s._finished = True
 
     analyzer_image = Path(s.imresdir).resolve() / s.analyzer_image
 
@@ -2160,7 +2160,7 @@ def test_analyze(tmp_path):
     s.analyze()
 
     assert(s.analyzed)
-    assert(set(s.timestamps.keys())=={'analyzed'})
+    assert(set(s.timestamps.keys())=={"created_directories", 'analyzed'})
     assert(analyzer_image.exists())
 
     s.analyzed = False
@@ -2191,15 +2191,15 @@ a    = $a
     s = get_test_sim(input=si)
 
     indicators = [
-        'created_directories',
-        'got_dependencies',
-        'setup',
-        'sent_files',
-        'submitted',
-        'finished',
-        'failed',
-        'got_output',
-        'analyzed',
+        '_created_directories',
+        '_got_dependencies',
+        '_setup',
+        '_sent_files',
+        '_submitted',
+        '_finished',
+        '_failed',
+        '_got_output',
+        '_analyzed',
         ]
 
     inds = obj()
