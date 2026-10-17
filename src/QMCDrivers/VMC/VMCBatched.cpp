@@ -382,6 +382,17 @@ void VMCBatched::run()
   int global_step = 0;
   for (int block = 0; block < num_blocks; ++block)
   {
+    bool stop_requested = false;
+    if (!myComm.rank())
+      stop_requested = runtimeControl.checkStop(vmc_loop);
+    myComm.bcast(stop_requested);
+    if (stop_requested)
+    {
+      app_log() << runtimeControl.generateStopMessage("VMCBatched", block);
+      run_time_manager.markStop();
+      break;
+    }
+
     {
       ScopeGuard<LoopTimer<>> vmc_local_timer(vmc_loop);
       vmc_state.recalculate_properties_period =
@@ -420,21 +431,7 @@ void VMCBatched::run()
       recordBlock(block);
     }
 
-    bool stop_requested = false;
-    // Rank 0 checks the time limit only when another block remains.
-    if (!myComm.rank())
-      stop_requested = runtimeControl.checkStop(vmc_loop, block + 1 < num_blocks);
-    myComm.bcast(stop_requested);
-    // Progress messages before possibly stopping
-    if (!myComm.rank())
-      app_log() << runtimeControl.generateProgressMessage("VMCBatched", block, num_blocks);
-    if (stop_requested)
-    {
-      if (!myComm.rank())
-        app_log() << runtimeControl.generateStopMessage("VMCBatched", block);
-      run_time_manager.markStop();
-      break;
-    }
+    app_log() << runtimeControl.generateProgressMessage(vmc_loop, "VMCBatched", block, num_blocks);
   }
   // This is confusing logic from VMC.cpp want this functionality write documentation of this
   // and clean it up

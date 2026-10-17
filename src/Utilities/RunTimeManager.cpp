@@ -89,52 +89,48 @@ RunTimeControl<CLOCK>::RunTimeControl(RunTimeManager<CLOCK>& rm,
 }
 
 template<class CLOCK>
-bool RunTimeControl<CLOCK>::enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer, bool check_time_limit)
+typename RunTimeControl<CLOCK>::StopStatus RunTimeControl<CLOCK>::enough_time_for_next_iteration() const
+{
+  if (m_elapsed >= MaxCPUSecs)
+    return StopStatus::MAX_SECONDS_PASSED;
+
+  if ((m_loop_margin * m_loop_time + m_runtime_safety_padding) > m_remaining)
+    return StopStatus::NOT_ENOUGH_TIME;
+
+  return StopStatus::CONTINUE;
+}
+
+template<class CLOCK>
+typename RunTimeControl<CLOCK>::StopStatus RunTimeControl<CLOCK>::stop_file_requested() const
+{
+  if (std::ifstream(stop_filename_.c_str()))
+    return StopStatus::STOP_FILE;
+  else
+    return StopStatus::CONTINUE;
+}
+
+template<class CLOCK>
+bool RunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer)
 {
   m_loop_time = loop_timer.get_time_per_iteration();
   m_elapsed   = runtimeManager.elapsed();
+  m_remaining = MaxCPUSecs - m_elapsed;
 
-  if (!check_time_limit)
-    return true;
+  stop_status_ = enough_time_for_next_iteration();
+  bool need_to_stop = stop_status_ != StopStatus::CONTINUE;
 
-  if (m_elapsed >= MaxCPUSecs)
+  if (!need_to_stop)
   {
-    stop_status_ = StopStatus::MAX_SECONDS_PASSED;
-    return false;
+    stop_status_ = stop_file_requested();
+    need_to_stop = stop_status_ != StopStatus::CONTINUE;
   }
 
-  m_remaining      = MaxCPUSecs - m_elapsed;
-  bool enough_time = true;
-  if ((m_loop_margin * m_loop_time + m_runtime_safety_padding) > m_remaining)
-    enough_time = false;
-
-  stop_status_ = StopStatus::NOT_ENOUGH_TIME;
-  return enough_time;
-}
-
-template<class CLOCK>
-bool RunTimeControl<CLOCK>::stop_file_requested()
-{
-  if (std::ifstream(stop_filename_.c_str()))
-  {
-    stop_status_ = StopStatus::STOP_FILE;
-    return true;
-  }
-  else
-    return false;
-}
-
-template<class CLOCK>
-bool RunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer, bool check_time_limit)
-{
-  bool need_to_stop = false;
-  need_to_stop |= !enough_time_for_next_iteration(loop_timer, check_time_limit);
-  need_to_stop |= stop_file_requested();
   return need_to_stop;
 }
 
 template<class CLOCK>
-std::string RunTimeControl<CLOCK>::generateProgressMessage(const std::string& driverName,
+std::string RunTimeControl<CLOCK>::generateProgressMessage(const LoopTimer<CLOCK>& loop_timer,
+                                                           const std::string& driverName,
                                                            int block,
                                                            int num_blocks) const
 {
@@ -143,8 +139,8 @@ std::string RunTimeControl<CLOCK>::generateProgressMessage(const std::string& dr
       block + 1 == num_blocks)
   {
     log << "Completed block " << std::setw(4) << block + 1 << " of " << num_blocks << " average "
-        << std::setprecision(4) << m_loop_time << " secs/block after " << std::setprecision(4) << m_elapsed << " secs"
-        << std::endl;
+        << std::setprecision(4) << loop_timer.get_time_per_iteration() << " secs/block after " << std::setprecision(4)
+        << runtimeManager.elapsed() << " secs" << std::endl;
   }
   return log.str();
 }
