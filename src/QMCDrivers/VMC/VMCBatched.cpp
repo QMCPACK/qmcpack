@@ -427,7 +427,7 @@ void VMCBatched::run()
     myComm.bcast(stop_requested);
     // Progress messages before possibly stopping
     if (!myComm.rank())
-      app_log() << runtimeControl.generateProgressMessage("VMCBatched", block, num_blocks);
+      app_log() << runtimeControl.generateProgressMessage(vmc_loop, "VMCBatched", block, num_blocks);
     if (stop_requested)
     {
       if (!myComm.rank())
