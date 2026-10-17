@@ -108,10 +108,11 @@ TEST_CASE("test_loop_control_average", "[utilities]")
   // With 36 seconds left, the average fits (5 * 1.1 + 30), but the last iteration would not.
   FakeChronoClock::fake_chrono_clock_value += convert_to_ns(54s);
   CHECK_FALSE(rc.checkStop(loop));
-  // Equality at the margin still allows another iteration.
-  FakeChronoClock::fake_chrono_clock_value += convert_to_ns(0.5s);
+  // Sufficient time remaining (35.6s left > 35.5s needed).
+  FakeChronoClock::fake_chrono_clock_value += convert_to_ns(0.4s);
   CHECK_FALSE(rc.checkStop(loop));
-  FakeChronoClock::fake_chrono_clock_value += convert_to_ns(0.1s);
+  // Insufficient time for next iteration (35.4s left < 35.5s needed).
+  FakeChronoClock::fake_chrono_clock_value += convert_to_ns(0.2s);
   CHECK(rc.checkStop(loop));
   const std::string msg = rc.generateStopMessage("executeLoop", 2, "loop iteration");
   CHECK(msg.find("RunTimeControl takes action in executeLoop.") != std::string::npos);
