@@ -105,8 +105,21 @@ class RunTimeControl
     STOP_FILE,          // reqsuted stop from a file
   } stop_status_;
 
-  bool enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer, bool check_time_limit);
-  bool stop_file_requested();
+  /** @brief Check whether there is sufficient remaining walltime for another block or iteration.
+   *
+   * Checks if total elapsed time has exceeded MaxCPUSecs, or if projected time for the next iteration
+   * (average iteration time scaled by loop margin + runtime safety padding) exceeds remaining time.
+   *
+   * @return MAX_SECONDS_PASSED if hard time limit is reached,
+   *         NOT_ENOUGH_TIME if remaining time cannot safely accommodate the next iteration,
+   *         or CONTINUE if sufficient time remains.
+   */
+  StopStatus enough_time_for_next_iteration() const;
+
+  /** @brief Check if an explicit stop file (.STOP) exists on disk.
+   *  @return STOP_FILE if the stop file exists, or CONTINUE otherwise.
+   */
+  StopStatus stop_file_requested() const;
 
 public:
   /** constructor
