@@ -28,6 +28,7 @@ import os
 from copy import deepcopy
 from .developer import obj
 from .pseudoset import PseudoSet
+from .physical_system import PhysicalSystem
 from .simulation import Simulation
 from .vasp_input import VaspInput,generate_vasp_input,generate_poscar,Poscar
 from .vasp_analyzer import VaspAnalyzer
@@ -183,15 +184,18 @@ class Vasp(Simulation):
 
 
 def generate_vasp(**kwargs):
-    pseudos = kwargs.get('pseudos',None)
-    if pseudos is not None:
-        system = kwargs.get('system',None)
-        kwargs['pseudos'] = PseudoSet.get_pseudos(
+    pseudos = kwargs.get("pseudos")
+    system = kwargs.get("system")
+    if isinstance(system, PhysicalSystem) and system.pseudos is not None:
+        if len(pseudos) > 0:
+            msg = "Can not pass explicit pseudos when they are bound to a PhysicalSystem!"
+            raise ValueError(msg)
+    elif pseudos is not None:
+        kwargs["pseudos"] = PseudoSet.get_pseudos(
             pseudos = pseudos,
             system = system,
-            code = 'vasp',
-            )
-    #end if
+            code = "vasp",
+        )
 
     sim_args,inp_args = Vasp.separate_inputs(kwargs)
 
