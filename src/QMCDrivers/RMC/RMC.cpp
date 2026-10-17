@@ -125,8 +125,7 @@ void RMC::run()
 
     if (stop_requested)
     {
-      if (!myComm.rank())
-        app_log() << runtimeControl.generateStopMessage("RMC", block);
+      app_log() << runtimeControl.generateStopMessage("RMC", block);
       run_time_manager.markStop();
       break;
     }
