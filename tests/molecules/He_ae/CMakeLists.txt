@@ -173,6 +173,21 @@ else()
     He_batch_VMC_MWALKERS_2-3_SCALARS # VMC
   )
 
+  set(HE_OPTBATCH_RUNTIME_TEST deterministic-He_ae-optbatch-cpu_limit)
+  run_qmc_app(
+    ${HE_OPTBATCH_RUNTIME_TEST}
+    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    1
+    1
+    HE_OPTBATCH_RUNTIME_TEST_ADDED
+    det_He_optbatch_cpu_limit.xml)
+  if(HE_OPTBATCH_RUNTIME_TEST_ADDED)
+    set_tests_properties(
+      ${HE_OPTBATCH_RUNTIME_TEST}
+      PROPERTIES TIMEOUT 120 PASS_REGULAR_EXPRESSION
+                 "Insufficient time for next optimization iteration. Stopping after optimization iteration [1-9][0-9]*(.|\\n)*QMCPACK execution completed successfully")
+    add_test_check_file_existence(${HE_OPTBATCH_RUNTIME_TEST} det_He_optbatch_cpu_limit.s000.opt.xml TRUE)
+  endif()
 endif()
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)

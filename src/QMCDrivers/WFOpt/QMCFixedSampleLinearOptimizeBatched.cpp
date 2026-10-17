@@ -33,6 +33,7 @@
 #include "Message/UniformCommunicateError.h"
 #include "Numerics/DeterminantOperators.h"
 #include "LinearMethod.h"
+#include "Utilities/RunTimeManager.h"
 #include <cassert>
 #include <iostream>
 #include <fstream>
@@ -262,8 +263,26 @@ void QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
     return optTarget->computedCost();
   };
 
+  LoopTimer<> cycle_timer;
+  RunTimeControl<> runtime_control(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(), false);
   while (Total_iterations < Max_iterations)
   {
+    bool stop_requested = false;
+    if (!myComm.rank())
+      stop_requested = runtime_control.checkStop(cycle_timer);
+    myComm.bcast(stop_requested);
+    if (stop_requested)
+    {
+      if (!myComm.rank())
+        app_log() << runtime_control.generateStopMessage("QMCFixedSampleLinearOptimizeBatched", Total_iterations,
+                                                        "optimization iteration");
+      run_time_manager.markStop();
+      break;
+    }
+
+    // Predict the next cycle from the last cycle, rather than the average of all cycles.
+    cycle_timer = LoopTimer<>();
+    ScopeGuard<LoopTimer<>> cycle_scope(cycle_timer);
     Total_iterations += 1;
     app_log() << "Iteration: " << Total_iterations << "/" << Max_iterations << std::endl;
     if (!ValidCostFunction(Valid))
