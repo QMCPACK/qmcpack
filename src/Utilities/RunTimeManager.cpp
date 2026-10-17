@@ -89,10 +89,13 @@ RunTimeControl<CLOCK>::RunTimeControl(RunTimeManager<CLOCK>& rm,
 }
 
 template<class CLOCK>
-bool RunTimeControl<CLOCK>::enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer)
+bool RunTimeControl<CLOCK>::enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer, bool check_time_limit)
 {
   m_loop_time = loop_timer.get_time_per_iteration();
   m_elapsed   = runtimeManager.elapsed();
+
+  if (!check_time_limit)
+    return true;
 
   if (m_elapsed >= MaxCPUSecs)
   {
@@ -122,10 +125,10 @@ bool RunTimeControl<CLOCK>::stop_file_requested()
 }
 
 template<class CLOCK>
-bool RunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer)
+bool RunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer, bool check_time_limit)
 {
   bool need_to_stop = false;
-  need_to_stop |= !enough_time_for_next_iteration(loop_timer);
+  need_to_stop |= !enough_time_for_next_iteration(loop_timer, check_time_limit);
   need_to_stop |= stop_file_requested();
   return need_to_stop;
 }
@@ -147,23 +150,30 @@ std::string RunTimeControl<CLOCK>::generateProgressMessage(const std::string& dr
 }
 
 template<class CLOCK>
-std::string RunTimeControl<CLOCK>::generateStopMessage(const std::string& driverName, int block) const
+std::string RunTimeControl<CLOCK>::generateStopMessage(const std::string& driverName,
+                                                       int completed_iterations,
+                                                       const std::string& iteration_name) const
 {
   std::stringstream log;
-  log << "RunTimeControl takes action in " << driverName << " driver." << std::endl;
+  log << "RunTimeControl takes action in " << driverName;
+  if (iteration_name == "block")
+    log << " driver";
+  log << "." << std::endl;
   if (stop_status_ == StopStatus::MAX_SECONDS_PASSED)
-    log << "Time limit reached. Stopping after block " << block << std::endl
+    log << "Time limit reached. Stopping after " << iteration_name << " " << completed_iterations << std::endl
         << "Hard limit (seconds) " << MaxCPUSecs << ", elapsed (seconds) " << m_elapsed << std::endl;
   else if (stop_status_ == StopStatus::NOT_ENOUGH_TIME)
   {
-    log << "Insufficient time for next block. Stopping after block " << block << std::endl;
-    log << "  Iteration time per " << driverName << " block (seconds) = " << m_loop_time << std::endl;
+    log << "Insufficient time for next " << iteration_name << ". Stopping after " << iteration_name << " "
+        << completed_iterations << std::endl;
+    log << "  Iteration time per " << driverName << " " << iteration_name << " (seconds) = " << m_loop_time
+        << std::endl;
     log << "  Elapsed   time (seconds) = " << m_elapsed << std::endl;
     log << "  Remaining time (seconds) = " << m_remaining << std::endl;
   }
   else if (stop_status_ == StopStatus::STOP_FILE)
-    log << "Stop requested from the control file \"" + stop_filename_ + "\", stopping after block " << block
-        << std::endl;
+    log << "Stop requested from the control file \"" + stop_filename_ + "\", stopping after " << iteration_name << " "
+        << completed_iterations << std::endl;
   else
     throw std::runtime_error("Unidentified stop status!");
 
