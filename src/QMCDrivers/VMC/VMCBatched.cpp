@@ -421,9 +421,9 @@ void VMCBatched::run()
     }
 
     bool stop_requested = false;
-    // Rank 0 decides whether the time limit was reached
+    // Rank 0 checks the time limit only when another block remains.
     if (!myComm.rank())
-      stop_requested = runtimeControl.checkStop(vmc_loop);
+      stop_requested = runtimeControl.checkStop(vmc_loop, block + 1 < num_blocks);
     myComm.bcast(stop_requested);
     // Progress messages before possibly stopping
     if (!myComm.rank())

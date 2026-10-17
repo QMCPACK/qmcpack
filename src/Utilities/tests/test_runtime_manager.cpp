@@ -12,7 +12,8 @@
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Utilities/RunTimeManager.h"
-#include <stdio.h>
+#include <cstdio>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -83,8 +84,104 @@ TEST_CASE("test_loop_control", "[utilities]")
   REQUIRE(rc.checkStop(loop));
 
   std::string msg = rc.generateStopMessage("QMC", 2);
-  REQUIRE(msg.size() > 0);
+  CHECK(msg.find("RunTimeControl takes action in QMC driver.") != std::string::npos);
+  CHECK(msg.find("Insufficient time for next block. Stopping after block 2") != std::string::npos);
 }
 
+TEST_CASE("test_loop_control_average", "[utilities]")
+{
+  // Advance time explicitly so only the measured iterations contribute to the estimate.
+  const auto saved_increment                   = FakeChronoClock::fake_chrono_clock_increment;
+  FakeChronoClock::fake_chrono_clock_increment = convert_to_ns(0s);
+  RunTimeManager<FakeChronoClock> rm;
+  RunTimeControl<FakeChronoClock> rc(rm, 100, "dummy", false);
+  LoopTimer<FakeChronoClock> loop;
+
+  loop.start();
+  FakeChronoClock::fake_chrono_clock_value += convert_to_ns(2s);
+  loop.stop();
+  loop.start();
+  FakeChronoClock::fake_chrono_clock_value += convert_to_ns(8s);
+  loop.stop();
+  CHECK(loop.get_time_per_iteration() == Approx(5.0));
+
+  // With 36 seconds left, the average fits (5 * 1.1 + 30), but the last iteration would not.
+  FakeChronoClock::fake_chrono_clock_value += convert_to_ns(54s);
+  CHECK_FALSE(rc.checkStop(loop));
+  // Equality at the margin still allows another iteration.
+  FakeChronoClock::fake_chrono_clock_value += convert_to_ns(0.5s);
+  CHECK_FALSE(rc.checkStop(loop));
+  FakeChronoClock::fake_chrono_clock_value += convert_to_ns(0.1s);
+  CHECK(rc.checkStop(loop));
+  const std::string msg = rc.generateStopMessage("executeLoop", 2, "loop iteration");
+  CHECK(msg.find("RunTimeControl takes action in executeLoop.") != std::string::npos);
+  CHECK(msg.find("Insufficient time for next loop iteration. Stopping after loop iteration 2") != std::string::npos);
+  CHECK(msg.find("loop iteration (seconds) = 5") != std::string::npos);
+
+  FakeChronoClock::fake_chrono_clock_value += convert_to_ns(40s);
+  CHECK(rc.checkStop(loop));
+  CHECK(rc.generateStopMessage("executeLoop", 2, "loop iteration")
+            .find("Time limit reached. Stopping after loop iteration 2") != std::string::npos);
+  FakeChronoClock::fake_chrono_clock_increment = saved_increment;
+}
+
+TEST_CASE("test_loop_control_before_first_iteration", "[utilities]")
+{
+  RunTimeManager<FakeChronoClock> rm;
+  LoopTimer<FakeChronoClock> loop;
+  SECTION("Time limit already reached")
+  {
+    RunTimeControl<FakeChronoClock> rc(rm, 0, "dummy", false);
+    CHECK(rc.checkStop(loop));
+    CHECK(rc.generateStopMessage("executeLoop", 0, "loop iteration")
+              .find("Time limit reached. Stopping after loop iteration 0") != std::string::npos);
+  }
+  SECTION("Insufficient shutdown allowance")
+  {
+    RunTimeControl<FakeChronoClock> rc(rm, 30, "dummy", false);
+    CHECK(rc.checkStop(loop));
+    CHECK(rc.generateStopMessage("executeLoop", 0, "loop iteration")
+              .find("Insufficient time for next loop iteration. Stopping after loop iteration 0") != std::string::npos);
+  }
+  SECTION("Enough time to start")
+  {
+    RunTimeControl<FakeChronoClock> rc(rm, 100, "dummy", false);
+    CHECK_FALSE(rc.checkStop(loop));
+  }
+}
+
+
+TEST_CASE("test_loop_control_final_block", "[utilities]")
+{
+  int max_cpu_secs = 0;
+  SECTION("Time limit already reached") { max_cpu_secs = 0; }
+  SECTION("Insufficient time for another block") { max_cpu_secs = 30; }
+
+  RunTimeManager<FakeChronoClock> rm;
+  RunTimeControl<FakeChronoClock> rc(rm, max_cpu_secs, "dummy", false);
+  LoopTimer<FakeChronoClock> loop;
+  loop.start();
+  loop.stop();
+
+  CHECK_FALSE(rc.checkStop(loop, false));
+  CHECK(rc.generateProgressMessage("QMC", 0, 1).find("average 1 secs/block after ") != std::string::npos);
+  CHECK(rc.checkStop(loop));
+}
+
+TEST_CASE("test_loop_control_final_block_stop_file", "[utilities]")
+{
+  const std::string prefix    = "runtime_final_block_test";
+  const std::string stop_file = prefix + ".STOP";
+  RunTimeManager<FakeChronoClock> rm;
+  RunTimeControl<FakeChronoClock> rc(rm, 0, prefix);
+  LoopTimer<FakeChronoClock> loop;
+  {
+    std::ofstream stop(stop_file);
+    CHECK(stop.good());
+  }
+  CHECK(rc.checkStop(loop, false));
+  CHECK(rc.generateStopMessage("QMC", 0).find("Stop requested from the control file") != std::string::npos);
+  CHECK(std::remove(stop_file.c_str()) == 0);
+}
 
 } // namespace qmcplusplus

@@ -37,6 +37,7 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 #include "Message/Communicate.h"
+#include "Message/CommOperators.h"
 #include "Message/UniformCommunicateError.h"
 #include "Concurrency/OpenMP.h"
 #include "Estimators/EstimatorInputDelegates.h"
@@ -309,12 +310,29 @@ void QMCMain::executeLoop(xmlNodePtr cur)
   //reset qmc_counter
   qmc_common.qmc_counter = 0;
   app_log() << "Loop execution max-interations = " << niter << std::endl;
+  LoopTimer<> loop_timer;
+  RunTimeControl<> runtime_control(run_time_manager, my_project_.getMaxCPUSeconds(), my_project_.getTitle(), false);
   for (int iter = 0; iter < niter; iter++)
   {
     if (run_time_manager.isStopNeeded())
       break;
+
+    bool stop_requested = false;
+    if (!myComm.rank())
+      stop_requested = runtime_control.checkStop(loop_timer);
+    myComm.bcast(stop_requested);
+    if (stop_requested)
+    {
+      if (!myComm.rank())
+        app_log() << runtime_control.generateStopMessage("executeLoop", iter, "loop iteration");
+      run_time_manager.markStop();
+      break;
+    }
+
+    // Include all QMC sections in the iteration average timings.
+    ScopeGuard<LoopTimer<>> iteration_timer(loop_timer);
     xmlNodePtr tcur = cur->children;
-    while (tcur != NULL)
+    while (tcur != NULL && !run_time_manager.isStopNeeded())
     {
       std::string cname((const char*)tcur->name);
       if (cname == "qmc")
