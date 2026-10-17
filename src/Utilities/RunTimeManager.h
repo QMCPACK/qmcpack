@@ -32,7 +32,7 @@ public:
     return elapsed.count();
   }
   // Initialize the start time at static class initialization time
-  RunTimeManager() : start_time(CLOCK::now()) {}
+  RunTimeManager() : start_time(CLOCK::now()), need_to_stop_(false) {}
 
   bool isStopNeeded() const { return need_to_stop_; }
   void markStop() { need_to_stop_ = true; }
