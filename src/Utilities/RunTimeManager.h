@@ -22,24 +22,42 @@
 
 namespace qmcplusplus
 {
+/** @brief Coordinates application-wide execution timing and early termination signals.
+ *
+ * RunTimeManager tracks the total wallclock time since construction (typically at static
+ * application startup) and maintains a shared stop signal to halt downstream calculations
+ * cleanly when runtime limits or stop files are encountered.
+ *
+ * @tparam CLOCK Clock type providing now() and time_point (defaults to ChronoClock; FakeChronoClock for testing).
+ */
 template<class CLOCK = ChronoClock>
 class RunTimeManager
 {
 public:
+  /** @brief Get the elapsed wallclock time in seconds since this manager was initialized.
+   *  @return Elapsed time in seconds.
+   */
   inline double elapsed()
   {
     std::chrono::duration<double> elapsed = CLOCK::now() - start_time;
     return elapsed.count();
   }
-  // Initialize the start time at static class initialization time
+  /// Default constructor, records start timestamp.
   RunTimeManager() : start_time(CLOCK::now()), need_to_stop_(false) {}
 
+  /** @brief Check whether an early simulation stop has been flagged.
+   *  @return true if an early stop was requested by any driver or controller.
+   */
   bool isStopNeeded() const { return need_to_stop_; }
+
+  /// Flag that the simulation must stop early, preventing subsequent sections from running.
   void markStop() { need_to_stop_ = true; }
 
 private:
+  /// The reference timestamp taken at instantiation.
   const typename CLOCK::time_point start_time;
-  bool need_to_stop_;
+  /// Global early-termination flag.
+  bool need_to_stop_{false};
 };
 
 extern RunTimeManager<ChronoClock> run_time_manager;
