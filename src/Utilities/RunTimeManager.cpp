@@ -110,18 +110,14 @@ typename RunTimeControl<CLOCK>::StopStatus RunTimeControl<CLOCK>::stop_file_requ
 }
 
 template<class CLOCK>
-bool RunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer, bool check_time_limit)
+bool RunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer)
 {
   m_loop_time = loop_timer.get_time_per_iteration();
   m_elapsed   = runtimeManager.elapsed();
   m_remaining = MaxCPUSecs - m_elapsed;
 
-  bool need_to_stop = false;
-  if (check_time_limit)
-  {
-    stop_status_ = enough_time_for_next_iteration();
-    need_to_stop = stop_status_ != StopStatus::CONTINUE;
-  }
+  stop_status_ = enough_time_for_next_iteration();
+  bool need_to_stop = stop_status_ != StopStatus::CONTINUE;
 
   if (!need_to_stop)
   {

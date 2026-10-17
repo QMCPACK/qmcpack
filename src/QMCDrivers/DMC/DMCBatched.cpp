@@ -504,6 +504,18 @@ void DMCBatched::run()
   int global_step = 0;
   for (int block = 0; block < num_blocks; ++block)
   {
+    bool stop_requested = false;
+    if (!myComm.rank())
+      stop_requested = runtimeControl.checkStop(dmc_loop);
+    myComm.bcast(stop_requested);
+    if (stop_requested)
+    {
+      if (!myComm.rank())
+        app_log() << runtimeControl.generateStopMessage("DMCBatched", block);
+      run_time_manager.markStop();
+      break;
+    }
+
     {
       ScopeGuard<LoopTimer<>> dmc_local_timer(dmc_loop);
       estimator_manager_->startBlock(steps_per_block_);
@@ -544,21 +556,8 @@ void DMCBatched::run()
       recordBlock(block);
     }
 
-    bool stop_requested = false;
-    // Rank 0 checks the time limit only when another block remains.
-    if (!myComm.rank())
-      stop_requested = runtimeControl.checkStop(dmc_loop, block + 1 < num_blocks);
-    myComm.bcast(stop_requested);
-    // Progress messages before possibly stopping
     if (!myComm.rank())
       app_log() << runtimeControl.generateProgressMessage(dmc_loop, "DMCBatched", block, num_blocks);
-    if (stop_requested)
-    {
-      if (!myComm.rank())
-        app_log() << runtimeControl.generateStopMessage("DMCBatched", block);
-      run_time_manager.markStop();
-      break;
-    }
   }
 
   branch_engine_->printStatus();
