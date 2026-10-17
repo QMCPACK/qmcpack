@@ -89,47 +89,46 @@ RunTimeControl<CLOCK>::RunTimeControl(RunTimeManager<CLOCK>& rm,
 }
 
 template<class CLOCK>
-bool RunTimeControl<CLOCK>::enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer, bool check_time_limit)
+typename RunTimeControl<CLOCK>::StopStatus RunTimeControl<CLOCK>::enough_time_for_next_iteration() const
 {
-  m_loop_time = loop_timer.get_time_per_iteration();
-  m_elapsed   = runtimeManager.elapsed();
-
-  if (!check_time_limit)
-    return true;
-
   if (m_elapsed >= MaxCPUSecs)
-  {
-    stop_status_ = StopStatus::MAX_SECONDS_PASSED;
-    return false;
-  }
+    return StopStatus::MAX_SECONDS_PASSED;
 
-  m_remaining      = MaxCPUSecs - m_elapsed;
-  bool enough_time = true;
   if ((m_loop_margin * m_loop_time + m_runtime_safety_padding) > m_remaining)
-    enough_time = false;
+    return StopStatus::NOT_ENOUGH_TIME;
 
-  stop_status_ = StopStatus::NOT_ENOUGH_TIME;
-  return enough_time;
+  return StopStatus::CONTINUE;
 }
 
 template<class CLOCK>
-bool RunTimeControl<CLOCK>::stop_file_requested()
+typename RunTimeControl<CLOCK>::StopStatus RunTimeControl<CLOCK>::stop_file_requested() const
 {
   if (std::ifstream(stop_filename_.c_str()))
-  {
-    stop_status_ = StopStatus::STOP_FILE;
-    return true;
-  }
+    return StopStatus::STOP_FILE;
   else
-    return false;
+    return StopStatus::CONTINUE;
 }
 
 template<class CLOCK>
 bool RunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer, bool check_time_limit)
 {
+  m_loop_time = loop_timer.get_time_per_iteration();
+  m_elapsed   = runtimeManager.elapsed();
+  m_remaining = MaxCPUSecs - m_elapsed;
+
   bool need_to_stop = false;
-  need_to_stop |= !enough_time_for_next_iteration(loop_timer, check_time_limit);
-  need_to_stop |= stop_file_requested();
+  if (check_time_limit)
+  {
+    stop_status_ = enough_time_for_next_iteration();
+    need_to_stop = stop_status_ != StopStatus::CONTINUE;
+  }
+
+  if (!need_to_stop)
+  {
+    stop_status_ = stop_file_requested();
+    need_to_stop = stop_status_ != StopStatus::CONTINUE;
+  }
+
   return need_to_stop;
 }
 
