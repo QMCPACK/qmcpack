@@ -156,11 +156,11 @@ std::string RunTimeControl<CLOCK>::generateStopMessage(const std::string& driver
     log << " driver";
   log << "." << std::endl;
   if (stop_status_ == StopStatus::MAX_SECONDS_PASSED)
-    log << "Time limit reached. Stopping after " << iteration_name << " " << completed_iterations << std::endl
+    log << "Time limit reached. Stopping before " << iteration_name << " " << completed_iterations << std::endl
         << "Hard limit (seconds) " << MaxCPUSecs << ", elapsed (seconds) " << m_elapsed << std::endl;
   else if (stop_status_ == StopStatus::NOT_ENOUGH_TIME)
   {
-    log << "Insufficient time for next " << iteration_name << ". Stopping after " << iteration_name << " "
+    log << "Insufficient time for the current " << iteration_name << ". Stopping before " << iteration_name << " "
         << completed_iterations << std::endl;
     log << "  Iteration time per " << driverName << " " << iteration_name << " (seconds) = " << m_loop_time
         << std::endl;
@@ -168,7 +168,7 @@ std::string RunTimeControl<CLOCK>::generateStopMessage(const std::string& driver
     log << "  Remaining time (seconds) = " << m_remaining << std::endl;
   }
   else if (stop_status_ == StopStatus::STOP_FILE)
-    log << "Stop requested from the control file \"" + stop_filename_ + "\", stopping after " << iteration_name << " "
+    log << "Stop requested from the control file \"" + stop_filename_ + "\", stopping before " << iteration_name << " "
         << completed_iterations << std::endl;
   else
     throw std::runtime_error("Unidentified stop status!");

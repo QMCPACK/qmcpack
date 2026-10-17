@@ -85,7 +85,7 @@ TEST_CASE("test_loop_control", "[utilities]")
 
   std::string msg = rc.generateStopMessage("QMC", 2);
   CHECK(msg.find("RunTimeControl takes action in QMC driver.") != std::string::npos);
-  CHECK(msg.find("Insufficient time for next block. Stopping after block 2") != std::string::npos);
+  CHECK(msg.find("Insufficient time for the current block. Stopping before block 2") != std::string::npos);
 }
 
 TEST_CASE("test_loop_control_average", "[utilities]")
@@ -116,13 +116,13 @@ TEST_CASE("test_loop_control_average", "[utilities]")
   CHECK(rc.checkStop(loop));
   const std::string msg = rc.generateStopMessage("executeLoop", 2, "loop iteration");
   CHECK(msg.find("RunTimeControl takes action in executeLoop.") != std::string::npos);
-  CHECK(msg.find("Insufficient time for next loop iteration. Stopping after loop iteration 2") != std::string::npos);
+  CHECK(msg.find("Insufficient time for the current loop iteration. Stopping before loop iteration 2") != std::string::npos);
   CHECK(msg.find("loop iteration (seconds) = 5") != std::string::npos);
 
   FakeChronoClock::fake_chrono_clock_value += convert_to_ns(40s);
   CHECK(rc.checkStop(loop));
   CHECK(rc.generateStopMessage("executeLoop", 2, "loop iteration")
-            .find("Time limit reached. Stopping after loop iteration 2") != std::string::npos);
+            .find("Time limit reached. Stopping before loop iteration 2") != std::string::npos);
   FakeChronoClock::fake_chrono_clock_increment = saved_increment;
 }
 
@@ -135,14 +135,14 @@ TEST_CASE("test_loop_control_before_first_iteration", "[utilities]")
     RunTimeControl<FakeChronoClock> rc(rm, 0, "dummy", false);
     CHECK(rc.checkStop(loop));
     CHECK(rc.generateStopMessage("executeLoop", 0, "loop iteration")
-              .find("Time limit reached. Stopping after loop iteration 0") != std::string::npos);
+              .find("Time limit reached. Stopping before loop iteration 0") != std::string::npos);
   }
   SECTION("Insufficient shutdown allowance")
   {
     RunTimeControl<FakeChronoClock> rc(rm, 30, "dummy", false);
     CHECK(rc.checkStop(loop));
     CHECK(rc.generateStopMessage("executeLoop", 0, "loop iteration")
-              .find("Insufficient time for next loop iteration. Stopping after loop iteration 0") != std::string::npos);
+              .find("Insufficient time for the current loop iteration. Stopping before loop iteration 0") != std::string::npos);
   }
   SECTION("Enough time to start")
   {
