@@ -945,28 +945,28 @@ class PseudoSet(DevBase):
         ...     pseudo_dir=pseudo_dir,
         ...     patterns={"espresso": "ccECP", "rmg": "USPP"}
         ... )
-        >>> for code, ps_set in psps.items():
+        >>> for code, ps_set in psps.pseudos.items():
         ...     print(f"{code} pseudos:")
         ...     for lbl, psp in ps_set.pseudos.items():
         ...         print(f"  {lbl}: {psp}")
-        espresso pseudos:
+        quantum_espresso pseudos:
         H: /path/to/pseudo_dir/H.ccECP.upf
         C: /path/to/pseudo_dir/C.ccECP.upf
-        gamess pseudos:
-        C: /path/to/pseudo_dir/C.BFD.gms
-        H: /path/to/pseudo_dir/H.BFD.gms
-        vasp pseudos:
-        C: /path/to/pseudo_dir/C/POTCAR
-        H: /path/to/pseudo_dir/H/POTCAR
         qmcpack pseudos:
         C: /path/to/pseudo_dir/C.ccECP.xml
         H: /path/to/pseudo_dir/H.ccECP.xml
-        rmg pseudos:
-        C: /path/to/pseudo_dir/C.USPP.upf
-        H: /path/to/pseudo_dir/H.USPP.upf
+        gamess pseudos:
+        C: /path/to/pseudo_dir/C.BFD.gms
+        H: /path/to/pseudo_dir/H.BFD.gms
         pyscf pseudos:
         C: /path/to/pseudo_dir/C.BFD.gth
         H: /path/to/pseudo_dir/H.BFD.gth
+        vasp pseudos:
+        C: /path/to/pseudo_dir/C/POTCAR
+        H: /path/to/pseudo_dir/H/POTCAR
+        rmg pseudos:
+        C: /path/to/pseudo_dir/C.USPP.upf
+        H: /path/to/pseudo_dir/H.USPP.upf
         """
         psp_dir = Path(pseudo_dir).resolve(strict=True)
 
@@ -1168,7 +1168,7 @@ class PseudoSet(DevBase):
 
         Parameters
         ----------
-        pseudos : PseudoSet or str or Collection of str or dict[str: PathLike] or None
+        pseudos : PseudoSet or str or Collection of str or dict[str: PathLike] or PseudoSetCollection or None
             Either a :class:`PseudoSet` object, a string label from
             :func:`ppset`, a list of pseudopotential file names, a dictionary
             mapping file names to file paths, or ``None``.
@@ -1501,7 +1501,8 @@ class PseudoSetCollection:
 
     @property
     def pseudos(self) -> dict[CodeString, PseudoSet]:
-        return {
+        """All non-``None`` pseudosets in this collection."""
+        all_pseudos = {
             CodeString.ESPRESSO: self.espresso,
             CodeString.QMCPACK: self.qmcpack,
             CodeString.GAMESS: self.gamess,
@@ -1509,6 +1510,7 @@ class PseudoSetCollection:
             CodeString.VASP: self.vasp,
             CodeString.RMG: self.rmg,
         }
+        return {code: pseudo for code, pseudo in all_pseudos.items() if pseudo is not None}
 
     @pseudos.setter
     def pseudos(self, pseudos: dict[CodeString | str, PseudoSet]) -> None:
@@ -1750,25 +1752,25 @@ def generate_pseudoset(
     ...     code={"qmcpack", "espresso", "rmg", "pyscf", "gamess"},
     ...     extension={"rmg": ".xml"},
     ... )
-    >>> for code, ps_set in psps.items():
+    >>> for code, ps_set in psps.pseudos.items():
     ...     print(f"{code} pseudos:")
     ...     for lbl, psp in ps_set.pseudos.items():
     ...         print(f"  {lbl}: {psp}")
-    espresso pseudos:
+    quantum_espresso pseudos:
         C: /path/to/pseudo_dir/C.ccECP.upf
         H: /path/to/pseudo_dir/H.ccECP.upf
-    pyscf pseudos:
-        H: /path/to/pseudo_dir/H.ccECP.nwchem
-        C: /path/to/pseudo_dir/C.ccECP.nwchem
-    rmg pseudos:
-        H: /path/to/pseudo_dir/H.ccECP.xml
-        C: /path/to/pseudo_dir/C.ccECP.xml
     qmcpack pseudos:
-        H: /path/to/pseudo_dir/H.ccECP.xml
         C: /path/to/pseudo_dir/C.ccECP.xml
+        H: /path/to/pseudo_dir/H.ccECP.xml
     gamess pseudos:
         C: /path/to/pseudo_dir/C.ccECP.gamess
         H: /path/to/pseudo_dir/H.ccECP.gamess
+    pyscf pseudos:
+        C: /path/to/pseudo_dir/C.ccECP.nwchem
+        H: /path/to/pseudo_dir/H.ccECP.nwchem
+    rmg pseudos:
+        C: /path/to/pseudo_dir/C.ccECP.xml
+        H: /path/to/pseudo_dir/H.ccECP.xml
     """
     if pseudo_dir is None and len(codes_psps) == 0:
         if nexus_config.pseudo_dir is not None:

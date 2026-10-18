@@ -129,15 +129,21 @@ Users familiar with the legacy :py:func:`~.ppset` or that have a custom pseudopo
         O = 6,
         )
 
-    # You can also grab Zeffs right from the pseudopotential files
-    system = generate_physical_system(
-        structure = "structure.xsf",
-        **ccECP["espresso"].get_Zeff({"C", "H", "O"})
-        )
-
     generate_pwscf(
         pseudos = pseudos,
         system  = system,
+        ...,
+        )
+
+    # You can also have the code automatically grab Zeffs from the pseudos
+    system = generate_physical_system(
+        structure = "structure.xsf",
+        pseudos   = ccECP,
+        )
+
+    generate_pwscf(
+        # You can not pass `pseudos` when they are passed to `system`
+        system = system,
         ...,
         )
 
@@ -184,11 +190,10 @@ If you are using Nexus for just one code, e.g. driving high-throughput Quantum E
 
             system = generate_physical_system(
                 structure = "structure.xsf",
-                **pseudos["espresso"].get_Zeff({"C", "H", "O"})
+                pseudos   = pseudos,
                 )
 
             generate_pwscf(
-                pseudos = pseudos,
                 system  = system,
                 ...,
                 )
@@ -221,11 +226,10 @@ If you are using Nexus for just one code, e.g. driving high-throughput Quantum E
 
             system = generate_physical_system(
                 structure = "structure.xsf",
-                **pseudos.get_Zeff({"C", "H", "O"})
+                pseudos   = pseudos,
                 )
 
             generate_pwscf(
-                pseudos = pseudos,
                 system  = system,
                 ...,
                 )
@@ -262,7 +266,7 @@ If you are driving multiple codes with Nexus, e.g. running an RMG calculation fo
 
             pseudos = PseudoSet.from_mixed_dir(
                 pseudo_dir = "/tmp/ccECP",
-                extensions = {"rmg": ".xml"}
+                extensions = {"rmg": ".xml"},
                 )
 
 
