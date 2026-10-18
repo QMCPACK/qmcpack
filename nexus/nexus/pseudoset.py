@@ -995,7 +995,7 @@ class PseudoSet(DevBase):
             if codes is None:
                 extensions = dict.fromkeys(CodeString, extensions)
             else:
-                extensions = dict.fromkeys(CodeString, extensions)
+                extensions = dict.fromkeys(codes, extensions)
         else:
             extensions = PseudoSet._normalize_code_map_keys(extensions)
             if codes is None:

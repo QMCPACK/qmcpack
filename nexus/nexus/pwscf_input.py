@@ -2092,7 +2092,7 @@ def generate_any_pwscf_input(**kwargs):
     atom_species = []
     if system is not None:
         if isinstance(system, PhysicalSystem) and system.pseudos is not None:
-            if len(pseudos) > 0:
+            if pseudos is not None and len(pseudos) > 0:
                 msg = "Can not pass explicit pseudos when they are bound to a PhysicalSystem!"
                 raise ValueError(msg)
             pseudos = PseudoSet.get_pseudos(

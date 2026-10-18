@@ -1251,6 +1251,13 @@ def generate_any_gamess_input(**kwargs):
         if pskw.symmetry!='C1':
             data+='\n'
         #end if
+        if not (system.pseudos is None or pskw.pseudos is None):
+            msg = "Can not pass explicit pseudos when they are bound to a PhysicalSystem!"
+            raise ValueError(msg)
+
+        if system.pseudos is not None:
+            pskw.pseudos = system.pseudos
+
         if pskw.pseudos is None:
             if pskw.bases is not None:
                 bss = nexus_config.basissets.bases_by_atom(*pskw.bases)
