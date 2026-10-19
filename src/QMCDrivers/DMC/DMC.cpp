@@ -239,14 +239,27 @@ void DMC::run()
   Traces->startRun(nBlocks, traceClones);
 #endif
   wlog_manager_->startRun(getWalkerLogCollectorRefs());
-  IndexType block = 0;
-  int sample      = 0;
+  int sample = 0;
 
   RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm.getName(), myComm.rank() == 0);
 
-  do // block
+  for (IndexType block = 0; block < nBlocks; ++block)
   {
-    dmc_loop.start();
+    bool stop_requested = false;
+    // Rank 0 decides whether the time limit was reached
+    if (!myComm.rank())
+      stop_requested = runtimeControl.checkStop(dmc_loop);
+    myComm.bcast(stop_requested);
+
+    if (stop_requested)
+    {
+      if (!myComm.rank())
+        app_log() << runtimeControl.generateStopMessage("DMC", block);
+      run_time_manager.markStop();
+      break;
+    }
+
+    ScopeGuard<LoopTimer<>> dmc_local_timer(dmc_loop);
     Estimators->startBlock(nSteps);
     for (int ip = 0; ip < NumThreads; ip++)
       Movers[ip]->startBlock(nSteps);
@@ -287,25 +300,8 @@ void DMC::run()
     Traces->write_buffers(traceClones, block);
 #endif
     wlog_manager_->writeBuffers();
-    block++;
     recordBlock(block);
-    dmc_loop.stop();
-
-    bool stop_requested = false;
-    // Rank 0 decides whether the time limit was reached
-    if (!myComm.rank())
-      stop_requested = runtimeControl.checkStop(dmc_loop);
-    myComm.bcast(stop_requested);
-
-    if (stop_requested)
-    {
-      if (!myComm.rank())
-        app_log() << runtimeControl.generateStopMessage("DMC", block - 1);
-      run_time_manager.markStop();
-      break;
-    }
-
-  } while (block < nBlocks);
+  }
 
   Estimators->stop();
   for (int ip = 0; ip < NumThreads; ++ip)

@@ -81,7 +81,21 @@ void RMC::run()
   RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm.getName(), myComm.rank() == 0);
   for (int block = 0; block < nBlocks; ++block)
   {
-    rmc_loop.start();
+    bool stop_requested = false;
+    // Rank 0 decides whether the time limit was reached
+    if (!myComm.rank())
+      stop_requested = runtimeControl.checkStop(rmc_loop);
+    myComm.bcast(stop_requested);
+
+    if (stop_requested)
+    {
+      if (!myComm.rank())
+        app_log() << runtimeControl.generateStopMessage("RMC", block);
+      run_time_manager.markStop();
+      break;
+    }
+
+    ScopeGuard<LoopTimer<>> rmc_local_timer(rmc_loop);
 #pragma omp parallel
     {
       int ip                 = omp_get_thread_num();
@@ -115,21 +129,6 @@ void RMC::run()
     CurrentStep += nSteps;
     Estimators->stopBlock(estimatorClones);
     recordBlock(block);
-    rmc_loop.stop();
-
-    bool stop_requested = false;
-    // Rank 0 decides whether the time limit was reached
-    if (!myComm.rank())
-      stop_requested = runtimeControl.checkStop(rmc_loop);
-    myComm.bcast(stop_requested);
-
-    if (stop_requested)
-    {
-      if (!myComm.rank())
-        app_log() << runtimeControl.generateStopMessage("RMC", block);
-      run_time_manager.markStop();
-      break;
-    }
   } //block
   Estimators->stop(estimatorClones);
   //copy back the random states
