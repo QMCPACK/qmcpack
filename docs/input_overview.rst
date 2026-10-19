@@ -145,6 +145,6 @@ If the random element is not present, or the seed value is negative, the seed wi
 To initialize the many independent random number generators (one per thread and MPI process), the seed value is used (modulo 1024) as a starting index into a list of prime numbers.
 Entries in this offset list of prime numbers are then used as the seed for the random generator on each thread and process.
 
-If checkpointing is enabled, the random number state is written to an HDF file at the end of each block (suffix: ``.random.h5``).
+If checkpointing is enabled, the random number state is written to an HDF file whenever checkpoint files are written (suffix: ``.random.h5``).
 This file will be read if the ``mcwalkerset`` tag is present to perform a restart.
 For more information, see the ``checkpoint`` element in the QMC methods :ref:`qmcmethods` and :ref:`checkpoint-files` on checkpoint and restart files.

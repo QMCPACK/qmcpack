@@ -274,8 +274,7 @@ void QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
     myComm.bcast(stop_requested);
     if (stop_requested)
     {
-      if (!myComm.rank())
-        app_log() << runtime_control.getStopMessage();
+      app_log() << runtime_control.getStopMessage();
       run_time_manager.markStop();
       break;
     }
