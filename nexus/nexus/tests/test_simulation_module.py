@@ -6,7 +6,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.SIMULATION)
 
 from pathlib import Path
 from copy import deepcopy
-from . import isolate_nexus_core
+from . import isolate_nexus_core, TEST_DIR
 from nexus.nexus_base import nexus_config, SimStage
 
 from ..testing import value_eq,object_eq
@@ -14,8 +14,16 @@ from ..testing import FailedTest,failed
 
 from ..generic import NexusUserWarning
 from ..developer import obj
-from ..machines import Job
+from ..machines import Job, job
 from ..simulation import Simulation,SimulationInput,SimulationAnalyzer
+
+
+TEST_FILES = {
+    "old_sim_image": TEST_DIR / "reference/simulation_module/old_sim.p", # commit 9d0d968139fc33f71dbf9159f526dd7b47f10a3b
+    }
+
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
 
 
 class SimulationInputForTests(SimulationInput):
@@ -1684,8 +1692,8 @@ def test_save_load_image(tmp_path):
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
-    nsave = 31
-    nload = 23
+    nsave = 35
+    nload = 27
 
     assert(len(SimulationImage.save_fields)==nsave)
     assert(len(SimulationImage.load_fields)==nload)
@@ -2911,3 +2919,51 @@ def test_graph_sims():
 
     Simulation.clear_all_sims()
 #end def test_graph_sims
+
+
+def test_load_old_image():
+    """Test that old simulation images can still be loaded (retain backwards-compatibility)."""
+
+    sim = Simulation(job=job(machine='ws1',app_command='test.x'))
+
+    sim.load_image(TEST_FILES["old_sim_image"])
+
+    assert(sim.analyzer_image      == "analyzer.p")
+    assert(sim.app_name            == "pw.x")
+    assert(sim.app_props           == ['mpi', 'serial'])
+    assert(sim.block               is False)
+    assert(sim.block_subcascade    is False)
+    assert(sim.errfile             == "scf.err")
+    assert(sim.files               == {'scf.in', 'C.BFD.upf'})
+    assert(sim.identifier          == "scf")
+    assert(sim.image_dir           == "sim_scf")
+    assert(sim.imlocdir            == "./runs/diamond/scf/sim_scf")
+    assert(sim.imremdir            == "./runs/diamond/scf/sim_scf")
+    assert(sim.imresdir            == "./runs/diamond/scf/sim_scf")
+    assert(sim.infile              == "scf.in")
+    assert(sim.input_image         == "input.p")
+    assert(sim.locdir              == "./runs/diamond/scf")
+    assert(sim.outfile             == "scf.out")
+    assert(sim.outputs             is None)
+    assert(sim.path                == "diamond/scf")
+    assert(sim.process_id          == 548572)
+    assert(sim.remdir              == "./runs/diamond/scf")
+    assert(sim.resdir              == "./runs/diamond/scf")
+    assert(sim.sim_image           == "sim.p")
+    assert(sim.subcascade_finished is False)
+
+    # Affected by legacy migration
+    assert(sim.setup      is True)
+    assert(sim.sent_files is True)
+    assert(sim.submitted  is True)
+    assert(sim.finished   is True)
+    assert(sim.failed     is False)
+    assert(sim.got_output is True)
+    assert(sim.analyzed   is True)
+
+    # Also affected, but these have status dependent on the previous flags
+    assert(sim.created_directories is True)
+    assert(sim.got_dependencies    is True)
+    assert(sim.exited_queue        is True)
+    assert(sim.timed_out           is False)
+#end def test_load_old_image

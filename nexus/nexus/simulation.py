@@ -79,6 +79,7 @@ from inspect import signature
 from pathlib import Path
 from string import Template
 from subprocess import Popen
+from types import MappingProxyType
 from typing import Any, ClassVar, TypeAlias, TYPE_CHECKING
 from os import PathLike
 from .developer import DevBase, obj, FileFormatError, NexusError
@@ -222,6 +223,8 @@ class SimulationImage(NexusCore):
             'files',
             'outputs',
             # simulation status flags
+            '_created_directories',
+            '_got_dependencies',
             '_setup',
             '_sent_files',
             '_submitted',
@@ -229,6 +232,8 @@ class SimulationImage(NexusCore):
             '_failed',
             '_got_output',
             '_analyzed',
+            '_exited_queue',
+            '_timed_out',
             # event timestamps
             'timestamps',
             # cascade status flag
@@ -237,9 +242,57 @@ class SimulationImage(NexusCore):
 
     save_fields = load_fields | save_only_fields
 
+    legacy_map = MappingProxyType(
+        {
+            "_setup":      "setup",
+            "_sent_files": "sent_files",
+            "_submitted":  "submitted",
+            "_finished":   "finished",
+            "_failed":     "failed",
+            "_got_output": "got_output",
+            "_analyzed":   "analyzed",
+            "_created_directories": None,
+            "_got_dependencies": None,
+            "_exited_queue": None,
+            "_timed_out": None,
+        }
+    )
+    """Mapping of new attributes to their old counterparts, or ``None`` if they did not exist."""
+
     def __init__(self):
         pass
     #end def __init__
+
+    def convert_legacy_fields(self):
+        """Attempt to convert fields in :attr:`legacy_map` to current fields."""
+        for new_attr, old_attr in SimulationImage.legacy_map.items():
+            if hasattr(self, new_attr):
+                continue
+
+            if old_attr is not None and hasattr(self, old_attr): # Simple name swaps
+                setattr(self, new_attr, getattr(self, old_attr))
+                delattr(self, old_attr)
+                continue
+
+            match new_attr:
+                case "_created_directories":
+                    self._created_directories = self._setup
+                case "_got_dependencies":
+                    self._got_dependencies = self._setup or self._sent_files
+                case "_exited_queue":
+                    # Any of these indicate the simulation has exited the queue
+                    self._exited_queue = (
+                        self._finished
+                        or self._got_output
+                        or self._failed
+                        or self._analyzed
+                    )
+                case "_timed_out":
+                    self._timed_out = False # Always False since there's no definitive way to tell
+                case unhandled: # pragma: no cover
+                    msg = f"Legacy field {unhandled} not handled!"
+                    raise NexusError(msg)
+    # end def convert_legacy_fields
 
     def save_image(self,sim,imagefile):
         self.clear()
@@ -256,6 +309,7 @@ class SimulationImage(NexusCore):
     def load_image(self,sim,imagefile):
         self.clear()
         self.load(imagefile)
+        self.convert_legacy_fields()
         for k in SimulationImage.save_fields:
             if k=='timestamps':
                 if k in self:
