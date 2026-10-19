@@ -510,7 +510,8 @@ void DMCBatched::run()
     myComm.bcast(stop_requested);
     if (stop_requested)
     {
-      app_log() << runtimeControl.generateStopMessage("DMCBatched", block);
+      if (!myComm.rank())
+        app_log() << runtimeControl.generateStopMessage("DMCBatched", block);
       run_time_manager.markStop();
       break;
     }

@@ -323,7 +323,8 @@ void QMCMain::executeLoop(xmlNodePtr cur)
     myComm.bcast(stop_requested);
     if (stop_requested)
     {
-      app_log() << runtime_control.generateStopMessage("executeLoop", iter, "loop iteration");
+      if (!myComm.rank())
+        app_log() << runtime_control.generateStopMessage("executeLoop", iter, "loop iteration");
       run_time_manager.markStop();
       break;
     }
