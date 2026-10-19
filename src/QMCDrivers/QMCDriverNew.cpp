@@ -197,7 +197,8 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
 
 void QMCDriverNew::recordBlock(int block)
 {
-  if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period() == 0)
+  if (qmcdriver_input_.get_check_point_period() > 0 &&
+      (block + 1) % qmcdriver_input_.get_check_point_period() == 0)
   {
     ScopedTimer local_timer(timers_.checkpoint_timer);
     population_.saveWalkerConfigurations(walker_configs_ref_);
@@ -213,14 +214,14 @@ void QMCDriverNew::finalize(int block, bool dumpwalkers)
   app_log() << "  Carry over " << walker_configs_ref_.getGlobalNumWalkers()
             << " walker configurations to the next QMC driver." << std::endl;
 
-  const bool DumpConfig = qmcdriver_input_.get_dump_config();
-  if (DumpConfig && dumpwalkers)
+  const bool dump_config = qmcdriver_input_.get_check_point_period() >= 0;
+  if (dump_config && dumpwalkers)
     wOut->dump(walker_configs_ref_, block);
 
   infoSummary.flush();
   infoLog.flush();
 
-  if (DumpConfig)
+  if (dump_config)
     RandomNumberControl::write(rngs_, get_root_name(), myComm);
 }
 

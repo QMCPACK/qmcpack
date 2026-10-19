@@ -38,7 +38,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
 
   std::string debug_checks_str;
   std::string measure_imbalance_str;
-  int Period4CheckPoint{0};
   int dummy_int = 0;
 
   ParameterSet parameter_set;
@@ -76,12 +75,9 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   aAttrib.add(qmc_method_, "method");
   aAttrib.add(update_mode_, "move");
   aAttrib.add(scoped_profiling_, "profiling");
-  aAttrib.add(Period4CheckPoint, "checkpoint");
+  aAttrib.add(check_point_period_, "checkpoint");
   // This does all the parameter parsing setup in the constructor
   aAttrib.put(cur);
-
-  //set default to match legacy QMCDriver
-  check_point_period_ = Period4CheckPoint;
 
   if (cur != NULL)
   {
@@ -128,9 +124,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
       debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_TMOVE;
   }
 
-  if (check_point_period_ < 1)
-    check_point_period_ = max_blocks_;
-
   // \todo this should be moved to a checkParticularValidity override
   // when QMCDriverInput is modernized.
   const std::string error_tag{"QMCDriverInput: "};
@@ -138,8 +131,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   {
     throw UniformCommunicateError(error_tag + " steps must be a multiple of estimator measurement period!");
   }
-
-  dump_config_ = (Period4CheckPoint >= 0);
 }
 
 } // namespace qmcplusplus

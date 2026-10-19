@@ -62,7 +62,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
 {
   ResetRandom       = false;
   AppendRun         = false;
-  DumpConfig        = false;
   IsQMCDriver       = true;
   allow_traces      = false;
   allow_walker_logs = false;
@@ -293,7 +292,7 @@ std::string QMCDriver::getLastRotationName(std::string RootName)
 
 void QMCDriver::recordBlock(int block)
 {
-  if (DumpConfig && block % Period4CheckPoint == 0)
+  if (Period4CheckPoint > 0 && (block + 1) % Period4CheckPoint == 0)
   {
     ScopedTimer local(checkpoint_timer_);
     wOut->dump(W, block);
@@ -304,7 +303,8 @@ void QMCDriver::recordBlock(int block)
 
 void QMCDriver::finalize(int block, bool dumpwalkers)
 {
-  if (DumpConfig && dumpwalkers)
+  const bool dump_config = Period4CheckPoint >= 0;
+  if (dump_config && dumpwalkers)
     wOut->dump(W, block);
   nTargetWalkers = W.getActiveWalkers();
   MyCounter++;
@@ -313,7 +313,7 @@ void QMCDriver::finalize(int block, bool dumpwalkers)
 
   branchEngine->finalize(W);
 
-  if (DumpConfig)
+  if (dump_config)
     RandomNumberControl::write(RootName, myComm);
 }
 
@@ -428,7 +428,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
         rAttrib.add(Period4CheckPoint, "stride");
         rAttrib.add(Period4CheckPoint, "period");
         rAttrib.put(tcur);
-        //DumpConfig=(Period4CheckPoint>0);
       }
       else if (cname == "random")
       {
@@ -461,9 +460,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     nSubSteps = 1;
   }
 
-  DumpConfig = (Period4CheckPoint >= 0);
-  if (Period4CheckPoint < 1)
-    Period4CheckPoint = nBlocks;
   //reset CurrentStep to zero if qmc/@continue='no'
   if (!AppendRun)
     CurrentStep = 0;

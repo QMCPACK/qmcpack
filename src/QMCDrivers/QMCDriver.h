@@ -200,8 +200,6 @@ protected:
   bool ResetRandom;
   ///flag to append or restart the run
   bool AppendRun;
-  ///flag to turn off dumping configurations
-  bool DumpConfig;
   ///true, if it is a real QMC engine
   bool IsQMCDriver;
   /** the number of times this QMCDriver is executed
