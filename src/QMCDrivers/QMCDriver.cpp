@@ -292,7 +292,7 @@ std::string QMCDriver::getLastRotationName(std::string RootName)
 
 void QMCDriver::recordBlock(int block)
 {
-  if (Period4CheckPoint > 0 && (block + 1) % Period4CheckPoint == 0)
+  if (Period4CheckPoint > 0 && (block + 1) % Period4CheckPoint == 0 && (block + 1) < nBlocks)
   {
     ScopedTimer local(checkpoint_timer_);
     wOut->dump(W, block);
