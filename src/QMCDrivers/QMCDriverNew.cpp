@@ -205,6 +205,7 @@ void QMCDriverNew::recordBlock(int block)
     population_.saveWalkerConfigurations(walker_configs_ref_);
     setWalkerOffsets(walker_configs_ref_, myComm);
     wOut->dump(walker_configs_ref_, block);
+    RandomNumberControl::write(rngs_, get_root_name(), myComm);
   }
 }
 
