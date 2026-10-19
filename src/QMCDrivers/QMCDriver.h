@@ -209,9 +209,13 @@ protected:
    * using MyCounter++ as in RQMC.
    */
   int MyCounter;
-  /** period of dumping walker configurations and everything else for restart
+  /** Period of dumping walker configurations and everything else for restart.
    *
-   * The unit is a block.
+   * The unit is in blocks.
+   *   < 0 : No checkpoint files are written.
+   *   = 0 : Write checkpoint files after the completion of the QMC section (default).
+   *   > 0 : Write checkpoint files after every n blocks (excluding the last block),
+   *         and at the end of the QMC section.
    */
   int Period4CheckPoint;
   /** period of dumping walker positions and IDs for Forward Walking
