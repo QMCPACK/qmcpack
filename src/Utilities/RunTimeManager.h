@@ -65,6 +65,48 @@ extern RunTimeManager<ChronoClock> run_time_manager;
 extern template class RunTimeManager<ChronoClock>;
 extern template class RunTimeManager<FakeChronoClock>;
 
+enum class StopStatus
+{
+  CONTINUE,           // keep running
+  MAX_SECONDS_PASSED, // all already passed max_seconds
+  NOT_ENOUGH_TIME,    // not enough time for next iteration
+  STOP_FILE,          // requested stop from a file
+};
+
+class ProjectData;
+
+template<class CLOCK = ChronoClock>
+class RunTimeControl
+{
+  const ProjectData& project_data_;
+  RunTimeManager<CLOCK>& runtimeManager;
+
+  double m_elapsed;
+  std::string stop_message_;
+
+  /// Generate a stop message.
+  std::string generateStopMessage(StopStatus stop_status) const;
+
+public:
+  /** constructor
+   * @param rm the RunTimeManager attached to
+   * @param project_data ProjectData containing title (for .STOP file) and max CPU seconds
+   * @param cleanup if true, clean up stop files left from previous simulations.
+   */
+  RunTimeControl(RunTimeManager<CLOCK>& rm, const ProjectData& project_data, bool cleanup = false);
+
+  /** @brief Check whether the run needs to stop because of walltime or stop control file.
+   *  @return true if stop is requested, or false if continuing.
+   */
+  bool checkStop();
+
+  /// Return current stop message
+  const std::string& getStopMessage() const { return stop_message_; }
+};
+
+extern template class RunTimeControl<ChronoClock>;
+extern template class RunTimeControl<FakeChronoClock>;
+
 template<class CLOCK = ChronoClock>
 class LoopTimer
 {
@@ -85,25 +127,19 @@ extern template class LoopTimer<ChronoClock>;
 extern template class LoopTimer<FakeChronoClock>;
 
 template<class CLOCK = ChronoClock>
-class RunTimeControl
+class LoopRunTimeControl
 {
-  const int MaxCPUSecs;
+  const ProjectData& project_data_;
+  const std::string scope_name_;
+  const std::string iteration_name_;
   double m_runtime_safety_padding;
   double m_loop_margin;
   double m_loop_time;
   double m_elapsed;
   double m_remaining;
   RunTimeManager<CLOCK>& runtimeManager;
-  /// the prefix of the stop file (stop_file_prefix + ".STOP")
-  const std::string stop_filename_;
 
-  enum class StopStatus
-  {
-    CONTINUE,           // keep running
-    MAX_SECONDS_PASSED, // all already passed max_seconds
-    NOT_ENOUGH_TIME,    // not enough time for next iteration
-    STOP_FILE,          // reqsuted stop from a file
-  } stop_status_;
+  std::string stop_message_;
 
   /** @brief Check whether there is sufficient remaining walltime for another block or iteration.
    *
@@ -121,37 +157,42 @@ class RunTimeControl
    */
   StopStatus stop_file_requested() const;
 
+  /// Generate a stop message with the completed block or iteration count.
+  std::string generateStopMessage(StopStatus stop_status, int completed_iterations) const;
+
 public:
   /** constructor
    * @param rm the RunTimeManager attached to
-   * @param maxCPUSecs maxmimal allowed seconds from the beginning of the simulation
-   * @param stop_file_prefix the prefix of the stop file
+   * @param project_data ProjectData containing title (for .STOP file) and max CPU seconds
+   * @param scope_name name of the driver or loop scope for logging
+   * @param iteration_name name of the iteration (e.g. "block" or "loop iteration")
    * @param cleanup if true, clean up stop files left from previous simulations. Rank 0 handle this.
    */
-  RunTimeControl(RunTimeManager<CLOCK>& rm, int maxCPUSecs, const std::string& stop_file_prefix, bool cleanup = true);
+  LoopRunTimeControl(RunTimeManager<CLOCK>& rm,
+                     const ProjectData& project_data,
+                     const std::string& scope_name,
+                     const std::string& iteration_name,
+                     bool cleanup = true);
 
   /** check if the run needs to stop because of walltime or stop control file.
    * Call before each driver block or before additional loop iterations.
+   * @return true if stop is requested, or false if continuing.
    */
-  bool checkStop(LoopTimer<CLOCK>& loop_timer);
+  bool checkStop(LoopTimer<CLOCK>& loop_timer, int completed_iterations);
+
+  /// Return current stop message
+  const std::string& getStopMessage() const { return stop_message_; }
 
   /// generate terse progress messages
-  std::string generateProgressMessage(const LoopTimer<CLOCK>& loop_timer,
-                                      const std::string& driverName,
-                                      int block,
-                                      int num_blocks) const;
-  /// Generate a stop message with the completed block or iteration count.
-  std::string generateStopMessage(const std::string& driverName,
-                                  int completed_iterations,
-                                  const std::string& iteration_name = "block") const;
+  std::string generateProgressMessage(const LoopTimer<CLOCK>& loop_timer, int block, int num_blocks) const;
 
   // for testing
   void runtime_padding(int runtime_padding) { m_runtime_safety_padding = runtime_padding; }
   void loop_margin(int loopMargin) { m_loop_margin = loopMargin; }
 };
 
-extern template class RunTimeControl<ChronoClock>;
-extern template class RunTimeControl<FakeChronoClock>;
+extern template class LoopRunTimeControl<ChronoClock>;
+extern template class LoopRunTimeControl<FakeChronoClock>;
 
 } // namespace qmcplusplus
 #endif

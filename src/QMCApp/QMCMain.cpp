@@ -311,7 +311,7 @@ void QMCMain::executeLoop(xmlNodePtr cur)
   qmc_common.qmc_counter = 0;
   app_log() << "Loop execution max-interations = " << niter << std::endl;
   LoopTimer<> loop_timer;
-  RunTimeControl<> runtime_control(run_time_manager, my_project_.getMaxCPUSeconds(), my_project_.getTitle(), false);
+  LoopRunTimeControl<> runtime_control(run_time_manager, my_project_, "executeLoop", "loop iteration", false);
   for (int iter = 0; iter < niter; iter++)
   {
     if (run_time_manager.isStopNeeded())
@@ -319,11 +319,11 @@ void QMCMain::executeLoop(xmlNodePtr cur)
 
     bool stop_requested = false;
     if (!myComm.rank())
-      stop_requested = runtime_control.checkStop(loop_timer);
+      stop_requested = runtime_control.checkStop(loop_timer, iter);
     myComm.bcast(stop_requested);
     if (stop_requested)
     {
-      app_log() << runtime_control.generateStopMessage("executeLoop", iter, "loop iteration");
+      app_log() << runtime_control.getStopMessage();
       run_time_manager.markStop();
       break;
     }

@@ -70,7 +70,7 @@ void VMC::run()
   wlog_manager_->startRun(getWalkerLogCollectorRefs());
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm.getName(), myComm.rank() == 0);
+  LoopRunTimeControl<> runtimeControl(run_time_manager, project_data_, "VMC driver", "block", myComm.rank() == 0);
 
   const bool has_collectables = W.Collectables.size();
   for (int block = 0; block < nBlocks; ++block)
@@ -78,11 +78,11 @@ void VMC::run()
     bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached
     if (!myComm.rank())
-      stop_requested = runtimeControl.checkStop(vmc_loop);
+      stop_requested = runtimeControl.checkStop(vmc_loop, block);
     myComm.bcast(stop_requested);
     if (stop_requested)
     {
-      app_log() << runtimeControl.generateStopMessage("VMC", block);
+      app_log() << runtimeControl.getStopMessage();
       run_time_manager.markStop();
       break;
     }

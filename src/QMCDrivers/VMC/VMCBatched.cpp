@@ -329,8 +329,7 @@ void VMCBatched::run()
                            serializing_crowd_walkers_);
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
-                                  myComm.rank() == 0);
+  LoopRunTimeControl<> runtimeControl(run_time_manager, project_data_, "VMCBatched driver", "block", myComm.rank() == 0);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
@@ -384,11 +383,11 @@ void VMCBatched::run()
   {
     bool stop_requested = false;
     if (!myComm.rank())
-      stop_requested = runtimeControl.checkStop(vmc_loop);
+      stop_requested = runtimeControl.checkStop(vmc_loop, block);
     myComm.bcast(stop_requested);
     if (stop_requested)
     {
-      app_log() << runtimeControl.generateStopMessage("VMCBatched", block);
+      app_log() << runtimeControl.getStopMessage();
       run_time_manager.markStop();
       break;
     }
@@ -431,7 +430,7 @@ void VMCBatched::run()
       recordBlock(block);
     }
 
-    app_log() << runtimeControl.generateProgressMessage(vmc_loop, "VMCBatched", block, num_blocks);
+    app_log() << runtimeControl.generateProgressMessage(vmc_loop, block, num_blocks);
   }
   // This is confusing logic from VMC.cpp want this functionality write documentation of this
   // and clean it up
