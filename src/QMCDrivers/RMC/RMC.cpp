@@ -112,6 +112,8 @@ void RMC::run()
         branchEngine->collect(
             CurrentStep,
             W); //Ray Clay:  For now, collects and syncs based on first reptile.  Need a better way to do this.
+        //accumulate collectables and energies for scalar.dat
+        Estimators->accumulate(W);
       }
       Movers[ip]->stopBlock(false);
     } //end-of-parallel for
@@ -283,6 +285,7 @@ void RMC::resetRun()
     {
       Movers[ip]->advanceWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1], false);
       branchEngine->collect(CurrentStep, W);
+      Estimators->accumulate(W);
     }
   }
 

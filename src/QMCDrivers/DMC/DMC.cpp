@@ -277,6 +277,8 @@ void DMC::run()
           W.Collectables += wClones[ip]->Collectables;
       }
       branchEngine->branch(CurrentStep, W);
+      //accumulate collectables and energies for scalar.dat
+      Estimators->accumulate(W);
       if (variablePop)
         FairDivideLow(W.getActiveWalkers(), NumThreads, wPerRank);
       sample++;

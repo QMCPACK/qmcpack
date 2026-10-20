@@ -360,10 +360,9 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
     }
   }
   WalkerController->setTrialEnergy(vParam[SBVP::ETRIAL]);
-  //accumulate collectables and energies for scalar.dat
+  //normalize collectables
   FullPrecRealType wgt_inv = WalkerController->get_num_contexts() / WalkerController->get_ensemble_property().Weight;
   walkers.Collectables *= wgt_inv;
-  MyEstimator->accumulate(walkers);
 }
 
 /**
@@ -453,8 +452,6 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
       EnergyHist(vParam[SBVP::ENOW]);
     }
   }
-  //accumulate collectables and energies for scalar.dat
-  MyEstimator->accumulate(W);
 }
 
 /** Calculates and saves various action components, also does necessary updates for running averages.
