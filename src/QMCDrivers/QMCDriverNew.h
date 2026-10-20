@@ -465,12 +465,6 @@ protected:
   // ///samples per thread
   // IndexType nSamplesPerThread;
 
-  //  TODO: restart
-  //  /** period of dumping walker configurations and everything else for restart
-  //  *
-  //  * The unit is a block.
-  //  */
-  // int check_point_period_;
 
   /** }@ */
 

@@ -44,7 +44,7 @@ the particular type of QMC methods that will be run.
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``profiling``  | text         | yes/no       | no          | Activate resume/pause control   |
   +----------------+--------------+--------------+-------------+---------------------------------+
-  | ``checkpoint`` | integer      | -1, 0, n     | 0           | Checkpoint frequency            |
+  | ``checkpoint`` | integer      | <0, 0, n     | 0           | Checkpoint frequency            |
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``record``     | integer      | n            | 0           | Save configuration ever n steps |
   +----------------+--------------+--------------+-------------+---------------------------------+
@@ -77,13 +77,13 @@ Additional information:
 -  ``checkpoint``: This enables and disables checkpointing and
    specifying the frequency of output. Possible values are:
 
-   - **[-1]** No checkpoint files are written.
+   - **[<0]** No checkpoint files are written.
 
    - **[0]** Write the checkpoint files after the completion of the QMC section (default).
 
    - **[n]** Write the checkpoint files after every :math:`n` blocks, and also at the end of the QMC section.
 
-The particle configurations are written to a ``.config.h5`` file.
+The particle configurations are written to a ``.config.h5`` file, and the random number generator state is written to a ``.random.h5`` file.
 
 .. code-block:: xml
   :caption: The following is an example of running a simulation that can be restarted.
@@ -95,9 +95,9 @@ The particle configurations are written to a ``.config.h5`` file.
     <parameter name="steps">            400    </parameter>
   </qmc>
 
-The checkpoint flag instructs QMCPACK to output walker configurations.  This also
-works in VMC.  This outputs an h5 file with the name ``projectid.run-number.config.h5``.
-Check that this file exists before attempting a restart.
+The checkpoint flag instructs QMCPACK to output walker configurations and random number generator state. This also
+works in VMC. This outputs an h5 file with the name ``projectid.run-number.config.h5`` and an RNG state file ``projectid.run-number.random.h5``.
+Check that these files exist before attempting a restart.
 
 To continue a run, specify the ``mcwalkerset`` element before your VMC/DMC block:
 
@@ -1550,10 +1550,10 @@ on diffusion Monte Carlo.
     <parameter name="steps">            400    </parameter>
   </qmc>
 
-The checkpoint flag instructs QMCPACK to output walker configurations.
+The checkpoint flag instructs QMCPACK to output walker configurations and random number generator state.
 This also works in VMC. This will output an h5 file with the name
-``projectid.run-number.config.h5``. Check that this file exists before
-attempting a restart. To read in this file for a continuation run,
+``projectid.run-number.config.h5`` and an RNG state file ``projectid.run-number.random.h5``.
+Check that these files exist before attempting a restart. To read in this file for a continuation run,
 specify the following:
 
 .. code-block:: xml
