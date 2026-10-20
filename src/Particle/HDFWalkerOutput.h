@@ -25,10 +25,6 @@ namespace qmcplusplus
 /** Writes a set of walker configurations to an HDF5 file. */
 class HDFWalkerOutput
 {
-  ///if true, keep it in memory
-  bool DoNotAppend;
-  ///number of blocks for append
-  int appended_blocks;
   /** number of walkers when a state is dumped
    *
    * When the number of walkers per state has changed, NumOfWalkers is used
@@ -39,7 +35,6 @@ class HDFWalkerOutput
   const size_t number_of_particles_;
   ///communicator
   Communicate& myComm;
-  int currentConfigNumber;
 
 public:
   ///constructor

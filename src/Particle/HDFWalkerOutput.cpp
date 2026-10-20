@@ -55,11 +55,9 @@ namespace qmcplusplus
  * to unclosed hdf5.
  */
 HDFWalkerOutput::HDFWalkerOutput(size_t num_ptcls, Communicate& c)
-    : appended_blocks(0),
-      number_of_walkers_(0),
+    : number_of_walkers_(0),
       number_of_particles_(num_ptcls),
-      myComm(c),
-      currentConfigNumber(0)
+      myComm(c)
 { block = -1; }
 
 /** Destructor writes the state of random numbers and close the file */
@@ -94,7 +92,6 @@ bool HDFWalkerOutput::dump(const WalkerConfigurations& W, const std::string& fna
   write_configuration(W, dump_file, nblock);
   dump_file.close();
 
-  currentConfigNumber++;
   return true;
 }
 
