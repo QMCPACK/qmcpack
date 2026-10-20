@@ -271,9 +271,6 @@ protected:
   ///timestep
   RealType Tau;
 
-  ///maximum cpu in secs
-  int MaxCPUSecs;
-
   ///Time-step factor \f$ 1/(2\tau)\f$
   RealType m_oneover2tau;
   ///Time-step factor \f$ \sqrt{\tau}\f$
