@@ -76,6 +76,7 @@ from collections.abc import Collection, Mapping
 from copy import deepcopy
 from datetime import datetime
 from inspect import signature
+from logging.handlers import MemoryHandler
 from pathlib import Path
 from string import Template
 from subprocess import Popen
@@ -619,6 +620,18 @@ class Simulation(NexusCore):
         self.job.initialize(self)
         self.post_init()
         self.logger = logging.getLogger(f"{self.identifier}{self.simid}")
+        if not nexus_config.disable_logging:
+            self.logger.setLevel(
+                logging.DEBUG if nexus_config.debug else logging.INFO
+            )
+            # Memory handler will buffer all records until the simulation directories have been created
+            # This means we can store logs and then flush them once we have a spot to flush to
+            memory_handler = MemoryHandler(capacity=1e12)
+            memory_handler.setLevel(
+                logging.DEBUG if nexus_config.debug else logging.INFO
+            )
+            memory_handler.shouldFlush = lambda _: False # Override to always be false
+            self.logger.addHandler(memory_handler)
 
         Simulation.all_sims.append(self)
 
@@ -2688,13 +2701,20 @@ class sim_log_handler:
             return
 
         self.original_log_level = self.logger.getEffectiveLevel()
-        self.original_log_handlers = self.logger.handlers
-        for handler in self.original_log_handlers:
-            self.logger.removeHandler(handler)
 
         if nexus_config.disable_logging:
             self.logger.addHandler(self.null_handler)
             return
+
+        self.memory_handler = self.logger.handlers[0]
+        if not isinstance(self.memory_handler, MemoryHandler):
+            msg = (
+                "Expected only a MemoryHandler in the logger!\n"
+                "This is a developer error, please report it!"
+            )
+            raise NexusError(msg)
+        else:
+            self.logger.removeHandler(self.memory_handler)
 
         if nexus_config.debug:
             self.logger.setLevel(logging.DEBUG)
@@ -2714,6 +2734,12 @@ class sim_log_handler:
         self.logger.addHandler(self.file_handler)
         self.logger.addHandler(nexus_config.main_log_handler)
 
+        # Handle anything that predates the existence of the logger
+        if len(self.memory_handler.buffer) > 0:
+            for record in self.memory_handler.buffer:
+                self.logger.handle(record)
+            self.memory_handler.buffer.clear()
+
     def __exit__(self, *exc_details):
         if not self.initialized:
             return
@@ -2721,8 +2747,7 @@ class sim_log_handler:
         for handler in self.logger.handlers:
             self.logger.removeHandler(handler)
 
-        for handler in self.original_log_handlers:
-            self.logger.addHandler(handler)
-
         self.logger.setLevel(self.original_log_level)
+        if not nexus_config.disable_logging:
+            self.logger.addHandler(self.memory_handler)
 #end class sim_log_handler
