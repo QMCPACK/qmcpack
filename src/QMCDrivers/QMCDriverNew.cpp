@@ -71,7 +71,6 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
     estimator_manager_ = std::move(estimator_manager);
   else
     estimator_manager_ = std::make_unique<EstimatorManagerNew>(population_.get_golden_hamiltonian(), comm);
-  estimator_manager_->set_root_name(get_root_name());
 
   drift_modifier_.reset(
       createDriftModifier(qmcdriver_input_.get_drift_modifier(), qmcdriver_input_.get_drift_modifier_unr_a()));
@@ -161,9 +160,6 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
   app_log() << "\n========================================================="
             << "\n  Start " << QMCType << "\n  File Root " << get_root_name();
   app_log() << "\n=========================================================" << std::endl;
-
-  if (estimator_manager_)
-    estimator_manager_->set_root_name(get_root_name());
 
   if (h5name.size())
     h5_file_root_ = h5name;

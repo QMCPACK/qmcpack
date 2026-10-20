@@ -209,9 +209,9 @@ void EstimatorManagerNew::addHeader(std::ostream& o)
 }
 
 /// \todo clean up this method its a mess
-void EstimatorManagerNew::startDriverRun()
+void EstimatorManagerNew::startDriverRun(const std::string& root_name)
 {
-  assert(!root_name_.empty());
+  assert(!root_name.empty());
   reset();
   RecordCount = 0;
   energyAccumulator.clear();
@@ -225,7 +225,7 @@ void EstimatorManagerNew::startDriverRun()
   if (!DebugArchive)
   {
     std::array<char, 128> fname;
-    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", root_name_.c_str(), my_comm_.rank()) <
+    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", root_name.c_str(), my_comm_.rank()) <
         0)
       throw std::runtime_error("Error generating filename");
     DebugArchive = std::make_unique<std::ofstream>(fname.data());
@@ -234,7 +234,7 @@ void EstimatorManagerNew::startDriverRun()
 #endif
   if (my_comm_.rank() == 0)
   {
-    std::filesystem::path fname(root_name_);
+    std::filesystem::path fname(root_name);
     fname.concat(".scalar.dat");
     Archive = std::make_unique<std::ofstream>(fname);
     addHeader(*Archive);
@@ -242,7 +242,7 @@ void EstimatorManagerNew::startDriverRun()
     {
       h5desc.clear();
     }
-    fname  = root_name_ + ".stat.h5";
+    fname  = root_name + ".stat.h5";
     h_file = std::make_unique<hdf_archive>();
     h_file->create(fname);
     main_estimator_->registerObservables(h5desc, *h_file);

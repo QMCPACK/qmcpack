@@ -64,7 +64,6 @@ EstimatorManagerBase::EstimatorManagerBase(Communicate* c)
 
 EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
     : Options(em.Options),
-      root_name_(em.root_name_),
       RecordCount(0),
       myComm(0),
       MainEstimator(0),
@@ -154,9 +153,9 @@ void EstimatorManagerBase::addHeader(std::ostream& o)
   o.setf(std::ios::right, std::ios::adjustfield);
 }
 
-void EstimatorManagerBase::start(int blocks, bool record)
+void EstimatorManagerBase::start(int blocks, const std::string& root_name, bool record)
 {
-  assert(!root_name_.empty());
+  assert(!record || !root_name.empty());
   reset();
   RecordCount = 0;
   energyAccumulator.clear();
@@ -181,7 +180,7 @@ void EstimatorManagerBase::start(int blocks, bool record)
   if (record && !DebugArchive)
   {
     std::array<char, 128> fname;
-    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", root_name_.c_str(), myComm->rank()) < 0)
+    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", root_name.c_str(), myComm->rank()) < 0)
       throw std::runtime_error("Error generating filename");
     DebugArchive = std::make_unique<std::ofstream>(fname.data());
     addHeader(*DebugArchive);
@@ -191,7 +190,7 @@ void EstimatorManagerBase::start(int blocks, bool record)
   Options.set(RECORD, record && Options[MANAGE]);
   if (Options[RECORD])
   {
-    std::filesystem::path fname(root_name_);
+    std::filesystem::path fname(root_name);
     fname.concat(".scalar.dat");
     Archive = std::make_unique<std::ofstream>(fname);
     addHeader(*Archive);
@@ -199,7 +198,7 @@ void EstimatorManagerBase::start(int blocks, bool record)
     {
       h5desc.clear();
     }
-    fname = root_name_ + ".stat.h5";
+    fname = root_name + ".stat.h5";
     h_file.create(fname);
     for (int i = 0; i < Estimators.size(); i++)
       Estimators[i]->registerObservables(h5desc, h_file);

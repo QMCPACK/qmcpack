@@ -59,8 +59,6 @@ public:
   ///destructor
   ~EstimatorManagerNew();
 
-  void set_root_name(const std::string& root_name) { root_name_ = root_name; }
-
   /** add a "non" physical operator estimator
    *
    *  this is a dratically reduced version of OperatorBase right now it just supports
@@ -96,12 +94,11 @@ public:
 
   /** Start the manager at the beginning of a driver run().
    * Open files. Setting zeros.
-   * @param blocks number of blocks
-   * @param record if true, will write to a file
+   * @param root_name root name for output files
    *
    * Replace reportHeader and reset functon.
    */
-  void startDriverRun();
+  void startDriverRun(const std::string& root_name);
 
   /** Stop the manager at the end of a driver run().
    * Flush/close files.
@@ -231,8 +228,6 @@ private:
    */
   void zeroOperatorEstimators();
 
-  ///root name
-  std::string root_name_;
   ///number of records in a block
   int RecordCount;
   ///index for the block weight PropertyCache(weightInd)
