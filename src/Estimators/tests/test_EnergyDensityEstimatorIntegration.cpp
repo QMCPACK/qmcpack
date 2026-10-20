@@ -65,6 +65,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::multirank_reduction", "[estimators
   auto twf_lock = ResourceCollectionTeamLock<TrialWaveFunction>(eden_test.getTwfRes(), twf_list);
 
   EstimatorManagerNew emn(gold_elem.ham, comm);
+  emn.set_root_name("test");
   emn.constructEstimators(std::move(emi), gold_elem.pset_elec, gold_elem.twf, gold_elem.ham,
                           gold_elem.particle_pool.getPool());
   EstimatorManagerCrowd emc(emn);
@@ -143,6 +144,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::operator_reporting", "[estimators]
   auto twf_lock = ResourceCollectionTeamLock<TrialWaveFunction>(eden_test.getTwfRes(), twf_list);
 
   EstimatorManagerNew emn(gold_elem.ham, comm);
+  emn.set_root_name("test");
 
   emn.startDriverRun();
   emn.constructEstimators(std::move(emi), gold_elem.pset_elec, gold_elem.twf, gold_elem.ham,

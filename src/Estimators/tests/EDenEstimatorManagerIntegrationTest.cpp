@@ -48,6 +48,7 @@ EDenEstimatorManagerIntegrationTest::EDenEstimatorManagerIntegrationTest(Communi
   auto twf_lock = ResourceCollectionTeamLock<TrialWaveFunction>(eden_test_->getTwfRes(), twf_list);
 
   emn_ = std::make_unique<EstimatorManagerNew>(gold_elem.ham, comm);
+  emn_->set_root_name("test");
 
   emn_->startDriverRun();
   emn_->constructEstimators(std::move(emi), gold_elem.pset_elec, gold_elem.twf, gold_elem.ham,

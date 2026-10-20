@@ -59,6 +59,8 @@ public:
   ///destructor
   ~EstimatorManagerNew();
 
+  void set_root_name(const std::string& root_name) { root_name_ = root_name; }
+
   /** add a "non" physical operator estimator
    *
    *  this is a dratically reduced version of OperatorBase right now it just supports
@@ -229,6 +231,8 @@ private:
    */
   void zeroOperatorEstimators();
 
+  ///root name
+  std::string root_name_;
   ///number of records in a block
   int RecordCount;
   ///index for the block weight PropertyCache(weightInd)
