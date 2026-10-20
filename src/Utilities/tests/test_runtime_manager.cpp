@@ -83,7 +83,7 @@ TEST_CASE("test_loop_control", "[utilities]")
   RunTimeManager<FakeChronoClock> rm; // fake clock = 1
   ProjectData proj = make_project_data("dummy", max_cpu_secs);
   LoopRunTimeControl<FakeChronoClock> rc(rm, proj, "QMC driver", "block", *OHMMS::Controller);
-  rc.runtime_padding(1.0);
+  rc.set_runtime_padding(1.0);
   REQUIRE_FALSE(rc.checkStop(loop, 0)); // fake clock = 2
 
   loop.start(); // fake clock = 3
@@ -100,7 +100,7 @@ TEST_CASE("test_loop_control", "[utilities]")
   // remaining = 9 - 8.0 = 1.0  not enough time for another loop
   REQUIRE(rc.checkStop(loop, 2));
 
-  const std::string& msg = rc.getStopMessage();
+  const std::string& msg = rc.get_stop_message();
   CHECK(msg.find("LoopRunTimeControl takes action in QMC driver.") != std::string::npos);
   CHECK(msg.find("Insufficient time for the current block. Stopping before block 2") != std::string::npos);
   CHECK(rm.isStopNeeded());
@@ -136,7 +136,7 @@ TEST_CASE("test_loop_control_average", "[utilities]")
     // Insufficient time for next iteration (35.4s left < 35.5s needed).
     FakeChronoClock::fake_chrono_clock_value += convert_to_ns(0.2s);
     CHECK(rc.checkStop(loop, 2));
-    const std::string msg = rc.getStopMessage();
+    const std::string msg = rc.get_stop_message();
     CHECK(msg.find("LoopRunTimeControl takes action in executeLoop.") != std::string::npos);
     CHECK(msg.find("Insufficient time for the current loop iteration. Stopping before loop iteration 2") !=
           std::string::npos);
@@ -148,7 +148,7 @@ TEST_CASE("test_loop_control_average", "[utilities]")
   {
     FakeChronoClock::fake_chrono_clock_value += convert_to_ns(40s);
     CHECK(rc.checkStop(loop, 2));
-    CHECK(rc.getStopMessage().find("Time limit reached. Stopping before loop iteration 2") != std::string::npos);
+    CHECK(rc.get_stop_message().find("Time limit reached. Stopping before loop iteration 2") != std::string::npos);
     CHECK(rm.isStopNeeded());
   }
   FakeChronoClock::fake_chrono_clock_increment = saved_increment;
@@ -163,14 +163,14 @@ TEST_CASE("test_loop_control_before_first_iteration", "[utilities]")
     ProjectData proj = make_project_data("dummy", 0);
     LoopRunTimeControl<FakeChronoClock> rc(rm, proj, "executeLoop", "loop iteration", *OHMMS::Controller);
     CHECK(rc.checkStop(loop, 0));
-    CHECK(rc.getStopMessage().find("Time limit reached. Stopping before loop iteration 0") != std::string::npos);
+    CHECK(rc.get_stop_message().find("Time limit reached. Stopping before loop iteration 0") != std::string::npos);
   }
   SECTION("Insufficient shutdown allowance")
   {
     ProjectData proj = make_project_data("dummy", 30);
     LoopRunTimeControl<FakeChronoClock> rc(rm, proj, "executeLoop", "loop iteration", *OHMMS::Controller);
     CHECK(rc.checkStop(loop, 0));
-    CHECK(rc.getStopMessage().find("Insufficient time for the current loop iteration. Stopping before loop iteration 0") != std::string::npos);
+    CHECK(rc.get_stop_message().find("Insufficient time for the current loop iteration. Stopping before loop iteration 0") != std::string::npos);
   }
   SECTION("Enough time to start")
   {
@@ -206,7 +206,7 @@ TEST_CASE("test_loop_control_stop_file", "[utilities]")
     CHECK(stop.good());
   }
   CHECK(rc.checkStop(loop, 0));
-  CHECK(rc.getStopMessage().find("Stop requested from the control file") != std::string::npos);
+  CHECK(rc.get_stop_message().find("Stop requested from the control file") != std::string::npos);
   CHECK(rm.isStopNeeded());
   CHECK_FALSE(std::ifstream(stop_file.c_str()));
 }
@@ -219,17 +219,17 @@ TEST_CASE("test_runtime_control_checkStop", "[utilities]")
 
   // Initially: elapsed is 0, max_seconds is 10, no STOP file
   CHECK_FALSE(rc.checkStop());
-  CHECK(rc.getStopMessage().empty());
+  CHECK(rc.get_stop_message().empty());
   CHECK_FALSE(rm.isStopNeeded());
 
   SECTION("Time limit reached")
   {
     FakeChronoClock::fake_chrono_clock_value += convert_to_ns(11s);
     CHECK(rc.checkStop());
-    CHECK_FALSE(rc.getStopMessage().empty());
-    CHECK(rc.getStopMessage().find("RunTimeControl takes action in test_scope.") != std::string::npos);
-    CHECK(rc.getStopMessage().find("Time limit reached.") != std::string::npos);
-    CHECK(rc.getStopMessage().find("Hard limit (seconds) 10") != std::string::npos);
+    CHECK_FALSE(rc.get_stop_message().empty());
+    CHECK(rc.get_stop_message().find("RunTimeControl takes action in test_scope.") != std::string::npos);
+    CHECK(rc.get_stop_message().find("Time limit reached.") != std::string::npos);
+    CHECK(rc.get_stop_message().find("Hard limit (seconds) 10") != std::string::npos);
     CHECK(rm.isStopNeeded());
   }
 
@@ -241,9 +241,9 @@ TEST_CASE("test_runtime_control_checkStop", "[utilities]")
       CHECK(stop.good());
     }
     CHECK(rc.checkStop());
-    CHECK_FALSE(rc.getStopMessage().empty());
-    CHECK(rc.getStopMessage().find("RunTimeControl takes action in test_scope.") != std::string::npos);
-    CHECK(rc.getStopMessage().find("Stop requested from the control file \"" + stop_file + "\"") != std::string::npos);
+    CHECK_FALSE(rc.get_stop_message().empty());
+    CHECK(rc.get_stop_message().find("RunTimeControl takes action in test_scope.") != std::string::npos);
+    CHECK(rc.get_stop_message().find("Stop requested from the control file \"" + stop_file + "\"") != std::string::npos);
     CHECK(rm.isStopNeeded());
     CHECK_FALSE(std::ifstream(stop_file.c_str()));
   }
@@ -264,13 +264,13 @@ TEST_CASE("test_runtime_control_checkStop", "[utilities]")
     // Even if time limit is exceeded, RunTimeControl::checkStop() is a no-op returning true
     FakeChronoClock::fake_chrono_clock_value += convert_to_ns(100s);
     CHECK(rc.checkStop());
-    CHECK(rc.getStopMessage().empty());
+    CHECK(rc.get_stop_message().empty());
 
     // LoopRunTimeControl::checkStop() is also a no-op returning true
     LoopTimer<FakeChronoClock> loop;
     LoopRunTimeControl<FakeChronoClock> loop_rc(rm, proj, "test_loop", "block", *OHMMS::Controller);
     CHECK(loop_rc.checkStop(loop, 0));
-    CHECK(loop_rc.getStopMessage().empty());
+    CHECK(loop_rc.get_stop_message().empty());
   }
 }
 
