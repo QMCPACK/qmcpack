@@ -108,7 +108,6 @@ int main(int argc, char** argv)
     }
   }
 
-  myComm.setName(directory + "restart");
   myComm.barrier();
 
   // set the number of walkers equal to the threads.
@@ -302,7 +301,6 @@ int main(int argc, char** argv)
   if (myComm.size() > 1)
   {
     Communicate subComm(myComm.split(2));
-    subComm.setName("restart2");
 
     if (subComm.getGroupID() == 0)
     {

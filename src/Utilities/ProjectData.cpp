@@ -111,8 +111,6 @@ void ProjectData::reset()
     file_len = std::snprintf(fileroot.data(), fileroot.size(), "%s.g%03d.s%03d", title_.c_str(), groupid, series_);
 
   project_main_ = std::string(fileroot.data(), file_len);
-  //set the communicator name
-  my_comm_->setName(fileroot.data(), file_len);
   int next_len{0};
   if (no_gtag)
   {
