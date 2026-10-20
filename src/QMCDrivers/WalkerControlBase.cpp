@@ -49,7 +49,7 @@ void WalkerControlBase::start()
 {
   if (MyContext == 0)
   {
-    std::filesystem::path hname(myComm.getName());
+    std::filesystem::path hname(root_name_);
     hname.concat(".dmc.dat");
     if (hname != dmcFname)
     {

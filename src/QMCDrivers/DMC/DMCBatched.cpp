@@ -437,7 +437,8 @@ void DMCBatched::process(xmlNodePtr node)
         std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), dmcdriver_input_.get_feedback(), refE_update_scheme);
     branch_engine_->put(node);
 
-    walker_controller_ = std::make_unique<WalkerControl>(myComm, Random, dmcdriver_input_.get_reconfiguration());
+    walker_controller_ =
+        std::make_unique<WalkerControl>(myComm, Random, get_root_name(), dmcdriver_input_.get_reconfiguration());
     walker_controller_->start();
     walker_controller_->put(node);
 
