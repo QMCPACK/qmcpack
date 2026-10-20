@@ -120,7 +120,6 @@ void SimpleFixedNodeBranch::registerParameters()
 void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
 {
   RootName = froot;
-  MyEstimator->reset();
 }
 
 int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, bool fixW, bool killwalker)
@@ -179,7 +178,6 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   //{
   //  BranchMode.set(B_DMCSTAGE,0);//always reset warmup
   //}
-  MyEstimator->reset();
   //update the simulation parameters
   WalkerController->put(myNode);
   //assign current Eref and a large number for variance
@@ -240,7 +238,6 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
   //{
   //  BranchMode.set(B_DMCSTAGE,0);//always reset warmup
   //}
-  MyEstimator->reset();
   this->reset();
   if (fromscratch)
   {
@@ -511,8 +508,6 @@ void SimpleFixedNodeBranch::reset()
 int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
 {
   app_log() << "BRANCH resetRun" << std::endl;
-  //estimator is always reset
-  MyEstimator->reset();
   MyEstimator->setCollectionMode(true);
   std::bitset<B_MODE_MAX> bmode(BranchMode);
   IParamType iparam_old(iParam);
