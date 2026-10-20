@@ -265,19 +265,11 @@ void QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
 
   LoopTimer<> cycle_timer;
   LoopRunTimeControl<> runtime_control(run_time_manager, project_data_, "QMCFixedSampleLinearOptimizeBatched",
-                                       "optimization iteration", false);
+                                       "optimization iteration", myComm);
   while (Total_iterations < Max_iterations)
   {
-    bool stop_requested = false;
-    if (!myComm.rank())
-      stop_requested = runtime_control.checkStop(cycle_timer, Total_iterations);
-    myComm.bcast(stop_requested);
-    if (stop_requested)
-    {
-      app_log() << runtime_control.getStopMessage();
-      run_time_manager.markStop();
+    if (runtime_control.checkStop(cycle_timer, Total_iterations))
       break;
-    }
 
     // Predict the next cycle from the last cycle, rather than the average of all cycles.
     cycle_timer = LoopTimer<>();

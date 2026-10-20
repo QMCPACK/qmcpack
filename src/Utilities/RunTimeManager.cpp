@@ -16,6 +16,9 @@
  */
 #include "RunTimeManager.h"
 #include "ProjectData.h"
+#include "Message/Communicate.h"
+#include "Message/CommOperators.h"
+#include "OutputManager.h"
 #include <sstream>
 #include <fstream>
 #include <iomanip>
@@ -32,20 +35,11 @@ template<class CLOCK>
 RunTimeControl<CLOCK>::RunTimeControl(RunTimeManager<CLOCK>& rm,
                                       const ProjectData& project_data,
                                       const std::string& scope_name,
-                                      bool cleanup)
-    : project_data_(project_data), scope_name_(scope_name), runtimeManager(rm), m_elapsed(0.0)
+                                      Communicate& comm)
+    : project_data_(project_data), scope_name_(scope_name), runtimeManager(rm), comm_(comm), m_elapsed(0.0)
 {
   if (project_data_.getTitle().empty())
     throw std::runtime_error("Stop control filename prefix must not be empty!");
-
-  if (cleanup)
-  {
-    const std::string stop_filename = project_data_.getTitle() + ".STOP";
-    std::remove(stop_filename.c_str());
-    if (std::ifstream(stop_filename.c_str()))
-      throw std::runtime_error("Failed to delete the existing stop control file \"" + stop_filename +
-                               "\", cannot continue!");
-  }
 }
 
 template<class CLOCK>
@@ -71,22 +65,38 @@ bool RunTimeControl<CLOCK>::checkStop()
   if (runtimeManager.isStopNeeded())
   {
     stop_message_.clear();
-    return false;
+    return true;
   }
 
-  m_elapsed                       = runtimeManager.elapsed();
-  const int max_cpu_secs          = project_data_.getMaxCPUSeconds();
-  const std::string stop_filename = project_data_.getTitle() + ".STOP";
-
-  StopStatus stop_status = StopStatus::CONTINUE;
-  if (m_elapsed >= max_cpu_secs)
-    stop_status = StopStatus::MAX_SECONDS_PASSED;
-  else if (std::ifstream(stop_filename.c_str()))
-    stop_status = StopStatus::STOP_FILE;
-
-  if (stop_status != StopStatus::CONTINUE)
+  bool stop_requested = false;
+  if (comm_.rank() == 0)
   {
-    stop_message_ = generateStopMessage(stop_status);
+    m_elapsed                       = runtimeManager.elapsed();
+    const int max_cpu_secs          = project_data_.getMaxCPUSeconds();
+    const std::string stop_filename = project_data_.getTitle() + ".STOP";
+
+    StopStatus stop_status = StopStatus::CONTINUE;
+    if (m_elapsed >= max_cpu_secs)
+      stop_status = StopStatus::MAX_SECONDS_PASSED;
+    else if (std::ifstream(stop_filename.c_str()))
+    {
+      std::remove(stop_filename.c_str());
+      stop_status = StopStatus::STOP_FILE;
+    }
+
+    if (stop_status != StopStatus::CONTINUE)
+    {
+      stop_message_  = generateStopMessage(stop_status);
+      stop_requested = true;
+    }
+  }
+
+  comm_.bcast(stop_requested);
+
+  if (stop_requested)
+  {
+    app_log() << stop_message_;
+    runtimeManager.markStop();
     return true;
   }
   else
@@ -140,23 +150,15 @@ LoopRunTimeControl<CLOCK>::LoopRunTimeControl(RunTimeManager<CLOCK>& rm,
                                               const ProjectData& project_data,
                                               const std::string& scope_name,
                                               const std::string& iteration_name,
-                                              bool cleanup)
+                                              Communicate& comm)
     : project_data_(project_data),
       scope_name_(scope_name),
       iteration_name_(iteration_name),
-      runtimeManager(rm)
+      runtimeManager(rm),
+      comm_(comm)
 {
   if (project_data_.getTitle().empty())
     throw std::runtime_error("Stop control filename prefix must not be empty!");
-
-  if (cleanup)
-  {
-    const std::string stop_filename = project_data_.getTitle() + ".STOP";
-    std::remove(stop_filename.c_str());
-    if (std::ifstream(stop_filename.c_str()))
-      throw std::runtime_error("Failed to delete the existing stop control file \"" + stop_filename +
-                               "\", cannot continue!");
-  }
 
   m_runtime_safety_padding = 30.0; // generous 30 seconds to allow for shut down?
   m_loop_margin            = 1.1;  // 10% margin on average loop time?
@@ -179,7 +181,10 @@ StopStatus LoopRunTimeControl<CLOCK>::stop_file_requested() const
 {
   const std::string stop_filename = project_data_.getTitle() + ".STOP";
   if (std::ifstream(stop_filename.c_str()))
+  {
+    std::remove(stop_filename.c_str());
     return StopStatus::STOP_FILE;
+  }
   else
     return StopStatus::CONTINUE;
 }
@@ -190,21 +195,34 @@ bool LoopRunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer, int comp
   if (runtimeManager.isStopNeeded())
   {
     stop_message_.clear();
-    return false;
+    return true;
   }
 
-  m_loop_time = loop_timer.get_time_per_iteration();
-  m_elapsed   = runtimeManager.elapsed();
-  m_remaining = project_data_.getMaxCPUSeconds() - m_elapsed;
-
-  StopStatus stop_status = enough_time_for_next_iteration();
-
-  if (stop_status == StopStatus::CONTINUE)
-    stop_status = stop_file_requested();
-
-  if (stop_status != StopStatus::CONTINUE)
+  bool stop_requested = false;
+  if (comm_.rank() == 0)
   {
-    stop_message_ = generateStopMessage(stop_status, completed_iterations);
+    m_loop_time = loop_timer.get_time_per_iteration();
+    m_elapsed   = runtimeManager.elapsed();
+    m_remaining = project_data_.getMaxCPUSeconds() - m_elapsed;
+
+    StopStatus stop_status = enough_time_for_next_iteration();
+
+    if (stop_status == StopStatus::CONTINUE)
+      stop_status = stop_file_requested();
+
+    if (stop_status != StopStatus::CONTINUE)
+    {
+      stop_message_  = generateStopMessage(stop_status, completed_iterations);
+      stop_requested = true;
+    }
+  }
+
+  comm_.bcast(stop_requested);
+
+  if (stop_requested)
+  {
+    app_log() << stop_message_;
+    runtimeManager.markStop();
     return true;
   }
   else

@@ -329,7 +329,7 @@ void VMCBatched::run()
                            serializing_crowd_walkers_);
 
   LoopTimer<> vmc_loop;
-  LoopRunTimeControl<> runtimeControl(run_time_manager, project_data_, "VMCBatched driver", "block", myComm.rank() == 0);
+  LoopRunTimeControl<> runtimeControl(run_time_manager, project_data_, "VMCBatched driver", "block", myComm);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
@@ -381,16 +381,8 @@ void VMCBatched::run()
   int global_step = 0;
   for (int block = 0; block < num_blocks; ++block)
   {
-    bool stop_requested = false;
-    if (!myComm.rank())
-      stop_requested = runtimeControl.checkStop(vmc_loop, block);
-    myComm.bcast(stop_requested);
-    if (stop_requested)
-    {
-      app_log() << runtimeControl.getStopMessage();
-      run_time_manager.markStop();
+    if (runtimeControl.checkStop(vmc_loop, block))
       break;
-    }
 
     {
       ScopeGuard<LoopTimer<>> vmc_local_timer(vmc_loop);

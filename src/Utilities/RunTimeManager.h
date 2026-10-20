@@ -19,6 +19,7 @@
 #include "Utilities/Clock.h"
 #include <string>
 
+class Communicate;
 
 namespace qmcplusplus
 {
@@ -81,6 +82,7 @@ class RunTimeControl
   const ProjectData& project_data_;
   const std::string scope_name_;
   RunTimeManager<CLOCK>& runtimeManager;
+  Communicate& comm_;
 
   double m_elapsed;
   std::string stop_message_;
@@ -93,14 +95,16 @@ public:
    * @param rm the RunTimeManager attached to
    * @param project_data ProjectData containing title (for .STOP file) and max CPU seconds
    * @param scope_name name of the scope for logging
-   * @param cleanup if true, clean up stop files left from previous simulations.
+   * @param comm communicator used for rank checks and broadcasting stop signals
    */
   RunTimeControl(RunTimeManager<CLOCK>& rm,
                  const ProjectData& project_data,
                  const std::string& scope_name,
-                 bool cleanup = false);
+                 Communicate& comm);
 
   /** @brief Check whether the run needs to stop because of walltime or stop control file.
+   *  Rank 0 performs the time/file checks, broadcasts to comm, logs the message,
+   *  and marks stop on runtimeManager. If runtimeManager already needs stop, returns true as a no-op.
    *  @return true if stop is requested, or false if continuing.
    */
   bool checkStop();
@@ -143,6 +147,7 @@ class LoopRunTimeControl
   double m_elapsed;
   double m_remaining;
   RunTimeManager<CLOCK>& runtimeManager;
+  Communicate& comm_;
 
   std::string stop_message_;
 
@@ -171,15 +176,17 @@ public:
    * @param project_data ProjectData containing title (for .STOP file) and max CPU seconds
    * @param scope_name name of the driver or loop scope for logging
    * @param iteration_name name of the iteration (e.g. "block" or "loop iteration")
-   * @param cleanup if true, clean up stop files left from previous simulations. Rank 0 handle this.
+   * @param comm communicator used for rank checks and broadcasting stop signals
    */
   LoopRunTimeControl(RunTimeManager<CLOCK>& rm,
                      const ProjectData& project_data,
                      const std::string& scope_name,
                      const std::string& iteration_name,
-                     bool cleanup = true);
+                     Communicate& comm);
 
   /** check if the run needs to stop because of walltime or stop control file.
+   * Rank 0 performs the time/file checks, broadcasts to comm, logs the message,
+   * and marks stop on runtimeManager. If runtimeManager already needs stop, returns true as a no-op.
    * Call before each driver block or before additional loop iterations.
    * @return true if stop is requested, or false if continuing.
    */
