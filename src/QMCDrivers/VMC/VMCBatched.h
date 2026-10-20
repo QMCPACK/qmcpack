@@ -142,6 +142,9 @@ private:
   // create Rngs and StepContests
   void createStepContexts(int num_crowds);
 
+  /** Complete a block using the buffered per-step scalar data used for vmc.dat. */
+  void endBlockWithStepData(int first_step, int steps);
+
   /** function to calculate samples per MPI rank
    */
   static size_t compute_samples_per_rank(const size_t num_blocks,

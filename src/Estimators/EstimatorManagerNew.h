@@ -119,6 +119,13 @@ public:
    */
   void stopBlock(unsigned long accept, unsigned long reject, FullPrecRealType block_weight);
 
+  /** Enable batched VMC per-step output. */
+  void startVMCdat();
+
+  /** Reduce one block of raw per-step VMC scalar data, write vmc.dat, and
+   * reuse the reduced data for scalar.dat. */
+  void stopBlockVMC(int first_step, std::vector<FullPrecRealType>& step_data);
+
   /** At end of block collect the main scalar estimators for the entire rank
    *
    *  One per crowd over multiple walkers
@@ -241,6 +248,8 @@ private:
   std::unique_ptr<hdf_archive> h_file;
   ///file handler to write data
   std::unique_ptr<std::ofstream> Archive;
+  // Rank-zero stream for optional VMC per-step scalar output.
+  std::unique_ptr<std::ofstream> vmc_archive_;
   ///file handler to write data for debugging
   std::unique_ptr<std::ofstream> DebugArchive;
   ///communicator to handle communication
