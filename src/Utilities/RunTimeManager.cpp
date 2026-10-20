@@ -68,6 +68,12 @@ std::string RunTimeControl<CLOCK>::generateStopMessage(StopStatus stop_status) c
 template<class CLOCK>
 bool RunTimeControl<CLOCK>::checkStop()
 {
+  if (runtimeManager.isStopNeeded())
+  {
+    stop_message_.clear();
+    return false;
+  }
+
   m_elapsed                       = runtimeManager.elapsed();
   const int max_cpu_secs          = project_data_.getMaxCPUSeconds();
   const std::string stop_filename = project_data_.getTitle() + ".STOP";
@@ -181,6 +187,12 @@ StopStatus LoopRunTimeControl<CLOCK>::stop_file_requested() const
 template<class CLOCK>
 bool LoopRunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer, int completed_iterations)
 {
+  if (runtimeManager.isStopNeeded())
+  {
+    stop_message_.clear();
+    return false;
+  }
+
   m_loop_time = loop_timer.get_time_per_iteration();
   m_elapsed   = runtimeManager.elapsed();
   m_remaining = project_data_.getMaxCPUSeconds() - m_elapsed;

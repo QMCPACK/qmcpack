@@ -250,6 +250,23 @@ TEST_CASE("test_runtime_control_checkStop", "[utilities]")
     rm2.markStop();
     CHECK(rm2.isStopNeeded());
   }
+
+  SECTION("subsequent checks become no-op when isStopNeeded is true")
+  {
+    rm.markStop();
+    CHECK(rm.isStopNeeded());
+
+    // Even if time limit is exceeded, RunTimeControl::checkStop() is a no-op returning false
+    FakeChronoClock::fake_chrono_clock_value += convert_to_ns(100s);
+    CHECK_FALSE(rc.checkStop());
+    CHECK(rc.getStopMessage().empty());
+
+    // LoopRunTimeControl::checkStop() is also a no-op returning false
+    LoopTimer<FakeChronoClock> loop;
+    LoopRunTimeControl<FakeChronoClock> loop_rc(rm, proj, "test_loop", "block", false);
+    CHECK_FALSE(loop_rc.checkStop(loop, 0));
+    CHECK(loop_rc.getStopMessage().empty());
+  }
 }
 
 } // namespace qmcplusplus
