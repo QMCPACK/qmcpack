@@ -29,8 +29,11 @@ template class RunTimeManager<ChronoClock>;
 template class RunTimeManager<FakeChronoClock>;
 
 template<class CLOCK>
-RunTimeControl<CLOCK>::RunTimeControl(RunTimeManager<CLOCK>& rm, const ProjectData& project_data, bool cleanup)
-    : project_data_(project_data), runtimeManager(rm), m_elapsed(0.0)
+RunTimeControl<CLOCK>::RunTimeControl(RunTimeManager<CLOCK>& rm,
+                                      const ProjectData& project_data,
+                                      const std::string& scope_name,
+                                      bool cleanup)
+    : project_data_(project_data), scope_name_(scope_name), runtimeManager(rm), m_elapsed(0.0)
 {
   if (project_data_.getTitle().empty())
     throw std::runtime_error("Stop control filename prefix must not be empty!");
@@ -52,7 +55,7 @@ std::string RunTimeControl<CLOCK>::generateStopMessage(StopStatus stop_status) c
   const std::string stop_filename = project_data_.getTitle() + ".STOP";
 
   std::stringstream log;
-  log << "RunTimeControl takes action." << std::endl;
+  log << "RunTimeControl takes action in " << scope_name_ << "." << std::endl;
   if (stop_status == StopStatus::MAX_SECONDS_PASSED)
     log << "Time limit reached." << std::endl
         << "Hard limit (seconds) " << max_cpu_secs << ", elapsed (seconds) " << m_elapsed << std::endl;

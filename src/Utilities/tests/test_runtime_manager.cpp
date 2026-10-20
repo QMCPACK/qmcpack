@@ -202,7 +202,7 @@ TEST_CASE("test_runtime_control_checkStop", "[utilities]")
 {
   RunTimeManager<FakeChronoClock> rm;
   ProjectData proj = make_project_data("test_proj", 10);
-  RunTimeControl<FakeChronoClock> rc(rm, proj);
+  RunTimeControl<FakeChronoClock> rc(rm, proj, "test_scope");
 
   // Initially: elapsed is 0, max_seconds is 10, no STOP file
   CHECK_FALSE(rc.checkStop());
@@ -214,7 +214,7 @@ TEST_CASE("test_runtime_control_checkStop", "[utilities]")
     FakeChronoClock::fake_chrono_clock_value += convert_to_ns(11s);
     CHECK(rc.checkStop());
     CHECK_FALSE(rc.getStopMessage().empty());
-    CHECK(rc.getStopMessage().find("RunTimeControl takes action.") != std::string::npos);
+    CHECK(rc.getStopMessage().find("RunTimeControl takes action in test_scope.") != std::string::npos);
     CHECK(rc.getStopMessage().find("Time limit reached.") != std::string::npos);
     CHECK(rc.getStopMessage().find("Hard limit (seconds) 10") != std::string::npos);
     // checkStop does not touch need_to_stop_
@@ -233,7 +233,7 @@ TEST_CASE("test_runtime_control_checkStop", "[utilities]")
     }
     CHECK(rc.checkStop());
     CHECK_FALSE(rc.getStopMessage().empty());
-    CHECK(rc.getStopMessage().find("RunTimeControl takes action.") != std::string::npos);
+    CHECK(rc.getStopMessage().find("RunTimeControl takes action in test_scope.") != std::string::npos);
     CHECK(rc.getStopMessage().find("Stop requested from the control file \"" + stop_file + "\"") != std::string::npos);
     // checkStop does not touch need_to_stop_
     CHECK_FALSE(rm.isStopNeeded());

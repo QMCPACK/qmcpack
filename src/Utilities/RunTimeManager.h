@@ -79,6 +79,7 @@ template<class CLOCK = ChronoClock>
 class RunTimeControl
 {
   const ProjectData& project_data_;
+  const std::string scope_name_;
   RunTimeManager<CLOCK>& runtimeManager;
 
   double m_elapsed;
@@ -91,9 +92,13 @@ public:
   /** constructor
    * @param rm the RunTimeManager attached to
    * @param project_data ProjectData containing title (for .STOP file) and max CPU seconds
+   * @param scope_name name of the scope for logging
    * @param cleanup if true, clean up stop files left from previous simulations.
    */
-  RunTimeControl(RunTimeManager<CLOCK>& rm, const ProjectData& project_data, bool cleanup = false);
+  RunTimeControl(RunTimeManager<CLOCK>& rm,
+                 const ProjectData& project_data,
+                 const std::string& scope_name,
+                 bool cleanup = false);
 
   /** @brief Check whether the run needs to stop because of walltime or stop control file.
    *  @return true if stop is requested, or false if continuing.
