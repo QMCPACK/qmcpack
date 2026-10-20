@@ -4,10 +4,14 @@ Notable changes to QMCPACK and NEXUS are documented in this file.
 
 ## [Unreleased]
 
+* Updated STOP file handling: the `<title>.STOP` control file is automatically removed upon detection by rank 0 so subsequent runs can start without manually deleting it, and stop signals are coordinated across ranks to cleanly halt execution.
+* Improved support for timeouts and walltime limits: walltime checks before launching QMC driver sections and between sub-sections within loop iterations prevent starting expensive calculations when `max_seconds` has elapsed or when insufficient time remains for another iteration, and stop messages report the execution phase.
 * Removed the LMY optimization engine, adaptive and hybrid optimizers, and legacy-driver descent optimizer. Descent-based optimization remains available with the batched driver. Create an issue for any LMY features that would be useful if reimplemented in other optimizers, e.g. blocked LM.
 * Require minimum CMake 3.28.0 and drop the use of FindBoost CMake module. A proper installation of Boost library header files is required.
 * Removed use of legacy NIST-like sparse BLAS Level 2 and Level 3 APIs from MKL in AFQMC due to their removal in the oneAPI 2026 release.
 * Introduce the use of OpenMP offload unified shared memory feature that eliminates device copies of data. Use CMake option QMC_OFFLOAD_USM to opt in.
+* Updated STOP file handling: the `<title>.STOP` control file is automatically removed upon detection by rank 0 so subsequent runs can start without manually deleting it, and stop signals are coordinated across ranks to cleanly halt execution.
+* Improved support for timeouts and walltime limits: walltime checks before launching QMC driver sections and between sub-sections within loop iterations prevent starting expensive calculations when `max_seconds` has elapsed or when insufficient time remains for another iteration, and stop messages report the execution phase.
 
 ## [4.4.0] - 2026-08-31
 
