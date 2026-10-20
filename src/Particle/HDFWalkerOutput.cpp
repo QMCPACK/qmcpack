@@ -31,8 +31,7 @@
 namespace qmcplusplus
 {
 /* constructor
- * @param W walkers to operate on
- * @param aroot the root file name
+ * @param num_ptcls number of particles
  * @param c communicator
  *
  * Create the HDF5 file "aroot.config.h5" for output.

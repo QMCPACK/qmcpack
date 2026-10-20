@@ -58,7 +58,9 @@ public:
   /** empty destructor to clean up the derived classes */
   ~WalkerControl();
 
-  /** start a block */
+  /** start a run and open the .dmc.dat file
+   * @param root_name root name for the output file
+   */
   void start(const std::string& root_name);
 
   /** take averages and writes to a file */
