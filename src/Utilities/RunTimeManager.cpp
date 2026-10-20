@@ -15,10 +15,15 @@
 
  */
 #include "RunTimeManager.h"
+#include "ProjectData.h"
+#include "Message/Communicate.h"
+#include "Message/CommOperators.h"
+#include "OutputManager.h"
 #include <sstream>
 #include <fstream>
 #include <iomanip>
 #include <cstdio>
+#include <cassert>
 
 namespace qmcplusplus
 {
@@ -26,6 +31,96 @@ RunTimeManager<ChronoClock> run_time_manager;
 
 template class RunTimeManager<ChronoClock>;
 template class RunTimeManager<FakeChronoClock>;
+
+template<class CLOCK>
+RunTimeControl<CLOCK>::RunTimeControl(RunTimeManager<CLOCK>& rm,
+                                      const ProjectData& project_data,
+                                      const std::string& scope_name,
+                                      Communicate& comm)
+    : project_data_(project_data), scope_name_(scope_name), runtimeManager(rm), comm_(comm), m_elapsed(0.0)
+{
+  if (project_data_.getTitle().empty())
+    throw std::runtime_error("Stop control filename prefix must not be empty!");
+}
+
+template<class CLOCK>
+std::string RunTimeControl<CLOCK>::getStopFilename() const
+{
+  return project_data_.getTitle() + ".STOP";
+}
+
+template<class CLOCK>
+std::string RunTimeControl<CLOCK>::generateStopMessage(StopStatus stop_status, std::string_view phase) const
+{
+  assert(!phase.empty());
+  const int max_cpu_secs = project_data_.getMaxCPUSeconds();
+
+  std::stringstream log;
+  log << "RunTimeControl takes action in " << scope_name_ << "." << std::endl;
+  if (stop_status == StopStatus::MAX_SECONDS_PASSED)
+    log << "Time limit reached. Stopping at " << phase << std::endl
+        << "Hard limit (seconds) " << max_cpu_secs << ", elapsed (seconds) " << m_elapsed << std::endl;
+  else if (stop_status == StopStatus::STOP_FILE)
+    log << "Stop requested from the control file \"" << getStopFilename() << "\". Stopping at " << phase << std::endl;
+  else
+    throw std::runtime_error("Unidentified stop status!");
+
+  return log.str();
+}
+
+template<class CLOCK>
+bool RunTimeControl<CLOCK>::checkStop(std::string_view phase)
+{
+  assert(!phase.empty());
+  if (runtimeManager.isStopNeeded())
+  {
+    stop_message_.clear();
+    return true;
+  }
+
+  bool stop_requested = false;
+  if (comm_.rank() == 0)
+  {
+    m_elapsed              = runtimeManager.elapsed();
+    const int max_cpu_secs = project_data_.getMaxCPUSeconds();
+
+    StopStatus stop_status = StopStatus::CONTINUE;
+    if (m_elapsed >= max_cpu_secs)
+      stop_status = StopStatus::MAX_SECONDS_PASSED;
+    else
+    {
+      const std::string stop_filename = getStopFilename();
+      if (std::ifstream(stop_filename.c_str()))
+      {
+        std::remove(stop_filename.c_str());
+        stop_status = StopStatus::STOP_FILE;
+      }
+    }
+
+    if (stop_status != StopStatus::CONTINUE)
+    {
+      stop_message_  = generateStopMessage(stop_status, phase);
+      stop_requested = true;
+    }
+  }
+
+  comm_.bcast(stop_requested);
+
+  if (stop_requested)
+  {
+    app_log() << stop_message_;
+    runtimeManager.markStop();
+    return true;
+  }
+  else
+  {
+    stop_message_.clear();
+    return false;
+  }
+}
+
+template class RunTimeControl<ChronoClock>;
+template class RunTimeControl<FakeChronoClock>;
 
 template<class CLOCK>
 LoopTimer<CLOCK>::LoopTimer() : nloop(0), ticking(false), total_time(0.0)
@@ -64,34 +159,31 @@ template class LoopTimer<ChronoClock>;
 template class LoopTimer<FakeChronoClock>;
 
 template<class CLOCK>
-RunTimeControl<CLOCK>::RunTimeControl(RunTimeManager<CLOCK>& rm,
-                                      int maxCPUSecs,
-                                      const std::string& stop_file_prefix,
-                                      bool cleanup)
-    : MaxCPUSecs(maxCPUSecs),
+LoopRunTimeControl<CLOCK>::LoopRunTimeControl(RunTimeManager<CLOCK>& rm,
+                                              const ProjectData& project_data,
+                                              const std::string& scope_name,
+                                              const std::string& iteration_name,
+                                              Communicate& comm)
+    : project_data_(project_data),
+      scope_name_(scope_name),
+      iteration_name_(iteration_name),
       runtimeManager(rm),
-      stop_filename_(stop_file_prefix + ".STOP"),
-      stop_status_(StopStatus::CONTINUE)
+      comm_(comm)
 {
-  if (stop_file_prefix.empty())
+  if (project_data_.getTitle().empty())
     throw std::runtime_error("Stop control filename prefix must not be empty!");
-
-  if (cleanup)
-  {
-    std::remove(stop_filename_.c_str());
-    if (std::ifstream(stop_filename_.c_str()))
-      throw std::runtime_error("Failed to delete the existing stop control file \"" + stop_filename_ +
-                               "\", cannot continue!");
-  }
-
-  m_runtime_safety_padding = 30.0; // generous 30 seconds to allow for shut down?
-  m_loop_margin            = 1.1;  // 10% margin on average loop time?
 }
 
 template<class CLOCK>
-typename RunTimeControl<CLOCK>::StopStatus RunTimeControl<CLOCK>::enough_time_for_next_iteration() const
+std::string LoopRunTimeControl<CLOCK>::getStopFilename() const
 {
-  if (m_elapsed >= MaxCPUSecs)
+  return project_data_.getTitle() + ".STOP";
+}
+
+template<class CLOCK>
+StopStatus LoopRunTimeControl<CLOCK>::enough_time_for_next_iteration() const
+{
+  if (m_elapsed >= project_data_.getMaxCPUSeconds())
     return StopStatus::MAX_SECONDS_PASSED;
 
   if ((m_loop_margin * m_loop_time + m_runtime_safety_padding) > m_remaining)
@@ -101,82 +193,104 @@ typename RunTimeControl<CLOCK>::StopStatus RunTimeControl<CLOCK>::enough_time_fo
 }
 
 template<class CLOCK>
-typename RunTimeControl<CLOCK>::StopStatus RunTimeControl<CLOCK>::stop_file_requested() const
+StopStatus LoopRunTimeControl<CLOCK>::stop_file_requested() const
 {
-  if (std::ifstream(stop_filename_.c_str()))
+  const std::string stop_filename = getStopFilename();
+  if (std::ifstream(stop_filename.c_str()))
+  {
+    std::remove(stop_filename.c_str());
     return StopStatus::STOP_FILE;
+  }
   else
     return StopStatus::CONTINUE;
 }
 
 template<class CLOCK>
-bool RunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer)
+bool LoopRunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer, int completed_iterations)
 {
-  m_loop_time = loop_timer.get_time_per_iteration();
-  m_elapsed   = runtimeManager.elapsed();
-  m_remaining = MaxCPUSecs - m_elapsed;
-
-  stop_status_ = enough_time_for_next_iteration();
-  bool need_to_stop = stop_status_ != StopStatus::CONTINUE;
-
-  if (!need_to_stop)
+  if (runtimeManager.isStopNeeded())
   {
-    stop_status_ = stop_file_requested();
-    need_to_stop = stop_status_ != StopStatus::CONTINUE;
+    stop_message_.clear();
+    return true;
   }
 
-  return need_to_stop;
+  bool stop_requested = false;
+  if (comm_.rank() == 0)
+  {
+    m_loop_time = loop_timer.get_time_per_iteration();
+    m_elapsed   = runtimeManager.elapsed();
+    m_remaining = project_data_.getMaxCPUSeconds() - m_elapsed;
+
+    StopStatus stop_status = enough_time_for_next_iteration();
+
+    if (stop_status == StopStatus::CONTINUE)
+      stop_status = stop_file_requested();
+
+    if (stop_status != StopStatus::CONTINUE)
+    {
+      stop_message_  = generateStopMessage(stop_status, completed_iterations);
+      stop_requested = true;
+    }
+  }
+
+  comm_.bcast(stop_requested);
+
+  if (stop_requested)
+  {
+    app_log() << stop_message_;
+    runtimeManager.markStop();
+    return true;
+  }
+  else
+  {
+    stop_message_.clear();
+    return false;
+  }
 }
 
 template<class CLOCK>
-std::string RunTimeControl<CLOCK>::generateProgressMessage(const LoopTimer<CLOCK>& loop_timer,
-                                                           const std::string& driverName,
-                                                           int block,
-                                                           int num_blocks) const
+std::string LoopRunTimeControl<CLOCK>::generateProgressMessage(const LoopTimer<CLOCK>& loop_timer,
+                                                               int block,
+                                                               int num_blocks) const
 {
   std::stringstream log;
   if (block == 0 || block + 1 == num_blocks / 4 || block + 1 == num_blocks / 2 || block + 1 == (num_blocks * 3) / 4 ||
       block + 1 == num_blocks)
   {
-    log << "Completed block " << std::setw(4) << block + 1 << " of " << num_blocks << " average "
-        << std::setprecision(4) << loop_timer.get_time_per_iteration() << " secs/block after " << std::setprecision(4)
-        << runtimeManager.elapsed() << " secs" << std::endl;
+    log << "Completed " << iteration_name_ << " " << std::setw(4) << block + 1 << " of " << num_blocks << " average "
+        << std::setprecision(4) << loop_timer.get_time_per_iteration() << " secs/" << iteration_name_ << " after "
+        << std::setprecision(4) << runtimeManager.elapsed() << " secs" << std::endl;
   }
   return log.str();
 }
 
 template<class CLOCK>
-std::string RunTimeControl<CLOCK>::generateStopMessage(const std::string& driverName,
-                                                       int completed_iterations,
-                                                       const std::string& iteration_name) const
+std::string LoopRunTimeControl<CLOCK>::generateStopMessage(StopStatus stop_status, int completed_iterations) const
 {
   std::stringstream log;
-  log << "RunTimeControl takes action in " << driverName;
-  if (iteration_name == "block")
-    log << " driver";
-  log << "." << std::endl;
-  if (stop_status_ == StopStatus::MAX_SECONDS_PASSED)
-    log << "Time limit reached. Stopping before " << iteration_name << " " << completed_iterations << std::endl
-        << "Hard limit (seconds) " << MaxCPUSecs << ", elapsed (seconds) " << m_elapsed << std::endl;
-  else if (stop_status_ == StopStatus::NOT_ENOUGH_TIME)
+  log << "LoopRunTimeControl takes action in " << scope_name_ << "." << std::endl;
+  if (stop_status == StopStatus::MAX_SECONDS_PASSED)
+    log << "Time limit reached. Stopping before " << iteration_name_ << " " << completed_iterations << std::endl
+        << "Hard limit (seconds) " << project_data_.getMaxCPUSeconds() << ", elapsed (seconds) " << m_elapsed << std::endl;
+  else if (stop_status == StopStatus::NOT_ENOUGH_TIME)
   {
-    log << "Insufficient time for the current " << iteration_name << ". Stopping before " << iteration_name << " "
+    log << "Insufficient time for the current " << iteration_name_ << ". Stopping before " << iteration_name_ << " "
         << completed_iterations << std::endl;
-    log << "  Iteration time per " << driverName << " " << iteration_name << " (seconds) = " << m_loop_time
+    log << "  Iteration time per " << scope_name_ << " " << iteration_name_ << " (seconds) = " << m_loop_time
         << std::endl;
     log << "  Elapsed   time (seconds) = " << m_elapsed << std::endl;
     log << "  Remaining time (seconds) = " << m_remaining << std::endl;
   }
-  else if (stop_status_ == StopStatus::STOP_FILE)
-    log << "Stop requested from the control file \"" + stop_filename_ + "\", stopping before " << iteration_name << " "
-        << completed_iterations << std::endl;
+  else if (stop_status == StopStatus::STOP_FILE)
+    log << "Stop requested from the control file \"" << getStopFilename() << "\", stopping before " << iteration_name_
+        << " " << completed_iterations << std::endl;
   else
     throw std::runtime_error("Unidentified stop status!");
 
   return log.str();
 }
 
-template class RunTimeControl<ChronoClock>;
-template class RunTimeControl<FakeChronoClock>;
+template class LoopRunTimeControl<ChronoClock>;
+template class LoopRunTimeControl<FakeChronoClock>;
 
 } // namespace qmcplusplus

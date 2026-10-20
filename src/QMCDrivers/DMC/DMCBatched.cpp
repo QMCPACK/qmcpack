@@ -475,8 +475,7 @@ void DMCBatched::run()
                            serializing_crowd_walkers_);
 
   LoopTimer<> dmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
-                                  myComm.rank() == 0);
+  LoopRunTimeControl<> runtimeControl(run_time_manager, project_data_, "DMCBatched driver", "block", myComm);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
@@ -504,17 +503,8 @@ void DMCBatched::run()
   int global_step = 0;
   for (int block = 0; block < num_blocks; ++block)
   {
-    bool stop_requested = false;
-    if (!myComm.rank())
-      stop_requested = runtimeControl.checkStop(dmc_loop);
-    myComm.bcast(stop_requested);
-    if (stop_requested)
-    {
-      if (!myComm.rank())
-        app_log() << runtimeControl.generateStopMessage("DMCBatched", block);
-      run_time_manager.markStop();
+    if (runtimeControl.checkStop(dmc_loop, block))
       break;
-    }
 
     {
       ScopeGuard<LoopTimer<>> dmc_local_timer(dmc_loop);
@@ -556,7 +546,7 @@ void DMCBatched::run()
       recordBlock(block);
     }
 
-    app_log() << runtimeControl.generateProgressMessage(dmc_loop, "DMCBatched", block, num_blocks);
+    app_log() << runtimeControl.generateProgressMessage(dmc_loop, block, num_blocks);
   }
 
   branch_engine_->printStatus();

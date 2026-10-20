@@ -78,22 +78,11 @@ void RMC::run()
   const bool has_collectables = W.Collectables.size();
 
   LoopTimer<> rmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm.getName(), myComm.rank() == 0);
+  LoopRunTimeControl<> runtimeControl(run_time_manager, project_data_, "RMC driver", "block", myComm);
   for (int block = 0; block < nBlocks; ++block)
   {
-    bool stop_requested = false;
-    // Rank 0 decides whether the time limit was reached
-    if (!myComm.rank())
-      stop_requested = runtimeControl.checkStop(rmc_loop);
-    myComm.bcast(stop_requested);
-
-    if (stop_requested)
-    {
-      if (!myComm.rank())
-        app_log() << runtimeControl.generateStopMessage("RMC", block);
-      run_time_manager.markStop();
+    if (runtimeControl.checkStop(rmc_loop, block))
       break;
-    }
 
     ScopeGuard<LoopTimer<>> rmc_local_timer(rmc_loop);
 #pragma omp parallel

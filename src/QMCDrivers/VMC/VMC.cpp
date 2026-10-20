@@ -70,23 +70,13 @@ void VMC::run()
   wlog_manager_->startRun(getWalkerLogCollectorRefs());
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm.getName(), myComm.rank() == 0);
+  LoopRunTimeControl<> runtimeControl(run_time_manager, project_data_, "VMC driver", "block", myComm);
 
   const bool has_collectables = W.Collectables.size();
   for (int block = 0; block < nBlocks; ++block)
   {
-    bool stop_requested = false;
-    // Rank 0 decides whether the time limit was reached
-    if (!myComm.rank())
-      stop_requested = runtimeControl.checkStop(vmc_loop);
-    myComm.bcast(stop_requested);
-    if (stop_requested)
-    {
-      if (!myComm.rank())
-        app_log() << runtimeControl.generateStopMessage("VMC", block);
-      run_time_manager.markStop();
+    if (runtimeControl.checkStop(vmc_loop, block))
       break;
-    }
 
     ScopeGuard<LoopTimer<>> vmc_local_timer(vmc_loop);
 #pragma omp parallel

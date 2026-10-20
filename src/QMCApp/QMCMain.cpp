@@ -239,14 +239,19 @@ bool QMCMain::execute()
   }
   Timer t1;
   qmc_common.qmc_counter = 0;
+  RunTimeControl<> runtime_control(run_time_manager, my_project_, "QMCMain", myComm);
   for (int qa = 0; qa < qmc_action_.size(); qa++)
   {
+    // If a previous section (or loop) already requested a stop, terminate the execution loop.
     if (run_time_manager.isStopNeeded())
       break;
     xmlNodePtr cur = qmc_action_[qa].first;
     std::string cname((const char*)cur->name);
     if (cname == "qmc" || cname == "optimize")
     {
+      // Check walltime limit and stop file before driver construction and execution.
+      if (runtime_control.checkStop("executeQMCSection"))
+        break;
       executeQMCSection(cur);
       qmc_common.qmc_counter++; // increase the counter
     }
@@ -311,43 +316,42 @@ void QMCMain::executeLoop(xmlNodePtr cur)
   qmc_common.qmc_counter = 0;
   app_log() << "Loop execution max-interations = " << niter << std::endl;
   LoopTimer<> loop_timer;
-  RunTimeControl<> runtime_control(run_time_manager, my_project_.getMaxCPUSeconds(), my_project_.getTitle(), false);
+  LoopRunTimeControl<> loop_runtime_control(run_time_manager, my_project_, "executeLoop", "loop iteration", myComm);
   for (int iter = 0; iter < niter; iter++)
   {
-    if (run_time_manager.isStopNeeded())
+    // Check if remaining walltime can safely accommodate the projected iteration time or if a stop was requested.
+    if (loop_runtime_control.checkStop(loop_timer, iter))
       break;
-
-    bool stop_requested = false;
-    if (!myComm.rank())
-      stop_requested = runtime_control.checkStop(loop_timer);
-    myComm.bcast(stop_requested);
-    if (stop_requested)
-    {
-      if (!myComm.rank())
-        app_log() << runtime_control.generateStopMessage("executeLoop", iter, "loop iteration");
-      run_time_manager.markStop();
-      break;
-    }
 
     // Include all QMC sections in the iteration average timings.
     ScopeGuard<LoopTimer<>> iteration_timer(loop_timer);
-    xmlNodePtr tcur = cur->children;
-    while (tcur != NULL && !run_time_manager.isStopNeeded())
-    {
-      std::string cname((const char*)tcur->name);
+    RunTimeControl<> runtime_control(run_time_manager, my_project_, "executeLoop iteration " + std::to_string(iter),
+                                     myComm);
+    bool terminated    = false;
+    int qmc_call_count = 0;
+    processChildren(cur, [&](const std::string& cname, const xmlNodePtr tcur) {
+      // Skip remaining child elements if a failure or stop was already requested.
+      if (terminated || run_time_manager.isStopNeeded())
+        return;
       if (cname == "qmc")
       {
+        // For subsequent QMC sections within the same loop iteration, check walltime and stop file.
+        if (qmc_call_count > 0 && runtime_control.checkStop("executeQMCSection in a loop"))
+          return;
+        qmc_call_count++;
         //prevent completed is set
-        bool success = executeQMCSection(tcur, true);
+        const bool success = executeQMCSection(tcur, true);
         if (!success)
         {
           app_warning() << "  Terminated loop execution. A sub section returns false." << std::endl;
+          terminated = true;
           return;
         }
         qmc_common.qmc_counter++; // increase the counter
       }
-      tcur = tcur->next;
-    }
+    });
+    if (terminated)
+      break;
   }
   // Destroy the last driver at the end of a loop with no further reuse of a driver needed.
   last_driver_.reset(nullptr);

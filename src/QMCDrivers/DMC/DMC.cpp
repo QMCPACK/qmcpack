@@ -241,23 +241,12 @@ void DMC::run()
   wlog_manager_->startRun(getWalkerLogCollectorRefs());
   int sample = 0;
 
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm.getName(), myComm.rank() == 0);
+  LoopRunTimeControl<> runtimeControl(run_time_manager, project_data_, "DMC driver", "block", myComm);
 
   for (IndexType block = 0; block < nBlocks; ++block)
   {
-    bool stop_requested = false;
-    // Rank 0 decides whether the time limit was reached
-    if (!myComm.rank())
-      stop_requested = runtimeControl.checkStop(dmc_loop);
-    myComm.bcast(stop_requested);
-
-    if (stop_requested)
-    {
-      if (!myComm.rank())
-        app_log() << runtimeControl.generateStopMessage("DMC", block);
-      run_time_manager.markStop();
+    if (runtimeControl.checkStop(dmc_loop, block))
       break;
-    }
 
     ScopeGuard<LoopTimer<>> dmc_local_timer(dmc_loop);
     Estimators->startBlock(nSteps);
