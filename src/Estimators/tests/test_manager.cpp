@@ -30,6 +30,7 @@ TEST_CASE("EstimatorManagerBase", "[estimators]")
   Communicate& c(*OHMMS::Controller);
 
   EstimatorManagerBase em(&c);
+  em.set_root_name("test");
 
   REQUIRE(em.size() == 0);
 

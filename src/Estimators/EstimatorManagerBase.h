@@ -61,6 +61,8 @@ public:
   ///destructor
   virtual ~EstimatorManagerBase();
 
+  void set_root_name(const std::string& root_name) { root_name_ = root_name; }
+
   /** set the communicator */
   void setCommunicator(Communicate* c);
 
@@ -190,6 +192,8 @@ public:
 protected:
   //  TODO: fix needless use of bitset instead of clearer more visible booleans
   std::bitset<8> Options;
+  ///root name
+  std::string root_name_;
   ///size of the message buffer
   int BufferSize;
   ///number of records in a block
