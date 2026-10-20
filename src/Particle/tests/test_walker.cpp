@@ -96,8 +96,8 @@ TEST_CASE("walker HDF read and write", "[particle]")
 
   wc_list.setWalkerOffsets(walker_offset);
 
-  HDFWalkerOutput hout(num_ptcls, "walker_test", c);
-  hout.dump(wc_list, 0);
+  HDFWalkerOutput hout(num_ptcls, c);
+  hout.dump(wc_list, "walker_test", 0);
 
   c.barrier();
 

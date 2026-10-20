@@ -83,8 +83,8 @@ TEST_CASE("HDFWalkerInput_0_4 16 walkers read_hdf5 and put", "[particle]")
   wc_list_out.setWalkerOffsets(walker_offsets);
 
   const std::string file_root = "test_hdfwalkerinput_16";
-  HDFWalkerOutput hout(num_ptcls, file_root, c);
-  hout.dump(wc_list_out, 0);
+  HDFWalkerOutput hout(num_ptcls, c);
+  hout.dump(wc_list_out, file_root, 0);
   c.barrier();
 
   const std::filesystem::path h5file = file_root + ".config.h5";

@@ -40,19 +40,19 @@ class HDFWalkerOutput
   ///communicator
   Communicate& myComm;
   int currentConfigNumber;
-  ///rootname
-  std::string root_name_;
 
 public:
   ///constructor
-  HDFWalkerOutput(size_t num_ptcls, const std::string& fname, Communicate& c);
+  HDFWalkerOutput(size_t num_ptcls, Communicate& c);
   ///destructor
   ~HDFWalkerOutput();
 
   /** dump configurations
    * @param w walkers
+   * @param fname file root name
+   * @param block current block
    */
-  bool dump(const WalkerConfigurations& w, int block);
+  bool dump(const WalkerConfigurations& w, const std::string& fname, int block);
 
 private:
   ///PooledData<T> is used to define the shape of multi-dimensional array

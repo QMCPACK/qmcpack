@@ -136,7 +136,11 @@ public:
    *
    * CAUTION: The current implementation assumes the same amount of active walkers on all the MPI ranks.
    */
-  static bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput& out, int np, int nBlock);
+  static bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others,
+                           HDFWalkerOutput& out,
+                           const std::string& fname,
+                           int np,
+                           int nBlock);
   ///clear the ensemble
   void clearEnsemble();
 
