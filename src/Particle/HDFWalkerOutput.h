@@ -41,8 +41,7 @@ class HDFWalkerOutput
   Communicate& myComm;
   int currentConfigNumber;
   ///rootname
-  std::string RootName;
-  std::string prevFile;
+  std::string root_name_;
 
 public:
   ///constructor

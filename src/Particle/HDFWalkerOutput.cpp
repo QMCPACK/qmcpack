@@ -60,7 +60,7 @@ HDFWalkerOutput::HDFWalkerOutput(size_t num_ptcls, const std::string& aroot, Com
       number_of_particles_(num_ptcls),
       myComm(c),
       currentConfigNumber(0),
-      RootName(aroot)
+      root_name_(aroot)
 { block = -1; }
 
 /** Destructor writes the state of random numbers and close the file */
@@ -79,15 +79,8 @@ HDFWalkerOutput::~HDFWalkerOutput() = default;
  */
 bool HDFWalkerOutput::dump(const WalkerConfigurations& W, int nblock)
 {
-  std::filesystem::path FileName = myComm.getName();
+  std::filesystem::path FileName = root_name_;
   FileName.concat(hdf::config_ext);
-  //rotate files
-  //if(!myComm.rank() && currentConfigNumber)
-  //{
-  //  std::ostringstream o;
-  //  o<<myComm.getName()<<".b"<<(currentConfigNumber%5) << hdf::config_ext;
-  //  rename(prevFile.c_str(),o.str().c_str());
-  //}
 
   //try to use collective
   hdf_archive dump_file(myComm, true);
@@ -101,7 +94,6 @@ bool HDFWalkerOutput::dump(const WalkerConfigurations& W, int nblock)
   dump_file.close();
 
   currentConfigNumber++;
-  prevFile = FileName;
   return true;
 }
 
