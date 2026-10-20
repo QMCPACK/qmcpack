@@ -18,6 +18,7 @@
 
 #include "Utilities/Clock.h"
 #include <string>
+#include <string_view>
 
 class Communicate;
 
@@ -95,7 +96,7 @@ class ProjectData;
  * RunTimeControl<> runtime_control(run_time_manager, project_data, "QMCMain", comm);
  * for (auto& action : qmc_actions)
  * {
- *   if (runtime_control.checkStop())
+ *   if (runtime_control.checkStop("executeAction"))
  *     break;
  *   executeAction(action);
  * }
@@ -118,7 +119,7 @@ class RunTimeControl
   std::string getStopFilename() const;
 
   /// Generate a stop message.
-  std::string generateStopMessage(StopStatus stop_status) const;
+  std::string generateStopMessage(StopStatus stop_status, std::string_view phase) const;
 
 public:
   /** @brief Constructor.
@@ -135,9 +136,10 @@ public:
   /** @brief Check whether the run needs to stop because of walltime or stop control file.
    *  Rank 0 performs the time/file checks, broadcasts to comm, logs the message,
    *  and marks stop on runtimeManager. If runtimeManager already needs stop, returns true as a no-op.
+   *  @param phase execution phase name (e.g. "executeQMC") included in the stop message (must not be empty)
    *  @return true if stop is requested, or false if continuing.
    */
-  bool checkStop();
+  bool checkStop(std::string_view phase);
 
   /// Retrieve the generated stop message (primarily for unit testing; empty on non-root ranks).
   const std::string& get_stop_message() const { return stop_message_; }

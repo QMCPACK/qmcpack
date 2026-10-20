@@ -23,6 +23,7 @@
 #include <fstream>
 #include <iomanip>
 #include <cstdio>
+#include <cassert>
 
 namespace qmcplusplus
 {
@@ -49,17 +50,18 @@ std::string RunTimeControl<CLOCK>::getStopFilename() const
 }
 
 template<class CLOCK>
-std::string RunTimeControl<CLOCK>::generateStopMessage(StopStatus stop_status) const
+std::string RunTimeControl<CLOCK>::generateStopMessage(StopStatus stop_status, std::string_view phase) const
 {
+  assert(!phase.empty());
   const int max_cpu_secs = project_data_.getMaxCPUSeconds();
 
   std::stringstream log;
   log << "RunTimeControl takes action in " << scope_name_ << "." << std::endl;
   if (stop_status == StopStatus::MAX_SECONDS_PASSED)
-    log << "Time limit reached." << std::endl
+    log << "Time limit reached. Stopping at " << phase << std::endl
         << "Hard limit (seconds) " << max_cpu_secs << ", elapsed (seconds) " << m_elapsed << std::endl;
   else if (stop_status == StopStatus::STOP_FILE)
-    log << "Stop requested from the control file \"" << getStopFilename() << "\"" << std::endl;
+    log << "Stop requested from the control file \"" << getStopFilename() << "\". Stopping at " << phase << std::endl;
   else
     throw std::runtime_error("Unidentified stop status!");
 
@@ -67,8 +69,9 @@ std::string RunTimeControl<CLOCK>::generateStopMessage(StopStatus stop_status) c
 }
 
 template<class CLOCK>
-bool RunTimeControl<CLOCK>::checkStop()
+bool RunTimeControl<CLOCK>::checkStop(std::string_view phase)
 {
+  assert(!phase.empty());
   if (runtimeManager.isStopNeeded())
   {
     stop_message_.clear();
@@ -96,7 +99,7 @@ bool RunTimeControl<CLOCK>::checkStop()
 
     if (stop_status != StopStatus::CONTINUE)
     {
-      stop_message_  = generateStopMessage(stop_status);
+      stop_message_  = generateStopMessage(stop_status, phase);
       stop_requested = true;
     }
   }

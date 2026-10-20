@@ -218,17 +218,17 @@ TEST_CASE("test_runtime_control_checkStop", "[utilities]")
   RunTimeControl<FakeChronoClock> rc(rm, proj, "test_scope", *OHMMS::Controller);
 
   // Initially: elapsed is 0, max_seconds is 10, no STOP file
-  CHECK_FALSE(rc.checkStop());
+  CHECK_FALSE(rc.checkStop("test_phase"));
   CHECK(rc.get_stop_message().empty());
   CHECK_FALSE(rm.isStopNeeded());
 
   SECTION("Time limit reached")
   {
     FakeChronoClock::fake_chrono_clock_value += convert_to_ns(11s);
-    CHECK(rc.checkStop());
+    CHECK(rc.checkStop("executeQMC"));
     CHECK_FALSE(rc.get_stop_message().empty());
     CHECK(rc.get_stop_message().find("RunTimeControl takes action in test_scope.") != std::string::npos);
-    CHECK(rc.get_stop_message().find("Time limit reached.") != std::string::npos);
+    CHECK(rc.get_stop_message().find("Time limit reached. Stopping at executeQMC") != std::string::npos);
     CHECK(rc.get_stop_message().find("Hard limit (seconds) 10") != std::string::npos);
     CHECK(rm.isStopNeeded());
   }
@@ -240,10 +240,10 @@ TEST_CASE("test_runtime_control_checkStop", "[utilities]")
       std::ofstream stop(stop_file);
       CHECK(stop.good());
     }
-    CHECK(rc.checkStop());
+    CHECK(rc.checkStop("executeQMC"));
     CHECK_FALSE(rc.get_stop_message().empty());
     CHECK(rc.get_stop_message().find("RunTimeControl takes action in test_scope.") != std::string::npos);
-    CHECK(rc.get_stop_message().find("Stop requested from the control file \"" + stop_file + "\"") != std::string::npos);
+    CHECK(rc.get_stop_message().find("Stop requested from the control file \"" + stop_file + "\". Stopping at executeQMC") != std::string::npos);
     CHECK(rm.isStopNeeded());
     CHECK_FALSE(std::ifstream(stop_file.c_str()));
   }
@@ -263,7 +263,7 @@ TEST_CASE("test_runtime_control_checkStop", "[utilities]")
 
     // Even if time limit is exceeded, RunTimeControl::checkStop() is a no-op returning true
     FakeChronoClock::fake_chrono_clock_value += convert_to_ns(100s);
-    CHECK(rc.checkStop());
+    CHECK(rc.checkStop("test_phase"));
     CHECK(rc.get_stop_message().empty());
 
     // LoopRunTimeControl::checkStop() is also a no-op returning true

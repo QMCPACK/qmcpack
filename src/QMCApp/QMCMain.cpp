@@ -250,7 +250,7 @@ bool QMCMain::execute()
     if (cname == "qmc" || cname == "optimize")
     {
       // Check walltime limit and stop file before driver construction and execution.
-      if (runtime_control.checkStop())
+      if (runtime_control.checkStop("executeQMCSection"))
         break;
       executeQMCSection(cur);
       qmc_common.qmc_counter++; // increase the counter
@@ -336,7 +336,7 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       if (cname == "qmc")
       {
         // For subsequent QMC sections within the same loop iteration, check walltime and stop file.
-        if (qmc_call_count > 0 && runtime_control.checkStop())
+        if (qmc_call_count > 0 && runtime_control.checkStop("executeQMCSection in a loop"))
           return;
         qmc_call_count++;
         //prevent completed is set
