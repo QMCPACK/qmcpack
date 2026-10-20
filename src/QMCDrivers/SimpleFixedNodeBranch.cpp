@@ -508,7 +508,6 @@ void SimpleFixedNodeBranch::reset()
 int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
 {
   app_log() << "BRANCH resetRun" << std::endl;
-  MyEstimator->setCollectionMode(true);
   std::bitset<B_MODE_MAX> bmode(BranchMode);
   IParamType iparam_old(iParam);
   VParamType vparam_old(vParam);
@@ -719,7 +718,6 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur)
   //check dmc/vmc and decide to create WalkerControllerBase
   m_param.put(cur);
   reset();
-  MyEstimator->setCollectionMode(true); //always collect
   return true;
 }
 
