@@ -109,7 +109,7 @@ public:
    */
   bool checkStop();
 
-  /// Return current stop message
+  // for testing
   const std::string& getStopMessage() const { return stop_message_; }
 };
 
@@ -192,13 +192,11 @@ public:
    */
   bool checkStop(LoopTimer<CLOCK>& loop_timer, int completed_iterations);
 
-  /// Return current stop message
-  const std::string& getStopMessage() const { return stop_message_; }
-
   /// generate terse progress messages
   std::string generateProgressMessage(const LoopTimer<CLOCK>& loop_timer, int block, int num_blocks) const;
 
   // for testing
+  const std::string& getStopMessage() const { return stop_message_; }
   void runtime_padding(int runtime_padding) { m_runtime_safety_padding = runtime_padding; }
   void loop_margin(int loopMargin) { m_loop_margin = loopMargin; }
 };
