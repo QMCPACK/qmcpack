@@ -89,10 +89,8 @@ public:
   /** empty destructor to clean up the derived classes */
   virtual ~WalkerControlBase();
 
-  void set_root_name(const std::string& root_name) { root_name_ = root_name; }
-
   /** start a block */
-  void start();
+  void start(const std::string& root_name);
 
   /** start controller  and initialize the IDs of walkers
       \todo remove when legacy is dropped*/
@@ -186,8 +184,6 @@ protected:
   ///offset of the particle index for a fair distribution
   std::vector<int> FairOffSet;
 
-  ///root name
-  std::string root_name_;
   ///filename for dmc.dat
   std::filesystem::path dmcFname;
   ///file to save energy histogram

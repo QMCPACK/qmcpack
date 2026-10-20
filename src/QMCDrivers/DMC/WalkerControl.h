@@ -53,13 +53,13 @@ public:
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerControl(Communicate& c, RandomBase<FullPrecRealType>& rng, const std::string& root_name, bool use_fixed_pop = false);
+  WalkerControl(Communicate& c, RandomBase<FullPrecRealType>& rng, bool use_fixed_pop = false);
 
   /** empty destructor to clean up the derived classes */
   ~WalkerControl();
 
   /** start a block */
-  void start();
+  void start(const std::string& root_name);
 
   /** take averages and writes to a file */
   void writeDMCdat(int iter, const std::vector<FullPrecRealType>& curData);
@@ -149,8 +149,6 @@ private:
 
   ///random number generator
   RandomBase<FullPrecRealType>& rng_;
-  ///root name
-  const std::string root_name_;
   ///if true, use fixed population
   bool use_fixed_pop_;
   ///trial energy energy

@@ -45,11 +45,11 @@ WalkerControlBase::WalkerControlBase(Communicate& c)
 
 WalkerControlBase::~WalkerControlBase() = default;
 
-void WalkerControlBase::start()
+void WalkerControlBase::start(const std::string& root_name)
 {
   if (MyContext == 0)
   {
-    std::filesystem::path hname(root_name_);
+    std::filesystem::path hname(root_name);
     hname.concat(".dmc.dat");
     if (hname != dmcFname)
     {
@@ -70,7 +70,6 @@ void WalkerControlBase::start()
 
 void WalkerControlBase::setWalkerID(MCWalkerConfiguration& walkers)
 {
-  start(); //do the normal start
   for (const auto& walker : walkers)
   {
     if (walker->getWalkerID() == 0)

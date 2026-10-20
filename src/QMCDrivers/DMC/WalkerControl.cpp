@@ -54,13 +54,9 @@ TimerNameList_t<WC_Timers> WalkerControlTimerNames = {{WC_branch, "WalkerControl
                                                       {WC_send, "WalkerControl::send"},
                                                       {WC_recv, "WalkerControl::recv"}};
 
-WalkerControl::WalkerControl(Communicate& c,
-                             RandomBase<FullPrecRealType>& rng,
-                             const std::string& root_name,
-                             bool use_fixed_pop)
+WalkerControl::WalkerControl(Communicate& c, RandomBase<FullPrecRealType>& rng, bool use_fixed_pop)
     : MPIObjectBase(c),
       rng_(rng),
-      root_name_(root_name),
       use_fixed_pop_(use_fixed_pop),
       rank_num_(c.rank()),
       num_ranks_(c.size()),
@@ -76,11 +72,11 @@ WalkerControl::WalkerControl(Communicate& c,
 
 WalkerControl::~WalkerControl() = default;
 
-void WalkerControl::start()
+void WalkerControl::start(const std::string& root_name)
 {
   if (rank_num_ == 0)
   {
-    std::filesystem::path hname(root_name_);
+    std::filesystem::path hname(root_name);
     hname.concat(".dmc.dat");
     if (hname != dmcFname)
     {
