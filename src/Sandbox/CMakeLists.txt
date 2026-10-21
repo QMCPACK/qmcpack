@@ -13,5 +13,10 @@ foreach(p ${ESTEST})
   add_unit_test(BASENAME sandbox_${p} THREADS 3 TEST_BINARY $<TARGET_FILE:${p}>)
 endforeach(p ${ESTEST})
 
+if(HAVE_MPI)
+  add_unit_test(BASENAME sandbox_restart PROCS 2 THREADS 1 TEST_BINARY $<TARGET_FILE:restart>)
+  add_test_check_file_existence(${ADDED_UNIT_TEST_NAME} restart2.config.h5 TRUE)
+endif()
+
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
 add_labels_for_tests("${CURRENT_TESTS}")

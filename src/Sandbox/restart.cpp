@@ -312,7 +312,7 @@ int main(int argc, char** argv)
         std::cout << "Walkers are loaded again by the subgroup!\n";
       setWalkerOffsets(elecs_with_walkers, subComm);
       HDFWalkerOutput subwOut(elecs_with_walkers.getTotalNum(), subComm);
-      subwOut.dump(elecs_with_walkers, "XXXX", 1);
+      subwOut.dump(elecs_with_walkers, "restart2", 1);
       if (!subComm.rank())
         std::cout << "Walkers are dumped again by the subgroup!\n";
     }
