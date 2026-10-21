@@ -198,7 +198,6 @@ void QMCDriver::process(xmlNodePtr cur)
   Estimators->put(H, cur);
   if (!wOut)
     wOut = std::make_unique<HDFWalkerOutput>(W.getTotalNum(), myComm);
-  branchEngine->start(RootName);
   branchEngine->write(RootName);
   //use new random seeds
   if (ResetRandom)

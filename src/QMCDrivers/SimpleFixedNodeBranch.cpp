@@ -120,6 +120,8 @@ void SimpleFixedNodeBranch::registerParameters()
 void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
 {
   RootName = froot;
+  if (WalkerController)
+    WalkerController->start(RootName);
 }
 
 int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, bool fixW, bool killwalker)
@@ -488,8 +490,6 @@ void SimpleFixedNodeBranch::reset()
       vParam[SBVP::FEEDBACK] = 0.0;
       logN                   = 0.0;
     }
-    //       vParam(abranch.vParam)
-    WalkerController->start(RootName);
   }
   if (BranchMode[B_RMC])
   {

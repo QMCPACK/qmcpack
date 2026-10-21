@@ -230,6 +230,7 @@ void DMC::run()
 
   bool variablePop = (Reconfiguration == "no");
   resetUpdateEngines();
+  branchEngine->start(RootName);
   Estimators->start(nBlocks, RootName);
   for (int ip = 0; ip < NumThreads; ip++)
     Movers[ip]->startRun(nBlocks, false);
