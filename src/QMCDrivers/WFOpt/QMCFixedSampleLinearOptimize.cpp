@@ -672,7 +672,7 @@ void QMCFixedSampleLinearOptimize::start()
     optTarget->checkConfigurations(handle);
 
     // check recomputed variance against VMC
-    auto sigma2_vmc   = vmcEngine->getBranchEngine()->vParam[SimpleFixedNodeBranch::SBVP::SIGMA2];
+    auto sigma2_vmc   = vmcEngine->getBranchEngine()->getSigma2();
     auto sigma2_check = optTarget->getVariance();
     if (optTarget->getNumSamples() > 1 && (sigma2_check > 2.0 * sigma2_vmc || sigma2_check < 0.5 * sigma2_vmc))
       throw std::runtime_error(

@@ -95,6 +95,14 @@ class EstimatorManagerBase;
  *   e. set WC's TrialEnergy
  *   f. multiply walkers.Collectables *= the inverse weight.
  */
+template<class SFNB>
+class BranchIO;
+
+namespace testing
+{
+class SetupSimpleFixedNodeBranch;
+}
+
 struct SimpleFixedNodeBranch : public QMCTraits
 {
   using ThisType  = SimpleFixedNodeBranch;
@@ -130,7 +138,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * \since 2008-05-05
    */
   using BranchModeType = std::bitset<B_MODE_MAX>;
-  BranchModeType BranchMode;
 
   /*! enum for iParam std::bitset<B_IPARAM_MAX>
    * \since 2008-05-05
@@ -199,54 +206,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
     const FullPrecRealType& operator[](PAR_ENUM sbvp) const { return Base::operator[](static_cast<size_t>(sbvp)); }
   };
   using VParamType = VParams<SBVP>;
-  VParamType vParam;
-
-  /** number of remaning steps for a specific tasks
-   *
-   * set differently for BranchMode[B_DMCSTAGE]
-   */
-  int ToDoSteps;
-  ///Feed*log(N)
-  FullPrecRealType logN;
-  ///save xml element
-  xmlNodePtr myNode;
-  ///WalkerController
-  std::unique_ptr<WalkerControlBase> WalkerController;
-  ///Backup WalkerController for mixed DMC
-  std::unique_ptr<WalkerControlBase> BackupWalkerController;
-
-  std::unique_ptr<EstimatorManagerBase> MyEstimator;
-  ///a simple accumulator for energy
-  accumulator_set<FullPrecRealType> EnergyHist;
-  ///a simple accumulator for variance
-  accumulator_set<FullPrecRealType> VarianceHist;
-  ///a simple accumulator for energy
-  accumulator_set<RealType> R2Accepted;
-  ///a simple accumulator for energy
-  accumulator_set<RealType> R2Proposed;
-  ///a simple accumulator for reptation's center slice
-  accumulator_set<RealType> R2Center;
-  /////histogram of populations
-  //BlockHistogram<RealType> PopHist;
-  /////histogram of populations
-  //BlockHistogram<RealType> DMCEnergyHist;
-  ///root name
-  std::string RootName;
-  ///scheme of branching cutoff
-  std::string branching_cutoff_scheme;
-  ///set of parameters
-  ParameterSet m_param;
-  ///string parameters
-  std::vector<std::string> sParam;
-
-  /// Used for the average scaling
-  FullPrecRealType ScaleSum;
-  unsigned long ScaleNum;
-  //@TODO move these to private
-  ///LogJacob
-  RealType LogJacobRef;
-  ///LogNorm
-  std::vector<RealType> LogNorm;
 
   ///Constructor
   SimpleFixedNodeBranch(RealType tau, int nideal);
@@ -274,13 +233,13 @@ struct SimpleFixedNodeBranch : public QMCTraits
   inline void regressQMCCounter() { iParam[B_COUNTER]--; }
 
   /** get the EstimatorManager */
-  EstimatorManagerBase* getEstimatorManager() { return MyEstimator.get(); }
+  EstimatorManagerBase* getEstimatorManager() { return my_estimator_.get(); }
 
   /** set the EstimatorManager
    * @param est estimator created by the first QMCDriver
    * this assumes estimator managers are reused section to section
    * */
-  void setEstimatorManager(std::unique_ptr<EstimatorManagerBase> est) { MyEstimator = std::move(est); }
+  void setEstimatorManager(std::unique_ptr<EstimatorManagerBase> est) { my_estimator_ = std::move(est); }
 
   /** initialize  the WalkerController
    * @param mcwc Walkers
@@ -305,7 +264,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * This is equivalent to calling branchWeight(enew,eold,1.0,1.0)
    */
   inline RealType branchWeightBare(RealType enew, RealType eold) const
-  { return std::exp(vParam[SBVP::TAUEFF] * (vParam[SBVP::ETRIAL] - 0.5 * (enew + eold))); }
+  { return std::exp(v_param_[SBVP::TAUEFF] * (v_param_[SBVP::ETRIAL] - 0.5 * (enew + eold))); }
 
   /** return the bare branch weight with a filtering using an energy window
    *
@@ -313,25 +272,25 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   inline RealType branchWeight(FullPrecRealType enew, FullPrecRealType eold) const
   {
-    FullPrecRealType taueff_ = vParam[SBVP::TAUEFF] * 0.5;
-    FullPrecRealType x       = std::max(vParam[SBVP::EREF] - enew, vParam[SBVP::EREF] - eold);
-    if (x > vParam[SBVP::BRANCHMAX])
+    FullPrecRealType taueff_ = v_param_[SBVP::TAUEFF] * 0.5;
+    FullPrecRealType x       = std::max(v_param_[SBVP::EREF] - enew, v_param_[SBVP::EREF] - eold);
+    if (x > v_param_[SBVP::BRANCHMAX])
       taueff_ = 0.0;
-    else if (x > vParam[SBVP::BRANCHCUTOFF])
-      taueff_ *= (1.0 - (x - vParam[SBVP::BRANCHCUTOFF]) * vParam[SBVP::BRANCHFILTER]);
-    return std::exp(taueff_ * (vParam[SBVP::ETRIAL] * 2.0 - enew - eold));
+    else if (x > v_param_[SBVP::BRANCHCUTOFF])
+      taueff_ *= (1.0 - (x - v_param_[SBVP::BRANCHCUTOFF]) * v_param_[SBVP::BRANCHFILTER]);
+    return std::exp(taueff_ * (v_param_[SBVP::ETRIAL] * 2.0 - enew - eold));
   }
 
   inline RealType symLinkAction(RealType logGf, RealType logGb, RealType enew, RealType eold) const
   {
     RealType driftaction = -0.5 * (logGf + logGb);
     //RealType energyaction =
-    RealType taueff_ = vParam[SBVP::TAUEFF] * 0.5;
-    RealType x       = std::max(vParam[SBVP::EREF] - enew, vParam[SBVP::EREF] - eold);
-    if (x > vParam[SBVP::BRANCHMAX])
+    RealType taueff_ = v_param_[SBVP::TAUEFF] * 0.5;
+    RealType x       = std::max(v_param_[SBVP::EREF] - enew, v_param_[SBVP::EREF] - eold);
+    if (x > v_param_[SBVP::BRANCHMAX])
       taueff_ = 0.0;
-    else if (x > vParam[SBVP::BRANCHCUTOFF])
-      taueff_ *= (1.0 - (x - vParam[SBVP::BRANCHCUTOFF]) * vParam[SBVP::BRANCHFILTER]);
+    else if (x > v_param_[SBVP::BRANCHCUTOFF])
+      taueff_ *= (1.0 - (x - v_param_[SBVP::BRANCHCUTOFF]) * v_param_[SBVP::BRANCHFILTER]);
     RealType energyaction = taueff_ * (enew + eold);
     return driftaction + energyaction;
   }
@@ -339,7 +298,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   inline RealType symLinkActionBare(RealType logGf, RealType logGb, RealType enew, RealType eold) const
   {
     RealType driftaction  = -0.5 * (logGf + logGb);
-    RealType taueff_      = vParam[SBVP::TAUEFF] * 0.5;
+    RealType taueff_      = v_param_[SBVP::TAUEFF] * 0.5;
     RealType energyaction = taueff_ * (enew + eold);
     // RealType wavefunctionaction= -psinew + psiold;
     return driftaction + energyaction;
@@ -347,12 +306,12 @@ struct SimpleFixedNodeBranch : public QMCTraits
 
   inline RealType DMCLinkAction(RealType enew, RealType eold) const
   {
-    RealType taueff_ = vParam[SBVP::TAUEFF] * 0.5;
-    RealType x       = std::max(vParam[SBVP::EREF] - enew, vParam[SBVP::EREF] - eold);
-    if (x > vParam[SBVP::BRANCHMAX])
+    RealType taueff_ = v_param_[SBVP::TAUEFF] * 0.5;
+    RealType x       = std::max(v_param_[SBVP::EREF] - enew, v_param_[SBVP::EREF] - eold);
+    if (x > v_param_[SBVP::BRANCHMAX])
       taueff_ = 0.0;
-    else if (x > vParam[SBVP::BRANCHCUTOFF])
-      taueff_ *= (1.0 - (x - vParam[SBVP::BRANCHCUTOFF]) * vParam[SBVP::BRANCHFILTER]);
+    else if (x > v_param_[SBVP::BRANCHCUTOFF])
+      taueff_ *= (1.0 - (x - v_param_[SBVP::BRANCHCUTOFF]) * v_param_[SBVP::BRANCHFILTER]);
     return taueff_ * (enew + eold);
   }
   /** return the branch weight according to JCP1993 Umrigar et al. Appendix A p=1, q=0
@@ -363,9 +322,9 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   inline RealType branchWeight(RealType enew, RealType eold, RealType scnew, RealType scold) const
   {
-    FullPrecRealType s1 = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - enew) * scnew;
-    FullPrecRealType s0 = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - eold) * scold;
-    return std::exp(vParam[SBVP::TAUEFF] * 0.5 * (s1 + s0));
+    FullPrecRealType s1 = (v_param_[SBVP::ETRIAL] - v_param_[SBVP::EREF]) + (v_param_[SBVP::EREF] - enew) * scnew;
+    FullPrecRealType s0 = (v_param_[SBVP::ETRIAL] - v_param_[SBVP::EREF]) + (v_param_[SBVP::EREF] - eold) * scold;
+    return std::exp(v_param_[SBVP::TAUEFF] * 0.5 * (s1 + s0));
   }
 
   /** return the branch weight according to JCP1993 Umrigar et al. Appendix A
@@ -377,9 +336,9 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   inline RealType branchWeight(RealType enew, RealType eold, RealType scnew, RealType scold, RealType p) const
   {
-    FullPrecRealType s1 = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - enew) * scnew;
-    FullPrecRealType s0 = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - eold) * scold;
-    return std::exp(vParam[SBVP::TAUEFF] * (p * 0.5 * (s1 - s0) + s0));
+    FullPrecRealType s1 = (v_param_[SBVP::ETRIAL] - v_param_[SBVP::EREF]) + (v_param_[SBVP::EREF] - enew) * scnew;
+    FullPrecRealType s0 = (v_param_[SBVP::ETRIAL] - v_param_[SBVP::EREF]) + (v_param_[SBVP::EREF] - eold) * scold;
+    return std::exp(v_param_[SBVP::TAUEFF] * (p * 0.5 * (s1 - s0) + s0));
     //return std::exp(TauEff*(p*0.5*(sp-sq)+sq));
   }
 
@@ -392,18 +351,19 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   inline RealType branchWeightTau(RealType enew, RealType eold, RealType scnew, RealType scold, RealType taueff)
   {
-    ScaleSum += scnew + scold;
-    ScaleNum += 2;
-    FullPrecRealType scavg = (ScaleNum > 10000) ? ScaleSum / (RealType)ScaleNum : 1.0;
-    FullPrecRealType s1    = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - enew) * scnew / scavg;
-    FullPrecRealType s0    = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - eold) * scold / scavg;
+    scale_sum_ += scnew + scold;
+    scale_num_ += 2;
+    FullPrecRealType scavg = (scale_num_ > 10000) ? scale_sum_ / (RealType)scale_num_ : 1.0;
+    FullPrecRealType s1    = (v_param_[SBVP::ETRIAL] - v_param_[SBVP::EREF]) + (v_param_[SBVP::EREF] - enew) * scnew / scavg;
+    FullPrecRealType s0    = (v_param_[SBVP::ETRIAL] - v_param_[SBVP::EREF]) + (v_param_[SBVP::EREF] - eold) * scold / scavg;
     return std::exp(taueff * 0.5 * (s1 + s0));
   }
 
-  inline RealType getEref() const { return vParam[SBVP::EREF]; }
-  inline RealType getEtrial() const { return vParam[SBVP::ETRIAL]; }
-  inline RealType getTau() const { return vParam[SBVP::TAU]; }
-  inline RealType getTauEff() const { return vParam[SBVP::TAUEFF]; }
+  inline RealType getEref() const { return v_param_[SBVP::EREF]; }
+  inline RealType getEtrial() const { return v_param_[SBVP::ETRIAL]; }
+  inline RealType getTau() const { return v_param_[SBVP::TAU]; }
+  inline RealType getTauEff() const { return v_param_[SBVP::TAUEFF]; }
+  inline RealType getSigma2() const { return v_param_[SBVP::SIGMA2]; }
 
   /** perform branching
    * @param iter current step
@@ -442,9 +402,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
 
   void read(const std::string& fname);
 
-  /** create map between the parameter name and variables */
-  void registerParameters();
-
   /** start the WalkerController
    * @param froot root file name
    */
@@ -453,11 +410,71 @@ struct SimpleFixedNodeBranch : public QMCTraits
   void finalize(MCWalkerConfiguration& w);
 
 private:
+  template<class SFNB>
+  friend class BranchIO;
+  friend class testing::SetupSimpleFixedNodeBranch;
+
+  /** create map between the parameter name and variables */
+  void registerParameters();
+
   ///set branch cutoff, max, filter
   void setBranchCutoff(FullPrecRealType variance,
                        FullPrecRealType targetSigma,
                        FullPrecRealType maxSigma,
                        int Nelec = 0);
+
+  /** booleans to set the branch modes
+   * \since 2008-05-05
+   */
+  BranchModeType branch_mode_;
+
+  VParamType v_param_;
+
+  /** number of remaning steps for a specific tasks
+   *
+   * set differently for branch_mode_[B_DMCSTAGE]
+   */
+  int todo_steps_;
+  ///Feed*log(N)
+  FullPrecRealType log_n_;
+  ///save xml element
+  xmlNodePtr my_node_;
+  ///WalkerController
+  std::unique_ptr<WalkerControlBase> walker_controller_;
+  ///Backup WalkerController for mixed DMC
+  std::unique_ptr<WalkerControlBase> backup_walker_controller_;
+
+  std::unique_ptr<EstimatorManagerBase> my_estimator_;
+  ///a simple accumulator for energy
+  accumulator_set<FullPrecRealType> energy_hist_;
+  ///a simple accumulator for variance
+  accumulator_set<FullPrecRealType> variance_hist_;
+  ///a simple accumulator for energy
+  accumulator_set<RealType> r2_accepted_;
+  ///a simple accumulator for energy
+  accumulator_set<RealType> r2_proposed_;
+  ///a simple accumulator for reptation's center slice
+  accumulator_set<RealType> r2_center_;
+  /////histogram of populations
+  //BlockHistogram<RealType> pop_hist_;
+  /////histogram of populations
+  //BlockHistogram<RealType> dmc_energy_hist_;
+  ///root name
+  std::string root_name_;
+  ///scheme of branching cutoff
+  std::string branching_cutoff_scheme_;
+  ///set of parameters
+  ParameterSet m_param_;
+  ///string parameters
+  std::vector<std::string> s_param_;
+
+  /// Used for the average scaling
+  FullPrecRealType scale_sum_;
+  unsigned long scale_num_;
+  ///LogJacob
+  RealType log_jacob_ref_;
+  ///LogNorm
+  std::vector<RealType> log_norm_;
 
   ///disable branching for debugging
   std::string debug_disable_branching_;
