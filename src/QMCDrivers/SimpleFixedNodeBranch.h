@@ -93,8 +93,7 @@ class EstimatorManagerBase;
  *   c. If using taueff update that based on acceptance ration and current tau.
  *   d. If not warmup calculate ETRIAL based on EREF and feedback * log(TargetWalkers) - log(pop_now) 
  *   e. set WC's TrialEnergy
- *   d. multiply walkers.Colelctables *= the inverse weight.
- *   f. call SFNB's estimator accumilator on MCWC
+ *   f. multiply walkers.Collectables *= the inverse weight.
  */
 struct SimpleFixedNodeBranch : public QMCTraits
 {
@@ -446,8 +445,10 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** create map between the parameter name and variables */
   void registerParameters();
 
-  ///start a run
-  void start(const std::string& froot, bool append = false);
+  /** start the WalkerController
+   * @param froot root file name
+   */
+  void startWalkerController(const std::string& froot);
   ///finalize the simulation
   void finalize(MCWalkerConfiguration& w);
 

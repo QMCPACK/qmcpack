@@ -230,8 +230,7 @@ void DMC::run()
 
   bool variablePop = (Reconfiguration == "no");
   resetUpdateEngines();
-  //estimator does not need to collect data
-  Estimators->setCollectionMode(true);
+  branchEngine->startWalkerController(RootName);
   Estimators->start(nBlocks, RootName);
   for (int ip = 0; ip < NumThreads; ip++)
     Movers[ip]->startRun(nBlocks, false);
@@ -279,6 +278,8 @@ void DMC::run()
           W.Collectables += wClones[ip]->Collectables;
       }
       branchEngine->branch(CurrentStep, W);
+      //accumulate collectables and energies for scalar.dat
+      Estimators->accumulate(W);
       if (variablePop)
         FairDivideLow(W.getActiveWalkers(), NumThreads, wPerRank);
       sample++;

@@ -117,10 +117,11 @@ void SimpleFixedNodeBranch::registerParameters()
   m_param.add(debug_disable_branching_, "debug_disable_branching", {"no", "yes"});
 }
 
-void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
+void SimpleFixedNodeBranch::startWalkerController(const std::string& froot)
 {
   RootName = froot;
-  MyEstimator->reset();
+  if (WalkerController)
+    WalkerController->start(RootName);
 }
 
 int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, bool fixW, bool killwalker)
@@ -179,7 +180,6 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   //{
   //  BranchMode.set(B_DMCSTAGE,0);//always reset warmup
   //}
-  MyEstimator->reset();
   //update the simulation parameters
   WalkerController->put(myNode);
   //assign current Eref and a large number for variance
@@ -240,7 +240,6 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
   //{
   //  BranchMode.set(B_DMCSTAGE,0);//always reset warmup
   //}
-  MyEstimator->reset();
   this->reset();
   if (fromscratch)
   {
@@ -363,10 +362,9 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
     }
   }
   WalkerController->setTrialEnergy(vParam[SBVP::ETRIAL]);
-  //accumulate collectables and energies for scalar.dat
+  //normalize collectables
   FullPrecRealType wgt_inv = WalkerController->get_num_contexts() / WalkerController->get_ensemble_property().Weight;
   walkers.Collectables *= wgt_inv;
-  MyEstimator->accumulate(walkers);
 }
 
 /**
@@ -456,8 +454,6 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
       EnergyHist(vParam[SBVP::ENOW]);
     }
   }
-  //accumulate collectables and energies for scalar.dat
-  MyEstimator->accumulate(W);
 }
 
 /** Calculates and saves various action components, also does necessary updates for running averages.
@@ -494,8 +490,6 @@ void SimpleFixedNodeBranch::reset()
       vParam[SBVP::FEEDBACK] = 0.0;
       logN                   = 0.0;
     }
-    //       vParam(abranch.vParam)
-    WalkerController->start(RootName);
   }
   if (BranchMode[B_RMC])
   {
@@ -511,9 +505,6 @@ void SimpleFixedNodeBranch::reset()
 int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
 {
   app_log() << "BRANCH resetRun" << std::endl;
-  //estimator is always reset
-  MyEstimator->reset();
-  MyEstimator->setCollectionMode(true);
   std::bitset<B_MODE_MAX> bmode(BranchMode);
   IParamType iparam_old(iParam);
   VParamType vparam_old(vParam);
@@ -724,7 +715,6 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur)
   //check dmc/vmc and decide to create WalkerControllerBase
   m_param.put(cur);
   reset();
-  MyEstimator->setCollectionMode(true); //always collect
   return true;
 }
 

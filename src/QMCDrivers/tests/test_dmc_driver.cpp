@@ -11,7 +11,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
-
+#include <filesystem>
+#include <fstream>
+#include <stdio.h>
+#include <string>
 #include "Utilities/ProjectData.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -29,11 +32,6 @@
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/DMC/DMC.h"
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
-
-
-#include <stdio.h>
-#include <string>
-
 
 using std::string;
 
@@ -296,6 +294,117 @@ TEST_CASE("DMC move-all node-crossing mover selection", "[drivers][dmc]")
     REQUIRE(mover != nullptr);
     CHECK(dynamic_cast<const DMCUpdateAllWithKill*>(mover) != nullptr);
     CHECK(dynamic_cast<const DMCUpdateAllWithRejection*>(mover) == nullptr);
+  }
+}
+
+TEST_CASE("DMC repeated loop output files", "[drivers][dmc]")
+{
+  ProjectData project_data("dmc_loop_test", ProjectData::DriverVersion::LEGACY);
+  project_data.reset();
+  Communicate& c(*OHMMS::Controller);
+
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  MCWalkerConfiguration elec(simulation_cell);
+
+  ions.setName("ion");
+  ions.create({1});
+  ions.R[0] = {0.0, 0.0, 0.0};
+  elec.setName("elec");
+  elec.create({2});
+  elec.R[0] = {1.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 0.0, 1.0};
+  elec.createWalkers(1);
+
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+
+  elec.addTable(ions);
+  elec.update();
+
+  CloneManager::clearClones();
+
+  TrialWaveFunction psi(project_data.getRuntimeOptions());
+  psi.addComponent(std::make_unique<ConstantOrbital>());
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
+
+  using RNG = RandomBase<QMCTraits::FullPrecRealType>;
+  UPtrVector<RNG> rngs(omp_get_max_threads());
+  for (std::unique_ptr<RNG>& rng : rngs)
+    rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
+
+  QMCHamiltonian h;
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
+  h.addObservables(elec);
+  elec.resetWalkerProperty();
+
+  DMC dmc(project_data, elec, psi, h, rngs, c, false);
+
+  const char* dmc_input = R"(<qmc method="dmc" checkpoint="-1">
+    <parameter name="steps">1</parameter>
+    <parameter name="blocks">1</parameter>
+    <parameter name="timestep">0.1</parameter>
+  </qmc>)";
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(dmc_input));
+  xmlNodePtr root = doc.getRoot();
+
+  const std::string root0 = project_data.currentMainRoot();
+  if (c.rank() == 0)
+  {
+    std::filesystem::remove(root0 + ".dmc.dat");
+    std::filesystem::remove(root0 + ".scalar.dat");
+  }
+  c.barrier();
+
+  // First loop iteration (series 0)
+  dmc.setStatus(root0, "", false);
+  dmc.process(root);
+  dmc.run();
+  auto branch_engine = dmc.getBranchEngine();
+
+  // Second loop iteration reusing the same DMC driver (series 1)
+  branch_engine->resetRun(root);
+  dmc.setBranchEngine(std::move(branch_engine));
+  project_data.advance();
+  const std::string root1 = project_data.currentMainRoot();
+  if (c.rank() == 0)
+  {
+    std::filesystem::remove(root1 + ".dmc.dat");
+    std::filesystem::remove(root1 + ".scalar.dat");
+  }
+  c.barrier();
+
+  dmc.setStatus(root1, "", false);
+  dmc.process(root);
+  dmc.run();
+
+  auto count_lines = [](const std::filesystem::path& path) {
+    std::ifstream in(path);
+    int lines = 0;
+    std::string line;
+    while (std::getline(in, line))
+      if (!line.empty())
+        ++lines;
+    return lines;
+  };
+
+  if (c.rank() == 0)
+  {
+    REQUIRE(std::filesystem::exists(root0 + ".dmc.dat"));
+    REQUIRE(std::filesystem::exists(root1 + ".dmc.dat"));
+    CHECK(count_lines(root0 + ".dmc.dat") == 2);
+    CHECK(count_lines(root1 + ".dmc.dat") == 2);
+
+    REQUIRE(std::filesystem::exists(root0 + ".scalar.dat"));
+    REQUIRE(std::filesystem::exists(root1 + ".scalar.dat"));
+    CHECK(count_lines(root0 + ".scalar.dat") == 2);
+    CHECK(count_lines(root1 + ".scalar.dat") == 2);
   }
 }
 } // namespace qmcplusplus

@@ -125,10 +125,6 @@ public:
   //bool put(xmlNodePtr cur);
   bool put(QMCHamiltonian& H, xmlNodePtr cur);
 
-  /** reset the estimator
-   */
-  void reset();
-
   /** start a run
    * @param blocks number of blocks
    * @param root_name root name for output files
@@ -264,6 +260,10 @@ private:
 
   //Data for communication
   std::vector<std::unique_ptr<BufferType>> RemoteData;
+
+  /** reset the estimator
+   */
+  void reset();
 
   ///collect data and write
   void collectBlockAverages();
