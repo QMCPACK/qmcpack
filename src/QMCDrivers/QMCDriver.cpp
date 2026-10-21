@@ -197,7 +197,7 @@ void QMCDriver::process(xmlNodePtr cur)
   branchEngine->put(cur);
   Estimators->put(H, cur);
   if (!wOut)
-    wOut = std::make_unique<HDFWalkerOutput>(W.getTotalNum(), RootName, myComm);
+    wOut = std::make_unique<HDFWalkerOutput>(W.getTotalNum(), myComm);
   branchEngine->start(RootName);
   branchEngine->write(RootName);
   //use new random seeds
@@ -292,7 +292,7 @@ void QMCDriver::recordBlock(int block)
   if (Period4CheckPoint > 0 && (block + 1) % Period4CheckPoint == 0 && (block + 1) < nBlocks)
   {
     ScopedTimer local(checkpoint_timer_);
-    wOut->dump(W, block);
+    wOut->dump(W, RootName, block);
     branchEngine->write(RootName, true); //save energy_history
     RandomNumberControl::write(RootName, myComm);
   }
@@ -302,7 +302,7 @@ void QMCDriver::finalize(int block, bool dumpwalkers)
 {
   const bool dump_config = Period4CheckPoint >= 0;
   if (dump_config && dumpwalkers)
-    wOut->dump(W, block);
+    wOut->dump(W, RootName, block);
   nTargetWalkers = W.getActiveWalkers();
   MyCounter++;
   infoSummary.flush();

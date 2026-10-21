@@ -438,7 +438,7 @@ void DMCBatched::process(xmlNodePtr node)
     branch_engine_->put(node);
 
     walker_controller_ = std::make_unique<WalkerControl>(myComm, Random, dmcdriver_input_.get_reconfiguration());
-    walker_controller_->start();
+    walker_controller_->start(get_root_name());
     walker_controller_->put(node);
 
     std::ostringstream o;
@@ -462,7 +462,7 @@ void DMCBatched::run()
 {
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
-  estimator_manager_->startDriverRun();
+  estimator_manager_->startDriverRun(get_root_name());
 
   //initialize WalkerLogManager and collectors
   WalkerLogManager wlog_manager(walker_logs_input, allow_walker_logs, get_root_name(), myComm);

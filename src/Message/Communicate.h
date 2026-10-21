@@ -162,9 +162,6 @@ public:
   int getNumGroups() const { return d_ngroups; }
   // Avoid public access to unique_ptr.
   Communicate& getInterGroupComm() const;
-  void setName(const std::string& aname) { myName = aname; }
-  void setName(const char* aname, int alen) { myName = std::string(aname, alen); }
-  const std::string& getName() const { return myName; }
 
   ///return true if the current MPI rank is the group lead
   bool isGroupLeader() { return d_mycontext == 0; }
@@ -235,8 +232,6 @@ private:
    *  After switching to mpi3::communicator, myMPI is only a reference to the raw communicator owned by mpi3::communicator
    */
   mpi_comm_type myMPI;
-  /// Communicator name
-  std::string myName;
   /// Rank
   int d_mycontext;
   /// Size

@@ -131,11 +131,12 @@ public:
 
   /** start a run
    * @param blocks number of blocks
+   * @param root_name root name for output files
    * @param record if true, will write to a file
    *
    * Replace reportHeader and reset functon.
    */
-  void start(int blocks, bool record = true);
+  void start(int blocks, const std::string& root_name, bool record = true);
   /** stop a qmc run
    *
    * Replace finalize();

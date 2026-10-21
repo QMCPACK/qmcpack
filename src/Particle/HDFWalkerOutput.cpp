@@ -31,8 +31,7 @@
 namespace qmcplusplus
 {
 /* constructor
- * @param W walkers to operate on
- * @param aroot the root file name
+ * @param num_ptcls number of particles
  * @param c communicator
  *
  * Create the HDF5 file "aroot.config.h5" for output.
@@ -54,13 +53,10 @@ namespace qmcplusplus
  * the life time of this object. This is necessary so that failures do not lead
  * to unclosed hdf5.
  */
-HDFWalkerOutput::HDFWalkerOutput(size_t num_ptcls, const std::string& aroot, Communicate& c)
-    : appended_blocks(0),
-      number_of_walkers_(0),
+HDFWalkerOutput::HDFWalkerOutput(size_t num_ptcls, Communicate& c)
+    : number_of_walkers_(0),
       number_of_particles_(num_ptcls),
-      myComm(c),
-      currentConfigNumber(0),
-      RootName(aroot)
+      myComm(c)
 { block = -1; }
 
 /** Destructor writes the state of random numbers and close the file */
@@ -68,6 +64,8 @@ HDFWalkerOutput::~HDFWalkerOutput() = default;
 
 /** Write the set of walker configurations to the HDF5 file.
  * @param W set of walker configurations
+ * @param fname file root name
+ * @param nblock current block
  *
  * Dump is for restart and do not preserve the file
  * - version
@@ -77,17 +75,10 @@ HDFWalkerOutput::~HDFWalkerOutput() = default;
  *  - walker_partition (int array)
  *  - walkers (nw,np,3)
  */
-bool HDFWalkerOutput::dump(const WalkerConfigurations& W, int nblock)
+bool HDFWalkerOutput::dump(const WalkerConfigurations& W, const std::string& fname, int nblock)
 {
-  std::filesystem::path FileName = myComm.getName();
+  std::filesystem::path FileName = fname;
   FileName.concat(hdf::config_ext);
-  //rotate files
-  //if(!myComm.rank() && currentConfigNumber)
-  //{
-  //  std::ostringstream o;
-  //  o<<myComm.getName()<<".b"<<(currentConfigNumber%5) << hdf::config_ext;
-  //  rename(prevFile.c_str(),o.str().c_str());
-  //}
 
   //try to use collective
   hdf_archive dump_file(myComm, true);
@@ -100,8 +91,6 @@ bool HDFWalkerOutput::dump(const WalkerConfigurations& W, int nblock)
   write_configuration(W, dump_file, nblock);
   dump_file.close();
 
-  currentConfigNumber++;
-  prevFile = FileName;
   return true;
 }
 

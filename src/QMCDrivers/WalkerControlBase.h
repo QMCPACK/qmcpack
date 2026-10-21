@@ -89,10 +89,12 @@ public:
   /** empty destructor to clean up the derived classes */
   virtual ~WalkerControlBase();
 
-  /** start a block */
-  void start();
+  /** start a run and open the .dmc.dat file
+   * @param root_name root name for the output file
+   */
+  void start(const std::string& root_name);
 
-  /** start controller  and initialize the IDs of walkers
+  /** initialize the IDs of walkers
       \todo remove when legacy is dropped*/
   void setWalkerID(MCWalkerConfiguration& walkers);
 

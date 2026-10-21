@@ -72,11 +72,11 @@ WalkerControl::WalkerControl(Communicate& c, RandomBase<FullPrecRealType>& rng, 
 
 WalkerControl::~WalkerControl() = default;
 
-void WalkerControl::start()
+void WalkerControl::start(const std::string& root_name)
 {
   if (rank_num_ == 0)
   {
-    std::filesystem::path hname(myComm.getName());
+    std::filesystem::path hname(root_name);
     hname.concat(".dmc.dat");
     if (hname != dmcFname)
     {

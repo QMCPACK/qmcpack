@@ -70,7 +70,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::multirank_reduction", "[estimators
   EstimatorManagerCrowd emc(emn);
   emc.registerListeners(ham_list);
 
-  emn.startDriverRun();
+  emn.startDriverRun("test");
 
   ParticleSet::mw_update(pset_list);
   TrialWaveFunction::mw_evaluateLog(twf_list, pset_list);
@@ -144,7 +144,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::operator_reporting", "[estimators]
 
   EstimatorManagerNew emn(gold_elem.ham, comm);
 
-  emn.startDriverRun();
+  emn.startDriverRun("test");
   emn.constructEstimators(std::move(emi), gold_elem.pset_elec, gold_elem.twf, gold_elem.ham,
                           gold_elem.particle_pool.getPool());
   EstimatorManagerCrowd emc(emn);

@@ -356,7 +356,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
         BackupWalkerController = 0;
         vParam[SBVP::ETRIAL]   = vParam[SBVP::EREF];
         app_log() << "  Etrial     = " << vParam[SBVP::ETRIAL] << std::endl;
-        WalkerController->start();
+        WalkerController->start(RootName);
       }
       //This is not necessary
       //EnergyHist(DMCEnergyHist.mean());
@@ -495,7 +495,7 @@ void SimpleFixedNodeBranch::reset()
       logN                   = 0.0;
     }
     //       vParam(abranch.vParam)
-    WalkerController->start();
+    WalkerController->start(RootName);
   }
   if (BranchMode[B_RMC])
   {

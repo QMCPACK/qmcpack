@@ -25,10 +25,6 @@ namespace qmcplusplus
 /** Writes a set of walker configurations to an HDF5 file. */
 class HDFWalkerOutput
 {
-  ///if true, keep it in memory
-  bool DoNotAppend;
-  ///number of blocks for append
-  int appended_blocks;
   /** number of walkers when a state is dumped
    *
    * When the number of walkers per state has changed, NumOfWalkers is used
@@ -39,21 +35,19 @@ class HDFWalkerOutput
   const size_t number_of_particles_;
   ///communicator
   Communicate& myComm;
-  int currentConfigNumber;
-  ///rootname
-  std::string RootName;
-  std::string prevFile;
 
 public:
   ///constructor
-  HDFWalkerOutput(size_t num_ptcls, const std::string& fname, Communicate& c);
+  HDFWalkerOutput(size_t num_ptcls, Communicate& c);
   ///destructor
   ~HDFWalkerOutput();
 
   /** dump configurations
    * @param w walkers
+   * @param fname file root name
+   * @param block current block
    */
-  bool dump(const WalkerConfigurations& w, int block);
+  bool dump(const WalkerConfigurations& w, const std::string& fname, int block);
 
 private:
   ///PooledData<T> is used to define the shape of multi-dimensional array
