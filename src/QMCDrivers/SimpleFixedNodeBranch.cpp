@@ -117,7 +117,7 @@ void SimpleFixedNodeBranch::registerParameters()
   m_param.add(debug_disable_branching_, "debug_disable_branching", {"no", "yes"});
 }
 
-void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
+void SimpleFixedNodeBranch::startWalkerController(const std::string& froot)
 {
   RootName = froot;
   if (WalkerController)

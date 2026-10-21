@@ -445,8 +445,10 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** create map between the parameter name and variables */
   void registerParameters();
 
-  ///start a run
-  void start(const std::string& froot, bool append = false);
+  /** start the WalkerController
+   * @param froot root file name
+   */
+  void startWalkerController(const std::string& froot);
   ///finalize the simulation
   void finalize(MCWalkerConfiguration& w);
 
