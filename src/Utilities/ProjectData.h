@@ -19,7 +19,6 @@
 
 #include <unordered_map>
 #include "OhmmsData/libxmldefs.h"
-#include "Message/Communicate.h"
 #include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
@@ -28,10 +27,6 @@ namespace qmcplusplus
  *\brief Encapsulate data for a project
  *
  * Default: title_ = getDateAndTime("%Y%m%dT%H%M")
- *
- * \todo This shouldn't contain MPI information it is only used to calculate the
- *       path information and the communication parameters should just be input params to that call.
- *       This reduce the internal state.
  */
 class ProjectData
 {
@@ -58,7 +53,11 @@ private:
 
 public:
   /// constructor
-  ProjectData(const std::string& atitle = "", DriverVersion de = DriverVersion::BATCH);
+  ProjectData(int my_group_id                        = 0,
+              int num_groups                         = 1,
+              const std::string& atitle              = "",
+              DriverVersion de                       = DriverVersion::BATCH);
+  ProjectData(const std::string& atitle, DriverVersion de = DriverVersion::BATCH);
 
   bool get(std::ostream& os) const;
   bool put(std::istream& is);
@@ -70,8 +69,6 @@ public:
 
   ///roll-back a series number and reset project_main_ by one
   void rewind();
-
-  void setCommunicator(Communicate* c);
 
   /** 
    * @brief returns the title of the project
@@ -101,6 +98,12 @@ public:
 private:
   static DriverVersion lookupDriverVersion(const std::string& enum_value);
 
+  ///current group id
+  int my_group_id_;
+
+  ///number of groups
+  int num_groups_;
+
   ///title of the project
   std::string title_;
 
@@ -115,9 +118,6 @@ private:
 
   ///series index
   int series_;
-
-  ///communicator
-  Communicate* my_comm_;
 
   ///the xml node for <Project/>
   xmlNodePtr cur_;

@@ -26,9 +26,6 @@ namespace qmcplusplus
 {
 TEST_CASE("ProjectData", "[ohmmsapp]")
 {
-  Communicate& c(*OHMMS::Controller);
-
-
   ProjectData proj1;
   // If no name given, it gets set to time and date
   //   and the title is set equal to the name
@@ -40,9 +37,16 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   REQUIRE(proj2.getSeriesIndex() == 1);
   REQUIRE(proj2.getTitle() == std::string("asample"));
 
-  proj2.setCommunicator(&c);
   std::stringstream o2;
   proj2.get(o2);
+
+  ProjectData proj_multi(1, 4, "my_group");
+  proj_multi.reset();
+  REQUIRE(proj_multi.currentMainRoot() == "my_group.g001.s000");
+
+  ProjectData proj_single(0, 1, "single_group");
+  proj_single.reset();
+  REQUIRE(proj_single.currentMainRoot() == "single_group.s000");
 }
 
 TEST_CASE("ProjectData::put no series", "[ohmmsapp]")

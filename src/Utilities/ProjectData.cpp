@@ -15,9 +15,7 @@
 
 
 #include "ProjectData.h"
-#include "Message/Communicate.h"
 #include "Host/sysutil.h"
-#include "Utilities/qmc_common.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Message/UniformCommunicateError.h"
 #include "ModernStringUtils.hpp"
@@ -32,8 +30,13 @@ namespace qmcplusplus
 // ProjectData
 //----------------------------------------------------------------------------
 // constructors and destructors
-ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion driver_version)
-    : title_(atitle),
+ProjectData::ProjectData(int my_group_id,
+                         int num_groups,
+                         const std::string& atitle,
+                         ProjectData::DriverVersion driver_version)
+    : my_group_id_(my_group_id),
+      num_groups_(num_groups),
+      title_(atitle),
       host_("none"),
       date_("none"),
       series_(0),
@@ -42,12 +45,13 @@ ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion d
       driver_version_(driver_version),
       runtime_options_(RuntimeOptions())
 {
-  my_comm_ = OHMMS::Controller.get();
   if (title_.empty())
     title_ = getDateAndTime("%Y%m%dT%H%M");
 }
 
-void ProjectData::setCommunicator(Communicate* c) { my_comm_ = c; }
+ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion driver_version)
+    : ProjectData(0, 1, atitle, driver_version)
+{}
 
 bool ProjectData::get(std::ostream& os) const
 {
@@ -96,15 +100,14 @@ void ProjectData::rewind()
  */
 void ProjectData::reset()
 {
-  int groupid = my_comm_->getGroupID();
   std::array<char, 256> fileroot;
 
-  bool no_gtag = (qmc_common.mpi_groups == 1);
+  bool no_gtag = (num_groups_ == 1);
   int file_len{0};
   if (no_gtag)
     file_len = std::snprintf(fileroot.data(), fileroot.size(), "%s.s%03d", title_.c_str(), series_);
   else
-    file_len = std::snprintf(fileroot.data(), fileroot.size(), "%s.g%03d.s%03d", title_.c_str(), groupid, series_);
+    file_len = std::snprintf(fileroot.data(), fileroot.size(), "%s.g%03d.s%03d", title_.c_str(), my_group_id_, series_);
 
   if (file_len < 0)
     throw std::runtime_error("Error generating project_main");

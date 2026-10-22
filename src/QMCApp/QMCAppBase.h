@@ -35,7 +35,7 @@ class QMCAppBase
 {
 public:
   ///constructor
-  QMCAppBase();
+  QMCAppBase(int my_group_id = 0, int num_groups = 1);
 
   ///destructor
   virtual ~QMCAppBase();

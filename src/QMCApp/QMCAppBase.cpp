@@ -17,7 +17,7 @@
 
 namespace qmcplusplus
 {
-QMCAppBase::QMCAppBase() = default;
+QMCAppBase::QMCAppBase(int my_group_id, int num_groups) : my_project_(my_group_id, num_groups) {}
 
 QMCAppBase::~QMCAppBase()
 {
