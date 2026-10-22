@@ -53,10 +53,10 @@ private:
 
 public:
   /// constructor
-  ProjectData(int my_group_id                        = 0,
-              int num_groups                         = 1,
-              const std::string& atitle              = "",
-              DriverVersion de                       = DriverVersion::BATCH);
+  ProjectData(int my_group_id           = 0,
+              int num_groups            = 1,
+              const std::string& atitle = "",
+              DriverVersion de          = DriverVersion::BATCH);
   ProjectData(const std::string& atitle, DriverVersion de = DriverVersion::BATCH);
 
   bool get(std::ostream& os) const;

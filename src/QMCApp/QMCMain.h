@@ -43,6 +43,8 @@ public:
   bool validateXML() override;
   bool execute() override;
 
+  /** @brief return the project title
+   */
   const std::string& getTitle() const { return my_project_.getTitle(); }
 
   ParticleSetPool& getParticlePool() { return *particle_set_pool_; }
@@ -51,6 +53,11 @@ private:
   /// project description
   ProjectData my_project_;
 
+  /** @brief write the continuation input XML file (<root>.cont.xml)
+   *
+   * Dumps the updated in-memory XML document (with the updated mcwalkerset node)
+   * to a .cont.xml file for continuing or restarting subsequent calculations.
+   */
   void writeContinuationInputXML();
 
   /// ParticleSet Pool

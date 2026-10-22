@@ -137,7 +137,9 @@ QMCMain::QMCMain(Communicate& c)
     app_summary() << "  Real build. QMC_COMPLEX=OFF" << std::endl;
 
   app_summary() << "  Output verbosity = "
-                << (outputManager.isDebugActive() ? "debug" : outputManager.isHighActive() ? "high" : "low")
+                << (outputManager.isDebugActive()      ? "debug"
+                        : outputManager.isHighActive() ? "high"
+                                                       : "low")
                 << " (options: --verbosity=low|high|debug)" << std::endl;
 #ifdef ENABLE_TIMERS
   app_summary() << "  Timer level = " << getGlobalTimerManager().get_timer_threshold_string()
