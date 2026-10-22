@@ -50,7 +50,6 @@ struct ECPotentialBuilder : public MPIObjectBase, public QMCTraits
 
   bool put(xmlNodePtr cur);
 
-  void useSimpleTableFormat();
   void useXmlFormat(xmlNodePtr cur);
 };
 } // namespace qmcplusplus
