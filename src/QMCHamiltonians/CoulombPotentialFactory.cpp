@@ -268,14 +268,7 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   app_summary() << std::endl;
 
   ECPotentialBuilder ecp(*targetH, *ion, targetPtcl, myComm);
-  try
-  {
-    ecp.put(cur);
-  }
-  catch (const UniformCommunicateError& error)
-  {
-    myComm.barrier_and_abort(error.what());
-  }
+  ecp.put(cur);
 #else
   APP_ABORT("HamiltonianFactory::addPseudoPotential\n pairpot@type=\"pseudo\" is invalid if DIM != 3");
 #endif

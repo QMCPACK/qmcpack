@@ -5,7 +5,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
 
-#include "Message/UniformCommunicateError.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSet.h"
 #include "QMCHamiltonians/ECPotentialBuilder.h"
@@ -15,7 +14,9 @@
 
 namespace qmcplusplus
 {
-TEST_CASE("ECPotentialBuilder validates ion species metadata", "[hamiltonian][ecp]")
+namespace
+{
+struct ECPInput
 {
   bool add_charge = true;
   double charge = 4;
@@ -23,37 +24,10 @@ TEST_CASE("ECPotentialBuilder validates ion species metadata", "[hamiltonian][ec
   int atomic_number = 6;
   std::string element = "C";
   std::string format = "xml";
-  bool valid = false;
+};
 
-  SECTION("matching metadata") { valid = true; }
-  SECTION("atomic_number alias")
-  {
-    atomic_attribute = "atomic_number";
-    valid = true;
-  }
-  SECTION("charge within positive tolerance")
-  {
-    charge += 5e-5;
-    valid = true;
-  }
-  SECTION("charge within negative tolerance")
-  {
-    charge -= 5e-5;
-    valid = true;
-  }
-  SECTION("missing charge") { add_charge = false; }
-  SECTION("charge above tolerance") { charge += 2e-4; }
-  SECTION("charge below tolerance") { charge -= 2e-4; }
-  SECTION("missing atomic number") { atomic_attribute.clear(); }
-  SECTION("atomic number mismatch") { atomic_number = 5; }
-  SECTION("atomic_number alias mismatch")
-  {
-    atomic_attribute = "atomic_number";
-    atomic_number = 5;
-  }
-  SECTION("unknown ion species") { element = "N"; }
-  SECTION("unsupported pseudo format") { format = "unsupported"; }
-
+void checkECPInput(const ECPInput& input, bool expect_abort)
+{
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell);
   ParticleSet electrons(simulation_cell);
@@ -63,41 +37,56 @@ TEST_CASE("ECPotentialBuilder validates ion species metadata", "[hamiltonian][ec
   electrons.create({1});
   auto& species = ions.getSpeciesSet();
   int carbon = species.addSpecies("C");
-  if (add_charge)
-    species(species.addAttribute("charge"), carbon) = charge;
-  if (!atomic_attribute.empty())
-    species(species.addAttribute(atomic_attribute), carbon) = atomic_number;
+  if (input.add_charge)
+    species(species.addAttribute("charge"), carbon) = input.charge;
+  if (!input.atomic_attribute.empty())
+    species(species.addAttribute(input.atomic_attribute), carbon) = input.atomic_number;
 
   QMCHamiltonian hamiltonian;
   ECPotentialBuilder builder(hamiltonian, ions, electrons, *OHMMS::Controller);
   Libxml2Document doc;
-  REQUIRE(doc.parseFromString("<pairpot format=\"xml\"><pseudo elementType=\"" + element +
-                             "\" href=\"C.BFD.xml\" format=\"" + format + "\"/></pairpot>"));
-  if (valid)
-  {
-    REQUIRE(builder.put(doc.getRoot()));
-    REQUIRE(hamiltonian.size() == 2);
-    CHECK(hamiltonian.getComponent(0)->getName() == "LocalECP");
-    CHECK(hamiltonian.getComponent(1)->getName() == "NonLocalECP");
-  }
-  else
-  {
-    try
-    {
-      builder.put(doc.getRoot());
-      FAIL("Invalid ECP input must throw UniformCommunicateError");
-    }
-    catch (const UniformCommunicateError& error)
-    {
-      CHECK(std::string(error.what()) ==
-            "ECPotentialBuilder::useXmlFormat failed: Failed to add pseudopotential for element " + element);
-    }
-    CHECK(hamiltonian.size() == 0);
-  }
+  REQUIRE(doc.parseFromString("<pairpot format=\"xml\"><pseudo elementType=\"" + input.element +
+                             "\" href=\"C.BFD.xml\" format=\"" + input.format + "\"/></pairpot>"));
+  REQUIRE(builder.put(doc.getRoot()));
+  if (expect_abort)
+    FAIL("Invalid ECP input must abort");
+  REQUIRE(hamiltonian.size() == 2);
+  CHECK(hamiltonian.getComponent(0)->getName() == "LocalECP");
+  CHECK(hamiltonian.getComponent(1)->getName() == "NonLocalECP");
+}
+} // namespace
+
+TEST_CASE("ECPotentialBuilder accepts matching ion species metadata", "[hamiltonian][ecp]")
+{
+  ECPInput input;
+  SECTION("matching metadata") {}
+  SECTION("atomic_number alias") { input.atomic_attribute = "atomic_number"; }
+  SECTION("charge within positive tolerance") { input.charge += 5e-5; }
+  SECTION("charge within negative tolerance") { input.charge -= 5e-5; }
+  checkECPInput(input, false);
 }
 
-// Run only in a separate process: the factory must convert the builder exception into an abort.
-TEST_CASE("HamiltonianFactory aborts on invalid ECP metadata", "[.ecp_abort]")
+// Each section is selected explicitly by a separate CTest subprocess.
+TEST_CASE("ECPotentialBuilder aborts on invalid ion species metadata", "[.ecp_abort]")
+{
+  ECPInput input;
+  SECTION("missing_charge") { input.add_charge = false; }
+  SECTION("charge_above_tolerance") { input.charge += 2e-4; }
+  SECTION("charge_below_tolerance") { input.charge -= 2e-4; }
+  SECTION("missing_atomic_number") { input.atomic_attribute.clear(); }
+  SECTION("atomic_number_mismatch") { input.atomic_number = 5; }
+  SECTION("atomic_number_alias_mismatch")
+  {
+    input.atomic_attribute = "atomic_number";
+    input.atomic_number = 5;
+  }
+  SECTION("unknown_species") { input.element = "N"; }
+  SECTION("unsupported_format") { input.format = "unsupported"; }
+  checkECPInput(input, true);
+}
+
+// Run only in a separate process: invalid metadata must abort through the factory.
+TEST_CASE("HamiltonianFactory aborts on invalid ECP metadata", "[.ecp_factory_abort]")
 {
   const SimulationCell simulation_cell;
   auto ions = std::make_unique<ParticleSet>(simulation_cell);

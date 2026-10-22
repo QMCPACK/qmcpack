@@ -1,14 +1,37 @@
-# MPI_Abort and serial aborts have platform-dependent exit statuses. Require the
-# factory's fatal diagnostic as well as failure, so an unrelated crash cannot pass.
-execute_process(COMMAND ${TEST_COMMAND} "[.ecp_abort]" --turn-on-printout
+# Abort exit statuses vary across platforms. Require both failure and the expected
+# diagnostics so an unrelated crash, exception, or failed assertion cannot pass.
+set(element C)
+if(SCENARIO STREQUAL "factory")
+  set(arguments "[.ecp_factory_abort]")
+  set(diagnostic "Ion species C charge 3 pseudopotential charge 4 mismatch!")
+else()
+  set(arguments "[.ecp_abort]" --section "${SCENARIO}")
+  if(SCENARIO STREQUAL "missing_charge")
+    set(diagnostic "Ion species C needs parameter 'charge'")
+  elseif(SCENARIO MATCHES "^charge_(above|below)_tolerance$")
+    set(diagnostic "Ion species C charge .* pseudopotential charge 4 mismatch!")
+  elseif(SCENARIO STREQUAL "missing_atomic_number")
+    set(diagnostic "Ion species C needs parameter 'atomicnumber'")
+  elseif(SCENARIO MATCHES "^atomic_number(_alias)?_mismatch$")
+    set(diagnostic "Ion species C atomicnumber 5 pseudopotential atomic-number 6 mismatch!")
+  elseif(SCENARIO STREQUAL "unknown_species")
+    set(element N)
+    set(diagnostic "Ion species N is not found.")
+  elseif(NOT SCENARIO STREQUAL "unsupported_format")
+    message(FATAL_ERROR "Unknown ECP abort scenario: ${SCENARIO}")
+  endif()
+endif()
+execute_process(COMMAND ${TEST_COMMAND} ${arguments} --turn-on-printout
                 RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE error TIMEOUT 30)
 set(log "${output}\n${error}")
 if("${result}" STREQUAL "0" OR "${result}" MATCHES "[Tt]imeout")
   message(FATAL_ERROR "Expected ECP application abort; got ${result}\n${log}")
 endif()
-foreach(expected "Ion species C charge 3 pseudopotential charge 4 mismatch!"
-                 "Failed to add pseudopotential for element C"
-                 "Fatal Error. Aborting at ECPotentialBuilder::useXmlFormat failed")
+if(DEFINED diagnostic AND NOT log MATCHES "${diagnostic}")
+  message(FATAL_ERROR "Missing scenario diagnostic: ${diagnostic}\nResult: ${result}\n${log}")
+endif()
+foreach(expected "Failed to add pseudopotential for element ${element}"
+                 "Fatal Error. Aborting at ECPotentialBuilder::useXmlFormat failed!")
   string(FIND "${log}" "${expected}" found)
   if(found EQUAL -1)
     message(FATAL_ERROR "Missing abort diagnostic: ${expected}\nResult: ${result}\n${log}")
