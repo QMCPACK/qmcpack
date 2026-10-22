@@ -99,10 +99,10 @@ private:
   static DriverVersion lookupDriverVersion(const std::string& enum_value);
 
   ///current group id
-  int my_group_id_;
+  const int my_group_id_;
 
   ///number of groups
-  int num_groups_;
+  const int num_groups_;
 
   ///title of the project
   std::string title_;
