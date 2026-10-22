@@ -65,10 +65,10 @@ public:
   bool put(xmlNodePtr cur);
   void reset();
 
-  ///increment a series number and reset project_root_
+  ///increment a series number and reset project_main_
   void advance();
 
-  ///roll-back a series number and reset project_root_ by one
+  ///roll-back a series number and reset project_main_ by one
   void rewind();
 
   void setCommunicator(Communicate* c);
@@ -86,13 +86,6 @@ public:
    * translate to project_main_ = "det_qmc_short_sdbatch_vmcbatch_mwalkers.s000"
    */
   const std::string& currentMainRoot() const noexcept;
-
-  /** 
-   * @brief returns the nextroot of the project, the series id is incremented at every QMC section
-   * <project id="det_qmc_short_sdbatch_vmcbatch_mwalkers" series="0">
-   * translate to project_main_ = "det_qmc_short_sdbatch_vmcbatch_mwalkers.s001"
-   */
-  const std::string& nextRoot() const noexcept;
 
 
   int getSeriesIndex() const noexcept;
@@ -119,12 +112,6 @@ private:
 
   ///main root for all the output engines
   std::string project_main_;
-
-  ///processor-dependent root for all the output engines
-  std::string project_root_;
-
-  ///root for the next run
-  std::string next_root_;
 
   ///series index
   int series_;

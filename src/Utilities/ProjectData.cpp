@@ -96,57 +96,20 @@ void ProjectData::rewind()
  */
 void ProjectData::reset()
 {
-  //int nproc_g = OHMMS::Controller->size();
-  int nproc   = my_comm_->size();
-  int nodeid  = my_comm_->rank();
   int groupid = my_comm_->getGroupID();
   std::array<char, 256> fileroot;
-  std::array<char, 256> nextroot;
 
   bool no_gtag = (qmc_common.mpi_groups == 1);
   int file_len{0};
-  if (no_gtag) //qnproc_g == nproc)
+  if (no_gtag)
     file_len = std::snprintf(fileroot.data(), fileroot.size(), "%s.s%03d", title_.c_str(), series_);
   else
     file_len = std::snprintf(fileroot.data(), fileroot.size(), "%s.g%03d.s%03d", title_.c_str(), groupid, series_);
 
-  project_main_ = std::string(fileroot.data(), file_len);
-  int next_len{0};
-  if (no_gtag)
-  {
-    if (nproc > 1)
-    {
-      file_len = std::snprintf(fileroot.data(), fileroot.size(), ".s%03d.p%03d", series_, nodeid);
-      next_len = std::snprintf(nextroot.data(), nextroot.size(), ".s%03d.p%03d", series_ + 1, nodeid);
-    }
-    else
-    {
-      file_len = std::snprintf(fileroot.data(), fileroot.size(), ".s%03d", series_);
-      next_len = std::snprintf(nextroot.data(), nextroot.size(), ".s%03d", series_ + 1);
-    }
-  }
-  else
-  {
-    if (nproc > 1)
-    {
-      file_len = std::snprintf(fileroot.data(), fileroot.size(), ".g%03d.s%03d.p%03d", groupid, series_, nodeid);
-      next_len = std::snprintf(nextroot.data(), nextroot.size(), ".g%03d.s%03d.p%03d", groupid, series_ + 1, nodeid);
-    }
-    else
-    {
-      file_len = std::snprintf(fileroot.data(), fileroot.size(), ".g%03d.s%03d", groupid, series_);
-      next_len = std::snprintf(nextroot.data(), nextroot.size(), ".g%03d.s%03d", groupid, series_ + 1);
-    }
-  }
   if (file_len < 0)
-    throw std::runtime_error("Error generating project_root");
-  if (next_len < 0)
-    throw std::runtime_error("Error generating next_root");
+    throw std::runtime_error("Error generating project_main");
 
-  project_root_ = title_;
-  project_root_.append(fileroot.data(), file_len);
-  next_root_ = title_;
-  next_root_.append(nextroot.data(), next_len);
+  project_main_ = std::string(fileroot.data(), file_len);
   std::stringstream s;
   s << series_ + 1;
   if (cur_)
@@ -208,8 +171,6 @@ bool ProjectData::put(xmlNodePtr cur)
 const std::string& ProjectData::getTitle() const noexcept { return title_; }
 
 const std::string& ProjectData::currentMainRoot() const noexcept { return project_main_; }
-
-const std::string& ProjectData::nextRoot() const noexcept { return next_root_; }
 
 int ProjectData::getSeriesIndex() const noexcept { return series_; }
 
