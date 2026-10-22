@@ -58,7 +58,8 @@ namespace qmcplusplus
 {
 QMCMain::QMCMain(Communicate& c)
     : MPIObjectBase(c),
-      QMCAppBase(c.getGroupID(), c.getNumGroups()),
+      QMCAppBase(),
+      my_project_(c.getGroupID(), c.getNumGroups()),
       particle_set_pool_(std::make_unique<ParticleSetPool>(myComm)),
       psi_pool_(std::make_unique<WaveFunctionPool>(my_project_.getRuntimeOptions(), *particle_set_pool_, myComm)),
       ham_pool_(std::make_unique<HamiltonianPool>(*particle_set_pool_, *psi_pool_, myComm)),
@@ -301,9 +302,21 @@ bool QMCMain::execute()
       xmlReplaceNode(mcptr, newmcptr);
       xmlFreeNode(mcptr);
     }
-    saveXml();
+    writeContinuationInputXML();
   }
   return true;
+}
+
+void QMCMain::writeContinuationInputXML()
+{
+  if (!xml_doc_stack_.empty())
+  {
+    std::string newxml(my_project_.currentMainRoot());
+    newxml.append(".cont.xml");
+    app_log() << "\n========================================================="
+              << "\n  A new xml input file : " << newxml << std::endl;
+    xml_doc_stack_.top()->dump(newxml);
+  }
 }
 
 void QMCMain::executeLoop(xmlNodePtr cur)

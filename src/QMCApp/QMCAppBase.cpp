@@ -17,7 +17,7 @@
 
 namespace qmcplusplus
 {
-QMCAppBase::QMCAppBase(int my_group_id, int num_groups) : my_project_(my_group_id, num_groups) {}
+QMCAppBase::QMCAppBase() = default;
 
 QMCAppBase::~QMCAppBase()
 {
@@ -67,17 +67,4 @@ bool QMCAppBase::parse(const std::string& infile)
   return pushDocument(infile);
 }
 
-void QMCAppBase::saveXml()
-{
-  if (!xml_doc_stack_.empty())
-  {
-    std::string newxml(my_project_.currentMainRoot());
-    newxml.append(".cont.xml");
-    app_log() << "\n========================================================="
-              << "\n  A new xml input file : " << newxml << std::endl;
-    xml_doc_stack_.top()->dump(newxml);
-  }
-}
-
-const std::string& QMCAppBase::getTitle() const { return my_project_.getTitle(); }
 } // namespace qmcplusplus

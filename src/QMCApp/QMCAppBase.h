@@ -17,7 +17,6 @@
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "ProjectData.h"
 #include "RandomNumberControl.h"
 #include <stack>
 /**@defgroup qmcapp QMC Application Group
@@ -35,7 +34,7 @@ class QMCAppBase
 {
 public:
   ///constructor
-  QMCAppBase(int my_group_id = 0, int num_groups = 1);
+  QMCAppBase();
 
   ///destructor
   virtual ~QMCAppBase();
@@ -46,25 +45,15 @@ public:
    */
   bool parse(const std::string& infile);
 
-  /** save the xml document
-   *
-   */
-  void saveXml();
-
   /** validate the input file */
   virtual bool validateXML() = 0;
 
   /** execute the main function */
   virtual bool execute() = 0;
 
-  const std::string& getTitle() const;
-
 protected:
   ///stack of xml document
   std::stack<Libxml2Document*> xml_doc_stack_;
-
-  ///project description
-  ProjectData my_project_;
 
   ///random number controller
   RandomNumberControl my_random_control_;

@@ -23,6 +23,7 @@
 #include "QMCApp/QMCAppBase.h"
 #include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "ProjectData.h"
 
 namespace qmcplusplus
 {
@@ -42,9 +43,16 @@ public:
   bool validateXML() override;
   bool execute() override;
 
+  const std::string& getTitle() const { return my_project_.getTitle(); }
+
   ParticleSetPool& getParticlePool() { return *particle_set_pool_; }
 
 private:
+  /// project description
+  ProjectData my_project_;
+
+  void writeContinuationInputXML();
+
   /// ParticleSet Pool
   std::unique_ptr<ParticleSetPool> particle_set_pool_;
 
