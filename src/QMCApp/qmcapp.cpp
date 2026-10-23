@@ -201,7 +201,6 @@ int main(int argc, char** argv)
     if (inputs.size() > 1)
     {
       comm_job              = std::make_unique<Communicate>(OHMMS::Controller->split(inputs.size(), ranks_per_group_multiple));
-      qmc_common.mpi_groups = inputs.size();
       qmc_common.setupFilenameInfixForEnsembleJobs(comm_job->getGroupID(), comm_job->getNumGroups());
     }
     Communicate& qmcComm = inputs.size() > 1 ? *comm_job : *OHMMS::Controller;

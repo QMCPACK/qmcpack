@@ -219,7 +219,7 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
 
 void ECPComponentBuilder::printECPTable()
 {
-  if (!qmc_common.io_node || qmc_common.mpi_groups > 1)
+  if (!qmc_common.io_node || !qmc_common.get_filename_infix_for_ensemble_jobs().empty())
     return;
   if (!outputManager.isActive(Verbosity::DEBUG))
     return;
