@@ -30,6 +30,14 @@ case "$1" in
       CMAKE_OPTIONS="-DQMC_MPI=ON"
     fi
 
+    # AFQMC configuration
+    if [[ "${GH_JOBNAME}" =~ (-AFQMC) ]] ; then
+      echo 'Configure for AFQMC build -DBUILD_AFQMC=ON'
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DBUILD_AFQMC=ON"
+    else
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DBUILD_AFQMC=OFF"
+    fi
+
     # OpenMP or not configuration
     if [[ "${GH_JOBNAME}" =~ (-NoOMP) ]] ; then
       echo 'Configure for build without OpenMP'
@@ -270,7 +278,6 @@ case "$1" in
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
-              -DBUILD_AFQMC=ON \
               -DQMC_GPU="cuda;openmp" \
               -DQMC_GPU_ARCHS=sm_70 \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
@@ -305,7 +312,6 @@ case "$1" in
               -DCMAKE_C_FLAGS="-diag-disable=10441" \
               -DCMAKE_CXX_FLAGS="-diag-disable=10441" \
               -DCMAKE_CUDA_FLAGS="-diag-disable=10441" \
-              -DBUILD_AFQMC=ON \
               -DQMC_GPU=cuda \
               -DQMC_GPU_ARCHS=sm_70 \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
