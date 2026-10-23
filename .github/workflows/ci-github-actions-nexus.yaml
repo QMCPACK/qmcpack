@@ -23,6 +23,11 @@ jobs:
     - name: Checkout Action
       uses: actions/checkout@v7
 
+    - name: Update System Packages
+      run: |
+        sudo apt-get update
+        sudo apt-get upgrade -y
+
     - name: Setup Graphviz
       run: sudo apt-get install graphviz
 
@@ -61,6 +66,11 @@ jobs:
     steps:
     - name: Checkout Action
       uses: actions/checkout@v7
+
+    - name: Update System Packages
+      run: |
+        brew update
+        brew upgrade
 
     - name: Setup Graphviz
       run: brew install graphviz
