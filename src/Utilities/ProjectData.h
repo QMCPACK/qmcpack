@@ -53,11 +53,7 @@ private:
 
 public:
   /// constructor
-  ProjectData(int my_group_id           = 0,
-              int num_groups            = 1,
-              const std::string& atitle = "",
-              DriverVersion de          = DriverVersion::BATCH);
-  ProjectData(const std::string& atitle, DriverVersion de = DriverVersion::BATCH);
+  ProjectData(const std::string& atitle = "", DriverVersion de = DriverVersion::BATCH);
   explicit ProjectData(DriverVersion de);
 
   bool get(std::ostream& os) const;
@@ -99,11 +95,6 @@ public:
 private:
   static DriverVersion lookupDriverVersion(const std::string& enum_value);
 
-  ///current group id
-  const int my_group_id_;
-
-  ///number of groups
-  const int num_groups_;
 
   ///title of the project
   std::string title_;

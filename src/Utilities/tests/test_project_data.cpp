@@ -13,6 +13,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "ProjectData.h"
+#include "Utilities/qmc_common.h"
 
 
 #include <stdio.h>
@@ -40,11 +41,13 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   std::stringstream o2;
   proj2.get(o2);
 
-  ProjectData proj_multi(1, 4, "my_group");
+  qmc_common.setupFilenameInfixForEnsembleJobs(1, 4);
+  ProjectData proj_multi("my_group");
   proj_multi.reset();
   REQUIRE(proj_multi.currentMainRoot() == "my_group.g001.s000");
 
-  ProjectData proj_single(0, 1, "single_group");
+  qmc_common.setupFilenameInfixForEnsembleJobs(0, 1);
+  ProjectData proj_single("single_group");
   proj_single.reset();
   REQUIRE(proj_single.currentMainRoot() == "single_group.s000");
 }

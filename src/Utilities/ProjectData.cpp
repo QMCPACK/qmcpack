@@ -19,6 +19,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "Message/UniformCommunicateError.h"
 #include "ModernStringUtils.hpp"
+#include "Utilities/qmc_common.h"
 
 #include <array>
 
@@ -30,13 +31,8 @@ namespace qmcplusplus
 // ProjectData
 //----------------------------------------------------------------------------
 // constructors and destructors
-ProjectData::ProjectData(int my_group_id,
-                         int num_groups,
-                         const std::string& atitle,
-                         ProjectData::DriverVersion driver_version)
-    : my_group_id_(my_group_id),
-      num_groups_(num_groups),
-      title_(atitle),
+ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion driver_version)
+    : title_(atitle),
       host_("none"),
       date_("none"),
       series_(0),
@@ -49,11 +45,7 @@ ProjectData::ProjectData(int my_group_id,
     title_ = getDateAndTime("%Y%m%dT%H%M");
 }
 
-ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion driver_version)
-    : ProjectData(0, 1, atitle, driver_version)
-{}
-
-ProjectData::ProjectData(ProjectData::DriverVersion driver_version) : ProjectData(0, 1, "", driver_version) {}
+ProjectData::ProjectData(ProjectData::DriverVersion driver_version) : ProjectData("", driver_version) {}
 
 bool ProjectData::get(std::ostream& os) const
 {
@@ -104,12 +96,8 @@ void ProjectData::reset()
 {
   std::array<char, 256> fileroot;
 
-  bool no_gtag = (num_groups_ == 1);
-  int file_len{0};
-  if (no_gtag)
-    file_len = std::snprintf(fileroot.data(), fileroot.size(), "%s.s%03d", title_.c_str(), series_);
-  else
-    file_len = std::snprintf(fileroot.data(), fileroot.size(), "%s.g%03d.s%03d", title_.c_str(), my_group_id_, series_);
+  int file_len = std::snprintf(fileroot.data(), fileroot.size(), "%s%s.s%03d", title_.c_str(),
+                               qmc_common.get_filename_infix_for_ensemble_jobs().c_str(), series_);
 
   if (file_len < 0)
     throw std::runtime_error("Error generating project_main");
