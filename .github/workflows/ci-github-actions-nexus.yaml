@@ -67,11 +67,6 @@ jobs:
     - name: Checkout Action
       uses: actions/checkout@v7
 
-    - name: Update System Packages
-      run: |
-        brew update
-        brew upgrade
-
     - name: Setup Graphviz
       run: brew install graphviz
 
