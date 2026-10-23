@@ -43,12 +43,10 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
 
   qmc_common.setupFilenameInfixForEnsembleJobs(1, 4);
   ProjectData proj_multi("my_group");
-  proj_multi.reset();
   REQUIRE(proj_multi.currentMainRoot() == "my_group.g001.s000");
 
   qmc_common.setupFilenameInfixForEnsembleJobs(0, 1);
   ProjectData proj_single("single_group");
-  proj_single.reset();
   REQUIRE(proj_single.currentMainRoot() == "single_group.s000");
 }
 

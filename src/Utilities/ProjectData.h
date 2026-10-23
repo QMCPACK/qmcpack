@@ -59,7 +59,6 @@ public:
   bool get(std::ostream& os) const;
   bool put(std::istream& is);
   bool put(xmlNodePtr cur);
-  void reset();
 
   ///increment a series number and reset project_main_
   void advance();
@@ -94,6 +93,7 @@ public:
 
 private:
   static DriverVersion lookupDriverVersion(const std::string& enum_value);
+  void reset();
 
 
   ///title of the project

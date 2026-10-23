@@ -59,7 +59,6 @@ namespace qmcplusplus
 QMCMain::QMCMain(Communicate& c)
     : MPIObjectBase(c),
       QMCAppBase(),
-      my_project_(c.getGroupID(), c.getNumGroups()),
       particle_set_pool_(std::make_unique<ParticleSetPool>(myComm)),
       psi_pool_(std::make_unique<WaveFunctionPool>(my_project_.getRuntimeOptions(), *particle_set_pool_, myComm)),
       ham_pool_(std::make_unique<HamiltonianPool>(*particle_set_pool_, *psi_pool_, myComm)),
@@ -391,10 +390,7 @@ bool QMCMain::validateXML()
   xmlXPathContextPtr m_context = xml_doc_stack_.top()->getXPathContext();
   OhmmsXPathObject result("//project", m_context);
   if (result.empty())
-  {
     app_warning() << "Project is not defined" << std::endl;
-    my_project_.reset();
-  }
   else
   {
     try

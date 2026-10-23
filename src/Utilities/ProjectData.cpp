@@ -43,6 +43,7 @@ ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion d
 {
   if (title_.empty())
     title_ = getDateAndTime("%Y%m%dT%H%M");
+  reset();
 }
 
 ProjectData::ProjectData(ProjectData::DriverVersion driver_version) : ProjectData("", driver_version) {}
