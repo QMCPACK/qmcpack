@@ -59,7 +59,7 @@ private:
 TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
 {
   using namespace testing;
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   VMCBatchedTest vbt(test_project);
   vbt.testCalcDefaultLocalWalkers();
 }

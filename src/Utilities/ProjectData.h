@@ -58,6 +58,7 @@ public:
               const std::string& atitle = "",
               DriverVersion de          = DriverVersion::BATCH);
   ProjectData(const std::string& atitle, DriverVersion de = DriverVersion::BATCH);
+  explicit ProjectData(DriverVersion de);
 
   bool get(std::ostream& os) const;
   bool put(std::istream& is);

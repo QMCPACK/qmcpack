@@ -23,7 +23,7 @@ namespace testing
 {
 SetupPools::SetupPools() : comm(*OHMMS::Controller)
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
 
   app_log() << "For purposes of multithreaded testing max threads is forced to 8" << std::endl;
   Concurrency::OverrideMaxCapacity<> override(8);

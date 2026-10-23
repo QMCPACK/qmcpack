@@ -53,6 +53,8 @@ ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion d
     : ProjectData(0, 1, atitle, driver_version)
 {}
 
+ProjectData::ProjectData(ProjectData::DriverVersion driver_version) : ProjectData(0, 1, "", driver_version) {}
+
 bool ProjectData::get(std::ostream& os) const
 {
   os << "  Project = " << title_ << "\n";
