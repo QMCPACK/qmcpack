@@ -1,12 +1,16 @@
 import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.BASISSET)
 
-
-
-from . import TEST_DIR
+from ..basisset import (
+    BasisFile,
+    BasisSets,
+    GaussianBasisSet,
+    gamessBasisFile,
+    process_gaussian_text,
+)
 from ..testing import object_eq
+from . import TEST_DIR, NexusTestOrder
 
+pytestmark = pytest.mark.order(NexusTestOrder.BASISSET)
 
 TEST_FILES = {
     "Fe.aug-cc-pwcv5z-dk.0.bas":       TEST_DIR / "test_basisset_files/Fe.aug-cc-pwcv5z-dk.0.bas",
@@ -24,10 +28,6 @@ for file in TEST_FILES.values():
 
 
 def test_basissets():
-    from ..basisset import BasisSets
-    from ..basisset import BasisFile
-    from ..basisset import gamessBasisFile
-
     # empty initialization
     BasisSets()
     BasisFile()
@@ -58,8 +58,6 @@ def test_basissets():
 
 
 def test_process_gaussian_text():
-    from ..basisset import process_gaussian_text
-
     basis_refs = {
         'Fe.aug-cc-pwcv5z-dk.0.bas'   : 503,
         'Fe.aug-cc-pwcv5z-dk.0.gbs'   : 503,
@@ -113,8 +111,6 @@ def test_process_gaussian_text():
 
 
 def test_gaussianbasisset():
-    from ..basisset import GaussianBasisSet
-
     GaussianBasisSet()
 
     ref = {

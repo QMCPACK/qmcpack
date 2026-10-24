@@ -29,9 +29,9 @@
 
 
 import os
-from .developer import obj
-from .simulation import Simulation,SimulationInput,SimulationAnalyzer
 
+from .developer import obj
+from .simulation import Simulation, SimulationAnalyzer, SimulationInput
 
 # PLEASE READ THIS
 #

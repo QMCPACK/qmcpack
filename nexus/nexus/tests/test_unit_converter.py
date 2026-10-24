@@ -1,16 +1,13 @@
+import numpy as np
 import pytest
+
+from ..testing import value_eq
+from ..unit_converter import UnitConverter, convert
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.UNIT_CONVERTER)
 
-
-
-
 def test_convert():
-    import numpy as np
-    from ..testing import value_eq
-    from ..unit_converter import convert
-
-
     # distance
     meters_per_angstrom = convert(1.0,'A','m')
     meters_per_bohr     = convert(1.0,'B','m')
@@ -84,9 +81,6 @@ def test_convert():
 
 
 def test_convert_scalar_to_all():
-    from ..testing import value_eq
-    from ..unit_converter import UnitConverter
-
     eV_to = {
         'J'       : 1.60217646e-19,
         'Ha'      : 0.03674932439858279,

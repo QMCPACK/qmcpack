@@ -4,8 +4,8 @@ import gc
 import os
 import sys
 from copy import deepcopy
-from pathlib import Path
 from optparse import OptionParser
+from pathlib import Path
 
 if sys.version_info[0:3] < (3, 12, 0):
     v = sys.version_info[0:3]
@@ -65,21 +65,20 @@ def find_nexus_modules():
 
 # Load Nexus modules
 find_nexus_modules()
-from nexus.nexus_version import nexus_version
-import nexus.numpy_extensions as npe
-from nexus.developer import DevBase,obj
-import nexus.memory as memory
-from nexus.hdfreader import HDFreader
-from nexus.fileio import XsfFile,ChgcarFile
-from nexus.structure import read_structure,Structure
-from nexus.numerics import simplestats,simstats
-from nexus.qmcpack_input import QmcpackInput
-from nexus.qmcpack_input import spindensity as spindensity_xml
-from nexus.qmcpack_input import density as density_xml
-from nexus.unit_converter import convert
-
 import h5py
+import nexus.numpy_extensions as npe
 import numpy as np
+from nexus import memory
+from nexus.developer import DevBase, obj
+from nexus.fileio import ChgcarFile, XsfFile
+from nexus.hdfreader import HDFreader
+from nexus.nexus_version import nexus_version
+from nexus.numerics import simplestats, simstats
+from nexus.qmcpack_input import QmcpackInput
+from nexus.qmcpack_input import density as density_xml
+from nexus.qmcpack_input import spindensity as spindensity_xml
+from nexus.structure import Structure, read_structure
+from nexus.unit_converter import convert
 
 
 def h5_int(val):

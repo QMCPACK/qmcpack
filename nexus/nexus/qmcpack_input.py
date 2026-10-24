@@ -133,25 +133,36 @@
 #====================================================================#
 
 
-import os
-import sys
-from pathlib import Path
-from copy import deepcopy
 import inspect
 import keyword
+import os
+import sys
+from copy import deepcopy
+from pathlib import Path
+
 import numpy as np
-from .numpy_extensions import reshape_inplace
-from .xmlreader import XMLreader, XMLelement
-from .developer import DevBase, dotdict, obj, nxs_print, warn, FileFormatError, NexusError, sorted_generic
-from .periodic_table import Elements
-from .structure import Structure, Jellium, get_kpath
-from .physical_system import PhysicalSystem
-from .pseudoset import pp_elem_label, PseudoSet
-from .simulation import SimulationInput, SimulationInputTemplate
-from .pwscf_input import array_to_string as pwscf_array_string
-from .utilities import path_string
-from .unit_converter import convert
+
 from . import numpy_extensions as npe
+from .developer import (
+    DevBase,
+    FileFormatError,
+    NexusError,
+    dotdict,
+    nxs_print,
+    obj,
+    sorted_generic,
+    warn,
+)
+from .numpy_extensions import reshape_inplace
+from .periodic_table import Elements
+from .physical_system import PhysicalSystem
+from .pseudoset import PseudoSet, pp_elem_label
+from .pwscf_input import array_to_string as pwscf_array_string
+from .simulation import SimulationInput, SimulationInputTemplate
+from .structure import Jellium, Structure, get_kpath
+from .unit_converter import convert
+from .utilities import path_string
+from .xmlreader import XMLelement, XMLreader
 
 yesno_dict     = {True:'yes' ,False:'no'}
 truefalse_dict = {True:'true',False:'false'}
@@ -10210,8 +10221,8 @@ if __name__=='__main__':
 
 
     if test_ret_system:
-        from .structure import generate_structure
         from .physical_system import PhysicalSystem
+        from .structure import generate_structure
 
         system = PhysicalSystem(
             structure = generate_structure('diamond','fcc','Ge',(2,2,2),scale=5.639,units='A'),
@@ -10230,8 +10241,8 @@ if __name__=='__main__':
 
 
     if test_gen_input:
-        from .structure import generate_structure
         from .physical_system import PhysicalSystem
+        from .structure import generate_structure
 
         system = PhysicalSystem(
             structure = generate_structure('diamond','fcc','Ge',(2,2,2),scale=5.639,units='A'),

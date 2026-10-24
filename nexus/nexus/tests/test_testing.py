@@ -1,16 +1,24 @@
+import numpy as np
 import pytest
+
+from ..testing import (
+    object_diff,
+    object_eq,
+    object_neq,
+    text_diff,
+    text_eq,
+    text_neq,
+    value_diff,
+    value_eq,
+    value_neq,
+)
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.TESTING)
 
-
-
-
 def test_value_checks():
-    import numpy as np
-    from ..testing import value_diff,value_eq,value_neq
 
     assert(id(value_diff)==id(value_neq))
-
 
     shift = 1e-8
 
@@ -233,8 +241,6 @@ def test_value_checks():
 
 
 def test_object_checks():
-    from ..testing import object_diff,object_eq,object_neq
-
     assert(id(object_diff)==id(object_neq))
 
 
@@ -307,8 +313,6 @@ def test_object_checks():
 
 
 def test_text_checks():
-    from ..testing import text_diff,text_eq,text_neq,value_diff
-
     assert(id(text_diff)==id(text_neq))
 
     should_agree    = []

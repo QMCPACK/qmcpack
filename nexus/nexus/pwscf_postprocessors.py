@@ -105,10 +105,10 @@
 
 
 import os
-from .fileio import TextFile
-from .simulation import Simulation,SimulationInput,SimulationAnalyzer,NullSimulationAnalyzer
-from .developer import DevBase, obj, FileFormatError, NexusError
 
+from .developer import DevBase, FileFormatError, NexusError, obj
+from .fileio import TextFile
+from .simulation import NullSimulationAnalyzer, Simulation, SimulationAnalyzer, SimulationInput
 
 booldict = {'.true.':True,'.false.':False}
 def readval(val):

@@ -43,22 +43,24 @@
 #====================================================================#
 
 
+import importlib.machinery
+import importlib.util
 import os
+import platform
+import subprocess
+from copy import deepcopy
 from pathlib import Path
+from socket import gethostname
+from subprocess import CalledProcessError, Popen
 from types import MappingProxyType
 from typing import ClassVar
-from copy import deepcopy
-import platform
-from socket import gethostname
-import subprocess
-from subprocess import Popen, CalledProcessError
+
 import numpy as np
-from .developer import DevBase, obj, warn, NexusError
-from .nexus_base import NexusCore, nexus_config
+
+from .developer import DevBase, NexusError, obj, warn
 from .execute import execute
+from .nexus_base import NexusCore, nexus_config
 from .utilities import path_string
-import importlib.util
-import importlib.machinery
 
 
 def our_load_source(modname, filename):

@@ -15,8 +15,10 @@
 #====================================================================#
 
 
-from subprocess import Popen, PIPE
+from subprocess import PIPE, Popen
+
 from .utilities import to_str
+
 
 def execute(command,*,verbose=False,skip=False):
     out,err = '',''

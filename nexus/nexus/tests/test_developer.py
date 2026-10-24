@@ -1,13 +1,17 @@
-import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.DEVELOPER)
-
+from collections import UserDict
 from collections.abc import Mapping, MutableMapping
+from copy import deepcopy
+
+import pytest
+
+from ..developer_tools import DevBase, dotdict, obj
+from ..utilities import valid_variable_name
+from . import NexusTestOrder
+
+pytestmark = pytest.mark.order(NexusTestOrder.DEVELOPER)
 
 
 def test_valid_variable_name():
-    from ..utilities import valid_variable_name
-
     assert(valid_variable_name('valid_variable_name'))
     assert(valid_variable_name('_valid_variable_name'))
     assert(valid_variable_name('__valid_variable_name'))
@@ -19,7 +23,6 @@ def test_valid_variable_name():
     assert(not valid_variable_name('inv@lid_variable_name'))
     assert(not valid_variable_name('in>alid_variable_name'))
     assert(not valid_variable_name('invalid_variable_name '))
-
 #end def test_valid_variable_name
 
 
@@ -135,7 +138,6 @@ def check_dictlike(dict_type,*,check_repr_str=True,check_iter=True,check_copy=Tr
 
     # deepcopy must preserve the mapping type, recursively copy mutable values,
     # retain shared-reference relationships, and support recursive mappings.
-    from copy import deepcopy
     shared = [1, 2]
     original = dict_type({'first': shared, 'second': shared})
     original['self'] = original
@@ -266,8 +268,6 @@ def check_dictlike_pair(dict_type1,dict_type2):
 
 
 def test_dictlike_individual():
-    from collections import UserDict
-    from ..developer_tools import dotdict,obj
     check_dictlike(dict)
     check_dictlike(UserDict)
     check_dictlike(dotdict)
@@ -280,8 +280,6 @@ def test_dictlike_individual():
 
 
 def test_dictlike_pairs():
-    from collections import UserDict
-    from ..developer_tools import dotdict,obj
     dictlike = [dict,UserDict,dotdict,obj]
     for n,dict_type1 in enumerate(dictlike):
         for dict_type2 in dictlike[n:]:
@@ -292,7 +290,6 @@ def test_dictlike_pairs():
 
 def test_dotdict_unique():
     """Check dotdict behavior beyond the ordinary dictionary interface."""
-    from ..developer_tools import dotdict
     def check(condition, operation):
         if not condition:
             raise AssertionError(
@@ -357,7 +354,6 @@ def test_dotdict_unique():
 
     # dotdict supplies its own memo-aware deepcopy implementation.  Verify
     # recursive structure and shared-reference preservation.
-    from copy import deepcopy
     shared = []
     recursive = dotdict(first=shared, second=shared)
     recursive.self = recursive
@@ -373,7 +369,6 @@ def test_dotdict_unique():
 
 def test_obj_unique():
     """Check obj behavior beyond the ordinary dictionary interface."""
-    from ..developer_tools import obj
     def check(condition, operation):
         if not condition:
             raise AssertionError(
@@ -453,9 +448,6 @@ def test_obj_unique():
 
 def test_obj_legacy():
     """Test legacy obj behavior that remains part of the new obj interface."""
-    from copy import deepcopy
-    from ..developer_tools import obj
-
     # construction from mappings, iterables, and keyword arguments
     assert(len(obj())==0)
     assert(obj({'a':1,'b':2})=={'a':1,'b':2})
@@ -536,10 +528,6 @@ def test_obj_legacy():
 
 def test_developer_tools_devbase(tmp_path):
     """Exercise the standalone DevBase implementation in developer_tools."""
-    from copy import deepcopy
-
-    from ..developer_tools import DevBase
-
     class DerivedDevBase(DevBase):
         def __init__(self,*args,**kwargs):
             self.update(dict(*args,**kwargs))
@@ -625,8 +613,6 @@ def test_developer_tools_devbase(tmp_path):
 
 
 def test_obj_virtual_subclass():
-    from ..developer_tools import obj
-
     assert(issubclass(obj, MutableMapping))
     assert(issubclass(obj, Mapping))
     assert(isinstance(obj(), MutableMapping))

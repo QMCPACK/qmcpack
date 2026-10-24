@@ -19,18 +19,13 @@
 #====================================================================#
 
 
+import traceback
 from typing import NoReturn
 
-from .developer_tools import save,load,_pp_repr,_pp_str,dotdict,obj,DevBase  # noqa: F401
-from .developer_tools import sorted_py2 as sorted_generic  # noqa: F401
 from .debug import ci, interact  # noqa: F401
-
-
-from .generic import NexusError, FileFormatError, NotAnElementError  # noqa: F401
-from .generic import error, nxs_print, warn, message  # noqa: F401
-
-
-import traceback
+from .developer_tools import DevBase, _pp_repr, _pp_str, dotdict, load, obj, save  # noqa: F401
+from .developer_tools import sorted_py2 as sorted_generic  # noqa: F401
+from .generic import FileFormatError, NexusError, NotAnElementError, error, message, nxs_print, warn  # noqa: F401  # noqa: F401
 
 
 def deprecation_error():

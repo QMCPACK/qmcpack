@@ -3,8 +3,8 @@
 # Python standard library imports
 import os
 import sys
-from pathlib import Path
 from optparse import OptionParser
+from pathlib import Path
 
 if sys.version_info[0:3] < (3, 12, 0):
     v = sys.version_info[0:3]
@@ -67,10 +67,9 @@ def find_nexus_modules():
 
 # Load Nexus modules
 find_nexus_modules()
-from nexus.nexus_version import nexus_version
-from nexus.developer import obj,nxs_print,warn
+from nexus.developer import nxs_print, obj, warn
 from nexus.hdfreader import read_hdf
-
+from nexus.nexus_version import nexus_version
 
 try:
     import h5py
@@ -106,9 +105,9 @@ def get_path(o,path,value=None):
 
 
 def read_eshdf_nofk_data(filename,Ef,ncore=0,nval=-1):
-    from numpy import array,pi,dot,sqrt,zeros
-    from numpy.linalg import inv
     from nexus.unit_converter import convert
+    from numpy import array, dot, pi, sqrt, zeros
+    from numpy.linalg import inv
 
     def h5int(i):
         return array(i,dtype=int)[0]

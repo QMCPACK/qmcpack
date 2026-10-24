@@ -56,10 +56,10 @@ from numpy import pi
 from numpy.linalg import inv
 
 from . import numpy_extensions as npe
-from .developer import DevBase, nxs_print, obj, warn, NexusError, FileFormatError
+from .developer import DevBase, FileFormatError, NexusError, nxs_print, obj, warn
 from .periodic_table import Elements
 from .physical_system import PhysicalSystem
-from .pseudoset import pp_elem_label, PseudoSet
+from .pseudoset import PseudoSet, pp_elem_label
 from .pwscf_input_defs import (
     CellDefinitions,
     ControlDefinitions,

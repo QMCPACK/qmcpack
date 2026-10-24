@@ -1,13 +1,11 @@
 import pytest
+
+from ..execute import execute
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.EXECUTE)
 
-
-
-
 def test_execute():
-    from ..execute import execute
-
     command = 'echo test'
 
     out,err,rc = execute(command,skip=True)

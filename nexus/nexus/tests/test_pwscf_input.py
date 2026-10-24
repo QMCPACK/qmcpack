@@ -1,13 +1,16 @@
-import pytest
 from copy import deepcopy
-from . import NexusTestOrder
+
+import numpy as np
+import pytest
+
+from ..developer import obj
+from ..physical_system import generate_physical_system
+from ..pwscf_input import PwscfInput, check_section_classes, generate_pwscf_input
+from ..structure import read_structure
+from ..testing import failed, object_diff, object_eq
+from . import TEST_DIR, NexusTestOrder, isolate_nexus_core, register_pseudo_files
+
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_INPUT)
-
-
-from . import isolate_nexus_core, register_pseudo_files, TEST_DIR
-from ..testing import failed
-from ..testing import object_eq,object_diff
-
 
 TEST_FILES = {
     "Cr_noncolin.in":         TEST_DIR / "test_pwscf_input_files/Cr_noncolin.in",
@@ -57,14 +60,6 @@ def test_input(tmp_path):
     register_pseudo_files([
         'V.opt.upf','O.opt.upf','Fe.pbe-nd-rrkjus.UPF'
         ])
-    # imports
-    import numpy as np
-    from ..developer import obj
-    from ..structure import read_structure
-    from ..physical_system import generate_physical_system
-    from ..pwscf_input import check_section_classes
-    from ..pwscf_input import PwscfInput,generate_pwscf_input
-
     # definitions
     def check_pw_same(pw1_,pw2_,l1='pw1',l2='pw2'):
         pw_same = object_eq(pw1_, pw2_, int_as_float=True, atol=5e-4)
@@ -710,10 +705,6 @@ def test_input(tmp_path):
 @isolate_nexus_core
 def test_supplemental_input_generation(tmp_path):
     """Generate representative inputs for supplemental analyzer run styles."""
-    import numpy as np
-    from ..developer import obj
-    from ..pwscf_input import PwscfInput, generate_pwscf_input
-
     def check_round_trip(name,pw):
         write_path = tmp_path / f'{name}.in'
         pw.write(write_path)

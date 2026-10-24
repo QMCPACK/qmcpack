@@ -16,11 +16,13 @@
 
 
 import os
+
 import numpy as np
-from .developer import obj, NexusError, FileFormatError
+
+from .developer import FileFormatError, NexusError, obj
 from .fileio import TextFile
-from .simulation import SimulationAnalyzer,Simulation
 from .gamess_input import GamessInput
+from .simulation import Simulation, SimulationAnalyzer
 from .utilities import path_string
 
 

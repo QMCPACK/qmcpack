@@ -1,9 +1,9 @@
 import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.PERIODIC_TABLE)
 
 from ..periodic_table import Elements
+from . import NexusTestOrder
 
+pytestmark = pytest.mark.order(NexusTestOrder.PERIODIC_TABLE)
 
 def test_periodic_table():
     ref_element_symbols = (

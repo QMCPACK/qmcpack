@@ -6,11 +6,12 @@
 #python standard library imports
 import os
 from numbers import Integral
+
 import numpy as np
 
 #custom library imports
-from .developer import DevBase,obj
-from .qmcpack_input import QIxml,QmcpackInput,collection,loop,project,simulation
+from .developer import DevBase, obj
+from .qmcpack_input import QIxml, QmcpackInput, collection, loop, project, simulation
 
 
 class QmcpackScalarInfo(DevBase):

@@ -4,23 +4,24 @@
 
 """Classes for reading pseudopotential data and converting pseudopotentials between file formats."""
 from __future__ import annotations
-from copy import deepcopy
+
 import os
-from types import MappingProxyType
 import re
+from copy import deepcopy
+from types import MappingProxyType
 
 import numpy as np
 
+from .basisset import GaussianBasisSet, process_gaussian_text
+from .developer import DevBase, FileFormatError, NotAnElementError, obj
 from .execute import execute
 from .fileio import TextFile
-from .xmlreader import readxml
 from .periodic_table import Elements
-from .unit_converter import convert
-from .developer import DevBase, obj, FileFormatError, NotAnElementError
-from .basisset import process_gaussian_text, GaussianBasisSet
-from .testing import object_eq
 from .pseudoset import pp_elem_label
+from .testing import object_eq
+from .unit_converter import convert
 from .utilities import path_string
+from .xmlreader import readxml
 
 
 class Pseudopotential(DevBase):

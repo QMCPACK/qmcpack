@@ -1,10 +1,10 @@
 #! /usr/bin/env python3
 
 import os
-from copy import deepcopy
-from pathlib import Path
 import sys
+from copy import deepcopy
 from optparse import OptionParser
+from pathlib import Path
 
 if sys.version_info[0:3] < (3, 12, 0):
     v = sys.version_info[0:3]
@@ -64,14 +64,12 @@ def find_nexus_modules():
 
 # Load Nexus modules
 find_nexus_modules()
-from nexus.nexus_version import nexus_version
-from nexus.developer import DevBase,obj
-from nexus.unit_converter import convert
-from nexus.numerics import simstats,simplestats,equilibration_length
 import nexus.numpy_extensions as npe
-
 import numpy as np
-
+from nexus.developer import DevBase, obj
+from nexus.nexus_version import nexus_version
+from nexus.numerics import equilibration_length, simplestats, simstats
+from nexus.unit_converter import convert
 
 # matplotlib imports
 matplotlib_import_success = False
