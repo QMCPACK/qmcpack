@@ -30,7 +30,7 @@ namespace qmcplusplus
 {
 TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   using namespace testing;
@@ -56,7 +56,7 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
 
 TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[estimators]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   using namespace testing;
