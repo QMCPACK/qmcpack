@@ -243,7 +243,7 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   auto lattice     = testing::makeTestLattice();
   auto species_set = testing::makeSpeciesSet(SpeciesCases::GOOD);
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
@@ -271,7 +271,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
@@ -308,7 +308,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamplesForSpinor", "[estimators]")
   using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_O2_spinor(comm);
@@ -344,7 +344,7 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
   using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
@@ -372,7 +372,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   Libxml2Document doc;
@@ -460,7 +460,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
   using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   for (auto valid_integrator :
@@ -513,7 +513,7 @@ TEST_CASE("OneBodyDensityMatrices::registerAndWrite", "[estimators]")
   using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   Libxml2Document doc;

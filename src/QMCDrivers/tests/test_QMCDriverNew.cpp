@@ -29,7 +29,7 @@ namespace qmcplusplus
 TEST_CASE("QMCDriverNew tiny case", "[drivers]")
 {
   using namespace testing;
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
   outputManager.pause();
 
@@ -77,7 +77,7 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
 TEST_CASE("QMCDriverNew walker counts", "[drivers]")
 {
   using namespace testing;
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
   outputManager.pause();
 
@@ -108,7 +108,7 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
 TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
 {
   using namespace testing;
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
   outputManager.pause();
 
