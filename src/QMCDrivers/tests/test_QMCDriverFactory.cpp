@@ -70,7 +70,7 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   Communicate& comm(*OHMMS::Controller);
 
   using DV = ProjectData::DriverVersion;
-  ProjectData test_project("testing", DV::LEGACY);
+  ProjectData test_project(DV::LEGACY);
   QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
@@ -94,7 +94,7 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
 
   SECTION("driver version behavior")
   {
-    ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+    ProjectData test_project;
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;
@@ -136,7 +136,7 @@ TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
   Communicate& comm(*OHMMS::Controller);
 
   using DV = ProjectData::DriverVersion;
-  ProjectData test_project("testing", DV::LEGACY);
+  ProjectData test_project(DV::LEGACY);
   QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
@@ -160,7 +160,7 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
 
   SECTION("driver version behavior")
   {
-    ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+    ProjectData test_project;
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;

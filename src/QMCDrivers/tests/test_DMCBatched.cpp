@@ -56,7 +56,7 @@ TEST_CASE("QMCDriverFactory rejects invalid L2 diffusion configurations for DMCB
 {
   using namespace testing;
   RandomNumberGeneratorPool rng_pool(1);
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   Libxml2Document doc;

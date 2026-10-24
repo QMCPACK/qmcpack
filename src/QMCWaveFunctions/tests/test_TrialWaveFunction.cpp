@@ -386,7 +386,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   */
 TEST_CASE("TrialWaveFunction::mw_evalGrad for spinors", "[wavefunction]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_O2_spinor(comm);

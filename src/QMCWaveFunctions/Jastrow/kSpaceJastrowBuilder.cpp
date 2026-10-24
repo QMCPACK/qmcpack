@@ -140,14 +140,10 @@ std::unique_ptr<WaveFunctionComponent> kSpaceJastrowBuilder::buildComponent(xmlN
 void kSpaceJastrowBuilder::outputJastrow(kSpaceJastrow* jastrow)
 {
   std::array<char, 32> fname;
-  int fname_len{0};
-  int taskid = is_manager() ? getGroupID() : -1;
 
   // output one-body jastrow
-  if (qmc_common.mpi_groups > 1)
-    fname_len = std::snprintf(fname.data(), fname.size(), "Jk1.g%03d.dat", taskid);
-  else
-    fname_len = std::snprintf(fname.data(), fname.size(), "Jk1.dat");
+  int fname_len = std::snprintf(fname.data(), fname.size(), "Jk1%s.dat",
+                                qmc_common.get_filename_infix_for_ensemble_jobs().c_str());
   if (fname_len < 0)
     throw std::runtime_error("Error generating filename");
 
@@ -157,10 +153,8 @@ void kSpaceJastrowBuilder::outputJastrow(kSpaceJastrow* jastrow)
   fout.close();
 
   // output two-body jastrow
-  if (qmc_common.mpi_groups > 1)
-    fname_len = std::snprintf(fname.data(), fname.size(), "Jk2.g%03d.dat", taskid);
-  else
-    fname_len = std::snprintf(fname.data(), fname.size(), "Jk2.dat");
+  fname_len = std::snprintf(fname.data(), fname.size(), "Jk2%s.dat",
+                            qmc_common.get_filename_infix_for_ensemble_jobs().c_str());
   if (fname_len < 0)
     throw std::runtime_error("Error generating filename");
   fout.open(std::string(fname.data(), fname_len));
