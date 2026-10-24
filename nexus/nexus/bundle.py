@@ -26,8 +26,9 @@
 #====================================================================#
 
 
-from .machines import Workstation,Job
-from .simulation import Simulation,NullSimulationInput,NullSimulationAnalyzer
+from .machines import Job, Workstation
+from .simulation import NullSimulationAnalyzer, NullSimulationInput, Simulation
+
 
 class SimulationBundleInput(NullSimulationInput):
     pass

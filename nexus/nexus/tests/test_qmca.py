@@ -1,14 +1,13 @@
-import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.QMCA)
-
-
-import sys
 import os
+import sys
 from pathlib import Path
-from . import TEST_DIR
-from ..testing import execute,text_eq
 
+import pytest
+
+from ..testing import execute, text_eq
+from . import TEST_DIR, NexusTestOrder
+
+pytestmark = pytest.mark.order(NexusTestOrder.QMCA)
 
 QMCA_EXE = TEST_DIR.parent / "bin/qmca"
 

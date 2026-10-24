@@ -1,14 +1,18 @@
-import pytest
-from copy import deepcopy
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_INPUT)
-
-
 import shutil
-from . import isolate_nexus_core, TEST_DIR
-from nexus.nexus_base import nexus_config
-from ..testing import object_eq,dict_serialize
+from copy import deepcopy
 
+import pytest
+
+from nexus.nexus_base import nexus_config
+
+from ..developer import obj
+from ..gamess_input import GamessInput, check_keyspec_groups, generate_gamess_input
+from ..physical_system import generate_physical_system
+from ..pseudoset import PseudoSet, ppset
+from ..testing import dict_serialize, object_eq
+from . import TEST_DIR, NexusTestOrder, isolate_nexus_core
+
+pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_INPUT)
 
 TEST_FILES = {
     "rhf.inp":           TEST_DIR / "test_gamess_input_files/rhf.inp",
@@ -165,7 +169,6 @@ H-QMC
 
 
 def generate_serial_references():
-
     basis_text = h2o_basis_text
     ecp_text   = h2o_ecp_text
 
@@ -255,7 +258,6 @@ def get_serial_references():
 
 
 def check_vs_serial_reference(gi,name):
-    from ..developer import obj
     sr = obj(get_serial_references()[name])
     sg = dict_serialize(gi,dict_type=obj)
     assert(object_eq(sg,sr))
@@ -263,16 +265,12 @@ def check_vs_serial_reference(gi,name):
 
 @isolate_nexus_core
 def test_keyspec_groups():
-    from ..gamess_input import check_keyspec_groups
-
     check_keyspec_groups()
 #end def test_keyspec_groups
 
 
 
 def test_empty_init():
-    from ..gamess_input import GamessInput,generate_gamess_input
-
     gi = GamessInput()
     assert(len(gi)==0)
 
@@ -284,8 +282,6 @@ def test_empty_init():
 
 
 def test_read():
-    from ..gamess_input import GamessInput
-
     input_files = ['rhf.inp','cisd.inp','cas.inp']
 
     for infile in input_files:
@@ -297,8 +293,6 @@ def test_read():
 
 
 def test_write(tmp_path):
-    from ..gamess_input import GamessInput
-
     input_files = ['rhf.inp','cisd.inp','cas.inp']
 
     for infile in input_files:
@@ -317,11 +311,6 @@ def test_write(tmp_path):
 
 @isolate_nexus_core
 def test_generate(tmp_path):
-    from ..developer import obj
-    from ..pseudoset import PseudoSet, ppset
-    from ..physical_system import generate_physical_system
-    from ..gamess_input import generate_gamess_input
-
     ppfiles = ["H.BFD_V5Z_ANO.gms","O.BFD_V5Z.gms"]
     pp_dir = tmp_path / "pseudopotentials"
     pp_dir.mkdir()

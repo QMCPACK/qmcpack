@@ -1,16 +1,13 @@
 import pytest
+
+from ..machines import job
+from ..rmg import Rmg, generate_rmg
+from ..testing import clear_all_sims
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.RMG_SIMULATION)
 
-
-from ..testing import clear_all_sims
-
-
-
 def test_minimal_init():
-    from ..machines import job
-    from ..rmg import Rmg,generate_rmg
-
     sim = generate_rmg(
         job    = job(machine='ws1',cores=1),
         )

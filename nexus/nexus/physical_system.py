@@ -18,10 +18,12 @@
 #====================================================================#
 
 import os
-from pathlib import Path
 from copy import deepcopy
+from pathlib import Path
+
 import numpy as np
-from .developer import DevBase, obj, warn, NexusError
+
+from .developer import DevBase, NexusError, obj, warn
 from .periodic_table import Elements
 from .structure import Structure, generate_structure, read_structure
 

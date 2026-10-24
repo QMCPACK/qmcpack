@@ -1,20 +1,28 @@
-import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.STRUCTURE)
-
-
 from copy import deepcopy
-import numpy as np
-from . import TEST_DIR
-from .. import testing
-from ..testing import value_eq as value_eq_orig
-from ..testing import object_eq as object_eq_orig
-from ..testing import object_diff as object_diff_orig
-from ..structure import Structure, Crystal
-from ..testing import text_eq
-from .. import numpy_extensions as npe
-from ..structure import generate_atom_structure, generate_dimer_structure, generate_trimer_structure
 
+import numpy as np
+import pytest
+from numpy import array
+
+from .. import numpy_extensions as npe
+from .. import testing
+from ..developer import obj
+from ..structure import (
+    Crystal,
+    Structure,
+    generate_atom_structure,
+    generate_dimer_structure,
+    generate_structure,
+    generate_trimer_structure,
+    read_structure,
+)
+from ..testing import object_diff as object_diff_orig
+from ..testing import object_eq as object_eq_orig
+from ..testing import text_eq
+from ..testing import value_eq as value_eq_orig
+from . import TEST_DIR, NexusTestOrder
+
+pytestmark = pytest.mark.order(NexusTestOrder.STRUCTURE)
 
 struct_atol = 1e-10
 
@@ -54,7 +62,6 @@ generated_structures = dict()
 crystal_structures   = dict()
 
 def sub_obj(s,keys):
-    from ..developer import obj
     return obj({k:s[k] for k in keys})
 
 def structure_diff(s1,s2):
@@ -66,7 +73,6 @@ def structure_diff(s1,s2):
 
 
 def structure_same(s1,s2):
-    import numpy as np
     keys = ('units','elem','axes','kpoints','kweights','kaxes','frozen','mag')
     o1 = sub_obj(s1,keys)
     o2 = sub_obj(s2,keys)
@@ -98,7 +104,6 @@ def structure_same(s1,s2):
 
 
 def get_reference_inputs():
-    from ..developer import obj
     if len(reference_inputs)==0:
         ref_in = obj()
         ref_in.diamond_prim = obj(
@@ -208,8 +213,6 @@ def get_reference_inputs():
 
 
 def get_reference_structures():
-    from ..developer import obj
-    from ..structure import Structure
     if len(reference_structures)==0:
         ref_in = get_reference_inputs()
         ref = reference_structures
@@ -224,8 +227,6 @@ def get_reference_structures():
 
 
 def get_generated_structures():
-    from ..developer import obj
-    from ..structure import generate_structure
     if len(generated_structures)==0:
         ref_in = get_reference_inputs()
         gen = generated_structures
@@ -238,8 +239,6 @@ def get_generated_structures():
 
 
 def get_crystal_structures():
-    from ..developer import obj
-    from ..structure import Crystal,generate_structure
     if len(crystal_structures)==0:
         crys = crystal_structures
         for (latt,cell) in Crystal.known_crystals.keys():
@@ -253,7 +252,6 @@ def get_crystal_structures():
 
 def example_structure_h4():
     # hydrogen at rs=1.31
-    from ..structure import Structure
     natom = 4
     alat = 3.3521298178767225
     axes = alat*np.eye(3)
@@ -267,8 +265,6 @@ def example_structure_h4():
 
 
 def test_empty_init():
-    from ..structure import Structure
-    from ..structure import generate_structure
     s1 = Structure()
     s2 = generate_structure('empty')
     assert(object_eq(s1,s2))
@@ -315,7 +311,6 @@ def test_crystal_init():
 
 
 def test_change_units():
-    import numpy as np
     ref = get_reference_structures()
     s = deepcopy(ref.diamond_conv)
     assert(value_eq(s.pos[-1],np.array([2.6775,2.6775,0.8925])))
@@ -326,7 +321,6 @@ def test_change_units():
 
 
 def test_rotate():
-    import numpy as np
     ref = get_reference_structures()
     s0 = deepcopy(ref.CuO_prim)
     s1 = deepcopy(ref.CuO_prim)
@@ -503,8 +497,6 @@ def test_gen_molecule():
     """
     Create an H2O molecule.
     """
-    from ..structure import generate_structure
-
     h2o = generate_structure(
         elem  = ['O','H','H'],
         pos   = [[0.000000, 0.000000, 0.000000],
@@ -525,9 +517,6 @@ def test_gen_diamond_direct():
     """
     Create a conventional cell of diamond directly.
     """
-    import numpy as np
-    from ..structure import generate_structure
-
     diamond = generate_structure(
         units = 'A',
         axes  = [[3.57, 0.00, 0.00],
@@ -563,8 +552,6 @@ def test_gen_diamond_lattice():
     """
     Create a conventional cell of diamond from lattice information.
     """
-    from ..structure import generate_structure
-
     diamond = generate_structure(
         lattice   = 'cubic',        # cubic tetragonal orthorhombic rhombohedral
                                     # hexagonal triclinic monoclinic
@@ -603,8 +590,6 @@ def test_gen_graphene():
     """
     Create a graphene cell using stored information.
     """
-    from ..structure import generate_structure
-
     graphene = generate_structure(
         structure = 'graphene',
         cell      = 'prim',
@@ -801,8 +786,6 @@ def test_read_write(tmp_path):
     """
     Write/read conventional diamond cell to/from XYZ, XSF, and POSCAR formats.
     """
-    from ..structure import generate_structure, read_structure
-
     d8 = generate_structure(
         structure = 'diamond',
         cell      = 'conv',
@@ -843,8 +826,6 @@ def test_read_cif():
     """
     _ = pytest.importorskip("cif2cell")
     _ = pytest.importorskip("CifFile")
-    from ..structure import read_structure,generate_structure
-
     # Read from CIF file
     s = read_structure(str(TEST_FILES['La2CuO4_ICSD69312.cif']))
 
@@ -877,9 +858,6 @@ def test_read_cif():
 
 
 def test_bounding_box():
-    import numpy as np
-    from ..structure import generate_structure,read_structure
-
     h2o = generate_structure(
         elem  = ['O','H','H'],
         pos   = [[0.000000, 0.000000, 0.000000],
@@ -919,9 +897,6 @@ def test_bounding_box():
 
 
 def test_opt_tiling():
-    import numpy as np
-    from ..structure import generate_structure
-
     dprim = generate_structure(
         structure = 'diamond',
         cell      = 'prim',
@@ -945,7 +920,6 @@ def test_primitive_search():
     """
     _ = pytest.importorskip("spglib")
     _ = pytest.importorskip("seekpath")
-    from ..structure import generate_structure
 
     d2 = generate_structure(
         structure = 'diamond',
@@ -985,9 +959,6 @@ def test_unit_coords():
     """
     Get atomic positions in unit coordinates.
     """
-    import numpy as np
-    from ..structure import generate_structure
-
     s = generate_structure(
         structure = 'diamond',
         cell      = 'prim',
@@ -1026,10 +997,6 @@ def test_monkhorst_pack_kpoints():
     """
     Add k-points according to Monkhorst-Pack grid.
     """
-    import numpy as np
-    from ..developer import obj
-    from ..structure import generate_structure
-
     g11 = generate_structure(
         structure = 'graphene',
         cell      = 'prim',
@@ -1242,7 +1209,6 @@ def test_symm_kpoints():
     Add symmetrized Monkhorst-Pack kpoints.
     """
     _ = pytest.importorskip("spglib")
-    from ..structure import generate_structure
 
     # Note: this demo requires spglib
 
@@ -1349,7 +1315,6 @@ def test_count_kshells():
 
 
 def test_rinscribe():
-    from ..structure import generate_structure
     s = generate_structure(
         structure = 'graphene',
         cell      = 'prim',
@@ -1362,7 +1327,6 @@ def test_rinscribe():
 
 
 def test_rwigner():
-    from ..structure import generate_structure
     s = generate_structure(
         structure = 'graphene',
         cell      = 'prim',
@@ -1405,10 +1369,6 @@ def test_min_image_distances():
     """
     Compute minimum image distances between nearest neighbors.
     """
-    import numpy as np
-    from ..structure import generate_structure
-    from .. import numpy_extensions as npe
-
     g = generate_structure(
         structure = 'graphene',
         cell      = 'prim',
@@ -1482,8 +1442,6 @@ def test_freeze():
     """
     Freeze sets of atoms to prevent relaxation.
     """
-    from ..structure import generate_structure
-
     g = generate_structure(
         structure = 'graphene',
         cell      = 'prim',
@@ -1511,9 +1469,6 @@ def test_embed():
     Embed a "relaxed" structure in a larger pristine cell.
     """
     _ = pytest.importorskip("scipy")
-    import numpy as np
-    from ..structure import generate_structure
-    from .. import numpy_extensions as npe
 
     center = (0,0,0)
 
@@ -1571,9 +1526,6 @@ def test_interpolate():
     """
     Interpolate between two "relaxed" structures for NEB initialization.
     """
-    import numpy as np
-    from ..structure import generate_structure
-
     g = generate_structure(
         structure = 'graphene',
         cell      = 'prim',
@@ -1671,10 +1623,6 @@ def test_interpolate():
 def test_rmg_transform():
     _ = pytest.importorskip("spglib")
     _ = pytest.importorskip("seekpath")
-    from numpy import array
-    from ..developer import obj
-    from ..structure import generate_structure
-
     ref = obj({
         ('Ca2CuO3', 'conv') : obj(
             R          = array([[ 8.62068966e-01,  0.00000000e+00,  0.00000000e+00],
@@ -1811,8 +1759,6 @@ def test_rmg_transform():
 
 
 def test_group_atoms():
-    from nexus.structure import Structure
-
     unordered_elem = ["H", "N", "C", "H", "C", "O", "H", "H", "O", "H"]
     ordered_elem = ["C", "C", "H", "H", "H", "H", "H", "N", "O", "O"]
 
@@ -1845,8 +1791,6 @@ def test_group_atoms():
 
 
 def test_rename():
-    from nexus.structure import Structure
-
     original_elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"]
 
     structure = Structure(
@@ -1886,8 +1830,6 @@ def test_rename():
 
 
 def test_reset_axes():
-    from nexus.structure import Structure
-
     original_axes = np.array([
         [6.00000, 0.00000, 0.00000],
         [0.00000, 6.00000, 0.00000],
@@ -1946,8 +1888,6 @@ def test_reset_axes():
 
 
 def test_reset_axes_none():
-    from nexus.structure import Structure
-
     original_axes = np.array([
         [6.00000, 0.00000, 0.00000],
         [0.00000, 6.00000, 0.00000],
@@ -2002,8 +1942,6 @@ def test_reset_axes_none():
     np.testing.assert_allclose(structure.center, ref_center)
 
 def test_write_axes():
-    from nexus.structure import Structure
-
     structure = Structure(
         axes = np.array([
             [6.00000,  0.00000,   0.00000],
@@ -2036,8 +1974,6 @@ def test_write_axes():
 
 
 def test_corners():
-    from nexus.structure import Structure
-
     structure = Structure(
         axes = np.array([
             [7.00000,  0.00000,  0.00000],

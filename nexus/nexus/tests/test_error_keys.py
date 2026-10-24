@@ -1,14 +1,14 @@
-from io import BytesIO, StringIO
 import re
+from io import BytesIO, StringIO
 
 import pytest
 
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.ERROR_KEYS)
-
-
 from .. import error_keys
 from ..error_keys import find_error_keys
+from . import NexusTestOrder
+
+pytestmark = pytest.mark.order(NexusTestOrder.ERROR_KEYS)
+
 
 
 _DIRECT_ERROR_LISTS = (

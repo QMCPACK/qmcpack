@@ -30,10 +30,12 @@
 
 
 import os
+
 import numpy as np
+
 from . import numpy_extensions as npe
-from .developer import DevBase, obj, FileFormatError, sorted_generic
-from .simulation import Simulation,SimulationAnalyzer
+from .developer import DevBase, FileFormatError, obj, sorted_generic
+from .simulation import Simulation, SimulationAnalyzer
 from .vasp_input import Incar
 
 # vasp xml reader classes/functions

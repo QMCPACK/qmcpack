@@ -1,10 +1,12 @@
 import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_ANALYZER)
+from numpy import array
 
-
-from . import TEST_DIR
+from ..developer import obj, to_obj
+from ..gamess_analyzer import GamessAnalyzer
 from ..testing import object_eq
+from . import TEST_DIR, NexusTestOrder
+
+pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_ANALYZER)
 
 TEST_FILES = {
     "gms.inp": TEST_DIR / "test_gamess_analyzer_files/gms.inp",
@@ -16,18 +18,12 @@ for file in TEST_FILES.values():
 
 
 def test_empty_init():
-    from ..gamess_analyzer import GamessAnalyzer
-
     GamessAnalyzer()
 #end def test_empty_init
 
 
 
 def test_analyze():
-    from numpy import array
-    from ..developer import obj, to_obj
-    from ..gamess_analyzer import GamessAnalyzer
-
     # no analysis
     ga = GamessAnalyzer(TEST_FILES["gms.inp"])
 
@@ -246,5 +242,4 @@ def test_analyze():
         )
 
     assert(object_eq(to_obj(ga),ga_ref))
-
 #end def test_analyze

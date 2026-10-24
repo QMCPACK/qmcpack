@@ -1,12 +1,11 @@
 import pytest
+
+from ..memory import memory, resident, stacksize
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.MEMORY)
 
-
-
 def test_memory():
-    from ..memory import memory
-
     mem = memory()
     assert(isinstance(mem,float))
     assert(mem>-1e-6)
@@ -19,8 +18,6 @@ def test_memory():
 
 
 def test_resident():
-    from ..memory import resident
-
     mem = resident()
     assert(isinstance(mem,float))
     assert(mem>-1e-6)
@@ -33,8 +30,6 @@ def test_resident():
 
 
 def test_stacksize():
-    from ..memory import stacksize
-
     mem = stacksize()
     assert(isinstance(mem,float))
     assert(mem>-1e-6)

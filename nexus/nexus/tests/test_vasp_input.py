@@ -1,16 +1,43 @@
+from types import MappingProxyType
+
+import numpy as np
 import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
 
-
-from ..generic import NexusError
-from ..pseudoset import PseudoSet
-
-from nexus.nexus_base import nexus_config
-from . import isolate_nexus_core, TEST_DIR
 from .. import testing
-from ..testing import object_eq,dict_serialize
+from ..developer import obj
+from ..generic import NexusError
+from ..nexus_base import nexus_config
+from ..physical_system import PhysicalSystem, generate_physical_system
+from ..pseudoset import PseudoSet
+from ..structure import Structure
+from ..testing import dict_serialize, object_eq
+from ..vasp_input import (
+    Iconst,
+    Incar,
+    Ircar,
+    Irccar,
+    Kpoints,
+    KpointsElph,
+    KpointsOpt,
+    KpointsWan,
+    NebPoscars,
+    Penaltypot,
+    Poscar,
+    Potcar,
+    Qpoints,
+    Stopcar,
+    VaspInput,
+    VKeywordFile,
+    VRawFile,
+    assign_int_array,
+    assign_mixed,
+    generate_poscar,
+    generate_vasp_input,
+    mixed_type_matches,
+)
+from . import TEST_DIR, NexusTestOrder, isolate_nexus_core
 
+pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
 
 serial_references = dict()
 
@@ -21,8 +48,6 @@ End of Dataset
 '''
 
 def generate_serial_references():
-    import numpy as np
-    from ..developer import obj
 
     ref = {
         'incar/encut' : 450.0,
@@ -100,7 +125,6 @@ def get_serial_references():
 
 
 def check_vs_serial_reference(gi,name):
-    from ..developer import obj
     sr = obj(get_serial_references()[name])
     sg = dict_serialize(gi,dict_type=obj)
     same = object_eq(sg,sr)
@@ -125,8 +149,6 @@ for file in TEST_FILES.values():
 
 
 def test_keyword_consistency():
-    from ..vasp_input import Incar,Stopcar,VKeywordFile
-
     for cls in Incar,Stopcar:
         assert(isinstance(cls.scalar_keywords,frozenset))
         assert(isinstance(cls.array_keywords,frozenset))
@@ -164,8 +186,6 @@ def test_keyword_consistency():
 
 
 def test_current_keyword_types():
-    from ..vasp_input import Incar
-
     expected = {
         'ints': {
             'efermi_nedos', 'elph_nbands', 'iopt', 'libmbd_n_omega_grid',
@@ -212,9 +232,6 @@ def test_current_keyword_types():
 
 
 def test_current_keywords_roundtrip():
-    import numpy as np
-    from ..vasp_input import Incar
-
     incar = Incar()
     incar.assign(
         elph_driver       = 'el',
@@ -244,11 +261,6 @@ def test_current_keywords_roundtrip():
 
 
 def test_mixed_keyword_types():
-    import numpy as np
-    from ..vasp_input import (
-        Incar,assign_mixed,generate_vasp_input,mixed_type_matches,
-        )
-
     generated = generate_vasp_input(
         bext   = 0.02,
         efermi = 5.4,
@@ -315,10 +327,6 @@ def test_mixed_keyword_types():
 
 
 def test_block_constructs():
-    from types import MappingProxyType
-    from ..developer import obj
-    from ..vasp_input import Incar,generate_vasp_input
-
     assert(isinstance(Incar.block_constructs,MappingProxyType))
     assert(isinstance(
         Incar.block_constructs['kernel_truncation'],MappingProxyType
@@ -381,10 +389,6 @@ def test_block_constructs():
 
 
 def test_block_construct_parsing():
-    import numpy as np
-    from ..developer import obj
-    from ..vasp_input import Incar
-
     text = (
         'ENCUT = 400\n'
         'KERNEL_TRUNCATION {\n'
@@ -444,9 +448,6 @@ def test_block_construct_parsing():
 
 
 def test_integer_assignment_validation():
-    import numpy as np
-    from ..vasp_input import Incar,assign_int_array,generate_vasp_input
-
     incar = Incar()
     incar.assign(
         ibrion      = np.int64(2),
@@ -504,9 +505,6 @@ def test_integer_assignment_validation():
 
 
 def test_keyword_syntax_parsing():
-    import numpy as np
-    from ..vasp_input import Incar
-
     text = (
         'ENCUT = 4D2; ISMEAR = -1 ! trailing comment\n'
         'MAGMOM = 2*1.5 \\\n'
@@ -526,8 +524,6 @@ def test_keyword_syntax_parsing():
 
 
 def test_quoted_string_preservation():
-    from ..vasp_input import Incar
-
     text = (
         'SYSTEM = "a; b # c ! d = e"; '
         'WANNIER90_WIN = "Begin; x=y # z!"\n'
@@ -558,9 +554,6 @@ def test_quoted_string_preservation():
 
 
 def test_array_compression_roundtrip():
-    import numpy as np
-    from ..vasp_input import Incar
-
     incar = Incar()
     incar.assign(
         lattice_constraints = [True]*4,
@@ -591,9 +584,6 @@ def test_array_compression_roundtrip():
 
 
 def test_real_array_fortran_exponents():
-    import numpy as np
-    from ..vasp_input import Incar
-
     incar = Incar()
     incar.read_text('MAGMOM = 2*1D-1 -2d+0')
 
@@ -602,8 +592,6 @@ def test_real_array_fortran_exponents():
 
 
 def test_invalid_keyword_input():
-    from ..vasp_input import Incar
-
     with pytest.raises(NexusError,match='NOT_A_TAG is not a keyword'):
         Incar().assign(not_a_tag=1)
     #end with
@@ -626,8 +614,6 @@ def test_invalid_keyword_input():
 
 
 def test_keyword_catalog_integrity():
-    from ..vasp_input import Incar
-
     keyword_sets = (
         Incar.ints,
         Incar.reals,
@@ -648,8 +634,6 @@ def test_keyword_catalog_integrity():
 
 
 def test_deprecated_keyword_compatibility():
-    from ..vasp_input import Incar
-
     incar = Incar()
     incar.assign(
         ichain     = 0,
@@ -670,9 +654,6 @@ def test_deprecated_keyword_compatibility():
 
 
 def test_keyword_file_roundtrip():
-    import numpy as np
-    from ..vasp_input import Incar
-
     text = 'SYSTEM = "first line\nsecond line"\nENCUT = 400\nLATTICE_CONSTRAINTS = t f .TRUE.\n'
     incar = Incar()
     incar.read_text(text)
@@ -689,10 +670,6 @@ def test_keyword_file_roundtrip():
 
 
 def test_kpoints_tetrahedra_roundtrip():
-    import numpy as np
-    from ..developer import obj
-    from ..vasp_input import Kpoints
-
     kpoints = Kpoints()
     kpoints.mode = 'explicit'
     kpoints.coord = 'reciprocal'
@@ -716,11 +693,6 @@ def test_kpoints_tetrahedra_roundtrip():
 
 
 def test_kpoints_labels_and_related_files():
-    import numpy as np
-    from ..vasp_input import (
-        Kpoints,KpointsElph,KpointsOpt,KpointsWan,Qpoints
-        )
-
     text = (
         'band path\n'
         '20\n'
@@ -768,9 +740,6 @@ def test_kpoints_labels_and_related_files():
 
 
 def test_poscar_coordinates_and_structure_conversion():
-    import numpy as np
-    from ..vasp_input import Poscar,VaspInput
-
     poscar = Poscar()
     poscar.scale = 2.0
     poscar.axes = np.eye(3)
@@ -808,9 +777,6 @@ Direct
 
 
 def test_poscar_extended_format():
-    import numpy as np
-    from ..vasp_input import Poscar,VaspInput
-
     text = (
         'extended structure # retained as a comment\n'
         '1 2 3\n'
@@ -866,9 +832,6 @@ def test_poscar_extended_format():
 
 
 def test_auxiliary_formatted_files():
-    import numpy as np
-    from ..vasp_input import Iconst,Ircar,Irccar,Penaltypot
-
     assert(Ircar is Irccar)
 
     iconst = Iconst()
@@ -903,8 +866,6 @@ def test_auxiliary_formatted_files():
 
 
 def test_extended_input_file_registry(tmp_path):
-    from ..vasp_input import VaspInput,VRawFile
-
     raw_files = ('CHGCAR','DYNMATFULL','GAMMA','HESSEMAT','ML_AB','ML_FF',
                  'TAUCAR','WANPROJ')
     for filename in raw_files:
@@ -926,8 +887,6 @@ def test_extended_input_file_registry(tmp_path):
 
 
 def test_potcar_construction_and_metadata(tmp_path):
-    from ..vasp_input import Potcar
-
     empty = Potcar()
     assert(empty.write_text()=='')
 
@@ -951,8 +910,6 @@ def test_potcar_construction_and_metadata(tmp_path):
 
 
 def test_input_filename_filtering(tmp_path):
-    from ..vasp_input import VaspInput
-
     (tmp_path / 'INCAR').write_text('ENCUT = 100\n')
     (tmp_path / 'job_INCAR.in').write_text('ENCUT = 200\n')
 
@@ -963,15 +920,12 @@ def test_input_filename_filtering(tmp_path):
 
 
 def test_empty_init():
-    from ..vasp_input import VaspInput
     vi = VaspInput()
 #end test_empty_init
 
 
 
 def test_read():
-    from ..vasp_input import VaspInput
-
     test_files_dir = TEST_FILES['diamond_INCAR'].parent
     vi = VaspInput(test_files_dir, prefix='diamond_')
 
@@ -983,8 +937,6 @@ def test_read():
 
 
 def test_write(tmp_path):
-    from ..vasp_input import VaspInput
-
     test_files_dir = TEST_FILES['diamond_INCAR'].parent
 
     vi_read = VaspInput(test_files_dir, prefix='diamond_')
@@ -1001,10 +953,6 @@ def test_write(tmp_path):
 
 @isolate_nexus_core
 def test_generate(tmp_path):
-    import numpy as np
-    from ..physical_system import generate_physical_system
-    from ..vasp_input import generate_vasp_input,VaspInput
-
     pseudo_dir = tmp_path / 'pseudopotentials'
     pseudo_dir.mkdir()
 
@@ -1070,9 +1018,6 @@ def test_generate(tmp_path):
 
 
 def test_return_system_sampling_and_electronic_state():
-    import numpy as np
-    from ..vasp_input import Incar,Kpoints,Poscar,Potcar,VaspInput
-
     poscar = Poscar()
     poscar.scale = 1.0
     poscar.axes = 2*np.eye(3)
@@ -1123,11 +1068,6 @@ def test_return_system_sampling_and_electronic_state():
 
 
 def test_generate_poscar_reorders_atom_data_and_accepts_system():
-    import numpy as np
-    from ..physical_system import PhysicalSystem
-    from ..structure import Structure
-    from ..vasp_input import generate_poscar,Poscar
-
     structure = Structure(
         axes   = np.eye(3),
         elem   = ['C','H','C'],
@@ -1163,9 +1103,6 @@ def test_generate_poscar_reorders_atom_data_and_accepts_system():
 
 
 def test_poscar_inline_comments_and_named_vector_block():
-    import numpy as np
-    from ..vasp_input import Poscar
-
     text = (
         'synthetic triclinic structure\n'
         '1.2345 ! arbitrary scale\n'
@@ -1207,8 +1144,6 @@ def test_poscar_inline_comments_and_named_vector_block():
 
 
 def test_vasp_input_run_type():
-    from ..vasp_input import Incar,VaspInput
-
     vasp_input = VaspInput()
     assert(vasp_input.run_type()=='unknown')
 
@@ -1230,9 +1165,6 @@ def test_vasp_input_run_type():
 
 
 def test_neb_input_roundtrip(tmp_path):
-    import numpy as np
-    from ..vasp_input import Incar,NebPoscars,Poscar,VaspInput
-
     vasp_input = VaspInput()
     vasp_input.incar = Incar()
     vasp_input.incar.images = 1
@@ -1258,9 +1190,6 @@ def test_neb_input_roundtrip(tmp_path):
 
 
 def test_vasp_input_validation():
-    import numpy as np
-    from ..vasp_input import Incar,Kpoints,Poscar,Potcar,VaspInput
-
     vasp_input = VaspInput()
     vasp_input.incar = Incar()
     vasp_input.poscar = Poscar()

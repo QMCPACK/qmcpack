@@ -1,11 +1,12 @@
 import pytest
-from . import NexusTestOrder
+from numpy import array, ndarray
+
+from ..developer import obj
+from ..testing import object_eq, value_eq
+from ..vasp_analyzer import VXML, OutcarData, VaspAnalyzer
+from . import TEST_DIR, NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
-
-
-from . import TEST_DIR
-from ..testing import value_eq,object_eq
-
 
 TEST_FILES = {
     "relax.CONTCAR":     TEST_DIR / "test_vasp_analyzer_files/relax.CONTCAR",
@@ -30,18 +31,12 @@ for file in TEST_FILES.values():
 
 
 def test_empty_init():
-    from ..vasp_analyzer import VaspAnalyzer
-
     va = VaspAnalyzer(None)
 #end def test_empty_init
 
 
 
 def test_analyze():
-    from numpy import array,ndarray
-    from ..developer import obj
-    from ..vasp_analyzer import VaspAnalyzer,VXML,OutcarData
-
     incar_path = TEST_FILES['relax.INCAR']
 
 

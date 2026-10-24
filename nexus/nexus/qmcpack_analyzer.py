@@ -22,34 +22,37 @@
 
 
 #python standard library imports
+import importlib
 import os
 import sys
 import traceback
-import importlib
-from pathlib import Path
 from copy import deepcopy
+from pathlib import Path
+
 import numpy as np
+
 #custom library imports
-from .developer import obj, DevBase, sorted_generic
+from .developer import DevBase, obj, sorted_generic
 from .physical_system import ghost_atoms
+
 #QmcpackAnalyzer classes imports
-from .qmcpack_analyzer_base import QAobject, QAanalyzer, QAanalyzerCollection
+from .qmcpack_analyzer_base import QAanalyzer, QAanalyzerCollection, QAobject
+from .qmcpack_input import QmcpackInput
+from .qmcpack_method_analyzers import DmcAnalyzer, OptAnalyzer, VmcAnalyzer
 from .qmcpack_property_analyzers import WavefunctionAnalyzer
 from .qmcpack_quantity_analyzers import (
-    ScalarsDatAnalyzer,
-    ScalarsHDFAnalyzer,
+    DensityAnalyzer,
+    DensityMatricesAnalyzer,
     DmcDatAnalyzer,
     EnergyDensityAnalyzer,
-    TracesAnalyzer,
-    DensityMatricesAnalyzer,
+    ScalarsDatAnalyzer,
+    ScalarsHDFAnalyzer,
     SpinDensityAnalyzer,
     StructureFactorAnalyzer,
-    DensityAnalyzer,
-    )
-from .qmcpack_method_analyzers import OptAnalyzer, VmcAnalyzer, DmcAnalyzer
+    TracesAnalyzer,
+)
 from .qmcpack_result_analyzers import OptimizationAnalyzer, TimestepStudyAnalyzer
-from .simulation import SimulationAnalyzer,Simulation
-from .qmcpack_input import QmcpackInput
+from .simulation import Simulation, SimulationAnalyzer
 
 
 class QmcpackAnalyzerCapabilities(QAobject):

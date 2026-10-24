@@ -1,16 +1,16 @@
-import pytest
-import numpy as np
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.RMG_INPUT)
-
-
 from importlib.util import find_spec
-from . import isolate_nexus_core, register_pseudo_files, TEST_DIR
+
+import numpy as np
+import pytest
+
 from ..developer import obj
 from ..physical_system import generate_physical_system
-from ..rmg_input import RmgInput,generate_rmg_input,input_spec,rmg_modes
-from ..testing import value_eq,check_object_eq,dict_serialize
+from ..rmg_input import RmgInput, generate_rmg_input, input_spec, rmg_modes
+from ..testing import check_object_eq, dict_serialize, value_eq
 from ..unit_converter import convert
+from . import TEST_DIR, NexusTestOrder, isolate_nexus_core, register_pseudo_files
+
+pytestmark = pytest.mark.order(NexusTestOrder.RMG_INPUT)
 
 TEST_FILES = {
     "AlN32_input":                                                 TEST_DIR / "test_rmg_input_files/AlN32_input",

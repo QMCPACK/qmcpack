@@ -5,8 +5,10 @@
 """Classes and methods for getting data and properties of elements."""
 
 from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
+
 from .developer import warn
 
 

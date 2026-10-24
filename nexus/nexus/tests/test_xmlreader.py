@@ -1,10 +1,19 @@
+import numpy as np
 import pytest
-from . import NexusTestOrder
+
+from ..developer import obj, to_obj
+from ..testing import object_eq, value_eq
+from ..xmlreader import (
+    XMLelement,
+    find_pair,
+    parse_string,
+    readxml,
+    remove_empty_lines,
+    remove_pair_sections,
+)
+from . import TEST_DIR, NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.XMLREADER)
-
-
-from . import TEST_DIR
-from ..testing import object_eq
 
 TEST_FILES = {
     "vmc.in.xml": TEST_DIR / "test_xmlreader_files/vmc.in.xml",
@@ -15,8 +24,6 @@ for file in TEST_FILES.values():
 
 
 def test_read():
-    from ..developer import obj, to_obj
-    from ..xmlreader import readxml,XMLelement
 
     ref = obj(
         simulation = obj(
@@ -246,10 +253,6 @@ def test_read():
 
 
 def test_parse_string():
-    import numpy as np
-    from ..testing import value_eq
-    from ..xmlreader import parse_string
-
     v = parse_string('False')
     assert(isinstance(v,bool))
     assert(v==False)
@@ -285,8 +288,6 @@ def test_parse_string():
 
 
 def test_find_pair():
-    from ..xmlreader import find_pair
-
     s = '''
         <simulation>
             <project id="vmc_hf_noj" series="0">
@@ -341,8 +342,6 @@ def test_find_pair():
 
 
 def test_remove_pair_sections():
-    from ..xmlreader import remove_pair_sections
-
     s = '''
         <simulation>
            <project id="vmc_hf_noj" series="0">
@@ -415,8 +414,6 @@ def test_remove_pair_sections():
 
 
 def test_remove_empty_lines():
-    from ..xmlreader import remove_empty_lines
-
     s = '''
         
         This string

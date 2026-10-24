@@ -1,8 +1,8 @@
 #! /usr/bin/env python3
 
+import argparse
 import os
 import sys
-import argparse
 from pathlib import Path
 
 if sys.version_info[0:3] < (3, 12, 0):
@@ -85,18 +85,33 @@ def find_nexus_modules():
 
 # Load Nexus modules
 find_nexus_modules()
-from nexus.developer import obj,nxs_print
-from nexus.numerics import jackknife,jackknife_aux
-from nexus.numerics import simstats,equilibration_length
-from nexus.numerics import curve_fit,least_squares
-from nexus.numerics import eos_fit as num_eos_fit  # noqa: F401
-from nexus.numerics import morse_fit,morse,morse_re,morse_De
-from nexus.numerics import morse_Einf as morse_einf
-from nexus.numerics import morse_a,morse_width,morse_depth,morse_Ee,morse_k
-from nexus.numerics import murnaghan,birch,vinet
-from nexus.numerics import murnaghan_pressure,birch_pressure,vinet_pressure
 import nexus.numpy_extensions as npe
-
+from nexus.developer import nxs_print, obj
+from nexus.numerics import (
+    birch,
+    birch_pressure,
+    curve_fit,
+    equilibration_length,
+    jackknife,
+    jackknife_aux,
+    least_squares,
+    morse,
+    morse_a,
+    morse_De,
+    morse_depth,
+    morse_Ee,
+    morse_fit,
+    morse_k,
+    morse_re,
+    morse_width,
+    murnaghan,
+    murnaghan_pressure,
+    simstats,
+    vinet,
+    vinet_pressure,
+)
+from nexus.numerics import eos_fit as num_eos_fit  # noqa: F401
+from nexus.numerics import morse_Einf as morse_einf
 
 # Polynomial functions
 roots_n     = lambda p, x: np.roots(np.polyder(p[::-1], x))

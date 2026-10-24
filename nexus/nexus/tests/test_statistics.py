@@ -6,8 +6,6 @@ from . import NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.STATISTICS)
 
-
-
 def test_theil_sen():
     """Verify exact robust fitting with an extreme outlier.
 

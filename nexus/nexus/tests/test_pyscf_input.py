@@ -1,10 +1,12 @@
 import pytest
+
+from ..developer import obj, to_obj
+from ..physical_system import generate_physical_system
+from ..pyscf_input import PyscfInput, generate_pyscf_input
+from ..testing import object_eq, text_eq
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.PYSCF_INPUT)
-
-
-from ..testing import object_eq,text_eq
-
 
 mno_poscar = '''MnO Crystal
    4.494538
@@ -44,9 +46,6 @@ mf.kernel()
 
 
 def test_empty_init():
-    from ..developer import obj, to_obj
-    from ..pyscf_input import PyscfInput,generate_pyscf_input
-
     ref = obj(
         addendum      = None,
         allow_not_set = set(),
@@ -69,10 +68,6 @@ def test_empty_init():
 
 
 def test_generate(tmp_path):
-    from ..developer import obj, to_obj
-    from ..physical_system import generate_physical_system
-    from ..pyscf_input import generate_pyscf_input
-
     # water molecule
     xyz_path      = tmp_path / 'H2O.xyz'
     template_path = tmp_path / 'scf_template.py'
@@ -395,10 +390,6 @@ def test_generate(tmp_path):
 
 
 def test_write(tmp_path):
-    from ..developer import obj
-    from ..physical_system import generate_physical_system
-    from ..pyscf_input import generate_pyscf_input
-
     # water molecule
     xyz_path      = tmp_path / 'H2O.xyz'
     template_path = tmp_path / 'scf_template.py'

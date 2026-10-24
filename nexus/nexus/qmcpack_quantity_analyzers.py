@@ -67,21 +67,23 @@
 #====================================================================#
 
 
-import os
-import sys
-import re
 import copy
+import os
+import re
+import sys
 from copy import deepcopy
 from types import MappingProxyType
+
 import numpy as np
-from numpy import pi,sin,cos,sqrt
-from numpy.linalg import LinAlgError, inv, det, eig
-from .developer import obj, FileFormatError, NexusError, sorted_generic
-from .fileio import XsfFile
-from .hdfreader import HDFreader, HDFgroup
-from .numerics import ndgrid, simstats, simplestats, equilibration_length
-from .qmcpack_analyzer_base import QAobject, QAanalyzer, QAdata, QAHDFdata
+from numpy import cos, pi, sin, sqrt
+from numpy.linalg import LinAlgError, det, eig, inv
+
 from . import numpy_extensions as npe
+from .developer import FileFormatError, NexusError, obj, sorted_generic
+from .fileio import XsfFile
+from .hdfreader import HDFgroup, HDFreader
+from .numerics import equilibration_length, ndgrid, simplestats, simstats
+from .qmcpack_analyzer_base import QAanalyzer, QAdata, QAHDFdata, QAobject
 
 
 def first(o):
@@ -98,7 +100,7 @@ class QuantityAnalyzer(QAanalyzer):
     #end def __init__
 
     def plot_trace(self,quantity,*args,**kwargs):
-        from matplotlib.pyplot import plot, xlabel, ylabel, title, ylim
+        from matplotlib.pyplot import plot, title, xlabel, ylabel, ylim
         if 'data' in self:
             if quantity not in self.data:
                 msg = 'quantity '+quantity+' is not present in the data'
@@ -836,8 +838,8 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
 
     def test_structured(self):
 
-        from enthought.tvtk.api import tvtk
         from enthought.mayavi import mlab
+        from enthought.tvtk.api import tvtk
 
         def generate_annulus(r=None, theta=None, z=None):
             """ Generate points for structured grid for a cylindrical annular

@@ -20,12 +20,13 @@ import gc
 import os
 import sys
 import time
-from typing import ClassVar,Literal,TextIO
+from typing import ClassVar, Literal, TextIO
+
 from . import memory
-from .developer import obj, NexusError
-from .nexus_base import NexusCore, ShowStatusMode, nexus_config, dynamic_storage
+from .developer import NexusError, obj
+from .machines import Job, Machine
+from .nexus_base import NexusCore, ShowStatusMode, dynamic_storage, nexus_config
 from .simulation import Simulation, sim_err_handler, sim_log_handler
-from .machines import Machine,Job
 
 
 def color_status_result(result: Literal['SUCCESS','FAILURE'] | str,logfile: TextIO) -> str:

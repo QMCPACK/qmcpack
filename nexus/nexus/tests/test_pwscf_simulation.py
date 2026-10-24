@@ -1,21 +1,19 @@
+from copy import deepcopy
+from pathlib import Path
+
 import pytest
-from . import NexusTestOrder
+
+from ..developer import obj, to_obj
+from ..machines import job
+from ..nexus_base import nexus_config
+from ..physical_system import generate_physical_system
+from ..pwscf import Pwscf, generate_pwscf
+from ..testing import clear_all_sims, failed, object_eq, value_eq
+from . import NexusTestOrder, create_pseudo_files, isolate_nexus_core
+
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_SIMULATION)
 
-
-from pathlib import Path
-from copy import deepcopy
-
-from . import isolate_nexus_core, create_pseudo_files
-from nexus.nexus_base import nexus_config
-from ..testing import clear_all_sims
-from ..testing import failed
-from ..testing import value_eq,object_eq
-
-
 def get_system():
-    from ..physical_system import generate_physical_system
-
     system = generate_physical_system(
         units  = 'A',
         axes   = [[ 1.785,  1.785,  0.   ],
@@ -35,10 +33,6 @@ def get_system():
 
 
 def get_pwscf_sim(type='scf'):
-    from ..nexus_base import nexus_config
-    from ..machines import job
-    from ..pwscf import Pwscf,generate_pwscf
-
     nexus_config.runs = ''
 
     sim = None
@@ -72,9 +66,6 @@ def get_pwscf_sim(type='scf'):
 
 
 def test_minimal_init():
-    from ..machines import job
-    from ..pwscf import Pwscf,generate_pwscf
-
     sim = generate_pwscf(
         job    = job(machine='ws1',cores=1),
         system = get_system(),
@@ -161,8 +152,6 @@ def test_get_result(tmp_path):
 
 @isolate_nexus_core
 def test_incorporate_result(tmp_path):
-    from ..developer import obj, to_obj
-
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]

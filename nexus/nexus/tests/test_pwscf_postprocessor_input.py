@@ -1,9 +1,24 @@
 import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_POSTPROCESSOR_INPUT)
 
+from ..developer import obj, to_obj
+from ..pwscf_postprocessors import (
+    BandsInput,
+    CpppInput,
+    DosInput,
+    PPInput,
+    ProjwfcInput,
+    PwexportInput,
+    generate_bands_input,
+    generate_cppp_input,
+    generate_dos_input,
+    generate_pp_input,
+    generate_projwfc_input,
+    generate_pwexport_input,
+)
 from ..testing import object_eq
+from . import NexusTestOrder
 
+pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_POSTPROCESSOR_INPUT)
 
 projwfc_in = '''&projwfc
   prefix = 'pwscf'
@@ -11,16 +26,7 @@ projwfc_in = '''&projwfc
 /
 '''
 
-
-
 def test_empty_init():
-    from ..pwscf_postprocessors import PPInput,generate_pp_input
-    from ..pwscf_postprocessors import DosInput,generate_dos_input
-    from ..pwscf_postprocessors import BandsInput,generate_bands_input
-    from ..pwscf_postprocessors import ProjwfcInput,generate_projwfc_input
-    from ..pwscf_postprocessors import CpppInput,generate_cppp_input
-    from ..pwscf_postprocessors import PwexportInput,generate_pwexport_input
-
     ppi = PPInput()
     ppi = generate_pp_input()
 
@@ -38,15 +44,11 @@ def test_empty_init():
 
     ppi = PwexportInput()
     ppi = generate_pwexport_input()
-
 #end def test_empty_init
 
 
 
 def test_read(tmp_path):
-    from ..developer import obj, to_obj
-    from ..pwscf_postprocessors import ProjwfcInput
-
     infile_path = tmp_path / 'projwfc.in'
     infile_path.write_text(projwfc_in)
 
@@ -65,9 +67,6 @@ def test_read(tmp_path):
 
 
 def test_write(tmp_path):
-    from ..developer import obj, to_obj
-    from ..pwscf_postprocessors import ProjwfcInput
-
     infile_path = tmp_path / 'projwfc.in'
     infile_path.write_text(projwfc_in)
 
@@ -91,9 +90,6 @@ def test_write(tmp_path):
 
 
 def test_generate():
-    from ..developer import obj, to_obj
-    from ..pwscf_postprocessors import generate_projwfc_input
-
     pi = generate_projwfc_input(
         prefix = 'pwscf',
         outdir = 'pwscf_output',

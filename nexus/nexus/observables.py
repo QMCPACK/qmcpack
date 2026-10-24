@@ -1,28 +1,33 @@
 # Python standard library imports
+import inspect
 import os
 import sys
-import inspect
-from time import process_time
 from copy import deepcopy
+from time import process_time
 
 # Non-standard Python imports
 import numpy as np
 
 # Nexus imports
 from . import memory
-from .unit_converter import convert
-from .developer import DevBase, obj, nxs_print, NexusError, FileFormatError
-from .numerics import simstats
-from .grid_functions import grid_function, read_grid, StructuredGrid, grid as generate_grid
-from .grid_functions import SpheroidGrid,ParallelotopeGridFunction
-from .structure import Structure, get_seekpath_full
-from .fileio import XsfFile
-from .hdfreader import read_hdf
 from . import numpy_extensions as npe
 
 # Referenced in MomentumDistribution.backfold()
 from .debug import ci
-
+from .developer import DevBase, FileFormatError, NexusError, nxs_print, obj
+from .fileio import XsfFile
+from .grid_functions import (
+    ParallelotopeGridFunction,
+    SpheroidGrid,
+    StructuredGrid,
+    grid_function,
+    read_grid,
+)
+from .grid_functions import grid as generate_grid
+from .hdfreader import read_hdf
+from .numerics import simstats
+from .structure import Structure, get_seekpath_full
+from .unit_converter import convert
 
 
 def get_path(o, path, value=None):

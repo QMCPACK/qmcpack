@@ -8,13 +8,13 @@ from subprocess import PIPE, Popen
 import pytest
 
 from ..developer import obj
-from ..testing import object_diff, text_diff
-from ..pwscf_input import PwscfInput
-from ..qmcpack_converters import Pw2qmcpackInput
 from ..gamess_input import GamessInput
+from ..pwscf_input import PwscfInput
+from ..pyscf_input import PyscfInput
+from ..qmcpack_converters import Pw2qmcpackInput
 from ..qmcpack_input import QmcpackInput
 from ..rmg_input import RmgInput
-from ..pyscf_input import PyscfInput
+from ..testing import object_diff, text_diff
 from . import TEST_DIR, NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.USER_EXAMPLES)

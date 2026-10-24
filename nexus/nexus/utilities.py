@@ -2,7 +2,6 @@ import string
 from pathlib import Path
 
 
-
 def to_str(s):
     '''Convert a value to a string'''
     if isinstance(s,bytes):

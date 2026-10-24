@@ -1,14 +1,19 @@
 import pytest
+
+from ..generic import (
+    NexusDevWarning,
+    NexusError,
+    NexusUserWarning,
+    error,
+    nxs_deprecate,
+    nxs_print,
+    warn,
+)
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.GENERIC_OPERATION)
 
-from ..generic import warn, NexusDevWarning, NexusUserWarning, nxs_deprecate
-from ..generic import nxs_print,error
-from ..generic import NexusError
-
-
 def test_logging(tmp_path, capsys):
-
     # test log
     #   simple message
     s = 'simple message'
@@ -68,7 +73,6 @@ def test_warn():
 
 
 def test_nxs_deprecate():
-
     @nxs_deprecate(since="2.3.9", replacement="Some other function")
     def deprecated_function():
         pass

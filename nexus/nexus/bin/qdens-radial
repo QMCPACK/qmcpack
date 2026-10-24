@@ -1,9 +1,9 @@
 #! /usr/bin/env python3
 
-from pathlib import Path
+import sys
 from copy import deepcopy
 from optparse import OptionParser
-import sys
+from pathlib import Path
 
 if sys.version_info[0:3] < (3, 12, 0):
     v = sys.version_info[0:3]
@@ -63,13 +63,12 @@ def find_nexus_modules():
 
 # Load Nexus modules
 find_nexus_modules()
-from nexus.nexus_version import nexus_version
-from nexus.developer import DevBase,obj
-import nexus.memory as memory
-from nexus.observables import ChargeDensity, vlog
-from nexus.fileio import XsfFile
-
 import numpy as np
+from nexus import memory
+from nexus.developer import DevBase, obj
+from nexus.fileio import XsfFile
+from nexus.nexus_version import nexus_version
+from nexus.observables import ChargeDensity, vlog
 
 
 def comma_list(s):
