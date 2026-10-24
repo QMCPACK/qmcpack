@@ -105,16 +105,21 @@ class ProjectManager(NexusCore):
                 return
             #end if
         #end if
-        self.nxs_print('\nstarting runs:\n'+30*'~',n=1)
+        self.nxs_print('\nStarting runs:\n'+30*'~',n=1)
         if nexus_config.dependent_modes in nexus_config.stages:
             if nexus_config.monitor:
                 start_time = time.time()
                 ipoll = 0
                 while len(self.progressing_cascades)>0:
                     elapsed_time = time.time() - start_time
-                    mem_usage = (memory.resident(children=True)/1e6)
+                    self_mem, child_mem = memory.resident(children=True)
                     self.nxs_print(
-                        f'elapsed time {elapsed_time:.1f} s memory {mem_usage:3.2f} MB',
+                        (
+                            f"Elapsed time {elapsed_time:.1f} s - "
+                            f"Memory {self_mem / 1024.0**2:3.2f} MB (Nexus) - "
+                            f"{child_mem / 1024.0**2:3.2f} MB (Subprocesses)"
+                        ),
+                        # f"Child Memory {child_mem / 1024**2:3.2f} MB",
                         n=1,
                         progress=True,
                         )
