@@ -40,7 +40,6 @@ from typing import Literal, TypeAlias
 
 from .basisset import BasisSets
 from .developer import DevBase, nxs_print, obj
-from .memory import resident
 from .nexus_version import nexus_version
 from .utilities import path_string
 
@@ -375,10 +374,6 @@ class NexusCore(DevBase):
     # mutable/dynamic nexus core data
     wrote_something   = False # for pretty printing
     working_directory = None
-
-    def mem_usage(self):
-        return int(resident()/1e6)
-    #end def mem_usage
 
     def nxs_print(self, *texts: str, n: int = 0, progress: bool = False):
         """Write text to standard output.
