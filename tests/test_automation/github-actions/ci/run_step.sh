@@ -392,12 +392,6 @@ EOF
         export LD_LIBRARY_PATH=/usr/local/cuda-11.8/lib64:${LD_LIBRARY_PATH}
       fi
     fi
-
-    if [[ "${GH_JOBNAME}" =~ (AFQMC) ]]
-    then
-       # Avoid polluting the stderr output with libfabric error message
-       export OMPI_MCA_btl=self
-    fi
     
     if [[ "${GH_JOBNAME}" =~ (Offload) ]]
     then
