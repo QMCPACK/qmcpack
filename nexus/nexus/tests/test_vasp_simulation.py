@@ -7,8 +7,7 @@ from pathlib import Path
 from . import isolate_nexus_core, create_pseudo_files
 from nexus.nexus_base import nexus_config
 from ..testing import clear_all_sims
-from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,check_object_eq
+from ..testing import object_eq,check_object_eq
 
 from .test_vasp_input import c_potcar_text, TEST_FILES
 

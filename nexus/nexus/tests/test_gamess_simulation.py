@@ -79,7 +79,7 @@ def test_check_result():
 
 @isolate_nexus_core
 def test_get_result(tmp_path):
-    from ..developer import obj, NexusError
+    from ..developer import obj
     from ..nexus_base import nexus_config
 
     nexus_config.local_directory  = str(tmp_path)
@@ -126,7 +126,7 @@ def test_get_result(tmp_path):
 
 def test_incorporate_result():
 
-    from ..developer import NexusError, obj
+    from ..developer import obj
 
     sim = get_gamess_sim('rhf')
 
@@ -178,7 +178,7 @@ def test_check_sim_status(tmp_path):
         sim.check_sim_status()
         raise FailedTest
     except IOError:
-        None
+        pass
     except Exception as e:
         failed(str(e))
     #end try

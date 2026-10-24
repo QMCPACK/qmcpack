@@ -93,8 +93,8 @@ if(NOT MIXED_PRECISION)
   qmc_run_and_check(
     deterministic-bccH_2x2x2_ae-vmc_bf-batched
     "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
-    det_qmc-bf-opt_batched
-    det_qmc-bf-opt_batched.in.xml
+    det_qmc-bf-optbatch
+    det_qmc-bf-optbatch.in.xml
     1
     1
     TRUE)

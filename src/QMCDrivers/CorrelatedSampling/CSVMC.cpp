@@ -38,7 +38,7 @@ CSVMC::CSVMC(const ProjectData& project_data,
              MCWalkerConfiguration& w,
              std::vector<TrialWaveFunction*>&& multi_psi,
              std::vector<QMCHamiltonian*>&& multi_ham,
-             Communicate* comm)
+             Communicate& comm)
     : QMCDriver(project_data, w, *multi_psi[0], *multi_ham[0], comm, "CSVMC"),
       UseDrift("yes"),
       Psi1(std::move(multi_psi)),
@@ -50,8 +50,6 @@ CSVMC::CSVMC(const ProjectData& project_data,
   m_param.add(UseDrift, "useDrift");
   m_param.add(UseDrift, "usedrift");
   m_param.add(UseDrift, "use_drift");
-  equilBlocks = -1;
-  m_param.add(equilBlocks, "equilBlocks");
   qmc_driver_mode.set(QMC_MULTIPLE, 1);
 }
 
@@ -80,7 +78,7 @@ bool CSVMC::put(xmlNodePtr q)
     int nw = W.getActiveWalkers();
     //compute samples and overwrite steps for the given samples
     int Nthreads = omp_get_max_threads();
-    int Nprocs   = myComm->size();
+    int Nprocs   = myComm.size();
     //target samples set by samples or samplesperthread/dmcwalkersperthread
     nTargetPopulation = std::max(nTargetPopulation, nSamplesPerThread * Nprocs * Nthreads);
     nTargetSamples    = static_cast<int>(std::ceil(nTargetPopulation));
@@ -122,15 +120,13 @@ bool CSVMC::put(xmlNodePtr q)
 
   m_param.get(app_log());
 
-  if (DumpConfig)
-  {
-    app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint
+  if (Period4CheckPoint > 0)
+    app_log() << "  Configurations are dumped to config.h5 with a period of " << Period4CheckPoint
               << " blocks" << std::endl;
-  }
+  else if (Period4CheckPoint == 0)
+    app_log() << "  Configurations are dumped to config.h5 at the end of the run" << std::endl;
   else
-  {
-    app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << std::endl;
-  }
+    app_log() << "  Nothing (configurations, state) will be saved." << std::endl;
 
   if (Period4WalkerDump > 0)
     app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << std::endl;
@@ -149,7 +145,7 @@ void CSVMC::run()
 {
   resetRun();
   //start the main estimator
-  Estimators->start(nBlocks);
+  Estimators->start(nBlocks, RootName);
   for (int ip = 0; ip < NumThreads; ++ip)
     CSMovers[ip]->startRun(nBlocks, false);
 
@@ -161,8 +157,7 @@ void CSVMC::run()
   {
 #pragma omp parallel
     {
-      int ip                 = omp_get_thread_num();
-      IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
+      int ip = omp_get_thread_num();
       //assign the iterators and resuse them
       MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
       CSMovers[ip]->startBlock(nSteps);
@@ -201,10 +196,11 @@ void CSVMC::run()
   for (int ip = 0; ip < NumThreads; ++ip)
     RandomNumberControl::Children[ip] = Rng[ip]->makeClone();
   ///write samples to a file
-  bool wrotesamples = DumpConfig;
-  if (DumpConfig)
+  const bool dump_config = Period4CheckPoint >= 0;
+  bool wrotesamples      = dump_config;
+  if (dump_config)
   {
-    wrotesamples = MCWalkerConfiguration::dumpEnsemble(wClones, *wOut, myComm->size(), nBlocks);
+    wrotesamples = MCWalkerConfiguration::dumpEnsemble(wClones, *wOut, RootName, myComm.size(), nBlocks);
     if (wrotesamples)
       app_log() << "  samples are written to the config.h5" << std::endl;
   }

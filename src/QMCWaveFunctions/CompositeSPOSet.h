@@ -102,7 +102,7 @@ public:
 
 struct CompositeSPOSetBuilder : public SPOSetBuilder
 {
-  CompositeSPOSetBuilder(Communicate* comm, const SPOSetBuilderFactory& factory)
+  CompositeSPOSetBuilder(Communicate& comm, const SPOSetBuilderFactory& factory)
       : SPOSetBuilder("Composite", comm), sposet_builder_factory_(factory)
   {}
 

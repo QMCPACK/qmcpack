@@ -53,13 +53,15 @@ public:
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerControl(Communicate* c, RandomBase<FullPrecRealType>& rng, bool use_fixed_pop = false);
+  WalkerControl(Communicate& c, RandomBase<FullPrecRealType>& rng, bool use_fixed_pop = false);
 
   /** empty destructor to clean up the derived classes */
   ~WalkerControl();
 
-  /** start a block */
-  void start();
+  /** start a run and open the .dmc.dat file
+   * @param root_name root name for the output file
+   */
+  void start(const std::string& root_name);
 
   /** take averages and writes to a file */
   void writeDMCdat(int iter, const std::vector<FullPrecRealType>& curData);
@@ -79,15 +81,9 @@ public:
 
   bool put(xmlNodePtr cur);
 
-  void setMinMax(int nw_in, int nmax_in);
-
-  int get_n_max() const { return n_max_; }
-  int get_n_min() const { return n_min_; }
   MCDataType<FullPrecRealType>& get_ensemble_property() { return ensemble_property_; }
   void set_ensemble_property(MCDataType<FullPrecRealType>& ensemble_property)
-  {
-    ensemble_property_ = ensemble_property;
-  }
+  { ensemble_property_ = ensemble_property; }
   IndexType get_num_contexts() const { return num_ranks_; }
   const std::vector<int>& getNumPerRank() { return num_per_rank_; }
 
@@ -98,7 +94,7 @@ private:
   /// kill dead walkers in the population
   static void killDeadWalkersOnRank(MCPopulation& pop);
 
-  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
+  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate& comm, IndexType n_walkers);
 
   /** update the curData state buffer.
    *  weighted sum over walker properties then all reduce.  see discussion #curData
@@ -157,12 +153,6 @@ private:
   RandomBase<FullPrecRealType>& rng_;
   ///if true, use fixed population
   bool use_fixed_pop_;
-  ///minimum number of walkers
-  IndexType n_min_;
-  ///maximum number of walkers
-  IndexType n_max_;
-  ///maximum copy per walker
-  IndexType max_copy_;
   ///trial energy energy
   FullPrecRealType trial_energy_;
   /** Copied from curData[LE_MAX+rank_num] during branching

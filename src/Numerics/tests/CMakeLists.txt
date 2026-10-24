@@ -24,6 +24,7 @@ set(UTEST_SRCS
     test_soa_spherical_tensor.cpp
     test_transform.cpp
     test_min_oned.cpp
+    test_OneDimGridFactory.cpp
     test_OneDimCubicSplineLinearGrid.cpp
     test_one_dim_cubic_spline.cpp
     test_Quadrature.cpp
@@ -38,7 +39,7 @@ add_executable(${UTEST_EXE} ${UTEST_SRCS})
 
 target_link_libraries(${UTEST_EXE} catch_main containers qmcio qmcnumerics)
 
-add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
 add_labels_for_tests("${CURRENT_TESTS}")

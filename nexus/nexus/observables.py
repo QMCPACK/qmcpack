@@ -1523,12 +1523,12 @@ Density.define_attributes(
 
 
 class ChargeDensity(Density):
-    None
+    pass
 #end class ChargeDensity
 
 
 class EnergyDensity(Density):
-    None
+    pass
 #end class EnergyDensity
 
 

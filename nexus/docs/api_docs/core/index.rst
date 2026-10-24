@@ -17,6 +17,7 @@ User-Facing
 * :py:mod:`.bundle`
 * :py:mod:`.machines`
 * :py:mod:`.pseudopotential`
+* :py:mod:`.pseudoset`
 * :py:mod:`.basisset`
 
 Internal

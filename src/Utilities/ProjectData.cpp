@@ -42,7 +42,7 @@ ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion d
       driver_version_(driver_version),
       runtime_options_(RuntimeOptions())
 {
-  my_comm_ = OHMMS::Controller;
+  my_comm_ = OHMMS::Controller.get();
   if (title_.empty())
     title_ = getDateAndTime("%Y%m%dT%H%M");
 }
@@ -111,8 +111,6 @@ void ProjectData::reset()
     file_len = std::snprintf(fileroot.data(), fileroot.size(), "%s.g%03d.s%03d", title_.c_str(), groupid, series_);
 
   project_main_ = std::string(fileroot.data(), file_len);
-  //set the communicator name
-  my_comm_->setName(fileroot.data(), file_len);
   int next_len{0};
   if (no_gtag)
   {
@@ -178,10 +176,6 @@ bool ProjectData::put(xmlNodePtr cur)
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));
-    if (cname == "user")
-    {
-      // Removed
-    }
     if (cname == "host")
     {
       host_ = getHostName();

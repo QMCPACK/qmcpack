@@ -798,7 +798,7 @@ class Convert4qmcInput(SimulationInput):
 
 
     def read(self,filepath):
-        None
+        pass
     #end def read
 
 
@@ -836,7 +836,7 @@ class Convert4qmcAnalyzer(SimulationAnalyzer):
     #end def __init__
 
     def analyze(self):
-        None
+        pass
     #end def analyze
 #end class Convert4qmcAnalyzer
 
@@ -863,7 +863,7 @@ class Convert4qmc(Simulation):
 
 
     def propagate_identifier(self):
-        None
+        pass
         #self.input.prefix = self.identifier
     #end def propagate_identifier
 
@@ -1042,11 +1042,11 @@ class Convertpw4qmcInput(SimulationInput):
     #end def __init__
 
     def read(self, filepath):
-        None
+        pass
     #end def read
 
     def write(self, filepath):
-        None
+        pass
 
 #end class Convertpw4qmcInput
 
@@ -1064,7 +1064,7 @@ class Convertpw4qmcAnalyzer(SimulationAnalyzer):
     #end def __init__
 
     def analyze(self):
-        None
+        pass
     #end def analyze
 #end class Convertpw4qmcAnalyzer
 
@@ -1083,7 +1083,7 @@ class Convertpw4qmc(Simulation):
     #end def set_app_name
 
     def propagate_identifier(self):
-        None
+        pass
     #end def propagate_identifier
 
     def set_files(self):
@@ -1399,7 +1399,7 @@ class PyscfToAfqmcInput(SimulationInput):
 
 
     def read(self,filepath):
-        None
+        pass
     #end def read
 
 
@@ -1426,7 +1426,7 @@ class PyscfToAfqmcAnalyzer(SimulationAnalyzer):
     #end def __init__
 
     def analyze(self):
-        None
+        pass
     #end def analyze
 #end class PyscfToAfqmcAnalyzer
 

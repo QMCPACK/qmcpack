@@ -343,6 +343,11 @@ attribute:
 +-----------------------+------------+---------------+---------+----------------------------------------------------------+
 
 The product of ``shared_ranks`` and ``distributed_ranks`` may not exceed the total number of MPI ranks within a compute node.
+
+.. note::
+
+  In an ensemble run, multiple calculations may share a compute node or ranks may be partitioned across nodes. The number of MPI ranks assigned to each individual calculation on a compute node must be divisible by the product of ``shared_ranks`` and ``distributed_ranks``. To ensure this requirement is satisfied across all ensemble calculations, use the ``--ranks-per-group-multiple`` command-line option (e.g., set to the product of ``shared_ranks`` and ``distributed_ranks`` or a multiple thereof, such as the number of MPI ranks per node).
+
 Sharing and/or distributing memory only affect the memory allocation on the host. Distributing memory cannot be enabled when
 using GPUs. Sharing memory can be used with GPUs enabled to reduce host memory footprint within the compute node. When evaluations
 of B-spline orbitals happen on the host, sharing and/or distributing memory across NUMA domains may cause performance penalty.
@@ -1205,10 +1210,6 @@ The following modifications are worth a try in the optimization block:
 -  Try increasing “exp0" in the optimization block. Larger values of
    exp0 cause the search directions to more closely follow those
    predicted by steepest-descent than those by the linear method.
-
-Note that the new adaptive shift optimizer has not yet been tried with
-backflow wavefunctions. It should perform better than the older
-optimizers, but a considered optimization process is still recommended.
 
 .. _jastrow:
 

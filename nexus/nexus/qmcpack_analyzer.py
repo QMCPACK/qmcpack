@@ -90,7 +90,6 @@ class QmcpackAnalyzerCapabilities(QAobject):
         #end for
 
         self.future_quantities={'StructureFactor','MomentumDistribution'}
-        return
     #end def __init__
 #end class QmcpackCapabilities
 
@@ -155,7 +154,6 @@ class QmcpackAnalysisRequest(QAobject):
         #end if
         self.equilibration = eq
 
-        return
     #end def __init__
 
     def complete(self):
@@ -257,7 +255,6 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             self.analyze()
         #end if
 
-        return
     #end def __init__
 
 
@@ -686,7 +683,6 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         QAobject._global = self.saved_global
         del self.saved_global
         self._relink_dynamic_methods()
-        return
     #end def load
 
 
@@ -711,7 +707,6 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             if verbose:
                 self.nxs_print(pad+'\nNo traces to check')
             #end if
-            return None
         #end if
     #end def check_traces
 

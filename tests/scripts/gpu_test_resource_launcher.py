@@ -49,7 +49,9 @@ def map_visible_gpu(gpu_id, visibility_variable):
 
 def main():
     if len(sys.argv) < 3:
-        sys.stderr.write("GPU test resource launcher requires a visibility variable and command to run.\n")
+        sys.stderr.write(
+            "GPU test resource launcher requires a visibility variable and command to run.\n"
+        )
         return 1
 
     visibility_variable = sys.argv[1]

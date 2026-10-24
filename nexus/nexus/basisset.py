@@ -985,7 +985,7 @@ class GaussianBasisSet(DevBase):
 
 
     def plot_primitives(self):
-        None
+        pass
     #end def plot_primitives
 
 

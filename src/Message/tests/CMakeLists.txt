@@ -13,12 +13,12 @@ set(SRC_DIR message)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-add_executable(${UTEST_EXE} test_communciate.cpp)
+add_executable(${UTEST_EXE} test_communicate.cpp test_communicate_collectives.cpp)
 target_link_libraries(${UTEST_EXE} PUBLIC message catch_main containers)
 
 foreach(NUM_RANKS 1 2 3 6 12)
   set(UTEST_NAME_MPI ${UTEST_NAME}-r${NUM_RANKS})
-  add_unit_test(${UTEST_NAME_MPI} ${NUM_RANKS} 1 $<TARGET_FILE:${UTEST_EXE}>)
+  add_unit_test(BASENAME ${UTEST_NAME_MPI} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 endforeach()
 
 if(HAVE_MPI)
@@ -30,7 +30,7 @@ if(HAVE_MPI)
   #Way too many depenedencies make for very slow test linking
   target_link_libraries(${UTEST_EXE} PUBLIC message catch_main)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
-  add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
+  add_unit_test(BASENAME ${UTEST_NAME} PROCS 3 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 endif(HAVE_MPI)
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)

@@ -42,7 +42,7 @@ VMC::VMC(const ProjectData& project_data,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
          const UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
-         Communicate* comm,
+         Communicate& comm,
          bool enable_profiling)
     : QMCDriver(project_data, w, psi, h, comm, "VMC", enable_profiling), UseDrift("yes"), rngs_(rngs)
 {
@@ -61,7 +61,7 @@ void VMC::run()
 {
   resetRun();
   //start the main estimator
-  Estimators->start(nBlocks);
+  Estimators->start(nBlocks, RootName);
   for (int ip = 0; ip < NumThreads; ++ip)
     Movers[ip]->startRun(nBlocks, false);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -70,17 +70,18 @@ void VMC::run()
   wlog_manager_->startRun(getWalkerLogCollectorRefs());
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
+  LoopRunTimeControl<> runtimeControl(run_time_manager, project_data_, "VMC driver", "block", myComm);
 
   const bool has_collectables = W.Collectables.size();
   for (int block = 0; block < nBlocks; ++block)
   {
-    vmc_loop.start();
+    if (runtimeControl.checkStop(vmc_loop, block))
+      break;
+
+    ScopeGuard<LoopTimer<>> vmc_local_timer(vmc_loop);
 #pragma omp parallel
     {
       int ip = omp_get_thread_num();
-      //IndexType updatePeriod=(qmc_driver_mode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
-      IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
       //assign the iterators and resuse them
       MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
       Movers[ip]->startBlock(nSteps);
@@ -111,20 +112,6 @@ void VMC::run()
 #endif
     wlog_manager_->writeBuffers();
     recordBlock(block);
-    vmc_loop.stop();
-
-    bool stop_requested = false;
-    // Rank 0 decides whether the time limit was reached
-    if (!myComm->rank())
-      stop_requested = runtimeControl.checkStop(vmc_loop);
-    myComm->bcast(stop_requested);
-    if (stop_requested)
-    {
-      if (!myComm->rank())
-        app_log() << runtimeControl.generateStopMessage("VMC", block);
-      run_time_manager.markStop();
-      break;
-    }
   } //block
   Estimators->stop(estimatorClones);
   for (int ip = 0; ip < NumThreads; ++ip)
@@ -134,10 +121,11 @@ void VMC::run()
 #endif
   wlog_manager_->stopRun();
   ///write samples to a file
-  bool wrotesamples = DumpConfig;
-  if (DumpConfig)
+  const bool dump_config = Period4CheckPoint >= 0;
+  bool wrotesamples      = dump_config;
+  if (dump_config)
   {
-    wrotesamples = MCWalkerConfiguration::dumpEnsemble(wClones, *wOut, myComm->size(), nBlocks);
+    wrotesamples = MCWalkerConfiguration::dumpEnsemble(wClones, *wOut, RootName, myComm.size(), nBlocks);
     if (wrotesamples)
       app_log() << "  samples are written to the config.h5" << std::endl;
   }
@@ -311,7 +299,7 @@ bool VMC::put(xmlNodePtr q)
     int nw = W.getActiveWalkers();
     //compute samples and overwrite steps for the given samples
     int Nthreads = omp_get_max_threads();
-    int Nprocs   = myComm->size();
+    int Nprocs   = myComm.size();
 
 
     //target samples set by samples or samplesperthread/dmcwalkersperthread
@@ -355,15 +343,13 @@ bool VMC::put(xmlNodePtr q)
 
   m_param.get(app_log());
 
-  if (DumpConfig)
-  {
-    app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint
+  if (Period4CheckPoint > 0)
+    app_log() << "  Configurations are dumped to config.h5 with a period of " << Period4CheckPoint
               << " blocks" << std::endl;
-  }
+  else if (Period4CheckPoint == 0)
+    app_log() << "  Configurations are dumped to config.h5 at the end of the run" << std::endl;
   else
-  {
-    app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << std::endl;
-  }
+    app_log() << "  Nothing (configurations, state) will be saved." << std::endl;
 
   if (Period4WalkerDump > 0)
     app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << std::endl;

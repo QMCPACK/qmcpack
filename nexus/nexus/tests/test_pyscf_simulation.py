@@ -10,7 +10,6 @@ from nexus.nexus_base import nexus_config
 from nexus.physical_system import generate_physical_system
 from nexus.structure import generate_trimer_structure
 from ..testing import clear_all_sims
-from ..testing import failed,FailedTest
 
 TEST_FILES = {
     "scf_template.py": TEST_DIR / "test_pyscf_simulation_files/scf_template.py",
@@ -74,7 +73,6 @@ def test_check_result():
 
 @isolate_nexus_core
 def test_get_result(tmp_path):
-    from ..developer import NexusError
     from ..nexus_base import nexus_config
 
     nexus_config.local_directory  = str(tmp_path)
@@ -161,7 +159,7 @@ def test_check_sim_status(tmp_path):
     try:
         sim.check_sim_status()
     except IOError:
-        None
+        pass
     except Exception as e:
         raise e
 

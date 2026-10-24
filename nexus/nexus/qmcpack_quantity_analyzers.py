@@ -126,7 +126,7 @@ class QuantityAnalyzer(QAanalyzer):
     #end def QuantityAnalyzer
 
     def init_sub_analyzers(self):
-        None
+        pass
     #end def init_sub_analyzers
 
     def get_nblocks_exclude(self):
@@ -574,7 +574,6 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
             self.ions = ions
         #end if
 
-        return
     #end def analyze_local
 
 
@@ -626,7 +625,6 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
             #end for
         #end if
         self.info.reordered=True
-        return
     #end def reorder_atomic_data
 
 
@@ -696,7 +694,6 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         mlab.contour3d(x,y,z,s)
         mlab.show()
 
-        return
     #end def isosurface
 
     def mesh(self):
@@ -735,7 +732,6 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         mlab.mesh(f[i]*x[i],f[i]*y[i],f[i]*z[i],scalars=f[i])
         mlab.show()
 
-        return
     #end def test
 
 
@@ -765,7 +761,6 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         # View it.
         s = mlab.mesh(x, y, z, scalars=r)
         mlab.show()
-        return
     #end def
 
 
@@ -922,7 +917,6 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         mlab.pipeline.surface(contour)
 
 
-        return
     #end def test_structured
 
 
@@ -1197,7 +1191,7 @@ class TracesAnalyzer(QAanalyzer):
     #end def form_diagnostic_data
 
     def analyze_local(self):
-        None
+        pass
     #end def analyze_local
 
 
@@ -1490,15 +1484,15 @@ class TracesAnalyzer(QAanalyzer):
 
     #methods that do not apply
     def init_sub_analyzers(self):
-        None
+        pass
     def zero_data(self):
-        None
+        pass
     def minsize_data(self,other):
-        None
+        pass
     def accumulate_data(self,other):
-        None
+        pass
     def normalize_data(self,normalization):
-        None
+        pass
 #end class TracesAnalyzer
 
 
@@ -2166,7 +2160,6 @@ def is_integer(i):
 class SpaceGridInitializer(QAobject):
     def __init__(self):
         self.coord              = None # string
-        return
     #end def __init__
 
     def check_complete(self,*,exit_on_fail=True):
@@ -2296,19 +2289,19 @@ class SpaceGridBase(QAobject):
     #end def __init__
 
     def copy(self,other):
-        None
+        pass
     #end def copy
 
     def init_special(self):
-        None
+        pass
     #end def init_special
 
     def init_from_initializer(self,init):
-        None
+        pass
     #end def init_from_initializer
 
     def init_from_spacegrid(self,init):
-        None
+        pass
     #end def init_from_spacegrid
 
     def init_from_hdfgroup(self,init):
@@ -2417,11 +2410,10 @@ class SpaceGridBase(QAobject):
             self.data.P = P
         #end if
 
-        return
     #end def init_from_hdfgroup
 
     def init_from_xmlelement(self,init):
-        None
+        pass
     #end def init_from_xmlelement
 
     def check_complete(self,*,exit_on_fail=True):
@@ -2446,11 +2438,11 @@ class SpaceGridBase(QAobject):
     #end def check_complete
 
     def _reset_dynamic_methods(self):
-        None
+        pass
     #end def _reset_dynamic_methods
 
     def _unset_dynamic_methods(self):
-        None
+        pass
     #end def _unset_dynamic_methods
 
     def add_all_attributes(self,o):
@@ -2460,12 +2452,11 @@ class SpaceGridBase(QAobject):
                 self._add_attribute(k,vc)
             #end if
         #end for
-        return
     #end def add_all_attributes
 
 
     def reorder_atomic_data(self,imap):
-        None
+        pass
     #end if
 
 
@@ -2567,7 +2558,6 @@ class RectilinearGridInitializer(SpaceGridInitializer):
 class RectilinearGrid(SpaceGridBase):
     def __init__(self,initobj=None,options=None):
         SpaceGridBase.__init__(self,initobj,options)
-        return
     #end def __init__
 
     def init_special(self):
@@ -2583,7 +2573,6 @@ class RectilinearGrid(SpaceGridBase):
         self.odu            = None
         self.dm             = None
         self.domain_uwidths = None
-        return
     #end def init_special
 
     def copy(self):
@@ -2600,13 +2589,11 @@ class RectilinearGrid(SpaceGridBase):
              self.point2unit_cylindrical, \
              self.point2unit_spherical]
         self.point2unit = p2u[self.coordinate]
-        return
     #end def _reset_dynamic_methods
 
     def _unset_dynamic_methods(self):
         self.points2domains = None
         self.point2unit     = None
-        return
     #end def _unset_dynamic_methods
 
     def init_from_initializer(self,init):
@@ -2617,7 +2604,6 @@ class RectilinearGrid(SpaceGridBase):
             #end if
         #end for
         self.initialize()
-        return
     #end def init_from_initializer
 
     def init_from_spacegrid(self,init):
@@ -2637,14 +2623,13 @@ class RectilinearGrid(SpaceGridBase):
                 elif vtype==HDFgroup:
                     self[k] = v
                 elif k in exclude:
-                    None
+                    pass
                 else:
                     self[k] = vtype(v)
                 #end if
             #end for
         #end for
         self.points = init.points
-        return
     #end def init_from_spacegrid
 
     def init_from_hdfgroup(self,init):
@@ -2660,7 +2645,6 @@ class RectilinearGrid(SpaceGridBase):
         for i in range(len(self.gmap)):
             self.gmap[i]=self.gmap[i].reshape((len(self.gmap[i]),))
         #end for
-        return
     #end def init_from_hdfgroup
 
 
@@ -2706,7 +2690,6 @@ class RectilinearGrid(SpaceGridBase):
             self.axgrid.append(axis.grid)
         #end for
         self.initialize()
-        return
     #end def init_from_xmlelement
 
     def initialize(self): #like qmcpack SpaceGridBase.initialize
@@ -3188,13 +3171,11 @@ class RectilinearGrid(SpaceGridBase):
         for i in range(self.domain_centers.shape[0]):
             self.domain_centers[i,:] += shift
         #end for
-        return
     #end def shift_origin
 
 
     def set_origin(self,origin):
         self.shift_origin(origin-self.origin)
-        return
     #end def set_origin
 
 
@@ -3375,7 +3356,6 @@ class RectilinearGrid(SpaceGridBase):
         scalars    = self[quantity].mean
         name       = quantity
         self.plotter.isosurface(points,scalars,contours,dimensions,name)
-        return
     #end def isosurface
 
 
@@ -3391,7 +3371,6 @@ class RectilinearGrid(SpaceGridBase):
         scalars = val[quantity].mean
         npe.reshape_inplace(scalars, x.shape)
         self.plotter.surface_slice(x,y,z,scalars,options)
-        return
     #end def surface_slice
 
 
@@ -3410,7 +3389,6 @@ class RectilinearGrid(SpaceGridBase):
             az=np.array([-a[2],a[2]])
             self.plotter.plot3d(ax,ay,az,tube_radius=radius,color=tuple(colors[:,d]))
         #end for
-        return
     #end def plot_axes
 
     def plot_box(self,color=None,radius=.025,origin=None):
@@ -3431,7 +3409,6 @@ class RectilinearGrid(SpaceGridBase):
         p8=p.cppp+origin
         bline = np.array([p1,p2,p4,p3,p1,p5,p6,p8,p7,p5,p7,p3,p4,p8,p6,p2])
         self.plotter.plot3d(bline[:,0],bline[:,1],bline[:,2],color=color)
-        return
     #end def plot_box
 #end class RectilinearGrid
 
@@ -3449,7 +3426,6 @@ class VoronoiGridInitializer(SpaceGridInitializer):
 class VoronoiGrid(SpaceGridBase):
     def __init__(self,initobj=None,options=None):
         SpaceGridBase.__init__(self,initobj,options)
-        return
     #end def __init__
 
     def copy(self,other):

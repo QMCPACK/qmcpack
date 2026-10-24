@@ -131,12 +131,18 @@ public:
   /** dump Samples to a file
    * @param others MCWalkerConfigurations whose samples will be collected
    * @param out engine to write the samples to state_0/walkers
+   * @param fname file root name
    * @param np number of processors
+   * @param nBlock current block
    * @return true with non-zero samples
    *
    * CAUTION: The current implementation assumes the same amount of active walkers on all the MPI ranks.
    */
-  static bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput& out, int np, int nBlock);
+  static bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others,
+                           HDFWalkerOutput& out,
+                           const std::string& fname,
+                           int np,
+                           int nBlock);
   ///clear the ensemble
   void clearEnsemble();
 

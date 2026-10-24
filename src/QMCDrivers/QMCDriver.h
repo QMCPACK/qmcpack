@@ -106,7 +106,7 @@ public:
             MCWalkerConfiguration& w,
             TrialWaveFunction& psi,
             QMCHamiltonian& h,
-            Communicate* comm,
+            Communicate& comm,
             const std::string& QMC_driver_type,
             bool enable_profiling = false);
 
@@ -200,8 +200,6 @@ protected:
   bool ResetRandom;
   ///flag to append or restart the run
   bool AppendRun;
-  ///flag to turn off dumping configurations
-  bool DumpConfig;
   ///true, if it is a real QMC engine
   bool IsQMCDriver;
   /** the number of times this QMCDriver is executed
@@ -211,9 +209,13 @@ protected:
    * using MyCounter++ as in RQMC.
    */
   int MyCounter;
-  /** period of dumping walker configurations and everything else for restart
+  /** Period of dumping walker configurations and everything else for restart.
    *
-   * The unit is a block.
+   * The unit is in blocks.
+   *   < 0 : No checkpoint files are written.
+   *   = 0 : Write checkpoint files after the completion of the QMC section (default).
+   *   > 0 : Write checkpoint files after every n blocks (excluding the last block),
+   *         and at the end of the QMC section.
    */
   int Period4CheckPoint;
   /** period of dumping walker positions and IDs for Forward Walking
@@ -229,11 +231,6 @@ protected:
    * Default is 0 indicating that only the last configuration will be saved.
    */
   int Period4WalkerDump;
-
-  /** period of recording walker positions and IDs for forward walking afterwards
-   *
-   */
-  int Period4ConfigDump;
 
   ///current step
   IndexType CurrentStep;
@@ -273,9 +270,6 @@ protected:
 
   ///timestep
   RealType Tau;
-
-  ///maximum cpu in secs
-  int MaxCPUSecs;
 
   ///Time-step factor \f$ 1/(2\tau)\f$
   RealType m_oneover2tau;

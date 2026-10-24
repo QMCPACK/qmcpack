@@ -246,7 +246,7 @@ class StandardFile(DevBase):
 
     def __init__(self,filepath=None):
         if filepath is None:
-            None
+            pass
         elif isinstance(filepath, str | bytes | Path):
             filepath = path_string(filepath)
             self.read(filepath)

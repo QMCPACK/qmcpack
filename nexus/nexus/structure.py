@@ -763,7 +763,7 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
 
 
 class Sobj(DevBase):
-    None
+    pass
 #end class Sobj
 
 
@@ -3244,7 +3244,7 @@ class Structure(Sobj):
             elem = set(self.elem[indices])
             spec = set(spec_max.keys())
             if spec==elem or rmax is not None:
-                None
+                pass
             elif spec<elem and nmax is not None:
                 for e in elem:
                     if e not in spec:
@@ -3771,7 +3771,7 @@ class Structure(Sobj):
         elem = set(self.elem[indices])
         spec = set(spec_max.keys())
         if spec==elem or rmax is not None or voronoi:
-            None
+            pass
         elif spec<elem and nmax is not None:
             for e in elem:
                 if e not in spec:
@@ -5718,7 +5718,7 @@ class Structure(Sobj):
                 elif t0=='constrain_relaxation':
                     constrain_relax.append(tokens[1])
                 elif t0.startswith('initial'):
-                    None
+                    pass
                 else:
                     #None
                     msg = (

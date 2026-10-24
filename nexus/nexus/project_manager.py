@@ -24,7 +24,7 @@ from typing import ClassVar,Literal,TextIO
 from . import memory
 from .developer import obj, NexusError
 from .nexus_base import NexusCore, ShowStatusMode, nexus_config, dynamic_storage
-from .simulation import Simulation, sim_err_handler
+from .simulation import Simulation, sim_err_handler, sim_log_handler
 from .machines import Machine,Job
 
 
@@ -49,7 +49,7 @@ def color_status_result(result: Literal['SUCCESS','FAILURE'] | str,logfile: Text
 
 
 def trivial(sim,*args,**kwargs):
-    None
+    pass
 #end def trivial
 
 
@@ -286,7 +286,6 @@ class ProjectManager(NexusCore):
         for cascade in self.cascades.values():
             cascade.traverse_cascade(operation,*args,**kwargs)
         #end for
-        return
     #end def traverse_cascades
 
 
@@ -369,12 +368,13 @@ class ProjectManager(NexusCore):
         finished = []
         progressing_cascades = self.progressing_cascades
         for cascade in progressing_cascades.values():
-            with sim_err_handler(sim=cascade): # Wrap execution in sim error handler
+            # Use error and log handlers to redirect output and prevent total crashes
+            with sim_err_handler(sim=cascade), sim_log_handler(sim=cascade):
                 cascade.reset_wait_ids()
         #end for
         for cid,cascade in progressing_cascades.items():
-            with sim_err_handler(sim=cascade): # Wrap execution in sim error handler
-
+            # Use error and log handlers to redirect output and prevent total crashes
+            with sim_err_handler(sim=cascade), sim_log_handler(sim=cascade):
                 if not cascade.bundled or cascade.bundler.finished:
                     cascade.progress()
 
@@ -422,7 +422,6 @@ class ProjectManager(NexusCore):
             self.nxs_print(cascade.__class__.__name__+' '+str(cascade.simid),n=2)
             cascade.write_dependents(n=2)
         #end for
-        return
     #end def write_cascade_dependents
 #end class ProjectManager
 

@@ -53,7 +53,7 @@ public:
   using MCPWalker        = Walker<QMCT, PtclOnLatticeTraits>;
   using PSPool           = typename ParticleSetPool::PoolType;
   /// default constructor
-  EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* comm);
+  EstimatorManagerNew(const QMCHamiltonian& ham, Communicate& comm);
   ///copy constructor, deleted
   EstimatorManagerNew(EstimatorManagerNew& em) = delete;
   ///destructor
@@ -94,12 +94,11 @@ public:
 
   /** Start the manager at the beginning of a driver run().
    * Open files. Setting zeros.
-   * @param blocks number of blocks
-   * @param record if true, will write to a file
+   * @param root_name root name for output files
    *
    * Replace reportHeader and reset functon.
    */
-  void startDriverRun();
+  void startDriverRun(const std::string& root_name);
 
   /** Stop the manager at the end of a driver run().
    * Flush/close files.
@@ -244,7 +243,7 @@ private:
   ///file handler to write data for debugging
   std::unique_ptr<std::ofstream> DebugArchive;
   ///communicator to handle communication
-  Communicate* my_comm_;
+  Communicate& my_comm_;
   /** accumulator for the energy
    *
    * @todo expand it for all the scalar observables to report the final results

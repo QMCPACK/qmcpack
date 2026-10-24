@@ -27,7 +27,7 @@ namespace qmcplusplus
 {
 TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // BCC H
   Lattice lattice;
@@ -128,7 +128,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 
 TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // LiH
   Lattice lattice;

@@ -33,7 +33,7 @@ public:
                                     MCWalkerConfiguration& w,
                                     TrialWaveFunction& psi,
                                     QMCHamiltonian& h,
-                                    Communicate* comm);
+                                    Communicate& comm);
 };
 } // namespace qmcplusplus
 

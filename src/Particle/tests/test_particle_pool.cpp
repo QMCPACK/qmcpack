@@ -27,8 +27,7 @@ namespace qmcplusplus
 {
 TEST_CASE("ParticleSetPool", "[qmcapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool pp(c);
 
@@ -76,8 +75,7 @@ TEST_CASE("ParticleSetPool", "[qmcapp]")
 
 TEST_CASE("ParticleSetPool random", "[qmcapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool pp(c);
 
@@ -128,8 +126,7 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
 
 TEST_CASE("ParticleSetPool putLattice", "[qmcapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool pp(c);
 

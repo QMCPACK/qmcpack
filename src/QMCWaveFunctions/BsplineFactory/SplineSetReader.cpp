@@ -62,7 +62,8 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
     distributed_ranks = 1;
   }
 
-  auto dist_comm_ptr = std::make_unique<Communicate>(*myComm, myComm->size() / (distributed_ranks * shared_ranks));
+  auto dist_comm_ptr =
+      std::make_unique<Communicate>(myComm.split(myComm.size() / (distributed_ranks * shared_ranks)));
 
   app_log() << "  Using " << (use_duplex_splines_ ? "complex" : "real") << " einspline table." << std::endl;
   if (distributed_ranks > 1)
@@ -124,7 +125,7 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   }
 
   bool foundspline = lookforSplineDataDumpFile(bandgroup, bspline->getKeyword(), sizeof(ST));
-  if (foundspline && myComm->rank() == 0)
+  if (foundspline && myComm.rank() == 0)
   {
     Timer now;
     hdf_archive h5f(myComm);
@@ -137,13 +138,13 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   }
 
   /* create a sub communicator. spline table is shared across MPI ranks with identical subcomm rank id.
-   *  myComm->size() == 12 ; shared_ranks = 2; distributed_ranks = 3;
+   *  myComm.size() == 12 ; shared_ranks = 2; distributed_ranks = 3;
    *          | group 0 | group 1 |
    *          |  0 1 2  |  3 4 5  |
    *          |  6 7 8  | 9 10 11 |
    */
-  Communicate shared_comm(*myComm, shared_ranks, distributed_ranks);
-  Communicate dist_comm(shared_comm, shared_comm.size() / distributed_ranks);
+  Communicate shared_comm(myComm.splitByStride(shared_ranks, distributed_ranks));
+  Communicate dist_comm(shared_comm.split(shared_comm.size() / distributed_ranks));
 
   if (!foundspline)
   {
@@ -155,7 +156,7 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
       app_log() << "  SplineSetReader initialize_spline_pio " << now.elapsed() << " sec" << std::endl;
     }
 
-    if (saveSplineCoefs && myComm->rank() == 0)
+    if (saveSplineCoefs && myComm.rank() == 0)
     {
       Timer now;
       const std::string splinefile(getSplineDumpFileName(bandgroup));
@@ -173,11 +174,11 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   }
 
   {
-    myComm->barrier();
+    myComm.barrier();
     Timer now;
     if (shared_comm.getGroupID() == 0)
       SplineUtils<ST>::bcast(multi_splines, dist_comm.rank(), dist_comm.getInterGroupComm());
-    myComm->barrier();
+    myComm.barrier();
     app_log() << "  Time to bcast the table = " << now.elapsed() << std::endl;
   }
 
@@ -202,7 +203,7 @@ void SplineSetReader<ST>::initialize_spline_pio_gather(const int spin,
   const int Nprocs          = comm.size();
   const int Nbandgroups     = Nbands > 0 ? std::min(Nbands, Nprocs) : 1;
 
-  Communicate band_group_comm(comm, Nbandgroups);
+  Communicate band_group_comm(comm.split(Nbandgroups));
   std::vector<int> band_groups(Nbandgroups + 1, 0);
   FairDivideLow(Nbands, Nbandgroups, band_groups);
   const int iorb_first = orb_block_start + band_groups[band_group_comm.getGroupID()];
@@ -210,7 +211,7 @@ void SplineSetReader<ST>::initialize_spline_pio_gather(const int spin,
 
   app_log() << "Start transforming plane waves to 3D B-Splines." << std::endl;
   OneSplineOrbData oneband(mybuilder->MeshSize, half_g, use_duplex_splines_);
-  hdf_archive h5f(&band_group_comm, false);
+  hdf_archive h5f(band_group_comm, false);
   Vector<std::complex<double>> cG(mybuilder->Gvecs[0].size());
   const std::vector<BandInfo>& cur_bands = bandgroup.myBands;
   if (band_group_comm.isGroupLeader())

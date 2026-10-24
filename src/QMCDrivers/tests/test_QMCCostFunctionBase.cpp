@@ -22,7 +22,7 @@ namespace qmcplusplus
 class QMCCostFunctionTest : public QMCCostFunctionBase
 {
 public:
-  QMCCostFunctionTest(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* c)
+  QMCCostFunctionTest(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate& c)
       : QMCCostFunctionBase(w, psi, h, c)
   {}
 
@@ -64,7 +64,7 @@ TEST_CASE("updateXmlNodes", "[drivers]")
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);
 
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   QMCCostFunctionTest cost(w, psi, h, comm);
 
@@ -99,7 +99,7 @@ TEST_CASE("updateXmlNodes with existing element", "[drivers]")
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);
 
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   QMCCostFunctionTest cost(w, psi, h, comm);
   cost.setRootName("tmp2");

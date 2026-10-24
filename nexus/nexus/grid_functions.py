@@ -3456,7 +3456,7 @@ class StructuredGridFunction(GridFunction):
 
     @property
     def flat_values_shape(self):
-        None
+        pass
     #end def flat_values_shape
 
     @property

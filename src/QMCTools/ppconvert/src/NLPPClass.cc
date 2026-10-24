@@ -20,6 +20,7 @@
 #include "ParseCommand.h"
 
 #include <array>
+#include <charconv>
 #include <sstream>
 #include <ctime>
 #include <cstdlib>
@@ -932,19 +933,24 @@ PseudoClass::WriteABINIT (std::string fileName)
 	double ul;
 	double rend = ChannelPotentials[l].ul.grid.End();
 	if (r >= rend) {
-	  int i=ChannelPotentials[l].ul.grid.NumPoints();
-	  while (fabs(ChannelPotentials[l].ul(i)) == 0.0) i--;
-	  double r2 = ChannelPotentials[l].ul.grid[i];
-	  double r1 = ChannelPotentials[l].ul.grid[i-10];
-	  double u2 = ChannelPotentials[l].ul(i);
-	  double u1 = ChannelPotentials[l].ul(i-10);
-	  double alpha = log(u1/u2)/(r2-r1);
-	  // rend = min (rend, 60.0);
-	  // double uend = ChannelPotentials[l].ul(rend);
-	  // double alpha = log (ChannelPotentials[l].ul(rend-1.0)/uend);
-	  //cerr << "alpha = " << alpha << " rend = " << r2 << " u2 = " << u2 << endl;
-	  // ul = uend * exp(-alpha*(r-rend));
-	  ul = u2 * exp(-alpha*(r - r2));
+    int last_nonzero = ChannelPotentials[l].ul.grid.NumPoints() - 1;
+    while (last_nonzero > 0 && fabs(ChannelPotentials[l].ul(last_nonzero)) == 0.0)
+      last_nonzero--;
+    if (last_nonzero < 10)
+      ul = 0.0;
+    else {
+      double r2    = ChannelPotentials[l].ul.grid[last_nonzero];
+      double r1    = ChannelPotentials[l].ul.grid[last_nonzero - 10];
+      double u2    = ChannelPotentials[l].ul(last_nonzero);
+      double u1    = ChannelPotentials[l].ul(last_nonzero - 10);
+      double ratio = u1 / u2;
+      if (!std::isfinite(ratio) || ratio <= 0.0 || r2 <= r1)
+        ul = 0.0;
+      else {
+        double alpha = log(ratio) / (r2 - r1);
+        ul           = u2 * exp(-alpha * (r - r2));
+      }
+    }
 	}
 	else
 	  ul= ChannelPotentials[l].ul(r);
@@ -1490,6 +1496,8 @@ PseudoClass::ReadGAMESS_PP (std::string fileName)
   if (LocalChannel<0) LocalChannel = lmax;
 
   ChannelPotentials.resize(lmax+1);
+  if (!ValidateLocalChannel())
+    return false;
 
   // Setup the potential grid
   std::vector<double> rPoints;
@@ -1843,6 +1851,18 @@ PseudoClass::GetNumChannels()
 }
 
 bool
+PseudoClass::ValidateLocalChannel() const
+{
+  if (LocalChannel < 0 || LocalChannel >= static_cast<int>(ChannelPotentials.size()))
+  {
+    std::cerr << "Invalid local channel " << LocalChannel << "; expected a value from 0 to "
+              << static_cast<int>(ChannelPotentials.size()) - 1 << ".\n";
+    return false;
+  }
+  return true;
+}
+
+bool
 PseudoClass::HaveProjectors()
 {
   bool has = true;
@@ -1929,26 +1949,40 @@ int main(int argc, char **argv)
     nlpp.WriteLogGrid = true;
 
   if (parser.Found("local_channel"))
-    nlpp.SetLocalChannel(atoi(parser.GetArg("local_channel").c_str()));
+  {
+    const std::string local_channel_arg = parser.GetArg("local_channel");
+    int local_channel;
+    const auto parse_result =
+        std::from_chars(local_channel_arg.data(), local_channel_arg.data() + local_channel_arg.size(), local_channel);
+    if (parse_result.ec != std::errc() || parse_result.ptr != local_channel_arg.data() + local_channel_arg.size())
+    {
+      std::cerr << "Invalid local channel \"" << local_channel_arg << "\"; expected an integer.\n";
+      return 1;
+    }
+    nlpp.SetLocalChannel(local_channel);
+  }
 
   if (parser.Found("density_mix"))
     nlpp.SetDensityMix(atof(parser.GetArg("density_mix").c_str()));
 
+  bool input_read;
   if (parser.Found("casino_pot"))
-    nlpp.ReadCASINO_PP(parser.GetArg("casino_pot"));
+    input_read = nlpp.ReadCASINO_PP(parser.GetArg("casino_pot"));
   else if (parser.Found ("bfd_pot"))
-    nlpp.ReadBFD_PP (parser.GetArg ("bfd_pot"));
+    input_read = nlpp.ReadBFD_PP (parser.GetArg ("bfd_pot"));
   else if (parser.Found ("fhi_pot"))
-    nlpp.ReadFHI_PP (parser.GetArg ("fhi_pot"));
+    input_read = nlpp.ReadFHI_PP (parser.GetArg ("fhi_pot"));
   else if (parser.Found ("upf_pot"))
-    nlpp.ReadUPF_PP (parser.GetArg ("upf_pot"));
+    input_read = nlpp.ReadUPF_PP (parser.GetArg ("upf_pot"));
   else if (parser.Found ("gamess_pot"))
-    nlpp.ReadGAMESS_PP (parser.GetArg("gamess_pot"));
+    input_read = nlpp.ReadGAMESS_PP (parser.GetArg("gamess_pot"));
   else {
     std::cerr << "Need to specify a potential file with --casino_pot "
 	 << "or --bfd_pot or --fhi_pot or --upf_pot or --gamess_pot.\n";
     exit(1);
   }
+  if (!input_read || !nlpp.ValidateLocalChannel())
+    return 1;
 
   // Now check how the projectors are specified
   if (!nlpp.HaveProjectors()) {

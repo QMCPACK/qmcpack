@@ -73,12 +73,9 @@ BareForce::Return_t BareForce::evaluate(ParticleSet& P)
 
 bool BareForce::put(xmlNodePtr cur)
 {
-  std::string ionionforce("yes");
   OhmmsAttributeSet attr;
   attr.add(prefix_, "name");
-  attr.add(ionionforce, "add_ion_ion_");
   attr.put(cur);
-  add_ion_ion_ = (ionionforce == "yes" || ionionforce == "true");
   return true;
 }
 

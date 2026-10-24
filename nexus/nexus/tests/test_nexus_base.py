@@ -2,8 +2,7 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.NEXUS_BASE)
 
-from . import isolate_nexus_core, TEST_DIR
-from ..testing import object_eq
+from . import TEST_DIR
 
 
 TEST_FILES = {

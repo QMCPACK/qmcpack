@@ -681,9 +681,9 @@ class DrtGroup(KeywordSpecGroup):
 
     allowed_values = obj(
         group = {'c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h'},
-        stsym = {'a','ag','au','ap','app','a','b','a1','a2','b1','b2','ag',
-                     'bu','bg','au','a','b1','b2','b3','ag','b1g','b2g','b3g',
-                     'au','b1u','b2u','b3u'},
+        stsym = {'a','ag','au','ap','app','b','a1','a2','b1','b2',
+                     'bu','bg','b3','b1g','b2g','b3g',
+                     'b1u','b2u','b3u'},
         nprt = {0,1,2,3},
         )
 #end class DrtGroup
@@ -704,9 +704,9 @@ class CidrtGroup(KeywordSpecGroup):
 
     allowed_values = obj(
         group = {'c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h'},
-        stsym = {'a','ag','au','ap','app','a','b','a1','a2','b1','b2','ag',
-                     'bu','bg','au','a','b1','b2','b3','ag','b1g','b2g','b3g',
-                     'au','b1u','b2u','b3u'},
+        stsym = {'a','ag','au','ap','app','b','a1','a2','b1','b2',
+                     'bu','bg','b3','b1g','b2g','b3g',
+                     'b1u','b2u','b3u'},
         nprt = {0,1,2,3},
         )
 #end class CidrtGroup
@@ -730,9 +730,9 @@ class DetGroup(KeywordSpecGroup):
 
     allowed_values = obj(
         group = {'c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h'},
-        stsym = {'a','ag','au','ap','app','a','b','a1','a2','b1','b2','ag',
-                     'bu','bg','au','a','b1','b2','b3','ag','b1g','b2g','b3g',
-                     'au','b1u','b2u','b3u'},
+        stsym = {'a','ag','au','ap','app','b','a1','a2','b1','b2',
+                     'bu','bg','b3','b1g','b2g','b3g',
+                     'b1u','b2u','b3u'},
         )
 #end class DetGroup
 
@@ -949,7 +949,7 @@ class GamessInput(SimulationInput,GIbase):
                         group_text = ''
                     #end if
                 elif not ingroup:
-                    None
+                    pass
                 else:
                     msg = (
                         f'invalid text encountered during read of line number {n}:\n'
@@ -958,7 +958,7 @@ class GamessInput(SimulationInput,GIbase):
                     raise FileFormatError(msg)
                 #end if
             elif ls=='' or line[0]!=' ' or not ingroup:
-                None
+                pass
             else:
                 msg = (
                     f'invalid text encountered during read of line number {n}:\n'
@@ -1185,7 +1185,7 @@ def generate_any_gamess_input(**kwargs):
             del kw[vname]
             del kwrem[vname]
         elif name in GamessInput.group_keyword_overlap:
-            None
+            pass
         else:
             msg = (
                 f'invalid information provided to initialize group {vname}\n'

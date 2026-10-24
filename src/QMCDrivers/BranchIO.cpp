@@ -63,14 +63,10 @@ struct h5data_proxy<accumulator_set<T>> : public h5_space_type<T, 1>
   inline h5data_proxy(const data_type& a) { dims[0] = CAPACITY; }
 
   inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
-  {
-    return h5d_read(grp, aname, get_address(ref.properties), xfer_plist);
-  }
+  { return h5d_read(grp, aname, get_address(ref.properties), xfer_plist); }
 
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
-  {
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(ref.properties), xfer_plist);
-  }
+  { return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(ref.properties), xfer_plist); }
 };
 
 template<class SFNB>
@@ -108,7 +104,7 @@ void BranchIO<SFNB>::initAttributes()
 template<class SFNB>
 bool BranchIO<SFNB>::write(const std::string& fname)
 {
-  if (myComm->rank())
+  if (myComm.rank())
     return true;
 
 #if defined(HAVE_LIBBOOST)
@@ -117,18 +113,18 @@ bool BranchIO<SFNB>::write(const std::string& fname)
   ptree pt;
 
   // Put log filename in property tree
-  pt.put("state.branchmode", ref.BranchMode);
+  pt.put("state.branchmode", ref.branch_mode_);
 
-  auto it_vparam = ref.vParam.begin();
+  auto it_vparam = ref.v_param_.begin();
   for (auto& name : vParamName)
     pt.put("state.vparam." + name, *(it_vparam++));
   for (int i = 0; i < iParamName.size(); ++i)
     pt.put("state.iparam." + iParamName[i], ref.iParam[i]);
 
-  put_histogram("state.energy", ref.EnergyHist, pt);
-  put_histogram("state.variance", ref.VarianceHist, pt);
-  put_histogram("state.r2accepted", ref.R2Accepted, pt);
-  put_histogram("state.r2proposed", ref.R2Proposed, pt);
+  put_histogram("state.energy", ref.energy_hist_, pt);
+  put_histogram("state.variance", ref.variance_hist_, pt);
+  put_histogram("state.r2accepted", ref.r2_accepted_, pt);
+  put_histogram("state.r2proposed", ref.r2_proposed_, pt);
   std::string xname = fname + ".qmc.xml";
   write_xml(xname, pt);
 #else
@@ -144,16 +140,16 @@ bool BranchIO<SFNB>::write(const std::string& fname)
   std::string i_header("warmupsteps:energyupdateinterval:counter:targetwalkers:maxwalkers:minwalkers:branchinterval");
   dump.write(v_header, "vparam_def");
   dump.write(i_header, "iparam_def");
-  dump.write(ref.vParam, "vparam");
+  dump.write(ref.v_param_, "vparam");
   dump.write(ref.iParam, "iparam");
-  dump.write(ref.BranchMode, "branchmode");
+  dump.write(ref.branch_mode_, "branchmode");
   dump.push("histogram");
-  dump.write(ref.EnergyHist, "energy");
-  dump.write(ref.VarianceHist, "variance");
-  dump.write(ref.R2Accepted, "r2accepted");
-  dump.write(ref.R2Proposed, "r2proposed");
+  dump.write(ref.energy_hist_, "energy");
+  dump.write(ref.variance_hist_, "variance");
+  dump.write(ref.r2_accepted_, "r2accepted");
+  dump.write(ref.r2_proposed_, "r2proposed");
   //PopHist is not being used in 2010-10-19
-  //if(ref.BranchMode[SimpleFixedNodeBranch::B_DMC])
+  //if(ref.branch_mode_[SimpleFixedNodeBranch::B_DMC])
   //{
   //  dump.push("population");
   //  dump.write(ref.PopHist.myData,"histogram");
@@ -167,7 +163,7 @@ bool BranchIO<SFNB>::read(const std::string& fname)
 {
   int found_config = 0;
 
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     initAttributes();
     using boost::property_tree::ptree;
@@ -176,19 +172,19 @@ bool BranchIO<SFNB>::read(const std::string& fname)
     read_xml(xname, pt);
     if (!pt.empty())
     {
-      ref.BranchMode = pt.get<BranchModeType>("state.branchmode");
+      ref.branch_mode_ = pt.get<BranchModeType>("state.branchmode");
 
-      get_histogram("state.energy", ref.EnergyHist, pt);
-      get_histogram("state.variance", ref.VarianceHist, pt);
-      get_histogram("state.r2accepted", ref.R2Accepted, pt);
-      get_histogram("state.r2proposed", ref.R2Proposed, pt);
+      get_histogram("state.energy", ref.energy_hist_, pt);
+      get_histogram("state.variance", ref.variance_hist_, pt);
+      get_histogram("state.r2accepted", ref.r2_accepted_, pt);
+      get_histogram("state.r2proposed", ref.r2_proposed_, pt);
 
       int i = 0;
       BOOST_FOREACH (const ptree::value_type& v, pt.get_child("state.iparam"))
       {
         ref.iParam[i++] = v.second.get_value<int>();
       }
-      auto it_vparam = ref.vParam.begin();
+      auto it_vparam = ref.v_param_.begin();
       BOOST_FOREACH (const ptree::value_type& v, pt.get_child("state.vparam"))
       {
         *(it_vparam++) = v.second.get_value<double>();
@@ -196,7 +192,7 @@ bool BranchIO<SFNB>::read(const std::string& fname)
       found_config = 1;
     }
   }
-  myComm->bcast(found_config);
+  myComm.bcast(found_config);
 
   if (!found_config)
     return false;
@@ -209,46 +205,46 @@ bool BranchIO<SFNB>::read(const std::string& fname)
 template<class SFNB>
 void BranchIO<SFNB>::bcast_state()
 {
-  int n = ref.vParam.size() + ref.iParam.size();
+  int n = ref.v_param_.size() + ref.iParam.size();
   std::vector<RealType> pdata(n + 1 + 16, -1);
 
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
-    copy(ref.vParam.begin(), ref.vParam.end(), pdata.begin());
-    copy(ref.iParam.begin(), ref.iParam.end(), pdata.begin() + ref.vParam.size());
+    copy(ref.v_param_.begin(), ref.v_param_.end(), pdata.begin());
+    copy(ref.iParam.begin(), ref.iParam.end(), pdata.begin() + ref.v_param_.size());
     int offset      = n;
-    pdata[offset++] = ref.BranchMode.to_ulong();
-    copy(ref.EnergyHist.properties, ref.EnergyHist.properties + 4, pdata.begin() + offset);
+    pdata[offset++] = ref.branch_mode_.to_ulong();
+    copy(ref.energy_hist_.properties, ref.energy_hist_.properties + 4, pdata.begin() + offset);
     offset += 4;
-    copy(ref.VarianceHist.properties, ref.VarianceHist.properties + 4, pdata.begin() + offset);
+    copy(ref.variance_hist_.properties, ref.variance_hist_.properties + 4, pdata.begin() + offset);
     offset += 4;
-    copy(ref.R2Accepted.properties, ref.R2Accepted.properties + 4, pdata.begin() + offset);
+    copy(ref.r2_accepted_.properties, ref.r2_accepted_.properties + 4, pdata.begin() + offset);
     offset += 4;
-    copy(ref.R2Proposed.properties, ref.R2Proposed.properties + 4, pdata.begin() + offset);
+    copy(ref.r2_proposed_.properties, ref.r2_proposed_.properties + 4, pdata.begin() + offset);
   }
 
   //broadcast to the nodes : need to add a namespace mpi::
-  myComm->bcast(pdata);
+  myComm.bcast(pdata);
 
-  if (myComm->rank())
+  if (myComm.rank())
   {
     int ii = 0;
-    for (auto& vpar : ref.vParam)
+    for (auto& vpar : ref.v_param_)
       vpar = pdata[ii++];
     for (int i = 0; i < ref.iParam.size(); ++i, ++ii)
       ref.iParam[i] = static_cast<int>(pdata[ii]);
-    ref.BranchMode = static_cast<unsigned long>(pdata[ii]);
+    ref.branch_mode_ = static_cast<unsigned long>(pdata[ii]);
   }
   {
     //update historgram
     int ii = n + 1;
-    ref.EnergyHist.reset(pdata[ii], pdata[ii + 1], pdata[ii + 2]);
+    ref.energy_hist_.reset(pdata[ii], pdata[ii + 1], pdata[ii + 2]);
     ii += 4;
-    ref.VarianceHist.reset(pdata[ii], pdata[ii + 1], pdata[ii + 2]);
+    ref.variance_hist_.reset(pdata[ii], pdata[ii + 1], pdata[ii + 2]);
     ii += 4;
-    ref.R2Accepted.reset(pdata[ii], pdata[ii + 1], pdata[ii + 2]);
+    ref.r2_accepted_.reset(pdata[ii], pdata[ii + 1], pdata[ii + 2]);
     ii += 4;
-    ref.R2Proposed.reset(pdata[ii], pdata[ii + 1], pdata[ii + 2]);
+    ref.r2_proposed_.reset(pdata[ii], pdata[ii + 1], pdata[ii + 2]);
   }
 }
 

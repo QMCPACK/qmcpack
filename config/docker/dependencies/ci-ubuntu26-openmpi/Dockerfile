@@ -40,7 +40,6 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         vim \
         wget
 
-# Python packages for Nexus and testing
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y \
         python3-cif2cell \

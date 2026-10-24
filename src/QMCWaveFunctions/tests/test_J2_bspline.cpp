@@ -36,7 +36,7 @@ using PsiValue = WaveFunctionComponent::PsiValue;
 
 TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   ParticleSet ions_(simulation_cell);

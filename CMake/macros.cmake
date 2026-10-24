@@ -611,21 +611,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
 endif(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
-function(COVERAGE_RUN TESTNAME SRC_DIR PROCS THREADS ${ARGN})
-  set(FULLNAME "coverage-${TESTNAME}")
-  set(TEST_ADDED FALSE)
-  run_qmc_app(
-    ${FULLNAME}
-    ${SRC_DIR}
-    ${PROCS}
-    ${THREADS}
-    TEST_ADDED
-    ${ARGN})
-  if(TEST_ADDED)
-    set_property(TEST ${FULLNAME} APPEND PROPERTY LABELS "coverage")
-  endif()
-endfunction()
-
 function(
   CPU_LIMIT_RUN
   TESTNAME

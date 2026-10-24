@@ -158,7 +158,6 @@ class VXML(DevBase):
             self.update(**self._attr)
         #end if
 
-        return
     #end def _parse
 
 
@@ -398,7 +397,7 @@ def read_vxml(filepath):
                 cur._lines.append(ls)
             #end if
         elif ls.startswith('<?'):
-            None
+            pass
         elif ls.startswith('<'):
             ta,rest = ls[1:].split('>',1)
             tokens = ta.split(' ',1)
@@ -550,7 +549,7 @@ def read_outcar_bands(vlines,odata):
                     kpoint = obj(kpoint=kp,energies=[],occupations=[])
                     spin[nk]=kpoint
                 elif line[2]=='b':
-                    None
+                    pass
                 else:
                     bnum,energy,occ = line.split()
                     kpoint.energies.append(float(energy))

@@ -320,9 +320,9 @@ class OptAnalyzer(MethodAnalyzer):
 #end class OptAnalyzer
 
 class VmcAnalyzer(MethodAnalyzer):
-    None
+    pass
 #end class OptAnalyzer
 
 class DmcAnalyzer(MethodAnalyzer):
-    None
+    pass
 #end class OptAnalyzer

@@ -30,7 +30,7 @@
 
 namespace qmcplusplus
 {
-ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
+ParticleSetPool::ParticleSetPool(Communicate& c, const char* aname)
     : MPIObjectBase(c), simulation_cell_(std::make_unique<SimulationCell>())
 {}
 
@@ -86,7 +86,7 @@ bool ParticleSetPool::readSimulationCellXML(xmlNodePtr cur)
   }
   catch (const UniformCommunicateError& ue)
   {
-    myComm->barrier_and_abort(ue.what());
+    myComm.barrier_and_abort(ue.what());
   }
 
   if (lattice_defined)
@@ -115,7 +115,6 @@ bool ParticleSetPool::put(xmlNodePtr cur)
 {
   ReportEngine PRE("ParticleSetPool", "put");
   std::string id("e");
-  std::string role("none");
   std::string randomR("no");
   std::string randomsrc;
   std::string useGPU;
@@ -123,16 +122,12 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id, "id");
   pAttrib.add(id, "name");
-  pAttrib.add(role, "role");
   pAttrib.add(randomR, "random");
   pAttrib.add(randomsrc, "randomsrc");
   pAttrib.add(randomsrc, "random_source");
   pAttrib.add(spinor, "spinor", {"no", "yes"});
   pAttrib.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
   pAttrib.put(cur);
-  //backward compatibility
-  if (id == "e" && role == "none")
-    role = "MC";
   ParticleSet* pTemp = getParticleSet(id);
   if (pTemp == 0)
   {
@@ -158,7 +153,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     }
     catch (const UniformCommunicateError& ue)
     {
-      myComm->barrier_and_abort(ue.what());
+      myComm.barrier_and_abort(ue.what());
     }
 
     //if random_source is given, create a node <init target="" soruce=""/>

@@ -29,8 +29,7 @@ extern std::unique_ptr<ParticleSet> createElectronParticleSet(const SimulationCe
 
 TEST_CASE("HamiltonianPool", "[qmcapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // See src/QMCHamiltonians/tests/test_hamiltonian_factory for parsing tests
   const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">

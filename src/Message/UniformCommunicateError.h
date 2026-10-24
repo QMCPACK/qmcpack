@@ -20,7 +20,7 @@ namespace qmcplusplus
  *  
  *  Intended use is with a catch block like this:
  *
- *      catch (const UniformMPIerror& ue)
+ *      catch (const UniformCommunicateError& ue)
  *      {
  *        my_local_comm->barrier_and_abort(ue.what());
  *      }

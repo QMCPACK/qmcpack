@@ -239,24 +239,24 @@ reference_code_tests = obj(
         ''',
     #v320_171120 = '''
     #    short-H2-FDLR
-    #    short-H2-orb-opt
+    #    short-H2-opt_orb
     #    short-H4-FDLR
     #    '''.split(),
     #v330_180103 = '''
     #    short-H2-FDLR
-    #    short-H2-orb-opt
+    #    short-H2-opt_orb
     #    short-H4-FDLR
-    #    short-H4-orb-opt
-    #    short-H4-orb-opt-dmc
+    #    short-H4-opt_orb
+    #    short-H4-opt_orb-dmc
     #    short-FeCO6_gms-vmc_noj
     #    short-FeCO6_pyscf-vmc_noj
     #    '''.split(),
     v330_180107 = '''
         short-H2-FDLR
-        short-H2-orb-opt
+        short-H2-opt_orb
         short-H4-FDLR
-        short-H4-orb-opt
-        short-H4-orb-opt-dmc
+        short-H4-opt_orb
+        short-H4-opt_orb-dmc
         short-FeCO6_gms-vmc_noj
         short-FeCO6_pyscf-vmc_noj
         short-sho-grad_lap

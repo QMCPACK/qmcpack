@@ -2069,7 +2069,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
     def _unavailable(self,quantity,modes):
         """Apply unsupported and required-quantity policy to absent data."""
         if self._query_depth>0:
-            return None
+            return
         calculation = self.calculation
         if isinstance(calculation,str) and calculation not in modes:
             msg = f'PWSCF quantity "{quantity}" is not supported for calculation "{calculation}"'
@@ -2077,7 +2077,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         if quantity in self.required:
             msg = f'required PWSCF quantity "{quantity}" is not available'
             raise RuntimeError(msg)
-        return None
     #end def _unavailable
 
 

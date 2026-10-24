@@ -55,7 +55,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LiH_ae_MSD_OPT_CI_SHORT_SCALARS "eeenergy" "3.346222009202 0.002397327879")
   list(APPEND LiH_ae_MSD_OPT_CI_SHORT_SCALARS "ionion" "0.995380119260 0.001000000000")
   qmc_run_and_check(
-    short-LiH_ae-vmc_msdj_optCI
+    short-LiH_ae-msdj_optCI-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     vmc_short_opt_CI
     vmc_short_opt_CI.in.xml
@@ -122,7 +122,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LiH_ae_MSD_OPT_CI_SCALARS "eeenergy" "3.346222009202 0.000692976585")
   list(APPEND LiH_ae_MSD_OPT_CI_SCALARS "ionion" "0.995380119260 0.001000000000")
   qmc_run_and_check(
-    long-LiH_ae-vmc_msdj_optCI
+    long-LiH_ae-msdj_optCI-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     vmc_long_opt_CI
     vmc_long_opt_CI.in.xml

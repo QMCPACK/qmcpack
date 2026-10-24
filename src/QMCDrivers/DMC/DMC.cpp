@@ -46,7 +46,7 @@ DMC::DMC(const ProjectData& project_data,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
          const UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
-         Communicate* comm,
+         Communicate& comm,
          bool enable_profiling)
     : QMCDriver(project_data, w, psi, h, comm, "DMC", enable_profiling),
       rngs_(rngs),
@@ -58,7 +58,6 @@ DMC::DMC(const ProjectData& project_data,
 {
   RootName = "dmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
-  m_param.add(KillWalker, "killnode");
   m_param.add(Reconfiguration, "reconfiguration");
   //m_param.add(BranchInterval,"branchInterval");
   m_param.add(NonLocalMove, "nonlocalmove");
@@ -112,7 +111,6 @@ void DMC::resetUpdateEngines()
       }
       else
         o << "  Updates by walker moves";
-      // Appears to be set in constructor reported here and used nowhere
       if (KillNodeCrossing)
         o << "\n  Walkers are killed when a node crossing is detected";
       else
@@ -232,24 +230,24 @@ void DMC::run()
 
   bool variablePop = (Reconfiguration == "no");
   resetUpdateEngines();
-  //estimator does not need to collect data
-  Estimators->setCollectionMode(true);
-  Estimators->start(nBlocks);
+  branchEngine->startWalkerController(RootName);
+  Estimators->start(nBlocks, RootName);
   for (int ip = 0; ip < NumThreads; ip++)
     Movers[ip]->startRun(nBlocks, false);
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks, traceClones);
 #endif
   wlog_manager_->startRun(getWalkerLogCollectorRefs());
-  IndexType block        = 0;
-  IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
-  int sample             = 0;
+  int sample = 0;
 
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
+  LoopRunTimeControl<> runtimeControl(run_time_manager, project_data_, "DMC driver", "block", myComm);
 
-  do // block
+  for (IndexType block = 0; block < nBlocks; ++block)
   {
-    dmc_loop.start();
+    if (runtimeControl.checkStop(dmc_loop, block))
+      break;
+
+    ScopeGuard<LoopTimer<>> dmc_local_timer(dmc_loop);
     Estimators->startBlock(nSteps);
     for (int ip = 0; ip < NumThreads; ip++)
       Movers[ip]->startBlock(nSteps);
@@ -280,6 +278,8 @@ void DMC::run()
           W.Collectables += wClones[ip]->Collectables;
       }
       branchEngine->branch(CurrentStep, W);
+      //accumulate collectables and energies for scalar.dat
+      Estimators->accumulate(W);
       if (variablePop)
         FairDivideLow(W.getActiveWalkers(), NumThreads, wPerRank);
       sample++;
@@ -290,25 +290,8 @@ void DMC::run()
     Traces->write_buffers(traceClones, block);
 #endif
     wlog_manager_->writeBuffers();
-    block++;
     recordBlock(block);
-    dmc_loop.stop();
-
-    bool stop_requested = false;
-    // Rank 0 decides whether the time limit was reached
-    if (!myComm->rank())
-      stop_requested = runtimeControl.checkStop(dmc_loop);
-    myComm->bcast(stop_requested);
-
-    if (stop_requested)
-    {
-      if (!myComm->rank())
-        app_log() << runtimeControl.generateStopMessage("DMC", block - 1);
-      run_time_manager.markStop();
-      break;
-    }
-
-  } while (block < nBlocks);
+  }
 
   Estimators->stop();
   for (int ip = 0; ip < NumThreads; ++ip)

@@ -22,6 +22,7 @@
 #include <iostream>
 #include <numeric>
 #include <SpeciesSet.h>
+#include <CPU/math.hpp>
 
 namespace qmcplusplus
 {
@@ -106,7 +107,7 @@ std::optional<SpinDensityNew::FoldedMeasurementCell> SpinDensityNew::makeFoldedM
       const FullPrecRealType tolerance       = folding_commensurability_absolute_tolerance +
           folding_commensurability_relative_tolerance *
               std::max(std::abs(static_cast<FullPrecRealType>(custom_u[j])), std::abs(nearest_integer));
-      if (!std::isfinite(custom_u[j]) || std::abs(custom_u[j] - nearest_integer) > tolerance)
+      if (!qmcplusplus::isfinite(custom_u[j]) || std::abs(custom_u[j] - nearest_integer) > tolerance)
         throw UniformCommunicateError(
             "SpinDensity input: folding requires simulation and measurement cells to be commensurate");
       rounded_transform(i, j) = nearest_integer;
@@ -114,7 +115,7 @@ std::optional<SpinDensityNew::FoldedMeasurementCell> SpinDensityNew::makeFoldedM
   }
 
   const FullPrecRealType transform_determinant = det(rounded_transform);
-  if (!std::isfinite(transform_determinant) || transform_determinant == 0.0)
+  if (!qmcplusplus::isfinite(transform_determinant) || transform_determinant == 0.0)
     throw UniformCommunicateError("SpinDensity input: folding requires a nonsingular cell transformation");
 
   Lattice reduced_custom_lattice;

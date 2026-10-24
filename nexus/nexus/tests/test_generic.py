@@ -2,7 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.GENERIC_OPERATION)
 
-from . import isolate_nexus_core
 from ..generic import warn, NexusDevWarning, NexusUserWarning, nxs_deprecate
 from ..generic import nxs_print,error
 from ..generic import NexusError

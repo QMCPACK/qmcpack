@@ -32,7 +32,7 @@ namespace qmcplusplus
 {
 TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   // diamondC_1x1x1
@@ -191,7 +191,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 
 TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   // diamondC_2x1x1

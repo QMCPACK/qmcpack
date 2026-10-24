@@ -25,7 +25,7 @@
 
 namespace qmcplusplus
 {
-PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate* comm, xmlNodePtr cur)
+PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate& comm, xmlNodePtr cur)
     : SPOSetBuilder("Planewave", comm),
       targetPtcl(p),
       rootNode(cur),

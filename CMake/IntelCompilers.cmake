@@ -67,9 +67,9 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer")
 
-  if(MIXED_PRECISION)
-    # without this test_longrange went off in the mixed precsion build
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-model=precise")
+  # The internal device-linking step of oneapi clutters link.d with temporary files on /tmp and results in re-linking every time.
+  if(QMC_GPU AND NOT DEFINED CMAKE_LINK_DEPENDS_USE_LINKER)
+    set(CMAKE_LINK_DEPENDS_USE_LINKER FALSE)
   endif()
 else()
   # classic compiler options

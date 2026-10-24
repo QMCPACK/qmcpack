@@ -94,7 +94,7 @@ private:
    *  this is a simplifying assumption for other code
    */
   void create_basic_plist();
-  void set_access_plist(Communicate* comm, bool request_pio);
+  void set_access_plist(Communicate& comm, bool request_pio);
 #ifdef HAVE_MPI
   void set_access_plist(boost::mpi3::communicator& comm, bool request_pio);
 #endif
@@ -108,8 +108,8 @@ public:
    *        if true and PHDF5 is not available, hdf_archive is in master-only IO mode
    *        if false, hdf_archive is in independent IO mode
    */
-  template<class Comm = Communicate*>
-  hdf_archive(Comm c, bool request_pio = false) : file_id(is_closed)
+  template<class Comm, typename = std::enable_if_t<!std::is_same_v<std::decay_t<Comm>, hdf_archive>>>
+  hdf_archive(Comm& c, bool request_pio = false) : file_id(is_closed)
   {
     if (!hdf_error_suppression::enabled)
       throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");

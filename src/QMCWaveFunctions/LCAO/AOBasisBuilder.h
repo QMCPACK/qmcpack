@@ -59,7 +59,7 @@ private:
   std::map<std::string, int> nlms_id;
 
 public:
-  AOBasisBuilder(const std::string& eName, Communicate* comm);
+  AOBasisBuilder(const std::string& eName, Communicate& comm);
 
   bool put(xmlNodePtr cur);
   bool putH5(hdf_archive& hin);
