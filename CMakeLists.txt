@@ -964,7 +964,7 @@ set(TRIGGER_SITE "")
 set(DROP_SITE_CDASH TRUE)
 # Increase timeout per test over the default of 1500 seconds (25 minutes)
 set(DART_TESTING_TIMEOUT
-    7200
+    3600
     CACHE STRING "Maximum time for one test")
 enable_testing()
 

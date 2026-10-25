@@ -80,7 +80,7 @@ function(ADD_PWCONVERTER_TEST test_name)
                PASS_REGULAR_EXPRESSION
                "  pass"
                TIMEOUT
-               ${DART_TESTING_TIMEOUT}
+               120
                LABELS
                "converter;deterministic")
   if("asan" IN_LIST ENABLE_SANITIZER)
