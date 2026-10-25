@@ -30,7 +30,7 @@ TEST_CASE("WalkerLogCollector::collect", "[estimators]")
   app_log() << "\n\n=======================================================\n";
   app_log() << "test WalkerLogCollector::collect\n";
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
 

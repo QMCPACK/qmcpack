@@ -136,7 +136,9 @@ QMCMain::QMCMain(Communicate& c)
     app_summary() << "  Real build. QMC_COMPLEX=OFF" << std::endl;
 
   app_summary() << "  Output verbosity = "
-                << (outputManager.isDebugActive() ? "debug" : outputManager.isHighActive() ? "high" : "low")
+                << (outputManager.isDebugActive()      ? "debug"
+                        : outputManager.isHighActive() ? "high"
+                                                       : "low")
                 << " (options: --verbosity=low|high|debug)" << std::endl;
 #ifdef ENABLE_TIMERS
   app_summary() << "  Timer level = " << getGlobalTimerManager().get_timer_threshold_string()
@@ -301,9 +303,21 @@ bool QMCMain::execute()
       xmlReplaceNode(mcptr, newmcptr);
       xmlFreeNode(mcptr);
     }
-    saveXml();
+    writeContinuationInputXML();
   }
   return true;
+}
+
+void QMCMain::writeContinuationInputXML()
+{
+  if (!xml_doc_stack_.empty())
+  {
+    std::string newxml(my_project_.currentMainRoot());
+    newxml.append(".cont.xml");
+    app_log() << "\n========================================================="
+              << "\n  A new xml input file : " << newxml << std::endl;
+    xml_doc_stack_.top()->dump(newxml);
+  }
 }
 
 void QMCMain::executeLoop(xmlNodePtr cur)
@@ -375,12 +389,8 @@ bool QMCMain::validateXML()
 {
   xmlXPathContextPtr m_context = xml_doc_stack_.top()->getXPathContext();
   OhmmsXPathObject result("//project", m_context);
-  my_project_.setCommunicator(&myComm);
   if (result.empty())
-  {
     app_warning() << "Project is not defined" << std::endl;
-    my_project_.reset();
-  }
   else
   {
     try

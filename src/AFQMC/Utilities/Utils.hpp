@@ -19,6 +19,7 @@
 #include <fstream>
 #include <complex>
 #include <list>
+#include <mpi.h>
 
 #include "Host/sysutil.h"
 #include "OhmmsData/libxmldefs.h"

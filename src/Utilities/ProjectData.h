@@ -19,7 +19,6 @@
 
 #include <unordered_map>
 #include "OhmmsData/libxmldefs.h"
-#include "Message/Communicate.h"
 #include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
@@ -28,10 +27,6 @@ namespace qmcplusplus
  *\brief Encapsulate data for a project
  *
  * Default: title_ = getDateAndTime("%Y%m%dT%H%M")
- *
- * \todo This shouldn't contain MPI information it is only used to calculate the
- *       path information and the communication parameters should just be input params to that call.
- *       This reduce the internal state.
  */
 class ProjectData
 {
@@ -59,19 +54,17 @@ private:
 public:
   /// constructor
   ProjectData(const std::string& atitle = "", DriverVersion de = DriverVersion::BATCH);
+  explicit ProjectData(DriverVersion de);
 
   bool get(std::ostream& os) const;
   bool put(std::istream& is);
   bool put(xmlNodePtr cur);
-  void reset();
 
-  ///increment a series number and reset project_root_
+  ///increment a series number and reset project_main_
   void advance();
 
-  ///roll-back a series number and reset project_root_ by one
+  ///roll-back a series number and reset project_main_ by one
   void rewind();
-
-  void setCommunicator(Communicate* c);
 
   /** 
    * @brief returns the title of the project
@@ -87,13 +80,6 @@ public:
    */
   const std::string& currentMainRoot() const noexcept;
 
-  /** 
-   * @brief returns the nextroot of the project, the series id is incremented at every QMC section
-   * <project id="det_qmc_short_sdbatch_vmcbatch_mwalkers" series="0">
-   * translate to project_main_ = "det_qmc_short_sdbatch_vmcbatch_mwalkers.s001"
-   */
-  const std::string& nextRoot() const noexcept;
-
 
   int getSeriesIndex() const noexcept;
 
@@ -107,6 +93,8 @@ public:
 
 private:
   static DriverVersion lookupDriverVersion(const std::string& enum_value);
+  void reset();
+
 
   ///title of the project
   std::string title_;
@@ -120,17 +108,8 @@ private:
   ///main root for all the output engines
   std::string project_main_;
 
-  ///processor-dependent root for all the output engines
-  std::string project_root_;
-
-  ///root for the next run
-  std::string next_root_;
-
   ///series index
   int series_;
-
-  ///communicator
-  Communicate* my_comm_;
 
   ///the xml node for <Project/>
   xmlNodePtr cur_;
