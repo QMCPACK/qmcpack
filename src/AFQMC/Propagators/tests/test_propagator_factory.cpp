@@ -18,6 +18,7 @@
 #include "hdf/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/TimerManager.h"
+#include "Message/Communicate.h"
 
 #include <string>
 #include <vector>
@@ -41,7 +42,6 @@
 
 using std::cerr;
 using std::complex;
-using std::cout;
 using std::endl;
 using std::ifstream;
 using std::setprecision;
@@ -147,7 +147,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     PropgFac.push(prop_name, doc4.getRoot());
     Propagator& prop = PropgFac.getPropagator(TG, prop_name, wfn, rng);
 
-    std::cout << setprecision(12);
+    app_log() << setprecision(12);
     wfn.Energy(wset);
     {
       ComplexType eav = 0, ov = 0;
@@ -219,7 +219,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
       wfn.Orthogonalize(wset, true);
     }
 
-    getGlobalTimerManager().print(nullptr);
+    getGlobalTimerManager().print(*OHMMS::Controller);
   }
 }
 
@@ -394,7 +394,7 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
       app_log() << " -- " << i << " " << tot_time << " " << (eav / ov).real() << " Time: " << t1 << std::endl;
     }
 
-    getGlobalTimerManager().print(nullptr);
+    getGlobalTimerManager().print(*OHMMS::Controller);
   }
 }
 

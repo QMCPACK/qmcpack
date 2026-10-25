@@ -105,7 +105,7 @@ public:
   QuantumNumberType m_nlms;
 
   ///constructor
-  RadialOrbitalSetBuilder(Communicate* comm,
+  RadialOrbitalSetBuilder(Communicate& comm,
                           COT& aos,
                           int radial_grid_size = 1001); //radial_grid_size is 1001 just magic?
 
@@ -138,9 +138,6 @@ private:
   /// Number of grid points
   int radial_grid_size_;
 
-  ///maximum cutoff for an orbital, could come from XML always set to -1 by constructor
-  RealType m_rcut;
-
   ///safe common cutoff radius
   RealType m_rcut_safe;
 
@@ -152,8 +149,8 @@ private:
 };
 
 template<typename COT>
-RadialOrbitalSetBuilder<COT>::RadialOrbitalSetBuilder(Communicate* comm, COT& aos, int radial_grid_size)
-    : MPIObjectBase(comm), Normalized(true), m_orbitals(aos), radial_grid_size_(radial_grid_size), m_rcut(-1.0)
+RadialOrbitalSetBuilder<COT>::RadialOrbitalSetBuilder(Communicate& comm, COT& aos, int radial_grid_size)
+    : MPIObjectBase(comm), Normalized(true), m_orbitals(aos), radial_grid_size_(radial_grid_size)
 {}
 
 template<typename COT>
@@ -180,15 +177,15 @@ bool RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive& hin)
   app_log() << "   Grid is created by the input parameters in h5" << std::endl;
 
   std::string gridtype;
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     hin.read(gridtype, "grid_type");
   }
-  myComm->bcast(gridtype);
+  myComm.bcast(gridtype);
 
   int npts    = 0;
   RealType ri = 0.0, rf = 10.0, rmax_safe = 10;
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     double tt = 0;
     hin.read(tt, "grid_ri");
@@ -200,13 +197,13 @@ bool RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive& hin)
     //rmax_safe = tt;
     hin.read(npts, "grid_npts");
   }
-  myComm->bcast(ri);
-  myComm->bcast(rf);
-  myComm->bcast(rmax_safe);
-  myComm->bcast(npts);
+  myComm.bcast(ri);
+  myComm.bcast(rf);
+  myComm.bcast(rmax_safe);
+  myComm.bcast(npts);
 
   if (gridtype.empty())
-    myComm->barrier_and_abort("Grid type is not specified.");
+    myComm.barrier_and_abort("Grid type is not specified.");
 
   if (gridtype == "log")
   {
@@ -239,11 +236,8 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbital(xmlNodePtr cur,
                                                     const QuantumNumberType& nlms)
 {
   std::string radtype(m_infunctype);
-  std::string dsname("0");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(radtype, "type");
-  aAttrib.add(m_rcut, "rmax");
-  aAttrib.add(dsname, "ds");
   aAttrib.put(cur);
   m_nlms = nlms;
   if (radtype == "Gaussian" || radtype == "GTO")
@@ -251,7 +245,7 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbital(xmlNodePtr cur,
   else if (radtype == "Slater" || radtype == "STO")
     addSlater(cur);
   else
-    myComm->barrier_and_abort("Purely numerical atomic orbitals are not supported any longer.");
+    myComm.barrier_and_abort("Purely numerical atomic orbitals are not supported any longer.");
   return true;
 }
 
@@ -260,21 +254,20 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbitalH5(hdf_archive& hin,
                                                       const std::string& radtype_atomicBasisSet,
                                                       const QuantumNumberType& nlms)
 {
-  std::string dsname("0");
   std::string radtype(radtype_atomicBasisSet);
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
     hin.read(radtype, "type");
-  myComm->bcast(radtype);
+  myComm.bcast(radtype);
 
   m_nlms = nlms;
   if (radtype == "Gaussian" || radtype == "GTO")
     addGaussianH5(hin);
   else if (radtype == "Slater" || radtype == "STO")
     // addSlaterH5(hin);
-    myComm->barrier_and_abort(
+    myComm.barrier_and_abort(
         " RadType: Slater. Any type other than Gaussian not implemented in H5 format. Please contact developers.");
   else
-    myComm->barrier_and_abort(
+    myComm.barrier_and_abort(
         " RadType: Numerical. Any type other than Gaussian not implemented in H5 format. Please contact developers.");
   return true;
 }
@@ -301,7 +294,7 @@ void RadialOrbitalSetBuilder<COT>::addGaussianH5(hdf_archive& hin)
   int L          = m_nlms[1];
   using gto_type = GaussianCombo<OHMMS_PRECISION_FULL>;
   auto gset      = std::make_unique<gto_type>(L, Normalized);
-  gset->putBasisGroupH5(hin, *myComm);
+  gset->putBasisGroupH5(hin, myComm);
   //at least gamess derived xml seems to provide the max its grid goes to
   //So in priniciple this 100 should be coming in from input
   //m_rcut seems like it once served this purpose but is somehow

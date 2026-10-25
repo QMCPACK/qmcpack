@@ -23,6 +23,8 @@
 
 namespace qmcplusplus
 {
+class MultiDiracDeterminant;
+
 /**
  *  TWFFastDerivWrapper is a wrapper class for TrialWavefunction that provides separate and low level access to the Jastrow and 
  *  SPOSet objects.  This is so that observables can be recast in matrix form and their derivatives taken efficiently. 
@@ -275,7 +277,7 @@ public:
                                 const std::vector<ValueMatrix>& Minv_dM,
                                 const std::vector<ValueMatrix>& Minv_dB,
                                 const std::vector<IndexType>& mdd_spo_ids,
-                                const std::vector<const WaveFunctionComponent*>& mdds,
+                                const std::vector<const MultiDiracDeterminant*>& mdds,
                                 std::vector<ValueVector>& dvals_dmu_O,
                                 std::vector<ValueVector>& dvals_dmu) const;
 
@@ -292,7 +294,7 @@ public:
   void computeMDDerivatives_Obs(const std::vector<ValueMatrix>& Minv_Mv,
                                 const std::vector<ValueMatrix>& Minv_B,
                                 const std::vector<IndexType>& mdd_spo_ids,
-                                const std::vector<const WaveFunctionComponent*>& mdds,
+                                const std::vector<const MultiDiracDeterminant*>& mdds,
                                 std::vector<ValueVector>& dvals_O) const;
 
   /** @brief Uses per-det lists of derivatives to calculate total excited det contributions
@@ -304,7 +306,7 @@ public:
    *  @return  {d_mu(OPsi/Psi), d_mu(log(Psi)), OPsi/Psi}
    */
   std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType>
-      computeMDDerivatives_total(const std::vector<const WaveFunctionComponent*>& mdds,
+      computeMDDerivatives_total(const std::vector<const MultiDiracDeterminant*>& mdds,
                                  const std::vector<ValueVector>& dvals_dmu_O,
                                  const std::vector<ValueVector>& dvals_O,
                                  const std::vector<ValueVector>& dvals_dmu) const;

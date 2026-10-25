@@ -65,11 +65,11 @@ public:
     }
     if (DMBuffer.size() < dm_size)
     {
-      DMBuffer.reextent(iextensions<1u>{dm_size});
+      DMBuffer.reextent(extents_t<1u>{dm_size});
     }
     if (DMAverage.size() < dm_size)
     {
-      DMAverage.reextent(iextensions<1u>{dm_size});
+      DMAverage.reextent(extents_t<1u>{dm_size});
     }
     std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0, 0.0));
     std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0, 0.0));
@@ -88,7 +88,7 @@ public:
     CMatrix_ref OneRDM(DMBuffer.data(), {dm_dims.first, dm_dims.second});
     denom[0] = ComplexType(0.0, 0.0);
     std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0, 0.0));
-    stdCVector wgt(iextensions<1u>{wset.size()});
+    stdCVector wgt(extents_t<1u>{wset.size()});
     wset.getProperty(WEIGHT, wgt);
 
     int nx((wset.getWalkerType() == COLLINEAR) ? 2 : 1);
@@ -101,7 +101,7 @@ public:
 
     if (!importanceSampling)
     {
-      stdCVector phase(iextensions<1u>{wset.size()});
+      stdCVector phase(extents_t<1u>{wset.size()});
       wset.getProperty(PHASE, phase);
       for (int i = 0; i < wgt.size(); i++)
         wgt[i] *= phase[i];

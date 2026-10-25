@@ -32,7 +32,7 @@ namespace qmcplusplus
 {
 TEST_CASE("kspace jastrow", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // initialize simulationcell for kvectors
   const char* xmltext = R"(<tmp>
@@ -107,7 +107,7 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
 
 TEST_CASE("kspace jastrow derivatives", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // initialize simulationcell for kvectors
   const char* xmltext = R"(<tmp>

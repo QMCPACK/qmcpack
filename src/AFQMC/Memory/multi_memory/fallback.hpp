@@ -65,7 +65,7 @@ class fallback : public MemoryResource1 {
 	} {}
 
 	typename fallback::void_pointer
-	allocate(size_type required_bytes, typename fallback::size_type align = alignof(std::max_align_t)) try {
+	allocate(std::size_t required_bytes, typename fallback::size_type align = alignof(std::max_align_t)) try {
 		return MemoryResource1::allocate(required_bytes, align);
 	} catch(...) {
 		++fallbacks_;

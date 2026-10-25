@@ -9,6 +9,7 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include "Platforms/Host/OutputManager.h"
 
 #include <iostream>
 #include "config.h"
@@ -21,20 +22,20 @@ TEST_CASE("Aligned allocator", "[numerics]")
   bool not_aligned;
 
   aligned_vector<float> a(311);
-  std::cout << "address=" << a.data() << " require=" << (void*)(QMC_SIMD_ALIGNMENT - 1) << std::endl;
+  app_log() << "address=" << a.data() << " require=" << (void*)(QMC_SIMD_ALIGNMENT - 1) << std::endl;
   not_aligned = (size_t)a.data() & (QMC_SIMD_ALIGNMENT - 1);
   REQUIRE(!not_aligned);
   a.resize(829);
-  std::cout << "address=" << a.data() << " require=" << (void*)(QMC_SIMD_ALIGNMENT - 1) << std::endl;
+  app_log() << "address=" << a.data() << " require=" << (void*)(QMC_SIMD_ALIGNMENT - 1) << std::endl;
   not_aligned = (size_t)a.data() & (QMC_SIMD_ALIGNMENT - 1);
   REQUIRE(!not_aligned);
 
   aligned_vector<double> b(311);
-  std::cout << "address=" << b.data() << " require=" << (void*)(QMC_SIMD_ALIGNMENT - 1) << std::endl;
+  app_log() << "address=" << b.data() << " require=" << (void*)(QMC_SIMD_ALIGNMENT - 1) << std::endl;
   not_aligned = (size_t)b.data() & (QMC_SIMD_ALIGNMENT - 1);
   REQUIRE(!not_aligned);
   b.resize(829);
-  std::cout << "address=" << b.data() << " require=" << (void*)(QMC_SIMD_ALIGNMENT - 1) << std::endl;
+  app_log() << "address=" << b.data() << " require=" << (void*)(QMC_SIMD_ALIGNMENT - 1) << std::endl;
   not_aligned = (size_t)b.data() & (QMC_SIMD_ALIGNMENT - 1);
   REQUIRE(!not_aligned);
 }

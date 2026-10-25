@@ -29,7 +29,7 @@ void test_He(bool transform)
 
   SECTION(section_name.str())
   {
-    Communicate* c = OHMMS::Controller;
+    Communicate& c(*OHMMS::Controller);
 
     const SimulationCell simulation_cell;
     auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -85,7 +85,7 @@ void test_He(bool transform)
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
     auto sposet = bb.createSPOSet(slater_base[0]);
 
-    //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
+    //app_log() << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
     SPOSet::ValueVector values;
     SPOSet::GradVector dpsi;
@@ -133,7 +133,7 @@ TEST_CASE("ReadMolecularOrbital Numerical He", "[wavefunction]") { test_He(true)
 void test_He_mw(bool transform)
 {
   // set up ion particle set as normal
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -189,7 +189,7 @@ void test_He_mw(bool transform)
   OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
   auto sposet = bb.createSPOSet(slater_base[0]);
 
-  //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
+  //app_log() << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
   SPOSet::ValueVector psi;
   SPOSet::GradVector dpsi;
@@ -280,7 +280,7 @@ TEST_CASE("mw_evaluate Numerical He", "[wavefunction]") { test_He_mw(true); }
 void test_EtOH_mw(bool transform)
 {
   // set up ion particle set as normal
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parse("ethanol.structure.xml"));
@@ -340,7 +340,7 @@ void test_EtOH_mw(bool transform)
   auto sposet = bb.createSPOSet(slater_base[0]);
 
 
-  //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
+  //app_log() << "basis set size = " << sposet->getBasisSetSize() << std::endl;
   size_t n_mo = sposet->getOrbitalSetSize();
   SPOSet::ValueVector psiref_0(n_mo);
   SPOSet::GradVector dpsiref_0(n_mo);
@@ -460,7 +460,7 @@ void test_Ne(bool transform)
 
   SECTION(section_name.str())
   {
-    Communicate* c = OHMMS::Controller;
+    Communicate& c(*OHMMS::Controller);
 
     const SimulationCell simulation_cell;
     auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -519,7 +519,7 @@ void test_Ne(bool transform)
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
     auto sposet = bb.createSPOSet(slater_base[0]);
 
-    //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
+    //app_log() << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
     const int norbs = 5;
     SPOSet::ValueVector values;
@@ -588,7 +588,7 @@ void test_HCN(bool transform)
 
   SECTION(section_name.str())
   {
-    Communicate* c = OHMMS::Controller;
+    Communicate& c(*OHMMS::Controller);
 
     Libxml2Document doc;
     REQUIRE(doc.parse("hcn.structure.xml"));

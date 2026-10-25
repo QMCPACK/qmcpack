@@ -84,7 +84,7 @@
    </qmcsystem>
 
    <mcwalkerset fileroot="det_qmc_vmcbatch_dmcbatch_tm.s001" node="-1" nprocs="1" version="0 4" collected="yes"/>
-   <qmc method="dmc_batch" move="pbyp" checkpoint="0">
+   <qmc method="dmc" move="pbyp" checkpoint="0">
      <estimator name="LocalEnergy" hdf5="yes"/>
      <parameter name="reconfiguration">   no </parameter>
      <parameter name="warmupSteps">  2  </parameter>

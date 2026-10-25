@@ -39,7 +39,6 @@
 
 using std::cerr;
 using std::complex;
-using std::cout;
 using std::endl;
 using std::ifstream;
 using std::setprecision;
@@ -324,16 +323,16 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     boost::multi::array<ComplexType, 3, Alloc> GFock({2, nwalk, dm_size}, alloc_);
     fill_n(GFock.base(), GFock.num_elements(), ComplexType(0.0));
     //for(int i = 0; i < nwalk; i++) {
-    //std::cout << Gw2_[i][0] << std::endl;
+    //app_log() << Gw2_[i][0] << std::endl;
     //}
-    //std::cout << "INIT: " << Gw2_[0][0] << " " << Gw2_[0][NMO*NMO] << std::endl;
+    //app_log() << "INIT: " << Gw2_[0][0] << " " << Gw2_[0][NMO*NMO] << std::endl;
     HOps.generalizedFockMatrix(Gw2_, GFock[0], GFock[1]);
     //boost::multi::array_ref<ComplexType,2,pointer> GR(make_device_ptr(GFock[0][0].base()), {NMO,NMO});
     //for(int i = 0; i < nwalk; i++) {
-    //std::cout << GFock[0][i][0] << std::endl;
+    //app_log() << GFock[0][i][0] << std::endl;
     //}
-    //std::cout << "GFOCK: " << GFock[0][0][0] << " " << GFock[1][0][0] << std::endl;
-    //std::cout << "Fm: " << std::endl;
+    //app_log() << "GFOCK: " << GFock[0][0][0] << " " << GFock[1][0][0] << std::endl;
+    //app_log() << "Fm: " << std::endl;
     std::fill_n(Mat.base(), Mat.num_elements(), 0.0);
     ref.readEntry(Mat, "Fha");
     for (int i = 0; i < NMO; i++)
@@ -342,27 +341,27 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
       {
         if (auto gfock = ComplexType(GFock[1][0][i * NMO + j]); std::abs(Mat[i][j] - std::real(gfock)) > 1e-5)
         {
-          std::cout << "DELTAA: " << i << " " << j << " " << Mat[i][j] << " " << std::real(gfock) << std::endl;
+          app_log() << "DELTAA: " << i << " " << j << " " << Mat[i][j] << " " << std::real(gfock) << std::endl;
         }
         //if(std::abs(real(GFock[1][0][i*NMO+j]))>1e-6)
-        //std::cout << i << " " << j << " " << real(GFock[1][0][i*NMO+j]) << " " << std::endl;
+        //app_log() << i << " " << j << " " << real(GFock[1][0][i*NMO+j]) << " " << std::endl;
       }
     }
-    //std::cout << "Fp: " << std::endl;
+    //app_log() << "Fp: " << std::endl;
     std::fill_n(Mat.base(), Mat.num_elements(), 0.0);
     ref.readEntry(Mat, "Fpa");
     for (int i = 0; i < NMO; i++)
     {
       for (int j = 0; j < NMO; j++)
       {
-        //std::cout << Mat[i][j] << std::endl;
-        //std::cout << Mat[i][j]-real(GFock[0][0][i*NMO+j]) << std::endl;
+        //app_log() << Mat[i][j] << std::endl;
+        //app_log() << Mat[i][j]-real(GFock[0][0][i*NMO+j]) << std::endl;
         if (auto gfock = ComplexType(GFock[0][0][i * NMO + j]); std::abs(Mat[i][j] - std::real(gfock)) > 1e-5)
         {
-          std::cout << "DELTAB: " << i << " " << j << " " << Mat[i][j] << " " << std::real(gfock) << std::endl;
+          app_log() << "DELTAB: " << i << " " << j << " " << Mat[i][j] << " " << std::real(gfock) << std::endl;
         }
         //if(std::abs(real(GFock[0][0][i*NMO+j]))>1e-6)
-        //std::cout << i << " " << j << " " << real(GFock[0][0][i*NMO+j]) << " " << real(GFock[0][1][i*NMO+j]) << " " << real(GFock[0][2][i*NMO+j]) << std::endl;
+        //app_log() << i << " " << j << " " << real(GFock[0][0][i*NMO+j]) << " " << real(GFock[0][1][i*NMO+j]) << " " << real(GFock[0][2][i*NMO+j]) << std::endl;
       }
     }
   }

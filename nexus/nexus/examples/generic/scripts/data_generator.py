@@ -7,7 +7,7 @@ try:
     # ==========================================
     # USER CODE STARTS HERE
     # ==========================================
-    
+
     import numpy as np
 
     print("=== Data Generator Simulation ===")
@@ -49,16 +49,16 @@ try:
 
     print("Statistics saved to statistics.txt")
     print("Data generation completed successfully")
-    
+
     # ==========================================
     # USER CODE ENDS HERE
     # ==========================================
-    
+
     # REQUIRED: Create completion file
     with open('data_generation_complete.txt', 'w') as f:
         f.write("Data generation completed successfully\n")
     print("Simulation completed successfully")
-    
+
 except Exception as e:
     # REQUIRED: Create error file
     error_msg = str(e)

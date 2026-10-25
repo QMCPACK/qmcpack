@@ -81,7 +81,7 @@ public:
              MCPopulation&& pop,
              const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
              SampleStack& samples_,
-             Communicate* comm);
+             Communicate& comm);
   /// Copy constructor
   VMCBatched(const VMCBatched&) = delete;
   /// Copy operator (disabled).

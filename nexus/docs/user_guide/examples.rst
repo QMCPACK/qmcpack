@@ -1514,7 +1514,7 @@ We use neutral primitive cells at the wavefunction generation. However,
 creation / annihilation operations are applied at VMC level to simulate
 optical excitations. Compared to the ground state bulk calculations, a
 tiling matrix that is commensurate with the wavevectors involved in the
-excitation must be chosen. This process has been automatized in Nexus
+excitation must be chosen. This process has been automated in Nexus
 using the "get_band_tiling" function. There are two VMC scripts in this
 lab that generate the tiling matrix in different ways: ``vmc.py`` script 
 uses a non-optimal tiling matrix from Lab 5 in QMCPACK, whereas 

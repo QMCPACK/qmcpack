@@ -28,7 +28,7 @@ public:
   const ParticleSet& sourcePtcl;
   std::map<std::string, kSpaceJastrow::SymmetryType> SymmMap;
   // One-body constructor
-  kSpaceJastrowBuilder(Communicate* comm, ParticleSet& target, const ParticleSet& source)
+  kSpaceJastrowBuilder(Communicate& comm, ParticleSet& target, const ParticleSet& source)
       : WaveFunctionComponentBuilder(comm, target), sourcePtcl(source)
   {
     // nothing for now

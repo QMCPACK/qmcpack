@@ -44,7 +44,7 @@ TEST_CASE("ewald3d", "[lrhandler]")
   handler.initBreakup(ref);
   CHECK(handler.Sigma == Approx(std::sqrt(lattice.LR_kc / (2.0 * lattice.LR_rc))));
 
-  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  app_log() << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
   CHECK(handler.MaxKshell == 78);
   CHECK(handler.LR_rc == Approx(2.5));
   CHECK(handler.LR_kc == Approx(12));
@@ -92,7 +92,7 @@ TEST_CASE("ewald3d df", "[lrhandler]")
   handler.initBreakup(ref);
   CHECK(handler.Sigma == Approx(std::sqrt(lattice.LR_kc / (2.0 * lattice.LR_rc))));
 
-  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  app_log() << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
   CHECK(handler.MaxKshell == 78);
   CHECK(handler.LR_rc == Approx(2.5));
   CHECK(handler.LR_kc == Approx(12));

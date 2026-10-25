@@ -28,7 +28,6 @@
 #endif
 
 using std::cerr;
-using std::cout;
 using std::endl;
 using std::get;
 using tp_ul_ul = std::tuple<std::size_t, std::size_t>;
@@ -689,9 +688,9 @@ TEST_CASE("csr_matrix_shm_large_memory", "[csr]")
   world.barrier();
   if (node.root())
   {
-    std::cout << " capacity: " << umat.capacity() << std::endl;
+    app_log() << " capacity: " << umat.capacity() << std::endl;
     umat.emplace({399999, 0}, Type(1));
-    std::cout << " pbegin[399999]: " << umat.pointers_begin()[399999] << std::endl;
+    app_log() << " pbegin[399999]: " << umat.pointers_begin()[399999] << std::endl;
   }
   world.barrier();
   Alloc B(node);
@@ -699,9 +698,9 @@ TEST_CASE("csr_matrix_shm_large_memory", "[csr]")
   world.barrier();
   if (node.root())
   {
-    std::cout << " capacity: " << umat2.capacity() << std::endl;
+    app_log() << " capacity: " << umat2.capacity() << std::endl;
     umat2.emplace({399999, 0}, Type(1));
-    std::cout << " pbegin[399999]: " << umat2.pointers_begin()[399999] << std::endl;
+    app_log() << " pbegin[399999]: " << umat2.pointers_begin()[399999] << std::endl;
   }
   world.barrier();
 }

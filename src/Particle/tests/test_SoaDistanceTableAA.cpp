@@ -43,7 +43,7 @@ TEST_CASE("SoaDistanceTableAA compute_size", "[distance_table]")
   // run checks
   if (Alignment == 4 || Alignment == 8)
   {
-    std::cout << "testing Alignment = " << Alignment << std::endl;
+    app_log() << "testing Alignment = " << Alignment << std::endl;
     for (int i = 0; i < ref_results.size(); i++)
       CHECK(dt_ee.compute_size(i) == ref_results[i]);
   }

@@ -31,7 +31,7 @@ namespace qmcplusplus
 {
 void test_einset_diamond_1x1x1(bool use_offload, int distributed_ranks = 1, int shared_ranks = 1)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   // monoO
@@ -304,15 +304,15 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   test_einset_diamond_1x1x1(true);
   test_einset_diamond_1x1x1(false);
-  Communicate* c = OHMMS::Controller;
-  if (c->size() % 2 == 0)
+  Communicate& c(*OHMMS::Controller);
+  if (c.size() % 2 == 0)
   {
     test_einset_diamond_1x1x1(true, 2, 1);
     test_einset_diamond_1x1x1(false, 2, 1);
     test_einset_diamond_1x1x1(true, 1, 2);
     test_einset_diamond_1x1x1(false, 1, 2);
   }
-  if (c->size() % 6 == 0)
+  if (c.size() % 6 == 0)
   {
     test_einset_diamond_1x1x1(true, 2, 3);
     test_einset_diamond_1x1x1(false, 2, 3);
@@ -323,7 +323,7 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 
 TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   // diamondC_2x1x1
@@ -521,7 +521,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
 
 TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   lattice.R       = 0.0;

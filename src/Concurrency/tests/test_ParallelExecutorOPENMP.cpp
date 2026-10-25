@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
+#include "Platforms/Host/OutputManager.h"
 
 #include "Concurrency/ParallelExecutor.hpp"
 
@@ -35,7 +36,7 @@ TEST_CASE("ParallelExecutor<OPENMP> function case", "[concurrency]")
 TEST_CASE("ParallelExecutor<OPENMP> lambda case", "[concurrency]")
 {
   const int num_threads = omp_get_max_threads();
-  std::cout << "omp_get_max_threads() == " << num_threads << '\n';
+  app_log() << "omp_get_max_threads() == " << num_threads << '\n';
   ParallelExecutor<Executor::OPENMP> test_block;
   int count(0);
   test_block(

@@ -19,9 +19,8 @@
 #include <stdlib.h>
 #include <fstream>
 #include <iostream>
-#include <fcntl.h>
-#include <unistd.h>
 #include <cassert>
+#include <iterator>
 
 std::streamsize ParserClass::FileSize(std::string fname)
 {
@@ -43,23 +42,9 @@ MemParserClass::OpenFile(std::string fname)
   infile.open(fname.c_str(), std::ifstream::in);
   if (!infile.is_open())
     return false;
-  std::streampos fileSize = 0;
-  infile.seekg(fileSize, std::ios_base::end);
-  fileSize = infile.tellg();
-  infile.seekg(0, std::ios_base::beg);
-  if (fileSize != (std::streampos)-1) {
-    Buffer.resize(fileSize);
-    infile.read(&(Buffer[0]), fileSize);
-    infile.close();
-  }
-  else {
-    int fd = open (fname.c_str(), O_RDONLY);
-    char ch[100000];
-    int len = read (fd, ch, 99999);
-    ch[len] = '\0';
-    close (fd);
-    Buffer = ch;
-  }
+  Buffer.assign(std::istreambuf_iterator<char>(infile), std::istreambuf_iterator<char>());
+  if (infile.bad())
+    return false;
   Pos = 0;
   return true;
 }
@@ -68,15 +53,14 @@ void
 MemParserClass::CloseFile()
 {
   Buffer.clear();
+  Pos = 0;
 }
 
 bool
 MemParserClass::FindToken(std::string token)
 {
-  bool found = false;
-  int toklen = token.size();
-  int tokenPos = Buffer.find(token, Pos);
-  if (tokenPos == -1)
+  const std::string::size_type tokenPos = Buffer.find(token, Pos);
+  if (tokenPos == std::string::npos)
     return false;
   Pos = tokenPos+token.size();
   return true;
@@ -91,6 +75,8 @@ MemParserClass::ReadInt (int &val)
 //   if (success) 
 //     Pos += numChars;
 //   return (success == 1);
+  if (Pos >= Buffer.size())
+    return false;
   char * endptr;
   val = strtol (&(Buffer[Pos]), &endptr, 10);
   if (endptr == &(Buffer[Pos]))
@@ -102,6 +88,8 @@ MemParserClass::ReadInt (int &val)
 bool 
 MemParserClass::ReadLong (long &val)
 {
+  if (Pos >= Buffer.size())
+    return false;
   char * endptr;
   val = strtol (&(Buffer[Pos]), &endptr, 10);
   if (endptr == &(Buffer[Pos]))
@@ -114,6 +102,8 @@ MemParserClass::ReadLong (long &val)
 bool 
 MemParserClass::ReadDouble (double &val)
 {
+  if (Pos >= Buffer.size())
+    return false;
   char *endptr;
   val =strtod (&(Buffer[Pos]), &endptr);
   if (endptr == &(Buffer[Pos]))
@@ -166,29 +156,32 @@ bool isWhiteSpace (char c)
 bool
 MemParserClass::ReadWord (std::string &word)
 {
-  word = "";
-  char str[2];
-  str[1] = '\0';
-  while (isWhiteSpace (Buffer[Pos]) && (Pos<(Buffer.size()-1)))
+  word.clear();
+  while (Pos < Buffer.size() && isWhiteSpace(Buffer[Pos]))
     Pos++;
-  while (!isWhiteSpace(Buffer[Pos]) && (Pos<Buffer.size()-1)) {
-    str[0] = Buffer[Pos];
-    word.append(str);
+  const std::string::size_type word_start = Pos;
+  while (Pos < Buffer.size() && !isWhiteSpace(Buffer[Pos]))
     Pos++;
-  }
-  return true;
+  word.assign(Buffer, word_start, Pos - word_start);
+  return !word.empty();
 }
 
 bool
 MemParserClass::ReadLine (std::string &word)
 {
-  word = "";
-  char str[2];
-  str[1] = '\0';
-  while ((Buffer[Pos]!='\n') && (Pos<Buffer.size()-1)) {
-    str[0] = Buffer[Pos];
-    word.append(str);
-    Pos++;
+  word.clear();
+  if (Pos >= Buffer.size())
+    return false;
+  const std::string::size_type line_end = Buffer.find('\n', Pos);
+  if (line_end == std::string::npos)
+  {
+    word.assign(Buffer, Pos, Buffer.size() - Pos);
+    Pos = Buffer.size();
+  }
+  else
+  {
+    word.assign(Buffer, Pos, line_end - Pos);
+    Pos = line_end;
   }
   return true;
 }
@@ -196,14 +189,11 @@ MemParserClass::ReadLine (std::string &word)
 bool
 MemParserClass::NextLine ()
 {
-  while ((Buffer[Pos]!='\n') && (Pos<Buffer.size()-1))
-    Pos++;
-  if (Pos < Buffer.size()) {
-    Pos++;
-    return true;
-  }
-  else
+  if (Pos >= Buffer.size())
     return false;
+  const std::string::size_type line_end = Buffer.find('\n', Pos);
+  Pos = line_end == std::string::npos ? Buffer.size() : line_end + 1;
+  return true;
 }
 
 void

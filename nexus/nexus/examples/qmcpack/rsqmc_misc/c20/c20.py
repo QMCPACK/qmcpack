@@ -38,7 +38,7 @@ c20 = generate_physical_system(
     net_charge = 0,          # net charge in units of e
     net_spin   = 0,          # net spin in units of e-spin
     C          = 4,          # C has 4 valence electrons
-    ) 
+    )
 
 # scf run produces charge density
 scf = generate_pwscf(
@@ -80,11 +80,11 @@ opt = generate_qmcpack(
     job          = job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = c20,             # run c20
-    # input format selector   
+    # input format selector
     input_type   = 'basic',
     # qmcpack input parameters
     driver       = 'legacy',
-    corrections  = [], 
+    corrections  = [],
     jastrows     = [('J1','bspline',8,6),   # 1 body bspline jastrow
                     ('J2','bspline',8,8)],  # 2 body bspline jastrow
     calculations = [
@@ -92,46 +92,46 @@ opt = generate_qmcpack(
              qmc = linear(                   # linearized optimization method
                 energy               =  0.0, # cost function
                 unreweightedvariance =  1.0, #   is all unreweighted variance
-                reweightedvariance   =  0.0, #   no energy or r.w. var. 
+                reweightedvariance   =  0.0, #   no energy or r.w. var.
                 timestep             =  0.5, # vmc timestep (1/Ha)
-                warmupsteps          =  100, # MC steps before data collected 
-                samples              = 16000,# samples used for cost function 
+                warmupsteps          =  100, # MC steps before data collected
+                samples              = 16000,# samples used for cost function
                 stepsbetweensamples  =   10, # steps between uncorr. samples
-                blocks               =   10, # ignore this  
+                blocks               =   10, # ignore this
                 minwalkers           =   0.1,#  and this
                 bigchange            =  15.0,#  and this
                 alloweddifference    =  1e-4 #  and this, for now
                 )
-             )        
+             )
         ],
     # workflow dependencies
-    dependencies = (p2q,'orbitals')        
+    dependencies = (p2q,'orbitals')
     )
 
-    
+
 # final dmc run
-qmc = generate_qmcpack( 
+qmc = generate_qmcpack(
     # nexus inputs
-    identifier   = 'qmc',           # identifier/file prefix       
-    path         = 'c20/qmc',  # directory for dmc run       
+    identifier   = 'qmc',           # identifier/file prefix
+    path         = 'c20/qmc',  # directory for dmc run
     job          = job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = c20,             # run c20
-    # input format selector                                      
+    # input format selector
     input_type   = 'basic',
     # qmcpack input parameters
     driver       = 'legacy',
     corrections  = [],              # no finite size corrections
     jastrows     = [],              # overwritten from opt
     calculations = [                # qmcpack input parameters for qmc
-        vmc(                        # vmc parameters 
+        vmc(                        # vmc parameters
             timestep      = 0.5,    # vmc timestep (1/Ha)
             warmupsteps   = 100,    # No. of MC steps before data is collected
             blocks        = 200,    # No. of data blocks recorded in scalar.dat
             steps         =  10,    # No. of steps per block
             substeps      =   3,    # MC steps taken w/o computing E_local
             samplesperthread = 40   # No. of dmc walkers per thread
-            ),                      
+            ),
         dmc(                        # dmc parameters
             timestep      = 0.01,   # dmc timestep (1/Ha)
             warmupsteps   =  50,    # No. of MC steps before data is collected
@@ -162,7 +162,7 @@ if performed_runs:
     le = qa.dmc[1].dmc.LocalEnergy  # dmc series 1, dmc.dat, local energy
     #  print the total energy for the 20 atom system
     print('The DMC ground state energy for C20 is:')
-    print('    {0} +/- {1} Ha'.format(le.mean,le.error))
+    print(f'    {le.mean} +/- {le.error} Ha')
 #end if
 
 

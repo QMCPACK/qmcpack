@@ -216,8 +216,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     size_t c0, cN, nc;
     std::tie(c0, cN) = FairDivideBoundary(size_t(TG.Global().rank()), gnmu, size_t(TG.Global().size()));
     nc               = cN - c0;
-    boost::multi::array<SPValueType, 2> Tuv({static_cast<boost::multi::size_t>(gnmu), static_cast<boost::multi::size_t>(nc)});
-    boost::multi::array<SPValueType, 2> Muv({static_cast<boost::multi::size_t>(gnmu), static_cast<boost::multi::size_t>(nc)});
+    boost::multi::array<SPValueType, 2> Tuv({static_cast<boost::multi::ssize_t>(gnmu), static_cast<boost::multi::ssize_t>(nc)});
+    boost::multi::array<SPValueType, 2> Muv({static_cast<boost::multi::ssize_t>(gnmu), static_cast<boost::multi::ssize_t>(nc)});
 
     // Muv = Luv * H(Luv)
     // This can benefit from 2D split of work
@@ -235,7 +235,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
       *(itT) = ma::conj(*itT) * (*itM);
 
     using std::get;
-    boost::multi::array<SPValueType, 2> T_({static_cast<boost::multi::size_t>(get<1>(Tuv.sizes())), NMO});
+    boost::multi::array<SPValueType, 2> T_({static_cast<boost::multi::ssize_t>(get<1>(Tuv.sizes())), NMO});
     ma::product(T(Tuv), H(Piu__), T_);
     ma::product(SPValueType(-0.5), T(T_), T(Piu__({0, long(NMO)}, {long(c0), long(cN)})), SPValueType(0.0), v0_);
 
@@ -269,8 +269,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     size_t c0, cN, nc;
     std::tie(c0, cN) = FairDivideBoundary(size_t(TG.Global().rank()), gnmu, size_t(TG.Global().size()));
     nc               = cN - c0;
-    boost::multi::array<SPValueType, 2> Tuv({static_cast<boost::multi::size_t>(gnmu), static_cast<boost::multi::size_t>(nc)});
-    boost::multi::array<SPValueType, 2> Muv({static_cast<boost::multi::size_t>(gnmu), static_cast<boost::multi::size_t>(nc)});
+    boost::multi::array<SPValueType, 2> Tuv({static_cast<boost::multi::ssize_t>(gnmu), static_cast<boost::multi::ssize_t>(nc)});
+    boost::multi::array<SPValueType, 2> Muv({static_cast<boost::multi::ssize_t>(gnmu), static_cast<boost::multi::ssize_t>(nc)});
 
     // Muv = Luv * H(Luv)
     // This can benefit from 2D split of work
@@ -288,7 +288,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
       *(itT) = ma::conj(*itT) * (*itM);
 
     using std::get;
-    boost::multi::array<SPValueType, 2> T_({static_cast<boost::multi::size_t>(get<1>(Tuv.sizes())), NMO});
+    boost::multi::array<SPValueType, 2> T_({static_cast<boost::multi::ssize_t>(get<1>(Tuv.sizes())), NMO});
     ma::product(T(Tuv), H(Piu), T_);
     ma::product(SPValueType(-0.5), T(T_), T(Piu({0, long(NMO)}, {long(c0), long(cN)})), SPValueType(0.0), v0_);
 
@@ -341,7 +341,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     }
     else
     {
-      boost::multi::array<SPComplexType, 2> A({static_cast<boost::multi::size_t>(PsiT[0].size(1)), static_cast<boost::multi::size_t>(PsiT[0].size(0))});
+      boost::multi::array<SPComplexType, 2> A({static_cast<boost::multi::ssize_t>(PsiT[0].size(1)), static_cast<boost::multi::ssize_t>(PsiT[0].size(0))});
       for (int i = 0; i < ndet; i++)
       {
         ma::Matrix2MA('T', PsiT[i], A);

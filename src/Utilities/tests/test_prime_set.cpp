@@ -25,7 +25,7 @@ namespace qmcplusplus
 TEST_CASE("prime number set 32 bit", "[utilities]")
 {
   PrimeNumberSet<std::uint32_t> pns;
-  //std::cout << "32 bit size = "<< pns.size() << std::endl;
+  //app_log() << "32 bit size = "<< pns.size() << std::endl;
   REQUIRE(pns.size() == 4097);
   REQUIRE(pns[0] == 3);
 
@@ -44,7 +44,7 @@ TEST_CASE("prime number set 32 bit", "[utilities]")
 TEST_CASE("prime number set 64 bit", "[utilities]")
 {
   PrimeNumberSet<uint64_t> pns;
-  //std::cout << "64 bit size = "<< pns.size() << std::endl;
+  //app_log() << "64 bit size = "<< pns.size() << std::endl;
   REQUIRE(pns.size() == 55109);
   REQUIRE(pns[0] == 3);
 

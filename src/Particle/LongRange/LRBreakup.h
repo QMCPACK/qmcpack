@@ -340,10 +340,10 @@ int LRBreakup<BreakupBasis>::SetupKVecs(mRealType kc, mRealType kcont, mRealType
   mRealType kc2 = kc * kc;
   //use at least one shell
   size_t ks = 0;
-  kc2       = std::max(kc2, static_cast<mRealType>(kexact.getKSQWorking()[kexact.getKShell()[ks]]));
+  kc2       = std::max(kc2, static_cast<mRealType>(kexact.getKSQ()[kexact.getKShell()[ks]]));
   while (findK)
   {
-    if (kexact.getKSQWorking()[kexact.getKShell()[ks]] > kc2)
+    if (kexact.getKSQ()[kexact.getKShell()[ks]] > kc2)
       findK = false;
     else
       ks++;
@@ -351,7 +351,7 @@ int LRBreakup<BreakupBasis>::SetupKVecs(mRealType kc, mRealType kcont, mRealType
   size_t maxkshell = ks;
   size_t numk      = kexact.getNumK() - kexact.getKShell()[ks];
   for (; ks < kexact.getKShell().size() - 1; ks++)
-    AddKToList(std::sqrt(kexact.getKSQWorking()[kexact.getKShell()[ks]]), kexact.getKShell()[ks + 1] - kexact.getKShell()[ks]);
+    AddKToList(std::sqrt(kexact.getKSQ()[kexact.getKShell()[ks]]), kexact.getKShell()[ks + 1] - kexact.getKShell()[ks]);
     ////Add these vectors to the internal list
     //int numk=0;
     //mRealType modk2;

@@ -582,7 +582,7 @@ Job bundling
 ------------
 
 Job bundling refers to aggregating multiple independent tasks into a single job submission to reduce queueing overhead and improve resource utilization.
-This approach is especially beneficial on systems that impose strict limits on the number of job submissions or priortize capability jobs over numberous small jobs.
+This approach is especially beneficial on systems that impose strict limits on the number of job submissions or prioritize capability jobs over numerous small jobs.
 
 The following provides an example of job bundling applied to the equation of state calculation for diamond:
 

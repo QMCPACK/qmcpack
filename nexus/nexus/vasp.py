@@ -38,7 +38,7 @@ class Vasp(Simulation):
     input_type         = VaspInput
     analyzer_type      = VaspAnalyzer
     generic_identifier = 'vasp'
-    application        = 'vasp' 
+    application        = 'vasp'
     application_properties = frozenset({'serial','mpi'})
     application_results    = frozenset({'structure'})
 
@@ -111,8 +111,8 @@ class Vasp(Simulation):
                 neb_structures = self.neb_structures
                 if len(neb_structures)>1:
                     msg = (
-                        'NEB simulation at {0} depends on more than two structures\n'
-                        '  please check your inputs'.format(self.locdir)
+                        f'NEB simulation at {self.locdir} depends on more than two structures\n'
+                        '  please check your inputs'
                         )
                     raise RuntimeError(msg)
                 #end if
@@ -126,7 +126,7 @@ class Vasp(Simulation):
         else:
             msg = 'ability to incorporate result '+result_name+' has not been implemented'
             raise NotImplementedError(msg)
-        #end if  
+        #end if
     #end def incorporate_result
 
 
@@ -172,7 +172,7 @@ class Vasp(Simulation):
             native_file = os.path.join(self.locdir,file)
             save_file   = os.path.join(self.locdir,self.identifier+'.'+file)
             if os.path.exists(native_file):
-                os.system('cp {0} {1}'.format(native_file,save_file))
+                os.system(f'cp {native_file} {save_file}')
                 output_files.append(file)
             #end if
         #end for

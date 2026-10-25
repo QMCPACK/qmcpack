@@ -112,6 +112,7 @@ public:
 
   int GetNumChannels();
   bool HaveProjectors();
+  bool ValidateLocalChannel() const;
   bool ReadBFD_PP(std::string fileName);
   bool ReadCASINO_PP(std::string fileName);
   bool ReadCASINO_WF(std::string fileName, int l);
@@ -141,7 +142,8 @@ public:
   void SetLocalChannel(int local) { LocalChannel = local; }
 
   PseudoClass()
-      : XC(XC_NONE), Relativistic(false), LocalChannel(-1), grid_delta(0.001), DensityMix(0.75), WriteLogGrid(false)
+      : AtomicNumber(0), PseudoCharge(0.0), TotalEnergy(0.0), XC(XC_NONE), Relativistic(false), LocalChannel(-1),
+        grid_delta(0.001), DensityMix(0.75), WriteLogGrid(false)
   {
     SetupMaps();
   }

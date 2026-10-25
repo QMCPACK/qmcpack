@@ -9,6 +9,7 @@
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 
 #include "Message/Communicate.h"
@@ -68,6 +69,19 @@ TEST_CASE("QMCUpdate", "[drivers]")
   FakeUpdate update(elec, psi, h, rg);
 
   update.put(NULL);
+
+  // Legacy DMC movers use MaxAge to suppress the multiplicity of persistent
+  // rejected walkers before population control.
+  auto& walker   = *elec[0];
+  walker.Age     = 1;
+  walker.Weight  = 2.0;
+  update.MaxAge  = 0;
+  update.setMultiplicity(walker);
+  CHECK(walker.Multiplicity == Approx(1.0));
+
+  update.MaxAge = 1;
+  update.setMultiplicity(walker);
+  CHECK(walker.Multiplicity == Approx(1.5));
 
   //update.resetRun(brancher, estimator_manager);
 }

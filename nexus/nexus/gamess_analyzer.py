@@ -86,15 +86,15 @@ class GamessAnalyzer(SimulationAnalyzer):
             info.prefix = prefix
             files = info.files
             for file,unit in GamessInput.file_units.items():
-                files[file.lower()] = '{0}.F{1}'.format(prefix,str(unit).zfill(2))
+                files[file.lower()] = f'{prefix}.F{str(unit).zfill(2)}'
             #end for
             files.input  = infilename
-            files.output = '{0}.out'.format(prefix)
+            files.output = f'{prefix}.out'
             for name,filename in outfilenames:
                 if name in files:
                     files[name] = filename
                 else:
-                    msg = 'unknown GAMESS file: {0}'.format(name)
+                    msg = f'unknown GAMESS file: {name}'
                     raise NexusError(msg)
                 #end if
             #end for
@@ -129,8 +129,8 @@ class GamessAnalyzer(SimulationAnalyzer):
         elif self.info.exit:
             msg = (
                 'output file does not exist at either of the locations below:\n'
-                '  {0}\n'
-                '  {1}'.format(outfile,filename)
+                f'  {outfile}\n'
+                f'  {filename}'
                 )
             raise FileNotFoundError(msg)
         else:
@@ -280,11 +280,9 @@ class GamessAnalyzer(SimulationAnalyzer):
                     success=False
                     if self.info.exit:
                         msg = (
-                            'could not find start of orbitals for {0}\n'
-                            'number of orbitals read successfully: {1}\n'
-                            'number of orbitals not read: {2}'.format(
-                                header, mos_found, mos_tot-mos_found
-                                )
+                            f'could not find start of orbitals for {header}\n'
+                            f'number of orbitals read successfully: {mos_found}\n'
+                            f'number of orbitals not read: {mos_tot-mos_found}'
                             )
                         raise FileFormatError(msg)
                     else:
@@ -321,7 +319,7 @@ class GamessAnalyzer(SimulationAnalyzer):
                         elif a in GamessAnalyzer.ftypes:
                             ftype.append(ia)
                         elif self.info.exit:
-                            msg = 'unrecognized angular type: {0}'.format(angular[ia])
+                            msg = f'unrecognized angular type: {angular[ia]}'
                             raise RuntimeError(msg)
                         #end if
                     #end for
@@ -334,11 +332,9 @@ class GamessAnalyzer(SimulationAnalyzer):
                 success=False
                 if self.info.exit:
                     msg = (
-                        'orbital read failed for {0}\n'
-                        'number of orbitals read successfully: {1}\n'
-                        'number of orbitals not read: {2}'.format(
-                            header, mos_found, mos_tot-mos_found
-                            )
+                        f'orbital read failed for {header}\n'
+                        f'number of orbitals read successfully: {mos_found}\n'
+                        f'number of orbitals not read: {mos_tot-mos_found}'
                         )
                     raise FileFormatError(msg)
             #end if
@@ -402,7 +398,7 @@ class GamessAnalyzer(SimulationAnalyzer):
                     l = GamessAnalyzer.lxyz_reverse[a]
                     linds[l].append(ia)
                 elif self.info.exit:
-                    msg = 'unrecognized angular type: {0}'.format(angular[ia])
+                    msg = f'unrecognized angular type: {angular[ia]}'
                     raise RuntimeError(msg)
                 #end if
             #end for
@@ -466,7 +462,7 @@ class GamessAnalyzer(SimulationAnalyzer):
             text = self.get_output('punch')
             if text is None:
                 # Try to read .dat instead
-                self.info.files['punch'] = '{}.dat'.format(self.info.prefix)
+                self.info.files['punch'] = f'{self.info.prefix}.dat'
                 text = self.get_output('punch')
             #end if
             if text is not None:

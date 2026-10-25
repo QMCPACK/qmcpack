@@ -32,8 +32,7 @@
 import os
 import numpy as np
 from . import numpy_extensions as npe
-from .generic import sorted_generic
-from .developer import DevBase, obj, FileFormatError, NotAnElementError
+from .developer import DevBase, obj, FileFormatError, sorted_generic
 from .simulation import Simulation,SimulationAnalyzer
 from .vasp_input import Incar
 
@@ -43,7 +42,7 @@ class VXML(DevBase):
     basic_types = frozenset({'dimension', 'field', 'v', 'time', 'i', 'set'})
 
     data_types = obj(int=int,string=str,float=float)
-    
+
     def __init__(self,tag,attr=None):
         self._tag   = tag
         self._lines = []
@@ -146,7 +145,7 @@ class VXML(DevBase):
         # if sub-objects resolve to a value, replace with that value
         for name in list(self.keys()):
             value = self[name]
-            if isinstance(value,VXML) and value._value is not None: 
+            if isinstance(value,VXML) and value._value is not None:
                 self[name] = value._value
             #end if
         #end for
@@ -159,7 +158,6 @@ class VXML(DevBase):
             self.update(**self._attr)
         #end if
 
-        return
     #end def _parse
 
 
@@ -226,7 +224,7 @@ class VXML(DevBase):
                         if t in VXML.data_types:
                             dtype = VXML.data_types[t]
                         else:
-                            msg = 'field type {0} is unrecognized: {1}'.format(t,line)
+                            msg = f'field type {t} is unrecognized: {line}'
                             raise FileFormatError(msg)
                         #end if
                     else:
@@ -235,7 +233,7 @@ class VXML(DevBase):
                     fields[len(fields)] = obj(name=fname,dtype=dtype)
                 elif line.startswith('<set'):
                     if not set_dims:
-                        dims = [v for v in dims.values()]
+                        dims = list(dims.values())
                         dims.reverse()
                         dims = tuple(dims)
                         dim_counts = np.zeros((len(dims),),dtype=int)
@@ -251,7 +249,7 @@ class VXML(DevBase):
                 else:
                     msg = (
                         'array parsing failed\n'
-                        ' unrecognized xml encountered: {0}'.format(line)
+                        f' unrecognized xml encountered: {line}'
                         )
                     raise FileFormatError(msg)
                 #end if
@@ -283,7 +281,7 @@ class VXML(DevBase):
                     del self[n]
                 #end if
             #end if
-        #end for 
+        #end for
     #end def _remove_empty
 
 
@@ -360,17 +358,17 @@ def readval(val):
         #end try
     #end if
     if fail:
-        msg = 'failed to read value: "{0}"'.format(val)
+        msg = f'failed to read value: "{val}"'
         raise FileFormatError(msg)
     #end if
     return v
 #end def readval
-            
+
 
 
 def read_vxml(filepath):
     if not os.path.exists(filepath):
-        msg = 'file {0} does not exist'.format(filepath)
+        msg = f'file {filepath} does not exist'
         raise FileNotFoundError(msg)
     #end if
     #print 'read'
@@ -399,7 +397,7 @@ def read_vxml(filepath):
                 cur._lines.append(ls)
             #end if
         elif ls.startswith('<?'):
-            None
+            pass
         elif ls.startswith('<'):
             ta,rest = ls[1:].split('>',1)
             tokens = ta.split(' ',1)
@@ -410,7 +408,7 @@ def read_vxml(filepath):
                 else:
                     attr = tokens[1].strip()
                 #end if
-                if ls.endswith('</{0}>'.format(tag)):
+                if ls.endswith(f'</{tag}>'):
                     new = VXML(tag,attr)
                     new._lines.append(ls.replace('<','|').replace('>','|').split('|')[2])
                     cur._add(new)
@@ -551,7 +549,7 @@ def read_outcar_bands(vlines,odata):
                     kpoint = obj(kpoint=kp,energies=[],occupations=[])
                     spin[nk]=kpoint
                 elif line[2]=='b':
-                    None
+                    pass
                 else:
                     bnum,energy,occ = line.split()
                     kpoint.energies.append(float(energy))
@@ -726,7 +724,7 @@ class OutcarData(DevBase):
     def __init__(self,filepath=None,lines=None):
         if filepath is not None:
             if not os.path.exists(filepath):
-                msg = 'file {0} does not exist'.format(filepath)
+                msg = f'file {filepath} does not exist'
                 raise FileNotFoundError(msg)
             #end if
             with open(filepath,'r') as f:
@@ -843,7 +841,7 @@ class VaspAnalyzer(SimulationAnalyzer):
             #end for
             return
         #end if
-            
+
         if outcar is None and self.info.outcar_file is not None:
             outcar = os.path.join(self.info.path,self.info.outcar_file)
         #ned if
@@ -858,7 +856,7 @@ class VaspAnalyzer(SimulationAnalyzer):
 
     def analyze_outcar(self,outcar):
         if not os.path.exists(outcar):
-            msg = 'outcar file {0} does not exist'.format(outcar)
+            msg = f'outcar file {outcar} does not exist'
             raise FileNotFoundError(msg)
         #end if
         with open(outcar,'r') as oc:

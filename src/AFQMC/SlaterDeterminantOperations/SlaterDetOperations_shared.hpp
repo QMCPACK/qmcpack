@@ -82,8 +82,8 @@ public:
     assert(SM_TMats->num_elements() >= NAEA * (NAEA + NMO));
     boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->base()), {NAEA, NAEA});
     boost::multi::array_ref<T, 2> TNM(to_address(SM_TMats->base()) + NAEA * NAEA, {NAEA, NMO});
-    TVector WORK(iextensions<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{NMO + 1}, buffer_manager.get_generator().template get_allocator<int>());
+    TVector WORK(extents_t<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(extents_t<1u>{NMO + 1}, buffer_manager.get_generator().template get_allocator<int>());
     return SlaterDeterminantOperations::shm::MixedDensityMatrix<T>(hermA, B, std::forward<MatC>(C), LogOverlapFactor,
                                                                    TNN, TNM, IWORK, WORK, comm, compact, herm);
   }
@@ -115,8 +115,8 @@ public:
     boost::multi::array_ref<T, 2> TAB(to_address(SM_TMats->base()) + cnt, {Nact, NEL});
     cnt += TAB.num_elements();
     boost::multi::array_ref<T, 2> TNM(to_address(SM_TMats->base()) + cnt, {NEL, NMO});
-    TVector WORK(iextensions<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{NMO + 1}, buffer_manager.get_generator().template get_allocator<int>());
+    TVector WORK(extents_t<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(extents_t<1u>{NMO + 1}, buffer_manager.get_generator().template get_allocator<int>());
     return SlaterDeterminantOperations::shm::MixedDensityMatrixForWoodbury<T>(hermA, B, std::forward<MatC>(C),
                                                                               LogOverlapFactor, std::forward<MatQ>(QQ0),
                                                                               ref, TNN, TAB, TNM, IWORK, WORK, comm,
@@ -132,7 +132,7 @@ public:
     assert(SM_TMats->num_elements() >= 2 * NAEA * NAEA);
     boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->base()), {NAEA, NAEA});
     boost::multi::array_ref<T, 2> TNN2(to_address(SM_TMats->base()) + NAEA * NAEA, {NAEA, NAEA});
-    IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
+    IVector IWORK(extents_t<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
     return SlaterDeterminantOperations::shm::Overlap<T>(hermA, B, LogOverlapFactor, TNN, IWORK, TNN2.elements(), comm, herm);
   }
 
@@ -155,8 +155,8 @@ public:
     assert(SM_TMats->num_elements() >= NEL * (Nact + NEL));
     boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->base()), {NEL, NEL});
     boost::multi::array_ref<T, 2> TMN(to_address(SM_TMats->base()) + NEL * NEL, {Nact, NEL});
-    TVector WORK(iextensions<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{Nact + 1}, buffer_manager.get_generator().template get_allocator<int>());
+    TVector WORK(extents_t<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(extents_t<1u>{Nact + 1}, buffer_manager.get_generator().template get_allocator<int>());
     return SlaterDeterminantOperations::shm::OverlapForWoodbury<T>(hermA, B, LogOverlapFactor, std::forward<MatC>(QQ0),
                                                                    ref, TNN, TMN, IWORK, WORK, comm);
   }
@@ -294,10 +294,10 @@ protected:
   {
     if (SM_TMats == nullptr || SM_TMats->get_allocator() != shared_allocator<T>{comm})
     {
-      SM_TMats = std::move(std::make_unique<shmTVector>(iextensions<1u>(N), shared_allocator<T>{comm}));
+      SM_TMats = std::move(std::make_unique<shmTVector>(extents_t<1u>(N), shared_allocator<T>{comm}));
     }
     else if (SM_TMats->num_elements() < N)
-      SM_TMats = std::move(std::make_unique<shmTVector>(iextensions<1u>(N), shared_allocator<T>{comm}));
+      SM_TMats = std::move(std::make_unique<shmTVector>(extents_t<1u>(N), shared_allocator<T>{comm}));
   }
 };
 

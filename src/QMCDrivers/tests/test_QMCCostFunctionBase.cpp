@@ -22,7 +22,7 @@ namespace qmcplusplus
 class QMCCostFunctionTest : public QMCCostFunctionBase
 {
 public:
-  QMCCostFunctionTest(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* c)
+  QMCCostFunctionTest(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate& c)
       : QMCCostFunctionBase(w, psi, h, c)
   {}
 
@@ -47,8 +47,8 @@ public:
     char* buf;
     int out_buflen;
     xmlDocDumpFormatMemory(m_doc_out, (xmlChar**)&buf, &out_buflen, 1);
-    std::cout << "XML buffer length = " << out_buflen << std::endl;
-    std::cout << "XML: " << std::endl << buf << std::endl;
+    app_log() << "XML buffer length = " << out_buflen << std::endl;
+    app_log() << "XML: " << std::endl << buf << std::endl;
     xmlFree(buf);
   }
 
@@ -64,7 +64,7 @@ TEST_CASE("updateXmlNodes", "[drivers]")
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);
 
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   QMCCostFunctionTest cost(w, psi, h, comm);
 
@@ -99,7 +99,7 @@ TEST_CASE("updateXmlNodes with existing element", "[drivers]")
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);
 
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   QMCCostFunctionTest cost(w, psi, h, comm);
   cost.setRootName("tmp2");

@@ -30,11 +30,8 @@ namespace testing
 class VMCBatchedTest
 {
 public:
-  VMCBatchedTest(const ProjectData& project_data) : project_data_(project_data)
-  {
-    Concurrency::OverrideMaxCapacity<> override(8);
-    comm_ = OHMMS::Controller;
-  }
+  VMCBatchedTest(const ProjectData& project_data) : comm_(*OHMMS::Controller), project_data_(project_data)
+  { Concurrency::OverrideMaxCapacity<> override(8); }
 
   void testCalcDefaultLocalWalkers()
   {
@@ -54,7 +51,7 @@ public:
   }
 
 private:
-  Communicate* comm_;
+  Communicate& comm_;
   const ProjectData& project_data_;
 };
 } // namespace testing
@@ -62,7 +59,7 @@ private:
 TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
 {
   using namespace testing;
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   VMCBatchedTest vbt(test_project);
   vbt.testCalcDefaultLocalWalkers();
 }

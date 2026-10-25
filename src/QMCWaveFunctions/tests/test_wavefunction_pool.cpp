@@ -81,9 +81,8 @@ void setupParticleSetPool(ParticleSetPool& pp)
 
 TEST_CASE("WaveFunctionPool", "[wavefunction]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* c;
-  c = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool pp(c);
   setupParticleSetPool(pp);

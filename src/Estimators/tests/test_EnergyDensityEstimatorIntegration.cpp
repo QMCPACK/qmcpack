@@ -38,7 +38,7 @@ using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
 TEST_CASE("EnergyDensityEstimatorIntegration::multirank_reduction", "[estimators]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   int num_walkers = 4;
 #ifndef ENABLE_OFFLOAD
@@ -70,7 +70,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::multirank_reduction", "[estimators
   EstimatorManagerCrowd emc(emn);
   emc.registerListeners(ham_list);
 
-  emn.startDriverRun();
+  emn.startDriverRun("test");
 
   ParticleSet::mw_update(pset_list);
   TrialWaveFunction::mw_evaluateLog(twf_list, pset_list);
@@ -110,15 +110,15 @@ TEST_CASE("EnergyDensityEstimatorIntegration::multirank_reduction", "[estimators
   auto expected_sum = pph_logger.sumOverSome({"local_potential"s, "kinetic_energy"s, "ion_potential"s});
   //Here we check the sum of logged energies against the total energy in the grid.
 
-  std::cout << "summed_grid: " << summed_grid << "  expected_sum: " << expected_sum << '\n';
+  app_log() << "summed_grid: " << summed_grid << "  expected_sum: " << expected_sum << '\n';
 
   CHECK(summed_grid == Approx(expected_sum));
 }
 
 TEST_CASE("EnergyDensityEstimatorIntegration::operator_reporting", "[estimators]")
 {
-  Communicate* comm = OHMMS::Controller;
-  int num_walkers   = 4;
+  Communicate& comm(*OHMMS::Controller);
+  int num_walkers = 4;
 #ifndef ENABLE_OFFLOAD
   testing::EnergyDensityTest eden_test(comm, num_walkers, &testing::makeGoldWalkerElementsWithEEEIPS,
                                        generate_test_data);
@@ -144,7 +144,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::operator_reporting", "[estimators]
 
   EstimatorManagerNew emn(gold_elem.ham, comm);
 
-  emn.startDriverRun();
+  emn.startDriverRun("test");
   emn.constructEstimators(std::move(emi), gold_elem.pset_elec, gold_elem.twf, gold_elem.ham,
                           gold_elem.particle_pool.getPool());
   EstimatorManagerCrowd emc(emn);
@@ -210,8 +210,8 @@ TEST_CASE("EnergyDensityEstimatorIntegration::operator_reporting", "[estimators]
 
 TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
 {
-  int num_walkers   = 4;
-  Communicate* comm = OHMMS::Controller;
+  int num_walkers = 4;
+  Communicate& comm(*OHMMS::Controller);
   testing::EDenEstimatorManagerIntegrationTest eden_emn_integration_test(comm, num_walkers);
   auto walker_list = eden_emn_integration_test.getWalkerList();
   auto ham_list    = eden_emn_integration_test.getHamList();
@@ -234,7 +234,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
   using namespace std::string_literals;
   auto expected_sum = pph_logger.sumOverSome({"local_potential"s, "kinetic_energy"s, "ion_potential"s});
 
-  std::cout << "expected_sum: " << expected_sum << '\n';
+  app_log() << "expected_sum: " << expected_sum << '\n';
 
   auto pset_list = eden_emn_integration_test.getPSetList();
   auto twf_list  = eden_emn_integration_test.getTwfList();
@@ -258,7 +258,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
   CHECK(summed_grid == Approx(debug_sum));
 #endif
 
-  std::cout << "summed grid: " << summed_grid << '\n';
+  app_log() << "summed grid: " << summed_grid << '\n';
 
   int num_steps = 4;
 
@@ -274,7 +274,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
 
     expected_sum2 += pph_logger.sumOverSome({"local_potential"s, "kinetic_energy"s, "ion_potential"s});
 
-    std::cout << "expected sum2: " << expected_sum2 << '\n';
+    app_log() << "expected sum2: " << expected_sum2 << '\n';
     emc.accumulate(walker_list, pset_list, twf_list, ham_list, rng);
 
     summed_grid = 0;
@@ -287,7 +287,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
   }
 
   auto block_weight = emc.get_block_weight();
-  std::cout << "block weight: " << block_weight << '\n';
+  app_log() << "block weight: " << block_weight << '\n';
   auto accept = num_walkers * pset_list[0].getTotalNum();
 
   RefVector<ScalarEstimatorBase> main_scalar_estimators;
@@ -309,14 +309,14 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
     summed_grid += *(app_grid.getDataVector().begin() + i * 3 + 2) + *(app_grid.getDataVector().begin() + i * 3 + 1);
   }
 
-  std::cout << "summed grid: " << summed_grid << '\n';
+  app_log() << "summed grid: " << summed_grid << '\n';
   CHECK(summed_grid == Approx(expected_sum + expected_sum2));
-  std::cout << "walkers weight: " << app_e_den_est.get_walkers_weight() << '\n';
+  app_log() << "walkers weight: " << app_e_den_est.get_walkers_weight() << '\n';
 
   emnta.stopBlockUpToWrite(accept, 0, block_weight);
-  std::cout << "walkers weight after reduction: " << app_e_den_est.get_walkers_weight() << '\n';
+  app_log() << "walkers weight after reduction: " << app_e_den_est.get_walkers_weight() << '\n';
 
-  if (comm->rank() == 0)
+  if (comm.rank() == 0)
   {
     summed_grid = 0;
     // grid memory layout is (W)eight (T) Kinetic (V) potential
@@ -325,7 +325,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
     {
       summed_grid += *(app_grid.getDataVector().begin() + i * 3 + 2) + *(app_grid.getDataVector().begin() + i * 3 + 1);
     }
-    std::cout << "summed grid: " << summed_grid << '\n';
+    app_log() << "summed grid: " << summed_grid << '\n';
 
     // This is by 8 because expected_sum + expected_sum2 are only the local grids
     CHECK(summed_grid == Approx((expected_sum + expected_sum2) / (num_walkers * num_steps)));

@@ -21,6 +21,7 @@
 #include "Common/allocator_traits.hpp"
 #if defined(ENABLE_OFFLOAD)
 #include <omp.h>
+#include "OMPrequires.hpp"
 #endif
 #include "OMPTargetUsage.hpp"
 

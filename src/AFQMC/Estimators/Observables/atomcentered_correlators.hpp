@@ -72,8 +72,8 @@ class atomcentered_correlators : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
-  using StaticMatrix         = boost::multi::static_array<ComplexType, 2, shm_stack_alloc_type>;
-  using Static3Tensor        = boost::multi::static_array<ComplexType, 3, shm_stack_alloc_type>;
+  using DynamicMatrix        = boost::multi::dynamic_array<ComplexType, 2, shm_stack_alloc_type>;
+  using Dynamic3Tensor       = boost::multi::dynamic_array<ComplexType, 3, shm_stack_alloc_type>;
 
   // MAM: Note -
   // This class uses lots of memory, but can be safely moved to single precision.
@@ -101,12 +101,12 @@ public:
         writer(false),
         S({0, 0, 0}, make_node_allocator<ComplexType>(TG)),
         XY({0, 0}, make_node_allocator<ComplexType>(TG)),
-        shapes(iextensions<1u>{0}, IAllocator{}),
+        shapes(extents_t<1u>{0}, IAllocator{}),
         DMAverage2D({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMWork2D({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMAverage1D({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMWork1D({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
-        denom(iextensions<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
+        denom(extents_t<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
         NwIJ({0, 0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         NwI({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()})
   {
@@ -259,7 +259,7 @@ public:
     {
       if (denom.size() != nw)
       {
-        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
+        denom = mpi3CVector(extents_t<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (get<0>(DMWork1D.sizes()) != nw || get<1>(DMWork1D.sizes()) != 3 || get<2>(DMWork1D.sizes()) != nsites)
       {
@@ -269,7 +269,8 @@ public:
       {
         DMWork2D = mpi3CTensor({nw, 3, ns2}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (get<0>(NwIJ.sizes()) != nsp || get<1>(NwIJ.sizes()) != nw || get<2>(NwIJ.sizes()) != nsites || get<3>(NwIJ.sizes()) != nsites)
+      if (get<0>(NwIJ.sizes()) != nsp || get<1>(NwIJ.sizes()) != nw || get<2>(NwIJ.sizes()) != nsites ||
+          get<3>(NwIJ.sizes()) != nsites)
       {
         NwIJ = mpi3C4Tensor({nsp, nw, nsites, nsites}, shared_allocator<ComplexType>{TG.TG_local()});
       }
@@ -278,19 +279,20 @@ public:
         NwI = mpi3CTensor({nsp, nw, nsites}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (shapes.size() < 2 * nw * nsites * nsites)
-        shapes = IVector(iextensions<1u>{2 * nw * nsites * nsites}, IAllocator{});
+        shapes = IVector(extents_t<1u>{2 * nw * nsites * nsites}, IAllocator{});
       fill_n(denom.base(), denom.num_elements(), ComplexType(0.0, 0.0));
       fill_n(DMWork1D.base(), DMWork1D.num_elements(), ComplexType(0.0, 0.0));
       fill_n(DMWork2D.base(), DMWork2D.num_elements(), ComplexType(0.0, 0.0));
     }
     else
     {
-      if (get<0>(denom.sizes()) != nw || get<0>(DMWork1D.sizes()) != nw || get<1>(DMWork1D.sizes()) != 3 || get<2>(DMWork1D.sizes()) != nsites ||
-          get<0>(DMWork2D.sizes()) != nw || get<1>(DMWork2D.sizes()) != 3 || get<2>(DMWork2D.sizes()) != ns2 || get<0>(NwI.sizes()) != nsp ||
-          get<1>(NwI.sizes()) != nw || get<2>(NwI.sizes()) != nsites || get<0>(NwIJ.sizes()) != nsp || get<1>(NwIJ.sizes()) != nw ||
-          get<2>(NwIJ.sizes()) != nsites || get<3>(NwIJ.sizes()) != nsites || get<0>(DMAverage1D.sizes()) != nave || get<1>(DMAverage1D.sizes()) != 3 ||
-          get<2>(DMAverage1D.sizes()) != nsites || get<0>(DMAverage2D.sizes()) != nave || get<1>(DMAverage2D.sizes()) != 3 ||
-          get<2>(DMAverage2D.sizes()) != ns2)
+      if (get<0>(denom.sizes()) != nw || get<0>(DMWork1D.sizes()) != nw || get<1>(DMWork1D.sizes()) != 3 ||
+          get<2>(DMWork1D.sizes()) != nsites || get<0>(DMWork2D.sizes()) != nw || get<1>(DMWork2D.sizes()) != 3 ||
+          get<2>(DMWork2D.sizes()) != ns2 || get<0>(NwI.sizes()) != nsp || get<1>(NwI.sizes()) != nw ||
+          get<2>(NwI.sizes()) != nsites || get<0>(NwIJ.sizes()) != nsp || get<1>(NwIJ.sizes()) != nw ||
+          get<2>(NwIJ.sizes()) != nsites || get<3>(NwIJ.sizes()) != nsites || get<0>(DMAverage1D.sizes()) != nave ||
+          get<1>(DMAverage1D.sizes()) != 3 || get<2>(DMAverage1D.sizes()) != nsites ||
+          get<0>(DMAverage2D.sizes()) != nave || get<1>(DMAverage2D.sizes()) != 3 || get<2>(DMAverage2D.sizes()) != ns2)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
@@ -311,11 +313,11 @@ public:
     {
       int nwlk = std::min(nwbatch, nw - iw0);
 
-      Static3Tensor QwI({nwlk, NAO, NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
-      Static3Tensor MwIJ({nwlk, NAO, NAO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
-      Static3Tensor devNwIJ({nwlk, nsites, nsites},
-                            buffer_manager.get_generator().template get_allocator<ComplexType>());
-      StaticMatrix devNwI({nwlk, nsites}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      Dynamic3Tensor QwI({nwlk, NAO, NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      Dynamic3Tensor MwIJ({nwlk, NAO, NAO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      Dynamic3Tensor devNwIJ({nwlk, nsites, nsites},
+                             buffer_manager.get_generator().template get_allocator<ComplexType>());
+      DynamicMatrix devNwI({nwlk, nsites}, buffer_manager.get_generator().template get_allocator<ComplexType>());
 
       for (int is = 0; is < nsp; ++is)
       {

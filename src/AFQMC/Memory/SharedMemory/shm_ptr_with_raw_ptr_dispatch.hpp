@@ -47,21 +47,21 @@ template<>
 struct shm_ptr_with_raw_ptr_dispatch<const void>
 {
   using T = const void;
-  std::shared_ptr<mpi3::shared_window<char>> wSP_;
+  mpi3::shared_window<char>* wSP_ = nullptr;  // non-owning: lifetime is managed exclusively by the allocator's allocate()/deallocate()
   std::ptrdiff_t offset = 0;
   shm_ptr_with_raw_ptr_dispatch(std::nullptr_t = nullptr) {}
   shm_ptr_with_raw_ptr_dispatch(shm_ptr_with_raw_ptr_dispatch const& other)            = default;
   shm_ptr_with_raw_ptr_dispatch& operator=(shm_ptr_with_raw_ptr_dispatch const& other) = default;
   shm_ptr_with_raw_ptr_dispatch& operator=(std::nullptr_t)
   {
-    wSP_.reset();
+    wSP_ = nullptr;
     return *this;
   }
   bool operator==(std::nullptr_t) const { return (bool)wSP_; }
   bool operator!=(std::nullptr_t) const { return not operator==(nullptr); }
 
 private:
-  shm_ptr_with_raw_ptr_dispatch(std::shared_ptr<mpi3::shared_window<char>> wSP) : wSP_{wSP} {}
+  shm_ptr_with_raw_ptr_dispatch(mpi3::shared_window<char>* wSP) : wSP_{wSP} {}
   template<class>
   friend struct shm_ptr_with_raw_ptr_dispatch;
 };
@@ -71,14 +71,14 @@ struct shm_ptr_with_raw_ptr_dispatch<void>
 {
   using T            = void;
   using element_type = T;
-  std::shared_ptr<mpi3::shared_window<char>> wSP_;
+  mpi3::shared_window<char>* wSP_ = nullptr;  // non-owning: lifetime is managed exclusively by the allocator's allocate()/deallocate()
   std::ptrdiff_t offset = 0;
   shm_ptr_with_raw_ptr_dispatch(std::nullptr_t = nullptr) {}
   shm_ptr_with_raw_ptr_dispatch(shm_ptr_with_raw_ptr_dispatch const& other)            = default;
   shm_ptr_with_raw_ptr_dispatch& operator=(shm_ptr_with_raw_ptr_dispatch const& other) = default;
   shm_ptr_with_raw_ptr_dispatch& operator=(std::nullptr_t)
   {
-    wSP_.reset();
+    wSP_ = nullptr;
     return *this;
   }
   template<typename Q>
@@ -112,7 +112,7 @@ struct shm_ptr_with_raw_ptr_dispatch
   using iterator_category      = std::random_access_iterator_tag;
   using rebind_const           = shm_ptr_with_raw_ptr_dispatch<const T>;
   using default_allocator_type = allocator_shm_ptr_with_raw_ptr_dispatch<value_type>;
-  std::shared_ptr<mpi3::shared_window<char>> wSP_;
+  mpi3::shared_window<char>* wSP_ = nullptr;  // non-owning: lifetime is managed exclusively by the allocator's allocate()/deallocate()
   std::ptrdiff_t offset = 0; // in Bytes
   shm_ptr_with_raw_ptr_dispatch() {}
   shm_ptr_with_raw_ptr_dispatch(std::nullptr_t) {}
@@ -245,10 +245,10 @@ struct allocator_shm_ptr_with_raw_ptr_dispatch
   shm_ptr_with_raw_ptr_dispatch<T> allocate(size_type n, const void* /*hint*/ = 0)
   {
     shm_ptr_with_raw_ptr_dispatch<T> ret = 0;
-    ret.wSP_.reset(new mpi3::shared_window<char>{*commP_, commP_->root() ? (long(n * sizeof(T))) : 0, int(sizeof(T))});
+    ret.wSP_ = new mpi3::shared_window<char>{*commP_, commP_->root() ? (long(n * sizeof(T))) : 0, int(sizeof(T))};
     return ret;
   }
-  void deallocate(shm_ptr_with_raw_ptr_dispatch<T> ptr, size_type) { ptr.wSP_.reset(); }
+  void deallocate(shm_ptr_with_raw_ptr_dispatch<T> ptr, size_type) { delete ptr.wSP_; }
   allocator_shm_ptr_with_raw_ptr_dispatch& operator=(allocator_shm_ptr_with_raw_ptr_dispatch const& other)
   {
     assert((*this) == other); // TODO make comm a shared_ptr
@@ -281,10 +281,10 @@ struct memory_resource_shm_ptr_with_raw_ptr_dispatch
   shm_ptr_with_raw_ptr_dispatch<void> allocate(std::size_t size, std::size_t alignment = alignof(std::max_align_t))
   {
     shm_ptr_with_raw_ptr_dispatch<char> ret = 0;
-    ret.wSP_.reset(new mpi3::shared_window<char>{*commP_, commP_->root() ? long(size) : 0, int(alignment)});
+    ret.wSP_ = new mpi3::shared_window<char>{*commP_, commP_->root() ? long(size) : 0, int(alignment)};
     return ret;
   }
-  void deallocate(shm_ptr_with_raw_ptr_dispatch<void> ptr, std::size_t) { ptr.wSP_.reset(); }
+  void deallocate(shm_ptr_with_raw_ptr_dispatch<void> ptr, std::size_t) { delete ptr.wSP_; }
 
   bool operator==(memory_resource_shm_ptr_with_raw_ptr_dispatch const& other) const { return commP_ == other.commP_; }
 
@@ -688,7 +688,7 @@ multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> fill_
     multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> last,
     Q const& val)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return fill_n(first, std::distance(first, last), val);
 }
 
@@ -729,7 +729,7 @@ multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> unini
     multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> last,
     T const& val)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return uninitialized_fill_n(a, first, std::distance(first, last), val);
 }
 
@@ -750,7 +750,7 @@ multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc
     multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> last,
     T const& val)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return uninitialized_fill_n(a, first, std::distance(first, last), val);
 }
 
@@ -828,7 +828,7 @@ multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy(
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return copy_n(first, std::distance(first, last), dest);
 }
 
@@ -838,7 +838,7 @@ multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy(
     ForwardIt last,
     multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return copy_n(first, std::distance(first, last), dest);
 }
 
@@ -849,7 +849,7 @@ multi::detail::array_iterator<T, 1, T*> copy(multi::detail::array_iterator<Q1, 1
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return copy_n(first, std::distance(first, last), dest);
 }
 
@@ -923,7 +923,7 @@ multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> unini
     ForwardIt last,
     multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return uninitialized_copy_n(a, first, std::distance(first, last), dest);
 }
 
@@ -938,7 +938,7 @@ multi::detail::array_iterator<T, 1, T*> uninitialized_copy(
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
   if (std::distance(first, last) == 0)
     return dest;
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   base(first).wSP_->fence();
   {
     auto d = dest;
@@ -963,7 +963,7 @@ multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc
     ForwardIt last,
     multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return uninitialized_copy_n(a, first, std::distance(first, last), dest);
 }
 

@@ -183,7 +183,7 @@ public:
     int npol  = (walker_type == NONCOLLINEAR) ? 2 : 1;
 
     // making a copy of vMF since it will be modified
-    shmCVector vMF_(iextensions<1u>{vMF.num_elements()}, shared_allocator<ComplexType>{*comm});
+    shmCVector vMF_(extents_t<1u>{vMF.num_elements()}, shared_allocator<ComplexType>{*comm});
     comm->barrier();
     //if(comm->root())
     {

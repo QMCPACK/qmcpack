@@ -5,11 +5,11 @@ import sys
 from pathlib import Path
 from optparse import OptionParser
 
-if sys.version_info[0:3] < (3, 10, 0):
+if sys.version_info[0:3] < (3, 12, 0):
     v = sys.version_info[0:3]
     print(
        f"Your version of Python ({v[0]}.{v[1]}.{v[2]}) is less than the minimum required for Nexus!\n"
-        "To use Nexus, please install at least Python 3.10.0 or higher!\n\n"
+        "To use Nexus, please install at least Python 3.12.0 or higher!\n\n"
         "If you already have a higher version installed, ensure that your Python\n"
         "environment is properly activated and your $PATH is set correctly."
     )
@@ -144,16 +144,16 @@ for path in sorted(paths.keys()):
         if len(contents)==0:
             print('    no contents to backup')
         elif dryrun:
-            print('    would have created backup of {0} files in directory {1}'.format(len(contents),attempt_dir))
+            print(f'    would have created backup of {len(contents)} files in directory {attempt_dir}')
         else:
-            print('    creating backup of {0} files in directory {1}'.format(len(contents),attempt_dir))
+            print(f'    creating backup of {len(contents)} files in directory {attempt_dir}')
         #end if
     #end if
     if not dryrun and len(contents)>0:
         os.mkdir(attempt_dir)
         if os.path.exists(attempt_dir) and os.path.isdir(attempt_dir):
             for item in contents:
-                os.system('mv {0} {1}'.format(item,attempt_dir))
+                os.system(f'mv {item} {attempt_dir}')
             #end for
         else:
             print('  failed to create backup directory '+os.path.join(path,attempt_dir))

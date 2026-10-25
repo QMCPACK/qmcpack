@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 template<typename COT>
-AOBasisBuilder<COT>::AOBasisBuilder(const std::string& eName, Communicate* comm)
+AOBasisBuilder<COT>::AOBasisBuilder(const std::string& eName, Communicate& comm)
     : MPIObjectBase(comm),
       addsignforM(false),
       expandlm(GAUSSIAN_EXPAND),
@@ -39,10 +39,8 @@ AOBasisBuilder<COT>::AOBasisBuilder(const std::string& eName, Communicate* comm)
 {
   // mmorales: for "Cartesian Gaussian", m is an integer that maps
   //           the component to Gamess notation, see Numerics/CartesianTensor.h
-  nlms_id["n"] = q_n;
   nlms_id["l"] = q_l;
   nlms_id["m"] = q_m;
-  nlms_id["s"] = q_s;
 }
 
 template<class COT>
@@ -73,7 +71,7 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
     addsignforM = 1;
     if (sph != "spherical")
     {
-      myComm->barrier_and_abort(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
+      myComm.barrier_and_abort(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
 
@@ -88,12 +86,12 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
     expandlm    = DIRAC_CARTESIAN_EXPAND;
     addsignforM = 0;
     if (sph != "cartesian")
-      myComm->barrier_and_abort(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
+      myComm.barrier_and_abort(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
   }
 
   // Numerical basis is a special case
   if (basisType == "Numerical")
-    myComm->barrier_and_abort("Purely numerical atomic orbitals are not supported any longer.");
+    myComm.barrier_and_abort("Purely numerical atomic orbitals are not supported any longer.");
 
   return true;
 }
@@ -104,7 +102,7 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
   ReportEngine PRE("AtomicBasisBuilder", "putH5(hin)");
   std::string CenterID, basisName;
 
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     hin.read(sph, "angular");
     hin.read(CenterID, "elementType");
@@ -113,13 +111,13 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
     hin.read(basisName, "name");
   }
 
-  myComm->bcast(sph);
-  myComm->bcast(Morder);
-  myComm->bcast(CenterID);
-  myComm->bcast(Normalized);
-  myComm->bcast(basisName);
-  myComm->bcast(basisType);
-  myComm->bcast(addsignforM);
+  myComm.bcast(sph);
+  myComm.bcast(Morder);
+  myComm.bcast(CenterID);
+  myComm.bcast(Normalized);
+  myComm.bcast(basisName);
+  myComm.bcast(basisType);
+  myComm.bcast(addsignforM);
 
   if (sph == "spherical")
     addsignforM = 1; //include (-1)^m
@@ -136,7 +134,7 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
     addsignforM = 1;
     if (sph != "spherical")
     {
-      myComm->barrier_and_abort(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
+      myComm.barrier_and_abort(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
 
@@ -151,7 +149,7 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
     expandlm    = DIRAC_CARTESIAN_EXPAND;
     addsignforM = 0;
     if (sph != "cartesian")
-      myComm->barrier_and_abort(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
+      myComm.barrier_and_abort(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
   }
   app_log() << R"(<input node="atomicBasisSet" name=")" << basisName << "\" expandYlm=\"" << Morder << "\" angular=\""
             << sph << "\" elementType=\"" << CenterID << "\" normalized=\"" << Normalized << "\" type=\"" << basisType
@@ -256,7 +254,7 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
       {
         std::map<std::string, int>::iterator iit = nlms_id.find(aname);
         if (iit != nlms_id.end())
-        //valid for n,l,m,s
+        // valid for l and m
         {
           nlms[(*iit).second] = atoi((const char*)(att->children->content));
         }
@@ -281,7 +279,7 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
   }
 
   if (expandYlm(aos.get(), all_nl, expandlm) != num)
-    myComm->barrier_and_abort("expandYlm doesn't match the number of basis.");
+    myComm.barrier_and_abort("expandYlm doesn't match the number of basis.");
   radFuncBuilder.finalize();
   aos->finalize();
   app_log() << "   Maximum Angular Momentum  = " << aos->Ylm.lmax() << std::endl
@@ -332,24 +330,24 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
   int num(0);  //the number of localized basis functions of this center
 
   int numbasisgroups(0);
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     if (!hin.readEntry(numbasisgroups, "NbBasisGroups"))
       PRE.error("Could not read NbBasisGroups in H5; Probably Corrupt H5 file", true);
   }
-  myComm->bcast(numbasisgroups);
+  myComm.bcast(numbasisgroups);
 
   for (int i = 0; i < numbasisgroups; i++)
   {
     std::string basisGroupID = "basisGroup" + std::to_string(i);
     int l(0);
-    if (myComm->rank() == 0)
+    if (myComm.rank() == 0)
     {
       hin.push(basisGroupID);
       hin.read(l, "l");
       hin.pop();
     }
-    myComm->bcast(l);
+    myComm.bcast(l);
 
     Lmax = std::max(Lmax, l);
     //expect that only Rnl is given
@@ -375,16 +373,16 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
   for (int i = 0; i < numbasisgroups; i++)
   {
     std::string basisGroupID = "basisGroup" + std::to_string(i);
-    if (myComm->rank() == 0)
+    if (myComm.rank() == 0)
     {
       hin.push(basisGroupID);
       hin.read(rnl, "rid");
       hin.read(nlms[0], "n");
       hin.read(nlms[1], "l");
     }
-    myComm->bcast(rnl);
-    myComm->bcast(nlms[0]);
-    myComm->bcast(nlms[1]);
+    myComm.bcast(rnl);
+    myComm.bcast(nlms[0]);
+    myComm.bcast(nlms[1]);
 
     //add Ylm channels
     app_log() << "   R(n,l,m,s) " << nlms[0] << " " << nlms[1] << " " << nlms[2] << " " << nlms[3] << std::endl;
@@ -401,12 +399,12 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
       all_nl.push_back((*rnl_it).second);
     }
 
-    if (myComm->rank() == 0)
+    if (myComm.rank() == 0)
       hin.pop();
   }
 
   if (expandYlm(aos.get(), all_nl, expandlm) != num)
-    myComm->barrier_and_abort("expandYlm doesn't match the number of basis.");
+    myComm.barrier_and_abort("expandYlm doesn't match the number of basis.");
   radFuncBuilder.finalize();
   aos->finalize();
   app_log() << "   Maximum Angular Momentum  = " << aos->Ylm.lmax() << std::endl
@@ -803,7 +801,7 @@ int AOBasisBuilder<COT>::expandYlm(COT* aos, std::vector<int>& all_nl, int expan
         num++;
         break;
       default:
-        myComm->barrier_and_abort("Cartesian Tensor only defined up to Lmax=6. Aborting\n");
+        myComm.barrier_and_abort("Cartesian Tensor only defined up to Lmax=6. Aborting\n");
         break;
       }
     }

@@ -43,11 +43,11 @@ int main(int argc, char* argv[])
   // Parse arguments.
   int parser_err = session.applyCommandLine(argc, argv);
 #ifdef CATCH_MAIN_HAVE_MPI
-  mpi3::environment env(argc, argv);
-  OHMMS::Controller = new Communicate(env.world());
+  mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
+  OHMMS::Controller = std::make_unique<Communicate>(env.world());
   if (OHMMS::Controller->rank())
     outputManager.shutOff();
-  Communicate node_comm{OHMMS::Controller->NodeComm()};
+  Communicate node_comm{OHMMS::Controller->createNodeComm()};
   // assign accelerators within a node
   qmcplusplus::DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 #else
@@ -63,7 +63,8 @@ int main(int argc, char* argv[])
   // Run the tests.
   int result = session.run();
 #ifdef CATCH_MAIN_HAVE_MPI
-  OHMMS::Controller->finalize();
+  // OHMMS::Controller holds duplicated (linked) mpi3::environment and must be freed first.
+  OHMMS::Controller.reset();
 #endif
   if (parser_err != 0)
   {

@@ -40,7 +40,7 @@ using boost::multi::array;
 using boost::multi::array_ref;
 using std::vector;
 template<std::ptrdiff_t D>
-using iextensions = typename boost::multi::iextensions<D>;
+using extents_t = typename boost::multi::extents_t<D>;
 
 namespace qmcplusplus
 {
@@ -91,18 +91,18 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
   //// matrix-vector
   {
     vector<double> b = {1., 2., 1., 4.};
-    array<double, 1, Allocator> B(iextensions<1u>{4}, alloc);
+    array<double, 1, Allocator> B(extents_t<1u>{4}, alloc);
     using std::copy_n;
     copy_n(b.data(), b.size(), B.base());
     REQUIRE(B.num_elements() == b.size());
 
-    array<double, 1, Allocator> C(iextensions<1u>{4}, alloc);
+    array<double, 1, Allocator> C(extents_t<1u>{4}, alloc);
     REQUIRE(C.num_elements() == 4);
 
     ma::product(A, B, C); // C = A*B
 
     vector<double> c2 = {18., 0., 6., 4.};
-    array_ref<double, 1> C2(c2.data(), iextensions<1u>{4});
+    array_ref<double, 1> C2(c2.data(), extents_t<1u>{4});
     REQUIRE(C2.num_elements() == c2.size());
     verify_approx(C, C2);
 
@@ -110,7 +110,7 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
     ma::product(T(A), B, C); // D = T(A)*B
 
     vector<double> d2 = {0., 12., 0., 4.};
-    array_ref<double, 1> D2(d2.data(), iextensions<1u>{4});
+    array_ref<double, 1> D2(d2.data(), extents_t<1u>{4});
     REQUIRE(D2.num_elements() == d2.size());
     verify_approx(C, D2);
   }
@@ -149,25 +149,25 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
   // matrix-vector
   {
     vector<double> b = {1., 2., 1., 4.};
-    array<double, 1, Allocator> B(iextensions<1u>{4}, alloc);
+    array<double, 1, Allocator> B(extents_t<1u>{4}, alloc);
     using std::copy_n;
     copy_n(b.data(), b.size(), B.base());
     REQUIRE(B.num_elements() == b.size());
 
-    array<double, 1, Allocator> C(iextensions<1u>{4}, alloc);
+    array<double, 1, Allocator> C(extents_t<1u>{4}, alloc);
     REQUIRE(C.num_elements() == 4);
 
     ma::product(A, B, C); // C = A*B
 
     vector<double> c2 = {18., 0., 6., 4.};
-    array_ref<double, 1> C2(c2.data(), iextensions<1u>{4});
+    array_ref<double, 1> C2(c2.data(), extents_t<1u>{4});
     verify_approx(C, C2);
 
     using ma::T;
     ma::product(T(A), B, C); // D = T(A)*B
 
     vector<double> d2 = {0., 12., 0., 4.};
-    array_ref<double, 1> D2(d2.data(), iextensions<1u>{4});
+    array_ref<double, 1> D2(d2.data(), extents_t<1u>{4});
     REQUIRE(D2.num_elements() == d2.size());
     verify_approx(C, D2);
   }

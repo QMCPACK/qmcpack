@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 '''
-This example is similar to diamond_lda_vmc.py (legacy drivers) 
+This example is similar to diamond_lda_vmc.py (legacy drivers)
 but for the batched drivers.
 '''
 
@@ -41,9 +41,9 @@ scf = generate_pwscf(
     job          = job(cores=16,app='pw.x'),
     input_type   = 'generic',
     calculation  = 'scf',
-    input_dft    = 'lda', 
-    ecutwfc      = 200,   
-    conv_thr     = 1e-8, 
+    input_dft    = 'lda',
+    ecutwfc      = 200,
+    conv_thr     = 1e-8,
     system       = system,
     pseudos      = ['C.BFD.upf'],
     kgrid        = (4,4,4),
@@ -56,9 +56,9 @@ nscf = generate_pwscf(
     job          = job(cores=16,app='pw.x'),
     input_type   = 'generic',
     calculation  = 'nscf',
-    input_dft    = 'lda', 
-    ecutwfc      = 200,   
-    conv_thr     = 1e-8, 
+    input_dft    = 'lda',
+    ecutwfc      = 200,
+    conv_thr     = 1e-8,
     system       = system,
     pseudos      = ['C.BFD.upf'],
     nosym        = True,

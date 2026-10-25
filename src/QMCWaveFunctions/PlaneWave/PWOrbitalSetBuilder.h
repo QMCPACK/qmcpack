@@ -72,7 +72,7 @@ private:
 
 public:
   ///constructor
-  PWOrbitalSetBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur);
+  PWOrbitalSetBuilder(ParticleSet& p, Communicate& comm, xmlNodePtr cur);
   ~PWOrbitalSetBuilder() override;
 
   /// create an sposet from xml and save the resulting SPOSet

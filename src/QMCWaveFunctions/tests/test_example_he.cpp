@@ -27,7 +27,7 @@ using PsiValue  = WaveFunctionComponent::PsiValue;
 
 TEST_CASE("ExampleHe", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
 

@@ -295,7 +295,7 @@ public:
     if (addH1)
     {
       boost::multi::array_cref<ComplexType, 1> haj_ref(to_address(haj[nd].base()),
-                                                       iextensions<1u>{haj[nd].num_elements()});
+                                                       extents_t<1u>{haj[nd].num_elements()});
       ma::product(ComplexType(1.), Gc, haj_ref, ComplexType(1.), E(get<0>(E.extents()), 0));
       for (int i = 0; i < nwalk; i++)
         E[i][0] += E0;

@@ -49,7 +49,7 @@ public:
   MultiBsplineMPIShared(const Ugrid grid[3],
                         const BCT& bc,
                         size_t num_splines,
-                        std::unique_ptr<Communicate>&& comm_distributed_and_shared,
+                        std::unique_ptr<Communicate> comm_distributed_and_shared,
                         unsigned distributed_ranks)
       : Base(FairDivideAligned<std::vector<size_t>>(num_splines, getAlignment<T>(), distributed_ranks)),
         comm_(std::move(comm_distributed_and_shared)),
@@ -79,7 +79,7 @@ public:
     const MPI_Aint allocation_size =
         comm_rank < distributed_ranks_ ? spline_owned.coefs_size * sizeof(T) + Alloc::alignment : 0;
     void* coefs = nullptr;
-    auto err = MPI_Win_allocate_shared(allocation_size, sizeof(T), info, comm.getMPI(), &coefs, &win);
+    auto err    = MPI_Win_allocate_shared(allocation_size, sizeof(T), info, comm.getMPI(), &coefs, &win);
     MPI_Info_free(&info);
     if (err != MPI_SUCCESS)
       throw UniformCommunicateError("MultiBsplineMPIShared::MultiBsplineMPIShared MPI_Win_allocate_shared failed!");

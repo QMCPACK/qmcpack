@@ -15,7 +15,7 @@ namespace qmcplusplus
 {
 namespace testing
 {
-MockGoldWalkerElements::MockGoldWalkerElements(Communicate* comm,
+MockGoldWalkerElements::MockGoldWalkerElements(Communicate& comm,
                                                RuntimeOptions& runtime_opt,
                                                WaveFunctionPoolFactoryFunc wavefunction_pool_fac_func,
                                                HamPoolFactoryFunc ham_pool_fac_func)
@@ -28,7 +28,7 @@ MockGoldWalkerElements::MockGoldWalkerElements(Communicate* comm,
       ham(hamiltonian_pool.getHamiltonian().value())
 {}
 
-MockGoldWalkerElements makeGoldWalkerElementsWithEE(Communicate* comm, RuntimeOptions runtime_opt)
+MockGoldWalkerElements makeGoldWalkerElementsWithEE(Communicate& comm, RuntimeOptions runtime_opt)
 {
   using namespace std::placeholders;
   MockGoldWalkerElements::WaveFunctionPoolFactoryFunc wfp_diamondC =
@@ -37,7 +37,7 @@ MockGoldWalkerElements makeGoldWalkerElementsWithEE(Communicate* comm, RuntimeOp
   return MockGoldWalkerElements(comm, runtime_opt, wfp_diamondC, hamp_ee);
 }
 
-MockGoldWalkerElements makeGoldWalkerElementsWithEI(Communicate* comm, RuntimeOptions runtime_opt)
+MockGoldWalkerElements makeGoldWalkerElementsWithEI(Communicate& comm, RuntimeOptions runtime_opt)
 {
   using namespace std::placeholders;
   MockGoldWalkerElements::WaveFunctionPoolFactoryFunc wfp_diamondC =
@@ -46,7 +46,7 @@ MockGoldWalkerElements makeGoldWalkerElementsWithEI(Communicate* comm, RuntimeOp
   return MockGoldWalkerElements(comm, runtime_opt, wfp_diamondC, hamp_ei);
 }
 
-MockGoldWalkerElements makeGoldWalkerElementsWithEEEI(Communicate* comm, RuntimeOptions runtime_opt)
+MockGoldWalkerElements makeGoldWalkerElementsWithEEEI(Communicate& comm, RuntimeOptions runtime_opt)
 {
   using namespace std::placeholders;
   MockGoldWalkerElements::WaveFunctionPoolFactoryFunc wfp_diamondC =
@@ -55,7 +55,7 @@ MockGoldWalkerElements makeGoldWalkerElementsWithEEEI(Communicate* comm, Runtime
   return MockGoldWalkerElements(comm, runtime_opt, wfp_diamondC, hamp_ee);
 }
 
-MockGoldWalkerElements makeGoldWalkerElementsWithEEEIPS(Communicate* comm, RuntimeOptions runtime_opt)
+MockGoldWalkerElements makeGoldWalkerElementsWithEEEIPS(Communicate& comm, RuntimeOptions runtime_opt)
 {
   using namespace std::placeholders;
   MockGoldWalkerElements::WaveFunctionPoolFactoryFunc wfp_diamondC =

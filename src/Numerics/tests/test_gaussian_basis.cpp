@@ -31,17 +31,17 @@ TEST_CASE("Basic Gaussian", "[numerics]")
   real_type r = 1.2;
 
   real_type f = g1.f(r * r);
-  //std::cout << "f = " << f << std::endl << std::endl;
+  //app_log() << "f = " << f << std::endl << std::endl;
   CHECK(f == Approx(0.0132998835424438));
 
   real_type df = g1.df(r, r * r);
-  //std::cout << "df = " << df << std::endl << std::endl;
+  //app_log() << "df = " << df << std::endl << std::endl;
   CHECK(df == Approx(-0.0957591615055951));
 
   df            = 0.0;
   real_type ddf = 0.0;
   f             = g1.evaluate(r, r * r, df, ddf);
-  //std::cout << "f = " << f << " " << df << " " << ddf << std::endl;
+  //app_log() << "f = " << f << " " << df << " " << ddf << std::endl;
   CHECK(f == Approx(0.0132998835424438));
   CHECK(df == Approx(-0.0957591615055951));
   CHECK(ddf == Approx(0.609666661585622));
@@ -50,7 +50,7 @@ TEST_CASE("Basic Gaussian", "[numerics]")
   ddf           = 0.0;
   real_type d3f = 0.0;
   f             = g1.evaluate(r, r * r, df, ddf, d3f);
-  //std::cout << "f = " << f << " " << df << " " << ddf  << " " << d3f << std::endl;
+  //app_log() << "f = " << f << " " << df << " " << ddf  << " " << d3f << std::endl;
   CHECK(f == Approx(0.0132998835424438));
   CHECK(df == Approx(-0.0957591615055951));
   CHECK(ddf == Approx(0.609666661585622));
@@ -70,7 +70,7 @@ TEST_CASE("Gaussian Combo", "[numerics]")
 
   real_type r = 1.3;
   real_type f = gc.f(r);
-  //std::cout << "f = " << f << std::endl << std::endl;
+  //app_log() << "f = " << f << std::endl << std::endl;
   CHECK(f == Approx(0.556240444149480));
 
   f = gc.evaluate(r, 1.0 / r);

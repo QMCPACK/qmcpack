@@ -70,16 +70,16 @@ public:
   int addAttribute(const std::string& aname);
 
   /**
-   * @param aname Unique name of the species to be looked up.
-   * @return the index of the species
-   * @brief When a name species does not exist, return attribute.size()
+   * @param aname Unique name of the attribute to be looked up.
+   * @return the index of the attribute
+   * @brief When an attribute does not exist, return attribute.size()
    */
   int getAttribute(const std::string& aname) const;
 
   /** Check for attribute presence
    *  This replaces code that gets numAttributes then tries to addAttribute for
    *  a particular name and compares the numAttributes and index of the new Attribute
-   * @param aname Unique name of the species to be looked up.
+   * @param aname Unique name of the attribute to be looked up.
    * @return is an attribute of that name present
    */
   bool hasAttribute(const std::string& aname) const;
@@ -107,7 +107,7 @@ public:
   /**
    * @param name a name of species
    * @return an ID for the species with name.
-   * @brief if the input species is not found, add a new species
+   * @brief if the input species is not found, return the number of species
    */
   inline int findSpecies(const std::string& name) const
   {

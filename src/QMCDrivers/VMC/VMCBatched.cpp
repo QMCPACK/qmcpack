@@ -39,7 +39,7 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
                        MCPopulation&& pop,
                        const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                        SampleStack& samples,
-                       Communicate* comm)
+                       Communicate& comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    std::move(estimator_manager),
@@ -274,7 +274,7 @@ void VMCBatched::process(xmlNodePtr node)
   try
   {
     QMCDriverNew::AdjustedWalkerCounts awc =
-        adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
+        adjustGlobalWalkerCount(myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), 1.0,
                                 determineNumCrowds(qmcdriver_input_.get_num_crowds(), rngs_.size()));
 
@@ -287,7 +287,7 @@ void VMCBatched::process(xmlNodePtr node)
   }
   catch (const UniformCommunicateError& ue)
   {
-    myComm->barrier_and_abort(ue.what());
+    myComm.barrier_and_abort(ue.what());
   }
 
   if (qmcdriver_input_.get_measure_imbalance())
@@ -297,9 +297,7 @@ void VMCBatched::process(xmlNodePtr node)
 size_t VMCBatched::compute_samples_per_rank(const size_t num_blocks,
                                             const size_t samples_per_block,
                                             const size_t local_walkers)
-{
-  return num_blocks * samples_per_block * local_walkers;
-}
+{ return num_blocks * samples_per_block * local_walkers; }
 
 
 /** Runs the actual VMC section
@@ -318,7 +316,7 @@ void VMCBatched::run()
 {
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
   //start the main estimator
-  estimator_manager_->startDriverRun();
+  estimator_manager_->startDriverRun(get_root_name());
 
   //initialize WalkerLogManager and collectors
   WalkerLogManager wlog_manager(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
@@ -331,8 +329,7 @@ void VMCBatched::run()
                            serializing_crowd_walkers_);
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
-                                  myComm->rank() == 0);
+  LoopRunTimeControl<> runtimeControl(run_time_manager, project_data_, "VMCBatched driver", "block", myComm);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
@@ -379,11 +376,14 @@ void VMCBatched::run()
   }
 
   // this barrier fences all previous load imbalance. Avoid block 0 timing pollution.
-  myComm->barrier();
+  myComm.barrier();
 
   int global_step = 0;
   for (int block = 0; block < num_blocks; ++block)
   {
+    if (runtimeControl.checkStop(vmc_loop, block))
+      break;
+
     {
       ScopeGuard<LoopTimer<>> vmc_local_timer(vmc_loop);
       vmc_state.recalculate_properties_period =
@@ -422,28 +422,14 @@ void VMCBatched::run()
       recordBlock(block);
     }
 
-    bool stop_requested = false;
-    // Rank 0 decides whether the time limit was reached
-    if (!myComm->rank())
-      stop_requested = runtimeControl.checkStop(vmc_loop);
-    myComm->bcast(stop_requested);
-    // Progress messages before possibly stopping
-    if (!myComm->rank())
-      app_log() << runtimeControl.generateProgressMessage("VMCBatched", block, num_blocks);
-    if (stop_requested)
-    {
-      if (!myComm->rank())
-        app_log() << runtimeControl.generateStopMessage("VMCBatched", block);
-      run_time_manager.markStop();
-      break;
-    }
+    app_log() << runtimeControl.generateProgressMessage(vmc_loop, block, num_blocks);
   }
   // This is confusing logic from VMC.cpp want this functionality write documentation of this
   // and clean it up
   // bool wrotesamples = qmcdriver_input_.get_dump_config();
   // if (qmcdriver_input_.get_dump_config())
   // {
-  //wrotesamples = W.dumpEnsemble(wClones, wOut, myComm->size(), nBlocks);
+  //wrotesamples = W.dumpEnsemble(wClones, wOut, myComm.size(), nBlocks);
   //if (wrotesamples)
   //  app_log() << "  samples are written to the config.h5" << std::endl;
   // }

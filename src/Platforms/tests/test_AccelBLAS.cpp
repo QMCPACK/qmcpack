@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
+#include "Platforms/Host/OutputManager.h"
 
 #include <DualAllocatorAliases.hpp>
 #include <AccelBLAS.hpp>
@@ -144,28 +145,28 @@ void test_gemm_cases()
   const int K = 23;
 
   // Non-batched test
-  std::cout << "Testing NN gemm" << std::endl;
+  app_log() << "Testing NN gemm" << std::endl;
   test_one_gemm<PL, float>(M, N, K, 'N', 'N');
   test_one_gemm<PL, double>(M, N, K, 'N', 'N');
 #if defined(QMC_COMPLEX)
   test_one_gemm<PL, std::complex<float>>(N, M, K, 'N', 'N');
   test_one_gemm<PL, std::complex<double>>(N, M, K, 'N', 'N');
 #endif
-  std::cout << "Testing NT gemm" << std::endl;
+  app_log() << "Testing NT gemm" << std::endl;
   test_one_gemm<PL, float>(M, N, K, 'N', 'T');
   test_one_gemm<PL, double>(M, N, K, 'N', 'T');
 #if defined(QMC_COMPLEX)
   test_one_gemm<PL, std::complex<float>>(N, M, K, 'N', 'T');
   test_one_gemm<PL, std::complex<double>>(N, M, K, 'N', 'T');
 #endif
-  std::cout << "Testing TN gemm" << std::endl;
+  app_log() << "Testing TN gemm" << std::endl;
   test_one_gemm<PL, float>(M, N, K, 'T', 'N');
   test_one_gemm<PL, double>(M, N, K, 'T', 'N');
 #if defined(QMC_COMPLEX)
   test_one_gemm<PL, std::complex<float>>(N, M, K, 'T', 'N');
   test_one_gemm<PL, std::complex<double>>(N, M, K, 'T', 'N');
 #endif
-  std::cout << "Testing TT gemm" << std::endl;
+  app_log() << "Testing TT gemm" << std::endl;
   test_one_gemm<PL, float>(M, N, K, 'T', 'T');
   test_one_gemm<PL, double>(M, N, K, 'T', 'T');
 #if defined(QMC_COMPLEX)
@@ -298,14 +299,14 @@ void test_gemv_cases()
   const int M = 137;
   const int N = 79;
 
-  std::cout << "Testing NOTRANS gemv" << std::endl;
+  app_log() << "Testing NOTRANS gemv" << std::endl;
   test_one_gemv<PL, float>(M, N, 'N');
   test_one_gemv<PL, double>(M, N, 'N');
 #if defined(QMC_COMPLEX)
   test_one_gemv<PL, std::complex<float>>(N, M, 'N');
   test_one_gemv<PL, std::complex<double>>(N, M, 'N');
 #endif
-  std::cout << "Testing TRANS gemv" << std::endl;
+  app_log() << "Testing TRANS gemv" << std::endl;
   test_one_gemv<PL, float>(M, N, 'T');
   test_one_gemv<PL, double>(M, N, 'T');
 #if defined(QMC_COMPLEX)
@@ -438,7 +439,7 @@ void test_ger_cases()
   const int N = 79;
 
   // Batched Test
-  std::cout << "Testing ger_batched" << std::endl;
+  app_log() << "Testing ger_batched" << std::endl;
   test_one_ger<PL, float>(M, N);
   test_one_ger<PL, double>(M, N);
 #if defined(QMC_COMPLEX)
@@ -499,7 +500,7 @@ void test_copy_cases()
 {
   const int n = 137;
 
-  std::cout << "Testing copy_batched" << std::endl;
+  app_log() << "Testing copy_batched" << std::endl;
   test_one_copy<PL, float>(n);
   test_one_copy<PL, double>(n);
 #if defined(QMC_COMPLEX)
@@ -513,15 +514,15 @@ TEST_CASE("AccelBLAS", "[BLAS]")
   SECTION("gemm")
   {
 #if defined(ENABLE_CUDA)
-    std::cout << "Testing gemm<PlatformKind::CUDA>" << std::endl;
+    app_log() << "Testing gemm<PlatformKind::CUDA>" << std::endl;
     test_gemm_cases<PlatformKind::CUDA>();
 #endif
 #if defined(ENABLE_SYCL)
-    std::cout << "Testing gemm<PlatformKind::SYCL>" << std::endl;
+    app_log() << "Testing gemm<PlatformKind::SYCL>" << std::endl;
     test_gemm_cases<PlatformKind::SYCL>();
 #endif
 #if defined(ENABLE_OFFLOAD)
-    std::cout << "Testing gemm<PlatformKind::OMPTARGET>" << std::endl;
+    app_log() << "Testing gemm<PlatformKind::OMPTARGET>" << std::endl;
     test_gemm_cases<PlatformKind::OMPTARGET>();
 #endif
   }
@@ -529,15 +530,15 @@ TEST_CASE("AccelBLAS", "[BLAS]")
   SECTION("gemv")
   {
 #if defined(ENABLE_CUDA)
-    std::cout << "Testing gemm<PlatformKind::CUDA>" << std::endl;
+    app_log() << "Testing gemm<PlatformKind::CUDA>" << std::endl;
     test_gemv_cases<PlatformKind::CUDA>();
 #endif
 #if defined(ENABLE_SYCL)
-    std::cout << "Testing gemm<PlatformKind::SYCL>" << std::endl;
+    app_log() << "Testing gemm<PlatformKind::SYCL>" << std::endl;
     test_gemv_cases<PlatformKind::SYCL>();
 #endif
 #if defined(ENABLE_OFFLOAD)
-    std::cout << "Testing gemm<PlatformKind::OMPTARGET>" << std::endl;
+    app_log() << "Testing gemm<PlatformKind::OMPTARGET>" << std::endl;
     test_gemv_cases<PlatformKind::OMPTARGET>();
 #endif
   }
@@ -545,15 +546,15 @@ TEST_CASE("AccelBLAS", "[BLAS]")
   SECTION("ger")
   {
 #if defined(ENABLE_CUDA)
-    std::cout << "Testing ger<PlatformKind::CUDA>" << std::endl;
+    app_log() << "Testing ger<PlatformKind::CUDA>" << std::endl;
     test_ger_cases<PlatformKind::CUDA>();
 #endif
 #if defined(ENABLE_SYCL)
-    std::cout << "Testing ger<PlatformKind::SYCL>" << std::endl;
+    app_log() << "Testing ger<PlatformKind::SYCL>" << std::endl;
     test_ger_cases<PlatformKind::SYCL>();
 #endif
 #if defined(ENABLE_OFFLOAD)
-    std::cout << "Testing ger<PlatformKind::OMPTARGET>" << std::endl;
+    app_log() << "Testing ger<PlatformKind::OMPTARGET>" << std::endl;
     test_ger_cases<PlatformKind::OMPTARGET>();
 #endif
   }
@@ -561,15 +562,15 @@ TEST_CASE("AccelBLAS", "[BLAS]")
   SECTION("copy")
   {
 #if defined(ENABLE_CUDA)
-    std::cout << "Testing copy<PlatformKind::CUDA>" << std::endl;
+    app_log() << "Testing copy<PlatformKind::CUDA>" << std::endl;
     test_copy_cases<PlatformKind::CUDA>();
 #endif
 #if defined(ENABLE_SYCL)
-    std::cout << "Testing copy<PlatformKind::SYCL>" << std::endl;
+    app_log() << "Testing copy<PlatformKind::SYCL>" << std::endl;
     test_copy_cases<PlatformKind::SYCL>();
 #endif
 #if defined(ENABLE_OFFLOAD)
-    std::cout << "Testing copy<PlatformKind::OMPTARGET>" << std::endl;
+    app_log() << "Testing copy<PlatformKind::OMPTARGET>" << std::endl;
     test_copy_cases<PlatformKind::OMPTARGET>();
 #endif
   }

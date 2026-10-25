@@ -69,8 +69,8 @@ class full2rdm : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using StaticVector     = boost::multi::static_array<ComplexType, 1, stack_alloc_type>;
-  using StaticMatrix     = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
+  using DynamicVector    = boost::multi::dynamic_array<ComplexType, 1, stack_alloc_type>;
+  using DynamicMatrix    = boost::multi::dynamic_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   full2rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, int nave_ = 1, int bsize = 1)
@@ -83,7 +83,7 @@ public:
         counter(0),
         apply_rotation(false),
         XRot({0, 0}, make_node_allocator<ComplexType>(TG)),
-        denom(iextensions<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
+        denom(extents_t<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMAverage({0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMWork({0, 0}, shared_allocator<ComplexType>{TG.TG_local()})
   {
@@ -131,8 +131,7 @@ public:
         dim[0] = R.size();
         dim[1] = 0;
         // conjugate rotation matrix
-        std::transform(R.base(), R.base() + R.num_elements(), R.base(),
-                       [](const auto& c) { return std::conj(c); });
+        std::transform(R.base(), R.base() + R.num_elements(), R.base(), [](const auto& c) { return std::conj(c); });
         TG.Node().broadcast_n(dim, 2, 0);
         XRot = sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG));
         copy_n(R.base(), R.num_elements(), make_device_ptr(XRot.base()));
@@ -204,7 +203,7 @@ public:
     {
       if (denom.size() != nw)
       {
-        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
+        denom = mpi3CVector(extents_t<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size)
       {
@@ -215,8 +214,8 @@ public:
     }
     else
     {
-      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size || get<0>(DMAverage.sizes()) != nave ||
-          get<1>(DMAverage.sizes()) != dm_size)
+      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size ||
+          get<0>(DMAverage.sizes()) != nave || get<1>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
@@ -319,17 +318,17 @@ private:
     size_t M4(M2 * M2);
     size_t N = size_t(dN) * M2;
     DeviceBufferManager buffer_manager;
-    StaticMatrix R({dN, NMO * NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicMatrix R({dN, NMO * NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref Q(R.base(), {NMO * NMO, NMO});
     CVector_ref R1D(R.base(), R.num_elements());
     CVector_ref Q1D(Q.base(), Q.num_elements());
 
     // put this in shared memory!!!
-    StaticMatrix Gt({NMO, NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicMatrix Gt({NMO, NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref GtC(Gt.base(), {NMO * NMO, 1});
 #if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     if (Grot.size() < R.num_elements())
-      Grot = stdCVector(iextensions<1u>(R.num_elements()));
+      Grot = stdCVector(extents_t<1u>(R.num_elements()));
 #endif
 
     if (TG.TG_local().size() > 1)
@@ -419,7 +418,7 @@ private:
       CVector_ref R1D( Buff.base(), {dN*NMO*NMO});
 #if defined(ENABLE_CUDA)
       if(Grot.size() < R.num_elements()) 
-        Grot = stdCVector(iextensions<1u>(R.num_elements()));
+        Grot = stdCVector(extents_t<1u>(R.num_elements()));
 #endif
         
 
@@ -462,7 +461,7 @@ private:
     CMatrix_ref T1(Buff.base(),{(iN-i0),NMO});
     CMatrix_ref T2(T1.base()+T1.num_elements(),{(iN-i0),nX});
     if(Grot.size() != npts) 
-      Grot = stdCVector(iextensions<1u>(npts));
+      Grot = stdCVector(extents_t<1u>(npts));
 
     // round-robin for now
     int cnt=0;

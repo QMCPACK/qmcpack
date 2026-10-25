@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
+#include "Platforms/Host/OutputManager.h"
 
 #include <memory>
 #include <vector>
@@ -150,28 +151,28 @@ TEST_CASE("ompBLAS gemm", "[OMP]")
   const int K = 23;
 
   // Non-batched test
-  std::cout << "Testing NN gemm" << std::endl;
+  app_log() << "Testing NN gemm" << std::endl;
   test_gemm<float>(M, N, K, 'N', 'N');
   test_gemm<double>(M, N, K, 'N', 'N');
 #if defined(QMC_COMPLEX)
   test_gemm<std::complex<float>>(N, M, K, 'N', 'N');
   test_gemm<std::complex<double>>(N, M, K, 'N', 'N');
 #endif
-  std::cout << "Testing NT gemm" << std::endl;
+  app_log() << "Testing NT gemm" << std::endl;
   test_gemm<float>(M, N, K, 'N', 'T');
   test_gemm<double>(M, N, K, 'N', 'T');
 #if defined(QMC_COMPLEX)
   test_gemm<std::complex<float>>(N, M, K, 'N', 'T');
   test_gemm<std::complex<double>>(N, M, K, 'N', 'T');
 #endif
-  std::cout << "Testing TN gemm" << std::endl;
+  app_log() << "Testing TN gemm" << std::endl;
   test_gemm<float>(M, N, K, 'T', 'N');
   test_gemm<double>(M, N, K, 'T', 'N');
 #if defined(QMC_COMPLEX)
   test_gemm<std::complex<float>>(N, M, K, 'T', 'N');
   test_gemm<std::complex<double>>(N, M, K, 'T', 'N');
 #endif
-  std::cout << "Testing TT gemm" << std::endl;
+  app_log() << "Testing TT gemm" << std::endl;
   test_gemm<float>(M, N, K, 'T', 'T');
   test_gemm<double>(M, N, K, 'T', 'T');
 #if defined(QMC_COMPLEX)
@@ -348,7 +349,7 @@ TEST_CASE("ompBLAS gemv", "[OMP]")
   const int batch_count = 23;
 
   // Non-batched test
-  std::cout << "Testing TRANS gemv" << std::endl;
+  app_log() << "Testing TRANS gemv" << std::endl;
   test_gemv<float>(M, N, 'T');
   test_gemv<double>(M, N, 'T');
 #if defined(QMC_COMPLEX)
@@ -356,7 +357,7 @@ TEST_CASE("ompBLAS gemv", "[OMP]")
   test_gemv<std::complex<double>>(N, M, 'T');
 #endif
   // Batched Test
-  std::cout << "Testing TRANS gemv_batched" << std::endl;
+  app_log() << "Testing TRANS gemv_batched" << std::endl;
   test_gemv_batched<float>(M, N, 'T', batch_count);
   test_gemv_batched<double>(M, N, 'T', batch_count);
 #if defined(QMC_COMPLEX)
@@ -372,7 +373,7 @@ TEST_CASE("ompBLAS gemv notrans", "[OMP]")
   const int batch_count = 23;
 
   // Non-batched test
-  std::cout << "Testing NOTRANS gemv" << std::endl;
+  app_log() << "Testing NOTRANS gemv" << std::endl;
   test_gemv<float>(M, N, 'N');
   test_gemv<double>(M, N, 'N');
 #if defined(QMC_COMPLEX)
@@ -380,7 +381,7 @@ TEST_CASE("ompBLAS gemv notrans", "[OMP]")
   test_gemv<std::complex<double>>(N, M, 'N');
 #endif
   // Batched Test
-  std::cout << "Testing NOTRANS gemv_batched" << std::endl;
+  app_log() << "Testing NOTRANS gemv_batched" << std::endl;
   test_gemv_batched<float>(M, N, 'N', batch_count);
   test_gemv_batched<double>(M, N, 'N', batch_count);
 #if defined(QMC_COMPLEX)
@@ -535,7 +536,7 @@ TEST_CASE("ompBLAS ger", "[OMP]")
   const int batch_count = 23;
 
   // Non-batched test
-  std::cout << "Testing ger" << std::endl;
+  app_log() << "Testing ger" << std::endl;
   test_ger<float>(M, N);
   test_ger<double>(M, N);
 #if defined(QMC_COMPLEX)
@@ -543,7 +544,7 @@ TEST_CASE("ompBLAS ger", "[OMP]")
   test_ger<std::complex<double>>(N, M);
 #endif
   // Batched Test
-  std::cout << "Testing ger_batched" << std::endl;
+  app_log() << "Testing ger_batched" << std::endl;
   test_ger_batched<float>(M, N, batch_count);
   test_ger_batched<double>(M, N, batch_count);
 #if defined(QMC_COMPLEX)

@@ -12,12 +12,12 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import ClassVar, Literal
 
-from .developer import DevBase, warn
+from .developer import DevBase, FileFormatError, warn
 from .generic import nxs_deprecate
+from .nexus_base import nexus_config
 from .periodic_table import Elements
 from .physical_system import PhysicalSystem
 from .utilities import is_valid_filename
-from .nexus_base import nexus_core
 
 
 def pp_elem_label(
@@ -138,6 +138,10 @@ def read_upf_z_valence(file: PathLike) -> int | float:
         found_header_start = False
         while not found_header_start:
             line = pseudo.readline()
+            if line == "":
+                msg = "Malformed UPF File, could not find header!"
+                raise FileFormatError(msg)
+
             if "<PP_HEADER" in line:
                 found_header_start = True
 
@@ -280,7 +284,7 @@ def read_potcar_z_valence(file: PathLike) -> int | float:
                    f"Could not find Z valence in file: {file!s}\n"
                     "You may need to provide the Z valence manually!"
                     )
-                raise RuntimeError(msg)
+                raise RuntimeError(msg) from None
             else:
                 zval = float(zval.group(1).lower().replace("d", "e"))
 
@@ -298,9 +302,15 @@ def read_potcar_z_valence(file: PathLike) -> int | float:
 
 
 
-@nxs_deprecate(since="2.4.0", replacement="generate_pseudoset")
+@nxs_deprecate(since="2.4.0", replacement="generate_pseudoset (https://nexus-workflows.readthedocs.io/en/latest/user_guide/pseudo-handling.html#migrating-from-ppset)")
 def ppset(label: str, **codes_pps: Collection[str]):
     """Register pseudopotentials for codes with a label.
+
+    .. deprecated:: 2.4.0
+        :func:`ppset` has been replaced by :func:`generate_pseudoset` because
+        the labeling system that :func:`ppset` requires checks for the existence
+        of the label at runtime, whereas :func:`generate_pseudoset` returns an
+        object with a name as other generate functions do.
 
     This is intended as a backwards-compatible interface to not break existing
     user code. Users are suggested to migrate to :func:`generate_pseudoset` or
@@ -769,7 +779,7 @@ class PseudoSet(DevBase):
                 msg = f"`extension` must be either None, str, or a collection of str, but is {type(next(iter(extension))).__name__}"
                 raise TypeError(msg)
 
-            extension = set([ext.lower() for ext in extension])
+            extension = {ext.lower() for ext in extension}
         else:
             msg = f"`extension` must be either None, str, or an iterable of str, but is {type(extension).__name__}"
             raise TypeError(msg)
@@ -974,9 +984,9 @@ class PseudoSet(DevBase):
         elif isinstance(extensions, str):
             # Single extension for all codes
             if codes is None:
-                extensions = {code: extensions for code in PseudoSet.known_codes}
+                extensions = dict.fromkeys(PseudoSet.known_codes, extensions)
             else:
-                extensions = {code: extensions for code in codes}
+                extensions = dict.fromkeys(codes, extensions)
         else:
             extensions = PseudoSet._normalize_code_map_keys(extensions)
             if codes is None:
@@ -1025,7 +1035,7 @@ class PseudoSet(DevBase):
         elif all(map(Elements.is_element, code_Zeff_map)):
             # User gave one set of Z valences to apply to all codes
             Zeff_map = deepcopy(code_Zeff_map)
-            code_Zeff_map = {code: Zeff_map for code in extensions}
+            code_Zeff_map = dict.fromkeys(extensions, Zeff_map)
         else:
             code_Zeff_map = PseudoSet._normalize_code_map_keys(code_Zeff_map)
 
@@ -1040,7 +1050,7 @@ class PseudoSet(DevBase):
         if include is None:
             include = {}
         elif isinstance(include, str):
-            include = {code: include for code in extensions}
+            include = dict.fromkeys(extensions, include)
         else:
             include = PseudoSet._normalize_code_map_keys(include)
 
@@ -1055,7 +1065,7 @@ class PseudoSet(DevBase):
         if exclude is None:
             exclude = {}
         elif isinstance(exclude, str):
-            exclude = {code: exclude for code in extensions}
+            exclude = dict.fromkeys(extensions, exclude)
         else:
             exclude = PseudoSet._normalize_code_map_keys(exclude)
 
@@ -1088,7 +1098,8 @@ class PseudoSet(DevBase):
                 # Raise from None to prevent exception chain.
                 raise ValueError(msg) from None
 
-        return pseudos
+        sorted_pseudos = {k: v for k, v in sorted(pseudos.items(), key=lambda x: x[0])}
+        return sorted_pseudos
     #end def from_mixed_dir
 
 
@@ -1303,9 +1314,9 @@ class PseudoSet(DevBase):
             else:
                 missing = set(pseudos) - PseudoSet.pseudo_files.keys()
                 if len(missing) > 0:
-                    msg = f'The following pseudopotential files are not present in PseudoSet.pseudo_files:\n'
+                    msg = 'The following pseudopotential files are not present in PseudoSet.pseudo_files:\n'
                     for psp in sorted(missing):
-                        msg += f"  - {str(psp)}\n"
+                        msg += f"  - {psp}\n"
                     raise FileNotFoundError(msg)
                 psps = PseudoSet([PseudoSet.pseudo_files[f] for f in pseudos])
                 return psps._get_pseudos(system=system, code=code)
@@ -1412,7 +1423,7 @@ class PseudoSet(DevBase):
             rep += "    },\n"
         else:
             rep += "},\n"
-        rep += ")\n"
+        rep += ")"
         return rep
     #end def __repr__
 #end class PseudoSet
@@ -1521,8 +1532,8 @@ def generate_pseudoset(
         H: /path/to/pseudo_dir/H.ccECP.gamess
     """
     if pseudo_dir is None and len(codes_psps) == 0:
-        if nexus_core.pseudo_dir is not None:
-            pseudo_dir = Path(nexus_core.pseudo_dir).resolve()
+        if nexus_config.pseudo_dir is not None:
+            pseudo_dir = Path(nexus_config.pseudo_dir).resolve()
         else:
             msg = "Must supply `pseudo_dir` and/or `codes_psps`!"
             raise ValueError(msg)
@@ -1551,13 +1562,13 @@ def generate_pseudoset(
         msg = "When supplying a direct map of codes to pseudos you cannot pass `code`!"
         raise ValueError(msg)
 
-    if not all([isinstance(psps, Collection | Path) for psps in codes_psps.values()]):
+    if not all(isinstance(psps, Collection | Path) for psps in codes_psps.values()):
         msg = "Must supply a directory or collection of file paths for direct map!"
         raise TypeError(msg)
 
     codes_psps = PseudoSet._normalize_code_map_keys(codes_psps)
     pseudosets = {}
-    for code, psps in codes_psps.items():
+    for code, psps in codes_psps.items():  # noqa: PLR1704
         if pseudo_dir is not None:
             # Can make supplied values relative to the directory for direct mapping
             if isinstance(psps, str | Path):
@@ -1610,7 +1621,7 @@ def generate_pseudoset(
                         str(exc) + "\n\n"
                         f"Error when processing pseudo directory for code '{code}'"
                         )
-                    raise type(exc)(msg)
+                    raise type(exc)(msg) from None
             else:
                 msg = "If you are providing a single path it must be to a directory!"
                 raise NotADirectoryError(msg)

@@ -24,8 +24,8 @@ namespace qmcplusplus
 template<typename T>
 void test_real_accumulator_basic()
 {
-  //std::cout << "int eps = " << std::numeric_limits<T>::epsilon() << std::endl;
-  //std::cout << "int max = " << std::numeric_limits<T::max() << std::endl;
+  //app_log() << "int eps = " << std::numeric_limits<T>::epsilon() << std::endl;
+  //app_log() << "int max = " << std::numeric_limits<T::max() << std::endl;
   accumulator_set<T> a1;
   REQUIRE(a1.count() == 0);
   REQUIRE(a1.good() == false);

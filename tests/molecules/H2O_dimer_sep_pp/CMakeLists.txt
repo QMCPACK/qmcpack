@@ -120,3 +120,6 @@ else()
     VERBOSE
     "Skipping H2O_dimer_sep_pp tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

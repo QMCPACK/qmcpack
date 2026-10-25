@@ -49,7 +49,6 @@ from .numerics import surface_normals
 class Plotter(DevBase):
     def __init__(self):
         self.initialized = False
-        return
     #end def __init__
 
     def ensure_init(self):
@@ -88,7 +87,6 @@ class Plotter(DevBase):
                 )
             raise TypeError(msg)
         #end if
-        return
     #end def isosurface
 
     def surface_slice(self,x,y,z,scalars,options=None):
@@ -113,14 +111,13 @@ class Plotter(DevBase):
         ys[...] = y[...] + surfnorm[...,1]*scalars[...]
         zs[...] = z[...] + surfnorm[...,2]*scalars[...]
         self.mesh(xs,ys,zs,scalars=scalars,opacity=opacity)
-        return
     #end def surface_slice
 #end class Plotter
 
 
 
 class QAobj_base(DevBase):
-    None
+    pass
 #end class QAobj_base
 
 
@@ -145,21 +142,18 @@ class QAobject(QAobj_base):
 
     def _register_dynamic_methods(self):
         QAobject._global.dynamic_methods_objects.append(self)
-        return
     #end def _register_dynamic_methods
 
     def _unlink_dynamic_methods(self):
         for o in QAobject._global.dynamic_methods_objects:
             o._unset_dynamic_methods()
         #end for
-        return
     #end def _unlink_dynamic_methods
 
     def _relink_dynamic_methods(self):
         for o in QAobject._global.dynamic_methods_objects:
             o._reset_dynamic_methods()
         #end for
-        return
     #end def _relink_dynamic_methods
 
 
@@ -183,8 +177,8 @@ class QAobject(QAobj_base):
             invalid.sort()
             msg = (
                 'attempted to set unknown variables\n'
-                '  unknown variables: {0}\n'
-                '  valid options are: {1}'.format(invalid,allowed)
+                f'  unknown variables: {invalid}\n'
+                f'  valid options are: {allowed}'
                 )
             raise ValueError(msg)
         #end if
@@ -225,17 +219,17 @@ class Checks(DevBase):
         #end if
         valid = self._valid
         if valid:
-            self.log(pad+self._label+' is valid')
+            self.nxs_print(pad+self._label+' is valid')
         else:
-            self.log(pad+self._label+' is invalid')
+            self.nxs_print(pad+self._label+' is invalid')
             for name,value in self.items():
                 if not (isinstance(name,str) and name.startswith('_')):
                     if value in self._exclusions:
-                        self.log(pad2+name+' could not be checked')
+                        self.nxs_print(pad2+name+' could not be checked')
                     elif value:
-                        self.log(pad2+name+' is valid')
+                        self.nxs_print(pad2+name+' is valid')
                     else:
-                        self.log(pad2+name+' is invalid')
+                        self.nxs_print(pad2+name+' is invalid')
                     #end if
                 #end if
             #end for
@@ -247,7 +241,7 @@ class Checks(DevBase):
 
 
 class QAinformation(obj):
-    None
+    pass
 #end class QAinformation
 
 
@@ -297,7 +291,7 @@ class QAdata(QAobject):
         for value in self.values():
             s+=value.sum()
         #end for
-        print('                sum = {0}'.format(s))
+        print(f'                sum = {s}')
     #end def sum
 #end class QAdata
 
@@ -381,7 +375,7 @@ class QAanalyzer(QAobject):
 
     def vlog(self,msg,n=0):
         if QAanalyzer.verbose_vlog:
-            self.log(msg,n=self.info.nindent+n)
+            self.nxs_print(msg,n=self.info.nindent+n)
         #end if
     #end def vlog
 
@@ -402,7 +396,7 @@ class QAanalyzer(QAobject):
     #end def init_sub_analyzers
 
     def load_data_local(self):
-        None
+        pass
     #end def load_data_local
 
     def remove_data_local(self):
@@ -412,22 +406,22 @@ class QAanalyzer(QAobject):
     #end def remove_data_local
 
     def analyze_local(self):
-        None
+        pass
     #end def analyze_local
 
     def set_global_info(self):
-        None
+        pass
     #end def set_global_info
 
     def unset_global_info(self):
-        None
+        pass
     #end def unset_global_info
 
     #def traverse(self,function,block_name=None,callpost=True,**kwargs):
     #    if not callpost:
     #        cls.__dict__[func_name](self,**kwargs)
     #    #end if
-    #    if block_name is None or not self.info[block_name]: 
+    #    if block_name is None or not self.info[block_name]:
     #        for name,value in self.items():
     #            if isinstance(value,QAanalyzer):
     #                value.traverse(value,func_name,block_name,callpost,**kwargs)
@@ -500,7 +494,7 @@ class QAanalyzer(QAobject):
             #end if
         #end for
         if not self.info.analyzed or force:
-            self.vlog('analyzing {0} data'.format(self.__class__.__name__),n=1)
+            self.vlog(f'analyzing {self.__class__.__name__} data',n=1)
             self.analyze_local()
             self.info.analyzed = True
         #end if
@@ -515,7 +509,7 @@ class QAanalyzer(QAobject):
             if isinstance(self[name],QAdata):
                 del self[name]
             #end if
-        #end for                
+        #end for
         for value in self.values():
             if isinstance(value,QAanalyzer):
                 value.remove_data()
@@ -664,5 +658,5 @@ class QAanalyzer(QAobject):
 
 
 class QAanalyzerCollection(QAobject):
-    None
+    pass
 #end class QAanalyzerCollection

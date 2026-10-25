@@ -33,18 +33,13 @@ namespace mpi3 = boost::mpi3;
 struct CommunicatorTraits
 {
   using mpi_comm_type = MPI_Comm;
-  using status        = MPI_Status;
-  using request       = MPI_Request;
 };
 
 #else
 struct CommunicatorTraits
 {
-  using mpi_comm_type               = int;
-  using status                      = int;
-  using request                     = int;
-  static const int MPI_COMM_NULL    = 0;
-  static const int MPI_REQUEST_NULL = 1;
+  using mpi_comm_type            = int;
+  static const int MPI_COMM_NULL = 0;
 };
 #endif
 
@@ -71,34 +66,75 @@ public:
   Communicate();
 
 #ifdef HAVE_MPI
-  ///constructor with communicator
-  Communicate(mpi3::communicator& in_comm);
+  /** Constructor that takes ownership of an existing or temporary communicator.
+   *  @param in_comm Communicator to move from (e.g., returned by env.world(), split(), or split_shared()).
+   *  Transfers ownership via move semantics directly without the collective overhead of `MPI_Comm_dup`.
+   *  `in_comm` is left in an empty/null state.
+   */
   Communicate(mpi3::communicator&& in_comm);
 #endif
-
-  /** constructor that splits in_comm
-   * in_comm.size() == 12 ; nparts = 2; stripe = 0
-   *   | group 0      | group 1       |
-   *   |  0 1 2 3 4 5 | 6 7 8 9 10 11 |
-   * in_comm.size() == 12 ; nparts = 2; stripe = 3;
-   *   | group 0 | group 1 |
-   *   |  0 1 2  |  3 4 5  |
-   *   |  6 7 8  | 9 10 11 |
-   */
-  Communicate(const Communicate& in_comm, int nparts, int stripe = 0);
 
   /**destructor
    * Call proper finalization of Communication library
    */
-  virtual ~Communicate();
+  ~Communicate();
 
-  ///disable constructor
+  ///disable copy constructor
   Communicate(const Communicate&) = delete;
 
-  /// provide a node/shared-memory communicator from current (parent) communicator
-  Communicate NodeComm() const;
+  Communicate(Communicate&&);
 
-  void finalize();
+  /** Create a new communicator by partitioning the current communicator into `nparts` subgroups.
+   *
+   *  The ranks are partitioned fairly using FairDivideLow. When `multiple` > 1 is specified,
+   *  ranks are grouped in contiguous chunks of size `multiple` so that the size of each
+   *  resulting sub-communicator is guaranteed to be a multiple of `multiple`.
+   *
+   *  @param nparts   The number of sub-communicator groups to divide into.
+   *  @param multiple The granularity of each sub-communicator size. `size()` must be divisible
+   *                  by `multiple`, and `multiple` must be >= 1. Defaults to 1.
+   *  @return The sub-communicator corresponding to the calling rank's subgroup.
+   *
+   *  Example 1: size() == 12, nparts = 2, multiple = 1
+   *    | group 0      | group 1       |
+   *    |  0 1 2 3 4 5 | 6 7 8 9 10 11 |
+   *
+   *  Example 2: size() == 10, nparts = 3, multiple = 2
+   *    | group 0 | group 1 | group 2 |
+   *    |  0 1    |  2 3 4 5 | 6 7 8 9 |
+   */
+  Communicate split(int nparts, int multiple = 1) const;
+
+  /** create a new communicator by splitting the current communicator with stride
+   * size() == 12 ; nparts = 2; stride = 3;
+   *   | group 0 | group 1 |
+   *   |  0 1 2  |  3 4 5  |
+   *   |  6 7 8  | 9 10 11 |
+   */
+  Communicate splitByStride(int nparts, int stride) const;
+
+  /** create a node/shared-memory communicator from current (parent) communicator
+   *
+   *  Note: the size of the node communicator may differ on different nodes.
+   */
+  Communicate createNodeComm() const;
+
+
+  /** return the rank count of a uniform node
+   *
+   *  A "uniform node" is defined as a logical grouping of ranks that resides entirely within
+   *  a single physical node, where all uniform nodes across the communicator have an identical
+   *  number of ranks.
+   *
+   *  Because different physical nodes may host varying numbers of ranks, the rank count of a
+   *  uniform node is determined by the greatest common divisor (GCD) of all local node communicator
+   *  sizes across the communicator. This ensures every physical node can be partitioned into an
+   *  integer number of identically sized sub-node groups.
+   *
+   *  In non-MPI (serial) builds, this returns 1.
+   */
+  int getUniformNodeRankCount() const;
+
   void barrier() const;
   void abort() const;
   void barrier_and_abort(const std::string& msg) const;
@@ -107,6 +143,9 @@ public:
 #if defined(HAVE_MPI)
   ///operator for implicit conversion to MPI_Comm
   operator MPI_Comm() const { return myMPI; }
+  ///return reference to mpi3::communicator
+  mpi3::communicator& getCommMPI3() { return comm; }
+  const mpi3::communicator& getCommMPI3() const { return comm; }
 #endif
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
@@ -121,14 +160,8 @@ public:
   int getGroupID() const { return d_groupid; }
   ///return the number of intra_comms which belong to the same group
   int getNumGroups() const { return d_ngroups; }
-
-  void cleanupMessage(void*);
-  void setNodeID(int i) { d_mycontext = i; }
-  void setNumNodes(int n) { d_ncontexts = n; }
-
-  void setName(const std::string& aname) { myName = aname; }
-  void setName(const char* aname, int alen) { myName = std::string(aname, alen); }
-  const std::string& getName() const { return myName; }
+  // Avoid public access to unique_ptr.
+  Communicate& getInterGroupComm() const;
 
   ///return true if the current MPI rank is the group lead
   bool isGroupLeader() { return d_mycontext == 0; }
@@ -165,55 +198,40 @@ public:
   template<typename T>
   void allreduce(T&);
   template<typename T>
-  void reduce(T&);
+  void reduce(T&, int dest = 0);
   template<typename T>
-  void reduce(T* restrict, T* restrict, int n);
+  void reduce(const T* sb, T* rb, int n, int dest = 0);
   template<typename T>
-  void reduce_in_place(T* restrict, int n);
+  void reduce_in_place(T*, int n, int dest = 0);
   template<typename T>
-  void bcast(T&);
+  void bcast(T&, int root = 0);
   template<typename T>
-  void bcast(T* restrict, int n);
-  template<typename T>
-  void send(int dest, int tag, T&);
+  void bcast(T*, int n, int root = 0);
   template<typename T>
   void gather(T& sb, T& rb, int dest = 0);
   template<typename T, typename IT>
   void gatherv(T& sb, T& rb, IT& counts, IT& displ, int dest = 0);
   template<typename T>
-  void allgather(T& sb, T& rb, int count);
-  template<typename T, typename IT>
-  void allgatherv(T& sb, T& rb, IT& counts, IT& displ);
-  template<typename T>
   void scatter(T& sb, T& rb, int dest = 0);
   template<typename T, typename IT>
   void scatterv(T& sb, T& rb, IT& counts, IT& displ, int source = 0);
-  template<typename T>
-  request irecv(int source, int tag, T&);
-  template<typename T>
-  request isend(int dest, int tag, T&);
-  template<typename T>
-  request irecv(int source, int tag, T*, int n);
-  template<typename T>
-  request isend(int dest, int tag, T*, int n);
   template<typename T, typename IT>
   void gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest = 0);
   template<typename T, typename TMPI, typename IT>
-  void gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest = 0);
+  void gatherv_in_place(T* buf, const TMPI& datatype, IT& counts, IT& displ, int dest = 0);
   template<typename T>
-  void allgather(T* sb, T* rb, int count);
+  void allgather(T& sb, T& rb);
   template<typename T>
-  void gsum(T&);
+  void allgather(const T* sb, T* rb, int count);
 
-protected:
+
+private:
   /** Raw communicator
    *
    *  Currently it is only owned by Communicate which manages its creation and destruction
    *  After switching to mpi3::communicator, myMPI is only a reference to the raw communicator owned by mpi3::communicator
    */
   mpi_comm_type myMPI;
-  /// Communicator name
-  std::string myName;
   /// Rank
   int d_mycontext;
   /// Size
@@ -224,10 +242,6 @@ protected:
   int d_ngroups;
   /// inter group communicator
   std::unique_ptr<Communicate> inter_group_comm_;
-
-public:
-  // Avoid public access to unique_ptr.
-  Communicate& getInterGroupComm() const { return *inter_group_comm_; }
 
 #ifdef HAVE_MPI
   /// mpi3 communicator wrapper
@@ -240,7 +254,8 @@ namespace OHMMS
 {
 /** Global Communicator for a process
  */
-extern Communicate* Controller;
+#include <memory>
+extern std::unique_ptr<Communicate> Controller;
 } // namespace OHMMS
 
 

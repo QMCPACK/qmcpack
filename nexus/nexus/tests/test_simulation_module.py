@@ -7,7 +7,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.SIMULATION)
 from pathlib import Path
 from copy import deepcopy
 from . import isolate_nexus_core
-from nexus.nexus_base import nexus_core
+from nexus.nexus_base import nexus_config, SimStage
 
 from ..testing import value_eq,object_eq
 from ..testing import FailedTest,failed
@@ -30,23 +30,23 @@ class SimulationInputForTests(SimulationInput):
     #end def is_valid
 
     def read(self,filepath):
-        None
+        pass
     #end def read
 
     def write(self,filepath=None):
-        None
+        pass
     #end def write
 
     def read_text(self,text,filepath=None):
-        None
+        pass
     #end def read_text
 
     def write_text(self,filepath=None):
-        None
+        pass
     #end def write_text
 
     def incorporate_system(self,system):
-        None
+        pass
     #end def incorporate_system
 
     def return_system(self):
@@ -143,7 +143,7 @@ def get_test_sim(**kwargs):
 
 n_test_workflows = 9
 
-    
+
 def generate_network():
     from numpy.random import randint
 
@@ -165,7 +165,7 @@ def generate_network():
                 deps.append(i)
             #end if
         #end for
-        sims.append(list(sorted(set(deps))))
+        sims.append(sorted(set(deps)))
     #end for
 
     sims_dict = {}
@@ -327,38 +327,38 @@ def get_test_workflow(index,**kwargs):
     elif index==8:
         # larger random network
         network = {
-            0  : [], 
-            1  : [], 
-            2  : [], 
-            3  : [0], 
-            4  : [2], 
-            5  : [0, 2], 
-            6  : [2, 5], 
-            7  : [1], 
-            8  : [1, 5, 7], 
-            9  : [0, 8], 
-            10 : [5], 
-            11 : [0, 10], 
-            12 : [1], 
-            13 : [6, 9, 11], 
-            14 : [2, 4], 
-            15 : [8, 9, 10, 12], 
-            16 : [3], 
-            17 : [7], 
-            18 : [6, 13], 
-            19 : [7, 11, 14], 
-            20 : [8, 16, 17], 
-            21 : [0, 8], 
-            22 : [14], 
-            23 : [2], 
-            24 : [16], 
-            25 : [13, 16, 22, 24], 
-            26 : [6, 10], 
-            27 : [12, 17, 24], 
-            28 : [8], 
-            29 : [10, 12, 23, 26], 
-            30 : [1], 
-            31 : [28], 
+            0  : [],
+            1  : [],
+            2  : [],
+            3  : [0],
+            4  : [2],
+            5  : [0, 2],
+            6  : [2, 5],
+            7  : [1],
+            8  : [1, 5, 7],
+            9  : [0, 8],
+            10 : [5],
+            11 : [0, 10],
+            12 : [1],
+            13 : [6, 9, 11],
+            14 : [2, 4],
+            15 : [8, 9, 10, 12],
+            16 : [3],
+            17 : [7],
+            18 : [6, 13],
+            19 : [7, 11, 14],
+            20 : [8, 16, 17],
+            21 : [0, 8],
+            22 : [14],
+            23 : [2],
+            24 : [16],
+            25 : [13, 16, 22, 24],
+            26 : [6, 10],
+            27 : [12, 17, 24],
+            28 : [8],
+            29 : [10, 12, 23, 26],
+            30 : [1],
+            31 : [28],
             32 : [20],
             }
         sims = make_network(network,**kwargs)
@@ -409,7 +409,7 @@ def test_simulation_input(tmp_path):
             v(*args)
             raise FailedTest
         except NotImplementedError:
-            None
+            pass
         except FailedTest:
             failed(str(v))
         except Exception as e:
@@ -430,7 +430,7 @@ def test_simulation_analyzer():
     except FailedTest:
         failed()
     except:
-        None
+        pass
     #end try
 
     # virtuals
@@ -438,7 +438,7 @@ def test_simulation_analyzer():
         SimulationAnalyzer(None)
         raise FailedTest
     except NotImplementedError:
-        None
+        pass
     except FailedTest:
         failed()
     except Exception as e:
@@ -450,7 +450,7 @@ def test_simulation_analyzer():
 
 def test_simulation_input_template(tmp_path):
     from string import Template
-    from ..developer import obj, to_obj, NexusError
+    from ..developer import obj, to_obj
     from ..simulation import SimulationInput
     from ..simulation import GenericSimulationInput
     from ..simulation import SimulationInputTemplate
@@ -489,7 +489,7 @@ file2 = "$file.$ext2"
     si_read = input_template(template_filepath)
 
     assert(isinstance(si_read.template,Template))
-    assert(si_read.keywords==set(['a','b','ext1','ext2','file']))
+    assert(si_read.keywords=={'a','b','ext1','ext2','file'})
 
 
     # assign
@@ -551,7 +551,7 @@ file2 = "my_file.dat"
     si_write.assign(**values)
     text = si_write.write()
     assert(text==text_ref)
-    
+
     input_filepath = tmp_path / 'input_file.txt'
     si_write.write(input_filepath)
     assert(input_filepath.read_text()==text_ref)
@@ -618,7 +618,7 @@ c    = $c
     assert(len(si.filenames)==3)
     assert(object_eq(si.filenames,filenames))
 
-    
+
     # init read
     si_init = multi_input_template(
         input1 = ('input_file1.txt',template1_filepath),
@@ -630,9 +630,9 @@ c    = $c
     assert(len(si.filenames)==3)
     assert(object_eq(si.filenames,filenames))
     keywords_ref = dict(
-        input1 = set(['a', 'name']),
-        input2 = set(['b', 'name']),
-        input3 = set(['c', 'name']),
+        input1 = {'a', 'name'},
+        input2 = {'b', 'name'},
+        input3 = {'c', 'name'},
         )
     for name,keyword_set in keywords_ref.items():
         assert(name in si)
@@ -722,9 +722,6 @@ def test_init():
     from ..machines import job,Job
     from ..simulation import Simulation,SimulationInput
 
-    # empty init, tests set(), set_directories(), set_files()
-    se = Simulation()
-
     se_ref = obj(
         analyzed             = False,
         analyzer_image       = 'analyzer.p',
@@ -736,11 +733,11 @@ def test_init():
         bundled              = False,
         bundler              = None,
         created_directories  = False,
-        dependency_ids       = set([]),
+        dependency_ids       = set(),
         errfile              = 'sim.err',
         failed               = False,
         fake_sim             = False,
-        files                = set([]),
+        files                = set(),
         finished             = False,
         force_restart        = False,
         force_write          = False,
@@ -772,32 +769,15 @@ def test_init():
         subcascade_finished  = False,
         submitted            = False,
         system               = None,
-        wait_ids             = set([]),
+        wait_ids             = set(),
         dependencies         = obj(),
         dependents           = obj(),
         input                = SimulationInput(),
         )
 
-    seo = obj()
-    for k in se_ref.keys():
-        seo[k] = se[k]
-    assert(object_eq(seo,se_ref))
-    assert(isinstance(se.simid,int))
-    assert(se.simid>=0)
-    assert(se.simid<Simulation.sim_count)
-    assert(isinstance(se.timestamps,obj))
-    assert(len(se.timestamps)==0)
-
-    Simulation.clear_all_sims()
-    assert(len(Simulation.all_sims)==0)
-    assert(len(Simulation.sim_directories)==0)
-    assert(Simulation.sim_count==0)
-
-
     # make a test job
     test_job = job(machine='ws1',app_command='test.x')
 
-    
     # minimal non-empty init, tests init_job()
     sm = Simulation(job=test_job)
 
@@ -807,9 +787,9 @@ def test_init():
     for k in sm_ref.keys():
         smo[k] = sm[k]
     assert(object_eq(smo,sm_ref))
-    assert(isinstance(se.simid,int))
-    assert(se.simid>=0)
-    assert(se.simid<Simulation.sim_count)
+    assert(isinstance(sm.simid,int))
+    assert(sm.simid>=0)
+    assert(sm.simid<Simulation.sim_count)
     assert(isinstance(sm.job,Job))
     assert(id(sm.job)!=id(test_job))
 
@@ -831,7 +811,7 @@ def test_init():
     except FailedTest:
         failed()
     except:
-        None
+        pass
     #end try
 
     # two sims in same directory w/ different identifiers should be ok
@@ -866,8 +846,11 @@ def test_init():
 
 def test_virtuals():
     from ..simulation import Simulation
+    from ..machines import job
 
-    s = Simulation()
+    s = Simulation(
+        job=job(machine='ws1',app_command='test.x')
+    )
 
     virts = [
         (s.check_result,[None,None]),
@@ -886,7 +869,7 @@ def test_virtuals():
             v(*args)
             raise FailedTest
         except NotImplementedError:
-            None
+            pass
         except FailedTest:
             failed(str(v))
         except Exception as e:
@@ -922,19 +905,22 @@ def test_virtuals():
 
 def test_reset_indicators():
     from ..simulation import Simulation
+    from ..machines import job
 
     indicators = '''
         got_dependencies
-        setup     
+        setup
         sent_files
-        submitted 
-        finished  
-        failed    
+        submitted
+        finished
+        failed
         got_output
-        analyzed  
+        analyzed
         '''.split()
 
-    s = Simulation()
+    s = Simulation(
+        job=job(machine='ws1',app_command='test.x')
+    )
 
     for i in indicators:
         s[i] = True
@@ -968,7 +954,9 @@ def test_indicator_checks():
     #end def complete
 
     # test completed()
-    s = Simulation()
+    s = Simulation(
+        job=job(machine='ws1',app_command='test.x')
+    )
     assert(not s.completed())
     complete(s)
     assert(s.completed())
@@ -1001,12 +989,15 @@ def test_indicator_checks():
 def test_create_directories(tmp_path):
     import os
     from ..simulation import Simulation
+    from ..machines import job
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
-    s = Simulation()
+    s = Simulation(
+        job=job(machine='ws1',app_command='test.x')
+    )
 
     assert(not os.path.exists(s.locdir))
     assert(not os.path.exists(s.imlocdir))
@@ -1025,12 +1016,15 @@ def test_create_directories(tmp_path):
 @isolate_nexus_core
 def test_file_text(tmp_path):
     from ..simulation import Simulation
+    from ..machines import job
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
-    s = Simulation()
+    s = Simulation(
+        job=job(machine='ws1',app_command='test.x')
+    )
     s.create_directories()
 
     outfile = Path(s.locdir).resolve() / s.outfile
@@ -1139,7 +1133,6 @@ def check_dependency(sim2,sim1,quants=('other',),*,only=False,objects=False):
 
 
 def test_depends():
-    from ..developer import NexusError
     from ..simulation import Simulation
 
     # single dependency, single quantity
@@ -1379,7 +1372,7 @@ def test_has_generic_input():
     del s
 
     class GenInput(SimulationInput,GenericSimulationInput):
-        None
+        pass
     #end class GenInput
 
     s = get_sim(
@@ -1394,7 +1387,7 @@ def test_has_generic_input():
 
 @isolate_nexus_core
 def test_check_dependencies():
-    from ..developer import obj, NexusError
+    from ..developer import obj
     from ..simulation import Simulation
     from ..simulation import SimulationInput,GenericSimulationInput
 
@@ -1464,7 +1457,7 @@ def test_check_dependencies():
 
     # existent dependency but generic input
     class GenInput(SimulationInput,GenericSimulationInput):
-        None
+        pass
     #end class GenInput
 
     s = get_test_sim(
@@ -1645,7 +1638,7 @@ def test_downstream_simids():
     for sname in sorted(sims.keys()):
         s = sims[sname]
         ds_ids = s.downstream_simids()
-        ds_ids_ref = set([sd.simid for sd in downstream_sims[sname]])
+        ds_ids_ref = {sd.simid for sd in downstream_sims[sname]}
         assert(ds_ids==ds_ids_ref)
         n+=1
     #end for
@@ -1659,7 +1652,7 @@ def test_downstream_simids():
 def test_copy_file(tmp_path):
     import os
     from ..simulation import Simulation
-    
+
     opath = tmp_path / 'other'
     if not os.path.exists(opath):
         os.makedirs(opath)
@@ -1677,7 +1670,7 @@ def test_copy_file(tmp_path):
 
     assert(file2.exists())
     assert(file2.read_text().strip()=='text')
-    
+
     Simulation.clear_all_sims()
 #end def test_copy_file
 
@@ -1687,9 +1680,9 @@ def test_save_load_image(tmp_path):
     from ..developer import obj, load
     from ..simulation import Simulation,SimulationImage
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     nsave = 31
     nload = 23
@@ -1746,9 +1739,9 @@ def test_save_load_image(tmp_path):
 def test_load_analyzer_image(tmp_path):
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     sim = get_test_sim()
 
@@ -1778,9 +1771,9 @@ def test_load_analyzer_image(tmp_path):
 def test_save_attempt(tmp_path):
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     sim = get_test_sim()
 
@@ -1810,9 +1803,9 @@ def test_save_attempt(tmp_path):
 def test_write_inputs(tmp_path):
     from ..simulation import Simulation,input_template
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     template = '''
 name = "$name"
@@ -1823,7 +1816,7 @@ a    = $a
 name = "input_name"
 a    = 1
 '''
-    
+
     si = input_template(text=template)
     si.assign(name='input_name',a=1)
 
@@ -1861,12 +1854,12 @@ a    = 1
 
 @isolate_nexus_core
 def test_send_files(tmp_path):
-    from ..nexus_base import nexus_core
+    from ..nexus_base import nexus_config
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     # make fake data files
     data_file1 = 'data_file1.txt'
@@ -1875,7 +1868,7 @@ def test_send_files(tmp_path):
     (tmp_path / data_file1).write_text('data1')
     (tmp_path / data_file2).write_text('data2')
 
-    data_files = [data_file1,data_file2] 
+    data_files = [data_file1,data_file2]
 
     s = get_test_sim(
         files = data_files,
@@ -1917,9 +1910,9 @@ def test_submit(tmp_path):
     from ..machines import job
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     s = get_test_sim(
         job = job(machine='ws1',app_command='echo run'),
@@ -1951,9 +1944,9 @@ def test_submit(tmp_path):
 def test_update_process_id(tmp_path):
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
     j = s.job
@@ -1984,9 +1977,9 @@ def test_check_status(tmp_path):
     from datetime import datetime
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
     j = s.job
@@ -2028,10 +2021,10 @@ def test_check_status_timeout(tmp_path):
     from datetime import datetime,timedelta
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
-    nexus_core.timeout = 10
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
+    nexus_config.timeout = 10
 
     # output files that arrive before the timeout are checked normally
     s = get_test_sim()
@@ -2063,7 +2056,7 @@ def test_check_status_timeout(tmp_path):
     s = get_test_sim()
     s.create_directories()
     s.job.finished = True
-    nexus_core.timeout = 1
+    nexus_config.timeout = 1
     exited_queue = (datetime.now().astimezone()-timedelta(seconds=2)).isoformat()
     s.timestamps.exited_queue = exited_queue
 
@@ -2085,9 +2078,9 @@ def test_check_status_timeout(tmp_path):
 def test_get_output(tmp_path):
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
 
@@ -2148,9 +2141,9 @@ def test_get_output(tmp_path):
 def test_analyze(tmp_path):
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
 
@@ -2180,23 +2173,13 @@ def test_analyze(tmp_path):
 
 @isolate_nexus_core
 def test_progress(tmp_path):
-    from ..nexus_base import nexus_core
     from ..simulation import Simulation,input_template
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
-    assert(nexus_core.mode==nexus_core.modes.stages)
-    assert(len(nexus_core.stages)==0)
-
-    nexus_core.stages     = list(nexus_core.primary_modes)
-    nexus_core.stages_set = set(nexus_core.stages)
-
-    primary_modes = ['setup','send_files','submit','get_output','analyze']
-    assert(value_eq(nexus_core.stages,primary_modes))
-    assert(value_eq(nexus_core.stages_set,set(primary_modes)))
-
+    assert(nexus_config.stages is SimStage.all)
 
     template = '''
 name = "$name"
@@ -2254,7 +2237,7 @@ a    = $a
     assert(not s.finished)
     assert(not s.got_output)
     assert(not s.analyzed)
-    assert(s.files==set([s.infile]))
+    assert(s.files=={s.infile})
     assert(s.job.status==1)
     assert(Path(s.locdir).exists())
     assert(Path(s.remdir).exists())
@@ -2273,7 +2256,7 @@ a    = $a
         assert(Path(s.resdir).exists())
         assert(Path(s.imresdir).exists())
     #end if
-    
+
     # check image
     for k in indicators:
         inds[k] = s[k]
@@ -2351,7 +2334,7 @@ a    = $a
     for k in indicators:
         s[k] = inds[k]
 
-    
+
     # attempt third progression
     #   nothing should happen
     sbef = deepcopy(s)
@@ -2366,13 +2349,30 @@ a    = $a
 
 
 @isolate_nexus_core
+def test_progress_respects_selected_stages():
+    s = get_test_sim()
+    s.created_directories = True
+    s.got_dependencies = True
+    nexus_config.stages = SimStage.write_input
+
+    calls = []
+    for name in ('write_inputs', 'send_files', 'submit', 'get_output', 'analyze'):
+        setattr(s, name, lambda name=name: calls.append(name))
+
+    s.progress()
+
+    assert(calls == ['write_inputs'])
+#end def test_progress_respects_selected_stages
+
+
+@isolate_nexus_core
 def test_execute(tmp_path):
     from ..machines import job
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     import shutil
     serial = shutil.which('mpirun') is None
@@ -2553,9 +2553,9 @@ def test_block_dependents():
 def test_reconstruct_cascade(tmp_path):
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     sims = get_test_workflow(2)
     assert(len(sims)==7)
@@ -2638,26 +2638,26 @@ def test_reconstruct_cascade(tmp_path):
 
     def finished(s):
         f = True
-        f &= s.setup            
-        f &= s.sent_files       
-        f &= s.submitted        
-        f &= s.finished         
-        f &= s.failed           
-        f &= s.got_output       
-        f &= s.analyzed         
+        f &= s.setup
+        f &= s.sent_files
+        f &= s.submitted
+        f &= s.finished
+        f &= s.failed
+        f &= s.got_output
+        f &= s.analyzed
         f &= isinstance(s.process_id,int)
         return f
     #end def finished
 
     def empty(s):
         e = True
-        e &= not s.setup            
-        e &= not s.sent_files       
-        e &= not s.submitted        
-        e &= not s.finished         
-        e &= not s.failed           
-        e &= not s.got_output       
-        e &= not s.analyzed         
+        e &= not s.setup
+        e &= not s.sent_files
+        e &= not s.submitted
+        e &= not s.finished
+        e &= not s.failed
+        e &= not s.got_output
+        e &= not s.analyzed
         e &= s.process_id is None
         e &= s.job.system_id is None
         return e
@@ -2689,7 +2689,7 @@ def test_reconstruct_cascade(tmp_path):
     s.sent_files       = True
     s.submitted        = True
     s.process_id       = get_process_id()
-    
+
     for s in sims.values():
         s.create_directories()
         s.save_image()
@@ -2717,8 +2717,8 @@ def test_reconstruct_cascade(tmp_path):
     assert(s.sent_files      )
     assert(s.submitted       )
     assert(s.finished        )
-    assert(not s.failed      )     
-    assert(not s.got_output  )     
+    assert(not s.failed      )
+    assert(not s.got_output  )
     assert(not s.analyzed    )
     assert(s.process_id==4   )
     assert(s.job.system_id is None )
@@ -2730,8 +2730,8 @@ def test_reconstruct_cascade(tmp_path):
     assert(s.sent_files      )
     assert(s.submitted       )
     assert(not s.finished    )
-    assert(not s.failed      )     
-    assert(not s.got_output  )     
+    assert(not s.failed      )
+    assert(not s.got_output  )
     assert(not s.analyzed    )
     assert(s.process_id==5   )
     assert(s.job.system_id==5)
@@ -2799,7 +2799,7 @@ def test_traverse_full_cascade():
             assert(s.finished)
         #end for
     #end for
-    
+
     Simulation.clear_all_sims()
 #end def test_traverse_full_cascade
 
@@ -2825,14 +2825,16 @@ def test_write_dependents():
 def test_generate_simulation():
     from ..simulation import Simulation,GenericSimulation
     from ..simulation import generate_simulation
+    from ..machines import job
 
+    test_job = job(machine='ws1',app_command='test.x')
     with pytest.raises(
         ValueError,
         match="sim_type unknown is unrecognized"
         ):
-        sim = generate_simulation(sim_type='unknown')
+        sim = generate_simulation(job=test_job, sim_type='unknown')
 
-    sim = generate_simulation()
+    sim = generate_simulation(job=test_job)
     assert(isinstance(sim,Simulation))
     assert(isinstance(sim,GenericSimulation))
 
@@ -2858,7 +2860,7 @@ def test_generic_simulation(tmp_path):
     assert(isinstance(sim1,Simulation))
     assert(sim1.outfiles == ['output.txt'])
     assert(isinstance(sim1.input,SimulationInputTemplate))
-    
+
     sim1_input_text = sim1.input.write_text()
     assert(sim1_input_text == script_text)
 
@@ -2872,7 +2874,7 @@ def test_generic_simulation(tmp_path):
     script_file_content = 'print("Hello from file")\n'
     script_file.write_text(script_file_content)
     #end with
-    
+
     # Test 2: GenericSimulation with file path input
     sim2 = generate_simulation(
         identifier = 'test_generic_file',
@@ -2884,7 +2886,7 @@ def test_generic_simulation(tmp_path):
     assert(isinstance(sim2,GenericSimulation))
     assert(sim2.outfiles == ['result.txt'])
     assert(isinstance(sim2.input,SimulationInputTemplate))
-    
+
     sim2_input_text = sim2.input.write_text()
     assert(sim2_input_text == script_file_content)
 

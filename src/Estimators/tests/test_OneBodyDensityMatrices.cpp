@@ -222,7 +222,7 @@ public:
   }
 
   void dumpData(OneBodyDensityMatrices& obdm)
-  { std::cout << "Here is what is in your OneBodyDensityMatrices:\n" << NativePrint(obdm.data_) << '\n'; }
+  { app_log() << "Here is what is in your OneBodyDensityMatrices:\n" << NativePrint(obdm.data_) << '\n'; }
 
 private:
   Data getEvaluateMatrixData(OBDMI::Integrator integrator);
@@ -243,9 +243,8 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   auto lattice     = testing::makeTestLattice();
   auto species_set = testing::makeSpeciesSet(SpeciesCases::GOOD);
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
@@ -272,8 +271,8 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
@@ -309,8 +308,8 @@ TEST_CASE("OneBodyDensityMatrices::generateSamplesForSpinor", "[estimators]")
   using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_O2_spinor(comm);
   auto wavefunction_pool =
@@ -345,8 +344,8 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
   using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
@@ -373,8 +372,8 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(Input::getXml(Input::valid::VANILLA)));
@@ -461,8 +460,8 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
   using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
 
   for (auto valid_integrator :
        std::vector<Input::valid>{Input::valid::VANILLA, Input::valid::SCALE, Input::valid::GRID})
@@ -474,7 +473,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
 
     std::string integrator_str =
         InputSection::reverseLookupInputEnumMap(obdmi.get_integrator(), testing::OBDMI::lookup_input_enum_value);
-    std::cout << "Test evaluateMatrix for: " << integrator_str << '\n';
+    app_log() << "Test evaluateMatrix for: " << integrator_str << '\n';
 
     auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
     auto wavefunction_pool =
@@ -514,8 +513,8 @@ TEST_CASE("OneBodyDensityMatrices::registerAndWrite", "[estimators]")
   using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(Input::getXml(Input::valid::VANILLA)));
@@ -524,7 +523,7 @@ TEST_CASE("OneBodyDensityMatrices::registerAndWrite", "[estimators]")
 
   std::string integrator_str =
       InputSection::reverseLookupInputEnumMap(obdmi.get_integrator(), testing::OBDMI::lookup_input_enum_value);
-  std::cout << "Test registerAndWrite for: " << integrator_str << '\n';
+  app_log() << "Test registerAndWrite for: " << integrator_str << '\n';
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =

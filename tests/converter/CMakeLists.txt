@@ -23,12 +23,53 @@ function(ADD_CONVERTER_TEST test_name)
                120
                LABELS
                "converter;deterministic")
+  if("asan" IN_LIST ENABLE_SANITIZER)
+    set_property(
+      TEST converter_${test_name}
+      APPEND
+      PROPERTY ENVIRONMENT LSAN_OPTIONS=${LSAN_OPTIONS})
+  endif()
+endfunction()
+
+function(ADD_CONVERTER_JASTROW_TEST test_name)
+  set(test_instance "${test_name}_jastrow")
+  execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/${test_name}"
+                          "${CMAKE_CURRENT_BINARY_DIR}/${test_instance}")
+  set(EXE_NAME $<TARGET_FILE:convert4qmc>)
+  if(HAVE_MPI)
+    set(EXE_NAME ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:convert4qmc>)
+    string(REPLACE ";" " " EXE_NAME "${EXE_NAME}")
+  endif()
+  add_test(NAME converter_${test_instance}
+           COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/converter_test.py"
+                   "${CMAKE_CURRENT_BINARY_DIR}/${test_instance}" --exe "${EXE_NAME}"
+                   --h5diff "${HDF5_DIFF_EXECUTABLE}" --jastrow)
+  set_tests_properties(
+    converter_${test_instance}
+    PROPERTIES FAIL_REGULAR_EXPRESSION
+               "  FAIL"
+               PASS_REGULAR_EXPRESSION
+               "  pass"
+               TIMEOUT
+               120
+               LABELS
+               "converter;deterministic")
+  if("asan" IN_LIST ENABLE_SANITIZER)
+    set_property(
+      TEST converter_${test_instance}
+      APPEND
+      PROPERTY ENVIRONMENT LSAN_OPTIONS=${LSAN_OPTIONS})
+  endif()
 endfunction()
 
 function(ADD_PWCONVERTER_TEST test_name)
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/${test_name}"
                           "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
   set(EXE_NAME $<TARGET_FILE:convertpw4qmc>)
+  if(HAVE_MPI)
+    set(EXE_NAME ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:convertpw4qmc>)
+    string(REPLACE ";" " " EXE_NAME "${EXE_NAME}")
+  endif()
   add_test(NAME converter_${test_name}
            COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/pwconverter_test.py"
                    "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe "${EXE_NAME}" --h5diff "${HDF5_DIFF_EXECUTABLE}")
@@ -39,14 +80,21 @@ function(ADD_PWCONVERTER_TEST test_name)
                PASS_REGULAR_EXPRESSION
                "  pass"
                TIMEOUT
-               120
+               ${DART_TESTING_TIMEOUT}
                LABELS
                "converter;deterministic")
+  if("asan" IN_LIST ENABLE_SANITIZER)
+    set_property(
+      TEST converter_${test_name}
+      APPEND
+      PROPERTY ENVIRONMENT LSAN_OPTIONS=${LSAN_OPTIONS})
+  endif()
 endfunction()
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/converter_test.py"
                         "${CMAKE_CURRENT_BINARY_DIR}")
 add_converter_test(test_He_sto3g)
+add_converter_jastrow_test(test_He_sto3g)
 add_converter_test(test_Be_sto3g)
 add_converter_test(test_Be_ccd)
 add_converter_test(test_O_ext)

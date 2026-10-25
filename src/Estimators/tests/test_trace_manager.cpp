@@ -30,9 +30,9 @@ namespace qmcplusplus
 
 TEST_CASE("TraceManager", "[estimators]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  TraceManager tm(c);
+  TraceManager tm(&c);
 
   tm.put(NULL, true, "test");
 

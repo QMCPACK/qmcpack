@@ -33,8 +33,7 @@ namespace qmcplusplus
 
 TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
 {
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(comm)};
 
@@ -63,8 +62,7 @@ TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
 
 TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
 {
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(comm)};
 
@@ -100,7 +98,7 @@ TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
 
 TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
 #ifndef ENABLE_OFFLOAD
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
@@ -169,12 +167,12 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   buffer.clear();
   e_den_est.packData(buffer);
   CHECK(buffer[buffer.size() - 1] == Approx(0.0));
-  std::cout << "wrote success\n";
+  app_log() << "wrote success\n";
 }
 
 TEST_CASE("NEEnergyDensityEstimator::Collect", "[estimators]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
 #ifndef ENABLE_OFFLOAD
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
@@ -234,7 +232,7 @@ TEST_CASE("NEEnergyDensityEstimator::Collect", "[estimators]")
   CHECK(summed_grid == Approx(expected_sum));
 
   e_den_est.write(hd);
-  std::cout << "wrote success\n";
+  app_log() << "wrote success\n";
 }
 
 } // namespace qmcplusplus

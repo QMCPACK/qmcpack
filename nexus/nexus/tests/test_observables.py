@@ -3,12 +3,11 @@ from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.OBSERVABLES)
 
 from ..testing import check_object_eq
-from ..testing import FailedTest,failed
 
 
 
 def test_defined_attribute_base():
-    from ..developer import obj, NexusError
+    from ..developer import obj
     from ..observables import AttributeProperties,DefinedAttributeBase
 
     # empty init
@@ -34,7 +33,7 @@ def test_defined_attribute_base():
         dest     = 'nest',
         deepcopy = True,
         )
-    
+
     pref = obj(
         assigned        = {'dest', 'default', 'deepcopy'},
         deepcopy        = True,
@@ -50,19 +49,19 @@ def test_defined_attribute_base():
 
     # define attributes
     class DA(DefinedAttributeBase):
-        None
+        pass
     #end class DA
 
     da_attributes = obj(
         a = obj(
             default    = 1,
-            ),         
-        b = obj(       
+            ),
+        b = obj(
             default    = 2,
             type       = int,
             required   = True,
-            ),         
-        c = obj(       
+            ),
+        c = obj(
             dest       = 'nest',
             type       = str,
             ),
@@ -150,12 +149,12 @@ def test_defined_attribute_base():
                 ),
             ),
         )
-    
+
     assert(check_object_eq(o,oref))
 
 
     class DA2(DA):
-        None
+        pass
     #end class DA2
 
     DA2.define_attributes(
@@ -192,7 +191,7 @@ def test_defined_attribute_base():
 
     # set_default_attributes
     da.set_default_attributes()
-    
+
     da_ref = obj(
         a    = 1,
         b    = 2,
@@ -282,12 +281,12 @@ def test_defined_attribute_base():
 
     # default values
     class DA_def(DefinedAttributeBase):
-        None
+        pass
     #end class DA_def
     DA_def.set_unassigned_default(None)
 
     class DA_def2(DA_def):
-        None
+        pass
     #end class DA_def2
 
     DA_def2.define_attributes(**da_attributes)
@@ -326,7 +325,7 @@ def test_defined_attribute_base():
             c = None,
             )
         )
-    
+
     assert(check_object_eq(da,da_ref))
 
     da.b = None

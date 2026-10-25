@@ -39,12 +39,11 @@ namespace qmcplusplus
 TEST_CASE("SkAll", "[hamiltonian]")
 {
   // Boiler plate setup
-  std::cout << std::fixed;
-  std::cout << std::setprecision(8);
+  app_log() << std::fixed;
+  app_log() << std::setprecision(8);
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // XML parser
   Libxml2Document doc;
@@ -110,7 +109,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   REQUIRE(lat_okay);
   xmlNodePtr lat_xml_root = doc.getRoot();
 
-  std::cout << "\n\n\ntest_SkAllEstimator: START\n";
+  app_log() << "\n\n\ntest_SkAllEstimator: START\n";
 
   // Build a ParticleSetPool - makes ParticleSets
   ParticleSetPool pset_builder(c, "pset_builder");
@@ -159,7 +158,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   elec->R[7][1] = 1.0;
   elec->R[7][2] = 1.0;
 
-  elec->get(std::cout); // print particleset info to stdout
+  elec->get(app_log()); // print particleset info to stdout
 
 
   // Get the (now assembled) ion ParticleSet, sanity check, report
@@ -174,7 +173,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   ParticleSet* ion = pset_builder.getParticleSet("i");
   REQUIRE(ion->isSameMass());
   REQUIRE(ion->getName() == "i");
-  ion->get(std::cout); // print particleset info to stdout
+  ion->get(app_log()); // print particleset info to stdout
 
 
   // Set up the distance table, match expected layout
@@ -207,11 +206,11 @@ TEST_CASE("SkAll", "[hamiltonian]")
   // of k-vectors in cartesian coordinates.
   // Luckily, ParticleSet stores that in SK->getKLists().kpts_cart
   int nkpts = elec->getSimulationCell().getKLists().getNumK();
-  std::cout << "\n";
-  std::cout << "SkAll results:\n";
-  std::cout << std::fixed;
-  std::cout << std::setprecision(6);
-  std::cout << std::setw(4) << "i"
+  app_log() << "\n";
+  app_log() << "SkAll results:\n";
+  app_log() << std::fixed;
+  app_log() << std::setprecision(6);
+  app_log() << std::setw(4) << "i"
             << "  " << std::setw(8) << "kx"
             << "  " << std::setw(8) << "ky"
             << "  " << std::setw(8) << "kz"
@@ -219,22 +218,22 @@ TEST_CASE("SkAll", "[hamiltonian]")
             << "  " << std::setw(8) << "rhok_i"
             << "  " << std::setw(8) << "c.c."
             << "\n";
-  std::cout << "================================================================\n";
+  app_log() << "================================================================\n";
 
   // Extract rhok out of Collectables, print values
   auto rhok = elec->Collectables;
-  std::cout << std::fixed;
-  std::cout << std::setprecision(5);
+  app_log() << std::fixed;
+  app_log() << std::setprecision(5);
   for (int k = 0; k < nkpts; k++)
   {
-    auto kvec      = elec->getSimulationCell().getKLists().getKptsCartWorking()[k];
+    auto kvec      = elec->getSimulationCell().getKLists().getKptsCart()[k];
     RealType kx    = kvec[0];
     RealType ky    = kvec[1];
     RealType kz    = kvec[2];
     RealType rk_r  = rhok[nkpts + k];
     RealType rk_i  = rhok[2 * nkpts + k];
     RealType rk_cc = rhok[k];
-    std::cout << std::setw(4) << k << "  " << std::setw(8) << kx << "  " << std::setw(8) << ky << "  " << std::setw(8)
+    app_log() << std::setw(4) << k << "  " << std::setw(8) << kx << "  " << std::setw(8) << ky << "  " << std::setw(8)
               << kz << "  " << std::setw(8) << rk_r << "  " << std::setw(8) << rk_i << "  " << std::setw(8) << rk_cc
               << "\n";
   }
@@ -332,6 +331,6 @@ TEST_CASE("SkAll", "[hamiltonian]")
   REQUIRE(std::fabs(rhok[26 + 25] + 1.38359) < eps);
   REQUIRE(std::fabs(rhok[52 + 25] - 0.30687) < eps);
 
-  std::cout << "test_SkAllEstimator:: STOP\n";
+  app_log() << "test_SkAllEstimator:: STOP\n";
 }
 } // namespace qmcplusplus

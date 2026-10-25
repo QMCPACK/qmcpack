@@ -1,0 +1,34 @@
+&CONTROL
+  calculation = 'nscf'
+  verbosity = 'low'
+  restart_mode = 'from_scratch'
+  prefix = 'carbon'
+  outdir = './tmp'
+  pseudo_dir = '/home/j1k/repositories/quantum_espresso/q-e-qe-7.6/pseudo'
+  tstress = .true.
+  tprnfor = .true.
+/
+&SYSTEM
+  ibrav = 2
+  celldm(1) = 6.80
+  nat = 2
+  ntyp = 1
+  ecutwfc = 25.0
+  ecutrho = 100.0
+  occupations = 'fixed'
+  nbnd = 8
+/
+&ELECTRONS
+  conv_thr = 1.0d-8
+  mixing_beta = 0.5
+  diagonalization = 'david'
+  startingpot = 'file'
+  startingwfc = 'atomic+random'
+/
+ATOMIC_SPECIES
+  C 12.0107 C.UPF
+ATOMIC_POSITIONS crystal
+  C 0.000 0.000 0.000
+  C 0.250 0.250 0.250
+K_POINTS automatic
+  3 3 3 0 0 0

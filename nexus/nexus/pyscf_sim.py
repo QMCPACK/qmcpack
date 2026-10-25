@@ -61,7 +61,7 @@ class Pyscf(Simulation):
                     kpoints = inp.kpoints
                 #end if
                 result.kpoints = kpoints.copy()
-                result.orb_files = ['{}.twistnum_{}.h5'.format(inp.prefix,str(n).zfill(3)) for n in range(len(kpoints))]
+                result.orb_files = [f'{inp.prefix}.twistnum_{str(n).zfill(3)}.h5' for n in range(len(kpoints))]
             #end if
             result.h5_file  = os.path.join(self.locdir,h5_file)
             result.location = self.locdir
@@ -110,7 +110,7 @@ class Pyscf(Simulation):
 
         if self.failed:
             error_txt = textwrap.indent(errors, "  ", lambda _: True)
-            self.log(
+            self.nxs_print(
                 "\n"
                 "PySCF run failed!\n"
                 "Error File Contents:\n\n"

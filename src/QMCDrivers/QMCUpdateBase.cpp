@@ -166,7 +166,7 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher,
 
 void QMCUpdateBase::startRun(int blocks, bool record)
 {
-  Estimators->start(blocks, record);
+  Estimators->start(blocks, "", record);
 #if !defined(REMOVE_TRACEMANAGER)
   if (!Traces)
   {

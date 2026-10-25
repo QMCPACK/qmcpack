@@ -31,3 +31,6 @@ qmc_run_and_check(
   0
   DET_GRAPHENE_Z30_SCALARS # VMC
 )
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

@@ -1,0 +1,28 @@
+description = "H3 initial endpoint for laptop NEB analyzer run"
+calculation_mode = "Quench Electrons"
+start_mode = "LCAO Start"
+
+wavefunction_grid = "40 20 20"
+potential_grid_refinement = "1"
+bravais_lattice_type = "Orthorhombic Primitive"
+lattice_units = "Bohr"
+a_length = "12.0"
+b_length = "6.0"
+c_length = "6.0"
+atomic_coordinate_type = "Absolute"
+atoms = "
+H  1.43330000  3.0  3.0  1 0 0  0.1
+H  6.00000000  3.0  3.0  0 0 0  0.1
+H  7.55776676  3.0  3.0  1 0 0  0.1
+"
+
+states_count_and_occupation_spin_up = "2 1.0 2 0.0"
+states_count_and_occupation_spin_down = "1 1.0 3 0.0"
+occupations_type = "Fermi Dirac"
+unoccupied_states_per_kpoint = "2"
+kohn_sham_solver = "davidson"
+subdiag_driver = "lapack"
+charge_mixing_type = "Broyden"
+max_scf_steps = "20"
+energy_convergence_criterion = "1.0e-7"
+rms_convergence_criterion = "1.0e-7"

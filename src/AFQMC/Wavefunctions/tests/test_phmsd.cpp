@@ -19,7 +19,6 @@
 #include "hdf/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/Timer.h"
-#include "Platforms/Host/OutputManager.h"
 
 #include <string>
 #include <vector>
@@ -43,7 +42,6 @@
 
 using std::cerr;
 using std::complex;
-using std::cout;
 using std::endl;
 using std::ifstream;
 using std::setprecision;
@@ -280,13 +278,13 @@ void test_phmsd(boost::mpi3::communicator& world)
     //CHECK(imag(*it->energy()) == Approx(imag(energy)));
     //}
     //auto nCV = wfn.local_number_of_cholesky_vectors();
-    //boost::multi::array<ComplexType,1> vMF(iextensions<1u>{nCV});
-    //std::cout << "NCHOL : " << nCV << " " << NMO*NMO << std::endl;
+    //boost::multi::array<ComplexType,1> vMF(extents_t<1u>{nCV});
+    //app_log() << "NCHOL : " << nCV << " " << NMO*NMO << std::endl;
     //wfn.vMF(vMF);
     //computeVariationalEnergy(wfn, occs, ham, NAEA, NAEB);
     //std::vector<ComplexType> vMF_sc = computeMeanFieldShift(wfn, occs, coeffs, NAEA, NAEB);
     //for(int i=0; i < vMF.size(); i++) {
-    //std::cout << vMF[i] << std::endl;
+    //app_log() << vMF[i] << std::endl;
     //}
   }
 }

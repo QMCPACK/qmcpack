@@ -39,7 +39,7 @@ public:
         MCWalkerConfiguration& w,
         std::vector<TrialWaveFunction*>&& multi_psi,
         std::vector<QMCHamiltonian*>&& multi_ham,
-        Communicate* comm);
+        Communicate& comm);
 
   void run() override;
   bool put(xmlNodePtr cur) override;
@@ -49,9 +49,6 @@ private:
   std::string UseDrift;
   int prevSteps;
   int prevStepsBetweenSamples;
-  ///blocks over which normalization factors are accumulated
-  int equilBlocks;
-
   ///driver copy of Random number generators
   UPtrVector<RandomBase<QMCTraits::FullPrecRealType>> Rng;
 

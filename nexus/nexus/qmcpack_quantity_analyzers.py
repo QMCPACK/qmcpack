@@ -76,8 +76,7 @@ from types import MappingProxyType
 import numpy as np
 from numpy import pi,sin,cos,sqrt
 from numpy.linalg import LinAlgError, inv, det, eig
-from .generic import sorted_generic
-from .developer import obj, FileFormatError, NexusError
+from .developer import obj, FileFormatError, NexusError, sorted_generic
 from .fileio import XsfFile
 from .hdfreader import HDFreader, HDFgroup
 from .numerics import ndgrid, simstats, simplestats, equilibration_length
@@ -127,9 +126,9 @@ class QuantityAnalyzer(QAanalyzer):
     #end def QuantityAnalyzer
 
     def init_sub_analyzers(self):
-        None
+        pass
     #end def init_sub_analyzers
-    
+
     def get_nblocks_exclude(self):
         return self.info.nblocks_exclude
     #end def get_nblocks_exclude
@@ -194,7 +193,7 @@ class ScalarsDatAnalyzer(DatAnalyzer):
                 kappa           = kappa
                 )
         #end for
-        
+
         if 'LocalEnergy_sq' in data:
             v = data.LocalEnergy_sq - data.LocalEnergy**2
             (mean,var,error,kappa)=simstats(v[nbe:])
@@ -204,7 +203,7 @@ class ScalarsDatAnalyzer(DatAnalyzer):
                 error           = error,
                 kappa           = kappa
                 )
-        #end if            
+        #end if
     #end def analyze_data_local
 #end class ScalarsDatAnalyzer
 
@@ -278,7 +277,7 @@ class DmcDatAnalyzer(DatAnalyzer):
         #end for
     #end def load_data_local
 
-    
+
     def get_nblocks_exclude(self):
         return self.info.nsteps_exclude
     #end def get_nblocks_exclude
@@ -298,7 +297,7 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
         mpc = obj(ElecElec=-1,MPC=1),
         kc  = obj(KEcorr=1)
         )
-    
+
     def __init__(self,exclude,nindent=0):
         HDFAnalyzer.__init__(self,nindent=nindent)
         self.info.exclude = exclude
@@ -322,7 +321,7 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
         if set(corrvars)<set(self.data.keys()):
             Ed,Ved,Vmd,Kcd = to_tuple(self.data,*corrvars)
             E_mpc_kc = obj()
-            E  = Ed.value 
+            E  = Ed.value
             Ve = Ved.value
             Vm = Vmd.value
             Kc = Kcd.value
@@ -388,7 +387,7 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
             #end for
         #end for
         missing = list(set(corrvars)-set(self.data.keys()))
-        if len(missing)>0:            
+        if len(missing)>0:
             #self.warn('correction '+corrkey+' cannot be applied because '+str(missing)+' are missing')
             return
         #end if
@@ -454,7 +453,7 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
 
     def analyze_local(self):
         nbe = QAanalyzer.method_info.nblocks_exclude
-        self.info.nblocks_exclude = nbe 
+        self.info.nblocks_exclude = nbe
         data = self.data
 
         #why is this called 3 times?
@@ -495,7 +494,7 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
 
         #convert quantities outside all spacegrids
         outside = QAobject()
-        iD,iT,iV = tuple(range(3))        
+        iD,iT,iV = tuple(range(3))
         outside.D  = QAobject()
         outside.T  = QAobject()
         outside.V  = QAobject()
@@ -575,10 +574,9 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
             self.ions = ions
         #end if
 
-        return
     #end def analyze_local
 
-    
+
     def reorder_atomic_data(self):
         input = self.run_info.input
         xml   = self.run_info.ordered_input
@@ -627,7 +625,6 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
             #end for
         #end if
         self.info.reordered=True
-        return
     #end def reorder_atomic_data
 
 
@@ -645,7 +642,7 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         #end if
     #end def remove_data
 
-    
+
     #def prev_init(self):
     #    if data._contains_group("spacegrid1"):
     #        self.points = data.spacegrid1.domain_centers
@@ -665,7 +662,7 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
     #    #end if
     ##end def prev_init
 
-    
+
 
     def isosurface(self):
         from enthought.mayavi import mlab
@@ -697,7 +694,6 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         mlab.contour3d(x,y,z,s)
         mlab.show()
 
-        return
     #end def isosurface
 
     def mesh(self):
@@ -736,7 +732,6 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         mlab.mesh(f[i]*x[i],f[i]*y[i],f[i]*z[i],scalars=f[i])
         mlab.show()
 
-        return
     #end def test
 
 
@@ -766,7 +761,6 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         # View it.
         s = mlab.mesh(x, y, z, scalars=r)
         mlab.show()
-        return
     #end def
 
 
@@ -813,14 +807,14 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
                     r[0] = x[i,j,k]
                     r[1] = y[i,j,k]
                     r[2] = z[i,j,k]
-                    
+
                     #print np,r[0],r[1],r[2]
                     np+=1
 
                     r = np.dot(A,r)
-                    x[i,j,k] = r[0]  
-                    y[i,j,k] = r[1]  
-                    z[i,j,k] = r[2]  
+                    x[i,j,k] = r[0]
+                    y[i,j,k] = r[1]
+                    z[i,j,k] = r[2]
                 #end for
             #end for
         #end for
@@ -866,7 +860,7 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
                 points : ndarray
                     Nx3 array of points that make up the volume of the annulus.
                     They are organized in planes starting with the first value
-                    of z and with the inside "ring" of the plane as the first 
+                    of z and with the inside "ring" of the plane as the first
                     set of points.  The default point array will be 1331x3.
             """
             # Default values for the annular grid.
@@ -894,10 +888,10 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
                 # slice out a plane of the output points and fill it
                 # with the x,y, and z values for this plane.  The x,y
                 # values are the same for every plane.  The z value
-                # is set to the current z 
-                plane_points = points[start:end]    
+                # is set to the current z
+                plane_points = points[start:end]
                 plane_points[:,0] = x_plane
-                plane_points[:,1] = y_plane    
+                plane_points[:,1] = y_plane
                 plane_points[:,2] = z_plane
                 start = end
 
@@ -923,7 +917,6 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         mlab.pipeline.surface(contour)
 
 
-        return
     #end def test_structured
 
 
@@ -1064,7 +1057,7 @@ class TracesFileHDF(QAobject):
         return self.info.particle_sums_valid
     #end def check_particle_sums
 
-    
+
     def accumulate_scalars(self,*,force=False):
         if not self.accumulated_scalars() or force:
             # get block and step information for the qmc method
@@ -1101,7 +1094,7 @@ class TracesFileHDF(QAobject):
             for b in range(blocks):
                 wb[b] = ws[s:s+steps_per_block].sum()
                 s+=steps_per_block
-            #end for            
+            #end for
             # accumulate walker population into steps
             ps  = np.zeros((steps,))
             for t in range(len(wt)):
@@ -1117,7 +1110,7 @@ class TracesFileHDF(QAobject):
             for qname in quantities:
                 qt = tr.scalars[qname]
                 if len(qt)!=len(wt):
-                    msg = 'quantity {0} trace is not commensurate with weight and steps traces'.format(qname)
+                    msg = f'quantity {qname} trace is not commensurate with weight and steps traces'
                     raise ValueError(msg)
                 #end if
                 qs[:] = 0
@@ -1198,7 +1191,7 @@ class TracesAnalyzer(QAanalyzer):
     #end def form_diagnostic_data
 
     def analyze_local(self):
-        None
+        pass
     #end def analyze_local
 
 
@@ -1277,8 +1270,8 @@ class TracesAnalyzer(QAanalyzer):
             dmc_valid = True
             if len(self.data)>0:
                 scalar_names = set(self.data[0].scalars_by_step.keys())
-                qnames = set(['LocalEnergy','Weight','NumOfWalkers']) & scalar_names
-                weighted = set(['LocalEnergy'])
+                qnames = {'LocalEnergy','Weight','NumOfWalkers'} & scalar_names
+                weighted = {'LocalEnergy'}
                 summed_scalars = obj()
                 for qname in qnames:
                     summed_scalars[qname] = np.zeros(dmc[qname].shape)
@@ -1367,7 +1360,7 @@ class TracesAnalyzer(QAanalyzer):
             for qname in dat_names:
                 qt = tr.scalars[qname]
                 if len(qt)!=len(wt):
-                    msg = 'quantity {0} trace is not commensurate with weight and steps traces'.format(qname)
+                    msg = f'quantity {qname} trace is not commensurate with weight and steps traces'
                     raise ValueError(msg)
                 #end if
                 qs[:] = 0
@@ -1402,7 +1395,7 @@ class TracesAnalyzer(QAanalyzer):
             for qname in hdf_names:
                 qt = tr.scalars[qname]
                 if len(qt)!=len(wt):
-                    msg = 'quantity {0} trace is not commensurate with weight and steps traces'.format(qname)
+                    msg = f'quantity {qname} trace is not commensurate with weight and steps traces'
                     raise ValueError(msg)
                 #end if
                 qs[:] = 0
@@ -1487,19 +1480,19 @@ class TracesAnalyzer(QAanalyzer):
         #end if
         return dmc_valid
     #end def check_dmc_old
-    
+
 
     #methods that do not apply
     def init_sub_analyzers(self):
-        None
+        pass
     def zero_data(self):
-        None
+        pass
     def minsize_data(self,other):
-        None
+        pass
     def accumulate_data(self,other):
-        None
+        pass
     def normalize_data(self,normalization):
-        None
+        pass
 #end class TracesAnalyzer
 
 
@@ -1515,10 +1508,8 @@ class DMSettings(QAobject):
             for name,value in ds.items():
                 if name not in self:
                     msg = (
-                        '{0} is an invalid setting for DensityMatricesAnalyzer\n'
-                        '  valid options are: {1}'.format(
-                            name, sorted(self.keys())
-                            )
+                        f'{name} is an invalid setting for DensityMatricesAnalyzer\n'
+                        f'  valid options are: {sorted(self.keys())}'
                         )
                     raise ValueError(msg)
                 else:
@@ -1585,12 +1576,12 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
         # 5) consider using cross-correlations w/ excluded elements to reduce variance
 
         ds = DMSettings(self.run_info.request.dm_settings)
-        diagonal  = ds.diagonal 
+        diagonal  = ds.diagonal
         jackknife = ds.jackknife and not diagonal
         save_data = ds.save_data
-        occ_tol   = ds.occ_tol  
-        coup_tol  = ds.coup_tol 
-        stat_tol  = ds.stat_tol 
+        occ_tol   = ds.occ_tol
+        coup_tol  = ds.coup_tol
+        stat_tol  = ds.stat_tol
 
         nbe = QAanalyzer.method_info.nblocks_exclude
         self.info.nblocks_exclude = nbe
@@ -1622,8 +1613,8 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                 species_data = self.data[matrix_name][species_name]
 
                 md_all = species_data.value
-                mdata  = md_all[nbe:,...] 
-            
+                mdata  = md_all[nbe:,...]
+
                 tdata = np.zeros((len(md_all),))
                 b = 0
                 for mat in md_all:
@@ -1822,9 +1813,9 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
             self[matrix_name] = mres
             for species_name,species_data in matrix_data.items():
                 md_all = species_data.value
-                mdata  = md_all[nbe:,...] 
+                mdata  = md_all[nbe:,...]
                 m,mvar,merr,mkap = simstats(mdata.transpose((1,2,0)))
-            
+
                 tdata = np.zeros((len(md_all),))
                 b = 0
                 for mat in md_all:
@@ -1891,7 +1882,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
         prefix = self.method_info.file_prefix
         nm = self.number_matrix
         for gname,g in nm.items():
-            filename =  '{0}.dm1b_{1}.dat'.format(prefix,gname)
+            filename =  f'{prefix}.dm1b_{gname}.dat'
             filepath = os.path.join(path,filename)
             mean  = g.matrix.ravel()
             error = g.matrix_error.ravel()
@@ -1924,12 +1915,12 @@ class DensityAnalyzerBase(HDFAnalyzer):
         #end try
     #end def __init__
 
-            
+
     def write_single_density(self,name,density,density_err,format='xsf'):
         if format!='xsf':
             msg = (
                 'sorry, the density can only be written in xsf format for now\n'
-                '  you requested: {0}'.format(format)
+                f'  you requested: {format}'
                 )
             raise NotImplementedError(msg)
         #end if
@@ -1944,8 +1935,8 @@ class DensityAnalyzerBase(HDFAnalyzer):
 
         f = XsfFile()
         f.incorporate_structure(s)
-        
-        prefix = '{0}.s{1}.{2}'.format(self.info.file_prefix,str(self.info.series).zfill(3),name)
+
+        prefix = f'{self.info.file_prefix}.s{str(self.info.series).zfill(3)}.{name}'
 
         c = 1
         g = 1
@@ -2027,7 +2018,7 @@ class SpinDensityAnalyzer(DensityAnalyzerBase):
     def write_files(self,path='./'):
         prefix = self.method_info.file_prefix
         for gname in self.data.keys():
-            filename =  '{0}.spindensity_{1}.dat'.format(prefix,gname)
+            filename =  f'{prefix}.spindensity_{gname}.dat'
             filepath = os.path.join(path,filename)
             mean  = self[gname].mean.ravel()
             error = self[gname].error.ravel()
@@ -2102,7 +2093,7 @@ class StructureFactorAnalyzer(HDFAnalyzer):
         print('  sf write files')
         prefix = self.method_info.file_prefix
         for gname in self.data.keys():
-            filename =  '{0}.structurefactor_{1}.dat'.format(prefix,gname)
+            filename =  f'{prefix}.structurefactor_{gname}.dat'
             filepath = os.path.join(path,filename)
             mean  = self[gname].mean.ravel()
             error = self[gname].error.ravel()
@@ -2169,7 +2160,6 @@ def is_integer(i):
 class SpaceGridInitializer(QAobject):
     def __init__(self):
         self.coord              = None # string
-        return
     #end def __init__
 
     def check_complete(self,*,exit_on_fail=True):
@@ -2235,7 +2225,7 @@ class SpaceGridBase(QAobject):
             options.exit_on_fail = True
             options.nblocks_exclude = 0
         else:
-            if 'points' not in options: 
+            if 'points' not in options:
                 options.points = None
             if 'exit_on_fail' not in options:
                 options.exit_on_fail = True
@@ -2248,7 +2238,7 @@ class SpaceGridBase(QAobject):
         self.nblocks_exclude = options.nblocks_exclude
         self.keep_data = True
         delvars = ['init_exit_fail','keep_data']
-            
+
         self.coord          = None # string
         self.coordinate     = None
         self.ndomains       = None
@@ -2299,19 +2289,19 @@ class SpaceGridBase(QAobject):
     #end def __init__
 
     def copy(self,other):
-        None
+        pass
     #end def copy
 
     def init_special(self):
-        None
+        pass
     #end def init_special
 
     def init_from_initializer(self,init):
-        None
+        pass
     #end def init_from_initializer
 
     def init_from_spacegrid(self,init):
-        None
+        pass
     #end def init_from_spacegrid
 
     def init_from_hdfgroup(self,init):
@@ -2321,13 +2311,13 @@ class SpaceGridBase(QAobject):
         for k,v in init.items():
             exclude = k[0]=='_' or gmap_pattern.match(k) or value_pattern.match(k)
             if not exclude:
-                self[k]=v                
+                self[k]=v
             #end if
         #end for
 
         #convert 1x and 1x1 numpy arrays to just numbers
         #convert Nx1 and 1xN numpy arrays to Nx arrays
-        exclude = set(['value','value_squared'])
+        exclude = {'value','value_squared'}
         for k,v in self.items():
             if k[0]!='_' and type(v) is np.ndarray and k not in exclude:
                 sh=v.shape
@@ -2385,16 +2375,16 @@ class SpaceGridBase(QAobject):
             elif q=='V':
                 iV = i
             else:
-                msg = 'quantity "{}" not recognized'.format(q)
+                msg = f'quantity "{q}" not recognized'
                 raise ValueError(msg)
             #end if
         #end for
-        
+
         E = value[iT,...]+value[iV,...]
         (mean,var,error,kappa)=simstats(E)
         self.E.mean  =  mean
         self.E.error = error
-        
+
         P = 2./3.*value[iT,...]+1./3.*value[iV,...]
         (mean,var,error,kappa)=simstats(P)
         self.P.mean  =  mean
@@ -2419,12 +2409,11 @@ class SpaceGridBase(QAobject):
             self.data.E = E
             self.data.P = P
         #end if
-            
-        return
+
     #end def init_from_hdfgroup
 
     def init_from_xmlelement(self,init):
-        None
+        pass
     #end def init_from_xmlelement
 
     def check_complete(self,*,exit_on_fail=True):
@@ -2449,11 +2438,11 @@ class SpaceGridBase(QAobject):
     #end def check_complete
 
     def _reset_dynamic_methods(self):
-        None
+        pass
     #end def _reset_dynamic_methods
 
     def _unset_dynamic_methods(self):
-        None
+        pass
     #end def _unset_dynamic_methods
 
     def add_all_attributes(self,o):
@@ -2463,12 +2452,11 @@ class SpaceGridBase(QAobject):
                 self._add_attribute(k,vc)
             #end if
         #end for
-        return
     #end def add_all_attributes
 
 
     def reorder_atomic_data(self,imap):
-        None
+        pass
     #end if
 
 
@@ -2525,7 +2513,7 @@ class SpaceGridBase(QAobject):
                 for b in range(nblocks):
                     qb = q[...,b]
                     qi[b] = qb[domain].sum()
-                #end for                
+                #end for
                 (mean,var,error,kappa)=simstats(qi)
                 res = QAobject()
                 res.mean  = mean
@@ -2570,7 +2558,6 @@ class RectilinearGridInitializer(SpaceGridInitializer):
 class RectilinearGrid(SpaceGridBase):
     def __init__(self,initobj=None,options=None):
         SpaceGridBase.__init__(self,initobj,options)
-        return
     #end def __init__
 
     def init_special(self):
@@ -2586,7 +2573,6 @@ class RectilinearGrid(SpaceGridBase):
         self.odu            = None
         self.dm             = None
         self.domain_uwidths = None
-        return
     #end def init_special
 
     def copy(self):
@@ -2603,13 +2589,11 @@ class RectilinearGrid(SpaceGridBase):
              self.point2unit_cylindrical, \
              self.point2unit_spherical]
         self.point2unit = p2u[self.coordinate]
-        return
     #end def _reset_dynamic_methods
 
     def _unset_dynamic_methods(self):
         self.points2domains = None
         self.point2unit     = None
-        return
     #end def _unset_dynamic_methods
 
     def init_from_initializer(self,init):
@@ -2620,7 +2604,6 @@ class RectilinearGrid(SpaceGridBase):
             #end if
         #end for
         self.initialize()
-        return
     #end def init_from_initializer
 
     def init_from_spacegrid(self,init):
@@ -2628,7 +2611,7 @@ class RectilinearGrid(SpaceGridBase):
             self[q].mean = init[q].mean.copy()
             self[q].error = init[q].error.copy()
         #end for
-        exclude = set(['point2unit','points2domains','points'])
+        exclude = {'point2unit','points2domains','points'}
         for k,v in init.items():
             if k[0]!='_':
                 vtype = type(v)
@@ -2640,14 +2623,13 @@ class RectilinearGrid(SpaceGridBase):
                 elif vtype==HDFgroup:
                     self[k] = v
                 elif k in exclude:
-                    None
+                    pass
                 else:
                     self[k] = vtype(v)
                 #end if
-            #end for            
+            #end for
         #end for
         self.points = init.points
-        return
     #end def init_from_spacegrid
 
     def init_from_hdfgroup(self,init):
@@ -2663,7 +2645,6 @@ class RectilinearGrid(SpaceGridBase):
         for i in range(len(self.gmap)):
             self.gmap[i]=self.gmap[i].reshape((len(self.gmap[i]),))
         #end for
-        return
     #end def init_from_hdfgroup
 
 
@@ -2709,15 +2690,14 @@ class RectilinearGrid(SpaceGridBase):
             self.axgrid.append(axis.grid)
         #end for
         self.initialize()
-        return
     #end def init_from_xmlelement
 
     def initialize(self): #like qmcpack SpaceGridBase.initialize
         write=False
         msg = ""
-    
+
         ndomains=-1
-    
+
         DIM = self.DIM
 
         coord   = self.coord
@@ -2728,37 +2708,37 @@ class RectilinearGrid(SpaceGridBase):
         del self.axgrid
 
 
-    
-        ax_cartesian   = ["x" , "y"   , "z"    ] 
-        ax_cylindrical = ["r" , "phi" , "z"    ] 
-        ax_spherical   = ["r" , "phi" , "theta"] 
-    
+
+        ax_cartesian   = ["x" , "y"   , "z"    ]
+        ax_cylindrical = ["r" , "phi" , "z"    ]
+        ax_spherical   = ["r" , "phi" , "theta"]
+
         cmap = dict()
         if(coord=="cartesian"):
             for d in range(DIM):
                 cmap[ax_cartesian[d]]=d
                 axlabel[d]=ax_cartesian[d]
-            #end 
+            #end
         elif(coord=="cylindrical"):
             for d in range(DIM):
                 cmap[ax_cylindrical[d]]=d
                 axlabel[d]=ax_cylindrical[d]
-            #end 
+            #end
         elif(coord=="spherical"):
             for d in range(DIM):
                 cmap[ax_spherical[d]]=d
                 axlabel[d]=ax_spherical[d]
-            #end 
+            #end
         else:
             msg += (
                 "  Coordinate supplied to spacegrid must be cartesian, cylindrical, or spherical\n"
                 "  You provided "+coord+"\n"
                 )
-        #end 
+        #end
         self.coordinate = SpaceGridBase.coord_s2n[self.coord]
-        coordinate = self.coordinate    
-    
-    
+        coordinate = self.coordinate
+
+
         #loop over spacegrid xml elements
         naxes =DIM
         # variables for loop
@@ -2780,28 +2760,28 @@ class RectilinearGrid(SpaceGridBase):
                 if(gc=='('):
                     inparen=True
                     gtmp+=' '
-                #end 
+                #end
                 if(not(inparen and gc==' ')):
                     gtmp+=gc
                 if(gc==')'):
                     inparen=False
                     gtmp+=' '
-                #end 
-            #end 
+                #end
+            #end
             grid=gtmp
             #  break into tokens
             tokens = grid.split()
             if(write):
                 print("      grid   = ",grid)
                 print("      tokens = ",tokens)
-            #end 
+            #end
             #  count the number of intervals
             nintervals=0
             for t in tokens:
                 if t[0]!='(':
                     nintervals+=1
-                #end 
-            #end 
+                #end
+            #end
             nintervals-=1
             if(write):
                 print("      nintervals = ",nintervals)
@@ -2818,7 +2798,7 @@ class RectilinearGrid(SpaceGridBase):
                     "  interval endpoints cannot be greater than 1\n"
                     "  endpoint provided: "+str(u1)+"\n"
                     )
-            #end 
+            #end
             is_int=False
             has_paren_val=False
             interval=-1
@@ -2834,16 +2814,16 @@ class RectilinearGrid(SpaceGridBase):
                     if(write):
                         print("      parsing interval ",interval," of ",nintervals)
                         print("      u1,u2 = ",u1,",",u2)
-                    #end 
+                    #end
                     if(u2<u1):
                         msg += "  interval ("+str(u1)+","+str(u2)+") is negative\n"
-                    #end 
+                    #end
                     if(abs(u2)>1.0000001):
                         msg += (
                             "  interval endpoints cannot be greater than 1\n"
                             "  endpoint provided: "+str(u2)+"\n"
                             )
-                    #end 
+                    #end
                     if(is_int):
                         du_int[interval]=(u2-u1)/ndom_i
                         ndom_int[interval]=ndom_i
@@ -2852,8 +2832,8 @@ class RectilinearGrid(SpaceGridBase):
                         ndom_int[interval]=np.floor((u2-u1)/du_i+.5)
                         if(abs(u2-u1-du_i*ndom_int[interval])>utol):
                             msg += "  interval ("+str(u1)+","+str(u2)+") not divisible by du="+str(du_i)+"\n"
-                        #end 
-                    #end 
+                        #end
+                    #end
                     u1=u2
                 else:
                     has_paren_val=True
@@ -2868,9 +2848,9 @@ class RectilinearGrid(SpaceGridBase):
                     else:
                         ndom_i = 0
                         du_i = eval(paren_val)
-                    #end 
-                #end 
-            #end 
+                    #end
+                #end
+            #end
             # find the smallest domain width
             du_min=np.min(du_int)
             odu[iaxis]=1.0/du_min
@@ -2878,18 +2858,18 @@ class RectilinearGrid(SpaceGridBase):
             for i in range(len(du_int)):
                 ndu_int[i]=np.floor(du_int[i]/du_min+.5)
                 if(abs(du_int[i]-ndu_int[i]*du_min)>utol):
-                    msg += "interval {0} of axis {1} is not divisible by smallest subinterval {2}\n".format(i+1,iaxis+1,du_min)
-                #end 
-            #end      
-    
+                    msg += f"interval {i+1} of axis {iaxis+1} is not divisible by smallest subinterval {du_min}\n"
+                #end
+            #end
+
             if(write):
                 print("      interval breakdown")
                 print("        interval,ndomains,nsubdomains_per_domain")
                 for i in range(len(ndom_int)):
                     print("      ",i,",",ndom_int[i],",",ndu_int[i])
-                #end 
-            #end 
-       
+                #end
+            #end
+
             # set up the interval map such that gmap[u/du]==domain index
             gmap[iaxis] = np.zeros((np.floor((umax[iaxis]-umin[iaxis])*odu[iaxis]+.5),),dtype=int)
             n=0
@@ -2906,12 +2886,12 @@ class RectilinearGrid(SpaceGridBase):
                             print("      ",i,",",j,",",k,"    ",iaxis,",",n,",",nd)
                         #end
                         n+=1
-                    #end 
-                #end 
-            #end 
+                    #end
+                #end
+            #end
             dimensions[iaxis]=nd+1
             #end read in the grid contents
-            
+
             #save interval width information
             ndom_tot=sum(ndom_int)
             ndu_per_interval[iaxis] = np.zeros((ndom_tot,),dtype=int)
@@ -2920,12 +2900,12 @@ class RectilinearGrid(SpaceGridBase):
                 for ii in range(ndom_int[i]):  # noqa: B007
                     ndu_per_interval[iaxis][idom] = ndu_int[i]
                     idom+=1
-                #end 
-            #end       
-        #end 
+                #end
+            #end
+        #end
 
         axinv = inv(axes)
-    
+
         #check that all axis grid values fall in the allowed intervals
         cartmap = dict()
         for d in range(DIM):
@@ -2935,39 +2915,39 @@ class RectilinearGrid(SpaceGridBase):
             if axlabel[d] in cartmap:
                 if(umin[d]<-1.0 or umax[d]>1.0):
                     msg += (
-                        "  grid values for {0} must fall in [-1,1]\n"
-                        "  interval provided: [{1},{2}]\n".format(axlabel[d],umin[d],umax[d])
+                        f"  grid values for {axlabel[d]} must fall in [-1,1]\n"
+                        f"  interval provided: [{umin[d]},{umax[d]}]\n"
                         )
                 #end if
             elif(axlabel[d]=="phi"):
                 if(abs(umin[d])+abs(umax[d])>1.0):
                     msg += (
                         "  phi interval cannot be longer than 1\n"
-                        "  interval length provided: {0}\n".format(abs(umin[d])+abs(umax[d]))
+                        f"  interval length provided: {abs(umin[d])+abs(umax[d])}\n"
                         )
                 #end if
             else:
                 if(umin[d]<0.0 or umax[d]>1.0):
                     msg += (
-                        "  grid values for {0} must fall in [0,1]\n"
-                        "  interval provided: [{1},{2}]\n".format(axlabel[d],umin[d],umax[d])
+                        f"  grid values for {axlabel[d]} must fall in [0,1]\n"
+                        f"  interval provided: [{umin[d]},{umax[d]}]\n"
                         )
                 #end if
             #end if
         #end for
-    
-    
+
+
         #set grid dimensions
         # C/Python style indexing
         dm=np.array([0,0,0],dtype=int)
         dm[0] = dimensions[1]*dimensions[2]
         dm[1] = dimensions[2]
         dm[2] = 1
-    
+
         ndomains=np.prod(dimensions)
-    
+
         volume = abs(det(axes))*8.0#axes span only one octant
-    
+
         #compute domain volumes, centers, and widths
         domain_volumes = np.zeros((ndomains,))
         domain_centers = np.zeros((ndomains,DIM))
@@ -2990,10 +2970,10 @@ class RectilinearGrid(SpaceGridBase):
         vol = -1e99
         vol_tot=0.0
         vscale = abs(det(axes))
-        
-        for i in range(dimensions[0]):                           
-            for j in range(dimensions[1]):                           
-                for k in range(dimensions[2]):                           
+
+        for i in range(dimensions[0]):
+            for j in range(dimensions[1]):
+                for k in range(dimensions[2]):
                     idomain = dm[0]*i + dm[1]*j + dm[2]*k
                     du[0] = interval_widths[0][i]
                     du[1] = interval_widths[1][j]
@@ -3001,7 +2981,7 @@ class RectilinearGrid(SpaceGridBase):
                     uc[0] = interval_centers[0][i]
                     uc[1] = interval_centers[1][j]
                     uc[2] = interval_centers[2][k]
-    
+
                     if(coordinate==SpaceGridBase.cartesian):
                         vol=du[0]*du[1]*du[2]
                         ubc=uc
@@ -3019,17 +2999,17 @@ class RectilinearGrid(SpaceGridBase):
                         du[2]=    pi*du[2]
                         vol=(uc[0]*uc[0]+du[0]*du[0]/12.0)*du[0] \
                            *du[1]                                \
-                           *2.0*sin(uc[2])*sin(.5*du[2])          
+                           *2.0*sin(uc[2])*sin(.5*du[2])
                         ubc[0]=uc[0]*sin(uc[2])*cos(uc[1])
                         ubc[1]=uc[0]*sin(uc[2])*sin(uc[1])
                         ubc[2]=uc[0]*cos(uc[2])
                     #end if
                     vol*=vscale
-    
+
                     vol_tot+=vol
-    
+
                     rc = np.dot(axes,ubc) + origin
-    
+
                     domain_volumes[idomain] = vol
                     for d in range(DIM):
                         domain_uwidths[idomain,d] = du[d]
@@ -3038,7 +3018,7 @@ class RectilinearGrid(SpaceGridBase):
                 #end for
             #end for
         #end for
-    
+
         #find the actual volume of the grid
         du = umax-umin
         uc = .5*(umax+umin)
@@ -3063,65 +3043,65 @@ class RectilinearGrid(SpaceGridBase):
         #end for
 
         #save the results
-        self.axinv              = axinv         
-        self.volume             = volume        
-        self.gmap               = gmap          
-        self.umin               = umin          
-        self.umax               = umax      
+        self.axinv              = axinv
+        self.volume             = volume
+        self.gmap               = gmap
+        self.umin               = umin
+        self.umax               = umax
         self.odu                = odu
-        self.dm                 = dm            
+        self.dm                 = dm
         self.dimensions         = dimensions
-        self.ndomains           = ndomains      
+        self.ndomains           = ndomains
         self.domain_volumes     = domain_volumes
         self.domain_centers     = domain_centers
         self.domain_uwidths     = domain_uwidths
 
 
         #succeeded = succeeded and check_grid()
-    
+
         if self.init_exit_fail and len(msg) > 0:
             msg = (
                 " in def initialize:\n"
                 f"{msg}"
                 )
             raise RuntimeError(msg)
-        #end 
+        #end
 
         return len(msg) == 0
     #end def initialize
 
     def point2unit_cartesian(self,point):
-        u = np.dot(self.axinv,(point-self.origin)) 
+        u = np.dot(self.axinv,(point-self.origin))
         return u
     #end def point2unit_cartesian
 
     def point2unit_cylindrical(self,point):
-        ub = np.dot(self.axinv,(point-self.origin)) 
+        ub = np.dot(self.axinv,(point-self.origin))
         u=np.zeros((self.DIM,))
-        u[0] = sqrt(ub[0]*ub[0]+ub[1]*ub[1]) 
-        u[1] = np.arctan2(ub[1],ub[0])*o2pi+.5 
-        u[2] = ub[2] 
+        u[0] = sqrt(ub[0]*ub[0]+ub[1]*ub[1])
+        u[1] = np.arctan2(ub[1],ub[0])*o2pi+.5
+        u[2] = ub[2]
         return u
     #end def point2unit_cylindrical
 
     def point2unit_spherical(self,point):
-        ub = np.dot(self.axinv,(point-self.origin)) 
+        ub = np.dot(self.axinv,(point-self.origin))
         u=np.zeros((self.DIM,))
-        u[0] = sqrt(ub[0]*ub[0]+ub[1]*ub[1]+ub[2]*ub[2]) 
-        u[1] = np.arctan2(ub[1],ub[0])*o2pi+.5 
-        u[2] = np.arccos(ub[2]/u[0])*o2pi*2.0 
+        u[0] = sqrt(ub[0]*ub[0]+ub[1]*ub[1]+ub[2]*ub[2])
+        u[1] = np.arctan2(ub[1],ub[0])*o2pi+.5
+        u[2] = np.arccos(ub[2]/u[0])*o2pi*2.0
         return u
     #end def point2unit_spherical
 
-    def points2domains_cartesian(self,points,domains,points_outside):        
+    def points2domains_cartesian(self,points,domains,points_outside):
         u  = np.zeros((self.DIM,))
         iu = np.zeros((self.DIM,),dtype=int)
         ndomains=-1
         npoints,ndim = points.shape
         for p in range(npoints):
-            u = np.dot(self.axinv,(points[p]-self.origin)) 
+            u = np.dot(self.axinv,(points[p]-self.origin))
             if (u>self.umin).all() and (u<self.umax).all():
-                points_outside[p]=False 
+                points_outside[p]=False
                 iu=np.floor( (u-self.umin)*self.odu )
                 iu[0] = self.gmap[0][iu[0]]
                 iu[1] = self.gmap[1][iu[1]]
@@ -3129,24 +3109,24 @@ class RectilinearGrid(SpaceGridBase):
                 ndomains+=1
                 domains[ndomains,0] = p
                 domains[ndomains,1] = np.dot(self.dm,iu)
-            #end 
-        #end 
+            #end
+        #end
         ndomains+=1
-        return ndomains 
+        return ndomains
     #end def points2domains_cartesian
 
-    def points2domains_cylindrical(self,points,domains,points_outside):        
+    def points2domains_cylindrical(self,points,domains,points_outside):
         u  = np.zeros((self.DIM,))
         iu = np.zeros((self.DIM,),dtype=int)
         ndomains=-1
         npoints,ndim = points.shape
         for p in range(npoints):
-            ub = np.dot(self.axinv,(points[p]-self.origin)) 
-            u[0] = sqrt(ub[0]*ub[0]+ub[1]*ub[1]) 
-            u[1] = np.arctan2(ub[1],ub[0])*o2pi+.5 
-            u[2] = ub[2] 
+            ub = np.dot(self.axinv,(points[p]-self.origin))
+            u[0] = sqrt(ub[0]*ub[0]+ub[1]*ub[1])
+            u[1] = np.arctan2(ub[1],ub[0])*o2pi+.5
+            u[2] = ub[2]
             if (u>self.umin).all() and (u<self.umax).all():
-                points_outside[p]=False 
+                points_outside[p]=False
                 iu=np.floor( (u-self.umin)*self.odu )
                 iu[0] = self.gmap[0][iu[0]]
                 iu[1] = self.gmap[1][iu[1]]
@@ -3154,24 +3134,24 @@ class RectilinearGrid(SpaceGridBase):
                 ndomains+=1
                 domains[ndomains,0] = p
                 domains[ndomains,1] = np.dot(self.dm,iu)
-            #end 
-        #end 
+            #end
+        #end
         ndomains+=1
-        return ndomains 
+        return ndomains
     #end def points2domains_cylindrical
 
-    def points2domains_spherical(self,points,domains,points_outside):        
+    def points2domains_spherical(self,points,domains,points_outside):
         u  = np.zeros((self.DIM,))
         iu = np.zeros((self.DIM,),dtype=int)
         ndomains=-1
         npoints,ndim = points.shape
         for p in range(npoints):
-            ub = np.dot(self.axinv,(points[p]-self.origin)) 
-            u[0] = sqrt(ub[0]*ub[0]+ub[1]*ub[1]+ub[2]*ub[2]) 
-            u[1] = np.arctan2(ub[1],ub[0])*o2pi+.5 
-            u[2] = np.arccos(ub[2]/u[0])*o2pi*2.0 
+            ub = np.dot(self.axinv,(points[p]-self.origin))
+            u[0] = sqrt(ub[0]*ub[0]+ub[1]*ub[1]+ub[2]*ub[2])
+            u[1] = np.arctan2(ub[1],ub[0])*o2pi+.5
+            u[2] = np.arccos(ub[2]/u[0])*o2pi*2.0
             if (u>self.umin).all() and (u<self.umax).all():
-                points_outside[p]=False 
+                points_outside[p]=False
                 iu=np.floor( (u-self.umin)*self.odu )
                 iu[0] = self.gmap[0][iu[0]]
                 iu[1] = self.gmap[1][iu[1]]
@@ -3179,30 +3159,28 @@ class RectilinearGrid(SpaceGridBase):
                 ndomains+=1
                 domains[ndomains,0] = p
                 domains[ndomains,1] = np.dot(self.dm,iu)
-            #end 
-        #end 
+            #end
+        #end
         ndomains+=1
-        return ndomains 
+        return ndomains
     #end def points2domains_spherical
 
-    
+
     def shift_origin(self,shift):
         self.origin += shift
         for i in range(self.domain_centers.shape[0]):
             self.domain_centers[i,:] += shift
         #end for
-        return
     #end def shift_origin
 
 
     def set_origin(self,origin):
         self.shift_origin(origin-self.origin)
-        return
     #end def set_origin
 
 
     def interpolate_across(self,quantities,spacegrids,outside,*,integration=False,warn=False):
-        #if the grid is to be used for integration confirm that domains 
+        #if the grid is to be used for integration confirm that domains
         #  of this spacegrid subdivide source spacegrid domains
         if integration:
             #setup checking variables
@@ -3221,7 +3199,7 @@ class RectilinearGrid(SpaceGridBase):
                 fine_interval_centers[d] = self.umin + .5*du + du*np.array(list(range(ndu)))
                 find_interval_domains[d] = np.zeros((ndu,))
             #end for
-            #checks are done on each source spacegrid to determine interpolation compatibility 
+            #checks are done on each source spacegrid to determine interpolation compatibility
             for s in spacegrids:
                 # all the spacegrids must have coordinate system to satisfy this
                 if s.coordinate!=self.coordinate:
@@ -3268,7 +3246,7 @@ class RectilinearGrid(SpaceGridBase):
                         return False
                     #end if
                 #end for
-                #  smallest dom width must be multiple of this smallest dom width 
+                #  smallest dom width must be multiple of this smallest dom width
                 for d in range(self.DIM):
                     if not is_integer(self.odu[d]/s.odu[d]):
                         if warn:
@@ -3311,7 +3289,7 @@ class RectilinearGrid(SpaceGridBase):
                             istart=iend
                         #end if
                     #end for
-                #end for                    
+                #end for
             #end for
         #end if
 
@@ -3378,10 +3356,9 @@ class RectilinearGrid(SpaceGridBase):
         scalars    = self[quantity].mean
         name       = quantity
         self.plotter.isosurface(points,scalars,contours,dimensions,name)
-        return 
     #end def isosurface
 
-    
+
     def surface_slice(self,quantity,x,y,z,options=None):
         if quantity not in SpaceGridBase.quantities:
             raise ValueError()
@@ -3394,7 +3371,6 @@ class RectilinearGrid(SpaceGridBase):
         scalars = val[quantity].mean
         npe.reshape_inplace(scalars, x.shape)
         self.plotter.surface_slice(x,y,z,scalars,options)
-        return
     #end def surface_slice
 
 
@@ -3413,7 +3389,6 @@ class RectilinearGrid(SpaceGridBase):
             az=np.array([-a[2],a[2]])
             self.plotter.plot3d(ax,ay,az,tube_radius=radius,color=tuple(colors[:,d]))
         #end for
-        return
     #end def plot_axes
 
     def plot_box(self,color=None,radius=.025,origin=None):
@@ -3434,7 +3409,6 @@ class RectilinearGrid(SpaceGridBase):
         p8=p.cppp+origin
         bline = np.array([p1,p2,p4,p3,p1,p5,p6,p8,p7,p5,p7,p3,p4,p8,p6,p2])
         self.plotter.plot3d(bline[:,0],bline[:,1],bline[:,2],color=color)
-        return
     #end def plot_box
 #end class RectilinearGrid
 
@@ -3452,7 +3426,6 @@ class VoronoiGridInitializer(SpaceGridInitializer):
 class VoronoiGrid(SpaceGridBase):
     def __init__(self,initobj=None,options=None):
         SpaceGridBase.__init__(self,initobj,options)
-        return
     #end def __init__
 
     def copy(self,other):
@@ -3482,7 +3455,7 @@ class VoronoiGrid(SpaceGridBase):
 
 def SpaceGrid(init,opts=None):
     SpaceGrid.count+=1
-    
+
     iname = init.__class__.__name__
     if iname=='HDFgroup':
         coordinate = init.coordinate[0]
@@ -3501,5 +3474,5 @@ def SpaceGrid(init,opts=None):
 #end def SpaceGrid
 SpaceGrid.count = 0
 SpaceGrid.coord_n2s = SpaceGridBase.coord_n2s
-SpaceGrid.rect = set(['cartesian','cylindrical','spherical'])
- 
+SpaceGrid.rect = {'cartesian','cylindrical','spherical'}
+

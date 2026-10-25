@@ -15,7 +15,6 @@
  *
  * Define vectorized math functions. 
  * HAVE_MKL_VML 
- * HAVE_MASSV 
  */
 #ifndef QMCPLUSPLUS_VECTORIZED_STDMATH_HPP
 #define QMCPLUSPLUS_VECTORIZED_STDMATH_HPP
@@ -23,8 +22,6 @@
 #include <cmath>
 #if defined(HAVE_MKL_VML)
 #include <mkl_vml_functions.h>
-#elif defined(HAVE_MASSV)
-#include <massv.h>
 #endif
 
 namespace qmcplusplus
@@ -81,14 +78,6 @@ inline void inv_sqrt(const double* in, double* out, int n) { vdInvSqrt(n, in, ou
 
 inline void inv_sqrt(const float* in, float* out, int n) { vsInvSqrt(n, in, out); }
 
-#elif defined(HAVE_MASSV)
-// restrict is not a C++ keyword
-inline void sqrt(double* in, double* out, int n) { vsqrt(out, in, &n); }
-inline void sqrt(float* in, float* out, int n) { vssqrt(out, in, &n); }
-inline void inv(double* in, double* out, int n) { vrec(out, in, &n); }
-inline void inv(float* in, float* out, int n) { vsrec(out, in, &n); }
-inline void inv_sqrt(double* in, double* out, int n) { vrsqrt(out, in, &n); }
-inline void inv_sqrt(float* in, float* out, int n) { vsrsqrt(out, in, &n); }
 #endif
 
 template<typename T>

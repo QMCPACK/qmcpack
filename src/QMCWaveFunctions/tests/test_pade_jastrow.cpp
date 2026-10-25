@@ -61,7 +61,7 @@ TEST_CASE("Pade2 functor", "[wavefunction]")
 
 TEST_CASE("Pade Jastrow", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   ParticleSet ions_(simulation_cell);
@@ -114,7 +114,7 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
 
 TEST_CASE("Pade2 Jastrow", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto& simulation_cell(ptcl.getSimulationCell());

@@ -34,7 +34,7 @@ script_path = os.path.join('scripts', 'data_generator.py')
 # Create data generator using GenericSimulation
 dg_outfiles = ["data/"+f+".txt" for f in 'matrix statistics x_values y_values'.split()] + ["data_generation_complete.txt"]
 # data_generation_complete.txt file is produced by data_generator.py script
-# Tracking a completion file is optional, if not provided, 
+# Tracking a completion file is optional, if not provided,
 #   the simulation will be considered finished after the script execution is complete.
 data_generator = generate_simulation(
     identifier = 'data_generator',

@@ -14,6 +14,7 @@
 #include <cmath>
 
 #include "DMCBatched.h"
+#include "L2Diffusion.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"
@@ -52,7 +53,7 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
                        WalkerConfigurations& wc,
                        MCPopulation&& pop,
                        const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
-                       Communicate* comm)
+                       Communicate& comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    std::move(estimator_manager),
@@ -63,8 +64,16 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
                    comm,
                    "DMCBatched"),
       dmcdriver_input_(input),
+      use_l2_diffusion_(dmcdriver_input_.get_l2_diffusion()),
       dmc_timers_("DMCBatched::")
-{}
+{
+  if (use_l2_diffusion_)
+  {
+    assert(!population_.get_golden_electrons().isSpinor() && "L2 diffusion is not supported for spinor particle sets.");
+    assert(population_.get_golden_hamiltonian().has_L2() &&
+           "L2 diffusion was requested, but the Hamiltonian has no L2 potential.");
+  }
+}
 
 DMCBatched::~DMCBatched() = default;
 
@@ -169,10 +178,22 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                        [t = taus.tauovermass](auto& delta_r) { return t * dot(delta_r, delta_r); });
 
         twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
-        sft.drift_modifier.getDrifts(taus, grads_now, drifts);
+        if (step_context.l2_workspace)
+        {
+          if constexpr (CT == CoordsType::POS)
+            L2Diffusion::prepareMove(taus, grads_now, iat, ps_dispatcher, ham_dispatcher, walker_elecs,
+                                     walker_hamiltonians, deltas, drifts, log_gf, are_valid,
+                                     *step_context.l2_workspace);
+          else
+            throw std::runtime_error("L2 diffusion is not supported for spinor particle sets.");
+        }
+        else
+        {
+          sft.drift_modifier.getDrifts(taus, grads_now, drifts);
 
-        scaleBySqrtTau(taus, deltas);
-        drifts += deltas;
+          scaleBySqrtTau(taus, deltas);
+          drifts += deltas;
+        }
 
 // in DMC this was done here, changed to match VMCBatched pending factoring to common source
 // if (rr > m_r2max)
@@ -186,10 +207,13 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 #endif
 
         ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts, are_valid);
+        if (step_context.l2_workspace)
+          L2Diffusion::applyMoveValidity(are_valid, *step_context.l2_workspace);
 
         twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
-        computeLogGreensFunction(deltas, taus, log_gf);
+        if (!step_context.l2_workspace)
+          computeLogGreensFunction(deltas, taus, log_gf);
 
         sft.drift_modifier.getDrifts(taus, grads_new, drifts_reverse);
 
@@ -382,7 +406,7 @@ void DMCBatched::process(xmlNodePtr node)
   try
   {
     QMCDriverNew::AdjustedWalkerCounts awc =
-        adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
+        adjustGlobalWalkerCount(myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), dmcdriver_input_.get_reserve(),
                                 determineNumCrowds(qmcdriver_input_.get_num_crowds(), rngs_.size()));
 
@@ -395,7 +419,7 @@ void DMCBatched::process(xmlNodePtr node)
   }
   catch (const UniformCommunicateError& ue)
   {
-    myComm->barrier_and_abort(ue.what());
+    myComm.barrier_and_abort(ue.what());
   }
 
   {
@@ -414,8 +438,7 @@ void DMCBatched::process(xmlNodePtr node)
     branch_engine_->put(node);
 
     walker_controller_ = std::make_unique<WalkerControl>(myComm, Random, dmcdriver_input_.get_reconfiguration());
-    walker_controller_->setMinMax(population_.get_num_global_walkers(), 0);
-    walker_controller_->start();
+    walker_controller_->start(get_root_name());
     walker_controller_->put(node);
 
     std::ostringstream o;
@@ -424,8 +447,6 @@ void DMCBatched::process(xmlNodePtr node)
     else
       o << "  Fluctuating population\n";
 
-    o << "  Persistent walkers are killed after " << dmcdriver_input_.get_max_age() << " MC sweeps\n";
-    o << "  BranchInterval = " << dmcdriver_input_.get_branch_interval() << "\n";
     o << "  Steps per block = " << steps_per_block_ << "\n";
     o << "  Number of blocks = " << qmcdriver_input_.get_max_blocks() << "\n";
     app_log() << o.str() << std::endl;
@@ -441,7 +462,7 @@ void DMCBatched::run()
 {
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
-  estimator_manager_->startDriverRun();
+  estimator_manager_->startDriverRun(get_root_name());
 
   //initialize WalkerLogManager and collectors
   WalkerLogManager wlog_manager(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
@@ -454,8 +475,7 @@ void DMCBatched::run()
                            serializing_crowd_walkers_);
 
   LoopTimer<> dmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
-                                  myComm->rank() == 0);
+  LoopRunTimeControl<> runtimeControl(run_time_manager, project_data_, "DMCBatched driver", "block", myComm);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
@@ -464,7 +484,7 @@ void DMCBatched::run()
     section_start_task(crowds_.size(), initialLogEvaluation, crowds_, step_contexts_refs, serializing_crowd_walkers_);
 
     FullPrecRealType energy, variance;
-    population_.measureGlobalEnergyVariance(*myComm, energy, variance);
+    population_.measureGlobalEnergyVariance(myComm, energy, variance);
     // false indicates we do not support kill at node crossings.
     branch_engine_->initParam(population_, energy, variance, dmcdriver_input_.get_reconfiguration(), false);
     walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
@@ -475,7 +495,7 @@ void DMCBatched::run()
   }
 
   // this barrier fences all previous load imbalance. Avoid block 0 timing pollution.
-  myComm->barrier();
+  myComm.barrier();
 
   ScopedTimer local_timer(timers_.production_timer);
   ParallelExecutor<> crowd_task;
@@ -483,6 +503,9 @@ void DMCBatched::run()
   int global_step = 0;
   for (int block = 0; block < num_blocks; ++block)
   {
+    if (runtimeControl.checkStop(dmc_loop, block))
+      break;
+
     {
       ScopeGuard<LoopTimer<>> dmc_local_timer(dmc_loop);
       estimator_manager_->startBlock(steps_per_block_);
@@ -491,8 +514,8 @@ void DMCBatched::run()
           ? qmcdriver_input_.get_recalculate_properties_period()
           : (qmcdriver_input_.get_max_blocks() + 1) * steps_per_block_;
       dmc_state.is_recomputing_block          = qmcdriver_input_.get_blocks_between_recompute()
-                   ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
-                   : false;
+          ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
+          : false;
 
       for (UPtr<Crowd>& crowd : crowds_)
         crowd->startBlock(steps_per_block_);
@@ -523,21 +546,7 @@ void DMCBatched::run()
       recordBlock(block);
     }
 
-    bool stop_requested = false;
-    // Rank 0 decides whether the time limit was reached
-    if (!myComm->rank())
-      stop_requested = runtimeControl.checkStop(dmc_loop);
-    myComm->bcast(stop_requested);
-    // Progress messages before possibly stopping
-    if (!myComm->rank())
-      app_log() << runtimeControl.generateProgressMessage("DMCBatched", block, num_blocks);
-    if (stop_requested)
-    {
-      if (!myComm->rank())
-        app_log() << runtimeControl.generateStopMessage("DMCBatched", block);
-      run_time_manager.markStop();
-      break;
-    }
+    app_log() << runtimeControl.generateProgressMessage(dmc_loop, block, num_blocks);
   }
 
   branch_engine_->printStatus();
@@ -570,7 +579,8 @@ void DMCBatched::createStepContexts(int num_crowds)
                                                                    ? dmcdriver_input_.get_non_local_move()
                                                                    : TmoveKind::OFF,
                                                                qmcdriver_input_.get_tau(), dmcdriver_input_.get_alpha(),
-                                                               dmcdriver_input_.get_gamma()));
+                                                               dmcdriver_input_.get_gamma()),
+                                             use_l2_diffusion_);
 }
 
 } // namespace qmcplusplus

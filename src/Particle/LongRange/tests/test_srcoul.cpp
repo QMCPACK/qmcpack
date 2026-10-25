@@ -52,7 +52,7 @@ TEST_CASE("srcoul", "[lrhandler]")
 
   handler.initBreakup(ref);
 
-  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  app_log() << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
   CHECK( handler.MaxKshell == 78);
   CHECK(Approx(handler.LR_rc) == 2.5);
   CHECK(Approx(handler.LR_kc) == 12);
@@ -96,7 +96,7 @@ TEST_CASE("srcoul df", "[lrhandler]")
 
   handler.initBreakup(ref);
 
-  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  app_log() << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
   CHECK( handler.MaxKshell == 78);
   CHECK(Approx(handler.LR_rc) == 2.5);
   CHECK(Approx(handler.LR_kc) == 12);

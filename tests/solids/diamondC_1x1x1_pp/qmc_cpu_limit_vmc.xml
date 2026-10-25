@@ -3,6 +3,7 @@
    <project id="qmc_cpu_limit_dmc" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
     <parameter name="driver_version">legacy</parameter>
+    <parameter name="max_seconds"> 60 </parameter>
    </project>
    <qmcsystem>
       <simulationcell>
@@ -90,7 +91,6 @@
      <parameter name="blocks">  100000 </parameter>
      <parameter name="timestep">  1.0 </parameter>
      <parameter name="usedrift">   no </parameter>
-     <parameter name="max_seconds"> 60 </parameter>
    </qmc>
 
 </simulation>

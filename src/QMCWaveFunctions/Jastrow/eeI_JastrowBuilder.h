@@ -26,7 +26,7 @@ class eeI_JastrowBuilder : public WaveFunctionComponentBuilder
 public:
   ParticleSet* sourcePtcl;
   // Two-body constructor
-  eeI_JastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source);
+  eeI_JastrowBuilder(Communicate& comm, ParticleSet& target, ParticleSet& source);
 
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 

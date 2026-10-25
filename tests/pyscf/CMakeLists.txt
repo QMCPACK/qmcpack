@@ -69,3 +69,6 @@ if(${THIS_TEST_NAME})
   set_tests_properties(${THIS_TEST_NAME}-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
   set_property(TEST ${THIS_TEST_NAME}-r1-t16 APPEND PROPERTY LABELS "converter")
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

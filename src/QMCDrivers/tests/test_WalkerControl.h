@@ -40,6 +40,9 @@ public:
    */
   void testNewDistribution(std::vector<int>& initial_num_per_rank, std::vector<int>& minus, std::vector<int>& plus);
 
+  /** Verify live WalkerControl inputs remain active. */
+  void testInput();
+
   /** This test function manipulates walker multiplicity and then checks that after "population control"
    *  that the number of walkers per rank is correct. Multiplicity in normal branching steps is a set
    *  walker->Weight + rng() before swapping and amplification of walker's with multiplicity >= 2
@@ -56,11 +59,11 @@ public:
    */
   void testWalkerIDs(std::vector<std::vector<int>> walker_ids_after, std::vector<std::vector<int>> parent_ids_after);
 
-  int getRank() const { return dpools_.comm->rank(); }
-  int getNumRanks() const { return dpools_.comm->size(); }
+  int getRank() const { return dpools_.comm.rank(); }
+  int getNumRanks() const { return dpools_.comm.size(); }
 
 private:
-  void reportWalkersPerRank(Communicate* c, MCPopulation& pop);
+  void reportWalkersPerRank(Communicate& c, MCPopulation& pop);
 
   SetupPools dpools_;
   WalkerConfigurations walker_confs;

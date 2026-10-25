@@ -15,21 +15,14 @@
 #    HDFgroup                                                        #
 #      Class representing an HDF group.                              #
 #      Contains other HDFgroup's or named data as numpy arrays       #
-#                                                                    #                                        
+#                                                                    #
 #====================================================================#
 
 import numpy as np
 import keyword
 from inspect import getmembers
-from .developer import DevBase, obj, unavailable
+from .developer import DevBase, obj
 from .utilities import path_string, valid_variable_name
-
-try:
-    import h5py
-except:
-    h5py = unavailable('h5py')
-#end try
-
 
 class HDFglobals(DevBase):
     view = False
@@ -46,18 +39,15 @@ class HDFgroup(DevBase):
 
     def _set_parent(self,parent):
         self._parent=parent
-        return
     #end def set_parent
 
     def _add_dataset(self,name,dataset):
         self._datasets[name]=dataset
-        return 
     #end def add_dataset
 
     def _add_group(self,name,group):
         group._name=name
         self._groups[name]=group
-        return 
     #end def add_group
 
     def _contains_group(self,name):
@@ -102,7 +92,6 @@ class HDFgroup(DevBase):
 
         self._escape_names=None
         self._escape_names=set(dict(getmembers(self)).keys()) | set(keyword.kwlist)
-        return
     #end def __init__
 
 
@@ -236,7 +225,7 @@ class HDFgroup(DevBase):
         #self.sum(*names)
     #end def accumulate
 
-    
+
     def normalize(self,normalization,*names):
         for name in names:
             if name in self and isinstance(self[name],np.ndarray):
@@ -252,7 +241,7 @@ class HDFgroup(DevBase):
         #self.sum(*names)
     #end def normalize
 
-        
+
     def sum(self,*names):
         for name in names:
             if name in self and isinstance(self[name],np.ndarray) and name=='value':
@@ -267,8 +256,9 @@ class HDFgroup(DevBase):
 
 
 class HDFreader(DevBase):
-    
+
     def __init__(self,fpath,*,verbose=False,view=False):
+        import h5py
         fpath = path_string(fpath)
         HDFglobals.view = view
 
@@ -325,7 +315,6 @@ class HDFreader(DevBase):
             print('  end HDFreader Initialization')
         #end if
 
-        return
     #end def __init__
 
 
@@ -337,13 +326,11 @@ class HDFreader(DevBase):
             self.hcur.append(None)
         #end if
         self.pad = self.ilevel*'  '
-        return
     #end def increment_level
 
     def decrement_level(self):
         self.ilevel-=1
         self.pad = self.ilevel*'  '
-        return
     #end def decrement_level
 
     def add_dataset(self,cur,k,v):
@@ -353,10 +340,10 @@ class HDFreader(DevBase):
             cur[k] = v
         #end if
         cur._add_dataset(k,cur[k])
-        return
     #end def add_dataset
 
     def add_group(self,hcur,cur,k,v):
+        import h5py
         cur[k] = HDFgroup()
         cur._add_group(k,cur[k])
         cur._groups[k]._parent = cur
@@ -379,7 +366,6 @@ class HDFreader(DevBase):
             #end if
         #end for
 
-        return
     #end def add_group
 #end class HDFreader
 

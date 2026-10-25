@@ -158,16 +158,16 @@ def test_projwfc_analyzer(tmp_path):
     text_ref = '''
         nup+ndn = 5.9977
         nup-ndn = 2.0001
-        
+
         tot
             0   S   6.00  s( 2.00)p( 4.00)d( 0.00)
-        
+
         pol
             0   S   2.00  s( 0.00)p( 2.00)d( 0.00)
-        
+
         up
             0   S   4.00  s( 1.00)p( 3.00)d( 0.00)
-        
+
         down
             0   S   2.00  s( 1.00)p( 1.00)d( 0.00)
         '''
@@ -191,16 +191,16 @@ def test_projwfc_analyzer(tmp_path):
     text_ref = '''
         nup+ndn = 5.9977
         nup-ndn = 2.0001
-        
+
         tot
             0   S   6.00  s( 2.00)px( 1.33)py( 1.33)pz( 1.33)dx2-y2( 0.00)dxy( 0.00)dxz( 0.00)dyz( 0.00)dz2( 0.00)
-        
+
         pol
             0   S   2.00  s( 0.00)px( 0.67)py( 0.67)pz( 0.67)dx2-y2( 0.00)dxy( 0.00)dxz( 0.00)dyz( 0.00)dz2( 0.00)
-        
+
         up
             0   S   4.00  s( 1.00)px( 1.00)py( 1.00)pz( 1.00)dx2-y2( 0.00)dxy( 0.00)dxz( 0.00)dyz( 0.00)dz2( 0.00)
-        
+
         down
             0   S   2.00  s( 1.00)px( 0.33)py( 0.33)pz( 0.33)dx2-y2( 0.00)dxy( 0.00)dxz( 0.00)dyz( 0.00)dz2( 0.00)
         '''

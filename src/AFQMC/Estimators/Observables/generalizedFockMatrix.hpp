@@ -70,7 +70,7 @@ class generalizedFockMatrix : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using Static3Tensor    = boost::multi::static_array<ComplexType, 3, stack_alloc_type>;
+  using Dynamic3Tensor   = boost::multi::dynamic_array<ComplexType, 3, stack_alloc_type>;
 
 public:
   generalizedFockMatrix(afqmc::TaskGroup_& tg_,
@@ -88,7 +88,7 @@ public:
         block_size(bsize),
         nave(nave_),
         counter(0),
-        denom(iextensions<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
+        denom(extents_t<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMAverage({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMWork({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()})
   {
@@ -139,7 +139,7 @@ public:
     {
       if (denom.size() != nw)
       {
-        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
+        denom = mpi3CVector(extents_t<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (get<0>(DMWork.sizes()) != 3 || get<1>(DMWork.sizes()) != nw || get<2>(DMWork.sizes()) != dm_size)
       {
@@ -150,13 +150,14 @@ public:
     }
     else
     {
-      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != 2 || get<1>(DMWork.sizes()) != nw || get<2>(DMWork.sizes()) != dm_size ||
-          get<0>(DMAverage.sizes()) != 2 || get<1>(DMAverage.sizes()) != nave || get<2>(DMAverage.sizes()) != dm_size)
+      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != 2 || get<1>(DMWork.sizes()) != nw ||
+          get<2>(DMWork.sizes()) != dm_size || get<0>(DMAverage.sizes()) != 2 || get<1>(DMAverage.sizes()) != nave ||
+          get<2>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
     DeviceBufferManager buffer_manager;
-    Static3Tensor gFock({2, nw, dm_size}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    Dynamic3Tensor gFock({2, nw, dm_size}, buffer_manager.get_generator().template get_allocator<ComplexType>());
 
     HamOp->generalizedFockMatrix(G, gFock[0], gFock[1]);
 

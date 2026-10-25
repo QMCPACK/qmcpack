@@ -4,7 +4,7 @@
 [![Documentation Status](https://readthedocs.org/projects/qmcpack/badge/?version=develop)](https://qmcpack.readthedocs.io/en/develop/?badge=develop)
 
 [![GitHub release](https://img.shields.io/github/release/QMCPACK/qmcpack/all.svg)](https://github.com/QMCPACK/qmcpack/releases)
-[![Spack Version](https://img.shields.io/spack/v/qmcpack)](https://spack.readthedocs.io/en/latest/package_list.html#qmcpack)
+[![Spack Version](https://img.shields.io/spack/v/qmcpack)](https://packages.spack.io/package.html?name=qmcpack)
 
 [![GitHub Actions CI](https://github.com/QMCPACK/qmcpack/actions/workflows/ci-github-actions.yaml/badge.svg)](https://github.com/QMCPACK/qmcpack/actions/workflows/ci-github-actions.yaml)
 [![codecov-deterministic](https://codecov.io/gh/QMCPACK/qmcpack/branch/develop/graph/badge.svg?token=35D0u6GlBm)](https://codecov.io/gh/QMCPACK/qmcpack)
@@ -118,7 +118,6 @@ before doing significant production. i.e. Check the details below.
 |----------------------|-------------|
 |   CXX          |    C++ compiler |
 |   CC           |    C Compiler |
-|   MKL_ROOT     |    Path for MKL |
 |   HDF5_ROOT    |    Path for HDF5 |
 |   BOOST_ROOT   |    Path for Boost |
 |   FFTW_HOME    |    Path for FFTW |
@@ -243,7 +242,7 @@ environment variables, packages are installed in custom locations,
 or the configure line may be long or complex.  In this case it is
 recommended to add "rm -rf CMake*" before the configure line to remove
 existing CMake configure files to ensure a fresh configure each time
-that the script is called.  and example script build.sh is given
+that the script is called.  An example helper script is given
 below:
 ```
 export CXX=mpic++

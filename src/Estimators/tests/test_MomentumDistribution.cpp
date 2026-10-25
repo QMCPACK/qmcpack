@@ -73,9 +73,8 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
 
   // Instantiate other dependencies (internal QMCPACK objects)
   auto lattice = testing::makeTestLattice();
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
@@ -119,9 +118,8 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
 
   // Instantiate other dependencies (internal QMCPACK objects)
   auto lattice = testing::makeTestLattice();
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
   outputManager.pause();
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
@@ -192,10 +190,10 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
               -9.4969045,    -9.470020717, -2.520417488,  -0.2024849597, -9.177741101, 21.82310933,   0.9716326509,
               0.08942598353, -5.130834919, 8.307662762,   4.78276286,    -5.752141485, 3.92261216};
 
-  //std::cout<<"\n\n\nn(k) data:\n{";
+  //app_log()<<"\n\n\nn(k) data:\n{";
   //for(int i=0;i<data.size();++i)
-  //  std::cout<<data[i]<<", ";
-  //std::cout<<"}\n\n\n";
+  //  app_log()<<data[i]<<", ";
+  //app_log()<<"}\n\n\n";
 
   for (size_t id = 0; id < ref_data.size(); ++id)
   {
@@ -227,9 +225,8 @@ TEST_CASE("MomentumDistribution::spawnCrowdClone", "[estimators]")
 
   // Instantiate other dependencies (internal QMCPACK objects)
   auto lattice = testing::makeTestLattice();
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =

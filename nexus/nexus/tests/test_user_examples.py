@@ -71,7 +71,7 @@ def run_example_script(script: Path, test_path: Path) -> tuple[bool, str]:
     old_cwd = Path.cwd()
     os.chdir(test_path)
 
-    script_command = f"PYTHONPATH={nexus_root} {sys.executable} {script} --generate_only --sleep=0.01"
+    script_command = f"PYTHONPATH={nexus_root} {sys.executable} {script} --generate_only --sleep=0.01 --disable-logging"
     process = Popen(script_command, shell=True, stdout=PIPE, stderr=PIPE, close_fds=True)
     out, err = process.communicate()
     returncode = process.returncode
@@ -163,7 +163,7 @@ def check_generated_files(
                 gs = gen_input.return_structure()
                 # compare minimum image distances of all atomic coordinates
                 d = rs.min_image_distances(gs.pos,pairs=False)
-                # allow for small deviation due to precision of ascii floats in the text input files 
+                # allow for small deviation due to precision of ascii floats in the text input files
                 if d.min()<1e-6:
                     failed = False
                 #end if
@@ -192,7 +192,7 @@ def check_generated_files(
 
 def test_pwscf_relax_Ge_T(tmp_path):
     test_data = dict(
-        path = 'quantum_espresso/relax_Ge_T_vs_kpoints', 
+        path = 'quantum_espresso/relax_Ge_T_vs_kpoints',
         scripts = [
             'relax_vs_kpoints_example.py',
             ],

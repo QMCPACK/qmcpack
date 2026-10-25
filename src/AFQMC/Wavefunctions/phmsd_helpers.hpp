@@ -92,7 +92,7 @@ inline void calculate_overlaps(int rank, int ngrp, int spin, PH_EXCT const& abij
     {
       boost::multi::array_ref<ComplexType, 2> Qwork_(Qwork.base(), {nex, nex});
       boost::multi::array_ref<ComplexType, 1> Qwork2_(Qwork.base() + Qwork_.num_elements(),
-                                                      iextensions<1u>{nex * nex});
+                                                      extents_t<1u>{nex * nex});
       for (auto it = abij.unique_begin(nex)[spin]; it < abij.unique_end(nex)[spin]; ++it, ++nd)
         if (nd % ngrp == rank)
         {

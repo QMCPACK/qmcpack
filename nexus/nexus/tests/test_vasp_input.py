@@ -6,7 +6,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
 from ..generic import NexusError
 from ..pseudoset import PseudoSet
 
-from nexus.nexus_base import nexus_core
+from nexus.nexus_base import nexus_config
 from . import isolate_nexus_core, TEST_DIR
 from .. import testing
 from ..testing import object_eq,dict_serialize
@@ -147,7 +147,7 @@ def test_keyword_consistency():
         assert(scalar_keywords==cls.scalar_keywords)
         assert(array_keywords==cls.array_keywords)
         assert(typed_keywords==cls.keywords)
-        assert(set(cls.type.keys())==cls.keywords)
+        assert(set(cls.dtype.keys())==cls.keywords)
         assert(set(cls.read_value.keys())==cls.keywords)
         assert(set(cls.write_value.keys())==cls.keywords)
         assert(set(cls.assign_value.keys())==cls.keywords)
@@ -159,7 +159,7 @@ def test_keyword_consistency():
 
     AdditionalKeywordFile.class_init()
     assert(AdditionalKeywordFile.keywords==frozenset({'flag'}))
-    assert(AdditionalKeywordFile.type.flag=='bools')
+    assert(AdditionalKeywordFile.dtype.flag=='bools')
 #end def test_keyword_consistency
 
 
@@ -193,7 +193,7 @@ def test_current_keyword_types():
 
     for keyword_type,keywords in expected.items():
         for keyword in keywords:
-            assert(Incar.type[keyword]==keyword_type)
+            assert(Incar.dtype[keyword]==keyword_type)
         #end for
     #end for
 
@@ -206,7 +206,7 @@ def test_current_keyword_types():
         }
     assert(dict(Incar.mixed_types)==expected_mixed)
     for keyword,types in expected_mixed.items():
-        assert(Incar.type[keyword]==types)
+        assert(Incar.dtype[keyword]==types)
     #end for
 #end def test_current_keyword_types
 
@@ -292,7 +292,7 @@ def test_mixed_keyword_types():
     for keyword,value in invalid:
         with pytest.raises(
             NexusError,
-            match='assign failed for keyword {0}'.format(keyword),
+            match=f'assign failed for keyword {keyword}',
             ):
             Incar().assign(**{keyword:value})
         #end with
@@ -1002,17 +1002,16 @@ def test_write(tmp_path):
 @isolate_nexus_core
 def test_generate(tmp_path):
     import numpy as np
-    from ..nexus_base import nexus_noncore
     from ..physical_system import generate_physical_system
     from ..vasp_input import generate_vasp_input,VaspInput
 
     pseudo_dir = tmp_path / 'pseudopotentials'
     pseudo_dir.mkdir()
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
-    nexus_noncore.pseudo_dir = pseudo_dir
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
+    nexus_config.pseudo_dir = pseudo_dir
 
     (pseudo_dir / 'C.POTCAR').write_text(c_potcar_text)
     PseudoSet.pseudo_files = {

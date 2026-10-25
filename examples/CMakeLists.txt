@@ -2,5 +2,5 @@
 
 message("Adding example tests for QMCPACK")
 
-subdirs(molecules/H2O)
-subdirs(molecules/He)
+add_subdirectory(molecules/H2O)
+add_subdirectory(molecules/He)

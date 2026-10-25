@@ -725,7 +725,7 @@ multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> uninitialized_fill_n(
 {
   if (n == 0)
     return first;
-  kernels::fill_n(to_address(base(first)), n, stride(first), val);
+  kernels::fill_n(to_address(base(first)), n, first.stride(), val);
   return first + n;
 }
 
@@ -736,10 +736,10 @@ multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> uninitialized_fill(
     multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> last,
     T const& val)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return first;
-  kernels::fill_n(to_address(base(first)), std::distance(first, last), stride(first), val);
+  kernels::fill_n(to_address(base(first)), std::distance(first, last), first.stride(), val);
   return first + std::distance(first, last);
 }
 
@@ -751,11 +751,11 @@ multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> copy(
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
   if (hipSuccess !=
-      hipMemcpy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+      hipMemcpy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), std::distance(first, last), hipMemcpyDeviceToDevice))
     throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   return dest + std::distance(first, last);
@@ -767,11 +767,11 @@ multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> copy(
     ForwardIt last,
     multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> dest)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
   if (hipSuccess !=
-      hipMemcpy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+      hipMemcpy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), std::distance(first, last), hipMemcpyDefault))
     throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   return dest + std::distance(first, last);
@@ -784,11 +784,11 @@ multi::array_iterator<T, 1, T*> copy(multi::array_iterator<Q1, 1, qmc_hip::devic
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
   if (hipSuccess !=
-      hipMemcpy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+      hipMemcpy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), std::distance(first, last), hipMemcpyDeviceToHost))
     throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   return dest + std::distance(first, last);
@@ -805,7 +805,7 @@ multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> copy_n(
   if (N == 0)
     return dest;
   if (hipSuccess !=
-      hipMemcpy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+      hipMemcpy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), N, hipMemcpyDeviceToDevice))
     throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   return dest + N;
@@ -820,7 +820,7 @@ multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> copy_n(
   if (n == 0)
     return dest;
   if (hipSuccess !=
-      hipMemcpy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+      hipMemcpy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), n, hipMemcpyDefault))
     throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   return dest + n;
@@ -836,7 +836,7 @@ multi::array_iterator<T, 1, T*> copy_n(multi::array_iterator<Q1, 1, qmc_hip::dev
   if (N == 0)
     return dest;
   if (hipSuccess !=
-      hipMemcpy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+      hipMemcpy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), N, hipMemcpyDeviceToHost))
     throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   return dest + N;
@@ -849,11 +849,11 @@ multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> uninitialized_copy(
     ForwardIt last,
     multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> dest)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
   if (hipSuccess !=
-      hipMemcpy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+      hipMemcpy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), std::distance(first, last), hipMemcpyDefault))
     throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   return dest + std::distance(first, last);
@@ -867,10 +867,10 @@ multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> uninitialized_copy(
                          multi::array_iterator<Q, 1, qmc_hip::device_pointer<Q>> last,
                          multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
-  assert( stride(first) == stride(last) );
+  assert( first.stride() == last.stride() );
   if(std::distance(first,last) == 0 ) return dest;
-  if(hipSuccess != hipMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
+  if(hipSuccess != hipMemcpy2D(to_address(base(dest)),sizeof(T)*dest.stride(),
+                                 to_address(base(first)),sizeof(T)*first.stride(),
                                  sizeof(T),std::distance(first,last),hipMemcpyDeviceToDevice))
       throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   return dest+std::distance(first,last);
@@ -883,10 +883,10 @@ multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> uninitialized_copy(
                          multi::array_iterator<Q, 1, boost::mpi3::intranode::array_ptr<Q>> last,
                          multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
-  assert( stride(first) == stride(last) );
+  assert( first.stride() == last.stride() );
   if(std::distance(first,last) == 0 ) return dest;
-  if(hipSuccess != hipMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
+  if(hipSuccess != hipMemcpy2D(to_address(base(dest)),sizeof(T)*dest.stride(),
+                                 to_address(base(first)),sizeof(T)*first.stride(),
                                  sizeof(T),std::distance(first,last),hipMemcpyHostToDevice))
       throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   return dest+std::distance(first,last);
@@ -900,10 +900,10 @@ multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> uninitialized_copy(
                          multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
-  assert( stride(first) == stride(last) );
+  assert( first.stride() == last.stride() );
   if(std::distance(first,last) == 0 ) return dest;
-  if(hipSuccess != hipMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
+  if(hipSuccess != hipMemcpy2D(to_address(base(dest)),sizeof(T)*dest.stride(),
+                                 to_address(base(first)),sizeof(T)*first.stride(),
                                  sizeof(T),std::distance(first,last),hipMemcpyHostToDevice))
       throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   return dest+std::distance(first,last);
@@ -918,12 +918,12 @@ multi::array_iterator<T, 1, T*> uninitialized_copy(Alloc& a,
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
   if (hipSuccess !=
-      hipMemcpy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+      hipMemcpy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), std::distance(first, last), hipMemcpyDeviceToHost))
     throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   return dest + std::distance(first, last);
@@ -938,8 +938,8 @@ multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> uninitialized_copy_n(
                            multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
   if(N==0) return dest;
-  if(hipSuccess != hipMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
+  if(hipSuccess != hipMemcpy2D(to_address(base(dest)),sizeof(T)*dest.stride(),
+                                 to_address(base(first)),sizeof(T)*first.stride(),
                                  sizeof(T),N,hipMemcpyDeviceToDevice))
       throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   return dest+N;
@@ -957,7 +957,7 @@ multi::array_iterator<T, 1, T*> uninitialized_copy_n(Alloc& a,
   if (n == 0)
     return dest;
   if (hipSuccess !=
-      hipMemcpy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+      hipMemcpy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), n, hipMemcpyDefault))
     throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   return dest + n;
@@ -973,7 +973,7 @@ multi::array_iterator<T, 1, qmc_hip::device_pointer<T>> uninitialized_copy_n(
   if (n == 0)
     return dest;
   if (hipSuccess !=
-      hipMemcpy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+      hipMemcpy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), n, hipMemcpyDefault))
     throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   return dest + n;

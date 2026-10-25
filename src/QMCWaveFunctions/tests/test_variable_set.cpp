@@ -47,12 +47,12 @@ TEST_CASE("VariableSet one", "[optimize]")
 
   std::ostringstream o;
   vs.print(o, 0, false);
-  //std::cout << o.str() << std::endl;
+  //app_log() << o.str() << std::endl;
   REQUIRE(o.str() == "first                 1.123457e+00 0  ON 0\n");
 
   std::ostringstream o2;
   vs.print(o2, 1, true);
-  //std::cout << o2.str() << std::endl;
+  //app_log() << o2.str() << std::endl;
 
   char formatted_output[] = "  Name                        Value Type Use Index\n"
                             " ----- ---------------------------- ---- --- -----\n"
@@ -87,7 +87,7 @@ TEST_CASE("VariableSet output", "[optimize]")
 
   std::ostringstream o;
   vs.print(o, 0, true);
-  //std::cout << o.str() << std::endl;
+  //app_log() << o.str() << std::endl;
 
   char formatted_output[] = "            Name                        Value Type Use Index\n"
                             "---------------- ---------------------------- ---- --- -----\n"

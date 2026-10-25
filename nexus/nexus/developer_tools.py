@@ -62,12 +62,10 @@ class python2_sort_key(object):
 
         # explicitly raise again for types that won't sort in Python 2 either
         if type(self) in _unhandled_types:
-            raise TypeError('no ordering relation is defined for {}'.format(
-                type(self).__name__))
+            raise TypeError(f'no ordering relation is defined for {type(self).__name__}')
         #end if
         if type(other) in _unhandled_types:
-            raise TypeError('no ordering relation is defined for {}'.format(
-                type(other).__name__))
+            raise TypeError(f'no ordering relation is defined for {type(other).__name__}')
         #end if
 
         # default_3way_compare from Python 2 as Python code
@@ -139,9 +137,9 @@ def _pp_repr(self):
     for k in sorted_py2(self.keys()):
         v = self.__dict__[k]
         if hasattr(v,'__class__'):
-            s+='  {0:<20}  {1:<20}\n'.format(str(k),v.__class__.__name__)
+            s+=f'  {str(k):<20}  {v.__class__.__name__:<20}\n'
         else:
-            s+='  {0:<20}  {1:<20}\n'.format(str(k),type(v))
+            s+=f'  {str(k):<20}  {type(v):<20}\n'
     return s
 
 
@@ -162,7 +160,7 @@ def _pp_str(self,nindent=1):
     for k in normal:
         v = self[k]
         vstr = str(v).replace('\n','\n'+indent)
-        s+=npad+'{0:<15} = '.format(str(k))+vstr+'\n'
+        s+=npad+f'{str(k):<15} = '+vstr+'\n'
     for k in qable:
         v = self[k]
         s+=npad+str(k)+'\n'

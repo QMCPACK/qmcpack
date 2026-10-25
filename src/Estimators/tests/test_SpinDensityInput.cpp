@@ -51,6 +51,37 @@ TEST_CASE("SpinDensityInput::readXML", "[estimators]")
   }
 }
 
+TEST_CASE("SpinDensityInput folding input", "[estimators]")
+{
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"XML(
+<estimator type="spindensity">
+  <parameter name="grid">2 2 2</parameter>
+  <parameter name="corner">0 0 0</parameter>
+  <parameter name="cell">1 0 0 0 1 0 0 0 1</parameter>
+  <parameter name="folding">yes</parameter>
+</estimator>
+)XML"));
+  SpinDensityInput folded_input(doc.getRoot());
+  CHECK(folded_input.hasFolding());
+
+  REQUIRE(doc.parseFromString(R"XML(
+<estimator type="spindensity">
+  <parameter name="grid">2 2 2</parameter>
+</estimator>
+)XML"));
+  SpinDensityInput default_input(doc.getRoot());
+  CHECK_FALSE(default_input.hasFolding());
+
+  REQUIRE(doc.parseFromString(R"XML(
+<estimator type="spindensity">
+  <parameter name="grid">2 2 2</parameter>
+  <parameter name="folding">yes</parameter>
+</estimator>
+)XML"));
+  CHECK_THROWS_AS(SpinDensityInput(doc.getRoot()), UniformCommunicateError);
+}
+
 TEST_CASE("SpinDensityInput invalid input", "[estimators]")
 {
   testing::InvalidSpinDensityInput input;

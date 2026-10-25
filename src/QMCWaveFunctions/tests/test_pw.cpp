@@ -121,7 +121,7 @@ TEST_CASE("PlaneWave real twist pairing", "[wavefunction][plane_wave]")
 
 TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // BCC H
   Lattice lattice;
@@ -221,7 +221,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 
 TEST_CASE("PlaneWave tiled SPO from HDF for diamond C", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   lattice.R = {6.74632230, 6.74632230, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
@@ -301,7 +301,7 @@ TEST_CASE("PlaneWave tiled SPO from HDF for diamond C", "[wavefunction]")
 
 TEST_CASE("PlaneWave SPO from HDF for LiH X", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // LiH
   Lattice lattice;

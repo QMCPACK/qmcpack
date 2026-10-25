@@ -38,10 +38,10 @@ if(NOT QMC_COMPLEX)
   list(APPEND HE_SIMPLE_OPT_SCALARS "totenergy" "-2.88 .005") # total energy
 
   qmc_run_and_check(
-    example_He_simple_opt
+    example_He_simple_optbatch
     "${qmcpack_SOURCE_DIR}/examples/molecules/He"
     He
-    he_simple_opt.xml
+    he_simple_optbatch.xml
     1
     1
     ${MP_SUCCESS}
@@ -88,3 +88,6 @@ if(NOT QMC_COMPLEX)
   #                    10 HE_BSPLINE_OPT_SCALARS # series for VMC on optimized value
   #                    )
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

@@ -9,6 +9,7 @@
 // File created by: Mark Dewing, mdewing@anl.gov Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include "Platforms/Host/OutputManager.h"
 
 #include <iostream>
 #include "Utilities/FairDivide.h"
@@ -24,9 +25,9 @@ void print_vector(vector<int>& out)
 {
   for (int i = 0; i < out.size(); i++)
   {
-    std::cout << out[i] << " ";
+    app_log() << out[i] << " ";
   }
-  std::cout << std::endl;
+  app_log() << std::endl;
 }
 
 TEST_CASE("FairDivideLow_one", "[utilities]")

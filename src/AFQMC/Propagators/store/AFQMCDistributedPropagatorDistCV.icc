@@ -80,7 +80,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     app_log() << " Resizing buffer space in AFQMCDistributedPropagatorDistCV to "
               << memory_needs * sizeof(ComplexType) / 1024.0 / 1024.0 << " MBs. \n";
     {
-      buffer = std::move(sharedCVector(iextensions<1u>{memory_needs}, aux_alloc_));
+      buffer = std::move(sharedCVector(extents_t<1u>{memory_needs}, aux_alloc_));
     }
     memory_report();
     fill_n(buffer.base(), buffer.num_elements(), ComplexType(0.0));
@@ -96,9 +96,9 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
               << memory_needs * sizeof(ComplexType) / 1024.0 / 1024.0 << " MBs. \n";
     {
 #ifdef ENABLE_CUDA
-      comm_buffer = std::move(stdCVector(iextensions<1u>{memory_needs}));
+      comm_buffer = std::move(stdCVector(extents_t<1u>{memory_needs}));
 #else
-      comm_buffer = std::move(sharedCVector(iextensions<1u>{memory_needs}, aux_alloc_));
+      comm_buffer = std::move(sharedCVector(extents_t<1u>{memory_needs}, aux_alloc_));
 #endif
     }
     memory_report();
@@ -175,7 +175,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   if (hybrid_weight.size(0) != nnodes * nsteps || hybrid_weight.size(1) != nwalk)
     hybrid_weight = std::move(CMatrix({nnodes * nsteps, nwalk}));
   if (new_overlaps.size(0) != nwalk)
-    new_overlaps = std::move(CVector(iextensions<1u>{nwalk}));
+    new_overlaps = std::move(CVector(extents_t<1u>{nwalk}));
   if (new_energies.size(0) != nwalk || new_energies.size(1) != 3)
     new_energies = std::move(CMatrix({nwalk, 3}));
 

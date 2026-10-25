@@ -34,6 +34,56 @@ if(NOT QMC_COMPLEX)
       DET_CO_L2_STD_DMC_1_1_SCALARS # DMC
     )
 
+    list(APPEND DET_CO_L2_STD_BATCHED_VMC_1_1_SCALARS "totenergy" "-144.30217710 0.000001")
+    list(APPEND DET_CO_L2_STD_BATCHED_VMC_1_1_SCALARS "kinetic" "51.86904420 0.000001")
+    list(APPEND DET_CO_L2_STD_BATCHED_VMC_1_1_SCALARS "potential" "-196.17122130 0.000001")
+    list(APPEND DET_CO_L2_STD_BATCHED_VMC_1_1_SCALARS "localecp" "-269.04428919 0.000001")
+    list(APPEND DET_CO_L2_STD_BATCHED_VMC_1_1_SCALARS "samples" "768.00000000 0.000001")
+
+    list(APPEND DET_CO_L2_STD_BATCHED_DMC_1_1_SCALARS "totenergy" "-145.21780084 0.000001")
+    list(APPEND DET_CO_L2_STD_BATCHED_DMC_1_1_SCALARS "kinetic" "75.19585253 0.000001")
+    list(APPEND DET_CO_L2_STD_BATCHED_DMC_1_1_SCALARS "potential" "-220.41365336 0.000001")
+    list(APPEND DET_CO_L2_STD_BATCHED_DMC_1_1_SCALARS "localecp" "-296.93654748 0.000001")
+    list(APPEND DET_CO_L2_STD_BATCHED_DMC_1_1_SCALARS "samples" "1139.51884547 0.000001")
+
+    qmc_run_and_check(
+      deterministic-Co_L2_std-vmc_dmc-batched
+      "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
+      det_dmc_std_diff_batched
+      det_dmc_std_diff_batched.in.xml
+      1
+      1
+      TRUE
+      0
+      DET_CO_L2_STD_BATCHED_VMC_1_1_SCALARS
+      1
+      DET_CO_L2_STD_BATCHED_DMC_1_1_SCALARS)
+
+    list(APPEND DET_CO_L2_L2_BATCHED_VMC_1_4_SCALARS "totenergy" "-144.52461662 0.000001")
+    list(APPEND DET_CO_L2_L2_BATCHED_VMC_1_4_SCALARS "kinetic" "55.60906845 0.000001")
+    list(APPEND DET_CO_L2_L2_BATCHED_VMC_1_4_SCALARS "potential" "-200.13368507 0.000001")
+    list(APPEND DET_CO_L2_L2_BATCHED_VMC_1_4_SCALARS "localecp" "-274.51810939 0.000001")
+    list(APPEND DET_CO_L2_L2_BATCHED_VMC_1_4_SCALARS "samples" "768.00000000 0.000001")
+
+    list(APPEND DET_CO_L2_L2_BATCHED_DMC_1_4_SCALARS "totenergy" "-145.26227032 0.000001")
+    list(APPEND DET_CO_L2_L2_BATCHED_DMC_1_4_SCALARS "kinetic" "70.14652628 0.000001")
+    list(APPEND DET_CO_L2_L2_BATCHED_DMC_1_4_SCALARS "potential" "-215.40879660 0.000001")
+    list(APPEND DET_CO_L2_L2_BATCHED_DMC_1_4_SCALARS "localecp" "-291.65712180 0.000001")
+    list(APPEND DET_CO_L2_L2_BATCHED_DMC_1_4_SCALARS "samples" "1257.91866872 0.000001")
+
+    qmc_run_and_check(
+      deterministic-Co_L2_L2-vmc_dmc-batched
+      "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
+      det_dmc_L2_diff_batched
+      det_dmc_L2_diff_batched.in.xml
+      1
+      4
+      TRUE
+      0
+      DET_CO_L2_L2_BATCHED_VMC_1_4_SCALARS
+      1
+      DET_CO_L2_L2_BATCHED_DMC_1_4_SCALARS)
+
     list(APPEND DET_CO_L2_L2_VMC_1_1_SCALARS "totenergy" "-144.46113333 0.000001")
     list(APPEND DET_CO_L2_L2_VMC_1_1_SCALARS "kinetic" "  52.20699764 0.000001")
     list(APPEND DET_CO_L2_L2_VMC_1_1_SCALARS "potential" "-196.66813096 0.000001")
@@ -65,3 +115,6 @@ if(NOT QMC_COMPLEX)
 else()
   message(VERBOSE "Skipping Co_L2 test because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

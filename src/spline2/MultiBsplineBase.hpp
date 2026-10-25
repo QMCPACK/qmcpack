@@ -12,9 +12,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /**@file MultiBsplineBase.hpp
+ * @brief Defines the MultiBsplineBase class for 3D multi-B-spline operations.
  *
- * define classes MultiBsplineBase
- * The evaluation functions are defined in MultiBsplineBaseEval.hpp
+ * Provides a C++ object-oriented interface around the einspline C library,
+ * managing metadata, blocks of splines, and dispatching precision-mixed evaluations.
+ * The inner evaluation functions are defined in MultiBsplineEval.hpp and
+ * MultiBsplineValue.hpp, MultiBsplineVGLH.hpp, etc.
  */
 #ifndef QMCPLUSPLUS_MULTIEINSPLINEBASE_HPP
 #define QMCPLUSPLUS_MULTIEINSPLINEBASE_HPP
@@ -23,16 +26,27 @@
 #include <cstddef>
 #include <vector>
 #include <stdexcept>
+#include <OhmmsPETE/OhmmsVector.h>
+#include <OhmmsSoA/VectorSoaContainer.h>
+#include <CPU/SIMD/aligned_allocator.hpp>
 #include "spline2/bspline_traits.hpp"
-#include "spline2/MultiBsplineEval.hpp"
 
 namespace qmcplusplus
 {
 
-/** container class to hold a 3D multi spline pointer
- * @tparam T the precision of splines
+/** @ingroup spline2
+ * @brief Base container class for 3D multi-B-spline evaluation.
  *
- * This class contains a pointer to a C object, copy and assign of this class is forbidden.
+ * MultiBsplineBase manages a collection (blocks) of 3D multi-B-spline objects
+ * implemented in C (from the einspline library). It handles memory layout metadata,
+ * boundary conditions, and dispatches evaluation calls (value, gradient, laplacian,
+ * hessian) to optimized SIMD routines.
+ *
+ * @tparam T The storage precision of the internal spline coefficients (float or double).
+ *           Note that spline evaluations can be performed in a different precision (VT).
+ *
+ * Copying and assignment are explicitly deleted to prevent unsafe aliasing of the
+ * underlying C-style pointers.
  */
 template<typename T>
 class MultiBsplineBase
@@ -73,60 +87,22 @@ protected:
     return xyzBC;
   }
 
+  /** Configure internal einspline metadata including grid and stride information
+   * @param spline reference to the internal spline object to configure
+   * @param x_grid grid in x direction
+   * @param y_grid grid in y direction
+   * @param z_grid grid in z direction
+   * @param bc array of boundary conditions
+   * @param num_splines number of valid splines to store
+   * @param num_splines_padded number of splines padded for SIMD alignment
+   */
   void setMetaData(SplineType& spline,
                    Ugrid x_grid,
                    Ugrid y_grid,
                    Ugrid z_grid,
                    const BoundaryCondition bc[3],
                    size_t num_splines,
-                   size_t num_splines_padded)
-  {
-    auto& xBC          = bc[0];
-    auto& yBC          = bc[1];
-    auto& zBC          = bc[2];
-    spline.spcode      = bspline_traits<T, 3>::spcode;
-    spline.tcode       = bspline_traits<T, 3>::tcode;
-    spline.xBC         = xBC;
-    spline.yBC         = yBC;
-    spline.zBC         = zBC;
-    spline.num_splines = num_splines;
-
-    // Setup internal variables
-    int Mx = x_grid.num;
-    int My = y_grid.num;
-    int Mz = z_grid.num;
-    int Nx, Ny, Nz;
-
-    if (xBC.lCode == PERIODIC || xBC.lCode == ANTIPERIODIC)
-      Nx = Mx + 3;
-    else
-      Nx = Mx + 2;
-    x_grid.delta     = (x_grid.end - x_grid.start) / (double)(Nx - 3);
-    x_grid.delta_inv = 1.0 / x_grid.delta;
-    spline.x_grid    = x_grid;
-
-    if (yBC.lCode == PERIODIC || yBC.lCode == ANTIPERIODIC)
-      Ny = My + 3;
-    else
-      Ny = My + 2;
-    y_grid.delta     = (y_grid.end - y_grid.start) / (double)(Ny - 3);
-    y_grid.delta_inv = 1.0 / y_grid.delta;
-    spline.y_grid    = y_grid;
-
-    if (zBC.lCode == PERIODIC || zBC.lCode == ANTIPERIODIC)
-      Nz = Mz + 3;
-    else
-      Nz = Mz + 2;
-    z_grid.delta     = (z_grid.end - z_grid.start) / (double)(Nz - 3);
-    z_grid.delta_inv = 1.0 / z_grid.delta;
-    spline.z_grid    = z_grid;
-
-    spline.x_stride = (size_t)Ny * (size_t)Nz * num_splines_padded;
-    spline.y_stride = Nz * num_splines_padded;
-    spline.z_stride = num_splines_padded;
-
-    spline.coefs_size = (size_t)Nx * spline.x_stride;
-  }
+                   size_t num_splines_padded);
 
 public:
   MultiBsplineBase(const MultiBsplineBase& in)            = delete;
@@ -134,134 +110,195 @@ public:
 
   virtual ~MultiBsplineBase() = default;
 
+  /** Return the number of spline blocks currently stored
+   * @return number of spline blocks
+   */
   size_t getNumBlocks() const { return spline_blocks.size(); }
+  /** Get the offsets array mapping global spline index to local block index
+   * @return constant reference to offsets vector
+   */
   const auto& getBlockOffsets() const { return offsets_; }
 
-  SplineType* getSplinePtr()
-  {
-    if (spline_blocks.size() != 1)
-      throw std::runtime_error("Bug! Cannot access splime_m. the number of spline_blocks is not 1.");
-    return spline_blocks[0];
-  }
+  /** Return pointer to the primary spline object (assumes a single block)
+   * @return pointer to SplineType
+   */
+  SplineType* getSplinePtr();
 
+  /** Access a specific spline block by index
+   * @param iblock index of the block
+   * @return reference to the requested spline block
+   */
   SplineType& getBlock(size_t iblock) { return *spline_blocks[iblock]; }
+  /** Const access to a specific spline block by index
+   * @param iblock index of the block
+   * @return const reference to the requested spline block
+   */
   const SplineType& getBlock(size_t iblock) const { return *spline_blocks[iblock]; }
 
-  void flush_zero(size_t iblock = 0) const
-  { std::fill(spline_blocks[iblock]->coefs, spline_blocks[iblock]->coefs + spline_blocks[iblock]->coefs_size, T(0)); }
-
-  size_t num_splines() const
-  {
-    size_t num_splines = 0;
-    for (auto spline_m : spline_blocks)
-      num_splines += spline_m->num_splines;
-    return num_splines;
-  }
-
-  size_t num_splines_padded() const
-  {
-    size_t num_splines_padded = 0;
-    for (auto spline_m : spline_blocks)
-      num_splines_padded += spline_m->z_stride;
-    return num_splines_padded;
-  }
-
-  size_t sizeInByte() const
-  {
-    size_t num_T = 0;
-    for (auto spline_m : spline_blocks)
-      num_T += spline_m->coefs_size;
-    return num_T * sizeof(T);
-  }
-
-  /** copy a single spline to multi spline
-   * @param single UBspline_3d_d
-   * @param int index of single in multi
+  /** Zero out the spline coefficients for a specific block
+   * @param iblock block index to zero out
    */
-  void set_spline(const UBspline_3d_d& single, int i)
-  {
-    size_t iblock = 0;
-    while (iblock < spline_blocks.size() && i >= offsets_[iblock + 1])
-      iblock++;
-    if (iblock == spline_blocks.size())
-      throw std::runtime_error("Bug detected in MultiBsplineBase::set_spline i goes out of bound!");
+  void flush_zero(size_t iblock = 0) const;
 
-    auto& multi(*spline_blocks[iblock]);
+  /** Get the total number of splines across all blocks
+   * @return total number of splines
+   */
+  size_t num_splines() const;
 
-    if (single.x_grid.num != multi.x_grid.num || single.y_grid.num != multi.y_grid.num ||
-        single.z_grid.num != multi.z_grid.num)
-      throw std::runtime_error("Cannot copy a single spline to MultiSpline with a different grid!\n");
+  /** Get the total padded number of splines (includes SIMD padding)
+   * @return total padded number of splines
+   */
+  size_t num_splines_padded() const;
 
-    intptr_t x_stride_in  = single.x_stride;
-    intptr_t y_stride_in  = single.y_stride;
-    intptr_t x_stride_out = multi.x_stride;
-    intptr_t y_stride_out = multi.y_stride;
-    intptr_t z_stride_out = multi.z_stride;
-    const intptr_t istart = static_cast<intptr_t>(i - offsets_[iblock]);
-    const intptr_t n0 = multi.x_grid.num + 3, n1 = multi.y_grid.num + 3, n2 = multi.z_grid.num + 3;
-    for (intptr_t ix = 0; ix < n0; ++ix)
-      for (intptr_t iy = 0; iy < n1; ++iy)
-      {
-        auto* __restrict__ out      = multi.coefs + ix * x_stride_out + iy * y_stride_out + istart;
-        const auto* __restrict__ in = single.coefs + ix * x_stride_in + iy * y_stride_in;
-        for (intptr_t iz = 0; iz < n2; ++iz)
-          out[iz * z_stride_out] = in[iz];
-      }
-  }
+  /** Get the memory size occupied by the spline coefficients in bytes
+   * @return size in bytes
+   */
+  size_t sizeInByte() const;
+
+  /** Copy a single spline into the multi-spline data structure
+   * @param single source UBspline_3d_d object
+   * @param i destination index within the multi-spline structure
+   */
+  void setOneSpline(const UBspline_3d_d& single, int i);
 
 
-  template<typename PT, typename VT>
-  inline void evaluate_v(const PT& r, VT& psi)
-  {
-    for (size_t ib = 0; ib < spline_blocks.size(); ib++)
-    {
-      const auto* spline_m(spline_blocks[ib]);
-      if (spline_m->num_splines == 0)
-        continue;
-      spline2::evaluate_v_impl(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], 0, spline_m->num_splines);
-    }
-  }
+  /** Evaluate spline values into single-precision arrays
+   * @param r 3D position vector
+   * @param psi output vector for spline values
+   */
+  void evaluate_v(const TinyVector<float, 3>& r, Vector<float, aligned_allocator<float>>& psi);
 
-  template<typename PT, typename VT, typename GT>
-  inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, GT& lap)
-  {
-    for (size_t ib = 0; ib < spline_blocks.size(); ib++)
-    {
-      const auto* spline_m(spline_blocks[ib]);
-      if (spline_m->num_splines == 0)
-        continue;
-      spline2::evaluate_vgl_impl(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], grad.data() + offsets_[ib],
-                                 lap.data() + offsets_[ib], psi.size(), 0, spline_m->num_splines);
-    }
-  }
+  /** Evaluate spline values into double-precision arrays
+   * @param r 3D position vector
+   * @param psi output vector for spline values
+   */
+  void evaluate_v(const TinyVector<double, 3>& r, Vector<double, aligned_allocator<double>>& psi);
 
-  template<typename PT, typename VT, typename GT, typename HT>
-  inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess)
-  {
-    for (size_t ib = 0; ib < spline_blocks.size(); ib++)
-    {
-      const auto* spline_m(spline_blocks[ib]);
-      if (spline_m->num_splines == 0)
-        continue;
-      spline2::evaluate_vgh_impl(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], grad.data() + offsets_[ib],
-                                 hess.data() + offsets_[ib], psi.size(), 0, spline_m->num_splines);
-    }
-  }
+  /** Evaluate spline values, gradients, and laplacians into single-precision arrays
+   * @param r 3D position vector
+   * @param psi output vector for spline values
+   * @param grad output container for spline gradients
+   * @param lap output container for spline laplacians
+   */
+  void evaluate_vgl(const TinyVector<float, 3>& r,
+                    Vector<float, aligned_allocator<float>>& psi,
+                    VectorSoaContainer<float, 3>& grad,
+                    VectorSoaContainer<float, 3>& lap);
 
-  template<typename PT, typename VT, typename GT, typename HT, typename GHT>
-  inline void evaluate_vghgh(const PT& r, VT& psi, GT& grad, HT& hess, GHT& ghess)
-  {
-    for (size_t ib = 0; ib < spline_blocks.size(); ib++)
-    {
-      const auto* spline_m(spline_blocks[ib]);
-      if (spline_m->num_splines == 0)
-        continue;
-      spline2::evaluate_vghgh_impl(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], grad.data() + offsets_[ib],
-                                   hess.data() + offsets_[ib], ghess.data() + offsets_[ib], psi.size(), 0,
-                                   spline_m->num_splines);
-    }
-  }
+  /** Evaluate spline values, gradients, and laplacians into double-precision arrays
+   * @param r 3D position vector
+   * @param psi output vector for spline values
+   * @param grad output container for spline gradients
+   * @param lap output container for spline laplacians
+   */
+  void evaluate_vgl(const TinyVector<double, 3>& r,
+                    Vector<double, aligned_allocator<double>>& psi,
+                    VectorSoaContainer<double, 3>& grad,
+                    VectorSoaContainer<double, 3>& lap);
+
+  /** Evaluate spline values, gradients, and hessians into single-precision arrays
+   * @param r 3D position vector
+   * @param psi output vector for spline values
+   * @param grad output container for spline gradients
+   * @param hess output container for spline hessians
+   */
+  void evaluate_vgh(const TinyVector<float, 3>& r,
+                    Vector<float, aligned_allocator<float>>& psi,
+                    VectorSoaContainer<float, 3>& grad,
+                    VectorSoaContainer<float, 6>& hess);
+
+  /** Evaluate spline values, gradients, and hessians into double-precision arrays
+   * @param r 3D position vector
+   * @param psi output vector for spline values
+   * @param grad output container for spline gradients
+   * @param hess output container for spline hessians
+   */
+  void evaluate_vgh(const TinyVector<double, 3>& r,
+                    Vector<double, aligned_allocator<double>>& psi,
+                    VectorSoaContainer<double, 3>& grad,
+                    VectorSoaContainer<double, 6>& hess);
+
+
+  /** Evaluate spline values, gradients, hessians, and gradient-hessians into single-precision arrays
+   * @param r 3D position vector
+   * @param psi output vector for spline values
+   * @param grad output container for spline gradients
+   * @param hess output container for spline hessians
+   * @param ghess output container for spline gradient-hessians
+   */
+  void evaluate_vghgh(const TinyVector<float, 3>& r,
+                      Vector<float, aligned_allocator<float>>& psi,
+                      VectorSoaContainer<float, 3>& grad,
+                      VectorSoaContainer<float, 6>& hess,
+                      VectorSoaContainer<float, 10>& ghess);
+
+  /** Evaluate spline values, gradients, hessians, and gradient-hessians into double-precision arrays
+   * @param r 3D position vector
+   * @param psi output vector for spline values
+   * @param grad output container for spline gradients
+   * @param hess output container for spline hessians
+   * @param ghess output container for spline gradient-hessians
+   */
+  void evaluate_vghgh(const TinyVector<double, 3>& r,
+                      Vector<double, aligned_allocator<double>>& psi,
+                      VectorSoaContainer<double, 3>& grad,
+                      VectorSoaContainer<double, 6>& hess,
+                      VectorSoaContainer<double, 10>& ghess);
+
+private:
+  /** Evaluate the spline values at a given 3D position (implementation)
+   * @tparam VT the precision of the output evaluation arrays
+   * @param r 3D position vector
+   * @param psi output vector for spline values
+   */
+  template<typename VT>
+  void evaluate_v_impl(const TinyVector<VT, 3>& r, Vector<VT, aligned_allocator<VT>>& psi);
+
+  /** Evaluate the spline values, gradients, and laplacians (implementation)
+   * @tparam VT the precision of the output evaluation arrays
+   * @param r 3D position vector
+   * @param psi output vector for spline values
+   * @param grad output container for spline gradients
+   * @param lap output container for spline laplacians
+   */
+  template<typename VT>
+  void evaluate_vgl_impl(const TinyVector<VT, 3>& r,
+                         Vector<VT, aligned_allocator<VT>>& psi,
+                         VectorSoaContainer<VT, 3>& grad,
+                         VectorSoaContainer<VT, 3>& lap);
+
+  /** Evaluate the spline values, gradients, and hessians (implementation)
+   * @tparam VT the precision of the output evaluation arrays
+   * @param r 3D position vector
+   * @param psi output vector for spline values
+   * @param grad output container for spline gradients
+   * @param hess output container for spline hessians
+   */
+  template<typename VT>
+  void evaluate_vgh_impl(const TinyVector<VT, 3>& r,
+                         Vector<VT, aligned_allocator<VT>>& psi,
+                         VectorSoaContainer<VT, 3>& grad,
+                         VectorSoaContainer<VT, 6>& hess);
+
+  /** Evaluate the spline values, gradients, hessians, and gradient-hessians (implementation)
+   * @tparam VT the precision of the output evaluation arrays
+   * @param r 3D position vector
+   * @param psi output vector for spline values
+   * @param grad output container for spline gradients
+   * @param hess output container for spline hessians
+   * @param ghess output container for spline gradient-hessians
+   */
+  template<typename VT>
+  void evaluate_vghgh_impl(const TinyVector<VT, 3>& r,
+                           Vector<VT, aligned_allocator<VT>>& psi,
+                           VectorSoaContainer<VT, 3>& grad,
+                           VectorSoaContainer<VT, 6>& hess,
+                           VectorSoaContainer<VT, 10>& ghess);
 };
+
+
+extern template class MultiBsplineBase<float>;
+extern template class MultiBsplineBase<double>;
 
 } // namespace qmcplusplus
 

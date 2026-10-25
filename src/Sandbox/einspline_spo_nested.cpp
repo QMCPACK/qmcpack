@@ -17,7 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "random.hpp"
-#include "mpi/collectives.h"
+#include "Message/CommOperators.h"
 #include "Sandbox/input.hpp"
 #include "Sandbox/pseudo.hpp"
 #include "Utilities/Timer.h"
@@ -32,11 +32,11 @@ using namespace qmcplusplus;
 int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
-  mpi3::environment env(argc, argv);
-  OHMMS::Controller = new Communicate(env.world());
+  mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
+  OHMMS::Controller = std::make_unique<Communicate>(env.world());
 #endif
-  Communicate* myComm = OHMMS::Controller;
-  if (OHMMS::Controller->rank() != 0)
+  Communicate& myComm = *OHMMS::Controller;
+  if (myComm.rank() != 0)
   {
     outputManager.shutOff();
   }
@@ -48,7 +48,7 @@ int main(int argc, char** argv)
 
   //use the global generator
 
-  bool ionode = (myComm->rank() == 0);
+  bool ionode = (myComm.rank() == 0);
   int na      = 4;
   int nb      = 4;
   int nc      = 1;
@@ -68,6 +68,7 @@ int main(int argc, char** argv)
     {
     case 'h':
       printf("[-g \"n0 n1 n2\"]\n");
+      OHMMS::Controller.reset();
       return 1;
     case 'g': //tiling1 tiling2 tiling3
       sscanf(optarg, "%d %d %d", &na, &nb, &nc);
@@ -249,8 +250,8 @@ int main(int argc, char** argv)
               v_t_loc2 += clock.elapsed();
             }
           } // els
-        }   //ions
-      }     // steps.
+        } //ions
+      } // steps.
 
       vgh_t_loc += vgh_t_loc2;
       v_t_loc += v_t_loc2;
@@ -292,10 +293,10 @@ int main(int argc, char** argv)
   timer_type global_t(t0, vgh_t, val_t, 0.0);
   timer_type global_t_1(tInit, tBigClock, 0.0, 0.0);
 
-  mpi::reduce(*myComm, global_t);
-  mpi::reduce(*myComm, global_t_1);
+  myComm.reduce(global_t);
+  myComm.reduce(global_t_1);
 
-  const int nmpi = myComm->size();
+  const int nmpi = myComm.size();
   t0             = global_t[0] / nmpi;
   vgh_t          = global_t[1] / nmpi;
   val_t          = global_t[2] / nmpi;
@@ -343,8 +344,6 @@ int main(int argc, char** argv)
     cout << endl;
   }
 
-
-  OHMMS::Controller->finalize();
-
+  OHMMS::Controller.reset();
   return 0;
 }

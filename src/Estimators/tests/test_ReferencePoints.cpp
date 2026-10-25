@@ -87,8 +87,7 @@ struct PSetsAndRefList
 PSetsAndRefList makePsets()
 {
   auto lattice = testing::makeTestLattice();
-  Communicate* comm;
-  comm               = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto& pset         = *(particle_pool.getParticleSet("e"));
   auto& pset_ions    = *(particle_pool.getParticleSet("ion"));
@@ -171,7 +170,7 @@ TEST_CASE("ReferencePoints::DefaultConstruction", "[estimators]")
   if (generate_test_data)
   {
     testing::TestableNEReferencePoints tref_points(ref_points);
-    std::cout << "expected_reference_points" << tref_points;
+    app_log() << "expected_reference_points" << tref_points;
   }
 
   typename NEReferencePoints::Points expected_reference_points;
@@ -193,7 +192,7 @@ TEST_CASE("ReferencePoints::Construction", "[estimators]")
   if (generate_test_data)
   {
     testing::TestableNEReferencePoints tref_points(ref_points);
-    std::cout << "expected_reference_points" << tref_points;
+    app_log() << "expected_reference_points" << tref_points;
   }
 
   typename NEReferencePoints::Points expected_reference_points;
@@ -279,7 +278,7 @@ TEST_CASE("ReferencePoints::Description", "[estimators]")
   std::string expected_testable_description;
   if constexpr (std::is_same_v<QMCTraits::RealType, float>)
   {
-    std::cout << "ParticleSet coords were float\n";
+    app_log() << "ParticleSet coords were float\n";
     expected_testable_description = R"({
  {"a1", {      3.37316115,3.37316115,0}},
  {"a2", {               0,3.37316115,3.37316115}},
@@ -309,7 +308,7 @@ TEST_CASE("ReferencePoints::Description", "[estimators]")
   }
   else
   {
-    std::cout << "ParticleSet coords were double\n";
+    app_log() << "ParticleSet coords were double\n";
     expected_testable_description = R"({
  {"a1", {      3.37316115,3.37316115,0}},
  {"a2", {               0,3.37316115,3.37316115}},

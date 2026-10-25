@@ -216,3 +216,6 @@ qmc_run_and_check(
   0
   DET_GEP_VMCBATCH_SCALARS
 )
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

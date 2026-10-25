@@ -77,7 +77,7 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
   CHECK(consts == Approx(-3.1151210154));
 
   double val = caa.evaluate(ions);
-  //std::cout << "val = " << val << std::endl;
+  //app_log() << "val = " << val << std::endl;
   CHECK(val == Approx(vmad_sc));
 
   // supercell Madelung energy
@@ -489,8 +489,8 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   // Check that the sum of the particle energies == the total
   auto dump_particle_pots = [](const auto& local_pots, int row) {
     for (int i = 0; i < local_pots.cols(); ++i)
-      std::cout << *(local_pots[row] + i) << ", ";
-    std::cout << '\n';
+      app_log() << *(local_pots[row] + i) << ", ";
+    app_log() << '\n';
   };
 
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(-2.9332312765));
@@ -738,7 +738,7 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle_multimove", "[hamiltonian]")
   checkValuePotsMatch(caa2, local_pots, 1, expected_caa2);
   // Check that the sum of the particle energies == the total
 
-  // Nice to be able to change this to std::cout and not have to wade
+  // Nice to be able to change this to app_log() and not have to wade
   // through all the output we don't care about from everywhere else
   auto& local_ostream = app_log();
 

@@ -30,7 +30,7 @@ namespace testing
 class EstimatorManagerCrowdTest
 {
 public:
-  EstimatorManagerCrowdTest(Communicate* comm, int ranks);
+  EstimatorManagerCrowdTest(Communicate& comm, int ranks);
   /** Quickly add scalar samples using FakeEstimator mock estimator. */
   void fakeSomeScalarSamples();
   /** call private EMB method and colelct EMBTs estimators_ */
@@ -41,13 +41,13 @@ public:
    */
   bool testMakeBlockAverages();
   EstimatorManagerBase em;
-private:
-  Communicate* comm_;
-  std::vector<FakeEstimator> estimators_;
 
+private:
+  Communicate& comm_;
+  std::vector<FakeEstimator> estimators_;
 };
 
-}
-}
+} // namespace testing
+} // namespace qmcplusplus
 
 #endif /* QMCPLUSPLUS_ESTIMATORMANAGERBASETEST_HPP */

@@ -91,14 +91,14 @@ inline boost::multi::array<ComplexType, 1> rotateHij(WALKER_TYPES walker_type,
   int NAEA = Alpha->size(0);
   int NMO  = Alpha->size(1);
 
-  boost::multi::array<ComplexType, 1> N(iextensions<1u>{1});
+  boost::multi::array<ComplexType, 1> N(extents_t<1u>{1});
   const ComplexType one  = ComplexType(1.0);
   const ComplexType zero = ComplexType(0.0);
 
   // 1-body part
   if (walker_type == CLOSED || walker_type == NONCOLLINEAR)
   {
-    N.reextent(iextensions<1u>{NAEA * NMO});
+    N.reextent(extents_t<1u>{NAEA * NMO});
     boost::multi::array_ref<ComplexType, 2> N_(N.base(), {NAEA, NMO});
 
     ma::product(*Alpha, H1, N_);
@@ -109,7 +109,7 @@ inline boost::multi::array<ComplexType, 1> rotateHij(WALKER_TYPES walker_type,
     assert(Beta != nullptr);
     int NAEB = Beta->size(0);
 
-    N.reextent(iextensions<1u>{(NAEA + NAEB) * NMO});
+    N.reextent(extents_t<1u>{(NAEA + NAEB) * NMO});
     boost::multi::array_ref<ComplexType, 2> NA_(N.base(), {NAEA, NMO});
     boost::multi::array_ref<ComplexType, 2> NB_(N.base() + NAEA * NMO, {NAEB, NMO});
 
@@ -434,12 +434,12 @@ inline void rotateHijkl(std::string& type,
             << norb * NAEA * maxnk * NAEA * sizeof(SPComplexType) / 1024.0 / 1024.0 << " MB " << std::endl;
 
   // temporary shared memory space for local "dense" result
-  shmSpVector Ta_shmbuff(iextensions<1u>{norb * NAEA * maxnk * NAEA}, shared_allocator<SPComplexType>{TG.Node()});
+  shmSpVector Ta_shmbuff(extents_t<1u>{norb * NAEA * maxnk * NAEA}, shared_allocator<SPComplexType>{TG.Node()});
 
   // setup working sparse matrix
   dummy_nrow = maxnk * NAEA;
   dummy_ncol = nvec;
-  shmSpVector tQk_shmbuff(iextensions<1u>{1}, shared_allocator<SPComplexType>{TG.Node()});
+  shmSpVector tQk_shmbuff(extents_t<1u>{1}, shared_allocator<SPComplexType>{TG.Node()});
   SpCType_shm_csr_matrix SptQk(tp_ul_ul{maxnk * NAEA, nvec}, tp_ul_ul{0, 0}, 0, Alloc(TG.Node()));
   if (sparseQk)
   {
@@ -447,7 +447,7 @@ inline void rotateHijkl(std::string& type,
     SptQk.reserve(sz_);
   }
   else
-    tQk_shmbuff.reextent(iextensions<1u>{maxnk * NAEA * nvec});
+    tQk_shmbuff.reextent(extents_t<1u>{maxnk * NAEA * nvec});
   if (sparseQk)
     dummy_nrow = dummy_ncol = 0;
 
@@ -818,7 +818,7 @@ inline void rotateHijkl_single_node(std::string& type,
   app_log() << "   Temporary integral matrix Ta: "
             << NMO * NAEA * maxnk * NAEA * sizeof(SPComplexType) / 1024.0 / 1024.0 << " MB " << std::endl;
 
-  shmSpVector Ta_shmbuff(iextensions<1u>{NMO * NAEA * maxnk * NAEA}, shared_allocator<SPComplexType>{TG.Node()});
+  shmSpVector Ta_shmbuff(extents_t<1u>{NMO * NAEA * maxnk * NAEA}, shared_allocator<SPComplexType>{TG.Node()});
   myTimer Timer_;
 
   SPComplexType EJX(0.0);

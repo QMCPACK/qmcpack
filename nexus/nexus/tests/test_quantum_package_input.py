@@ -42,7 +42,7 @@ def make_serial_reference(qi):
     ref = '    ref = {\n'
     for k in sorted(s.keys()):
         v = s[k]
-        ref +="        '{}' : {},\n".format(k,format_value(v))
+        ref +=f"        '{k}' : {format_value(v)},\n"
     #end for
     ref += '        }\n'
     return ref
@@ -55,7 +55,7 @@ serial_references = dict()
 def generate_serial_references():
     import numpy as np
     from ..developer import obj
-    
+
     # references for read
     serial_references['h2o.ezfio read'] = {
         'ao_basis/ao_basis' : 'cc-pvtz',
@@ -238,7 +238,7 @@ def check_vs_serial_reference(qi,name):
 
 h2o_xyz = '''3
 
-O  0.000000  0.000000  0.000000 
+O  0.000000  0.000000  0.000000
 H  0.000000  0.757160  0.586260
 H  0.000000  0.757160 -0.586260
 '''
@@ -323,4 +323,4 @@ def test_generate(tmp_path):
     assert(qi.is_valid())
 #end def test_generate
 
-    
+

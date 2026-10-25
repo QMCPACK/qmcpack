@@ -1,0 +1,216 @@
+RMG initialization ... 1 image(s) total, 1 per node. 4 MPI processes/image. Thread level 2.
+Warning: localized projectors selected but their diameter exceeds cell size. Switching to delocalized.
+
+ EXTERNAL ELECTRIC FIELD INITIALIZATION 
+ ====================================== 
+
+ Electric Field: (  0.00000000,   0.00000000,   0.00000000) Ha/bohr
+
+
+                     * * * * * * * * * *
+                     *    R   M   G    *
+                     * * * * * * * * * *
+
+     -- A Real Space Multigrid Electronic structure code --
+     --      More information at www.rmgdft.org          --
+
+Code Revision:     7.1.0-master-313012520
+Build Date:        Aug 27 2026  13:45:04
+Start time:        Thu Aug 27 16:51:49 2026
+
+NOTICE: RMG internal pseudopotentials have switched to
+ONCVP from Ultrasoft. You can revert to Ultrasoft by
+adding the input tag internal_pseudo_type="ultrasoft" to
+your input files.
+
+
+Files
+   Control input file:        input.stm
+   Data input file:           Waves/stm_seed
+   Data output file:          Waves/wave.out
+
+Run Setup
+    Calculation type:         calculate STM charge density 
+    Description:              Graphene laptop STM analyzer run
+    Orbital Initialization:   Read from Waves/stm_seed 
+    Exchange Correlation:     pbe
+    Spin Polarization:        OFF
+    System charge:            Neutral
+
+Processor Topology
+   Total PEs:                 2
+   X direction:               2
+   Y direction:               1
+   Z direction:               1
+   MG Threads/PE:             3
+   OMP Threads/PE:            3
+
+Grid Points  (Linear Anisotropy: 1.000)
+    X:  Total: 16   Per PE: 8   Spacing:0.291 a0  
+    Y:  Total: 16   Per PE: 16   Spacing:0.291 a0  
+    Z:  Total: 64   Per PE: 64   Spacing:0.291 a0  
+
+    Equivalent energy cutoffs (psi,rho):   116.915    467.662 Ry
+
+    Charge density grid:         2 times finer
+
+Coordinate planes
+  Planar Anisotropy: 1.155
+  A0-A1 density:    13.679
+  A0-A2 density:    11.846
+  A1-A2 density:    11.846
+
+
+Lattice (Cell) Setup
+    Type:                       Hexagonal gamma = 120
+    Volume (a0^3):                348.01
+    Boundary conditions:        Periodic
+
+    X Basis Vector:       4.649       0.000       0.000 a0
+    Y Basis Vector:      -2.324       4.026       0.000 a0
+    Z Basis Vector:       0.000       0.000      18.595 a0
+    X Reci Vector:       0.215       0.124      -0.000 a0
+    Y Reci Vector:       0.000       0.248       0.000 a0
+    Z Reci Vector:       0.000      -0.000       0.054 a0
+
+K-points
+    Brillouin Zone sampling with 2 K-points (orbitals are complex)
+
+         Kx      Ky        Kz     Weight in crystal unit
+      0.0000     0.0000     0.0000   0.250
+      0.0000     0.5000     0.0000   0.750
+
+         Kx      Ky        Kz     Weight in 2PI/a 
+      0.0000     0.0000     0.0000   0.250
+      0.0000     0.5774     0.0000   0.750
+
+Atoms and States
+    Number of ions:                          2
+    Number of species:                       1
+    Number of states:                        8
+
+Run Parameters
+    SCF Convergence criterion (potential):   1.00e-07
+    SCF Convergence criterion (energy):      1.00e-10
+    Max SCF steps:                           100
+    Max MD steps                             100
+    Timestep for molecular dynamics:          50.00000000
+    Restart data write frequency:            5 MD steps
+
+SCF Cycle Settings
+    Charge density mixing:                   Unknown charge mixing method
+    Hartree Solver:                          PFFT
+    Interpolation type:                      FFT
+
+Adaptive Interpolation
+    On: cmix                                 1.486454934
+
+Finite Difference parameters
+    Kohn Sham FD Order:                      8   
+    Force Gradient Order:                    8   
+    Adaptive Finite Differencing:            On
+    Adaptive CFAC:                           0.453476304
+
+Subspace Diagonalization Options
+    Frequency:                               every 1 SCF step(s)
+    Driver:                                  Lapack
+    Initial diagonalization:                 ON
+    Folded spectrum:                         OFF
+
+Filtering Cutoff  Parameters
+    Wavefunction grid (cparm):               0.800
+    Charge density grid (rhocparm):          1.000
+    Filter factor:                           1.000
+
+Multigrid (MG) Parameters
+    Psi MG levels:                           3
+    Psi global step:                         0.660 
+    Psi pre:                                 2
+    Psi post:                                2
+
+Davidson Parameters
+    Davidson multiplier:                     4
+    Davidson max step:                       8
+    Davidson unocc tol factor:               1000.000
+
+Blas Libraries
+    CPU support with openblas-parallel.
+
+
+Atomic Species Information
+(PP = Pseudopotential, US = Ultrasoft, NC = Norm Conserving)
+-------------------------------------------------------------------------
+|Index|Symbol| Mass|Valence| PP |  Comp  |Local| Local|Nlocal|    PP    |
+|     |      |     |       |Type|Gaussian|  l  |Radius|Radius|Functional|
+-------------------------------------------------------------------------
+|    1|     C| 12.0|   4.00|  NC|    0.66|   -1| 10.10|  7.00|       PBE|
+-------------------------------------------------------------------------
+
+Pseudopotential generation information:
+   C pseudopotential file: ./@Internal
+      Generation info     : Generated using ONCVPSP code by D. R. Hamann
+      Author info         : anonymous
+
+
+Memory usage (Mbytes):     Min        Max       Total
+    wave functions          4.20       4.20      16.78
+    beta-functions          4.20       4.20       8.40
+
+
+
+Initial Ionic Positions And Displacements (Bohr)
+Species      X           Y           Z           dX          dY          dZ
+  C        0.0000      0.0000      0.0000      0.0000      0.0000      0.0000
+  C        2.3244      1.3420      0.0000      0.0000      0.0000      0.0000
+
+
+Initial Ionic Positions And Displacements (Angstrom)
+Species      X           Y           Z           dX          dY          dZ
+  C        0.0000      0.0000      0.0000      0.0000      0.0000      0.0000
+  C        1.2300      0.7101      0.0000      0.0000      0.0000      0.0000
+
+
+--------TIMING INFORMATION FOR Processor owned the most atoms----------------
+                                        Total time               Per SCF/step
+
+1-TOTAL                                             2.43                 inf
+-----------------------------------------------------------------------------
+  1-TOTAL: Init                                     2.40                 inf
+  1-TOTAL: run                                      0.03                 inf
+
+2-Init                                              2.40                 inf
+-----------------------------------------------------------------------------
+  2-Init: KpointClass                               0.81                 inf
+  2-Init: ReinitIonicPotentials                     0.26                 inf
+  2-Init: radial potentials                         0.72                 inf
+  2-Init: weights                                   0.01                 inf
+
+3-ReinitIonicPotentials                             0.26                 inf
+-----------------------------------------------------------------------------
+  3-ReinitIonicPotentials: GetNlop                  0.01                 inf
+  3-ReinitIonicPotentials: GetWeight                0.01                 inf
+  3-ReinitIonicPotentials: get_QI                   0.00                 inf
+  3-ReinitIonicPotentials: get_qqq                  0.00                 inf
+  3-ReinitIonicPotentials: init_nuc                 0.24                 inf
+
+5-Functional                                        0.00                 inf
+
+CubeFile output                                     0.03                 inf
+
+GlobalSums                                          0.06                 inf
+
+Init                                                1.59                 inf
+
+Orbital                                             0.01                 inf
+-----------------------------------------------------------------------------
+  Orbital: phase and set                            0.01                 inf
+  Orbital: proj cal                                 0.01                 inf
+
+Weight                                              0.01                 inf
+
+radial beta                                         0.37                 inf
+
+
+------------------------- TIMING INFORMATION FOR THREADS  -------------------
+
+                                           Min            Max            Avg

@@ -14,7 +14,6 @@
 #include "Utilities/for_testing/Catch2Approx.h"
 
 
-
 #include "ProjectData.h"
 
 #include <stdio.h>
@@ -34,7 +33,6 @@
 #include "AFQMC/SlaterDeterminantOperations/mixed_density_matrix.hpp"
 
 using std::complex;
-using std::cout;
 using std::endl;
 using std::string;
 
@@ -65,9 +63,6 @@ using namespace afqmc;
 /*
 TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
 {
-  Communicate *c;
-  //c = OHMMS::Controller;
-
   const int NMO = 4;
   const int NEL = 3;
 
@@ -208,7 +203,7 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
 TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
 {
 
-  Communicate *c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   using boost::mpi3::shared_communicator;
   auto world = boost::mpi3::environment::get_world_instance();
@@ -308,7 +303,7 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
   array_ref g_ref_2(v_ref_2.data(),{3,3});
   array_ref gc_ref_2(vc_ref_2.data(),{2,3});
 
-  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(iextensions<1u>{NMO*(NMO+NEL)},
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(extents_t<1u>{NMO*(NMO+NEL)},
                                                             shared_allocator<Type>{node});  
 
   array_ref G(to_address(SMbuff.base()),{NMO,NMO});
@@ -350,7 +345,7 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
                           Gc({0,2},{0,3}),node,true);
   check(Gc({0,2},{0,3}),gc_ref_2);
 
-  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO*(NMO+NEL)},
+  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(extents_t<1u>{NMO*(NMO+NEL)},
                                                             shared_allocator<Type>{node_});
 
   array_ref G2(to_address(SMbuff2.base()),{NMO,NMO});
@@ -545,7 +540,7 @@ void SDetOps_complex_serial(Allocator alloc, BufferManager b)
     RA.reserve(3);
     RB.reserve(3);
     Gwv.reserve(3);
-    boost::multi::array<Type, 1, Allocator> ovlp(iextensions<1u>{3});
+    boost::multi::array<Type, 1, Allocator> ovlp(extents_t<1u>{3});
     for (int i = 0; i < 3; i++)
     {
       RA.emplace_back(&Aref);
@@ -592,7 +587,7 @@ void SDetOps_complex_serial(Allocator alloc, BufferManager b)
     std::vector<decltype(&Bref)> RB;
     RA.reserve(3);
     RB.reserve(3);
-    boost::multi::array<Type, 1, Allocator> ovlp(iextensions<1u>{3});
+    boost::multi::array<Type, 1, Allocator> ovlp(extents_t<1u>{3});
     for (int i = 0; i < 3; i++)
     {
       RA.emplace_back(&Aref);
@@ -738,7 +733,7 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   boost::multi::array_ref<Type, 2> g_ref_2(v_ref_2.data(), {3, 3});
   boost::multi::array_ref<Type, 2> gc_ref_2(vc_ref_2.data(), {2, 3});
 
-  boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff(iextensions<1u>{NMO * (NMO + NEL)},
+  boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff(extents_t<1u>{NMO * (NMO + NEL)},
                                                               shared_allocator<Type>{node});
 
   array_ref G(to_address(SMbuff.base()), {NMO, NMO});
@@ -776,7 +771,7 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   ov_ = SDet.MixedDensityMatrix(A({0, 2}, {0, 3}), B_, Gc({0, 2}, {0, 3}), 0.0, node, true);
   check(Gc({0, 2}, {0, 3}), gc_ref_2);
 
-  boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO * (NMO + NEL)},
+  boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff2(extents_t<1u>{NMO * (NMO + NEL)},
                                                                shared_allocator<Type>{node_});
 
   array_ref G2(to_address(SMbuff2.base()), {NMO, NMO});
@@ -906,7 +901,7 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   boost::multi::array_ref<Type, 2> g_ref_2(v_ref_2.data(), {3, 3});
   boost::multi::array_ref<Type, 2> gc_ref_2(vc_ref_2.data(), {2, 3});
 
-  boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff(iextensions<1u>{NMO * (NMO + NEL)},
+  boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff(extents_t<1u>{NMO * (NMO + NEL)},
                                                               shared_allocator<Type>{node});
 
   array_ref G(to_address(SMbuff.base()), {NMO, NMO});
@@ -932,7 +927,7 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   ov_ = SDet.MixedDensityMatrix(Acsr[{0, 2, 0, 3}], B_, Gc({0, 2}, {0, 3}), 0.0, node, true);
   check(Gc({0, 2}, {0, 3}), gc_ref_2);
 
-  boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO * (NMO + NEL)},
+  boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff2(extents_t<1u>{NMO * (NMO + NEL)},
                                                                shared_allocator<Type>{node_});
 
   array_ref G2(to_address(SMbuff2.base()), {NMO, NMO});
