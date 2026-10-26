@@ -92,10 +92,10 @@ foreach(ranks 1 2)
   endif()
   list(APPEND abort_command $<TARGET_FILE:test_hamiltonian_ham>)
   add_test(NAME ${abort_test}
-           COMMAND ${CMAKE_COMMAND} "-DTEST_COMMAND=${abort_command}"
-                   -P "${CMAKE_CURRENT_SOURCE_DIR}/check_ecp_builder_abort.cmake")
+           COMMAND ${CMAKE_COMMAND} -E env ${abort_command} "[.ecp_abort]" --turn-on-printout)
   set_tests_properties(${abort_test} PROPERTIES WORKING_DIRECTORY "${abort_dir}" TIMEOUT 45
-                       PROCESSORS ${ranks} ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "unit")
+                       PROCESSORS ${ranks} ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "unit"
+                       PASS_REGULAR_EXPRESSION "Fatal Error\\. Aborting at ECPotentialBuilder::useXmlFormat failed:")
   set_test_gpu_resources(${abort_test})
 endforeach()
 
