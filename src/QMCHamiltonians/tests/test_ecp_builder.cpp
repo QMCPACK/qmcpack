@@ -84,8 +84,7 @@ TEST_CASE("ECPotentialBuilder validates ion species metadata", "[hamiltonian][ec
   }
   SECTION("unsupported pseudo format")
   {
-    format     = "unsupported";
-    diagnostic = "Failed to add pseudopotential for element C";
+    format = "unsupported";
   }
 
   SECTION("missing charge and atomic number")
@@ -123,21 +122,15 @@ TEST_CASE("ECPotentialBuilder validates ion species metadata", "[hamiltonian][ec
   }
   else
   {
-    try
-    {
-      builder.put(doc.getRoot());
-      FAIL("Invalid ECP input must throw UniformCommunicateError");
-    }
-    catch (const UniformCommunicateError& error)
-    {
-      const std::string message(error.what());
-      CHECK(message.find("ECPotentialBuilder::useXmlFormat failed:") != std::string::npos);
-      CHECK(message.find("Failed to add pseudopotential for element " + element) != std::string::npos);
-      if (!diagnostic.empty())
-        CHECK(message.find(diagnostic) != std::string::npos);
-      if (!add_charge && atomic_attribute.empty())
-        CHECK(message.find("Ion species C needs parameter 'atomicnumber'") != std::string::npos);
-    }
+    std::string expected_message = "ECPotentialBuilder::useXmlFormat failed:\n";
+    if (!diagnostic.empty())
+      expected_message += "  " + diagnostic + "\n";
+    if (!add_charge && atomic_attribute.empty())
+      expected_message += "  Ion species C needs parameter 'atomicnumber'\n";
+    expected_message += "  Failed to add pseudopotential for element " + element + "\n";
+
+    CHECK_THROWS_MATCHES(builder.put(doc.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message(expected_message));
     CHECK(hamiltonian.size() == 0);
   }
 }
