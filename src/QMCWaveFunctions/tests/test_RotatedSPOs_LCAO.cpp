@@ -220,7 +220,7 @@ const std::string identity_coeff = R"(
 // No Jastrow, rotation angle of 0. Identity coefficients.
 TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool pp(c);
@@ -291,7 +291,7 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
 // No Jastrow, rotation angle theta1=0.1 and theta2=0.2 from identity coefficients
 TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool pp(c);
@@ -345,7 +345,7 @@ TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
 // Rotation angle of 0 and add Jastrow factory
 TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool pp(c);
@@ -462,7 +462,7 @@ const std::string coeff_rot_by_point2 = R"(
 
 TEST_CASE("Rotated LCAO WF1, MO coeff rotated, zero angle", "[qmcapp]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool pp(c);
@@ -523,7 +523,7 @@ const std::string coeff_rot_by_point05 = R"(
 
 TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool pp(c);
@@ -581,7 +581,7 @@ TEST_CASE("Rotated LCAO rotation consistency", "[qmcapp]")
   using ValueType   = QMCTraits::ValueType;
   using ValueMatrix = SPOSet::ValueMatrix;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool pp(c);
@@ -723,7 +723,7 @@ TEST_CASE("Rotated LCAO rotation consistency", "[qmcapp]")
 // Uses single determinant code path
 TEST_CASE("Rotated LCAO Be single determinant", "[qmcapp]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool pp(c);
@@ -787,7 +787,7 @@ TEST_CASE("Rotated LCAO Be single determinant", "[qmcapp]")
 // Uses multi-determinant code path with one determinant
 TEST_CASE("Rotated LCAO Be multi determinant with one determinant", "[qmcapp]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool pp(c);
@@ -851,7 +851,7 @@ TEST_CASE("Rotated LCAO Be multi determinant with one determinant", "[qmcapp]")
 // Uses multi-determinant code path with two determinants
 TEST_CASE("Rotated LCAO Be two determinant", "[qmcapp]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool pp(c);

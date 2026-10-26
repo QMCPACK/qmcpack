@@ -81,8 +81,8 @@ jobs:
             Clang22-NoMPI-ASan-Complex,
             Clang22-NoMPI-UBSan-Real,
             Clang22-NoMPI-Sandbox-ASan-Real,
-            Clang22-MPI-Real,
-            Clang22-MPI-Complex,
+            Clang22-MPI-AFQMC-Real,
+            Clang22-MPI-AFQMC-Complex,
             Clang22-NoMPI-Offload-Real,
             Clang22-NoMPI-Offload-Complex,
           ]

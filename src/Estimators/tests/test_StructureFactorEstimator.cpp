@@ -127,7 +127,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   auto ref_psets = makeRefVector<ParticleSet>(psets);
   RefVectorWithLeader<ParticleSet> rvwl_psets(ref_psets[0], ref_psets);
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
 
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);

@@ -17,6 +17,7 @@
 #include <complex>
 #include "hdf/hdf_archive.h"
 #include "Utils.hpp"
+#include "Message/AppAbort.h"
 
 namespace qmcplusplus
 {

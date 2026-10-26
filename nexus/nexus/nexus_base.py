@@ -40,7 +40,6 @@ from typing import Literal, TypeAlias
 
 from .basisset import BasisSets
 from .developer import DevBase, nxs_print, obj
-from .memory import resident
 from .nexus_version import nexus_version
 from .utilities import path_string
 
@@ -376,10 +375,6 @@ class NexusCore(DevBase):
     wrote_something   = False # for pretty printing
     working_directory = None
 
-    def mem_usage(self):
-        return int(resident()/1e6)
-    #end def mem_usage
-
     def nxs_print(self, *texts: str, n: int = 0, progress: bool = False):
         """Write text to standard output.
 
@@ -431,7 +426,7 @@ class NexusCore(DevBase):
         NexusCore.working_directory = os.getcwd()
         directory = path_string(directory)
 
-        self.nxs_print('\nEntering ' + directory, msg, n=2)
+        self.nxs_print(f'\nEntering {directory} {msg}', n=2)
         if changedir:
             os.chdir(directory)
 
