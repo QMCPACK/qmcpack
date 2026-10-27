@@ -25,10 +25,38 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
+    short-li2_sto-sj_dmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
+    Li2.STO.short
+    Li2.STO.short-batch.in.xml
+    1
+    16
+    TRUE
+    0
+    LI2STOSJS_VMC_SCALARS # VMC
+    2
+    LI2STOSJS_DMC_SCALARS # DMC
+  )
+
+  qmc_run_and_check(
     short-li2_sto-sj_dmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
     Li2.STO.short
     Li2.STO.short.in.xml
+    4
+    4
+    TRUE
+    0
+    LI2STOSJS_VMC_SCALARS # VMC
+    2
+    LI2STOSJS_DMC_SCALARS # DMC
+  )
+
+  qmc_run_and_check(
+    short-li2_sto-sj_dmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
+    Li2.STO.short
+    Li2.STO.short-batch.in.xml
     4
     4
     TRUE
@@ -49,6 +77,20 @@ if(NOT QMC_COMPLEX)
     "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
     Li2.STO.long
     Li2.STO.long.in.xml
+    1
+    16
+    TRUE
+    0
+    LI2STOSJL_VMC_SCALARS # VMC
+    2
+    LI2STOSJL_DMC_SCALARS # DMC
+  )
+
+  qmc_run_and_check(
+    long-li2_sto-sj_dmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
+    Li2.STO.long
+    Li2.STO.long-batch.in.xml
     1
     16
     TRUE

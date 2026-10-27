@@ -137,6 +137,20 @@ if(NOT QMC_COMPLEX)
     H4_OPT_SCALARS # OPT step 5
   )
 
+  if(NOT QMC_MIXED_PRECISION)
+    qmc_run_and_check(
+      short-H4-optbatch-OneShiftOnly
+      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+      H4-OneShiftOnly
+      optm-OneShiftOnly-batch.xml
+      16
+      1
+      ${SUCCESS_STATUS_MP}
+      5
+      H4_OPT_SCALARS # OPT step 5
+    )
+  endif()
+
   qmc_run_and_check(
     short-H4-opt-OneShiftOnly
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
