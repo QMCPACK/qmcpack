@@ -16,7 +16,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-chn_ae_cuspCorrection-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/CHN_ae"
-    vmc_short
     vmc_short.in.xml
     1
     16

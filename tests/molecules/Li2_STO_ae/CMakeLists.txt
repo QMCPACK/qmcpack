@@ -13,7 +13,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-li2_sto-sj_dmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
-    Li2.STO.short
     Li2.STO.short.in.xml
     1
     16
@@ -27,7 +26,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-li2_sto-sj_dmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
-    Li2.STO.short
     Li2.STO.short.in.xml
     4
     4
@@ -47,7 +45,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-li2_sto-sj_dmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
-    Li2.STO.long
     Li2.STO.long.in.xml
     1
     16

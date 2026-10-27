@@ -14,7 +14,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     long-diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD"
-    vmc_long
     vmc_long.in.xml
     1
     16
@@ -37,7 +36,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     short-diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD"
-    vmc_short
     vmc_short.in.xml
     1
     16

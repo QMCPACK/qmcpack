@@ -259,12 +259,59 @@ if(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
   endfunction()
 else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
+  # Extract the output prefix from a QMCPACK XML input.  Keeping this value
+  # coupled to the input prevents scalar checks from reading another run's
+  # output when an input is renamed or copied.
+  function(GET_QMC_PROJECT_ID INPUT_FILE PROJECT_ID)
+    if(NOT EXISTS "${INPUT_FILE}")
+      message(FATAL_ERROR "QMCPACK input file not found: ${INPUT_FILE}")
+    endif()
+
+    get_filename_component(INPUT_EXTENSION "${INPUT_FILE}" LAST_EXT)
+    if(INPUT_EXTENSION STREQUAL ".txt")
+      get_filename_component(INPUT_DIRECTORY "${INPUT_FILE}" DIRECTORY)
+      file(STRINGS "${INPUT_FILE}" INPUT_FILES)
+      foreach(NESTED_INPUT IN LISTS INPUT_FILES)
+        get_qmc_project_id("${INPUT_DIRECTORY}/${NESTED_INPUT}" NESTED_PROJECT_ID)
+        if(DEFINED PROJECT_ID_VALUE AND NOT PROJECT_ID_VALUE STREQUAL NESTED_PROJECT_ID)
+          message(FATAL_ERROR "QMCPACK input list contains different project ids: ${INPUT_FILE}")
+        endif()
+        set(PROJECT_ID_VALUE "${NESTED_PROJECT_ID}")
+      endforeach()
+      if(NOT DEFINED PROJECT_ID_VALUE)
+        message(FATAL_ERROR "QMCPACK input list is empty: ${INPUT_FILE}")
+      endif()
+      set(${PROJECT_ID}
+          "${PROJECT_ID_VALUE}"
+          PARENT_SCOPE)
+      return()
+    endif()
+
+    file(READ "${INPUT_FILE}" INPUT_XML)
+    string(REGEX MATCH "<project[ \t\r\n]+[^>]*>" PROJECT_TAG "${INPUT_XML}")
+    if(NOT PROJECT_TAG)
+      message(FATAL_ERROR "No project element found in QMCPACK input: ${INPUT_FILE}")
+    endif()
+
+    string(REGEX MATCH "(^|[ \t\r\n])id[ \t\r\n]*=[ \t\r\n]*\"[^\"]+\"" PROJECT_ID_ATTRIBUTE "${PROJECT_TAG}")
+    if(NOT PROJECT_ID_ATTRIBUTE)
+      string(REGEX MATCH "(^|[ \t\r\n])id[ \t\r\n]*=[ \t\r\n]*'[^']+'" PROJECT_ID_ATTRIBUTE "${PROJECT_TAG}")
+    endif()
+    if(NOT PROJECT_ID_ATTRIBUTE)
+      message(FATAL_ERROR "No project id found in QMCPACK input: ${INPUT_FILE}")
+    endif()
+
+    string(REGEX REPLACE "^[^=]*=[ \t\r\n]*['\"]([^'\"]+)['\"]$" "\\1" PROJECT_ID_VALUE "${PROJECT_ID_ATTRIBUTE}")
+    set(${PROJECT_ID}
+        "${PROJECT_ID_VALUE}"
+        PARENT_SCOPE)
+  endfunction()
+
   # Add a test run and associated scalar checks
   # ---required inputs---
   # BASE_NAME - name of test (number of MPI processes, number of threads, and value to check (if applicable)
   #             will be appended to get the full test name)
   # BASE_DIR - source location of test input files
-  # PREFIX - prefix for output files
   # INPUT_FILE - XML input file to QMCPACK
   # PROCS - number of MPI processes
   # THREADS - number of OpenMP threads
@@ -283,11 +330,11 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     QMC_RUN_AND_CHECK
     BASE_NAME
     BASE_DIR
-    PREFIX
     INPUT_FILE
     PROCS
     THREADS
     SHOULD_SUCCEED)
+    get_qmc_project_id("${BASE_DIR}/${INPUT_FILE}" PREFIX)
     # Map from name of check to appropriate flag for check_scalars.py
     list(
       APPEND
@@ -440,7 +487,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
   # BASE_NAME - name of test (number of MPI processes, number of threads, and value to check (if applicable)
   #             will be appended to get the full test name)
   # BASE_DIR - source location of test input files
-  # PREFIX - prefix for output files
   # INPUT_FILE - XML input file to QMCPACK
   # PROCS - number of MPI processes (default: 1)
   # THREADS - number of OpenMP threads (default: 1)
@@ -455,7 +501,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     set(ONE_VALUE_ARGS
         BASE_NAME
         BASE_DIR
-        PREFIX
         INPUT_FILE
         PROCS
         THREADS
@@ -479,8 +524,8 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
     set(BASE_NAME ${QRC_BASE_NAME})
     set(BASE_DIR ${QRC_BASE_DIR})
-    set(PREFIX ${QRC_PREFIX})
     set(INPUT_FILE ${QRC_INPUT_FILE})
+    get_qmc_project_id("${BASE_DIR}/${INPUT_FILE}" PREFIX)
 
     set(EQUIL 2)
     if(DEFINED QRC_EQUILIBRATION)

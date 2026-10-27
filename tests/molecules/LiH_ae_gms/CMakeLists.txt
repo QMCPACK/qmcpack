@@ -15,7 +15,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_ae_gms-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
-    vmc_short_noj
     vmc_short_noj.in.xml
     1
     16
@@ -31,7 +30,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-LiH_ae_qp-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
-    vmc_long_noj
     vmc_long_noj.in.xml
     1
     16

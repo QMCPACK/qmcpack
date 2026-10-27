@@ -16,7 +16,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-O_ae_uhf_pyscf-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/O_ae_pyscf_UHF"
-    vmc_short_noj
     vmc_short_noj.in.xml
     1
     16
@@ -32,7 +31,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-O_ae_uhf_pyscf-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/O_ae_pyscf_UHF"
-    vmc_long_noj
     vmc_long_noj.in.xml
     1
     16

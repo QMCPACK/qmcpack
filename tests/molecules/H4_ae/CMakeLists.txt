@@ -8,7 +8,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-opt-linear
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-linear
     optm-linear.xml
     16
     1
@@ -19,7 +18,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-optbatch-linear
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-linear
     optm-batch-linear.xml
     16
     1
@@ -32,7 +30,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-opt-linear-rescale
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-linear-rescale
     optm-linear-rescale.xml
     4
     4
@@ -43,7 +40,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-optbatch-linear-rescale
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-linear-rescale
     optm-batch-linear-rescale.xml
     4
     4
@@ -56,7 +52,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-opt-linear-linemin
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-linear-linemin
     optm-linear-linemin.xml
     16
     1
@@ -67,7 +62,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-optbatch-linear-linemin
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-linear-linemin
     optm-batch-linear-linemin.xml
     16
     1
@@ -128,7 +122,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-opt-OneShiftOnly
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-OneShiftOnly
     optm-OneShiftOnly.xml
     16
     1
@@ -140,7 +133,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-opt-OneShiftOnly
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-OneShiftOnly
     optm-OneShiftOnly.xml
     1
     16
@@ -152,7 +144,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-optbatch-OneShiftOnly
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-OneShiftOnly
     optm-batch-OneShiftOnly.xml
     1
     16
@@ -164,7 +155,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-optbatch-OneShiftOnly
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-OneShiftOnly
     optm-batch-OneShiftOnly.xml
     2
     4
@@ -176,7 +166,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-optbatch-OneShiftOnly
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-OneShiftOnly
     optm-batch-OneShiftOnly.xml
     3
     2
@@ -188,7 +177,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-optbatch-OneShiftOnly-general
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-OneShiftOnly-general
     optm-batch-OneShiftOnly-general.xml
     1
     16
@@ -201,7 +189,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-opt-OneShiftOnly-onlyjas
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-OneShiftOnly
     optm-OneShiftOnly-onlyjas.xml
     1
     16
@@ -212,7 +199,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-optbatch-OneShiftOnly-onlyjas
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-OneShiftOnly
     optm-batch-OneShiftOnly-onlyjas.xml
     1
     16
@@ -226,7 +212,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-opt-OneShiftOnly-onlymsd
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-OneShiftOnly
     optm-OneShiftOnly-onlymsd.xml
     1
     16
@@ -237,7 +222,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-optbatch-OneShiftOnly-onlymsd
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-OneShiftOnly
     optm-batch-OneShiftOnly-onlymsd.xml
     1
     16
@@ -250,7 +234,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-optbatch-OneShiftOnly-multistep
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-OneShiftOnly
     optm-OneShiftOnly-multistep.xml
     1
     16
@@ -262,7 +245,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     deterministic-input_check-invalid_variational_subset
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
-    H4-OneShiftOnly
     det-input-check-optm-invalid-subset.xml
     2
     1

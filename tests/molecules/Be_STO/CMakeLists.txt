@@ -11,8 +11,6 @@ if(NOT QMC_COMPLEX)
     short-Be_STO-vmc
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/Be_STO"
-    PREFIX
-    be_vmc
     INPUT_FILE
     be_sto_vmc.in.xml
     PROCS
@@ -29,8 +27,6 @@ if(NOT QMC_COMPLEX)
     short-Be_STO-vmc-nodrift
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/Be_STO"
-    PREFIX
-    be_vmc_nodrift
     INPUT_FILE
     be_sto_nodrift_vmc.in.xml
     PROCS
@@ -47,8 +43,6 @@ if(NOT QMC_COMPLEX)
     short-Be_STO-vmc-legacy
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/Be_STO"
-    PREFIX
-    be_vmc_legacy
     INPUT_FILE
     be_sto_vmc_legacy.in.xml
     PROCS
@@ -71,8 +65,6 @@ if(NOT QMC_COMPLEX)
       short-Be_STO-optbatch_orb
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/Be_STO"
-      PREFIX
-      be_optbatch
       INPUT_FILE
       be_optbatch.in.xml
       PROCS

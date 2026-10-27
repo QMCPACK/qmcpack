@@ -12,7 +12,6 @@ list(APPEND DIAMOND_AFQMC_SCALARS_CHOL "EnergyEstim__nume_real" "-10.55201 0.003
 qmc_run_and_check(
   "short-diamondC_afqmc_1x1x1_complex_cholesky"
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
-  qmc_short_chol
   qmc_short_chol.in.xml
   16
   1
@@ -25,7 +24,6 @@ list(APPEND LONG_DIAMOND_AFQMC_SCALARS_CHOL "EnergyEstim__nume_real" "-10.55201 
 qmc_run_and_check(
   "long-diamondC_afqmc_1x1x1_complex_cholesky"
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
-  qmc_long_chol
   qmc_long_chol.in.xml
   16
   1
@@ -47,7 +45,6 @@ list(APPEND DIAMOND_AFQMC_SCALARS_THC "EnergyEstim__nume_real" "-10.33408 0.0043
 qmc_run_and_check(
   "short-diamondC_afqmc_1x1x1_complex_thc"
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
-  qmc_short_thc
   qmc_short_thc.in.xml
   16
   1
@@ -60,7 +57,6 @@ list(APPEND LONG_DIAMOND_AFQMC_SCALARS_THC "EnergyEstim__nume_real" "-10.33408 0
 qmc_run_and_check(
   "long-diamondC_afqmc_1x1x1_complex_thc"
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
-  qmc_long_thc
   qmc_long_thc.in.xml
   16
   1

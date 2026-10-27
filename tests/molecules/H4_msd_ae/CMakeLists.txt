@@ -9,7 +9,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-msd-opt_orb
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_msd_ae"
-    H4
     H4_msd_opt_orb.xml
     16
     1
@@ -20,7 +19,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H4-msd-optbatch_orb
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_msd_ae"
-    H4
     H4_msd_optbatch_orb.xml
     16
     1

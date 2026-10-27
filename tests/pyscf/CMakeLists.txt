@@ -27,7 +27,6 @@ set(THIS_TEST_NAME "${PYSCF_TEST_NAME}-diamondC_1x1x1_pp-vmc_gaussian_sdj")
 qmc_run_and_check(
   ${THIS_TEST_NAME}
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
-  qmc_short
   qmc_short.in.xml
   1
   16
@@ -56,7 +55,6 @@ set(THIS_TEST_NAME "${PYSCF_TEST_NAME}-diamondC_1x1x1_pp-vmc_gaussian-bspline_sd
 qmc_run_and_check(
   ${THIS_TEST_NAME}
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
-  qmc_short-bspline
   qmc_short-bspline.in.xml
   1
   16

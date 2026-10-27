@@ -54,7 +54,6 @@ else()
   qmc_run_and_check(
     deterministic-He_ae-opt-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt
     det_He_opt.xml
     1
     1
@@ -66,7 +65,6 @@ else()
   qmc_run_and_check(
     deterministic-He_ae-opt-vmc-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_mwalkers
     det_He_opt_mwalkers.xml
     1
     16
@@ -78,7 +76,6 @@ else()
   qmc_run_and_check(
     deterministic-He_ae-opt-vmc-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_mwalkers
     det_He_opt_mwalkers.xml
     2
     3
@@ -140,7 +137,6 @@ else()
   qmc_run_and_check(
     deterministic-He_ae-optbatch-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_optbatch
     det_He_optbatch.xml
     1
     1
@@ -152,7 +148,6 @@ else()
   qmc_run_and_check(
     deterministic-He_ae-optbatch-vmcbatch-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_optbatch_mwalkers
     det_He_optbatch_mwalkers.xml
     1
     16
@@ -164,7 +159,6 @@ else()
   qmc_run_and_check(
     deterministic-He_ae-optbatch-vmcbatch-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_optbatch_mwalkers
     det_He_optbatch_mwalkers.xml
     2
     3

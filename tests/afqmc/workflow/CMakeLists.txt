@@ -51,7 +51,6 @@ function(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
   qmc_run_and_check(
     ${TESTNAME}
     ${input_dir}
-    qmc
     afqmc.xml
     16
     1
