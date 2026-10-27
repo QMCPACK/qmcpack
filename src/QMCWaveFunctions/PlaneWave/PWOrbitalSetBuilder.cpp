@@ -28,7 +28,7 @@
 
 namespace qmcplusplus
 {
-PWOrbitalSetBuilder::PWOrbitalSetBuilder(ParticleSet& p, Communicate& comm, xmlNodePtr cur)
+PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate& comm, xmlNodePtr cur)
     : SPOSetBuilder("Planewave", comm),
       targetPtcl(p),
       rootNode(cur),
@@ -170,8 +170,6 @@ bool PWOrbitalSetBuilder::createPWBasis()
   if (!pw::isRealCompatible(superTwist))
     throw std::runtime_error("Requested plane-wave supercell twist requires a complex QMCPACK build");
 #endif
-  targetPtcl.setTwist(superTwist);
-
   TwistAngle = twistAngles[includedKPoints.front()];
   if (!myBasisSet)
     myBasisSet = std::make_unique<PWBasis>(TwistAngle);

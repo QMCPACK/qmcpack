@@ -247,7 +247,8 @@ TEST_CASE("PlaneWave tiled SPO from HDF for diamond C", "[wavefunction]")
   REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
-  PWOrbitalSetBuilder pw_builder(elec, c, root);
+  const ParticleSet& target = elec;
+  PWOrbitalSetBuilder pw_builder(target, c, root);
   auto spo = pw_builder.createSPOSet(xmlFirstElementChild(root));
   REQUIRE(spo);
   CHECK(spo->getClassName() == "CompositeSPOSet");
@@ -292,7 +293,7 @@ TEST_CASE("PlaneWave tiled SPO from HDF for diamond C", "[wavefunction]")
   Libxml2Document smaller_doc;
   REQUIRE(smaller_doc.parseFromString(smaller_spo_input));
   xmlNodePtr smaller_root = smaller_doc.getRoot();
-  PWOrbitalSetBuilder smaller_builder(elec, c, smaller_root);
+  PWOrbitalSetBuilder smaller_builder(target, c, smaller_root);
   auto smaller_spo = smaller_builder.createSPOSet(xmlFirstElementChild(smaller_root));
   REQUIRE(smaller_spo);
   CHECK(smaller_spo->getOrbitalSetSize() == 3);
@@ -355,12 +356,13 @@ TEST_CASE("PlaneWave SPO from HDF for LiH X", "[wavefunction]")
   xmlNodePtr pw1  = xmlFirstElementChild(root);
 
 
-  PWOrbitalSetBuilder pw_builder(elec, c, root);
+  const ParticleSet& target = elec;
+  const auto initial_twist = target.getTwist();
+  PWOrbitalSetBuilder pw_builder(target, c, root);
   auto spo = pw_builder.createSPOSet(pw1);
   REQUIRE(spo);
-  CHECK(elec.getTwist()[0] == Approx(0.5));
-  CHECK(elec.getTwist()[1] == Approx(0.0));
-  CHECK(elec.getTwist()[2] == Approx(0.0));
+  for (int dimension = 0; dimension < OHMMS_DIM; ++dimension)
+    CHECK(target.getTwist()[dimension] == Approx(initial_twist[dimension]));
 
   const int orbSize = spo->getOrbitalSetSize();
   elec.update();

@@ -44,7 +44,7 @@ private:
 #endif
 
   /// target particle set
-  ParticleSet& targetPtcl;
+  const ParticleSet& targetPtcl;
   ///xml node for determinantset
   xmlNodePtr rootNode{nullptr};
   ///input twist angle
@@ -72,7 +72,7 @@ private:
 
 public:
   ///constructor
-  PWOrbitalSetBuilder(ParticleSet& p, Communicate& comm, xmlNodePtr cur);
+  PWOrbitalSetBuilder(const ParticleSet& p, Communicate& comm, xmlNodePtr cur);
   ~PWOrbitalSetBuilder() override;
 
   /// create an sposet from xml and save the resulting SPOSet
