@@ -31,8 +31,6 @@
 #include "Utilities/qmc_common.h"
 #include "Concurrency/OpenMP.h"
 
-#include <array>
-
 void output_hardware_info(Communicate& comm, Libxml2Document& doc, xmlNodePtr root);
 
 /** @file qmcapp.cpp
@@ -198,12 +196,8 @@ int main(int argc, char** argv)
       qmc_common.setupFilenameInfixForEnsembleJobs(comm_job->getGroupID(), comm_job->getNumGroups());
     }
 
-    Communicate& qmcComm = inputs.size() > 1 ? *comm_job : *OHMMS::Controller;
-    std::stringstream logname;
-    int inpnum          = (inputs.size() > 1) ? qmcComm.getGroupID() : 0;
-    std::string myinput = inputs[qmcComm.getGroupID()];
-    myinput             = myinput.substr(0, myinput.size() - 4);
-    logname << myinput;
+    Communicate& qmcComm          = inputs.size() > 1 ? *comm_job : *OHMMS::Controller;
+    const std::string& input_name = inputs.size() > 1 ? inputs[qmcComm.getGroupID()] : inputs[0];
 
     if (qmcComm.rank() != 0)
     {
@@ -212,10 +206,9 @@ int main(int argc, char** argv)
     }
     if (inputs.size() > 1 && qmcComm.rank() == 0)
     {
-      std::array<char, 128> fn;
-      if (std::snprintf(fn.data(), fn.size(), "%s.g%03d.qmc", logname.str().c_str(), qmcComm.getGroupID()) < 0)
-        throw std::runtime_error("Error generating filename");
-      infoSummary.redirectToFile(fn.data());
+      const std::string fn =
+          input_name.substr(0, input_name.size() - 4) + qmc_common.get_filename_infix_for_ensemble_jobs() + ".qmc";
+      infoSummary.redirectToFile(fn);
       infoLog.redirectToSameStream(infoSummary);
       infoError.redirectToSameStream(infoSummary);
     }
@@ -226,8 +219,6 @@ int main(int argc, char** argv)
     app_log() << std::endl;
 
     auto qmc = std::make_unique<QMCMain>(qmcComm);
-
-    const std::string& input_name = inputs.size() > 1 ? inputs[qmcComm.getGroupID()] : inputs[0];
 
     try
     {
