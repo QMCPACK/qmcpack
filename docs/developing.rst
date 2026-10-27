@@ -785,14 +785,53 @@ is used. Messages that come from only one or a few MPI ranks should use ``std::c
 Stopping or Aborting QMCPACK
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If the code needs to be stopped after an unrecoverable error that happens uniformly on all the MPI ranks, a bad input for example,
-avoid using ``app_err`` together with ``Communicate::abort(msg)`` or ``APP_ABORT(msg)`` because any MPI rank other than rank 0 may
-stop the whole run before rank 0 is able to print out the error message. To secure the printout before stopping, use
-``Communicate::barrier_and_abort(msg)`` if an MPI communicator is available or throw a custom exception ``UniformCommunicateError``
-and capture it where ``Communicate::barrier_and_abort()`` can be used. Note that ``UniformCommunicateError`` can only be used for
-uniform error, improper use may cause QMCPACK hanging.
+If the code needs to be stopped after an unrecoverable error that happens uniformly on all the MPI ranks
+(such as invalid XML input or incompatible options), avoid using ``app_err`` together with
+``Communicate::abort(msg)`` or ``APP_ABORT(msg)`` because any MPI rank other than rank 0 may abort
+the entire run before rank 0 can flush the error message.
 
-In addition, avoid directly calling C function ``abort()``, ``exit()`` and ``MPI_Abort()`` for stopping the code.
+To ensure the error message is printed before terminating:
+
+* **Uniform errors**: Throw a custom exception ``UniformCommunicateError(msg)`` and capture it near the
+  bottom of the call stack (the outermost driver layer) where ``Communicate::barrier_and_abort(msg)`` can be
+  called on the matching communicator.
+
+  - **Preserving unit testability**: Do not call ``barrier_and_abort()`` directly inside builders, factories,
+    or parsers. Throwing ``UniformCommunicateError`` allows unit tests to catch and verify errors with
+    ``CHECK_THROWS_AS`` without terminating the test runner.
+  - **Communicator scoping**: The exception must be caught and aborted on the specific communicator
+    representing that execution context. In ensemble runs, for instance, errors within an individual
+    calculation must be caught and aborted on that job's sub-communicator (e.g., ``qmcComm``) rather than
+    escaping to the global communicator (``OHMMS::Controller``). Calling ``barrier_and_abort()`` on a broader
+    communicator while other ensemble groups are running will cause an MPI deadlock.
+  - **Contextual diagnostics**: Prepend high-level context (such as the parallel scope, ensemble job index,
+    and input file name) to ``ue.what()`` when constructing the abort message. Prepending avoids issues with
+    trailing periods or newlines in the original error string.
+
+* **Non-uniform errors**: If an error occurs on only one or a subset of MPI ranks (such as a local memory
+  allocation failure, invalid calculation state, or unexpected exception), do **not** use ``UniformCommunicateError``
+  or ``barrier_and_abort()``, as waiting on a barrier will hang the run until walltime expires.
+  Instead, throw a standard C++ exception such as ``std::runtime_error``. Avoid calling ``APP_ABORT`` directly
+  in library, parser, or algorithm code—throwing an exception preserves unit testability (allowing unit tests to verify
+  errors via ``CHECK_THROWS_AS``) and enables clean RAII stack unwinding. Unhandled exceptions will unwind the stack to
+  ``main()``, where the outer exception handler safely aborts the global communicator via ``APP_ABORT`` with the
+  failing rank ID prepended (e.g., ``APP_ABORT("Global rank " + std::to_string(OHMMS::Controller->rank()) + " Unhandled Exception: " + e.what())``).
+
+In addition, avoid calling ``APP_ABORT()`` in library code—it is reserved for terminating the global communicator at
+``main()``—and avoid directly calling C library functions ``abort()``, ``exit()``, and ``MPI_Abort()``.
+
+Architectural Rule of Thumb
+
++------------------------+-----------------------------------------+-----------------------------------------------+--------------------------------------------------------------+
+| Error Nature           | Low/Mid-Level Code                      | Outermost Boundary (``main()`` / Driver)      | Action on Failure                                            |
+|                        | (Parsers, Builders, Algorithms)         |                                               |                                                              |
++========================+=========================================+===============================================+==============================================================+
+| **Uniform Error**      | ``throw UniformCommunicateError(...)``  | ``catch (const UniformCommunicateError& ue)`` | ``comm->barrier_and_abort(...)`` on matching communicator    |
+| (all ranks)            |                                         |                                               |                                                              |
++------------------------+-----------------------------------------+-----------------------------------------------+--------------------------------------------------------------+
+| **Non-Uniform Error**  | ``throw std::runtime_error(...)``       | ``catch (const std::exception& e)``           | ``APP_ABORT("Global rank <id> ...")`` terminating            |
+| (one or some ranks)    |                                         |                                               | ``MPI_COMM_WORLD``                                           |
++------------------------+-----------------------------------------+-----------------------------------------------+--------------------------------------------------------------+
 
 Adding and using timers
 ~~~~~~~~~~~~~~~~~~~~~~~
