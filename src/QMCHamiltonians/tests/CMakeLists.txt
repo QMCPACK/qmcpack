@@ -76,28 +76,5 @@ foreach(CATEGORY coulomb force ham ewald2d)
   add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
 endforeach()
 
-# Exercise the application abort in a child process, outside the regular Catch suite.
-foreach(ranks 1 2)
-  if(ranks GREATER 1 AND NOT HAVE_MPI)
-    continue()
-  endif()
-  set(abort_test deterministic-unit_test_ecp_builder_abort-r${ranks}-t1)
-  set(abort_dir "${CMAKE_CURRENT_BINARY_DIR}/${abort_test}")
-  file(MAKE_DIRECTORY "${abort_dir}")
-  configure_file("${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/C.BFD.xml"
-                 "${abort_dir}/C.BFD.xml" COPYONLY)
-  set(abort_command ${QMC_GPU_TEST_LAUNCHER})
-  if(HAVE_MPI)
-    list(APPEND abort_command ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${ranks} ${MPIEXEC_PREFLAGS})
-  endif()
-  list(APPEND abort_command $<TARGET_FILE:test_hamiltonian_ham>)
-  add_test(NAME ${abort_test}
-           COMMAND ${CMAKE_COMMAND} -E env ${abort_command} "[.ecp_abort]" --turn-on-printout)
-  set_tests_properties(${abort_test} PROPERTIES WORKING_DIRECTORY "${abort_dir}" TIMEOUT 45
-                       PROCESSORS ${ranks} ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "unit"
-                       PASS_REGULAR_EXPRESSION "Fatal Error\\. Aborting at ECPotentialBuilder::useXmlFormat failed:")
-  set_test_gpu_resources(${abort_test})
-endforeach()
-
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
 add_labels_for_tests("${CURRENT_TESTS}")

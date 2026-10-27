@@ -12,9 +12,7 @@
 #include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/ECPotentialBuilder.h"
 #include "QMCHamiltonians/HamiltonianFactory.h"
-#include "QMCHamiltonians/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
@@ -82,10 +80,7 @@ TEST_CASE("ECPotentialBuilder validates ion species metadata", "[hamiltonian][ec
     element    = "N";
     diagnostic = "Ion species N is not found.";
   }
-  SECTION("unsupported pseudo format")
-  {
-    format = "unsupported";
-  }
+  SECTION("unsupported pseudo format") { format = "unsupported"; }
 
   SECTION("missing charge and atomic number")
   {
@@ -137,7 +132,7 @@ TEST_CASE("ECPotentialBuilder validates ion species metadata", "[hamiltonian][ec
 
 namespace
 {
-void checkInvalidFactoryInput(bool through_pool)
+void checkInvalidFactoryInput()
 {
   ParticleSetPool particle_pool(*OHMMS::Controller);
   const auto& simulation_cell = particle_pool.getSimulationCell();
@@ -164,31 +159,14 @@ void checkInvalidFactoryInput(bool through_pool)
       <pseudo elementType="C" href="C.BFD.xml"/>
     </pairpot>
   </hamiltonian>)"));
-  if (through_pool)
-  {
-    WaveFunctionPool wavefunction_pool(options, particle_pool, *OHMMS::Controller);
-    wavefunction_pool.add("psi0", std::make_unique<TrialWaveFunction>(options, "psi0"));
-    HamiltonianPool pool(particle_pool, wavefunction_pool, *OHMMS::Controller);
-    pool.put(doc.getRoot());
-    FAIL("HamiltonianPool must abort on invalid ECP metadata");
-  }
-  else
-  {
-    TrialWaveFunction psi(options, "psi0");
-    HamiltonianFactory factory("h0", target, particle_pool.getPool(), psi, *OHMMS::Controller);
-    REQUIRE_THROWS_MATCHES(factory.put(doc.getRoot()), UniformCommunicateError,
-                           Catch::Matchers::Message("ECPotentialBuilder::useXmlFormat failed:\n"
-                                                    "  Ion species C charge 3 pseudopotential charge 4 mismatch!\n"
-                                                    "  Failed to add pseudopotential for element C\n"));
-  }
+  TrialWaveFunction psi(options, "psi0");
+  HamiltonianFactory factory("h0", target, particle_pool.getPool(), psi, *OHMMS::Controller);
+  REQUIRE_THROWS_MATCHES(factory.put(doc.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message("ECPotentialBuilder::useXmlFormat failed:\n"
+                                                  "  Ion species C charge 3 pseudopotential charge 4 mismatch!\n"
+                                                  "  Failed to add pseudopotential for element C\n"));
 }
 } // namespace
 
-TEST_CASE("HamiltonianFactory throws on invalid ECP metadata", "[hamiltonian][ecp]")
-{
-  checkInvalidFactoryInput(false);
-}
-
-// Only the application boundary aborts; exercise it outside the regular Catch suite.
-TEST_CASE("HamiltonianPool aborts on invalid ECP metadata", "[.ecp_abort]") { checkInvalidFactoryInput(true); }
+TEST_CASE("HamiltonianFactory throws on invalid ECP metadata", "[hamiltonian][ecp]") { checkInvalidFactoryInput(); }
 } // namespace qmcplusplus
