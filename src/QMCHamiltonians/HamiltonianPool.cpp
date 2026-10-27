@@ -61,7 +61,14 @@ bool HamiltonianPool::put(xmlNodePtr cur)
         "\" already exists in the pool! Please set a different name using \"name\" attribute of \"hamiltonian\" node.");
 
   HamiltonianFactory ham_fac(id, *qp, ptcl_pool_.getPool(), psi_pool_.getWaveFunction(psi_name), myComm);
-  ham_fac.put(cur);
+  try
+  {
+    ham_fac.put(cur);
+  }
+  catch (const UniformCommunicateError& error)
+  {
+    myComm.barrier_and_abort(error.what());
+  }
   add(id, ham_fac.releaseHamiltonian());
   return true;
 }

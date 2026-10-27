@@ -22,6 +22,7 @@
 #include "QMCHamiltonians/L2Potential.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/UniformCommunicateError.h"
+#include <sstream>
 
 namespace qmcplusplus
 {
@@ -217,6 +218,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       int AtomicNumberIndex = ion_species.findAttribute("atomicnumber");
       if (AtomicNumberIndex == -1)
         AtomicNumberIndex = ion_species.findAttribute("atomic_number");
+      std::ostringstream errors;
       bool success = false;
       if (speciesIndex < ion_species.getTotalNum())
       {
@@ -272,7 +274,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
           }
           if (chargeIndex == -1)
           {
-            app_error() << "  Ion species " << ionName << " needs parameter \'charge\'" << std::endl;
+            errors << "  Ion species " << ionName << " needs parameter \'charge\'" << std::endl;
             success = false;
           }
           else
@@ -280,14 +282,14 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
             RealType ion_charge = ion_species(chargeIndex, speciesIndex);
             if (std::fabs(ion_charge - ecp.Zeff) > 1e-4)
             {
-              app_error() << "  Ion species " << ionName << " charge " << ion_charge << " pseudopotential charge "
-                          << ecp.Zeff << " mismatch!" << std::endl;
+              errors << "  Ion species " << ionName << " charge " << ion_charge << " pseudopotential charge "
+                     << ecp.Zeff << " mismatch!" << std::endl;
               success = false;
             }
           }
           if (AtomicNumberIndex == -1)
           {
-            app_error() << "  Ion species " << ionName << " needs parameter \'atomicnumber\'" << std::endl;
+            errors << "  Ion species " << ionName << " needs parameter \'atomicnumber\'" << std::endl;
             success = false;
           }
           else
@@ -295,8 +297,8 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
             int atomic_number = ion_species(AtomicNumberIndex, speciesIndex);
             if (atomic_number != ecp.AtomicNumber)
             {
-              app_error() << "  Ion species " << ionName << " atomicnumber " << atomic_number
-                          << " pseudopotential atomic-number " << ecp.AtomicNumber << " mismatch!" << std::endl;
+              errors << "  Ion species " << ionName << " atomicnumber " << atomic_number
+                     << " pseudopotential atomic-number " << ecp.AtomicNumber << " mismatch!" << std::endl;
               success = false;
             }
           }
@@ -304,12 +306,12 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       }
       else
       {
-        app_error() << "  Ion species " << ionName << " is not found." << std::endl;
+        errors << "  Ion species " << ionName << " is not found." << std::endl;
       }
       if (!success)
       {
-        app_error() << "  Failed to add pseudopotential for element " << ionName << std::endl;
-        myComm.barrier_and_abort("ECPotentialBuilder::useXmlFormat failed!");
+        errors << "  Failed to add pseudopotential for element " << ionName << std::endl;
+        throw UniformCommunicateError("ECPotentialBuilder::useXmlFormat failed:\n" + errors.str());
       }
     }
     cur = cur->next;
