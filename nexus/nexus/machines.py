@@ -1438,17 +1438,17 @@ class Workstation(Machine):
 
 
     def submit_job(self,job):
-        pad = self.enter(job.directory,msg=job.simid)
+        pad = self.enter(job.directory,msg=f"(Sim #{job.simid})")
         command = self.job_command(job,pad=pad)
         job.status = job.states.running
         process = obj()
         process.job = job
         if nexus_config.generate_only:
-            self.nxs_print(pad+'Would have executed:  '+command)
+            self.nxs_print(pad+'Would have executed:\n'+command.strip("\n"))
             job.system_id = job.internal_id
         else:
             if nexus_config.monitor:
-                self.nxs_print(pad+'Executing:  '+command)
+                self.nxs_print(pad+'Executing:\n'+command.strip("\n"))
                 job.out = open(job.outfile,'w')
                 job.err = open(job.errfile,'w')
                 p = Popen(command,env=job.env,stdout=job.out,stderr=job.err,shell=True)
@@ -1456,7 +1456,7 @@ class Workstation(Machine):
                 job.system_id = p.pid
             else:
                 command+=' >'+job.outfile+' 2>'+job.errfile+'&'
-                self.nxs_print(pad+'Executing:  '+command)
+                self.nxs_print(pad+'Executing:\n'+command.strip("\n"))
                 os.system(command)
                 job.system_id = job.internal_id
             #end if

@@ -426,7 +426,7 @@ class NexusCore(DevBase):
         NexusCore.working_directory = os.getcwd()
         directory = path_string(directory)
 
-        self.nxs_print('\nEntering ' + directory, msg, n=2)
+        self.nxs_print(f'\nEntering {directory} {msg}', n=2)
         if changedir:
             os.chdir(directory)
 
