@@ -60,8 +60,61 @@ TEST_CASE("ParallelExecutor<OPENMP> nested case", "[concurrency]")
   };
 #ifdef _OPENMP
   REQUIRE_THROWS_WITH(test_block(num_threads, nested_tasks, count),
-                      Catch::Matchers::ContainsSubstring("ParallelExecutor should not be used for nested openmp threading"));
+                      Catch::Matchers::ContainsSubstring("Unexpected exception thrown in threaded section: task_id 0") &&
+                          Catch::Matchers::ContainsSubstring("ParallelExecutor should not be used for nested openmp threading"));
 #endif
+}
+
+TEST_CASE("ParallelExecutor<OPENMP> exception handling and iteration skipping", "[concurrency]")
+{
+  ParallelExecutor<Executor::OPENMP> test_block;
+  const int total_tasks = 100;
+  int tasks_executed    = 0;
+
+  auto failing_task = [&tasks_executed](int task_id) {
+#pragma omp atomic update
+    tasks_executed++;
+    if (task_id == 0)
+      throw std::runtime_error("Task 0 failed deliberately");
+  };
+
+  // A single thread runs task 0 first, making the skipping of the remaining iterations deterministic.
+  const int saved_max_threads = omp_get_max_threads();
+  omp_set_num_threads(1);
+  REQUIRE_THROWS_WITH(test_block(total_tasks, failing_task),
+                      Catch::Matchers::ContainsSubstring("Unexpected exception thrown in threaded section: task_id 0") &&
+                          Catch::Matchers::ContainsSubstring("Task 0 failed deliberately"));
+  omp_set_num_threads(saved_max_threads);
+#ifdef _OPENMP
+  CHECK(tasks_executed == 1);
+#endif
+}
+
+TEST_CASE("ParallelExecutor<OPENMP> multiple concurrent exceptions", "[concurrency]")
+{
+  ParallelExecutor<Executor::OPENMP> test_block;
+  const int total_tasks = 100;
+
+  // Every task throws. Only the first one is rethrown, the others go to std::cerr.
+  auto failing_task = [](int /*task_id*/) { throw std::runtime_error("Task failed deliberately"); };
+
+  REQUIRE_THROWS_WITH(test_block(total_tasks, failing_task),
+                      Catch::Matchers::ContainsSubstring("Unexpected exception thrown in threaded section: task_id") &&
+                          Catch::Matchers::ContainsSubstring("Task failed deliberately"));
+}
+
+TEST_CASE("ParallelExecutor<OPENMP> non-std exception", "[concurrency]")
+{
+  ParallelExecutor<Executor::OPENMP> test_block;
+
+  auto failing_task = [](int task_id) {
+    if (task_id == 0)
+      throw 42;
+  };
+
+  REQUIRE_THROWS_WITH(test_block(10, failing_task),
+                      Catch::Matchers::ContainsSubstring("Unexpected exception thrown in threaded section: task_id 0") &&
+                          Catch::Matchers::ContainsSubstring("not derived from std::exception"));
 }
 
 } // namespace qmcplusplus
