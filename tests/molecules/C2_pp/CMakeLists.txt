@@ -25,6 +25,18 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
+    short-C2_pp_msdj-H5-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
+    C2_TZ_PP_SHORT_H5_MSDJ
+    vmcbatch_short_pp_msdj-H5.xml
+    1
+    16
+    TRUE
+    1
+    C2_PP_MSDJ_SHORT # VMC
+  )
+
+  qmc_run_and_check(
     short-C2_pp_msdj-H5-msd_no_precompute-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
     C2_TZ_PP_SHORT_H5_MSDJ
@@ -37,10 +49,34 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
+    short-C2_pp_msdj-H5-msd_no_precompute-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
+    C2_TZ_PP_SHORT_H5_MSDJ
+    vmcbatch_short_pp_msd_no_precompute_jas-H5.xml
+    1
+    16
+    TRUE
+    1
+    C2_PP_MSDJ_SHORT # VMC
+  )
+
+  qmc_run_and_check(
     short-C2_pp_msdj-XML-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
     C2_TZ_PP_SHORT_XML_MSDJ
     vmc_short_pp_msdj-XML.xml
+    1
+    16
+    TRUE
+    1
+    C2_PP_MSDJ_SHORT # VMC
+  )
+
+  qmc_run_and_check(
+    short-C2_pp_msdj-XML-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
+    C2_TZ_PP_SHORT_XML_MSDJ
+    vmcbatch_short_pp_msdj-XML.xml
     1
     16
     TRUE
@@ -65,10 +101,34 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
+    long-C2_pp_msdj-H5-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
+    C2_TZ_PP_LONG_H5_MSDJ
+    vmcbatch_long_pp_msdj-H5.xml
+    1
+    16
+    TRUE
+    1
+    C2_PP_MSDJ_LONG # VMC
+  )
+
+  qmc_run_and_check(
     long-C2_pp_msdj-XML-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
     C2_TZ_PP_LONG_XML_MSDJ
     vmc_long_pp_msdj-XML.xml
+    1
+    16
+    TRUE
+    1
+    C2_PP_MSDJ_LONG # VMC
+  )
+
+  qmc_run_and_check(
+    long-C2_pp_msdj-XML-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
+    C2_TZ_PP_LONG_XML_MSDJ
+    vmcbatch_long_pp_msdj-XML.xml
     1
     16
     TRUE

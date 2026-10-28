@@ -25,6 +25,18 @@ if(NOT QMC_COMPLEX)
     CHN_SHORT # VMC
   )
 
+  qmc_run_and_check(
+    short-chn_ae_cuspCorrection-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/CHN_ae"
+    vmc_short
+    vmcbatch_short.in.xml
+    1
+    16
+    TRUE
+    0
+    CHN_SHORT # VMC
+  )
+
 else()
   message(
     VERBOSE
