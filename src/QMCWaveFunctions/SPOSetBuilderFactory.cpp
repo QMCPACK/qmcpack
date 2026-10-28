@@ -145,7 +145,9 @@ std::unique_ptr<SPOSetBuilder> SPOSetBuilderFactory::createSPOSetBuilder(xmlNode
 #ifdef QMC_COMPLEX
       bb = std::make_unique<LCAOSpinorBuilder>(targetPtcl, *ions, myComm, rootNode);
 #else
-      PRE.error("Use of lcao spinors requires QMC_COMPLEX=1.  Rebuild with this option");
+      throw UniformCommunicateError(
+          "SPOSetBuilderFactory::createSPOSetBuilder Use of lcao spinors requires QMC_COMPLEX=1. Rebuild with this "
+          "option");
 #endif
     else
       bb = std::make_unique<LCAOrbitalBuilder>(targetPtcl, *ions, myComm, rootNode);

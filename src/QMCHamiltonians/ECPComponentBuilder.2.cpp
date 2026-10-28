@@ -211,9 +211,9 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   }
   else
   {
-    app_error() << "The local channel is specified in neither the pseudopotential file nor the input file.\n"
-                << "Please add \'l-local=\"n\"\' attribute to either file.\n";
-    throw UniformCommunicateError("ECPComponentBuilder::doBreakUp");
+    throw UniformCommunicateError(
+        "ECPComponentBuilder::doBreakUp: The local channel is specified in neither the pseudopotential file nor the "
+        "input file.\nPlease add 'l-local=\"n\"' attribute to either file.\n");
   }
 
   if (angListSO.size() != nso)
@@ -380,10 +380,7 @@ bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
 
   std::ifstream fin(fname.c_str(), std::ios_base::in);
   if (!fin)
-  {
-    app_error() << "Could not open file " << fname << std::endl;
-    throw UniformCommunicateError("ECPComponentBuilder::parseCasino");
-  }
+    throw UniformCommunicateError("ECPComponentBuilder::parseCasino: Could not open file " + fname);
   if (!pp_nonloc)
     pp_nonloc = std::make_unique<NonLocalECPComponent>();
   OhmmsAsciiParser aParser;
