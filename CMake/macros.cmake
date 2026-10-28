@@ -334,7 +334,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     PROCS
     THREADS
     SHOULD_SUCCEED)
-    get_qmc_project_id("${BASE_DIR}/${INPUT_FILE}" PREFIX)
     # Map from name of check to appropriate flag for check_scalars.py
     list(
       APPEND
@@ -422,6 +421,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     endif()
 
     if(TEST_ADDED AND SHOULD_SUCCEED)
+      get_qmc_project_id("${BASE_DIR}/${INPUT_FILE}" PREFIX)
       set(IDX0 0)
       foreach(V ${ARGN})
         math(EXPR MOD_IDX0 "${IDX0}%2")
@@ -525,7 +525,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     set(BASE_NAME ${QRC_BASE_NAME})
     set(BASE_DIR ${QRC_BASE_DIR})
     set(INPUT_FILE ${QRC_INPUT_FILE})
-    get_qmc_project_id("${BASE_DIR}/${INPUT_FILE}" PREFIX)
 
     set(EQUIL 2)
     if(DEFINED QRC_EQUILIBRATION)
@@ -551,6 +550,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     endif()
 
     if(TEST_ADDED AND NOT SHOULD_FAIL)
+      get_qmc_project_id("${BASE_DIR}/${INPUT_FILE}" PREFIX)
       # Derefence the list of scalar values by variable name
       set(SCALAR_VALUES "${${QRC_SCALAR_VALUES}}")
 
