@@ -59,7 +59,7 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   app_summary() << std::endl;
 
   if (spo_object_name.empty())
-    myComm.barrier_and_abort("SPOSet object \"name\" attribute not given in the input!");
+    throw UniformCommunicateError("SPOSet object \"name\" attribute not given in the input!");
 
   // read specialized sposet construction requests
   //   and translate them into a set of orbital indices
@@ -69,20 +69,13 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   //   and preserve legacy interface
   std::unique_ptr<SPOSet> sposet;
 
-  try
-  {
-    if (legacy && input_info.legacy_request)
-      sposet = createSPOSetFromXML(cur);
-    else
-      sposet = createSPOSet(cur, input_info);
-  }
-  catch (const UniformCommunicateError& ue)
-  {
-    myComm.barrier_and_abort(ue.what());
-  }
+  if (legacy && input_info.legacy_request)
+    sposet = createSPOSetFromXML(cur);
+  else
+    sposet = createSPOSet(cur, input_info);
 
   if (!sposet)
-    myComm.barrier_and_abort("SPOSetBuilder::createSPOSet sposet creation failed");
+    throw UniformCommunicateError("SPOSetBuilder::createSPOSet sposet creation failed");
 
   if (optimize == "rotation" || optimize == "yes")
   {

@@ -219,7 +219,7 @@ bool QMCMain::execute()
   //validate the input file
   bool success = validateXML();
   if (!success)
-    myComm.barrier_and_abort("QMCMain::execute. Input document does not contain valid objects");
+    throw UniformCommunicateError("QMCMain::execute. Input document does not contain valid objects");
 
   //initialize all the instances of distance tables and evaluate them
   particle_set_pool_->reset();
@@ -393,14 +393,7 @@ bool QMCMain::validateXML()
     app_warning() << "Project is not defined" << std::endl;
   else
   {
-    try
-    {
-      my_project_.put(result[0]);
-    }
-    catch (const UniformCommunicateError& ue)
-    {
-      myComm.barrier_and_abort(ue.what());
-    }
+    my_project_.put(result[0]);
   }
   app_summary() << std::endl;
   my_project_.get(app_summary());
@@ -468,10 +461,10 @@ bool QMCMain::validateXML()
           popDocument();
         }
         else
-          myComm.barrier_and_abort("Invalid XML document");
+          throw UniformCommunicateError("Invalid XML document");
       }
       else
-        myComm.barrier_and_abort(R"(tag "include" must include an "href" attribute.)");
+        throw UniformCommunicateError(R"(tag "include" must include an "href" attribute.)");
     }
     else if (cname == "qmcsystem")
     {
@@ -504,13 +497,13 @@ bool QMCMain::validateXML()
   }
 
   if (particle_set_pool_->empty())
-    myComm.barrier_and_abort("QMCMain::validateXML. Illegal input. Missing particleset.");
+    throw UniformCommunicateError("QMCMain::validateXML. Illegal input. Missing particleset.");
 
   if (psi_pool_->empty())
-    myComm.barrier_and_abort("QMCMain::validateXML. Illegal input. Missing wavefunction.");
+    throw UniformCommunicateError("QMCMain::validateXML. Illegal input. Missing wavefunction.");
 
   if (ham_pool_->empty())
-    myComm.barrier_and_abort("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");
+    throw UniformCommunicateError("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");
 
   //randomize any particleset with random="yes" && random_source="ion0"
   particle_set_pool_->randomize();
@@ -562,17 +555,10 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     else if (cname == "estimators")
     {
       inputnode = true;
-      try
-      {
-        if (estimator_manager_input_)
-          throw UniformCommunicateError(
-              "QMCMain::validateXML. Illegal Input, only one global <estimators> node is permitted");
-        estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, cur);
-      }
-      catch (const UniformCommunicateError& ue)
-      {
-        myComm.barrier_and_abort(ue.what());
-      }
+      if (estimator_manager_input_)
+        throw UniformCommunicateError(
+            "QMCMain::validateXML. Illegal Input, only one global <estimators> node is permitted");
+      estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, cur);
     }
     else
     //add to m_qmcaction
@@ -601,17 +587,10 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   else
   {
     QMCDriverFactory driver_factory(my_project_);
-    try
-    {
-      QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
-      qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmc_system_, *particle_set_pool_,
-                                                  *psi_pool_, *ham_pool_, myComm);
-      append_run = das.append_run;
-    }
-    catch (const UniformCommunicateError& ue)
-    {
-      myComm.barrier_and_abort(ue.what());
-    }
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
+    qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmc_system_, *particle_set_pool_,
+                                                *psi_pool_, *ham_pool_, myComm);
+    append_run = das.append_run;
   }
 
   if (qmc_driver)

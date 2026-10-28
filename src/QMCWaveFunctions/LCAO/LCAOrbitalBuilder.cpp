@@ -143,43 +143,36 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   EvalPeriodicImagePhaseFactors(SuperTwist, PeriodicImagePhaseFactors, PeriodicImageDisplacements);
 
 
-  try
-  {
-    // no need to wait but load the basis set
-    processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
-      if (cname == "basisset")
-      {
-        std::string basisset_name_input(getXMLAttributeValue(element, "name"));
-        std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input);
-        if (basisset_map_.find(basisset_name) != basisset_map_.end())
-        {
-          std::ostringstream err_msg;
-          err_msg << "Cannot create basisset " << basisset_name << " which already exists." << std::endl;
-          throw std::runtime_error(err_msg.str());
-        }
-        if (h5_path != "")
-          basisset_map_[basisset_name] = loadBasisSetFromH5(element);
-        else
-          basisset_map_[basisset_name] = loadBasisSetFromXML(element, cur);
-      }
-    });
-
-    // deprecated h5 basis set handling when basisset element is missing
-    if (basisset_map_.size() == 0 && h5_path != "")
+  // no need to wait but load the basis set
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "basisset")
     {
-      app_warning() << "!!!!!!! Deprecated input style: missing basisset element. "
-                    << "LCAO needs an explicit basisset XML element. "
-                    << "Fallback on loading an implicit one." << std::endl;
-      basisset_map_["LCAOBSet"] = loadBasisSetFromH5(cur);
+      std::string basisset_name_input(getXMLAttributeValue(element, "name"));
+      std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input);
+      if (basisset_map_.find(basisset_name) != basisset_map_.end())
+      {
+        std::ostringstream err_msg;
+        err_msg << "Cannot create basisset " << basisset_name << " which already exists." << std::endl;
+        throw std::runtime_error(err_msg.str());
+      }
+      if (h5_path != "")
+        basisset_map_[basisset_name] = loadBasisSetFromH5(element);
+      else
+        basisset_map_[basisset_name] = loadBasisSetFromXML(element, cur);
     }
+  });
 
-    if (basisset_map_.size() == 0)
-      throw UniformCommunicateError("No basisset found in the XML input!");
-  }
-  catch (const UniformCommunicateError& uce)
+  // deprecated h5 basis set handling when basisset element is missing
+  if (basisset_map_.size() == 0 && h5_path != "")
   {
-    comm.barrier_and_abort(std::string("Failed to create basisset. ") + uce.what());
+    app_warning() << "!!!!!!! Deprecated input style: missing basisset element. "
+                  << "LCAO needs an explicit basisset XML element. "
+                  << "Fallback on loading an implicit one." << std::endl;
+    basisset_map_["LCAOBSet"] = loadBasisSetFromH5(cur);
   }
+
+  if (basisset_map_.size() == 0)
+    throw UniformCommunicateError("No basisset found in the XML input!");
 }
 
 LCAOrbitalBuilder::~LCAOrbitalBuilder()
