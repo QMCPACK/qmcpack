@@ -708,6 +708,75 @@ In addition, the hybrid orbital representation allows extra optimization to spee
 Plane-wave basis sets
 ~~~~~~~~~~~~~~~~~~~~~
 
+Plane-wave basis sets expand the ``sposet`` directly in the plane waves stored in the orbital HDF5 file, without interpolation onto
+a spline grid. They use the same orbital files as :ref:`spo-spline`. Plane-wave basis sets are more computationally costly than
+spline basis sets, which should be preferred for production runs. The implementation is kept primarily as a check on the splines.
+
+.. code-block:: xml
+  :caption: Plane-wave SPO XML element
+  :name: pw.spo.xml
+
+  <sposet_collection type="pw" href="pwscf.h5"
+                     tilematrix="1 0 0 0 1 0 0 0 1" twist="0 0 0" sort="1">
+    <sposet name="spo-up" size="8" spindataset="0"/>
+    <!-- spin polarized case needs two sposets /-->
+    <sposet name="spo-dn" size="8" spindataset="1"/>
+  </sposet_collection>
+
+``sposet_collection`` attributes:
+
++----------------+------------+---------------------+----------+------------------------------------------+
+| Name           | Datatype   | Values              | Default  | Description                              |
++================+============+=====================+==========+==========================================+
+| ``type``       | Text       | pw                  | Required | Type of orbital set.                     |
++----------------+------------+---------------------+----------+------------------------------------------+
+| ``href``       | Text       | File path           | Required | Orbital HDF5 file.       |
++----------------+------------+---------------------+----------+------------------------------------------+
+| ``tilematrix`` | 9 integers | Nonsingular matrix  | Identity | Primitive-to-supercell tiling matrix.    |
++----------------+------------+---------------------+----------+------------------------------------------+
+| ``twist``      | 3 floats   | Reduced coordinates | 0 0 0    | Supercell twist; overrides twistnum.     |
++----------------+------------+---------------------+----------+------------------------------------------+
+| ``twistnum``   | Integer    | Index or -1         | -1       | Supercell twist index; -1 selects Gamma. |
++----------------+------------+---------------------+----------+------------------------------------------+
+| ``sort``       | Integer    | 0, 1, 2             | 1        | Orbital ordering, as for splines.        |
++----------------+------------+---------------------+----------+------------------------------------------+
+
+Additional information:
+
+- ``type`` must be ``pw``. ``href`` specifies the orbital HDF5 file, as for :ref:`spo-spline`.
+- ``tilematrix`` specifies the primitive-to-supercell tiling matrix, as for :ref:`spo-spline`, and defaults to the identity matrix.
+  The file must contain all primitive-cell k-points that fold onto the selected supercell twist.
+- ``twist`` and ``twistnum`` select the supercell twist with the same meaning and precedence as in :ref:`spo-spline`. The default is
+  the Gamma point.
+- ``sort`` controls the ordering of orbitals from the contributing k-points, using the same ordering as the spline implementation:
+  ``0`` preserves file order, ``1`` sorts by energy (the default), and ``2`` sorts first by band index and then by energy.
+
+``sposet`` attributes:
+
++-----------------+----------+--------------------+----------+-----------------------------------------+
+| Name            | Datatype | Values             | Default  | Description                             |
++=================+==========+====================+==========+=========================================+
+| ``name``        | Text     | Unique name        | Required | Name used to reference the orbital set. |
++-----------------+----------+--------------------+----------+-----------------------------------------+
+| ``size``        | Integer  | >0                 | Required | Number of orbitals.                     |
++-----------------+----------+--------------------+----------+-----------------------------------------+
+| ``spindataset`` | Integer  | Spin channel index | 0        | Spin channel in the orbital HDF5 file.  |
++-----------------+----------+--------------------+----------+-----------------------------------------+
+
+Additional information:
+
+- ``name`` identifies the orbital set and ``size`` specifies the number of orbitals, as for :ref:`spo-spline`.
+- ``spindataset`` selects the spin channel in the HDF5 file and defaults to ``0``. Set this attribute on ``sposet`` rather than on
+  ``occupation``.
+- ``occupation`` defaults to ``mode="ground"``, filling the first ``size`` orbitals in the selected ordering. For a single
+  contributing primitive-cell k-point, ``mode="excited"`` accepts negative indices for removed orbitals and positive indices for
+  added orbitals, with indices starting at one. Excited occupations are not supported when multiple primitive-cell k-points
+  contribute to the supercell twist.
+
+Real builds support supercell twists whose reduced components are integers or half-integers; other twists require a complex build.
+Spline options such as ``meshfactor``, ``precision``, and ``save_coefs`` are either not applicable or not implemented for this
+basis.
+
 .. _hegbasis:
 
 Homogeneous electron gas
