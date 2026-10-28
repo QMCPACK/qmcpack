@@ -2185,7 +2185,7 @@ srun test.x''',
 #SBATCH -A ABC123
 #SBATCH -p batch
 #SBATCH -J jobname
-#SBATCH -t 06:30
+#SBATCH -t 06:30:00
 #SBATCH -N 2
 #SBATCH -S 8
 #SBATCH -o jobname.out
