@@ -584,7 +584,7 @@ TEST_CASE("EinsplineSetBuilder throws", "[wavefunction]")
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec_.create({2});
+  elec_.create({1, 1});
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 1.0, 0.0};
   elec_.update();
@@ -706,6 +706,25 @@ TEST_CASE("EinsplineSetBuilder throws", "[wavefunction]")
     xmlNodePtr spo2 = xmlNextElementSibling(spo1);
     CHECK_THROWS_MATCHES(einSet.createSPOSetFromXML(spo2), UniformCommunicateError,
                          Catch::Matchers::MessageMatches(Catch::Matchers::ContainsSubstring("Orbital H5 file contains no spin down data")));
+  }
+
+  SECTION("spindataset must be smaller than number of groups in target particleset")
+  {
+    const char* spo_xml = R"(
+      <sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float">
+        <sposet name="updet" size="4" spindataset="0"/>
+        <sposet name="downdet" size="4" spindataset="2"/>
+      </sposet_collection>
+    )";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(spo_xml));
+    EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, doc.getRoot());
+    xmlNodePtr spo1 = xmlFirstElementChild(doc.getRoot());
+    auto spo_up = einSet.createSPOSetFromXML(spo1);
+    REQUIRE(spo_up);
+    xmlNodePtr spo2 = xmlNextElementSibling(spo1);
+    CHECK_THROWS_MATCHES(einSet.createSPOSetFromXML(spo2), UniformCommunicateError,
+                         Catch::Matchers::Message("spindataset must be smaller than number of groups in target particleset."));
   }
 }
 

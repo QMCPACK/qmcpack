@@ -263,7 +263,7 @@ TEST_CASE("ECPComponentBuilder L2 exceptions", "[hamiltonian][ecp]")
 
   SECTION("unrecognized format")
   {
-    ecp.grid_global = std::make_unique<LinearGrid<QMCTraits::RealType>>();
+    ecp.grid_global = std::make_unique<LinearGrid<ECPComponentBuilder::mRealType>>();
     ecp.grid_global->set(0.0, 1.0, 10);
     REQUIRE(doc.parseFromString(R"(<L2 format="unknown_format" cutoff="1.0"/>)"));
     CHECK_THROWS_MATCHES(ecp.buildL2(doc.getRoot()), UniformCommunicateError,
@@ -272,7 +272,7 @@ TEST_CASE("ECPComponentBuilder L2 exceptions", "[hamiltonian][ecp]")
 
   SECTION("missing or negative cutoff")
   {
-    ecp.grid_global = std::make_unique<LinearGrid<QMCTraits::RealType>>();
+    ecp.grid_global = std::make_unique<LinearGrid<ECPComponentBuilder::mRealType>>();
     ecp.grid_global->set(0.0, 1.0, 10);
     REQUIRE(doc.parseFromString(R"(<L2 format="V" cutoff="-0.5"/>)"));
     CHECK_THROWS_MATCHES(ecp.buildL2(doc.getRoot()), UniformCommunicateError,
@@ -295,7 +295,7 @@ TEST_CASE("ECPComponentBuilder buildLocal exceptions", "[hamiltonian][ecp]")
 
   SECTION("illegal local pseudopotential")
   {
-    ecp.grid_global = std::make_unique<LinearGrid<QMCTraits::RealType>>();
+    ecp.grid_global = std::make_unique<LinearGrid<ECPComponentBuilder::mRealType>>();
     ecp.grid_global->set(0.0, 1.0, 10);
     ecp.Zeff = 4.0;
     REQUIRE(doc.parseFromString(R"(<local>
@@ -325,7 +325,7 @@ TEST_CASE("ECPComponentBuilder buildSemiLocalAndLocal exceptions", "[hamiltonian
   SECTION("more than one semilocal tag")
   {
     ECPComponentBuilder ecp("test_ecp_semilocal", c, 4, 1);
-    ecp.grid_global = std::make_unique<LinearGrid<QMCTraits::RealType>>();
+    ecp.grid_global = std::make_unique<LinearGrid<ECPComponentBuilder::mRealType>>();
     ecp.grid_global->set(0.0, 1.0, 10);
     REQUIRE(doc1.parseFromString(R"(<semilocal/>)"));
     REQUIRE(doc2.parseFromString(R"(<semilocal/>)"));
@@ -337,7 +337,7 @@ TEST_CASE("ECPComponentBuilder buildSemiLocalAndLocal exceptions", "[hamiltonian
   SECTION("default nrule not determined")
   {
     ECPComponentBuilder ecp("test_ecp_semilocal", c);
-    ecp.grid_global = std::make_unique<LinearGrid<QMCTraits::RealType>>();
+    ecp.grid_global = std::make_unique<LinearGrid<ECPComponentBuilder::mRealType>>();
     ecp.grid_global->set(0.0, 1.0, 10);
     ecp.pp_nonloc = std::make_unique<NonLocalECPComponent>();
     ecp.pp_nonloc->setLmax(12);
@@ -350,7 +350,7 @@ TEST_CASE("ECPComponentBuilder buildSemiLocalAndLocal exceptions", "[hamiltonian
   SECTION("unrecognized format")
   {
     ECPComponentBuilder ecp("test_ecp_semilocal", c, 4, 1);
-    ecp.grid_global = std::make_unique<LinearGrid<QMCTraits::RealType>>();
+    ecp.grid_global = std::make_unique<LinearGrid<ECPComponentBuilder::mRealType>>();
     ecp.grid_global->set(0.0, 1.0, 10);
     REQUIRE(doc1.parseFromString(R"(<semilocal format="bad_fmt"/>)"));
     std::vector<xmlNodePtr> semiPtr = {doc1.getRoot()};
@@ -361,7 +361,7 @@ TEST_CASE("ECPComponentBuilder buildSemiLocalAndLocal exceptions", "[hamiltonian
   SECTION("unrecognized angular momentum in vps")
   {
     ECPComponentBuilder ecp("test_ecp_semilocal", c, 4, 1);
-    ecp.grid_global = std::make_unique<LinearGrid<QMCTraits::RealType>>();
+    ecp.grid_global = std::make_unique<LinearGrid<ECPComponentBuilder::mRealType>>();
     ecp.grid_global->set(0.0, 1.0, 10);
     REQUIRE(doc1.parseFromString(R"(<semilocal format="V">
       <vps l="unknown"/>
@@ -374,7 +374,7 @@ TEST_CASE("ECPComponentBuilder buildSemiLocalAndLocal exceptions", "[hamiltonian
   SECTION("unrecognized angular momentum in vps_so")
   {
     ECPComponentBuilder ecp("test_ecp_semilocal", c, 4, 1);
-    ecp.grid_global = std::make_unique<LinearGrid<QMCTraits::RealType>>();
+    ecp.grid_global = std::make_unique<LinearGrid<ECPComponentBuilder::mRealType>>();
     ecp.grid_global->set(0.0, 1.0, 10);
     REQUIRE(doc1.parseFromString(R"(<semilocal format="V">
       <vps_so l="unknown"/>
@@ -387,7 +387,7 @@ TEST_CASE("ECPComponentBuilder buildSemiLocalAndLocal exceptions", "[hamiltonian
   SECTION("local channel not specified when multiple vps")
   {
     ECPComponentBuilder ecp("test_ecp_semilocal", c, 4, -1);
-    ecp.grid_global = std::make_unique<LinearGrid<QMCTraits::RealType>>();
+    ecp.grid_global = std::make_unique<LinearGrid<ECPComponentBuilder::mRealType>>();
     ecp.grid_global->set(0.0, 1.0, 10);
     REQUIRE(doc1.parseFromString(R"(<semilocal format="V">
       <vps l="s"/>
@@ -402,7 +402,7 @@ TEST_CASE("ECPComponentBuilder buildSemiLocalAndLocal exceptions", "[hamiltonian
   SECTION("so channels count mismatch")
   {
     ECPComponentBuilder ecp("test_ecp_semilocal", c, 4, 0);
-    ecp.grid_global = std::make_unique<LinearGrid<QMCTraits::RealType>>();
+    ecp.grid_global = std::make_unique<LinearGrid<ECPComponentBuilder::mRealType>>();
     ecp.grid_global->set(0.0, 1.0, 10);
     REQUIRE(doc1.parseFromString(R"(<semilocal format="V" npots-so="2">
       <vps l="s"/>

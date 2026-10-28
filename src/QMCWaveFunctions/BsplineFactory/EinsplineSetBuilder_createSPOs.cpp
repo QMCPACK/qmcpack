@@ -222,6 +222,9 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(const xmlNodePt
     }
   });
 
+  if (spinSet >= TargetPtcl.groups() || spinSet < 0)
+    throw UniformCommunicateError("spindataset must be smaller than number of groups in target particleset.");
+
   if (Occ != last_occ)
   {
     NewOcc = true;

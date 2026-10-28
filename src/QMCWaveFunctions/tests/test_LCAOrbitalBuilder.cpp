@@ -348,8 +348,15 @@ TEST_CASE("LCAOrbitalBuilder exceptions", "[wavefunction][LCAO]")
 
     Libxml2Document doc_spo;
     REQUIRE(doc_spo.parseFromString(R"(<sposet name="spo" cuspInfo=")" + bad_cusp + R"("/>)"));
+#if defined(QMC_COMPLEX)
+    CHECK_THROWS_MATCHES(
+        lcaob.createSPOSetFromXML(doc_spo.getRoot()), UniformCommunicateError,
+        Catch::Matchers::Message(
+            "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO."));
+#else
     CHECK_THROWS_MATCHES(lcaob.createSPOSetFromXML(doc_spo.getRoot()), UniformCommunicateError,
                          Catch::Matchers::Message("Invalid cusp correction file " + bad_cusp));
+#endif
 
     c.barrier();
     if (c.rank() == 0)

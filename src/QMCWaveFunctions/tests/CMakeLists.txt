@@ -164,6 +164,7 @@ if(ENABLE_OFFLOAD)
 endif(ENABLE_OFFLOAD)
 
 set(CATEGORY_MPI sposet)
+set(CATEGORY_MPI_2_3 trialwf jastrow determinant)
 
 foreach(CATEGORY common trialwf sposet jastrow determinant)
   set(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
@@ -188,11 +189,12 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
 
   add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
 
-  if(CATEGORY IN_LIST CATEGORY_MPI AND HAVE_MPI)
+  if(CATEGORY IN_LIST CATEGORY_MPI)
     foreach(NUM_RANKS 2 3 6)
-      set(UTEST_NAME_MPI ${UTEST_NAME}-r${NUM_RANKS})
-      add_unit_test(BASENAME ${UTEST_NAME_MPI} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
+      add_unit_test(BASENAME ${UTEST_NAME} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
     endforeach()
+  elseif(CATEGORY IN_LIST CATEGORY_MPI_2_3)
+    add_unit_test(BASENAME ${UTEST_NAME} PROCS 2 THREADS 3 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
   endif()
 
 endforeach()

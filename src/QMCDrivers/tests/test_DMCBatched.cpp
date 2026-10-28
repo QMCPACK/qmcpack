@@ -133,9 +133,9 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   outputManager.resume();
 
   dmcdriver.process(node);
-  CHECK(dmcdriver.get_num_living_walkers() == 8);
+  CHECK(dmcdriver.get_num_living_walkers() == 8 / comm.size());
   const QMCTraits::IndexType reserved_walkers = dmcdriver.get_num_living_walkers() + dmcdriver.get_num_dead_walkers();
-  CHECK(reserved_walkers == 10);
+  CHECK(reserved_walkers == 10 / comm.size());
   // What else should we expect after process
 }
 #endif
