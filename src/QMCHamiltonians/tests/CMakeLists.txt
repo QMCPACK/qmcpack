@@ -19,15 +19,14 @@ set(SRC_DIR hamiltonian)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(COULOMB_SRCS test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
-                 test_coulomb_pbcAA_ewald.cpp test_EwaldRef.cpp test_NonLocalECPotential.cpp)
+                 test_coulomb_pbcAA_ewald.cpp test_EwaldRef.cpp)
 set(EWALD2D_SRCS test_ewald2d.cpp test_ewald_quasi2d.cpp)
 set(FORCE_SRCS test_force.cpp test_force_ewald.cpp test_stress.cpp test_spacewarp.cpp)
+set(ECP_SRCS test_NonLocalECPotential.cpp test_ecp_builder.cpp test_ecp.cpp test_NonLocalTOperator.cpp)
 set(HAM_SRCS
     test_bare_kinetic.cpp
     test_density_estimator.cpp
     test_L2Potential.cpp
-    test_NonLocalTOperator.cpp
-    test_ecp.cpp
     test_hamiltonian_pool.cpp
     test_hamiltonian_factory.cpp
     test_PairCorrEstimator.cpp
@@ -61,7 +60,7 @@ foreach(fname C.BFD.xml Na.BFD.xml so_ecp_test.xml C.ccECP.xml N.ccECP.xml Be.BF
   list(APPEND UTEST_INPUT_FILES ${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/${fname})
 endforeach()
 
-foreach(CATEGORY coulomb force ham ewald2d)
+foreach(CATEGORY coulomb force ham ewald2d ecp)
   set(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   string(TOUPPER "${CATEGORY}_SRCS" SOURCE_FILE_VAR_NAME)
@@ -73,6 +72,7 @@ foreach(CATEGORY coulomb force ham ewald2d)
   endif()
 
   add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
+  add_unit_test(BASENAME ${UTEST_NAME} PROCS 2 THREADS 3 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES} )
 endforeach()
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
