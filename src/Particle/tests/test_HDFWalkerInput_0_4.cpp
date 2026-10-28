@@ -18,9 +18,12 @@
 
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
+#include "Message/UniformCommunicateError.h"
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include "Particle/WalkerConfigurations.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/HDFWalkerInput_0_4.h"
+#include "Particle/HDFWalkerInputManager.h"
 #include "hdf/hdf_archive.h"
 #include "hdf/HDFVersion.h"
 #include "Utilities/FairDivide.h"
@@ -274,6 +277,17 @@ TEST_CASE("HDFWalkerInput_0_4 error handling", "[particle]")
   CHECK(!success_empty_xml);
 
   c.barrier();
+}
+
+TEST_CASE("HDFWalkerInputManager outdated version throws", "[particle]")
+{
+  Communicate& c(*OHMMS::Controller);
+  WalkerConfigurations wc_list;
+  HDFWalkerInputManager win_mgr(wc_list, num_ptcls, c);
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<mcwalkerset version="0 3"/>)"));
+  CHECK_THROWS_MATCHES(win_mgr.put(doc.getRoot()), UniformCommunicateError,
+                       Catch::Matchers::Message("Outdated restart file!"));
 }
 
 } // namespace qmcplusplus

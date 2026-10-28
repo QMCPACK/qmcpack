@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 
 #include "Message/Communicate.h"
 #include "Message/UniformCommunicateError.h"
@@ -272,6 +273,163 @@ TEST_CASE("LCAOrbitalBuilder HDF5 Exceptions", "[wavefunction][LCAO]")
 
     lcaob.setH5Path("test_trap_missing_species.h5");
     REQUIRE_THROWS_WITH((lcaob.testCreateBasisSetH5<0, 0>()), "Species O not found.");
+  }
+}
+
+TEST_CASE("LCAOrbitalBuilder exceptions", "[wavefunction][LCAO]")
+{
+  Communicate& c(*OHMMS::Controller);
+  const SimulationCell sim_cell;
+  ParticleSet elec(sim_cell);
+  elec.setName("e");
+  ParticleSet ions(sim_cell);
+  ions.setName("ion0");
+  ions.create({1});
+  SpeciesSet& source_species(ions.getSpeciesSet());
+  source_species.addSpecies("C");
+  ions.update();
+
+  Libxml2Document doc;
+
+  SECTION("No basisset found")
+  {
+    REQUIRE(doc.parseFromString("<tmp></tmp>"));
+    CHECK_THROWS_MATCHES(LCAOrbitalBuilder(elec, ions, c, doc.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message("No basisset found in the XML input!"));
+  }
+
+  SECTION("Missing basisset in createSPOSetFromXML")
+  {
+    auto wf_xml = R"(
+      <tmp>
+        <basisset keyword="GTO" name="LCAOBSet">
+          <atomicBasisSet angular="spherical" elementType="C" name="Gaussian-G2" normalized="no" type="Gaussian">
+            <grid npts="1001" rf="1.e2" ri="1.e-6" type="log" />
+            <basisGroup l="0" n="0" rid="H00" type="Gaussian">
+              <radfunc contraction="1.0" exponent="1.0" />
+            </basisGroup>
+          </atomicBasisSet>
+        </basisset>
+      </tmp>
+    )";
+    REQUIRE(doc.parseFromString(wf_xml));
+    LCAOrbitalBuilder lcaob(elec, ions, c, doc.getRoot());
+
+    Libxml2Document doc_spo;
+    REQUIRE(doc_spo.parseFromString(R"(<sposet name="spo" basisset="nonexistent"/>)"));
+    CHECK_THROWS_MATCHES(lcaob.createSPOSetFromXML(doc_spo.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message("basisset \"nonexistent\" cannot be found\n"));
+  }
+
+  SECTION("Invalid cusp file in createSPOSetFromXML")
+  {
+    auto wf_xml = R"(
+      <tmp cuspCorrection="yes">
+        <basisset keyword="GTO" name="LCAOBSet">
+          <atomicBasisSet angular="spherical" elementType="C" name="Gaussian-G2" normalized="no" type="Gaussian">
+            <grid npts="1001" rf="1.e2" ri="1.e-6" type="log" />
+            <basisGroup l="0" n="0" rid="H00" type="Gaussian">
+              <radfunc contraction="1.0" exponent="1.0" />
+            </basisGroup>
+          </atomicBasisSet>
+        </basisset>
+      </tmp>
+    )";
+    REQUIRE(doc.parseFromString(wf_xml));
+    LCAOrbitalBuilder lcaob(elec, ions, c, doc.getRoot());
+
+    const std::string bad_cusp = "bad_test.cusp";
+    if (c.rank() == 0)
+    {
+      std::ofstream fout(bad_cusp);
+      fout << "invalid cusp data\n";
+    }
+    c.barrier();
+
+    Libxml2Document doc_spo;
+    REQUIRE(doc_spo.parseFromString(R"(<sposet name="spo" cuspInfo=")" + bad_cusp + R"("/>)"));
+    CHECK_THROWS_MATCHES(lcaob.createSPOSetFromXML(doc_spo.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message("Invalid cusp correction file " + bad_cusp));
+
+    c.barrier();
+    if (c.rank() == 0)
+      std::filesystem::remove(bad_cusp);
+  }
+
+  SECTION("AOBasisBuilder expandYlm pyscf incompatible with cartesian")
+  {
+    auto wf_xml = R"(
+      <tmp>
+        <basisset keyword="GTO" name="LCAOBSet">
+          <atomicBasisSet angular="cartesian" expandYlm="pyscf" elementType="C" type="Gaussian">
+            <grid npts="1001" rf="1.e2" ri="1.e-6" type="log" />
+            <basisGroup l="0" n="0" rid="H00" type="Gaussian">
+              <radfunc contraction="1.0" exponent="1.0" />
+            </basisGroup>
+          </atomicBasisSet>
+        </basisset>
+      </tmp>
+    )";
+    REQUIRE(doc.parseFromString(wf_xml));
+    CHECK_THROWS_MATCHES(LCAOrbitalBuilder(elec, ions, c, doc.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n"));
+  }
+
+  SECTION("AOBasisBuilder expandYlm Dirac incompatible with spherical")
+  {
+    auto wf_xml = R"(
+      <tmp>
+        <basisset keyword="GTO" name="LCAOBSet">
+          <atomicBasisSet angular="spherical" expandYlm="Dirac" elementType="C" type="Gaussian">
+            <grid npts="1001" rf="1.e2" ri="1.e-6" type="log" />
+            <basisGroup l="0" n="0" rid="H00" type="Gaussian">
+              <radfunc contraction="1.0" exponent="1.0" />
+            </basisGroup>
+          </atomicBasisSet>
+        </basisset>
+      </tmp>
+    )";
+    REQUIRE(doc.parseFromString(wf_xml));
+    CHECK_THROWS_MATCHES(LCAOrbitalBuilder(elec, ions, c, doc.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n"));
+  }
+
+  SECTION("AOBasisBuilder purely numerical atomic orbitals not supported")
+  {
+    auto wf_xml = R"(
+      <tmp>
+        <basisset keyword="GTO" name="LCAOBSet">
+          <atomicBasisSet angular="spherical" elementType="C" type="Numerical">
+            <grid npts="1001" rf="1.e2" ri="1.e-6" type="log" />
+            <basisGroup l="0" n="0" rid="H00" type="Numerical">
+              <radfunc contraction="1.0" exponent="1.0" />
+            </basisGroup>
+          </atomicBasisSet>
+        </basisset>
+      </tmp>
+    )";
+    REQUIRE(doc.parseFromString(wf_xml));
+    CHECK_THROWS_MATCHES(LCAOrbitalBuilder(elec, ions, c, doc.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message("Purely numerical atomic orbitals are not supported any longer."));
+  }
+
+  SECTION("RadialOrbitalSetBuilder purely numerical atomic orbitals not supported")
+  {
+    auto wf_xml = R"(
+      <tmp>
+        <basisset keyword="STO" transform="yes" name="LCAOBSet">
+          <atomicBasisSet angular="spherical" elementType="C" type="STO">
+            <grid npts="1001" rf="1.e2" ri="1.e-6" type="log" />
+            <basisGroup l="0" n="0" rid="H00" type="UnsupportedType">
+              <radfunc contraction="1.0" exponent="1.0" />
+            </basisGroup>
+          </atomicBasisSet>
+        </basisset>
+      </tmp>
+    )";
+    REQUIRE(doc.parseFromString(wf_xml));
+    CHECK_THROWS_MATCHES(LCAOrbitalBuilder(elec, ions, c, doc.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message("Purely numerical atomic orbitals are not supported any longer."));
   }
 }
 } // namespace qmcplusplus

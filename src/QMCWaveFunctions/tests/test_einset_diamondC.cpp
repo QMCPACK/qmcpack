@@ -9,7 +9,10 @@
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
+#include "Message/UniformCommunicateError.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -556,6 +559,154 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
 
   esb.SuperLattice(0, 0) = 1.1;
   REQUIRE_FALSE(esb.CheckLattice());
+}
+
+TEST_CASE("EinsplineSetBuilder throws", "[wavefunction]")
+{
+  Communicate& c(*OHMMS::Controller);
+
+  Lattice lattice;
+  lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.createSimulationCellByLattice(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
+
+  ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
+  ions_.create({2});
+  ions_.R[0] = {0.0, 0.0, 0.0};
+  ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.update();
+
+  elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
+  elec_.create({2});
+  elec_.R[0] = {0.0, 0.0, 0.0};
+  elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
+
+  SECTION("Non-positive orbital set size")
+  {
+    const char* spo_xml = R"(
+      <sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float">
+        <sposet name="updet" size="0"/>
+      </sposet_collection>
+    )";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(spo_xml));
+    EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, doc.getRoot());
+    CHECK_THROWS_MATCHES(einSet.createSPOSetFromXML(xmlFirstElementChild(doc.getRoot())), UniformCommunicateError,
+                         Catch::Matchers::Message("Non-positive orbital set size! Please correct attribute \"size\"."));
+  }
+
+  SECTION("Missing source particleset")
+  {
+    const char* spo_xml = R"(
+      <sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="nonexistent_ion" meshfactor="1.0" precision="float">
+        <sposet name="updet" size="4"/>
+      </sposet_collection>
+    )";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(spo_xml));
+    EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, doc.getRoot());
+    CHECK_THROWS_MATCHES(einSet.createSPOSetFromXML(xmlFirstElementChild(doc.getRoot())), UniformCommunicateError,
+                         Catch::Matchers::Message("Einspline needs the source particleset"));
+  }
+
+  SECTION("First SPO set must have spindataset 0")
+  {
+    const char* spo_xml = R"(
+      <sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float">
+        <sposet name="updet" size="4" spindataset="1"/>
+      </sposet_collection>
+    )";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(spo_xml));
+    EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, doc.getRoot());
+    CHECK_THROWS_MATCHES(einSet.createSPOSetFromXML(xmlFirstElementChild(doc.getRoot())), UniformCommunicateError,
+                         Catch::Matchers::Message("The first SPO set must have spindataset=\"0\""));
+  }
+
+  SECTION("Unsupported occupation mode")
+  {
+    const char* spo_xml = R"(
+      <sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float">
+        <sposet name="updet" size="4">
+          <occupation mode="unsupported_mode"/>
+        </sposet>
+      </sposet_collection>
+    )";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(spo_xml));
+    EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, doc.getRoot());
+    CHECK_THROWS_MATCHES(einSet.createSPOSetFromXML(xmlFirstElementChild(doc.getRoot())), UniformCommunicateError,
+                         Catch::Matchers::Message("EinsplineSetBuilder::createSPOSet Only ground state occupation currently supported in EinsplineSetBuilder."));
+  }
+
+  SECTION("Truncate feature removed")
+  {
+    const char* spo_xml = R"(
+      <sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" truncate="yes">
+        <sposet name="updet" size="4"/>
+      </sposet_collection>
+    )";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(spo_xml));
+    EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, doc.getRoot());
+    CHECK_THROWS_MATCHES(einSet.createSPOSetFromXML(xmlFirstElementChild(doc.getRoot())), UniformCommunicateError,
+                         Catch::Matchers::Message("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation."));
+  }
+
+  SECTION("Twistnum outside acceptable range")
+  {
+    const char* spo_xml = R"(
+      <sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="10" source="ion" meshfactor="1.0" precision="float">
+        <sposet name="updet" size="4"/>
+      </sposet_collection>
+    )";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(spo_xml));
+    EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, doc.getRoot());
+    CHECK_THROWS_MATCHES(einSet.createSPOSetFromXML(xmlFirstElementChild(doc.getRoot())), UniformCommunicateError,
+                         Catch::Matchers::Message("AnalyzeTwists2. twistnum input value 10 is outside the acceptable range [0, 1).\n"));
+  }
+
+  SECTION("Input twist not found in super twists")
+  {
+    const char* spo_xml = R"(
+      <sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twist="0.1 0.2 0.3" source="ion" meshfactor="1.0" precision="float">
+        <sposet name="updet" size="4"/>
+      </sposet_collection>
+    )";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(spo_xml));
+    EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, doc.getRoot());
+    CHECK_THROWS_MATCHES(einSet.createSPOSetFromXML(xmlFirstElementChild(doc.getRoot())), UniformCommunicateError,
+                         Catch::Matchers::Message("AnalyzeTwists2. Input twist [   0.10000   0.20000   0.30000] not found in the list of super twists above.\n"));
+  }
+
+  SECTION("Orbital H5 file contains no spin down data")
+  {
+    const char* spo_xml = R"(
+      <sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float">
+        <sposet name="updet" size="4" spindataset="0"/>
+        <sposet name="downdet" size="4" spindataset="1"/>
+      </sposet_collection>
+    )";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(spo_xml));
+    EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, doc.getRoot());
+    xmlNodePtr spo1 = xmlFirstElementChild(doc.getRoot());
+    auto spo_up = einSet.createSPOSetFromXML(spo1);
+    REQUIRE(spo_up);
+    xmlNodePtr spo2 = xmlNextElementSibling(spo1);
+    CHECK_THROWS_MATCHES(einSet.createSPOSetFromXML(spo2), UniformCommunicateError,
+                         Catch::Matchers::MessageMatches(Catch::Matchers::ContainsSubstring("Orbital H5 file contains no spin down data")));
+  }
 }
 
 } // namespace qmcplusplus

@@ -15,6 +15,11 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
+#include "Message/Communicate.h"
+#include "Message/UniformCommunicateError.h"
+#include <catch2/matchers/catch_matchers_exception.hpp>
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {
@@ -167,5 +172,14 @@ TEST_CASE("get scaled drift complex", "[drivers][drift]")
   }
 }
 #endif
+
+TEST_CASE("createDriftModifier unknown modifier throws", "[drivers][drift]")
+{
+  Communicate& c(*OHMMS::Controller);
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<drift><parameter name="drift_modifier">bad_modifier</parameter></drift>)"));
+  CHECK_THROWS_MATCHES(createDriftModifier(doc.getRoot(), c), UniformCommunicateError,
+                       Catch::Matchers::Message("createDriftModifier unknown drift_modifier bad_modifier"));
+}
 
 } // namespace qmcplusplus
