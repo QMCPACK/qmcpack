@@ -1176,40 +1176,39 @@ HamiltonianOperations WavefunctionFactory::getHamOps(const std::string& restart_
                                                      int ndets_to_read,
                                                      Hamiltonian& h)
 {
-  // if requested, create restart file
-  // Will use phdf5 in the future, for now only head node writes
-  hdf_archive restart(TGwfn.Global());
   if (restart_file != "")
   {
-    if (TGwfn.Global().root())
+    hdf_archive restart_read(TGwfn.Global());
+    if (restart_read.open(restart_file, H5F_ACC_RDONLY))
     {
-      app_log() << " Open " << restart_file << " for HamOps\n";
-      // first, try open existing restart file
-      if (!restart.open(restart_file, H5F_ACC_RDONLY))
-      { // make new restart file if cannot open existing
-        app_log() << " No restart_file create anew.\n";
-        if (!restart.create(restart_file, H5F_ACC_EXCL))
-        {
-          app_error() << " Error in WavefunctionFactory: Failed to create restart_file" << restart_file << "\n";
-          APP_ABORT("");
-        }
+      if (restart_read.is_group("HamiltonianOperations"))
+      {
+        app_log() << " getHamOps using restart file " << restart_file << "\n";
+        return loadHamOps(restart_read, type, NMO, NAEA, NAEB, PsiT, TGprop, TGwfn, cutvn, cutv2);
       }
     }
   }
 
-  bool read = restart.is_group("HamiltonianOperations");
-  if (read)
+  // if requested, create restart file
+  // Will use phdf5 in the future, for now only head node writes
+  hdf_archive restart_write;
+  if (restart_file != "")
   {
-    app_log() << " getHamOps using restart file\n";
-    return loadHamOps(restart, type, NMO, NAEA, NAEB, PsiT, TGprop, TGwfn, cutvn, cutv2);
+    if (TGwfn.Global().root())
+    {
+      app_log() << " No restart_file create anew: " << restart_file << "\n";
+      if (!restart_write.create(restart_file, H5F_ACC_EXCL))
+      {
+        app_error() << " Error in WavefunctionFactory: Failed to create restart_file" << restart_file << "\n";
+        APP_ABORT("");
+      }
+    }
   }
-  else
-  {
-    app_log() << " getHamOps from scratch\n";
-    bool pureSD = false;  // make Sparse ham. 2e rotation more effiecient
-    // pureSD only matters during setup of a large run. Avoid Sparse in that case.
-    return h.getHamiltonianOperations(pureSD, ndets_to_read > 1, type, PsiT, cutvn, cutv2, TGprop, TGwfn, restart);
-  }
+
+  app_log() << " getHamOps from scratch\n";
+  bool pureSD = false; // make Sparse ham. 2e rotation more effiecient
+  // pureSD only matters during setup of a large run. Avoid Sparse in that case.
+  return h.getHamiltonianOperations(pureSD, ndets_to_read > 1, type, PsiT, cutvn, cutv2, TGprop, TGwfn, restart_write);
 
 //  if(restart_file != "")
 //  {
