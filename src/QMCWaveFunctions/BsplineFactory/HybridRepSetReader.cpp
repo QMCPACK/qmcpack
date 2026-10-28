@@ -33,6 +33,7 @@
 #include "OneSplineOrbData.hpp"
 #include "spline2/SplineUtils.h"
 #include "Message/CommOperators.h"
+#include "Message/UniformCommunicateError.h"
 #include "spline2/MultiBspline.hpp"
 #include "Utilities/FairDivide.h"
 
@@ -394,8 +395,8 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
     }
 
     if (!success)
-      myComm.barrier_and_abort("initialize_hybridrep_atomic_centers Failed to initialize atomic centers "
-                               "in hybrid orbital representation!");
+      throw UniformCommunicateError("initialize_hybridrep_atomic_centers Failed to initialize atomic centers "
+                                    "in hybrid orbital representation!");
 
     for (int center_idx = 0; center_idx < ACInfo.Ncenters; center_idx++)
     {

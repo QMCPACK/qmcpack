@@ -506,7 +506,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   std::unique_ptr<BasisSet_t> myBasisSet;
   if (basisset_map_.find(basisset_name) == basisset_map_.end())
-    myComm.barrier_and_abort("basisset \"" + basisset_name + "\" cannot be found\n");
+    throw UniformCommunicateError("basisset \"" + basisset_name + "\" cannot be found\n");
   else
     myBasisSet.reset(basisset_map_[basisset_name]->makeClone());
 
@@ -517,7 +517,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (doCuspCorrection)
   {
 #if defined(QMC_COMPLEX)
-    myComm.barrier_and_abort(
+    throw UniformCommunicateError(
         "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
 #else
     app_summary() << "        Using cusp correction." << std::endl;
@@ -577,7 +577,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
         valid = readCuspInfo(cusp_file, spo_name, orbital_set_size, info);
       myComm.bcast(valid);
       if (!valid)
-        myComm.barrier_and_abort("Invalid cusp correction file " + cusp_file);
+        throw UniformCommunicateError("Invalid cusp correction file " + cusp_file);
 #ifdef HAVE_MPI
       for (int orb_idx = 0; orb_idx < orbital_set_size; orb_idx++)
         for (int center_idx = 0; center_idx < num_centers; center_idx++)
@@ -763,7 +763,7 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       std::ostringstream err_msg;
       err_msg << "Basis set size " << spo.getBasisSetSize() << " mismatched the number of MO coefficients columns "
               << Ctemp.cols() << " from h5." << std::endl;
-      myComm.barrier_and_abort(err_msg.str());
+      throw UniformCommunicateError(err_msg.str());
     }
 
     int norbs = spo.getOrbitalSetSize();
@@ -772,7 +772,7 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       std::ostringstream err_msg;
       err_msg << "Need " << norbs << " orbitals. Insufficient rows of MO coefficients " << Ctemp.rows() << " from h5."
               << std::endl;
-      myComm.barrier_and_abort(err_msg.str());
+      throw UniformCommunicateError(err_msg.str());
     }
 
     int n = 0, i = 0;

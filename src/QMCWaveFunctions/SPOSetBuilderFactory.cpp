@@ -22,6 +22,7 @@
 #include "PlaneWave/PWOrbitalSetBuilder.h"
 #include "ModernStringUtils.hpp"
 #include "ElectronGas/FreeOrbitalBuilder.h"
+#include "Message/UniformCommunicateError.h"
 #if OHMMS_DIM == 3
 #include "LCAO/LCAOrbitalBuilder.h"
 
@@ -153,7 +154,7 @@ std::unique_ptr<SPOSetBuilder> SPOSetBuilderFactory::createSPOSetBuilder(xmlNode
   PRE.flush();
 
   if (!bb)
-    myComm.barrier_and_abort("SPOSetBuilderFactory::createSPOSetBuilder SPOSetBuilder creation failed.");
+    throw UniformCommunicateError("SPOSetBuilderFactory::createSPOSetBuilder SPOSetBuilder creation failed.");
 
   app_log() << "  Created SPOSet builder named '" << name << "' of type " << type << std::endl;
   return bb;
@@ -198,7 +199,7 @@ void SPOSetBuilderFactory::buildSPOSetCollection(xmlNodePtr cur)
   });
 
   if (nsposets == 0)
-    myComm.barrier_and_abort("SPOSetBuilderFactory::buildSPOSetCollection  no <sposet/> elements found");
+    throw UniformCommunicateError("SPOSetBuilderFactory::buildSPOSetCollection  no <sposet/> elements found");
 
   // going through a list of spo_scanner entries
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
@@ -214,10 +215,10 @@ void SPOSetBuilderFactory::buildSPOSetCollection(xmlNodePtr cur)
 void SPOSetBuilderFactory::addSPOSet(std::unique_ptr<SPOSet> spo)
 {
   if (spo->getName().empty())
-    myComm.barrier_and_abort("sposet created in sposet_collection must have a name!");
+    throw UniformCommunicateError("sposet created in sposet_collection must have a name!");
 
   if (sposets.find(spo->getName()) != sposets.end())
-    myComm.barrier_and_abort("The name of each sposet must be unique! '" + spo->getName() + "' exists.");
+    throw UniformCommunicateError("The name of each sposet must be unique! '" + spo->getName() + "' exists.");
   else
     sposets.emplace(spo->getName(), std::move(spo));
 }

@@ -18,6 +18,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Particle/HDFWalkerInput_0_4.h"
 #include "Message/Communicate.h"
+#include "Message/UniformCommunicateError.h"
 #include "hdf/HDFVersion.h"
 
 namespace qmcplusplus
@@ -53,7 +54,7 @@ bool HDFWalkerInputManager::put(xmlNodePtr cur)
     cfile   = win.FileName_noext;
   }
   else
-    myComm.barrier_and_abort("Outdated restart file!");
+    throw UniformCommunicateError("Outdated restart file!");
   if (success)
     CurrentFileRoot = cfile;
   return success;
