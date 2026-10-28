@@ -2059,6 +2059,7 @@ def test_check_status_timeout(tmp_path):
     nexus_config.timeout = 1
     exited_queue = (datetime.now().astimezone()-timedelta(seconds=2)).isoformat()
     s.timestamps.exited_queue = exited_queue
+    s.timeout_started = True
 
     s.check_status()
 
