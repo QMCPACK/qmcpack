@@ -7,6 +7,11 @@ list(APPEND LIH_GAMMA_SCALARS "localecp" "-11.718808431876706 0.025")
 list(APPEND LIH_GAMMA_SCALARS "samples" "1600000 0.0")
 #  LIST(APPEND LIH_GAMMA_SCALARS "flux" "0.0 0.05")
 
+# Plane wave tests use one quarter of the samples and twice the statistical error bars.
+list(APPEND LIH_GAMMA_SCALARS_PW "kinetic" "7.4145221704067854 0.048")
+list(APPEND LIH_GAMMA_SCALARS_PW "localecp" "-11.718808431876706 0.050")
+list(APPEND LIH_GAMMA_SCALARS_PW "samples" "400000 0.0")
+
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
@@ -52,7 +57,7 @@ qmc_run_and_check(
   16
   TRUE
   0
-  LIH_GAMMA_SCALARS # VMC
+  LIH_GAMMA_SCALARS_PW # VMC
 )
 
 qmc_run_and_check(
@@ -76,13 +81,18 @@ qmc_run_and_check(
   16
   TRUE
   0
-  LIH_GAMMA_SCALARS # VMC
+  LIH_GAMMA_SCALARS_PW # VMC
 )
 
 list(APPEND LIH_X_SCALARS "kinetic" "7.3772282047321536 0.024")
 list(APPEND LIH_X_SCALARS "localecp" "-11.414410381100344 0.025")
 list(APPEND LIH_X_SCALARS "samples" "1600000 0.0")
 #  LIST(APPEND LIH_X_SCALARS "flux" "0.0 0.05")
+
+# Plane wave tests use one quarter of the samples and twice the statistical error bars.
+list(APPEND LIH_X_SCALARS_PW "kinetic" "7.3772282047321536 0.048")
+list(APPEND LIH_X_SCALARS_PW "localecp" "-11.414410381100344 0.050")
+list(APPEND LIH_X_SCALARS_PW "samples" "400000 0.0")
 
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-x-vmc_hf_noj
@@ -129,7 +139,7 @@ qmc_run_and_check(
   16
   TRUE
   0
-  LIH_X_SCALARS # VMC
+  LIH_X_SCALARS_PW # VMC
 )
 
 qmc_run_and_check(
@@ -153,7 +163,7 @@ qmc_run_and_check(
   16
   TRUE
   0
-  LIH_X_SCALARS # VMC
+  LIH_X_SCALARS_PW # VMC
 )
 
 # Hybridrep is not implemented in legacy CUDA but should be correctly error trapped
@@ -174,6 +184,11 @@ list(APPEND LIH_ARB_SCALARS "kinetic" "7.4201207734399359 0.024")
 list(APPEND LIH_ARB_SCALARS "localecp" "-11.615276430529056 0.025")
 list(APPEND LIH_ARB_SCALARS "samples" "1600000 0.0") # samples
 #  LIST(APPEND LIH_ARB_SCALARS "flux" "0.0 0.05")
+
+# Plane wave tests use one quarter of the samples and twice the statistical error bars.
+list(APPEND LIH_ARB_SCALARS_PW "kinetic" "7.4201207734399359 0.048")
+list(APPEND LIH_ARB_SCALARS_PW "localecp" "-11.615276430529056 0.050")
+list(APPEND LIH_ARB_SCALARS_PW "samples" "400000 0.0")
 
 if(QMC_COMPLEX)
   set(LIH_ARB_SUCCEED TRUE)
@@ -226,7 +241,7 @@ qmc_run_and_check(
   16
   ${LIH_ARB_SUCCEED}
   0
-  LIH_ARB_SCALARS # VMC
+  LIH_ARB_SCALARS_PW # VMC
 )
 
 qmc_run_and_check(
@@ -250,7 +265,7 @@ qmc_run_and_check(
   16
   ${LIH_ARB_SUCCEED}
   0
-  LIH_ARB_SCALARS # VMC
+  LIH_ARB_SCALARS_PW # VMC
 )
 
 # multi-slater determinant requires complex build to run. Ensure fails with real/non-complex build
