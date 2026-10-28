@@ -353,7 +353,7 @@ void test_walker_io(std::string wtype)
   hdf_archive dump(world, true);
   {
 #else
-  hdf_archive dump(world, false);
+  hdf_archive dump;
   if (TG.Global().root())
   {
 #endif
