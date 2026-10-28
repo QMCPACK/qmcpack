@@ -19,16 +19,14 @@ set(SRC_DIR hamiltonian)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(COULOMB_SRCS test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
-                 test_coulomb_pbcAA_ewald.cpp test_EwaldRef.cpp test_NonLocalECPotential.cpp)
+                 test_coulomb_pbcAA_ewald.cpp test_EwaldRef.cpp)
 set(EWALD2D_SRCS test_ewald2d.cpp test_ewald_quasi2d.cpp)
 set(FORCE_SRCS test_force.cpp test_force_ewald.cpp test_stress.cpp test_spacewarp.cpp)
+set(ECP_SRCS test_NonLocalECPotential.cpp test_ecp_builder.cpp test_ecp.cpp test_NonLocalTOperator.cpp)
 set(HAM_SRCS
     test_bare_kinetic.cpp
     test_density_estimator.cpp
     test_L2Potential.cpp
-    test_NonLocalTOperator.cpp
-    test_ecp_builder.cpp
-    test_ecp.cpp
     test_hamiltonian_pool.cpp
     test_hamiltonian_factory.cpp
     test_PairCorrEstimator.cpp
@@ -62,7 +60,7 @@ foreach(fname C.BFD.xml Na.BFD.xml so_ecp_test.xml C.ccECP.xml N.ccECP.xml Be.BF
   list(APPEND UTEST_INPUT_FILES ${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/${fname})
 endforeach()
 
-foreach(CATEGORY coulomb force ham ewald2d)
+foreach(CATEGORY coulomb force ham ewald2d ecp)
   set(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   string(TOUPPER "${CATEGORY}_SRCS" SOURCE_FILE_VAR_NAME)
@@ -74,29 +72,7 @@ foreach(CATEGORY coulomb force ham ewald2d)
   endif()
 
   add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
-endforeach()
-
-# Exercise the application abort in a child process, outside the regular Catch suite.
-foreach(ranks 1 2)
-  if(ranks GREATER 1 AND NOT HAVE_MPI)
-    continue()
-  endif()
-  set(abort_test deterministic-unit_test_ecp_builder_abort-r${ranks}-t1)
-  set(abort_dir "${CMAKE_CURRENT_BINARY_DIR}/${abort_test}")
-  file(MAKE_DIRECTORY "${abort_dir}")
-  configure_file("${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/C.BFD.xml"
-                 "${abort_dir}/C.BFD.xml" COPYONLY)
-  set(abort_command ${QMC_GPU_TEST_LAUNCHER})
-  if(HAVE_MPI)
-    list(APPEND abort_command ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${ranks} ${MPIEXEC_PREFLAGS})
-  endif()
-  list(APPEND abort_command $<TARGET_FILE:test_hamiltonian_ham>)
-  add_test(NAME ${abort_test}
-           COMMAND ${CMAKE_COMMAND} -E env ${abort_command} "[.ecp_abort]" --turn-on-printout)
-  set_tests_properties(${abort_test} PROPERTIES WORKING_DIRECTORY "${abort_dir}" TIMEOUT 45
-                       PROCESSORS ${ranks} ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "unit"
-                       PASS_REGULAR_EXPRESSION "Fatal Error\\. Aborting at ECPotentialBuilder::useXmlFormat failed:")
-  set_test_gpu_resources(${abort_test})
+  add_unit_test(BASENAME ${UTEST_NAME} PROCS 2 THREADS 3 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES} )
 endforeach()
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
