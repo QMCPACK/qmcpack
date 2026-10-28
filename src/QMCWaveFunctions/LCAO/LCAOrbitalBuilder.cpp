@@ -733,13 +733,15 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   aAttrib.add(neig, "size", {}, TagStatus::DEPRECATED);
   aAttrib.add(neig, "orbitals", {}, TagStatus::DELETED);
   aAttrib.put(coeff_ptr);
-  hdf_archive hin(myComm);
+  int Ctemp_rows = 0;
+  int Ctemp_cols = 0;
+  Matrix<RealType> Ctemp;
   if (myComm.rank() == 0)
   {
+    hdf_archive hin;
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
 
-    Matrix<RealType> Ctemp;
     std::array<char, 72> name;
 
 
@@ -758,23 +760,32 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     }
     hin.close();
 
-    if (Ctemp.cols() != spo.getBasisSetSize())
-    {
-      std::ostringstream err_msg;
-      err_msg << "Basis set size " << spo.getBasisSetSize() << " mismatched the number of MO coefficients columns "
-              << Ctemp.cols() << " from h5." << std::endl;
-      throw UniformCommunicateError(err_msg.str());
-    }
+    Ctemp_rows = Ctemp.rows();
+    Ctemp_cols = Ctemp.cols();
+  }
 
-    int norbs = spo.getOrbitalSetSize();
-    if (Ctemp.rows() < norbs)
-    {
-      std::ostringstream err_msg;
-      err_msg << "Need " << norbs << " orbitals. Insufficient rows of MO coefficients " << Ctemp.rows() << " from h5."
-              << std::endl;
-      throw UniformCommunicateError(err_msg.str());
-    }
+  myComm.bcast(Ctemp_rows);
+  myComm.bcast(Ctemp_cols);
 
+  if (Ctemp_cols != spo.getBasisSetSize())
+  {
+    std::ostringstream err_msg;
+    err_msg << "Basis set size " << spo.getBasisSetSize() << " mismatched the number of MO coefficients columns "
+            << Ctemp_cols << " from h5." << std::endl;
+    throw UniformCommunicateError(err_msg.str());
+  }
+
+  int norbs = spo.getOrbitalSetSize();
+  if (Ctemp_rows < norbs)
+  {
+    std::ostringstream err_msg;
+    err_msg << "Need " << norbs << " orbitals. Insufficient rows of MO coefficients " << Ctemp_rows << " from h5."
+            << std::endl;
+    throw UniformCommunicateError(err_msg.str());
+  }
+
+  if (myComm.rank() == 0)
+  {
     int n = 0, i = 0;
     while (i < norbs)
     {
