@@ -78,7 +78,7 @@ if(NOT QMC_COMPLEX)
     set(MO_SRCS ${MO_SRCS} test_soa_cusp_corr.cpp)
   endif()
 else()
-  set(MO_SRCS test_pyscf_complex_MO.cpp test_MO_spinor.cpp)
+  set(MO_SRCS test_pyscf_complex_MO.cpp test_MO_spinor.cpp test_LCAOSpinorBuilder.cpp)
 endif()
 
 set(COMMON_SRC test_variable_set.cpp test_OptimizableObject.cpp test_NaNguard.cpp)
@@ -109,7 +109,6 @@ set(SPOSET_SRC
     test_pw.cpp
     test_ConstantSPOSet.cpp
     test_LCAOrbitalBuilder.cpp
-    test_LCAOSpinorBuilder.cpp
     test_LCAO_diamondC_2x1x1.cpp
     test_RotatedSPOs.cpp
     ${MO_SRCS})

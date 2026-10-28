@@ -155,6 +155,10 @@ QMCMain::QMCMain(Communicate& c)
 
 QMCMain::~QMCMain()
 {
+  for (auto& qmcactionPair : qmc_action_)
+    if (!qmcactionPair.second)
+      xmlFreeNode(qmcactionPair.first);
+
   // free last_driver before clearing P,Psi,H clones
   last_driver_.reset();
   CloneManager::clearClones();

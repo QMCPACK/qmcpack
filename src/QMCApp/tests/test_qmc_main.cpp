@@ -1,5 +1,17 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2026 QMCPACK developers.
+//
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//////////////////////////////////////////////////////////////////////////////////////
+
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
+#include <memory>
 #include "Message/Communicate.h"
 #include "Message/UniformCommunicateError.h"
 #include "QMCApp/QMCMain.h"
@@ -15,9 +27,9 @@ public:
 
   void pushDocString(const std::string& xml_str)
   {
-    auto* doc = new Libxml2Document();
+    auto doc = std::make_unique<Libxml2Document>();
     REQUIRE(doc->parseFromString(xml_str));
-    xml_doc_stack_.push(doc);
+    xml_doc_stack_.push(doc.release());
   }
 };
 

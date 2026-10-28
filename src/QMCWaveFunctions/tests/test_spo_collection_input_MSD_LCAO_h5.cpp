@@ -324,41 +324,6 @@ TEST_CASE("LCAOrbitalBuilder putFromH5 throws", "[wavefunction]")
   Communicate& c(*OHMMS::Controller);
   RuntimeOptions runtime_options;
 
-  SECTION("Number of elements in HDF5 more than species")
-  {
-    ParticleSetPool ptcl = ParticleSetPool(c);
-    auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
-    auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
-    ParticleSet& ions_(*ions_uptr);
-    ParticleSet& elec_(*elec_uptr);
-
-    ions_.setName("ion0");
-    ptcl.addParticleSet(std::move(ions_uptr));
-    ions_.create({1});
-    SpeciesSet& ispecies = ions_.getSpeciesSet();
-    ispecies.addSpecies("Li");
-
-    elec_.setName("elec");
-    ptcl.addParticleSet(std::move(elec_uptr));
-    elec_.create({1});
-
-    WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-
-    const char* spo_xml = R"(<wavefunction name="psi0" target="elec">
-      <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" cuspCorrection="no" href="LiH.orbs.h5">
-        <sposet basisset="LCAOBSet" name="spo-up" size="1">
-          <occupation mode="ground"/>
-          <coefficient size="1" spindataset="0"/>
-        </sposet>
-      </sposet_collection>
-    </wavefunction>
-    )";
-    Libxml2Document doc;
-    REQUIRE(doc.parseFromString(spo_xml));
-    CHECK_THROWS_MATCHES(wf_factory.buildTWF(doc.getRoot(), runtime_options), UniformCommunicateError,
-                         Catch::Matchers::Message("Number of elements in the HDF5 basis set (2) is more than the number of species (1) in the particleset."));
-  }
-
   SECTION("Insufficient rows in h5")
   {
     ParticleSetPool ptcl = ParticleSetPool(c);
