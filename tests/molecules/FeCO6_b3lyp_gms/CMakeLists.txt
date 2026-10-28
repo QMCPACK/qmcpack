@@ -22,6 +22,18 @@ if(NOT QMC_COMPLEX)
     FeCO6_GMS_SHORT # VMC
   )
 
+  qmc_run_and_check(
+    short-FeCO6_gms-vmcbatch_noj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_gms"
+    vmc_short_noj
+    vmcbatch_short_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    FeCO6_GMS_SHORT # VMC
+  )
+
   list(APPEND FeCO6_GMS_LONG "kinetic" "163.8407 0.088") # kinetic energy
   list(APPEND FeCO6_GMS_LONG "eeenergy" "568.6009 0.067") # e-e energy
   list(APPEND FeCO6_GMS_LONG "totenergy" "-250.43439 0.012") # total energy
@@ -30,6 +42,18 @@ if(NOT QMC_COMPLEX)
     long-FeCO6_gms-vmc_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_gms"
     vmc_long_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    FeCO6_GMS_LONG # VMC
+  )
+
+  qmc_run_and_check(
+    long-FeCO6_gms-vmcbatch_noj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_gms"
+    vmc_long_noj
+    vmcbatch_long_noj.in.xml
     1
     16
     TRUE

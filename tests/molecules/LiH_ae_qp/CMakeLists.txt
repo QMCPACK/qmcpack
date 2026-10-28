@@ -24,6 +24,18 @@ if(NOT QMC_COMPLEX)
     LIH_SHORT # VMC
   )
 
+  qmc_run_and_check(
+    short-LiH_ae_qp-vmcbatch_hf_noj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_qp"
+    vmc_short_noj
+    vmcbatch_short_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    LIH_SHORT # VMC
+  )
+
   list(APPEND LIH_LONG "kinetic" "7.991334 0.01") # kinetic energy
   list(APPEND LIH_LONG "totenergy" "-7.9873140 0.0002") # total energy
   list(APPEND LIH_LONG "eeenergy" "3.488827 0.00026") # e-e energy
@@ -32,6 +44,18 @@ if(NOT QMC_COMPLEX)
     long-LiH_ae_qp-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_qp"
     vmc_long_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    LIH_LONG # VMC
+  )
+
+  qmc_run_and_check(
+    long-LiH_ae_qp-vmcbatch_hf_noj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_qp"
+    vmc_long_noj
+    vmcbatch_long_noj.in.xml
     1
     16
     TRUE

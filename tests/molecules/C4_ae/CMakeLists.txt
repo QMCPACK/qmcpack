@@ -20,11 +20,35 @@ if(NOT QMC_COMPLEX)
     C4_SD_AE_QP_SHORT # VMC
   )
 
+  qmc_run_and_check(
+    short-C4_sd-ae-qp-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
+    qmc_short-SD-C4_AE_Mol_QP
+    qmc_short-SD-C4_AE_Mol_QP-batch.in.xml
+    1
+    16
+    TRUE
+    0
+    C4_SD_AE_QP_SHORT # VMC
+  )
+
   # Test case where number of orbitals is greater than the number of electrons
   qmc_run_and_check(
     short-C4_sd-ae-large-qp-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
     qmc_short-SD-C4_AE_Mol_large_QP.in.xml
+    1
+    16
+    TRUE
+    0
+    C4_SD_AE_QP_SHORT # VMC
+  )
+
+  qmc_run_and_check(
+    short-C4_sd-ae-large-qp-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
+    qmc_short-SD-C4_AE_Mol_large_QP
+    qmc_short-SD-C4_AE_Mol_large_QP-batch.in.xml
     1
     16
     TRUE
@@ -43,6 +67,18 @@ if(NOT QMC_COMPLEX)
     long-C4_sd-ae-qp-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
     qmc_long-SD-C4_AE_Mol_QP.in.xml
+    1
+    16
+    TRUE
+    0
+    C4_SD_AE_QP_LONG # VMC
+  )
+
+  qmc_run_and_check(
+    long-C4_sd-ae-qp-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
+    qmc_long-SD-C4_AE_Mol_QP
+    qmc_long-SD-C4_AE_Mol_QP-batch.in.xml
     1
     16
     TRUE
@@ -75,6 +111,18 @@ if(NOT QMC_COMPLEX)
     C4_MD_AE_EXCITED_QP_SHORT # VMC
   )
 
+  qmc_run_and_check(
+    short-C4_md-ae-excited-qp-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
+    qmc_short-MD-C4_AE_Mol_Excited_QP
+    qmc_short-MD-C4_AE_Mol_Excited_QP-batch.in.xml
+    1
+    16
+    TRUE
+    0
+    C4_MD_AE_EXCITED_QP_SHORT # VMC
+  )
+
   list(APPEND C4_MD_AE_GROUND_QP_SHORT "totenergy" "-151.05936895837109 0.067531501861")
   list(APPEND C4_MD_AE_GROUND_QP_SHORT "variance" "34.274239480694 2.0")
   list(APPEND C4_MD_AE_GROUND_QP_SHORT "kinetic" "149.806496130140 2.275152959288")
@@ -86,6 +134,18 @@ if(NOT QMC_COMPLEX)
     short-C4_md-ae-ground-qp-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
     qmc_short-MD-C4_AE_Mol_Ground_QP.in.xml
+    1
+    16
+    TRUE
+    0
+    C4_MD_AE_GROUND_QP_SHORT # VMC
+  )
+
+  qmc_run_and_check(
+    short-C4_md-ae-ground-qp-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
+    qmc_short-MD-C4_AE_Mol_Ground_QP
+    qmc_short-MD-C4_AE_Mol_Ground_QP-batch.in.xml
     1
     16
     TRUE

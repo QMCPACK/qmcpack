@@ -24,6 +24,18 @@ if(NOT QMC_COMPLEX)
     O_UHF_SHORT # VMC
   )
 
+  qmc_run_and_check(
+    short-O_ae_uhf_pyscf-vmcbatch_hf_noj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/O_ae_pyscf_UHF"
+    vmc_short_noj
+    vmcbatch_short_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    O_UHF_SHORT # VMC
+  )
+
   list(APPEND O_UHF_LONG "kinetic" "74.7451 0.057") # kinetic energy
   list(APPEND O_UHF_LONG "totenergy" "-74.793488 0.0010") # total energy
   list(APPEND O_UHF_LONG "eeenergy" "28.483604 0.0018") # e-e energy
@@ -32,6 +44,18 @@ if(NOT QMC_COMPLEX)
     long-O_ae_uhf_pyscf-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/O_ae_pyscf_UHF"
     vmc_long_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    O_UHF_LONG # VMC
+  )
+
+  qmc_run_and_check(
+    long-O_ae_uhf_pyscf-vmcbatch_hf_noj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/O_ae_pyscf_UHF"
+    vmc_long_noj
+    vmcbatch_long_noj.in.xml
     1
     16
     TRUE
