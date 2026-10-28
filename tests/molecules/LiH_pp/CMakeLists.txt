@@ -23,7 +23,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_pp-vmcbatch_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_noj
     vmcbatch_hf_noj.in.xml
     1
     16
@@ -56,7 +55,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_pp-vmcbatch_hf_sdj_xml
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_sdj_xml
     vmcbatch_hf_sdj_xml.xml
     1
     16
@@ -79,7 +77,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_pp-vmcbatch_hf_sdj_xml
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_sdj_xml
     vmcbatch_hf_sdj_xml.xml
     16
     1
@@ -102,7 +99,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_pp-vmcbatch_hf_sdj_xml
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_sdj_xml
     vmcbatch_hf_sdj_xml.xml
     4
     4
@@ -129,7 +125,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_pp-vmcbatch_hf_sdj_hdf5
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_sdj_hdf5
     vmcbatch_hf_sdj_hdf5.xml
     1
     16
@@ -152,7 +147,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_pp-vmcbatch_hf_sdj_hdf5
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_sdj_hdf5
     vmcbatch_hf_sdj_hdf5.xml
     16
     1
@@ -175,7 +169,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_pp-vmcbatch_hf_sdj_hdf5
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_sdj_hdf5
     vmcbatch_hf_sdj_hdf5.xml
     4
     4
@@ -202,7 +195,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_pp-vmcbatch_hf_sdj_old_hdf5
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_sdj_old-hdf5
     vmcbatch_hf_sdj_old-hdf5.xml
     1
     16

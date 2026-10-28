@@ -27,7 +27,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_ae_pyscf-vmcbatch_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_pyscf"
-    vmc_short_noj
     vmcbatch_short_noj.in.xml
     1
     16
@@ -54,7 +53,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-LiH_ae_pyscf-vmcbatch_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_pyscf"
-    vmc_long_noj
     vmcbatch_long_noj.in.xml
     1
     16

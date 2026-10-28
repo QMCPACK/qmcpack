@@ -551,6 +551,14 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
     if(TEST_ADDED AND NOT SHOULD_FAIL)
       get_qmc_project_id("${BASE_DIR}/${INPUT_FILE}" PREFIX)
+      file(READ "${BASE_DIR}/${INPUT_FILE}" INPUT_XML)
+      string(REGEX MATCH
+                   "<parameter[ \t\r\n]+[^>]*name[ \t\r\n]*=[ \t\r\n]*['\"]output_param_file['\"][^>]*>[ \t\r\n]*yes[ \t\r\n]*</parameter>"
+                   WRITES_PARAMETER_OUTPUT
+                   "${INPUT_XML}")
+      if(WRITES_PARAMETER_OUTPUT)
+        set(PREFIX "${PREFIX}.param")
+      endif()
       # Derefence the list of scalar values by variable name
       set(SCALAR_VALUES "${${QRC_SCALAR_VALUES}}")
 

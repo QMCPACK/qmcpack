@@ -115,7 +115,6 @@ if(NOT QMC_COMPLEX)
     qmc_run_and_check(
       deterministic-Co_L2_L2-vmcbatch_dmcbatch
       "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
-      det_dmc_L2_diff
       det_dmcbatch_L2_diff.in.xml
       1
       1

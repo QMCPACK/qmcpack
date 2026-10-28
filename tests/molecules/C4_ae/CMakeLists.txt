@@ -23,7 +23,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-C4_sd-ae-qp-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-    qmc_short-SD-C4_AE_Mol_QP
     qmc_short-SD-C4_AE_Mol_QP-batch.in.xml
     1
     16
@@ -47,7 +46,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-C4_sd-ae-large-qp-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-    qmc_short-SD-C4_AE_Mol_large_QP
     qmc_short-SD-C4_AE_Mol_large_QP-batch.in.xml
     1
     16
@@ -77,7 +75,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-C4_sd-ae-qp-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-    qmc_long-SD-C4_AE_Mol_QP
     qmc_long-SD-C4_AE_Mol_QP-batch.in.xml
     1
     16
@@ -114,7 +111,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-C4_md-ae-excited-qp-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-    qmc_short-MD-C4_AE_Mol_Excited_QP
     qmc_short-MD-C4_AE_Mol_Excited_QP-batch.in.xml
     1
     16
@@ -144,7 +140,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-C4_md-ae-ground-qp-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-    qmc_short-MD-C4_AE_Mol_Ground_QP
     qmc_short-MD-C4_AE_Mol_Ground_QP-batch.in.xml
     1
     16
