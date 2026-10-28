@@ -464,6 +464,7 @@ class Simulation(NexusCore):
         self.got_output = False
         self.analyzed   = False
         self.timestamps = obj()
+        self.timeout_started = False
         self.subcascade_finished = False
         self.block            = block
         self.block_subcascade = block_subcascade
@@ -1265,17 +1266,22 @@ class Simulation(NexusCore):
             if self.errfile is not None:
                 errfile = os.path.join(self.locdir,self.errfile)
                 should_check &= os.path.exists(errfile)
-            #end if
+
             if not self.finished and should_check:
                 self.check_sim_status()
-            elif not self.finished:
-                exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
-                elapsed = datetime.now().astimezone() - exited_queue
-                if elapsed.total_seconds()>nexus_config.timeout:
-                    self.record_timestamp('timed_out')
-                    self.failed = True
-                #end if
-            #end if
+
+            if not self.finished:
+                if not self.timeout_started:
+                    self.timeout_started = True
+                    self.logger.info("Started countdown to timeout")
+                else:
+                    exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
+                    elapsed = datetime.now().astimezone() - exited_queue
+                    if elapsed.total_seconds()>nexus_config.timeout:
+                        self.record_timestamp('timed_out')
+                        self.failed = True
+                        self.timeout_started = False
+
             if self.failed:
                 self.finished = True
             #end if
@@ -1286,6 +1292,9 @@ class Simulation(NexusCore):
         if self.finished:
             self.record_timestamp('finished')
             self.save_image()
+            if self.timeout_started:
+                self.timeout_started = False
+                self.logger.info("Timeout countdown aborted")
         elif newly_exited_queue:
             self.save_image()
         #end if
