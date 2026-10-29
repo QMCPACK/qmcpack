@@ -27,6 +27,7 @@
 #include "QMCWaveFunctions/Jastrow/ShortRangeCuspFunctor.h"
 #include "QMCWaveFunctions/Jastrow/UserFunctor.h"
 #include "Platforms/Host/OutputManager.h"
+#include "Message/UniformCommunicateError.h"
 #include <iostream>
 
 
@@ -338,7 +339,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
       std::ostringstream msg;
       msg << R"(Offload enabled Jastrow needs the gpu="yes" attribute in the ")" << SourcePtcl->getName()
           << "\" particleset" << std::endl;
-      myComm.barrier_and_abort(msg.str());
+      throw UniformCommunicateError(msg.str());
     }
     app_summary() << "    Running OpenMP offload code path." << std::endl;
     use_offload = true;
@@ -590,7 +591,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
           std::ostringstream msg;
           msg << R"(Offload enabled Jastrow needs the gpu="yes" attribute in the ")" << targetPtcl.getName()
               << "\" particleset" << std::endl;
-          myComm.barrier_and_abort(msg.str());
+          throw UniformCommunicateError(msg.str());
         }
         app_summary() << "    Running OpenMP offload code path." << std::endl;
         return createJ2<BsplineFunctor<RealType>, detail::OMPTARGET>(cur);

@@ -78,16 +78,8 @@ bool ParticleSetPool::readSimulationCellXML(xmlNodePtr cur)
 {
   ReportEngine PRE("ParticleSetPool", "putLattice");
 
-  bool lattice_defined = false;
-  try
-  {
-    LatticeParser a(simulation_cell_->lattice_);
-    lattice_defined = a.put(cur);
-  }
-  catch (const UniformCommunicateError& ue)
-  {
-    myComm.barrier_and_abort(ue.what());
-  }
+  LatticeParser a(simulation_cell_->lattice_);
+  bool lattice_defined = a.put(cur);
 
   if (lattice_defined)
   {
@@ -146,15 +138,8 @@ bool ParticleSetPool::put(xmlNodePtr cur)
 
     myPool.emplace(id, pTemp);
 
-    try
-    {
-      XMLParticleParser pread(*pTemp);
-      pread.readXML(cur);
-    }
-    catch (const UniformCommunicateError& ue)
-    {
-      myComm.barrier_and_abort(ue.what());
-    }
+    XMLParticleParser pread(*pTemp);
+    pread.readXML(cur);
 
     //if random_source is given, create a node <init target="" soruce=""/>
     if (randomR == "yes" && !randomsrc.empty())
