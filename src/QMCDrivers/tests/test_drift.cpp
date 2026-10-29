@@ -101,30 +101,26 @@ TEST_CASE("drift pbyp and node correction complex", "[drivers][drift]")
 
 TEST_CASE("get scaled drift real", "[drivers][drift]")
 {
-  const SimulationCell simulation_cell;
-  MCWalkerConfiguration elec(simulation_cell);
+  using RealType = QMCTraits::RealType;
+  using PosType  = QMCTraits::PosType;
+  using GradType = QMCTraits::GradType;
 
-  elec.setName("elec");
-  std::vector<int> agroup(1);
-  agroup[0] = 1;
-  elec.create(agroup);
-
-  ParticleSet::RealType tau  = 0.5;
-  ParticleSet::RealType mass = 0.85;
-  std::vector<ParticleSet::RealType> massinv(1, 1. / mass);
-  ParticleSet::PosType drift;
+  const RealType tau  = 0.5;
+  const RealType mass = 0.85;
+  PosType drift;
 
   // check from -xtot/2 to xtot/2 in step size of dx i.e. np.arange(-xtot/2,xtot/2,dx)
-  double xtot  = 10.;
-  int nx       = 100;
-  double gradx = -xtot / 2.;
-  double dx    = xtot / nx;
+  const RealType xtot = 10.;
+  const int nx        = 100;
+  RealType gradx      = -xtot / 2.;
+  const RealType dx   = xtot / nx;
 
   DriftModifierUNR DM;
   for (int ix = 0; ix < nx; ix++)
   {
-    elec.G[0][0] = gradx;
-    DM.getDrift(tau / mass, elec.G[0], drift);
+    GradType grad{};
+    grad[0] = gradx;
+    DM.getDrift(tau / mass, grad, drift);
     double dval = drift[0];
 
     double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);
@@ -137,33 +133,29 @@ TEST_CASE("get scaled drift real", "[drivers][drift]")
 #ifdef QMC_COMPLEX
 TEST_CASE("get scaled drift complex", "[drivers][drift]")
 {
-  const SimulationCell simulation_cell;
-  MCWalkerConfiguration elec(simulation_cell);
+  using RealType    = QMCTraits::RealType;
+  using PosType     = QMCTraits::PosType;
+  using GradType    = QMCTraits::GradType;
+  using ComplexType = QMCTraits::ComplexType;
 
-  elec.setName("elec");
-  std::vector<int> agroup(1);
-  agroup[0] = 1;
-  elec.create(agroup);
-
-  ParticleSet::RealType tau  = 0.5;
-  ParticleSet::RealType mass = 0.85;
-  std::vector<ParticleSet::RealType> massinv(1, 1. / mass);
-  ParticleSet::PosType drift;
+  const RealType tau  = 0.5;
+  const RealType mass = 0.85;
+  PosType drift;
 
   // check from -xtot/2 to xtot/2 in step size of dx i.e. np.arange(-xtot/2,xtot/2,dx)
-  double xtot  = 10.;
-  int nx       = 100;
-  double gradx = -xtot / 2.;
-  double dx    = xtot / nx;
+  const RealType xtot = 10.;
+  const int nx        = 100;
+  RealType gradx      = -xtot / 2.;
+  const RealType dx   = xtot / nx;
 
   DriftModifierUNR DM;
 
   // imaginary component of wf gradient should NOT affect drift
-  std::complex<double> myi(0, 1.9);
   for (int ix = 0; ix < nx; ix++)
   {
-    elec.G[0][0] = gradx + myi;
-    DM.getDrift(tau / mass, elec.G[0], drift);
+    GradType grad{};
+    grad[0] = ComplexType(gradx, 1.9);
+    DM.getDrift(tau / mass, grad, drift);
     double dval = drift[0];
 
     double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);
