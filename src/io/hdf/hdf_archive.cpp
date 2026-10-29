@@ -126,7 +126,7 @@ bool hdf_archive::create(const std::filesystem::path& fname, unsigned mode_flags
 {
   close();
   possible_filename_ = fname;
-  if (read_only_)
+  if (read_only_predetermined_)
     throw std::runtime_error("Cannot create file in read-only mode!");
   file_id = H5Fcreate(fname.c_str(), mode_flags, file_cpl_, file_apl_);
   return file_id != is_closed;
@@ -136,7 +136,7 @@ bool hdf_archive::open(const std::filesystem::path& fname, unsigned mode_flags)
 {
   close();
   possible_filename_ = fname;
-  if (read_only_ && mode_flags != H5F_ACC_RDONLY)
+  if (read_only_predetermined_ && mode_flags != H5F_ACC_RDONLY)
     throw std::runtime_error("Only H5F_ACC_RDONLY is allowed in read-only mode!");
   file_id = H5Fopen(fname.c_str(), mode_flags, file_apl_);
   return file_id != is_closed;
@@ -204,6 +204,8 @@ void hdf_archive::push(const std::string& gname, bool createit)
 
   if ((oinfo.type != H5O_TYPE_GROUP) && createit)
   {
+    if (read_only_predetermined_)
+      throw std::runtime_error("Cannot create group in read-only mode!");
     g = H5Gcreate2(p, gname.c_str(), lcpl_id, H5P_DEFAULT, H5P_DEFAULT);
   }
   else

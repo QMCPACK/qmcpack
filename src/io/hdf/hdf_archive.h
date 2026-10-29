@@ -45,16 +45,41 @@ namespace qmcplusplus
 /// Suppress HDF5 warning and error messages.
 extern hdf_error_suppression hide_hdf_errors;
 
-/** class to handle hdf file
+/** Class to handle HDF5 file access.
  *
- *  Wrapper functions necessary because hdf5 c interface h5d_xxx semantics.
+ *  Wrapper functions provide RAII management and type-safe dataset/group operations.
+ *  Supports three distinct I/O modes determined at construction:
+ *
+ *  1. **Serial mode** (`hdf_archive()`):
+ *     - Standard serial POSIX I/O without MPI-IO property lists.
+ *     - Intended for single-rank executions, or when only rank 0 (or a designated rank)
+ *       creates, opens, reads, or writes to an HDF5 file.
+ *     - Both read and write operations are permitted (`read_only_predetermined_ = false`).
+ *
+ *  2. **Parallel independent mode** (`hdf_archive(comm, false)`):
+ *     - All ranks in `comm` open and read the file concurrently with independent access.
+ *     - **Predetermined read-only**: Mutating operations (`create()`, opening with
+ *       `H5F_ACC_RDWR`, creating new groups via `push()`, `writeEntry()`, `appendEntry()`,
+ *       and `flush()`) will throw `std::runtime_error`.
+ *     - When parallel HDF5 is enabled (`ENABLE_PHDF5`) and `comm.size() > 1`, uses the HDF5
+ *       MPI-IO driver (`H5Pset_fapl_mpio`) with independent transfers.
+ *     - When parallel HDF5 is disabled or unavailable, gracefully decays to serial POSIX
+ *       read-only access on each rank.
+ *
+ *  3. **Parallel collective mode** (`hdf_archive(comm, true)`):
+ *     - All ranks in `comm` participate collectively in parallel I/O.
+ *     - Supports both read and write operations (`read_only_predetermined_ = false`).
+ *     - Requires parallel HDF5 support (`ENABLE_PHDF5` and `comm.size() > 1`). Sets collective
+ *       file access properties (`H5Pset_fapl_mpio`, `H5Pset_all_coll_metadata_ops`,
+ *       `H5Pset_coll_metadata_write`) and collective dataset transfer (`H5FD_MPIO_COLLECTIVE`).
+ *     - If parallel HDF5 is not enabled (`!ENABLE_PHDF5`), construction throws `std::runtime_error`.
  */
 class hdf_archive
 {
 private:
   static const hid_t is_closed = -1;
   /// true if file can only be opened read-only
-  const bool read_only_{false};
+  const bool read_only_predetermined_{false};
   /// file creation property list
   hid_t file_cpl_{H5I_INVALID_HID};
   /// file access property list
@@ -87,21 +112,25 @@ private:
 #endif
 
 public:
-  /** constructor
-   * @param c communicator
-   * @param request_pio turns on collective parallel I/O,
-   *        if true and PHDF5 is available, hdf_archive is in parallel collective IO mode
-   *        if true and PHDF5 is not available, throws runtime_error
-   *        if false, hdf_archive is in read-only independent IO mode
+  /** Parallel constructor (independent read-only or collective read-write).
+   * @param c Communicator across which file access is coordinated.
+   * @param request_pio Flag selecting collective parallel I/O:
+   *        - false (default): parallel independent mode. Enforces read-only access.
+   *          Decays to serial POSIX read-only if ENABLE_PHDF5 is not enabled.
+   *        - true: parallel collective mode. Requires ENABLE_PHDF5; throws
+   *          std::runtime_error if parallel HDF5 is not enabled.
    */
   template<class Comm, typename = std::enable_if_t<!std::is_same_v<std::decay_t<Comm>, hdf_archive>>>
-  hdf_archive(Comm& c, bool request_pio = false) : read_only_(!request_pio)
+  hdf_archive(Comm& c, bool request_pio = false) : read_only_predetermined_(!request_pio)
   {
     if (!hdf_error_suppression::enabled)
       throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
     set_access_plist(c, request_pio);
   }
 
+  /** Serial default constructor.
+   *  Constructs an archive in serial mode for standard read-write POSIX access.
+   */
   hdf_archive()
   {
     if (!hdf_error_suppression::enabled)
@@ -134,6 +163,8 @@ public:
   ///flush a file
   inline void flush()
   {
+    if (read_only_predetermined_)
+      throw std::runtime_error("Cannot flush file in read-only mode!");
     if (file_id != is_closed)
       if (H5Fflush(file_id, H5F_SCOPE_LOCAL) < 0)
         throw std::runtime_error("H5Fflush failed.");
@@ -227,7 +258,7 @@ public:
   template<typename T>
   bool writeEntry(const T& data, const std::string& aname)
   {
-    if (read_only_)
+    if (read_only_predetermined_)
       throw std::runtime_error("Cannot write data in read-only mode!");
     hid_t p = group_id.empty() ? file_id : group_id.top();
     h5data_proxy<typename std::remove_const<T>::type> e(data);
@@ -279,7 +310,7 @@ public:
   template<typename T>
   bool appendEntry(T& data, const std::string& aname, hsize_t& current_append_index)
   {
-    if (read_only_)
+    if (read_only_predetermined_)
       throw std::runtime_error("Cannot append data in read-only mode!");
     hid_t p = group_id.empty() ? file_id : group_id.top();
     h5data_proxy<typename std::remove_const<T>::type> e(data);

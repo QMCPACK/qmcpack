@@ -52,7 +52,9 @@ TEST_CASE("hdf_archive_parallel", "[hdf]")
   int i_read = 0;
   REQUIRE(hd_read.readEntry(i_read, "int"));
   REQUIRE(i_read == 23);
+  REQUIRE_THROWS_AS(hd_read.push("new_group"), std::runtime_error);
   REQUIRE_THROWS_AS(hd_read.writeEntry(i_read, "int"), std::runtime_error);
+  REQUIRE_THROWS_AS(hd_read.flush(), std::runtime_error);
 }
 
 #ifdef HAVE_MPI
@@ -88,6 +90,8 @@ TEST_CASE("hdf_archive_parallel_mpi3", "[hdf]")
   int i_read = 0;
   REQUIRE(hd_read.readEntry(i_read, "int"));
   REQUIRE(i_read == 23);
+  REQUIRE_THROWS_AS(hd_read.push("new_group"), std::runtime_error);
   REQUIRE_THROWS_AS(hd_read.writeEntry(i_read, "int"), std::runtime_error);
+  REQUIRE_THROWS_AS(hd_read.flush(), std::runtime_error);
 }
 #endif
