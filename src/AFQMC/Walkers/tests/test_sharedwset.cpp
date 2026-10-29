@@ -369,14 +369,9 @@ void test_walker_io(std::string wtype)
   dump.close();
 
   {
-#if defined(ENABLE_PHDF5)
-    hdf_archive read(world, true);
-    {
-#else
-    hdf_archive read(world, false);
+    hdf_archive read;
     if (TG.Global().root())
     {
-#endif
       if (!read.open("dummy_walkers.h5", H5F_ACC_RDONLY))
       {
         app_error() << " Error opening restart file. \n";

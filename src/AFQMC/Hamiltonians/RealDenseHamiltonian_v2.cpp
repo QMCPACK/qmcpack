@@ -78,7 +78,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
   auto Qcomm_roots(Qcomm.split(distNode.rank(), Qcomm.rank()));
   auto distNode_roots(TG.Global().split(distNode.rank(), TG.Global().rank()));
 
-  hdf_archive dump(TG.Global());
+  hdf_archive dump;
   // right now only Node.root() reads
   if (distNode.root())
   {
