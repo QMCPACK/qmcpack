@@ -985,7 +985,16 @@ class QIxml(Names):
         #    c+=' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd"'
         ##end if
         #no_contents = len(set(self.keys())-set(self.elements)-set(self.plurals.keys()))==0
-        no_contents = len(set(self.keys())-set(self.attributes))==0
+        contents = set(self.keys())-set(self.attributes)
+        have_text = self.text is not None and self.text in self
+        if have_text and isinstance(self[self.text],str):
+            have_text = bool(self[self.text].strip())
+        #end if
+        # Empty text read from XML should not prevent a self-closing element.
+        if not have_text:
+            contents.discard(self.text)
+        #end if
+        no_contents = len(contents)==0
         if no_contents:
             c += '/>\n'
         else:
@@ -1062,7 +1071,7 @@ class QIxml(Names):
                     #end for
                 #end if
             #end for
-            if self.text is not None and self.text in self:
+            if have_text:
                 c = c.rstrip('\n')
                 c+=param.write(self[self.text],mode='elem',pad=ip,tag=None,normal_elem=True)
             #end if
