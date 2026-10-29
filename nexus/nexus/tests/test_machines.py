@@ -2185,11 +2185,12 @@ srun test.x''',
 #SBATCH -A ABC123
 #SBATCH -p batch
 #SBATCH -J jobname
-#SBATCH -t 06:30:00
+#SBATCH -t 00:30:00
 #SBATCH -N 2
 #SBATCH -S 8
 #SBATCH -o jobname.out
 #SBATCH -e jobname.err
+#SBATCH -q debug
 
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
@@ -2288,6 +2289,9 @@ srun -N 2 -n 64 test.x
         ji = deepcopy(job_inputs)
         if name=='summit': # exceptional treatment for summit nodes
             ji.gpus = 6
+        if name=='frontier': # test a 30 minute debug job on frontier
+            ji.hours = 0
+            ji.qos = 'debug'
         if name=='flight':
             ji.reservation='test_reservation_name'
         #end if
