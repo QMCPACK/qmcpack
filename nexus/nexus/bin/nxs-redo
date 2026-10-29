@@ -115,7 +115,7 @@ def main(
         if verbose:
             print(
                 f"    Creating backup of {len(contents)} files in:\n"
-                f"      {attempt_dir}\n"
+                f"      {attempt_dir}"
             )
 
         if not dry_run and len(contents) > 0:
@@ -124,7 +124,7 @@ def main(
                 item.move_into(attempt_dir)
 
         if verbose:
-            print("Done!\n")
+            print("  Done!\n")
 
     if verbose:
         print("Backup Complete!")
