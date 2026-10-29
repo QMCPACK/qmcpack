@@ -10,7 +10,9 @@
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
+#include "Message/UniformCommunicateError.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -779,6 +781,92 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
   auto check = checkMatrix(psiM_rot_manual, psiM, true);
   CHECKED_ELSE(check.result) { FAIL(check.result_message); }
+}
+
+TEST_CASE("EinsplineSpinorSetBuilder throws", "[wavefunction]")
+{
+  Communicate& c(*OHMMS::Controller);
+
+  Lattice lattice;
+  lattice.R = {5.10509515, -3.23993545, 0.00000000, 5.10509515, 3.23993545,
+               0.00000000, -6.49690625, 0.00000000, 7.08268015};
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.createSimulationCellByLattice(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
+
+  ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
+  ions_.create({2});
+  ions_.R[0] = {0.00000000, 0.00000000, 1.08659253};
+  ions_.R[1] = {0.00000000, 0.00000000, -1.08659253};
+  ions_.update();
+
+  elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
+  elec_.create({3});
+  elec_.setSpinor(true);
+  elec_.update();
+
+  SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
+  Libxml2Document doc;
+
+  SECTION("Non-positive orbital set size")
+  {
+    const char* particles = R"(
+      <sposet_builder name="A" type="einspline" href="o2_45deg_spins.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" precision="float" meshfactor="4.0">
+        <sposet name="myspo" size="0"/>
+      </sposet_builder>
+    )";
+    REQUIRE(doc.parseFromString(particles));
+    auto builder = fac.createSPOSetBuilder(doc.getRoot());
+    CHECK_THROWS_MATCHES(builder->createSPOSet(xmlFirstElementChild(doc.getRoot())), UniformCommunicateError,
+                         Catch::Matchers::Message("Non-positive orbital set size! Please correct attribute \"size\"."));
+  }
+
+  SECTION("Missing source particleset")
+  {
+    const char* particles = R"(
+      <sposet_builder name="A" type="einspline" href="o2_45deg_spins.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="nonexistent_ion" precision="float" meshfactor="4.0">
+        <sposet name="myspo" size="3"/>
+      </sposet_builder>
+    )";
+    REQUIRE(doc.parseFromString(particles));
+    auto builder = fac.createSPOSetBuilder(doc.getRoot());
+    CHECK_THROWS_MATCHES(builder->createSPOSet(xmlFirstElementChild(doc.getRoot())), UniformCommunicateError,
+                         Catch::Matchers::Message("Einspline needs the source particleset"));
+  }
+
+  SECTION("Unsupported occupation mode")
+  {
+    const char* particles = R"(
+      <sposet_builder name="A" type="einspline" href="o2_45deg_spins.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" precision="float" meshfactor="4.0">
+        <sposet name="myspo" size="3">
+          <occupation mode="unsupported_mode"/>
+        </sposet>
+      </sposet_builder>
+    )";
+    REQUIRE(doc.parseFromString(particles));
+    auto builder = fac.createSPOSetBuilder(doc.getRoot());
+    CHECK_THROWS_MATCHES(builder->createSPOSet(xmlFirstElementChild(doc.getRoot())), UniformCommunicateError,
+                         Catch::Matchers::Message("EinsplineSetBuilder::createSPOSet Only ground state occupation currently supported in EinsplineSetBuilder."));
+  }
+
+  SECTION("Truncate feature removed")
+  {
+    const char* particles = R"(
+      <sposet_builder name="A" type="einspline" href="o2_45deg_spins.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" precision="float" meshfactor="4.0" truncate="yes">
+        <sposet name="myspo" size="3"/>
+      </sposet_builder>
+    )";
+    REQUIRE(doc.parseFromString(particles));
+    auto builder = fac.createSPOSetBuilder(doc.getRoot());
+    CHECK_THROWS_MATCHES(builder->createSPOSet(xmlFirstElementChild(doc.getRoot())), UniformCommunicateError,
+                         Catch::Matchers::Message("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation."));
+  }
 }
 
 #endif //QMC_COMPLEX

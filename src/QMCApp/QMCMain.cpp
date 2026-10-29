@@ -72,7 +72,8 @@ QMCMain::QMCMain(Communicate& c)
 {
   Communicate node_comm{OHMMS::Controller->createNodeComm()};
   // assign accelerators within a node
-  DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
+  if (!DeviceManager::isInitialized())
+    DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
   app_summary() << "================================================================\n"
                 << "                        QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
@@ -154,6 +155,10 @@ QMCMain::QMCMain(Communicate& c)
 
 QMCMain::~QMCMain()
 {
+  for (auto& qmcactionPair : qmc_action_)
+    if (!qmcactionPair.second)
+      xmlFreeNode(qmcactionPair.first);
+
   // free last_driver before clearing P,Psi,H clones
   last_driver_.reset();
   CloneManager::clearClones();

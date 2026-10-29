@@ -16,6 +16,8 @@
 
 #include "test_WalkerControl.h"
 #include "Message/Communicate.h"
+#include "Message/UniformCommunicateError.h"
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include "ParticleSetPool.h"
 #include "WaveFunctionPool.h"
 #include "HamiltonianPool.h"
@@ -85,6 +87,15 @@ void UnifiedDriverWalkerControlMPITest::testInput()
   REQUIRE(wc_.put(configured_doc.getRoot()));
   CHECK_FALSE(wc_.use_nonblocking_);
   CHECK(wc_.debug_disable_branching_);
+
+  const char* const invalid_input = R"(
+  <qmc method="dmc_batch">
+    <parameter name="use_nonblocking">invalid</parameter>
+  </qmc>)";
+  Libxml2Document invalid_doc;
+  REQUIRE(invalid_doc.parseFromString(invalid_input));
+  CHECK_THROWS_MATCHES(wc_.put(invalid_doc.getRoot()), UniformCommunicateError,
+                       Catch::Matchers::Message("WalkerControl::put parsing error. use_nonblocking only accepts 'yes'/'no'/'true'/'false' but the input value is 'invalid'."));
 }
 
 } // namespace testing

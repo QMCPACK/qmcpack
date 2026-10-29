@@ -222,6 +222,15 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(const xmlNodePt
     }
   });
 
+  // Ensure the first SPO set must be spinSet==0
+  // to correctly initialize key data of EinsplineSetBuilder
+  if (SPOSetMap.size() == 0 && spinSet != 0)
+    throw UniformCommunicateError("The first SPO set must have spindataset=\"0\"");
+
+  if (spinSet >= TargetPtcl.groups() || spinSet < 0)
+    throw UniformCommunicateError(
+        "spindataset must be non-negative and smaller than number of groups in target particleset.");
+
   if (Occ != last_occ)
   {
     NewOcc = true;
@@ -245,11 +254,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(const xmlNodePt
 
   if (FullBands[spinSet] == 0)
     FullBands[spinSet] = std::make_unique<std::vector<BandInfo>>();
-
-  // Ensure the first SPO set must be spinSet==0
-  // to correctly initialize key data of EinsplineSetBuilder
-  if (SPOSetMap.size() == 0 && spinSet != 0)
-    throw UniformCommunicateError("The first SPO set must have spindataset=\"0\"");
 
   // set the internal parameters
   if (spinSet == 0)
