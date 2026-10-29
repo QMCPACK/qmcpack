@@ -9,7 +9,10 @@
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
+#include "Message/UniformCommunicateError.h"
 
 #include <cstdio>
 #include <string>
@@ -386,6 +389,54 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   CHECK(d2psi_v_list[1].get()[0] == ComplexApprox(ValueType{-1.3757134676, -1.3757134676}));
   CHECK(d2psi_v_list[1].get()[1] == ComplexApprox(ValueType{-2.4803137779, -2.4919104576}));
 #endif
+}
+
+TEST_CASE("HybridRepSetReader throws", "[wavefunction]")
+{
+  Communicate& c(*OHMMS::Controller);
+
+  Lattice lattice;
+  lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.createSimulationCellByLattice(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
+
+  ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
+  ions_.create({2});
+  ions_.R[0] = {0.0, 0.0, 0.0};
+  ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.update();
+  SpeciesSet& ion_species = ions_.getSpeciesSet();
+  int C_Idx               = ion_species.addSpecies("C");
+  int cutoffIdx           = ion_species.addAttribute("cutoff_radius");
+  int lmaxIdx             = ion_species.addAttribute("lmax");
+  int sradiusIdx          = ion_species.addAttribute("spline_radius");
+  int snpointsIdx         = ion_species.addAttribute("spline_npoints");
+  ion_species(cutoffIdx, C_Idx)   = 0.9;
+  ion_species(lmaxIdx, C_Idx)     = 3;
+  ion_species(sradiusIdx, C_Idx)  = -1.0;
+  ion_species(snpointsIdx, C_Idx) = 10;
+
+  elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
+  elec_.create({1});
+
+  const char* particles = R"(
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" hybridrep="yes">
+  <sposet name="updet" size="4"/>
+</sposet_collection>
+)";
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(particles));
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, doc.getRoot());
+  CHECK_THROWS_MATCHES(einSet.createSPOSetFromXML(xmlFirstElementChild(doc.getRoot())), UniformCommunicateError,
+                       Catch::Matchers::Message("initialize_hybridrep_atomic_centers Failed to initialize atomic centers in hybrid orbital representation!\nHybrid orbital representation needs parameter 'spline_radius' for atom 0\nHybrid orbital representation needs parameter 'spline_radius' for atom 1\n"));
 }
 
 } // namespace qmcplusplus

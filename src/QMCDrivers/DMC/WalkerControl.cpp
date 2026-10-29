@@ -26,6 +26,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "type_traits/template_types.hpp"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -570,7 +571,7 @@ bool WalkerControl::put(xmlNodePtr cur)
   }
   catch (const std::runtime_error& re)
   {
-    myComm.barrier_and_abort("WalkerControl::put parsing error. " + std::string(re.what()));
+    throw UniformCommunicateError("WalkerControl::put parsing error. " + std::string(re.what()));
   }
 
   app_log() << "  WalkerControl parameters " << std::endl;

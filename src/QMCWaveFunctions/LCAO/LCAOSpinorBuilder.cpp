@@ -15,6 +15,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "hdf/hdf_archive.h"
 #include "Message/CommOperators.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -22,7 +23,7 @@ LCAOSpinorBuilder::LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Commun
     : LCAOrbitalBuilder(els, ions, comm, cur)
 {
   if (h5_path == "")
-    myComm.barrier_and_abort("LCAOSpinorBuilder only works with href");
+    throw UniformCommunicateError("LCAOSpinorBuilder only works with href");
 }
 
 std::unique_ptr<SPOSet> LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
@@ -40,7 +41,7 @@ std::unique_ptr<SPOSet> LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   BasisSet_t* myBasisSet = nullptr;
   if (basisset_map_.find(basisset_name) == basisset_map_.end())
-    myComm.barrier_and_abort("basisset \"" + basisset_name + "\" cannot be found\n");
+    throw UniformCommunicateError("basisset \"" + basisset_name + "\" cannot be found\n");
   else
     myBasisSet = basisset_map_[basisset_name].get();
 
@@ -81,18 +82,24 @@ bool LCAOSpinorBuilder::loadMO(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr 
   }
 
   hdf_archive hin(myComm);
+  bool file_opened = true;
   if (myComm.rank() == 0)
   {
-    if (!hin.open(h5_path, H5F_ACC_RDONLY))
-      myComm.barrier_and_abort("LCAOSpinorBuilder::loadMO missing or incorrect path to H5 file.");
-    hin.push("PBC");
-    PBC = false;
-    hin.read(PBC, "PBC");
-    hin.close();
+    file_opened = hin.open(h5_path, H5F_ACC_RDONLY);
+    if (file_opened)
+    {
+      hin.push("PBC");
+      PBC = false;
+      hin.read(PBC, "PBC");
+      hin.close();
+    }
   }
+  myComm.bcast(file_opened);
+  if (!file_opened)
+    throw UniformCommunicateError("LCAOSpinorBuilder::loadMO missing or incorrect path to H5 file.");
   myComm.bcast(PBC);
   if (PBC)
-    myComm.barrier_and_abort("LCAOSpinorBuilder::loadMO lcao spinors not implemented in PBC");
+    throw UniformCommunicateError("LCAOSpinorBuilder::loadMO lcao spinors not implemented in PBC");
 
   bool success = putFromH5(up, dn, occ_ptr);
 
@@ -113,84 +120,87 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
 {
 #ifdef QMC_COMPLEX
   if (up.getBasisSetSize() == 0 || dn.getBasisSetSize() == 0)
-  {
-    myComm.barrier_and_abort("LCASpinorBuilder::loadMO  detected ZERO BasisSetSize");
-    return false;
-  }
+    throw UniformCommunicateError("LCASpinorBuilder::loadMO  detected ZERO BasisSetSize");
 
-  bool success = true;
+  bool success     = true;
+  bool file_opened = true;
   hdf_archive hin(myComm);
   if (myComm.rank() == 0)
   {
-    if (!hin.open(h5_path, H5F_ACC_RDONLY))
-      myComm.barrier_and_abort("LCAOSpinorBuilder::putFromH5 missing or incorrect path to H5 file");
-
-    Matrix<RealType> upReal;
-    Matrix<RealType> upImag;
-    std::string setname = "/Super_Twist/eigenset_0";
-    readRealMatrixFromH5(hin, setname, upReal);
-    setname += "_imag";
-    readRealMatrixFromH5(hin, setname, upImag);
-
-    assert(upReal.rows() == upImag.rows());
-    assert(upReal.cols() == upImag.cols());
-
-    Matrix<ValueType> upTemp(upReal.rows(), upReal.cols());
-    for (int i = 0; i < upTemp.rows(); i++)
+    file_opened = hin.open(h5_path, H5F_ACC_RDONLY);
+    if (file_opened)
     {
-      for (int j = 0; j < upTemp.cols(); j++)
+      Matrix<RealType> upReal;
+      Matrix<RealType> upImag;
+      std::string setname = "/Super_Twist/eigenset_0";
+      readRealMatrixFromH5(hin, setname, upReal);
+      setname += "_imag";
+      readRealMatrixFromH5(hin, setname, upImag);
+
+      assert(upReal.rows() == upImag.rows());
+      assert(upReal.cols() == upImag.cols());
+
+      Matrix<ValueType> upTemp(upReal.rows(), upReal.cols());
+      for (int i = 0; i < upTemp.rows(); i++)
       {
-        upTemp[i][j] = ValueType(upReal[i][j], upImag[i][j]);
+        for (int j = 0; j < upTemp.cols(); j++)
+        {
+          upTemp[i][j] = ValueType(upReal[i][j], upImag[i][j]);
+        }
       }
-    }
 
-    Matrix<RealType> dnReal;
-    Matrix<RealType> dnImag;
-    setname = "/Super_Twist/eigenset_1";
-    readRealMatrixFromH5(hin, setname, dnReal);
-    setname += "_imag";
-    readRealMatrixFromH5(hin, setname, dnImag);
+      Matrix<RealType> dnReal;
+      Matrix<RealType> dnImag;
+      setname = "/Super_Twist/eigenset_1";
+      readRealMatrixFromH5(hin, setname, dnReal);
+      setname += "_imag";
+      readRealMatrixFromH5(hin, setname, dnImag);
 
-    assert(dnReal.rows() == dnImag.rows());
-    assert(dnReal.cols() == dnImag.cols());
+      assert(dnReal.rows() == dnImag.rows());
+      assert(dnReal.cols() == dnImag.cols());
 
-    Matrix<ValueType> dnTemp(dnReal.rows(), dnReal.cols());
-    for (int i = 0; i < dnTemp.rows(); i++)
-    {
-      for (int j = 0; j < dnTemp.cols(); j++)
+      Matrix<ValueType> dnTemp(dnReal.rows(), dnReal.cols());
+      for (int i = 0; i < dnTemp.rows(); i++)
       {
-        dnTemp[i][j] = ValueType(dnReal[i][j], dnImag[i][j]);
+        for (int j = 0; j < dnTemp.cols(); j++)
+        {
+          dnTemp[i][j] = ValueType(dnReal[i][j], dnImag[i][j]);
+        }
       }
-    }
 
-    assert(upReal.rows() == dnReal.rows());
-    assert(upReal.cols() == dnReal.cols());
+      assert(upReal.rows() == dnReal.rows());
+      assert(upReal.cols() == dnReal.cols());
 
-    Occ.resize(upReal.rows());
-    success = putOccupation(up, occ_ptr);
+      Occ.resize(upReal.rows());
+      success = putOccupation(up, occ_ptr);
 
-    int norbs = up.getOrbitalSetSize();
+      int norbs = up.getOrbitalSetSize();
 
-    int n = 0, i = 0;
-    while (i < norbs)
-    {
-      if (Occ[n] > 0.0)
+      int n = 0, i = 0;
+      while (i < norbs)
       {
-        std::copy(upTemp[n], upTemp[n + 1], (*up.C)[i]);
-        std::copy(dnTemp[n], dnTemp[n + 1], (*dn.C)[i]);
-        i++;
+        if (Occ[n] > 0.0)
+        {
+          std::copy(upTemp[n], upTemp[n + 1], (*up.C)[i]);
+          std::copy(dnTemp[n], dnTemp[n + 1], (*dn.C)[i]);
+          i++;
+        }
+        n++;
       }
-      n++;
-    }
 
-    hin.close();
+      hin.close();
+    }
   }
+
+  myComm.bcast(file_opened);
+  if (!file_opened)
+    throw UniformCommunicateError("LCAOSpinorBuilder::putFromH5 missing or incorrect path to H5 file");
 
   myComm.bcast(*up.C);
   myComm.bcast(*dn.C);
 
 #else
-  myComm.barrier_and_abort("LCAOSpinorBuilder::putFromH5 Must build with QMC_COMPLEX");
+  throw UniformCommunicateError("LCAOSpinorBuilder::putFromH5 Must build with QMC_COMPLEX");
 #endif
 
   return success;

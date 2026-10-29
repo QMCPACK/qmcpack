@@ -33,6 +33,7 @@
 #include "OneSplineOrbData.hpp"
 #include "spline2/SplineUtils.h"
 #include "Message/CommOperators.h"
+#include "Message/UniformCommunicateError.h"
 #include "spline2/MultiBspline.hpp"
 #include "Utilities/FairDivide.h"
 
@@ -304,14 +305,15 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
   if (centers.size() == 0)
   {
     bool success = true;
+    std::ostringstream error_msg;
     app_log() << "Reading atomic center info for hybrid representation" << std::endl;
     for (int center_idx = 0; center_idx < ACInfo.Ncenters; center_idx++)
     {
       const int my_GroupID = ACInfo.GroupID[center_idx];
       if (ACInfo.cutoff[center_idx] < 0)
       {
-        app_error() << "Hybrid orbital representation needs parameter 'cutoff_radius' for atom " << center_idx
-                    << std::endl;
+        error_msg << "Hybrid orbital representation needs parameter 'cutoff_radius' for atom " << center_idx
+                  << std::endl;
         success = false;
       }
 
@@ -327,8 +329,8 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
       }
       else if (ACInfo.inner_cutoff[center_idx] > ACInfo.cutoff[center_idx])
       {
-        app_error() << "Hybrid orbital representation 'inner_cutoff' must be smaller than 'spline_radius' for atom "
-                    << center_idx << std::endl;
+        error_msg << "Hybrid orbital representation 'inner_cutoff' must be smaller than 'spline_radius' for atom "
+                  << center_idx << std::endl;
         success = false;
       }
 
@@ -336,7 +338,7 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
       {
         if (ACInfo.lmax[center_idx] < 0)
         {
-          app_error() << "Hybrid orbital representation needs parameter 'lmax' for atom " << center_idx << std::endl;
+          error_msg << "Hybrid orbital representation needs parameter 'lmax' for atom " << center_idx << std::endl;
           success = false;
         }
 
@@ -360,15 +362,15 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
         {
           if (ACInfo.spline_radius[center_idx] < 0)
           {
-            app_error() << "Hybrid orbital representation needs parameter 'spline_radius' for atom " << center_idx
-                        << std::endl;
+            error_msg << "Hybrid orbital representation needs parameter 'spline_radius' for atom " << center_idx
+                      << std::endl;
             success = false;
           }
 
           if (ACInfo.spline_npoints[center_idx] < 0)
           {
-            app_error() << "Hybrid orbital representation needs parameter 'spline_npoints' for atom " << center_idx
-                        << std::endl;
+            error_msg << "Hybrid orbital representation needs parameter 'spline_npoints' for atom " << center_idx
+                      << std::endl;
             success = false;
           }
         }
@@ -378,9 +380,9 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
             2.0 * ACInfo.spline_radius[center_idx] / (ACInfo.spline_npoints[center_idx] - 1);
         if (success && ACInfo.cutoff[center_idx] > max_allowed_cutoff)
         {
-          app_error() << "Hybrid orbital representation requires cutoff_radius<=" << max_allowed_cutoff
-                      << " calculated by spline_radius-2*spline_radius/(spline_npoints-1) for atom " << center_idx
-                      << std::endl;
+          error_msg << "Hybrid orbital representation requires cutoff_radius<=" << max_allowed_cutoff
+                    << " calculated by spline_radius-2*spline_radius/(spline_npoints-1) for atom " << center_idx
+                    << std::endl;
           success = false;
         }
       }
@@ -394,8 +396,9 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
     }
 
     if (!success)
-      myComm.barrier_and_abort("initialize_hybridrep_atomic_centers Failed to initialize atomic centers "
-                               "in hybrid orbital representation!");
+      throw UniformCommunicateError("initialize_hybridrep_atomic_centers Failed to initialize atomic centers "
+                                    "in hybrid orbital representation!\n" +
+                                    error_msg.str());
 
     for (int center_idx = 0; center_idx < ACInfo.Ncenters; center_idx++)
     {

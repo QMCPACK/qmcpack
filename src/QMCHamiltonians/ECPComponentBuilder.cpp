@@ -24,6 +24,7 @@
 #include "Platforms/Host/OutputManager.h"
 #include <cmath>
 #include "Utilities/qmc_common.h"
+#include "Message/UniformCommunicateError.h"
 
 
 namespace qmcplusplus
@@ -135,25 +136,25 @@ bool ECPComponentBuilder::read_pp_file(const std::string& fname)
   ReadFileBuffer buf(myComm);
   bool okay = buf.open_file(fname);
   if (!okay)
-    myComm.barrier_and_abort("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
+    throw UniformCommunicateError("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
 
   okay = buf.read_contents();
   if (!okay)
-    myComm.barrier_and_abort("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
+    throw UniformCommunicateError("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
 
   xmlDocPtr m_doc = xmlReadMemory(buf.contents(), buf.length, NULL, NULL, 0);
 
   if (m_doc == NULL)
   {
     xmlFreeDoc(m_doc);
-    myComm.barrier_and_abort("ECPComponentBuilder::read_pp_file xml file " + fname + " is invalid");
+    throw UniformCommunicateError("ECPComponentBuilder::read_pp_file xml file " + fname + " is invalid");
   }
   // Check the document is of the right kind
   xmlNodePtr cur = xmlDocGetRootElement(m_doc);
   if (cur == NULL)
   {
     xmlFreeDoc(m_doc);
-    myComm.barrier_and_abort("Empty document");
+    throw UniformCommunicateError("Empty document");
   }
   bool success = put(cur);
   xmlFreeDoc(m_doc);

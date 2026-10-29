@@ -78,7 +78,7 @@ if(NOT QMC_COMPLEX)
     set(MO_SRCS ${MO_SRCS} test_soa_cusp_corr.cpp)
   endif()
 else()
-  set(MO_SRCS test_pyscf_complex_MO.cpp test_MO_spinor.cpp)
+  set(MO_SRCS test_pyscf_complex_MO.cpp test_MO_spinor.cpp test_LCAOSpinorBuilder.cpp)
 endif()
 
 set(COMMON_SRC test_variable_set.cpp test_OptimizableObject.cpp test_NaNguard.cpp)
@@ -138,7 +138,8 @@ set(DETERMINANT_SRC
     test_DiracMatrix.cpp
     test_ci_configuration.cpp
     test_multi_slater_determinant.cpp
-    test_SlaterDet.cpp)
+    test_SlaterDet.cpp
+    test_slater_det_builder.cpp)
 
 add_library(sposets_for_testing FakeSPO.cpp ConstantSPOSet.cpp)
 target_include_directories(sposets_for_testing PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -162,6 +163,7 @@ if(ENABLE_OFFLOAD)
 endif(ENABLE_OFFLOAD)
 
 set(CATEGORY_MPI sposet)
+set(CATEGORY_MPI_2_3 trialwf jastrow determinant)
 
 foreach(CATEGORY common trialwf sposet jastrow determinant)
   set(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
@@ -186,11 +188,12 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
 
   add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
 
-  if(CATEGORY IN_LIST CATEGORY_MPI AND HAVE_MPI)
+  if(CATEGORY IN_LIST CATEGORY_MPI)
     foreach(NUM_RANKS 2 3 6)
-      set(UTEST_NAME_MPI ${UTEST_NAME}-r${NUM_RANKS})
-      add_unit_test(BASENAME ${UTEST_NAME_MPI} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
+      add_unit_test(BASENAME ${UTEST_NAME} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
     endforeach()
+  elseif(CATEGORY IN_LIST CATEGORY_MPI_2_3)
+    add_unit_test(BASENAME ${UTEST_NAME} PROCS 2 THREADS 3 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
   endif()
 
 endforeach()

@@ -36,6 +36,9 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   WalkerConfigurations walker_confs;
 
   // Test is intended to be run on one rank
+  if (comm.size() > 1)
+    return;
+
   MCPopulation population(1, comm.rank(), *particle_pool.getParticleSet("e"), twf,
                           hamiltonian_pool.getHamiltonian().value());
 

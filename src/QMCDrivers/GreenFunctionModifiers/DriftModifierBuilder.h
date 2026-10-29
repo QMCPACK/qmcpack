@@ -24,7 +24,7 @@ namespace qmcplusplus
 {
 /** create a DriftModifierBase instance from an XML input node (used by legacy drivers)
  * @param cur XML node pointer to the QMC driver section
- * @param myComm MPI communicator used to abort on unknown drift_modifier
+ * @param myComm MPI communicator
  * @return pointer to a newly allocated DriftModifierBase object
  */
 DriftModifierBase* createDriftModifier(xmlNodePtr cur, const Communicate& myComm);
