@@ -606,12 +606,8 @@ endif(HDF5_FOUND)
 #  set up libboost library, header only
 #-------------------------------------------------------------------
 find_package(Boost 1.70.0 CONFIG REQUIRED headers)
-if(Boost_FOUND)
-  target_compile_definitions(Boost::boost INTERFACE "HAVE_LIBBOOST")
-  message(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
-else()
-  message(FATAL_ERROR "Need boost 1.61.0 or higher.  Set BOOST_ROOT")
-endif()
+target_compile_definitions(Boost::boost INTERFACE "HAVE_LIBBOOST")
+message(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
 
 #-------------------------------------------------------------------
 #  set up CUDA compiler options and libraries
