@@ -24,7 +24,6 @@
 #include "hdf_stl.h"
 #include "hdf_hyperslab.h"
 
-#include <bitset>
 #include <filesystem>
 #include <stack>
 
@@ -53,27 +52,15 @@ extern hdf_error_suppression hide_hdf_errors;
 class hdf_archive
 {
 private:
-  enum
-  {
-    IS_PARALLEL = 0,
-    IS_MASTER,
-    NOIO
-  };
   static const hid_t is_closed = -1;
-  /** bitset of the io mode
-   * Mode[IS_PARALLEL] : true, if parallel
-   * Mode[IS_MASTER] : true, if the node is master
-   * Mode[NOIO] : true, if I/O is not performed
-   */
-  std::bitset<4> Mode;
+  /// true if file can only be opened read-only
+  const bool read_only_{false};
   /// file creation property list
   hid_t file_cpl_{H5I_INVALID_HID};
   /// file access property list
   hid_t file_apl_{H5I_INVALID_HID};
   ///file id
   hid_t file_id{is_closed};
-  ///access id
-  hid_t access_id{H5I_INVALID_HID};
   ///transfer property
   hid_t xfer_plist{H5I_INVALID_HID};
   /// Link creation property list identifier
@@ -98,38 +85,31 @@ private:
 #ifdef HAVE_MPI
   void set_access_plist(boost::mpi3::communicator& comm, bool request_pio);
 #endif
-  void set_access_plist();
 
 public:
   /** constructor
    * @param c communicator
-   * @param request_pio turns on parallel I/O,
+   * @param request_pio turns on collective parallel I/O,
    *        if true and PHDF5 is available, hdf_archive is in parallel collective IO mode
-   *        if true and PHDF5 is not available, hdf_archive is in master-only IO mode
-   *        if false, hdf_archive is in independent IO mode
+   *        if true and PHDF5 is not available, throws runtime_error
+   *        if false, hdf_archive is in read-only independent IO mode
    */
   template<class Comm, typename = std::enable_if_t<!std::is_same_v<std::decay_t<Comm>, hdf_archive>>>
-  hdf_archive(Comm& c, bool request_pio = false) : file_id(is_closed)
+  hdf_archive(Comm& c, bool request_pio = false) : read_only_(!request_pio)
   {
     if (!hdf_error_suppression::enabled)
       throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
     set_access_plist(c, request_pio);
   }
 
-  hdf_archive() : file_id(is_closed)
+  hdf_archive()
   {
     if (!hdf_error_suppression::enabled)
       throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
-    set_access_plist();
+    create_basic_plist();
   }
   ///destructor
   ~hdf_archive();
-
-  ///return true if parallel i/o
-  inline bool is_parallel() const { return Mode[IS_PARALLEL]; }
-
-  ///return true if master in parallel i/o
-  inline bool is_master() const { return Mode[IS_MASTER]; }
 
   ///return file_id. should be only be used for connecting to old codes when porting
   hid_t getFileID() const { return file_id; }
@@ -174,8 +154,6 @@ public:
    */
   bool is_dataset(const std::string& aname)
   {
-    if (Mode[NOIO])
-      return true;
     hid_t p = group_id.empty() ? file_id : group_id.top();
     int dummy_data;
     h5data_proxy<int> e(dummy_data);
@@ -189,8 +167,6 @@ public:
   template<typename T>
   bool is_dataset_of_type(const std::string& aname)
   {
-    if (Mode[NOIO])
-      return true;
     hid_t p = group_id.empty() ? file_id : group_id.top();
     T dummy_data;
     h5data_proxy<T> e(dummy_data);
@@ -240,8 +216,6 @@ public:
   template<typename T>
   bool getShape(const std::string& aname, std::vector<int>& sizes_out)
   {
-    if (Mode[NOIO])
-      return true;
     hid_t p = group_id.empty() ? file_id : group_id.top();
     return getDataShape<T>(p, aname, sizes_out);
   }
@@ -253,10 +227,8 @@ public:
   template<typename T>
   bool writeEntry(const T& data, const std::string& aname)
   {
-    if (Mode[NOIO])
-      return true;
-    if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
-      throw std::runtime_error("Only write data in parallel or by master but not every rank!");
+    if (read_only_)
+      throw std::runtime_error("Cannot write data in read-only mode!");
     hid_t p = group_id.empty() ? file_id : group_id.top();
     h5data_proxy<typename std::remove_const<T>::type> e(data);
     return e.write(data, p, aname, xfer_plist);
@@ -307,10 +279,8 @@ public:
   template<typename T>
   bool appendEntry(T& data, const std::string& aname, hsize_t& current_append_index)
   {
-    if (Mode[NOIO])
-      return true;
-    if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
-      throw std::runtime_error("Only write data in parallel or by master but not every rank!");
+    if (read_only_)
+      throw std::runtime_error("Cannot append data in read-only mode!");
     hid_t p = group_id.empty() ? file_id : group_id.top();
     h5data_proxy<typename std::remove_const<T>::type> e(data);
     return e.append(data, p, aname, current_append_index, xfer_plist);
@@ -344,8 +314,6 @@ public:
   template<typename T, typename = std::enable_if_t<!std::is_const<T>::value>>
   bool readEntry(T& data, const std::string& aname)
   {
-    if (Mode[NOIO])
-      return true;
     hid_t p = group_id.empty() ? file_id : group_id.top();
     h5data_proxy<T> e(data);
     return e.read(data, p, aname, xfer_plist);

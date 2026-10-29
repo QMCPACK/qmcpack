@@ -47,14 +47,6 @@ void hdf_archive::close()
   file_id = is_closed;
 }
 
-void hdf_archive::set_access_plist()
-{
-  create_basic_plist();
-  Mode.set(IS_PARALLEL, false);
-  Mode.set(IS_MASTER, true);
-  Mode.set(NOIO, false);
-}
-
 void hdf_archive::create_basic_plist()
 {
   file_apl_ = H5Pcreate(H5P_FILE_ACCESS);
@@ -92,85 +84,41 @@ void hdf_archive::create_basic_plist()
 
 void hdf_archive::set_access_plist(Communicate& comm, bool request_pio)
 {
+#ifdef HAVE_MPI
+  set_access_plist(comm.getCommMPI3(), request_pio);
+#else
+  if (request_pio)
+    throw std::runtime_error("hdf_archive collective parallel I/O requested but ENABLE_PHDF5 is not enabled!");
   create_basic_plist();
-  if (comm.size() > 1) //for parallel communicator
-  {
-    bool use_phdf5 = false;
-#if defined(ENABLE_PHDF5)
-    if (request_pio)
-    {
-      // enable parallel I/O
-      MPI_Info info = MPI_INFO_NULL;
-      // This in needed as well other resulting logic to support the unlikely
-      // optimization of using the global H5P_DEFAULT instead of just
-      // having hdf_archive own its access plist.
-      if (H5Pset_all_coll_metadata_ops(file_apl_, true) < 0 || H5Pset_coll_metadata_write(file_apl_, true) < 0 ||
-          H5Pset_fapl_mpio(file_apl_, comm.getMPI(), info) < 0 ||
-          H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE) < 0)
-      {
-        H5Pclose(file_apl_);
-        H5Pclose(file_cpl_);
-        H5Pclose(lcpl_id);
-        H5Pclose(xfer_plist);
-        throw std::runtime_error("hdf_archive failed to set parallel HDF5 properties!");
-      }
-      use_phdf5 = true;
-    }
 #endif
-    Mode.set(IS_PARALLEL, use_phdf5);
-    Mode.set(IS_MASTER, !comm.rank());
-    if (request_pio && !use_phdf5)
-      Mode.set(NOIO, comm.rank()); // master only
-    else
-      Mode.set(NOIO, false); // pio or all.
-  }
-  else
-  {
-    Mode.set(IS_PARALLEL, false);
-    Mode.set(IS_MASTER, true);
-    Mode.set(NOIO, false);
-  }
 }
 
 #ifdef HAVE_MPI
 void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request_pio)
 {
+#if !defined(ENABLE_PHDF5)
+  if (request_pio)
+    throw std::runtime_error("hdf_archive collective parallel I/O requested but ENABLE_PHDF5 is not enabled!");
+#endif
   create_basic_plist();
+#if defined(ENABLE_PHDF5)
   if (comm.size() > 1) //for parallel communicator
   {
-    bool use_phdf5 = false;
-    if (request_pio)
+    // enable parallel I/O
+    MPI_Info info = MPI_INFO_NULL;
+    if (H5Pset_fapl_mpio(file_apl_, comm.get(), info) < 0 ||
+        (request_pio &&
+         (H5Pset_all_coll_metadata_ops(file_apl_, true) < 0 || H5Pset_coll_metadata_write(file_apl_, true) < 0 ||
+          H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE) < 0)))
     {
-#if defined(ENABLE_PHDF5)
-      // enable parallel I/O
-      MPI_Info info = MPI_INFO_NULL;
-      if (H5Pset_all_coll_metadata_ops(file_apl_, true) < 0 || H5Pset_coll_metadata_write(file_apl_, true) < 0 ||
-          H5Pset_fapl_mpio(file_apl_, comm.get(), info) < 0 || H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE) < 0)
-      {
-        H5Pclose(file_apl_);
-        H5Pclose(file_cpl_);
-        H5Pclose(lcpl_id);
-        H5Pclose(xfer_plist);
-        throw std::runtime_error("hdf_archive failed to set parallel HDF5 properties!");
-      }
-      use_phdf5 = true;
-#else
-      use_phdf5 = false;
-#endif
+      H5Pclose(file_apl_);
+      H5Pclose(file_cpl_);
+      H5Pclose(lcpl_id);
+      H5Pclose(xfer_plist);
+      throw std::runtime_error("hdf_archive failed to set parallel HDF5 properties!");
     }
-    Mode.set(IS_PARALLEL, use_phdf5);
-    Mode.set(IS_MASTER, !comm.rank());
-    if (request_pio && !use_phdf5)
-      Mode.set(NOIO, comm.rank()); // master only
-    else
-      Mode.set(NOIO, false); // pio or all.
   }
-  else
-  {
-    Mode.set(IS_PARALLEL, false);
-    Mode.set(IS_MASTER, true);
-    Mode.set(NOIO, false);
-  }
+#endif
 }
 #endif
 
@@ -178,10 +126,8 @@ bool hdf_archive::create(const std::filesystem::path& fname, unsigned mode_flags
 {
   close();
   possible_filename_ = fname;
-  if (Mode[NOIO])
-    return true;
-  if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
-    throw std::runtime_error("Only create file in parallel or by master but not every rank!");
+  if (read_only_)
+    throw std::runtime_error("Cannot create file in read-only mode!");
   file_id = H5Fcreate(fname.c_str(), mode_flags, file_cpl_, file_apl_);
   return file_id != is_closed;
 }
@@ -190,16 +136,14 @@ bool hdf_archive::open(const std::filesystem::path& fname, unsigned mode_flags)
 {
   close();
   possible_filename_ = fname;
-  if (Mode[NOIO])
-    return true;
+  if (read_only_ && mode_flags != H5F_ACC_RDONLY)
+    throw std::runtime_error("Only H5F_ACC_RDONLY is allowed in read-only mode!");
   file_id = H5Fopen(fname.c_str(), mode_flags, file_apl_);
   return file_id != is_closed;
 }
 
 bool hdf_archive::is_group(const std::string& aname)
 {
-  if (Mode[NOIO])
-    return true;
   if (file_id == is_closed)
     return false;
   hid_t p = group_id.empty() ? file_id : group_id.top();
@@ -233,8 +177,6 @@ bool hdf_archive::is_group(const std::string& aname)
 void hdf_archive::push(const std::string& gname, bool createit)
 {
   hid_t g = is_closed;
-  if (Mode[NOIO])
-    return;
 
   if (file_id == is_closed)
     throw std::runtime_error("Failed to open group \"" + gname +

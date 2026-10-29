@@ -237,6 +237,7 @@ void test_hyperslab()
 
   int nwtot = (world += nwalk);
 
+#if defined(ENABLE_PHDF5)
   hdf_archive dump(world, true);
   if (!dump.create("dummy_walkers.h5", H5F_ACC_EXCL))
   {
@@ -251,6 +252,7 @@ void test_hyperslab()
   dump.write(hslab, "Walkers");
   dump.close();
   world.barrier();
+#endif
 
   {
     hdf_archive read(world, false);
