@@ -195,6 +195,8 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
 
 endforeach()
 
+target_link_libraries(test_wavefunction_sposet qmcestimators)
+
 if(ENABLE_DEEPQMC_INFERENCE AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_deepqmc_wfc)
   add_executable(${UTEST_EXE} benchmark_deepqmc_wfc.cpp)

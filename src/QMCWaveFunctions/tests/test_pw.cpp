@@ -18,10 +18,14 @@
 #include "PlaneWave/PWBandInfo.h"
 #include "PlaneWave/PWOrbitalSetBuilder.h"
 #include "PlaneWave/PWTiling.h"
+#include "Estimators/MomentumDistribution.h"
 
 
 #include <stdio.h>
 #include <cmath>
+#include <filesystem>
+#include <numeric>
+#include <sstream>
 #include <string>
 
 using std::string;
@@ -99,11 +103,279 @@ TEST_CASE("PlaneWave tilematrix folding", "[wavefunction][plane_wave]")
   const pw::TwistGroups duplicate_groups = pw::groupPrimitiveTwists(tile_matrix, duplicate_twists);
   CHECK_THROWS_AS(pw::validateTwistGroup(tile_matrix, duplicate_twists, duplicate_groups, 0), std::runtime_error);
 
+  SECTION("equivalent primitive twists in a non-diagonal tiling")
+  {
+    const std::vector<pw::Twist> equivalent_twists{{0.5, 0.5, 0.0}, {-0.5, -0.5, 0.0}};
+    const auto equivalent_groups = pw::groupPrimitiveTwists(tile_matrix, equivalent_twists);
+    CHECK_THROWS_AS(pw::validateTwistGroup(tile_matrix, equivalent_twists, equivalent_groups, 0), std::runtime_error);
+  }
+  SECTION("half-grid boundary in a diagonal tiling")
+  {
+    const pw::TileMatrix diagonal_matrix(2, 0, 0, 0, 1, 0, 0, 0, 1);
+    const std::vector<pw::Twist> equivalent_twists{{0.5, 0.0, 0.0}, {-0.5, 0.0, 0.0}};
+    const auto equivalent_groups = pw::groupPrimitiveTwists(diagonal_matrix, equivalent_twists);
+    CHECK_THROWS_AS(pw::validateTwistGroup(diagonal_matrix, equivalent_twists, equivalent_groups, 0),
+                    std::runtime_error);
+  }
+  SECTION("integer translations preserve distinct primitive classes")
+  {
+    const std::vector<pw::Twist> translated_twists{{1.0, -2.0, 0.0}, {-0.5, 1.5, 0.0}};
+    const auto translated_groups = pw::groupPrimitiveTwists(tile_matrix, translated_twists);
+    CHECK_NOTHROW(pw::validateTwistGroup(tile_matrix, translated_twists, translated_groups, 0));
+  }
+  SECTION("integer translations of the same primitive class")
+  {
+    const std::vector<pw::Twist> equivalent_twists{{0.0, 0.0, 0.0}, {1.0, -2.0, 0.0}};
+    const auto equivalent_groups = pw::groupPrimitiveTwists(tile_matrix, equivalent_twists);
+    CHECK_THROWS_AS(pw::validateTwistGroup(tile_matrix, equivalent_twists, equivalent_groups, 0), std::runtime_error);
+  }
+  SECTION("large tilings preserve nearby distinct primitive classes")
+  {
+    const pw::TileMatrix large_matrix(1024, 0, 0, 0, 1, 0, 0, 0, 1);
+    std::vector<pw::Twist> nearby_twists;
+    for (int index = 0; index < 1024; ++index)
+      nearby_twists.push_back({index / 1024.0, 0.0, 0.0});
+    const auto nearby_groups = pw::groupPrimitiveTwists(large_matrix, nearby_twists);
+    REQUIRE(nearby_groups.super_twists.size() == 1);
+    CHECK_NOTHROW(pw::validateTwistGroup(large_matrix, nearby_twists, nearby_groups, 0));
+  }
+
   pw::TileMatrix singular_matrix;
   for (int row = 0; row < OHMMS_DIM; ++row)
     for (int column = 0; column < OHMMS_DIM; ++column)
       singular_matrix(row, column) = 0;
   CHECK_THROWS_AS(pw::validateTwistGroup(singular_matrix, incomplete_twists, incomplete_groups, 0), std::runtime_error);
+}
+
+TEST_CASE("PlaneWave near-degenerate band ordering", "[wavefunction][plane_wave]")
+{
+  std::vector<pw::BandInfo> input{{1.5e-6, 0, 0}, {0.75e-6, 1, 0}, {0.0, 2, 0}};
+  SECTION("chained near degeneracies") {}
+  SECTION("exact tolerance boundary") { input[0].energy = 1e-6; }
+  SECTION("band index partitions")
+  {
+    input.push_back({1.5e-6, 0, 1});
+    input.push_back({0.75e-6, 1, 1});
+    input.push_back({0.0, 2, 1});
+  }
+
+  std::vector<int> permutation(input.size());
+  std::iota(permutation.begin(), permutation.end(), 0);
+  do
+  {
+    for (int mode : {1, 2})
+    {
+      INFO("sort mode " << mode);
+      std::vector<pw::BandInfo> bands;
+      for (int index : permutation)
+        bands.push_back(input[index]);
+      pw::sortBands(bands, mode);
+      std::vector<std::pair<int, int>> indices;
+      for (const auto& band : bands)
+        indices.emplace_back(band.twist_index, band.band_index);
+      if (input.size() == 3)
+        CHECK(indices == std::vector<std::pair<int, int>>{{1, 0}, {2, 0}, {0, 0}});
+      else if (mode == 1)
+        CHECK(indices == std::vector<std::pair<int, int>>{{1, 0}, {1, 1}, {2, 0}, {2, 1}, {0, 0}, {0, 1}});
+      else
+        CHECK(indices == std::vector<std::pair<int, int>>{{1, 0}, {2, 0}, {0, 0}, {1, 1}, {2, 1}, {0, 1}});
+    }
+  } while (std::next_permutation(permutation.begin(), permutation.end()));
+}
+
+TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_wave]")
+{
+  Communicate& comm(*OHMMS::Controller);
+  std::vector<pw::Twist> twists{{0.0, 0.0, 0.0}, {0.5, 0.0, 0.0}};
+  pw::TileMatrix tile_matrix(1, 0, 0, 0, 1, 0, 0, 0, 1);
+  std::string attributes;
+  std::string children;
+  int selected_primitive = 0;
+  double expected_twist  = 0.0;
+  bool invalid_input     = false;
+
+  SECTION("default Gamma") {}
+  SECTION("Gamma is not the first file twist")
+  {
+    std::reverse(twists.begin(), twists.end());
+    selected_primitive = 1;
+  }
+  SECTION("twistnum attribute")
+  {
+    attributes         = "twistnum='1'";
+    selected_primitive = 1;
+    expected_twist     = 0.5;
+  }
+  SECTION("twistIndex attribute")
+  {
+    attributes         = "twistIndex='1'";
+    selected_primitive = 1;
+    expected_twist     = 0.5;
+  }
+  SECTION("matching index aliases")
+  {
+    attributes         = "twistIndex='1' twistnum='1'";
+    selected_primitive = 1;
+    expected_twist     = 0.5;
+  }
+  SECTION("child index")
+  {
+    children           = "<twistIndex>1</twistIndex>";
+    selected_primitive = 1;
+    expected_twist     = 0.5;
+  }
+  SECTION("index attributes override child parameters")
+  {
+    attributes         = "twistnum='1'";
+    children           = "<twistIndex>0</twistIndex>";
+    selected_primitive = 1;
+    expected_twist     = 0.5;
+  }
+  SECTION("Gamma sentinel overrides child parameters")
+  {
+    attributes = "twistnum='-1'";
+    children   = "<twistIndex>1</twistIndex>";
+  }
+  SECTION("explicit vector overrides index")
+  {
+    attributes         = "twistnum='99' twist='-0.5 0 0'";
+    selected_primitive = 1;
+    expected_twist     = 0.5;
+  }
+  SECTION("index zero in a non-Gamma-only file")
+  {
+    twists         = {{0.5, 0.0, 0.0}};
+    attributes     = "twistnum='0'";
+    expected_twist = 0.5;
+  }
+  SECTION("complex twist")
+  {
+    twists[1]          = {0.25, 0.0, 0.0};
+    attributes         = "twistnum='1'";
+    selected_primitive = 1;
+    expected_twist     = 0.25;
+#if !defined(QMC_COMPLEX)
+    invalid_input = true;
+#endif
+  }
+  SECTION("selected supercell twist differs from primitive twist")
+  {
+    tile_matrix(0, 0) = 2;
+    twists            = {{0.25, 0.0, 0.0}, {0.75, 0.0, 0.0}};
+    attributes        = "twistnum='0'";
+    expected_twist    = 0.5;
+#if !defined(QMC_COMPLEX)
+    selected_primitive = 1; // The retained time-reversal partner supplies both projections.
+#endif
+  }
+  SECTION("missing default Gamma")
+  {
+    twists        = {{0.5, 0.0, 0.0}};
+    invalid_input = true;
+  }
+  SECTION("index outside available groups")
+  {
+    attributes    = "twistnum='2'";
+    invalid_input = true;
+  }
+  SECTION("invalid negative index")
+  {
+    attributes    = "twistIndex='-2'";
+    invalid_input = true;
+  }
+  SECTION("conflicting index aliases")
+  {
+    attributes    = "twistnum='0' twistIndex='1'";
+    invalid_input = true;
+  }
+  SECTION("duplicate primitive classes")
+  {
+    tile_matrix(0, 0) = 2;
+    twists            = {{0.5, 0.0, 0.0}, {-0.5, 0.0, 0.0}};
+    invalid_input     = true;
+  }
+
+  const std::string filename = "plane_wave_twist_selection-r" + std::to_string(comm.rank()) + ".h5";
+  hdf_archive file;
+  REQUIRE(file.create(filename));
+  file.write(std::vector<int>{0, 20}, "version");
+  file.push("supercell");
+  const pw::Lattice primitive_lattice(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+  file.write(primitive_lattice, "primitive_vectors");
+  file.pop();
+  file.push("electrons");
+  file.write(static_cast<int>(twists.size()), "number_of_kpoints");
+  file.write(1, "number_of_spins");
+  for (int index = 0; index < twists.size(); ++index)
+  {
+    file.push("kpoint_" + std::to_string(index));
+    file.write(twists[index], "reduced_k");
+    file.write(std::vector<TinyVector<int, 3>>{{0, 0, 0}}, "gvectors");
+    file.push("spin_0");
+    file.write(1, "number_of_states");
+    file.write(std::vector<double>{static_cast<double>(index)}, "eigenvalues");
+    file.push("state_0");
+    file.write(std::vector<std::complex<double>>{{index + 1.0, 0.0}}, "psi_g");
+    file.pop();
+    file.pop();
+    file.pop();
+  }
+  file.close();
+
+  Lattice lattice;
+  lattice.R = pw::makeSuperLattice(tile_matrix, primitive_lattice);
+  lattice.reset();
+  ParticleSetPool pool(comm);
+  pool.createSimulationCellByLattice(lattice);
+  ParticleSet elec(pool.getSimulationCell());
+  elec.create({1});
+  elec.R[0] = {0.25, 0.0, 0.0};
+  const ParticleSet::SingleParticlePos initial_twist{0.125, 0.0, 0.0};
+  elec.setTwist(initial_twist);
+  elec.update();
+
+  std::ostringstream xml;
+  xml << "<sposet_collection type='PW' href='" << filename << "' tilematrix='" << tile_matrix << "' " << attributes
+      << ">" << children << "<sposet name='spo' size='1'/></sposet_collection>";
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(xml.str()));
+  if (invalid_input)
+  {
+    CHECK_THROWS_AS(PWOrbitalSetBuilder(elec, comm, doc.getRoot()), std::runtime_error);
+    CHECK(elec.getTwist()[0] == Approx(initial_twist[0]));
+  }
+  else
+  {
+    PWOrbitalSetBuilder builder(elec, comm, doc.getRoot());
+    auto spo = builder.createSPOSet(xmlLastElementChild(doc.getRoot()));
+    REQUIRE(spo);
+    CHECK(elec.getTwist()[0] == Approx(expected_twist));
+    CHECK(elec.getTwist()[1] == Approx(0.0));
+    CHECK(elec.getTwist()[2] == Approx(0.0));
+    SPOSet::ValueVector values(1);
+    spo->evaluateValue(elec, 0, values);
+    const double phase = 2 * M_PI * twists[selected_primitive][0] * elec.R[0][0];
+    CHECK(std::real(values[0]) == Approx((selected_primitive + 1.0) * std::cos(phase)));
+#if defined(QMC_COMPLEX)
+    CHECK(std::imag(values[0]) == Approx((selected_primitive + 1.0) * std::sin(phase)));
+#endif
+
+    Libxml2Document estimator_doc;
+    REQUIRE(estimator_doc.parseFromString("<estimator type='MomentumDistribution' name='nofk' samples='1' kmax='7'/>"));
+    MomentumDistribution md(MomentumDistributionInput(estimator_doc.getRoot()), elec.getTotalNum(), elec.getTwist(),
+                            elec.getLattice());
+    REQUIRE_FALSE(md.kPoints.empty());
+    for (const auto& point : md.kPoints)
+    {
+      const auto reduced = elec.getLattice().k_unit(point);
+      for (int dimension = 0; dimension < OHMMS_DIM; ++dimension)
+      {
+        const double offset = reduced[dimension] - (dimension == 0 ? expected_twist : 0.0);
+        CHECK(offset == Approx(std::round(offset)).margin(1e-6));
+      }
+    }
+  }
+  REQUIRE(std::filesystem::remove(filename));
 }
 
 TEST_CASE("PlaneWave real twist pairing", "[wavefunction][plane_wave]")
@@ -246,8 +518,8 @@ TEST_CASE("PlaneWave tiled SPO from HDF for diamond C", "[wavefunction]")
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(particles));
 
-  xmlNodePtr root = doc.getRoot();
-  const ParticleSet& target = elec;
+  xmlNodePtr root     = doc.getRoot();
+  ParticleSet& target = elec;
   PWOrbitalSetBuilder pw_builder(target, c, root);
   auto spo = pw_builder.createSPOSet(xmlFirstElementChild(root));
   REQUIRE(spo);
@@ -356,20 +628,23 @@ TEST_CASE("PlaneWave SPO from HDF for LiH X", "[wavefunction]")
   xmlNodePtr pw1  = xmlFirstElementChild(root);
 
 
-  const ParticleSet& target = elec;
-  const auto initial_twist = target.getTwist();
+  ParticleSet& target = elec;
   PWOrbitalSetBuilder pw_builder(target, c, root);
   auto spo = pw_builder.createSPOSet(pw1);
   REQUIRE(spo);
   for (int dimension = 0; dimension < OHMMS_DIM; ++dimension)
-    CHECK(target.getTwist()[dimension] == Approx(initial_twist[dimension]));
+    CHECK(target.getTwist()[dimension] == Approx(dimension == 0 ? 0.5 : 0.0));
 
   const int orbSize = spo->getOrbitalSetSize();
   elec.update();
   SPOSet::ValueVector orbs(orbSize);
   spo->evaluateValue(elec, 0, orbs);
 
-  CHECK(std::isfinite(std::abs(orbs[0])));
+  // At the origin, the orbital is the direct sum of the HDF plane-wave coefficients.
+  CHECK(std::real(orbs[0]) == Approx(14.340275486947025));
+#if defined(QMC_COMPLEX)
+  CHECK(std::imag(orbs[0]) == Approx(-9.9807029146809008));
+#endif
 
 #if 0
   // Dump values of the orbitals

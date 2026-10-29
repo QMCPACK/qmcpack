@@ -710,7 +710,8 @@ Plane-wave basis sets
 
 Plane-wave basis sets expand the ``sposet`` directly in the plane waves stored in the orbital HDF5 file, without interpolation onto
 a spline grid. They use the same orbital files as :ref:`spo-spline`. Plane-wave basis sets are more computationally costly than
-spline basis sets, which should be preferred for production runs. The implementation is kept primarily as a check on the splines.
+spline basis sets, which should be preferred for production runs. The implementation exists primarily as a check on the splines:
+other than for spline specific settings, the inputs are intended to be compatible.
 
 .. code-block:: xml
   :caption: Plane-wave SPO XML element
@@ -748,8 +749,11 @@ Additional information:
   The file must contain all primitive-cell k-points that fold onto the selected supercell twist.
 - ``twist`` and ``twistnum`` select the supercell twist with the same meaning and precedence as in :ref:`spo-spline`. The default is
   the Gamma point.
+- ``twistIndex`` is an alias for ``twistnum``. Index attributes override legacy child parameters; if both index attributes are
+  supplied, they must be equal. Index ``-1`` selects Gamma.
 - ``sort`` controls the ordering of orbitals from the contributing k-points, using the same ordering as the spline implementation:
   ``0`` preserves file order, ``1`` sorts by energy (the default), and ``2`` sorts first by band index and then by energy.
+  
 
 ``sposet`` attributes:
 

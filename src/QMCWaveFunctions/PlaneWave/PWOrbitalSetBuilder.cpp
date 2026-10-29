@@ -28,7 +28,7 @@
 
 namespace qmcplusplus
 {
-PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate& comm, xmlNodePtr cur)
+PWOrbitalSetBuilder::PWOrbitalSetBuilder(ParticleSet& p, Communicate& comm, xmlNodePtr cur)
     : SPOSetBuilder("Planewave", comm),
       targetPtcl(p),
       rootNode(cur),
@@ -84,6 +84,18 @@ PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate& comm
 
   if (!success)
     throw std::runtime_error("h5 cannot be open for creating PW basis!");
+  // HDF version handling reapplies child parameters; XML attributes take precedence.
+  int twist_num   = myParam->twistIndex;
+  int twist_index = myParam->twistIndex;
+  OhmmsAttributeSet twist_attributes;
+  twist_attributes.add(twist_num, "twistnum");
+  twist_attributes.add(twist_index, "twistIndex");
+  twist_attributes.put(cur);
+  const bool has_twist_num   = !getXMLAttributeValue(cur, "twistnum").empty();
+  const bool has_twist_index = !getXMLAttributeValue(cur, "twistIndex").empty();
+  if (has_twist_num && has_twist_index && twist_num != twist_index)
+    throw std::runtime_error("Plane-wave twistnum and twistIndex attributes must agree");
+  myParam->twistIndex = has_twist_num ? twist_num : twist_index;
   if (!twist_attribute.empty() && !hasRequestedTwist)
     myParam->twistTag = twist_attribute;
   //create PW Basis
@@ -153,9 +165,9 @@ bool PWOrbitalSetBuilder::createPWBasis()
       app_warning() << "twist attribute exists; twistnum/twistIndex is ignored.\n";
     selected_twist_index = pw::findTwistGroup(twist_groups, requestedTwist);
   }
-  else if (myParam->twistIndex >= 0)
+  else if (myParam->twistIndex != -1)
   {
-    if (myParam->twistIndex >= twist_groups.primitive_indices.size())
+    if (myParam->twistIndex < 0 || myParam->twistIndex >= twist_groups.primitive_indices.size())
       throw std::runtime_error("Requested plane-wave supercell twist index is outside the available range");
     selected_twist_index = myParam->twistIndex;
   }
@@ -182,6 +194,7 @@ bool PWOrbitalSetBuilder::createPWBasis()
   //create at least one basis set but do resize the containers
   int nh5gvecs =
       myBasisSet->readbasis(hfile, real_ecut, targetPtcl.getLattice(), myParam->pwTag, myParam->pwMultTag, true);
+  targetPtcl.setTwist(superTwist);
   app_log() << "  num_twist = " << nkpts << std::endl;
   app_log() << "  included k-points = ";
   std::copy(includedKPoints.begin(), includedKPoints.end(), std::ostream_iterator<int>(app_log(), " "));

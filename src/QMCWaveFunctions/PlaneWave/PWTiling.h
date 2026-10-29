@@ -169,7 +169,7 @@ inline int findTwistGroup(const TwistGroups& groups, const Twist& requested_twis
 /** Validate that a twist group is a complete, nonduplicated tiling set.
  *
  * A valid group contains abs(det(tile_matrix)) primitive twists with distinct
- * integer reciprocal offsets after folding.
+ * primitive reciprocal-lattice classes modulo integer translations.
  *
  * @throws std::runtime_error for a singular matrix, invalid group index,
  * incomplete group, or duplicate reciprocal coset.
@@ -190,20 +190,16 @@ inline void validateTwistGroup(const TileMatrix& tile_matrix,
     throw std::runtime_error("Plane-wave supercell twist does not contain abs(det(tilematrix)) primitive k-points");
 
   const Lattice tiling = asRealMatrix(tile_matrix);
-  std::vector<Twist> integer_offsets;
-  for (const int primitive_index : primitive_indices)
-  {
-    const Twist transformed = dot(tiling, primitive_twists[primitive_index]);
-    Twist integer_offset    = transformed - groups.super_twists[group_index];
-    for (int dimension = 0; dimension < OHMMS_DIM; ++dimension)
-      integer_offset[dimension] = std::nearbyint(integer_offset[dimension]);
-    if (std::find_if(integer_offsets.begin(), integer_offsets.end(), [&](const Twist& candidate) {
-          const Twist difference = candidate - integer_offset;
-          return dot(difference, difference) < 1e-6;
-        }) != integer_offsets.end())
-      throw std::runtime_error("Plane-wave supercell twist contains duplicate primitive k-point cosets");
-    integer_offsets.push_back(integer_offset);
-  }
+  for (auto first = primitive_indices.begin(); first != primitive_indices.end(); ++first)
+    for (auto second = first + 1; second != primitive_indices.end(); ++second)
+    {
+      // Remove primitive reciprocal translations before comparing. Measure the
+      // residual in supercell coordinates, as in twist grouping, so nearby but
+      // distinct primitive classes in large tilings are not treated as duplicates.
+      const Twist difference = dot(tiling, canonicalizeTwist(primitive_twists[*first] - primitive_twists[*second]));
+      if (dot(difference, difference) < 1e-6)
+        throw std::runtime_error("Plane-wave supercell twist contains duplicate primitive k-point cosets");
+    }
 }
 
 /** Construct the real-space supercell lattice T L_primitive. */
