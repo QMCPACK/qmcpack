@@ -45,6 +45,18 @@ qmc_run_and_check(
   SHORT_BCCH333_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  short-bccH_3x3x3_ae-vmcbatch_bf-pw
+  "${qmcpack_SOURCE_DIR}/tests/solids/bccH_3x3x3_ae"
+  qmc-short-bf-pw-batch
+  qmc-short-bf-pw-batch.in.xml
+  1
+  4
+  TRUE
+  0
+  SHORT_BCCH333_SCALARS # VMC
+)
+
 list(APPEND DET_BCCH333_SCALARS "totenergy" "-29.43672031 0.5")
 list(APPEND DET_BCCH333_SCALARS "kinetic" "33.78052518 2.5")
 list(APPEND DET_BCCH333_SCALARS "potential" "-63.21724549 2.5")

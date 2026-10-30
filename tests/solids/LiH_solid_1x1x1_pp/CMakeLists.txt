@@ -1,11 +1,16 @@
 #
 # LiH solid einspline wavefunction tests for different k-points
-# Wavefunctions from quantum espresso. Reference energies obtained via pw2casino option
+# Wavefunctions from Quantum ESPRESSO. Reference energies obtained via pw2casino option
 #
 list(APPEND LIH_GAMMA_SCALARS "kinetic" "7.4145221704067854 0.024")
 list(APPEND LIH_GAMMA_SCALARS "localecp" "-11.718808431876706 0.025")
 list(APPEND LIH_GAMMA_SCALARS "samples" "1600000 0.0")
 #  LIST(APPEND LIH_GAMMA_SCALARS "flux" "0.0 0.05")
+
+# Plane wave tests use one quarter of the samples and twice the statistical error bars.
+list(APPEND LIH_GAMMA_SCALARS_PW "kinetic" "7.4145221704067854 0.048")
+list(APPEND LIH_GAMMA_SCALARS_PW "localecp" "-11.718808431876706 0.050")
+list(APPEND LIH_GAMMA_SCALARS_PW "samples" "400000 0.0")
 
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
@@ -43,10 +48,51 @@ qmc_run_and_check(
   LIH_GAMMA_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp-gamma-drift-vmcbatch_pw_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-gamma-drift_pw
+  hf_vmcbatch_LiH-gamma-drift_pw.xml
+  1
+  16
+  TRUE
+  0
+  LIH_GAMMA_SCALARS_PW # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp-gamma-vmcbatch_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-gamma
+  hf_vmcbatch_LiH-gamma.xml
+  1
+  16
+  TRUE
+  0
+  LIH_GAMMA_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp-gamma-vmcbatch_pw_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-gamma_pw
+  hf_vmcbatch_LiH-gamma_pw.xml
+  1
+  16
+  TRUE
+  0
+  LIH_GAMMA_SCALARS_PW # VMC
+)
+
 list(APPEND LIH_X_SCALARS "kinetic" "7.3772282047321536 0.024")
 list(APPEND LIH_X_SCALARS "localecp" "-11.414410381100344 0.025")
 list(APPEND LIH_X_SCALARS "samples" "1600000 0.0")
 #  LIST(APPEND LIH_X_SCALARS "flux" "0.0 0.05")
+
+# Plane wave tests use one quarter of the samples and twice the statistical error bars.
+list(APPEND LIH_X_SCALARS_PW "kinetic" "7.3772282047321536 0.048")
+list(APPEND LIH_X_SCALARS_PW "localecp" "-11.414410381100344 0.050")
+list(APPEND LIH_X_SCALARS_PW "samples" "400000 0.0")
 
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-x-vmc_hf_noj
@@ -84,6 +130,42 @@ qmc_run_and_check(
   LIH_X_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp-x-drift-vmcbatch_pw_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-x-drift_pw
+  hf_vmcbatch_LiH-x-drift_pw.xml
+  1
+  16
+  TRUE
+  0
+  LIH_X_SCALARS_PW # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp-x-vmcbatch_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-x
+  hf_vmcbatch_LiH-x.xml
+  1
+  16
+  TRUE
+  0
+  LIH_X_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp-x-vmcbatch_pw_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-x_pw
+  hf_vmcbatch_LiH-x_pw.xml
+  1
+  16
+  TRUE
+  0
+  LIH_X_SCALARS_PW # VMC
+)
+
 # Hybridrep is not implemented in legacy CUDA but should be correctly error trapped
 qmc_run_and_check(
   short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
@@ -102,6 +184,11 @@ list(APPEND LIH_ARB_SCALARS "kinetic" "7.4201207734399359 0.024")
 list(APPEND LIH_ARB_SCALARS "localecp" "-11.615276430529056 0.025")
 list(APPEND LIH_ARB_SCALARS "samples" "1600000 0.0") # samples
 #  LIST(APPEND LIH_ARB_SCALARS "flux" "0.0 0.05")
+
+# Plane wave tests use one quarter of the samples and twice the statistical error bars.
+list(APPEND LIH_ARB_SCALARS_PW "kinetic" "7.4201207734399359 0.048")
+list(APPEND LIH_ARB_SCALARS_PW "localecp" "-11.615276430529056 0.050")
+list(APPEND LIH_ARB_SCALARS_PW "samples" "400000 0.0")
 
 if(QMC_COMPLEX)
   set(LIH_ARB_SUCCEED TRUE)
@@ -143,6 +230,42 @@ qmc_run_and_check(
   ${LIH_ARB_SUCCEED}
   0
   LIH_ARB_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp-arb-drift-vmcbatch_pw_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-arb-drift_pw
+  hf_vmcbatch_LiH-arb-drift_pw.xml
+  1
+  16
+  ${LIH_ARB_SUCCEED}
+  0
+  LIH_ARB_SCALARS_PW # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp-arb-vmcbatch_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-arb
+  hf_vmcbatch_LiH-arb.xml
+  1
+  16
+  ${LIH_ARB_SUCCEED}
+  0
+  LIH_ARB_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp-arb-vmcbatch_pw_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-arb_pw
+  hf_vmcbatch_LiH-arb_pw.xml
+  1
+  16
+  ${LIH_ARB_SUCCEED}
+  0
+  LIH_ARB_SCALARS_PW # VMC
 )
 
 # multi-slater determinant requires complex build to run. Ensure fails with real/non-complex build

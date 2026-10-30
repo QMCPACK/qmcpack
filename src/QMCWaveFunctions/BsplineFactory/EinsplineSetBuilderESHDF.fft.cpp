@@ -14,6 +14,7 @@
 
 
 #include "EinsplineSetBuilder.h"
+#include "QMCWaveFunctions/BandSorting.h"
 #include "DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/Timer.h"
@@ -29,19 +30,6 @@
 
 namespace qmcplusplus
 {
-bool sortByIndex(BandInfo leftB, BandInfo rightB)
-{
-  if (leftB.BandIndex == rightB.BandIndex)
-  {
-    if ((leftB.Energy < rightB.Energy + 1e-6) && (leftB.Energy > rightB.Energy - 1e-6))
-      return leftB.TwistIndex < rightB.TwistIndex;
-    else
-      return leftB.Energy < rightB.Energy;
-  }
-  else
-    return (leftB.BandIndex < rightB.BandIndex);
-};
-
 void EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
 {
   if (!H5File.open(H5FileName, H5F_ACC_RDONLY))
@@ -524,14 +512,13 @@ int EinsplineSetBuilder::OccupyBands_ESHDF(hdf_archive& h5,
   // Now sort the bands by energy
   if (sortBands == 2)
   {
-    app_log() << "Sorting the bands by index now:\n";
-    sort(SortBands.begin(), SortBands.end(), sortByIndex);
+    app_log() << "Sorting the bands by index:\n";
   }
   else if (sortBands == 1)
   {
-    app_log() << "Sorting the bands now:\n";
-    sort(SortBands.begin(), SortBands.end());
+    app_log() << "Sorting the bands by energy:\n";
   }
+  sortOrbitalBands(SortBands, sortBands, &BandInfo::Energy, &BandInfo::TwistIndex, &BandInfo::BandIndex);
 
   std::vector<int> gsOcc(maxOrbs);
   int N_gs_orbs = numOrbs;

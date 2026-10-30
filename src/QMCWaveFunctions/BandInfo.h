@@ -18,6 +18,7 @@
 #ifndef QMCPLUSPLUS_BANDINFO_H
 #define QMCPLUSPLUS_BANDINFO_H
 #include <Configuration.h>
+#include <tuple>
 
 namespace qmcplusplus
 {
@@ -42,20 +43,12 @@ struct BandInfo
 
   /** operator to determine the order of any band
    * 
-   * - energy
-   * - twist index if the energies are similar
+   * Exact energy ordering, followed by twist and band index.
+   * Near-degenerate grouping is handled by sortOrbitalBands.
    */
-  inline bool operator<(BandInfo other) const
+  inline bool operator<(const BandInfo& other) const
   {
-    if ((Energy < other.Energy + 1e-6) && (Energy > other.Energy - 1e-6))
-    {
-      if (TwistIndex == other.TwistIndex)
-        return BandIndex < other.BandIndex;
-      else
-        return TwistIndex < other.TwistIndex;
-    }
-    else
-      return Energy < other.Energy;
+    return std::tie(Energy, TwistIndex, BandIndex) < std::tie(other.Energy, other.TwistIndex, other.BandIndex);
   }
 };
 
