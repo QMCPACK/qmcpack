@@ -146,13 +146,13 @@ sycl::event gemvT_batched_impl(sycl::queue& handle,
 
       for (int iend = COLBS / 2; iend > 0; iend /= 2)
       {
-        item.barrier(sycl::access::fence_space::local_space);
+        sycl::group_barrier(item.get_group());
         for (int irow = 0; irow < row_max; ++irow)
           if (tid < iend)
             sum[irow * COLBS + tid] += sum[irow * COLBS + tid + iend];
       }
 
-      item.barrier(sycl::access::fence_space::local_space);
+      sycl::group_barrier(item.get_group());
       T* __restrict__ y_iw = y[bx];
       if (tid < row_max)
       {
@@ -536,7 +536,7 @@ sycl::event transpose(sycl::queue& q,
 
       if (x < n && y < m)
         tile[yth][xth] = in[(y)*lda + x];
-      item.barrier(sycl::access::fence_space::local_space);
+      sycl::group_barrier(item.get_group());
 
       x = item.get_group(0) * tile_size + xth;
       y = item.get_group(1) * tile_size + yth;
