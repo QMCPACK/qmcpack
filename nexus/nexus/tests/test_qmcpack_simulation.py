@@ -588,3 +588,49 @@ def test_check_sim_status(tmp_path):
 
     clear_all_sims()
 #end def test_check_sim_status()
+
+
+@pytest.mark.parametrize('shared_ranks', [None, 1, 4])
+@pytest.mark.parametrize('distributed_ranks', [None, 1, 2])
+def test_coefs_mem_ranks(tmp_path, shared_ranks, distributed_ranks):
+    # Cover omitted options, each option alone, and both options together,
+    # including the minimum allowed value of 1.
+    from xml.etree import ElementTree as ET
+    from ..qmcpack_input import QmcpackInput
+
+    # Use separate spin SPOs to check that both receive the memory settings.
+    sim = get_qmcpack_sim(
+        shared_ranks=shared_ranks, distributed_ranks=distributed_ranks,
+        spin_polarized=True,
+    )
+    root = ET.fromstring(sim.input.write_text())
+    sposets = root.findall('.//sposet_builder/sposet')
+    assert len(sposets) == 2
+    # Only explicitly provided options should appear as XML attributes.
+    expected = {
+        name: str(value) for name, value in (
+            ('shared_ranks', shared_ranks), ('distributed_ranks', distributed_ranks)
+        ) if value is not None
+    }
+    for spo in sposets:
+        # Omit coefs_mem when neither option is set; otherwise emit it once.
+        if not expected:
+            assert spo.find('coefs_mem') is None
+        else:
+            assert len(spo.findall('coefs_mem')) == 1
+            assert spo.find('coefs_mem').attrib == expected
+    # Reading and rewriting the XML must preserve the coefs_mem attributes.
+    path = tmp_path / 'coefs_mem.xml'
+    sim.input.write(path)
+    reread = QmcpackInput(path)
+    assert [node.attrib for node in ET.fromstring(reread.write_text()).findall('.//coefs_mem')] == [
+        node.attrib for node in root.findall('.//coefs_mem')
+    ]
+    clear_all_sims()
+
+
+@pytest.mark.parametrize('keyword', ['shared_ranks', 'distributed_ranks'])
+@pytest.mark.parametrize('value', [0, -1])
+def test_coefs_mem_ranks_invalid(keyword, value):
+    with pytest.raises(ValueError, match=f'{keyword} must be >= 1'):
+        get_qmcpack_sim(**{keyword: value})

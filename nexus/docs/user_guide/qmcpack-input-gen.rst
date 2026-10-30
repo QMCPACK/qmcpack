@@ -55,3 +55,29 @@ This is not recommended unless a single simple convergence parameter is desired:
         <pseudo elementType="V" href="V.ccECP.xml" nrule="6"/>
      </pairpot>
   </hamiltonian>
+
+Sharing and distributing B-spline orbital coefficients
+-----------------------------------------------------
+
+Use ``shared_ranks`` to set the number of MPI ranks sharing each allocation of
+B-spline orbital coefficients. Use ``distributed_ranks`` to set the number of
+MPI ranks over which each allocation is distributed. These options can be used
+independently or together:
+
+.. code-block:: python
+
+  qmc = generate_qmcpack(
+      ...,
+      shared_ranks      = 4,
+      distributed_ranks = 2,
+      )
+
+Nexus adds the following child element to each B-spline ``sposet``:
+
+.. code-block:: xml
+
+  <coefs_mem shared_ranks="4" distributed_ranks="2"/>
+
+When provided, each rank option must be at least 1. Nexus emits only the attributes that are provided. If both options are omitted
+or set to ``None``, Nexus does not add a ``coefs_mem`` element. See the QMCPACK documentation for details on MPI layout and rank
+divisibility requirements and guidance on how to set these options.

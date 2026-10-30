@@ -985,7 +985,16 @@ class QIxml(Names):
         #    c+=' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd"'
         ##end if
         #no_contents = len(set(self.keys())-set(self.elements)-set(self.plurals.keys()))==0
-        no_contents = len(set(self.keys())-set(self.attributes))==0
+        contents = set(self.keys())-set(self.attributes)
+        have_text = self.text is not None and self.text in self
+        if have_text and isinstance(self[self.text],str):
+            have_text = bool(self[self.text].strip())
+        #end if
+        # Empty text read from XML should not prevent a self-closing element.
+        if not have_text:
+            contents.discard(self.text)
+        #end if
+        no_contents = len(contents)==0
         if no_contents:
             c += '/>\n'
         else:
@@ -1062,7 +1071,7 @@ class QIxml(Names):
                     #end for
                 #end if
             #end for
-            if self.text is not None:
+            if have_text:
                 c = c.rstrip('\n')
                 c+=param.write(self[self.text],mode='elem',pad=ip,tag=None,normal_elem=True)
             #end if
@@ -2238,6 +2247,11 @@ class group(QIxml):
 
 
 
+class coefs_mem(QIxml):
+    attributes = ('shared_ranks','distributed_ranks')
+#end class coefs_mem
+
+
 class sposet(QIxml):
     attributes = ('basisset','type','name','group','size',
                   'index_min','index_max','energy_min','energy_max',
@@ -2245,8 +2259,8 @@ class sposet(QIxml):
                   'gs_sposet','basis_sposet','same_k','frequency','mass',
                   'source','version','precision','tilematrix',
                   'meshfactor')
-    elements   = ('occupation','coefficient','coefficients')
-    text       = None
+    elements   = ('occupation','coefficient','coefficients','coefs_mem')
+    text       = 'spos'
     identifier = 'name'
 #end class sposet
 
@@ -3153,7 +3167,7 @@ classes = [   #standard classes
     atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,array_traces,
     reference_points,nearestneighbors,neighbor_trace,dm1b,
     coefficient,radfunc,spindensity,structurefactor,magnetizationdensity,
-    sposet,bspline_builder,composite_builder,heg_builder,include,
+    sposet,coefs_mem,bspline_builder,composite_builder,heg_builder,include,
     multideterminant,detlist,ci,mcwalkerset,csf,det,
     optimize,cg_optimizer,flex_optimizer,optimize_qmc,wftest,kspace_jastrow,
     header,local,force,forwardwalking,observable,record,rmc,pressure,dmccorrection,
@@ -6088,6 +6102,15 @@ def generate_particlesets(*,
 #end def generate_particlesets
 
 
+def _validate_coefs_mem_ranks(shared_ranks,distributed_ranks):
+    for name,value in (('shared_ranks',shared_ranks),('distributed_ranks',distributed_ranks)):
+        if value is not None and not value >= 1:
+            raise ValueError(f'{name} must be >= 1 when provided')
+        #end if
+    #end for
+#end def _validate_coefs_mem_ranks
+
+
 def generate_sposets(type           = None,
                      *,
                      occupation     = None,
@@ -6101,7 +6124,10 @@ def generate_sposets(type           = None,
                      spindatasets   = False,
                      spinor         = None,
                      rotate         = False,
+                     shared_ranks   = None,
+                     distributed_ranks = None,
                      ):
+    _validate_coefs_mem_ranks(shared_ranks,distributed_ranks)
     ndn = ndown
     if type is None:
         msg = (
@@ -6163,6 +6189,15 @@ def generate_sposets(type           = None,
             )
         raise ValueError(msg)
     #end if
+    if (shared_ranks is not None or distributed_ranks is not None) and type in ('bspline','einspline'):
+        for spo in sposets:
+            spo.coefs_mem = coefs_mem(**{
+                name:value for name,value in (
+                    ('shared_ranks',shared_ranks),('distributed_ranks',distributed_ranks)
+                    ) if value is not None
+                })
+        #end for
+    #end if
     if rotate:
         rotated_sposets = []
         for spo in sposets:
@@ -6194,6 +6229,8 @@ def generate_bspline_builder(type           = 'bspline',
                              *,
                              meshfactor     = 1.0,
                              precision      = 'float',
+                             shared_ranks   = None,
+                             distributed_ranks = None,
                              twistnum       = None,
                              twist          = None,
                              sort           = None,
@@ -6236,6 +6273,8 @@ def generate_bspline_builder(type           = 'bspline',
         spindatasets   = True,
         spinor         = spinor,
         rotate         = rotate,
+        shared_ranks   = shared_ranks,
+        distributed_ranks = distributed_ranks,
         )
     if not rotate:
         bsb.sposets = sposets
@@ -6548,6 +6587,8 @@ def generate_determinantset_old(type           = 'bspline',
                                 *,
                                 meshfactor     = 1.0,
                                 precision      = 'float',
+                                shared_ranks   = None,
+                                distributed_ranks = None,
                                 twistnum       = None,
                                 twist          = None,
                                 spin_polarized = False,
@@ -6560,6 +6601,7 @@ def generate_determinantset_old(type           = 'bspline',
                                 system         = None,
                                 spinor         = None,
                                 ):
+    _validate_coefs_mem_ranks(shared_ranks,distributed_ranks)
     if system is None:
         msg = 'generate_determinantset argument system must not be None'
         raise ValueError(msg)
@@ -6767,6 +6809,15 @@ def generate_determinantset_old(type           = 'bspline',
                 raise NotImplementedError(msg)
             #end if
 
+            if (shared_ranks is not None or distributed_ranks is not None) and type in ('bspline','einspline'):
+                for spo in dset.sposets:
+                    spo.coefs_mem = coefs_mem(**{
+                        name:value for name,value in (
+                            ('shared_ranks',shared_ranks),('distributed_ranks',distributed_ranks)
+                            ) if value is not None
+                        })
+                #end for
+            #end if
             return dset
 
         #end if
@@ -9336,6 +9387,8 @@ gen_basic_input_defaults = obj(
     meshfactor       = 1.0,
     orbspline        = None,
     precision        = 'float',
+    shared_ranks     = None,
+    distributed_ranks = None,
     twistnum         = None,
     twist            = None,
     gcta             = None,
@@ -9458,6 +9511,8 @@ def generate_basic_input(**kwargs):
             )
         raise ValueError(msg)
     #end if
+
+    _validate_coefs_mem_ranks(kw.shared_ranks,kw.distributed_ranks)
 
     batched = kw.driver=='batched'
     legacy  = kw.driver=='legacy'
@@ -9588,6 +9643,8 @@ def generate_basic_input(**kwargs):
                 twistnum       = kw.twistnum,
                 meshfactor     = kw.meshfactor,
                 precision      = kw.precision,
+                shared_ranks   = kw.shared_ranks,
+                distributed_ranks = kw.distributed_ranks,
                 truncate       = kw.truncate,
                 buffer         = kw.buffer,
                 hybridrep      = kw.hybridrep,
@@ -9629,6 +9686,8 @@ def generate_basic_input(**kwargs):
             twistnum       = kw.twistnum,
             meshfactor     = kw.meshfactor,
             precision      = kw.precision,
+            shared_ranks   = kw.shared_ranks,
+            distributed_ranks = kw.distributed_ranks,
             hybridrep      = kw.hybridrep,
             href           = kw.orbitals_h5,
             spin_polarized = kw.spin_polarized,
