@@ -63,7 +63,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
 
   long nkpts, Qbeg = 0, QN, nQ;
   long nmu, rotnmu;
-  hdf_archive dump(TGwfn.Global());
+  hdf_archive dump;
   // right now only Node.root() reads
   if (TG.Node().root())
   {
@@ -1037,7 +1037,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
 
   IntegerVector<std::allocator<int>> nchol_per_kp_(extents_t<1u>{nkpts});
 
-  hdf_archive dump_(TGwfn.Global());
+  hdf_archive dump_;
   // right now only Node.root() reads
   if (TG.Node().root())
   {

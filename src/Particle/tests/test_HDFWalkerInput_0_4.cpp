@@ -171,7 +171,7 @@ TEST_CASE("HDFWalkerInput_0_4 16 walkers repartition", "[particle]")
   // Master rank writes 16 walkers with a single partition [0, 16]
   if (c.rank() == 0)
   {
-    hdf_archive hout(c, false);
+    hdf_archive hout;
     hout.create(h5file);
     HDFVersion cur_version(0, 4);
     hout.write(cur_version.version, hdf::version);

@@ -90,7 +90,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
     APP_ABORT("Error: ndet > 1 not yet implemented in THCHamiltonian::getHamiltonianOperations.\n");
 
   long nkpts;
-  hdf_archive dump(TGwfn.Global());
+  hdf_archive dump;
   // right now only Node.root() reads
   if (TG.Node().root())
   {
@@ -823,7 +823,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   auto Qcomm_roots(Qcomm.split(distNode.rank(), Qcomm.rank()));
 
   long nkpts;
-  hdf_archive dump(TGwfn.Global());
+  hdf_archive dump;
   // right now only Node.root() reads
   if (distNode.root())
   {

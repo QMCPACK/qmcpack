@@ -128,7 +128,7 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   if (foundspline && myComm.rank() == 0)
   {
     Timer now;
-    hdf_archive h5f(myComm);
+    hdf_archive h5f;
     const auto splinefile = getSplineDumpFileName(bandgroup);
     h5f.open(splinefile, H5F_ACC_RDONLY);
     foundspline = SplineUtils<ST>::read(multi_splines, h5f);
@@ -211,12 +211,12 @@ void SplineSetReader<ST>::initialize_spline_pio_gather(const int spin,
 
   app_log() << "Start transforming plane waves to 3D B-Splines." << std::endl;
   OneSplineOrbData oneband(mybuilder->MeshSize, half_g, use_duplex_splines_);
-  hdf_archive h5f(band_group_comm, false);
   Vector<std::complex<double>> cG(mybuilder->Gvecs[0].size());
   const std::vector<BandInfo>& cur_bands = bandgroup.myBands;
   if (band_group_comm.isGroupLeader())
   {
     auto& group_leader_comm = band_group_comm.getInterGroupComm();
+    hdf_archive h5f;
     h5f.open(mybuilder->H5FileName, H5F_ACC_RDONLY);
     for (int iorb = iorb_first; iorb < iorb_last; iorb++)
     {

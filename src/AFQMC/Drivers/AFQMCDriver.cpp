@@ -142,7 +142,7 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
 bool AFQMCDriver::checkpoint(WalkerSet& wset, int block, int step)
 {
   // hack until hdf_archive works with mpi3
-  hdf_archive dump(globalComm, false);
+  hdf_archive dump;
   if (globalComm.rank() == 0)
   {
     std::string file;
@@ -191,7 +191,7 @@ bool AFQMCDriver::checkpoint(WalkerSet& wset, int block, int step)
 bool AFQMCDriver::writeSamples(WalkerSet& wset)
 {
   // hack until hdf_archive works with mpi3
-  hdf_archive dump(globalComm, false);
+  hdf_archive dump;
   if (globalComm.rank() == 0)
   {
     std::string file;

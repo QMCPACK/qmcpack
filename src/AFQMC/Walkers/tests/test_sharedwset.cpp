@@ -237,6 +237,7 @@ void test_hyperslab()
 
   int nwtot = (world += nwalk);
 
+#if defined(ENABLE_PHDF5)
   hdf_archive dump(world, true);
   if (!dump.create("dummy_walkers.h5", H5F_ACC_EXCL))
   {
@@ -251,6 +252,7 @@ void test_hyperslab()
   dump.write(hslab, "Walkers");
   dump.close();
   world.barrier();
+#endif
 
   {
     hdf_archive read(world, false);
@@ -353,7 +355,7 @@ void test_walker_io(std::string wtype)
   hdf_archive dump(world, true);
   {
 #else
-  hdf_archive dump(world, false);
+  hdf_archive dump;
   if (TG.Global().root())
   {
 #endif
@@ -369,14 +371,9 @@ void test_walker_io(std::string wtype)
   dump.close();
 
   {
-#if defined(ENABLE_PHDF5)
-    hdf_archive read(world, true);
-    {
-#else
-    hdf_archive read(world, false);
+    hdf_archive read;
     if (TG.Global().root())
     {
-#endif
       if (!read.open("dummy_walkers.h5", H5F_ACC_RDONLY))
       {
         app_error() << " Error opening restart file. \n";

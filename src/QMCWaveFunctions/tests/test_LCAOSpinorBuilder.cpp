@@ -104,7 +104,7 @@ TEST_CASE("LCAOSpinorBuilder throws", "[wavefunction]")
       const std::string pbc_h5 = "test_spinor_pbc.h5";
       if (c.rank() == 0)
       {
-        hdf_archive hout(c);
+        hdf_archive hout;
         hout.create(pbc_h5);
         hout.push("PBC", true);
         bool pbc = true;

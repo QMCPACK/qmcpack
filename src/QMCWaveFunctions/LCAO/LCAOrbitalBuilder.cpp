@@ -274,10 +274,10 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr par
 {
   ReportEngine PRE(class_name_, "loadBasisSetFromH5()");
 
-  hdf_archive hin(myComm);
   int ylm = -1;
   if (myComm.rank() == 0)
   {
+    hdf_archive hin;
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       PRE.error("Could not open H5 file", true);
 
@@ -407,7 +407,7 @@ std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSet
   /** process atomicBasisSet per ion species */
   app_log() << "Reading BasisSet from HDF5 file:" << h5_path << std::endl;
 
-  hdf_archive hin(myComm);
+  hdf_archive hin;
   if (myComm.rank() == 0)
   {
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
@@ -644,10 +644,9 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
     success = putFromXML(spo, coeff_ptr);
   else
   {
-    hdf_archive hin(myComm);
-
     if (myComm.rank() == 0)
     {
+      hdf_archive hin;
       if (!hin.open(h5_path, H5F_ACC_RDONLY))
         APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
 
@@ -820,7 +819,6 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   aAttrib.add(neig, "size", {}, TagStatus::DEPRECATED);
   aAttrib.add(neig, "orbitals", {}, TagStatus::DELETED);
   aAttrib.put(coeff_ptr);
-  hdf_archive hin(myComm);
 
   xmlNodePtr curtemp = coeff_ptr;
 
@@ -853,6 +851,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 
   if (myComm.rank() == 0)
   {
+    hdf_archive hin;
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
     hin.push("parameters");
@@ -1032,9 +1031,9 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(
   ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
   if (h5_path != "" && !usesOpenBC)
   {
-    hdf_archive hin(myComm);
     if (myComm.rank() == 0)
     {
+      hdf_archive hin;
       if (!hin.open(h5_path, H5F_ACC_RDONLY))
         APP_ABORT("Could not open H5 file");
 
@@ -1085,9 +1084,9 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(
   ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
   if (h5_path != "" && !usesOpenBC)
   {
-    hdf_archive hin(myComm);
     if (myComm.rank() == 0)
     {
+      hdf_archive hin;
       if (!hin.open(h5_path, H5F_ACC_RDONLY))
         APP_ABORT("Could not open H5 file");
 

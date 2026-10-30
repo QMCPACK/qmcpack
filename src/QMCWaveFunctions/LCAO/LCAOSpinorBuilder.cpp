@@ -81,10 +81,10 @@ bool LCAOSpinorBuilder::loadMO(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr 
     cur = cur->next;
   }
 
-  hdf_archive hin(myComm);
   bool file_opened = true;
   if (myComm.rank() == 0)
   {
+    hdf_archive hin;
     file_opened = hin.open(h5_path, H5F_ACC_RDONLY);
     if (file_opened)
     {
@@ -124,9 +124,9 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
 
   bool success     = true;
   bool file_opened = true;
-  hdf_archive hin(myComm);
   if (myComm.rank() == 0)
   {
+    hdf_archive hin;
     file_opened = hin.open(h5_path, H5F_ACC_RDONLY);
     if (file_opened)
     {
