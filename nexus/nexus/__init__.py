@@ -732,6 +732,14 @@ class Settings(NexusCore):
             version="Nexus {}.{}.{}".format(*nexus_version)
             )
         parser.add_argument(
+            "--debug",
+            action="store_true",
+            default=argparse.SUPPRESS,
+            help=(
+                f"Enable debug logging. (default: {nexus_config.debug})"
+            )
+        )
+        parser.add_argument(
             "--disable-logging",
             "--disable_logging",
             action="store_true",
@@ -1042,14 +1050,13 @@ class Settings(NexusCore):
         # before their keys are discarded.
         legacy_mode = kw.pop("mode", unset)
         legacy_verbose = kw.pop("verbose", unset)
-        legacy_debug = kw.pop("debug", unset)
         legacy_trace = kw.pop("trace", unset)
         legacy_emulate = kw.pop("emulate", unset)
 
 
         # `debug=True` historically overrode `verbose=False`.
         if "quiet" not in kw:
-            if legacy_debug is not unset and legacy_debug:
+            if kw.get("debug", False):
                 kw["quiet"] = False
             elif legacy_verbose is not unset:
                 kw["quiet"] = not legacy_verbose
@@ -1059,7 +1066,6 @@ class Settings(NexusCore):
         deprecated = (
             (legacy_mode, "mode", "Please use `stages` instead!"),
             (legacy_verbose, "verbose", "Please use `quiet=True` to turn off output instead of `verbose=False`!"),
-            (legacy_debug, "debug", "This variable was redundant, please remove from your script!"),
             (legacy_trace, "trace", "This variable was unused in Nexus, please remove from your script!"),
             (legacy_emulate, "emulate", "This variable was unused in Nexus, please remove from your script!"),
         )

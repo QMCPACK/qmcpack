@@ -68,7 +68,7 @@ from nexus.developer import obj,save,load
 
 class SimTool(obj):
 
-    indicators = ('setup','sent_files','submitted','finished','failed','got_output','analyzed')
+    indicators = ('_setup','_sent_files','_submitted','_finished','_failed','_got_output','_analyzed')
 
     fields = frozenset(indicators)
 
@@ -105,7 +105,7 @@ class SimTool(obj):
             sim  = self.sims[i]
             print(path)
             for f in fields:
-                print(f'   {f:<12} {int(sim[f])}')
+                print(f'   {f.lstrip("_"):<12} {int(sim[f])}')
             #end for
         #end for
     #end def write_state
@@ -150,7 +150,7 @@ class SimTool(obj):
     #end def restore
 
 
-    def set_indicators(self,inds,val=1):
+    def set_indicators(self,inds: list[str],val=1):
         if len(inds)==0:
             msg = (
                 'no indicators specified\n'
@@ -158,6 +158,7 @@ class SimTool(obj):
                 )
             raise ValueError(msg)
         #end if
+        inds = [i if i.startswith("_") else f"_{i}" for i in inds]
         forbidden = set(inds)-set(self.indicators)
         if len(forbidden)>0:
             msg = 'unrecognized indicators encountered:\n'
