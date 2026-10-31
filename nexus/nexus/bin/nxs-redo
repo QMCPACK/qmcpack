@@ -1,9 +1,10 @@
 #! /usr/bin/env python3
+"""Back up a simulation attempt into a subdirectory."""
 
-import os
+import shutil
 import sys
+from argparse import ArgumentParser
 from pathlib import Path
-from optparse import OptionParser
 
 if sys.version_info[0:3] < (3, 12, 0):
     v = sys.version_info[0:3]
@@ -61,107 +62,152 @@ def find_nexus_modules():
         sys.exit(1)
 #end def find_nexus_modules
 
-# Get Nexus version
 find_nexus_modules()
+
 from nexus.nexus_version import nexus_version
 
 
-usage  = '''usage: %prog [options] [file(s)]'''
-parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
-parser.add_option('-h','--help',dest='help',
-                  action='store_true',default=False,
-                  help='Print help information and exit (default=%default).'
-                  )
-parser.add_option('-v','--verbose',dest='verbose',
-                          action='store_true',default=False,
-                          help='Print detailed information (default=%default).'
-                          )
-parser.add_option('-n','--dry-run',dest='dryrun',
-                  action='store_true',default=False,
-                  help="Print directories to be backed up as previous attempts, but don't actually do anything (default=%default)."
-                  )
+def main(
+    paths_in: list[Path],
+    *,
+    verbose: bool,
+    dry_run: bool,
+):
+    paths: dict[Path, tuple[list[Path], list[Path]]] = {}
+    for path in paths_in:
+        if not (path.exists() or path.is_dir()):
+            continue
 
-options,paths_in = parser.parse_args()
-
-help    = options.__dict__['help']
-verbose = options.__dict__['verbose']
-dryrun  = options.__dict__['dryrun']
-
-if help:
-    print(parser.format_help())
-    sys.exit()
-#end if
-
-paths = dict()
-if len(paths_in)==1 and os.path.exists(paths_in[0]) and os.path.isfile(paths_in[0]):
-    with open(paths_in[0],'r') as fobj:
-        text = fobj.read()
-    paths_in = []
-    for line in text.splitlines():
-        tokens = line.split()
-        if len(tokens)>0:
-            paths_in.append(tokens[-1])
-        #end if
-    #end for
-#end if
-for path in paths_in:
-    if os.path.exists(path) and os.path.isdir(path):
-        simdir    = False
-        attempts  = []
-        contents  = []
-        for item in os.listdir(path):
-            isdir = os.path.isdir(os.path.join(path,item))
-            simdir |= item.startswith('sim') and isdir
-            if item.startswith('attempt') and isdir:
+        attempts = []
+        contents = []
+        for item in sorted(path.iterdir()):
+            isdir = item.is_dir()
+            if item.stem.startswith("attempt") and isdir:
                 attempts.append(item)
             else:
                 contents.append(item)
-            #end if
-        #end for
-        if simdir:
-            paths[path] = attempts,contents
-        #end if
-    #end if
-#end for
 
-if len(paths)>0:
+        paths[path] = (attempts, contents)
+
+    if len(paths) == 0:
+        msg = "No simulation directories found!"
+        raise RuntimeError(msg)
+
     if verbose:
-        print('redo: backing up attempted sim runs')
-    #end if
-else:
-    msg = 'redo: no simulation directories found'
-    raise RuntimeError(msg)
-#end if
-cwd = os.getcwd()
-for path in sorted(paths.keys()):
-    if verbose:
-        print('  Entering '+path)
-    #end if
-    os.chdir(path)
-    attempts,contents = paths[path]
-    attempt_dir = 'attempt'+str(len(attempts)+1)
-    if verbose:
-        if len(contents)==0:
-            print('    no contents to backup')
-        elif dryrun:
-            print(f'    would have created backup of {len(contents)} files in directory {attempt_dir}')
-        else:
-            print(f'    creating backup of {len(contents)} files in directory {attempt_dir}')
-        #end if
-    #end if
-    if not dryrun and len(contents)>0:
-        os.mkdir(attempt_dir)
-        if os.path.exists(attempt_dir) and os.path.isdir(attempt_dir):
+        print("Backing up attempted sim runs...\n")
+
+    for path, (attempts, contents) in paths.items():
+        if verbose:
+            print(f"  Backing up files in {path}")
+
+        attempt_dir = path / f"attempt{len(attempts) + 1}"
+        if len(contents) == 0:
+            if verbose:
+                print("    No contents to backup!")
+            continue
+
+        if dry_run:
+            print(
+                f"    Would have created backup of {len(contents)} files in:\n"
+                f"      {attempt_dir}\n"
+            )
+            continue
+
+        if verbose:
+            print(
+                f"    Creating backup of {len(contents)} files in:\n"
+                f"      {attempt_dir}"
+            )
+
+        if not dry_run and len(contents) > 0:
+            attempt_dir.mkdir()
             for item in contents:
-                os.system(f'mv {item} {attempt_dir}')
-            #end for
-        else:
-            print('  failed to create backup directory '+os.path.join(path,attempt_dir))
-        #end if
-    #end if
-    os.chdir(cwd)
-#end for
+                shutil.move(item, attempt_dir)
 
-if verbose:
-    print('redo: backup complete')
-#end if
+        if verbose:
+            print("  Done!\n")
+
+    if verbose:
+        print("Backup Complete!")
+
+if __name__ == "__main__":
+    parser = ArgumentParser(
+        prog="nxs-redo",
+        description="""
+            Take the contents of a simulation directory and back them up into a
+            subdirectory labeled `attemptN` where `N` is the attempt number.
+        """,
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s {}.{}.{}".format(*nexus_version)
+    )
+    parser.add_argument(
+        "paths",
+        type=Path,
+        nargs="+",
+        help=(
+            "Either a single file that contains the names of simulation run directories "
+            "each on their own line, or multiple simulation directories, or a glob pattern "
+            "that points to multiple simulation directories."
+        ),
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Print detailed information. (default: %(default)s)."
+    )
+    parser.add_argument(
+        "-n",
+        "--dry-run",
+        action="store_true",
+        help=(
+            "Print directories to be backed up as previous attempts, but don't "
+            "actually do anything. Automatically sets `verbose=True`. "
+            "(default: %(default)s)"
+        )
+    )
+
+    args = parser.parse_args()
+
+    paths_in: list[Path] = [path.resolve() for path in args.paths]
+    dry_run: bool  = args.dry_run
+    verbose: bool = args.verbose or dry_run # Always print with dry run
+
+    if (  # Passed a file with paths inside it
+        len(paths_in) == 1
+        and (in_file := paths_in[0]).is_file()
+    ):
+        text = in_file.read_text()
+        paths_in = []
+        for line in text.splitlines():
+            tokens = line.split()
+            if len(tokens) > 0:
+                paths_in.append(Path(tokens[-1]).resolve())
+
+    invalid_paths = {path for path in paths_in if not path.is_dir()}
+    paths_in = [i for i in paths_in if i not in invalid_paths]
+    if len(invalid_paths) > 0 and verbose:
+        print("The following provided paths do not exist or are not directories:")
+        for path in sorted(invalid_paths):
+            print(f"  {path}")
+        print()
+
+    non_sim_dirs = {
+        path for path in paths_in
+        if not any(f.stem.startswith("sim") and f.is_dir() for f in path.iterdir())
+    }
+    paths_in = [i for i in paths_in if i not in non_sim_dirs]
+    if len(non_sim_dirs) > 0 and verbose:
+        print("Encountered non-simulation directory in supplied paths:")
+        for non_sim_dir in sorted(non_sim_dirs):
+            print(f"  {non_sim_dir}")
+        print()
+
+    main(
+        paths_in,
+        verbose=verbose,
+        dry_run=dry_run,
+    )
