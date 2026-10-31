@@ -5,8 +5,10 @@ from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
 
 import numpy as np
+from ..structure import generate_structure
 from ..testing import value_eq,object_eq
-from nexus.physical_system import generate_physical_system
+from ..physical_system import generate_physical_system
+from ..pseudoset import PseudoSet
 
 from .test_structure import structure_same
 
@@ -409,3 +411,83 @@ def test_kf_rpa():
     assert np.isclose(kfs[0], 1.465, atol=1e-3)
     assert np.isclose(kfs[1], 1.465/2**(1./3), atol=1e-3)
 #end def test_kf_rpa
+
+
+def test_update_pseudos(tmp_path):
+    pseudo_names = (
+        "C.BFD.xml",
+        "H.BFD.xml",
+        "O.BFD.xml",
+        "C.BFD.upf",
+        "H.BFD.upf",
+        "O.BFD.upf",
+        "Fe.BFD.upf",
+        "C/POTCAR",
+        "H/POTCAR",
+        "O/POTCAR",
+        )
+
+    psp_dir = tmp_path / "pseudos"
+    psp_dir.mkdir()
+    assert psp_dir.exists(), "Failed to create pseudo directory!"
+
+    pseudo_list = []
+    for psp in pseudo_names:
+        if "POTCAR" in psp:
+            potcar_dir = psp_dir / psp.split("/")[0]
+            potcar_dir.mkdir()
+            assert potcar_dir.exists(), "Failed to create POTCAR directory!"
+
+        pseudo = (psp_dir / psp).resolve()
+        pseudo.touch()
+        assert pseudo.exists(), "Failed to create pseudo file!"
+        pseudo_list.append(pseudo)
+
+    pseudoset = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        extensions = {"rmg": ".xml"},
+        code_Zeff_map = {
+            "qmcpack":  {"C": 4, "H": 1, "O": 6},
+            "espresso": {"C": 4, "H": 1, "O": 6, "Fe": 16},
+            "rmg":      {"C": 4, "H": 1, "O": 6},
+            "vasp":     {"C": 4, "H": 1, "O": 6},
+        }
+    )
+
+    structure = generate_structure(
+        type       = "trimer",
+        trimer     = ["O", "H", "H"],
+        units      = "A",
+        separation = [0.984, 0.984],
+        angle      = 102.25,
+    )
+
+    mol = generate_physical_system(
+        structure  = structure,
+        net_charge = 0,
+        pseudos    = pseudoset,
+    )
+
+    assert(mol.valency.__dict__ == {"H": 1, "O": 6})
+
+    mol = generate_physical_system(
+        structure  = structure,
+        net_charge = 0,
+        H = 2,
+        O = 5
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match=(
+            "The Z-valence for 'H' does not match the value in the provided pseudos!\n"
+            "    Existing: 2\n"
+            "    Provided: 1\n"
+            "The Z-valence for 'O' does not match the value in the provided pseudos!\n"
+            "    Existing: 5\n"
+            "    Provided: 6\n"
+        )
+    ):
+        mol.update_pseudos(pseudoset)
+#end def test_update_pseudos
+

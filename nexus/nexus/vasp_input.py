@@ -3034,7 +3034,16 @@ def generate_any_vasp_input(**kwargs):
             vf[name] = default
         #end if
     #end for
-    if vf.pseudos is not None:
+    if isinstance(vf.system, PhysicalSystem) and vf.system.pseudos is not None:
+        if vf.pseudos is not None and len(vf.pseudos) > 0:
+            msg = "Can not pass explicit pseudos when they are bound to a PhysicalSystem!"
+            raise ValueError(msg)
+        vf.pseudos = PseudoSet.get_pseudos(
+            pseudos = vf.system.pseudos,
+            system = vf.system,
+            code = "vasp",
+        )
+    elif vf.pseudos is not None:
         vf.pseudos = PseudoSet.get_pseudos(
             pseudos = vf.pseudos,
             system = vf.system,

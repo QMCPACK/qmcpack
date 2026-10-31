@@ -16,21 +16,39 @@
 #      User function to create arbitrary physical systems.           #
 #                                                                    #
 #====================================================================#
+from __future__ import annotations
 
 import os
-from pathlib import Path
 from copy import deepcopy
+from pathlib import Path
+from typing import TYPE_CHECKING
+
 import numpy as np
-from .developer import DevBase, obj, warn, NexusError
+
+from .developer import DevBase, NexusError, obj, warn
 from .periodic_table import Elements
 from .structure import Structure, generate_structure, read_structure
+
+if TYPE_CHECKING:
+    from .pseudoset import PseudoSet, PseudoSetCollection
 
 
 class PhysicalSystem(DevBase):
 
     ghost_aliases = ("Xx",)
 
-    def __init__(self,structure=None,net_charge=0,net_spin=0,**valency):
+    def __init__(
+        self,
+        structure: Structure | None = None,
+        net_charge: int = 0,
+        net_spin: int = 0,
+        pseudos: dict[str, PseudoSet] | PseudoSet | None = None,
+        **valency: int,
+        ):
+        if not (pseudos is None or len(valency) == 0):
+            msg = "Can not pass both `pseudos` and `valency` to PhysicalSystem!"
+            raise ValueError(msg)
+
         self.pseudized = False
         if structure is None:
             self.structure = Structure()
@@ -81,10 +99,15 @@ class PhysicalSystem(DevBase):
                 **valency
                 )
         #end if
-        if valency is not None and len(valency) > 0:
+
+        if len(valency) > 0:
             self.pseudize(**valency)
+            self.pseudos = pseudos
+        elif pseudos is not None:
+            self.update_pseudos(pseudos)
         else:
             self.valency = None
+            self.pseudos = pseudos
         self.net_charge = net_charge
         self.net_spin   = net_spin
 
@@ -92,10 +115,10 @@ class PhysicalSystem(DevBase):
     #end def __init__
 
 
-    def pseudize(self,**valency):
-        for ion in valency.keys():
+    def pseudize(self, **valency):
+        for ion in valency:
             if ion not in self.ion_labels:
-                msg = ion+' is not in the physical system'
+                msg = f"'{ion}' is not in the physical system"
                 raise ValueError(msg)
 
         self.valency = obj(**valency)
@@ -318,6 +341,43 @@ class PhysicalSystem(DevBase):
     #end def kf_rpa
 
 
+    def update_pseudos(self, pseudos: PseudoSet | PseudoSetCollection):
+        from .pseudoset import PseudoSet, PseudoSetCollection  # Here to avoid circular imports
+        if isinstance(pseudos, PseudoSet):
+            self.pseudos = PseudoSetCollection(
+                **{code: pseudos for code in pseudos.codes}
+            )
+        elif isinstance(pseudos, PseudoSetCollection):
+            self.pseudos = pseudos
+        else:
+            msg = (
+                "Argument `pseudos` must be either a PseudoSet or a PseudoSetCollection\n"
+                f"but has type {type(pseudos).__name__}!"
+            )
+            raise TypeError(msg)
+
+        all_same, msg = self.pseudos.check_same_Zeff(elements=self.structure)
+        if not all_same:
+            raise RuntimeError(msg)
+
+        pseudo_valency = self.pseudos.get_Zeff(self.structure)
+        if self.pseudized:
+            msg = ""
+            for elem, current_valency in self.valency.items():
+                if (new_valency := pseudo_valency[elem]) != current_valency:
+                    msg += (
+                        f"The Z-valence for '{elem}' does not match the value in the provided pseudos!\n"
+                        f"    Existing: {current_valency}\n"
+                        f"    Provided: {new_valency}\n"
+                    )
+            if len(msg) > 0:
+                msg = f"\n{msg}"
+                raise RuntimeError(msg)
+        else:
+            self.pseudize(**pseudo_valency)
+    #end def update_pseudos
+
+
     @property
     def n_elec(self):
         ions = self.structure.elem.tolist()
@@ -438,6 +498,7 @@ def generate_physical_system(**kwargs):
     net_spin   = kwargs['net_spin']
     tiled_spin = kwargs['tiled_spin']
     extensive  = kwargs['extensive']
+    pseudos    = kwargs.pop('pseudos', None)
     del kwargs['net_spin']
     del kwargs['net_charge']
     del kwargs['tiled_spin']
@@ -494,6 +555,7 @@ def generate_physical_system(**kwargs):
             structure  = structure.folded_structure,
             net_charge = net_charge,
             net_spin   = net_spin,
+            pseudos    = pseudos,
             **valency
             )
         structure.remove_folded()
@@ -512,6 +574,7 @@ def generate_physical_system(**kwargs):
             structure  = structure,
             net_charge = net_charge,
             net_spin   = net_spin,
+            pseudos    = pseudos,
             **valency
             )
         structure.set_folded(folded_structure)
@@ -522,6 +585,7 @@ def generate_physical_system(**kwargs):
             structure  = structure,
             net_charge = net_charge,
             net_spin   = net_spin,
+            pseudos    = pseudos,
             **valency
             )
     #end if

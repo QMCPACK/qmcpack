@@ -4,6 +4,7 @@
 
 
 from .simulation import Simulation
+from .physical_system import PhysicalSystem
 from .pseudoset import PseudoSet
 from .rmg_input import RmgInput, generate_rmg_input
 from .rmg_analyzer import RmgAnalyzer
@@ -61,9 +62,23 @@ class Rmg(Simulation):
 
 
 def generate_rmg(**kwargs):
-    pseudos = kwargs.get('pseudos',None)
-    if pseudos is not None:
-        system = kwargs.get('system',None)
+    pseudos = kwargs.get('pseudos')
+    system = kwargs.get('system')
+    if isinstance(system, PhysicalSystem) and system.pseudos is not None:
+        if pseudos is not None and len(pseudos) > 0:
+            msg = "Can not pass explicit pseudos when they are bound to a PhysicalSystem!"
+            raise ValueError(msg)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = system.pseudos,
+            system = system,
+            code = "rmg",
+        )
+        kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
+        if 'input' in kwargs:
+            # Guard so that the mutual exclusion of `pseudos` and a system with pseudos
+            # does not get triggered in the input generator
+            kwargs['pseudos'] = pseudos
+    elif pseudos is not None:
         pseudos = PseudoSet.get_pseudos(
             pseudos = pseudos,
             system = system,

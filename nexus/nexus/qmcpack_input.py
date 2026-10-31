@@ -6966,11 +6966,23 @@ def generate_hamiltonian(name         = 'h0',
     iname   = ions
     wfname  = wavefunction
     ppfiles = pseudos
-    ppfiles = PseudoSet.get_pseudos(
-        pseudos = ppfiles,
-        system = system,
-        code = 'qmcpack',
+
+    if isinstance(system, PhysicalSystem) and system.pseudos is not None:
+        if ppfiles is not None and len(ppfiles) > 0:
+            msg = "Can not pass explicit pseudos when they are bound to a PhysicalSystem!"
+            raise ValueError(msg)
+        ppfiles = PseudoSet.get_pseudos(
+            pseudos = system.pseudos,
+            system = system,
+            code = "qmcpack",
         )
+    else:
+        ppfiles = PseudoSet.get_pseudos(
+            pseudos = ppfiles,
+            system = system,
+            code = "qmcpack",
+            )
+
     ppfiles = obj((pp_elem_label(f,guard=True)[1],f) for f in ppfiles)
     del electrons
     del ions
