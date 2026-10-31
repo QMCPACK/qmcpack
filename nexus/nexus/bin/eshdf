@@ -1,12 +1,20 @@
 #! /usr/bin/env python3
+"""Script for reading and analyzing EinSpline HDF archives.
+
+There are two primary functionalities, :func:`write_nk`, which writes the
+electron density summed over k-points to an HDF5 archive, and :func:`kinetic`,
+which reports the total and optionally the per-orbital kinetic energy of the
+system.
+"""
 
 # Python standard library imports
-import os
-import sys
-from pathlib import Path
-from optparse import OptionParser
 
-if sys.version_info[0:3] < (3, 12, 0):
+import sys
+from argparse import ArgumentParser
+from dataclasses import dataclass
+from pathlib import Path
+
+if sys.version_info[0:3] < (3, 12, 0):  # pragma: no cover
     v = sys.version_info[0:3]
     print(
        f"Your version of Python ({v[0]}.{v[1]}.{v[2]}) is less than the minimum required for Nexus!\n"
@@ -18,12 +26,13 @@ if sys.version_info[0:3] < (3, 12, 0):
 
 # Non-standard Python library imports
 import numpy as np
+import numpy.typing as npt
 
 # Copied from qmca. Modification must done on qmca first
 # Locate and import the closely coupled Nexus module
 search_basepath = Path(__file__).resolve().parent.parent
 nexus_library_search_path = search_basepath.parent
-def find_nexus_modules():
+def find_nexus_modules():  # pragma: no cover
     import sys
 
     # "import nexus" will succeed if nexus directory exists without __init__.py in it.
@@ -67,257 +76,186 @@ def find_nexus_modules():
 
 # Load Nexus modules
 find_nexus_modules()
-from nexus.nexus_version import nexus_version
-from nexus.developer import obj,nxs_print,warn
+from nexus.developer import warn
 from nexus.hdfreader import read_hdf
-
+from nexus.nexus_version import nexus_version
+from nexus.unit_converter import convert
 
 try:
     import h5py
-except ImportError as err:
+except ImportError as err:  # pragma: no cover
     msg = (
         f"{err!s}\n"
         "You must have h5py installed to use this script!"
         )
     raise ImportError(msg) from None
 
-opt = obj(
-    verbose = False,
-    )
 
-def vlog(*args,**kwargs):
-    if opt.verbose:
-        nxs_print(*args,**kwargs)
-    #end if
-#end def vlog
+@dataclass
+class KpointInfo:
+    """Information about a specific k-point."""
 
-
-def get_path(o,path,value=None):
-    """Retrieve a value from a nested dict-like object by slash-delimited path."""
-    for key in path.split('/'):
-        if key not in o:
-            return value
-        #end if
-        o = o[key]
-    #end for
-    return o
-#end def get_path
+    kpoint: npt.NDArray[np.floating]
+    """K-point coordinates in units of the reciprocal lattice vectors."""
+    kin: npt.NDArray[np.floating]
+    """Kinetic energy at the specified k-point."""
+    eig: npt.NDArray[np.floating]
+    """Kohn-Sham eigenvalue for the specified state."""
+    g_vecs: npt.NDArray[np.floating]
+    """G-vectors at the k-point."""
+    nk: npt.NDArray[np.floating]
+    """Wavefunction density at the k-point, summed over all states."""
+    ne: float
+    """Number of electrons at the k-point, summed over all states."""
 
 
+@dataclass
+class EshdfData:
+    """Data from the ES-HDF file."""
 
-def read_eshdf_nofk_data(filename,Ef,ncore=0,nval=-1):
-    from numpy import array,pi,dot,sqrt,zeros
-    from numpy.linalg import inv
-    from nexus.unit_converter import convert
+    orbfile: Path
+    """Fully resolved path to orbital file."""
+    E_fermi: float
+    """Fermi energy in eV."""
+    axes: npt.NDArray[np.floating]
+    """Unit cell axes, shape ``(3, 3)``, in atomic units (a0)."""
+    kaxes: npt.NDArray[np.floating]
+    """K-space cell axes, shape ``(3, 3)``, in units of 1/a0."""
+    nkpoints: int
+    """Total number of k-points in the file."""
+    nspins: int
+    """Number of distinct spins."""
+    data: dict[tuple[int, int], KpointInfo]
+    """Information at a k-point index and spin, e.g. ``data[kpt_idx, spin]``"""
 
-    def h5int(i):
-        return array(i,dtype=int)[0]
-    #end def h5int
 
-    E_fermi   = Ef + 1e-8
-    h        = read_hdf(filename,view=True)
-    gvu      = array(h.electrons.kpoint_0.gvectors)
-    axes     = array(h.supercell.primitive_vectors)
-    kaxes    = 2*pi*inv(axes).T
-    gv       = dot(gvu,kaxes)
-    Ngv      = len(gv[:,0])
-    kmag     = sqrt((gv**2).sum(1))
-    nk       = h5int(h.electrons.number_of_kpoints)
-    ns       = h5int(h.electrons.number_of_spins)
-    occpaths = []
-    data     = obj()
-    for k in range(nk):
-        kin_k   = obj()
-        eig_k   = obj()
-        k_k     = obj()
-        nk_k    = obj()
-        nelec_k = zeros((ns,),dtype=float)
-        kp = h.electrons['kpoint_'+str(k)]
-        gvs = dot(array(kp.reduced_k),kaxes)
-        gvk = gv.copy()
-        for d in range(3):
-            gvk[:,d] += gvs[d]
-        #end for
-        kinetic=(gvk**2).sum(1)/2 # Hartree units
-        for s in range(ns):
-            #print ' ',(k,s),(nk,ns)
+def read_eshdf_n_of_k_data(
+    filename: Path,
+    E_fermi: float,
+    ncore: int = 0,
+    nval: int = -1,
+) -> EshdfData:
+    """Read data from an ES-HDF archive and calculate some critical information.
+
+    Notes
+    -----
+    The formulation used for the calculation of the kinetic energy (in Hartrees) is
+    as follows:
+
+    .. math::
+        E_k = \\frac{1}{2} \\sum_{\\mathbf{G}} \\vert{}\\psi_{\\mathbf{G}}\\vert{}^2 \\vert{}\\mathbf{k} + \\mathbf{G}\\vert{}^2
+    """
+    h = read_hdf(filename, view=True)
+    gvecs_unit = np.asarray(h["electrons"]["kpoint_0"]["gvectors"])
+    axes = np.asarray(h["supercell"]["primitive_vectors"])
+    kaxes = 2 * np.pi * np.linalg.inv(axes).T
+
+    # Translate g-vectors from reciprocal lattice units to units of 1/a0
+    gvecs = gvecs_unit @ kaxes
+    kmag = np.sqrt((gvecs**2).sum(1))
+    nkpts = int(h["electrons"]["number_of_kpoints"][0])
+    nspins = int(h["electrons"]["number_of_spins"][0])
+    data = {}
+    for k in range(nkpts):
+        kpt_idx  = f"kpoint_{k}"
+        kp = h["electrons"][kpt_idx]
+        # Convert k-point coordinate from reciprocal lattice units to units of 1/a0
+        k_pos = np.dot(np.asarray(kp["reduced_k"]), kaxes)
+        gvecs_at_k = gvecs.copy() + k_pos.T # Translate g-vectors by the current k-point
+
+        # Kinetic energy at each g-vector, in Hartrees
+        kinetic = (gvecs_at_k**2).sum(1) / 2
+        for s in range(nspins):
+            spin_idx = f"spin_{s}"
             kin_s = []
             eig_s = []
-            k_s   = gvk
-            nk_s  = 0*kmag
+            nk_s = 0*kmag
             nelec_s = 0
-            path = f'electrons/kpoint_{k}/spin_{s}'
-            spin = get_path(h,path)
-            eig = convert(array(spin.eigenvalues),'Ha','eV')
-            nst = h5int(spin.number_of_states)
+            spin = h["electrons"][kpt_idx][spin_idx]
+            eig = convert(np.array(spin["eigenvalues"]),'Ha','eV')
+            nst = np.asarray(spin["number_of_states"], dtype=int)[0]
             nlast = nst
             if nval > 0:
               nlast = ncore + nval
             for st in range(ncore, nlast):
                 e = eig[st]
-                if e<E_fermi:
-                    stpath = path+f'/state_{st}/psi_g'
-                    occpaths.append(stpath)
-                    psi = array(get_path(h,stpath))
+                if e <= E_fermi:
+                    state_idx = f"state_{st}"
+
+                    # Complex expansion coefficients at each g-vector
+                    psi = np.array(
+                        h["electrons"][kpt_idx][spin_idx][state_idx]["psi_g"]
+                    )
                     nk_orb = (psi**2).sum(1)
                     kin_orb = (kinetic*nk_orb).sum()
                     nelec_s += nk_orb.sum()
                     nk_s += nk_orb
                     kin_s.append(kin_orb)
                     eig_s.append(e)
-                #end if
-            #end for
-            data[k,s] = obj(
-                kpoint = array(kp.reduced_k),
-                kin    = array(kin_s),
-                eig    = array(eig_s),
-                k      = k_s,
+
+            data[k,s] = KpointInfo(
+                kpoint = np.array(kp["reduced_k"]),
+                kin    = np.array(kin_s),
+                eig    = np.array(eig_s),
+                g_vecs = gvecs_at_k,
                 nk     = nk_s,
                 ne     = nelec_s,
-                )
-        #end for
-    #end for
-    res = obj(
+            )
+
+    res = EshdfData(
         orbfile  = filename,
         E_fermi  = E_fermi,
         axes     = axes,
         kaxes    = kaxes,
-        nkpoints = nk,
-        nspins   = ns,
+        nkpoints = nkpts,
+        nspins   = nspins,
         data     = data,
-        )
+    )
     return res
 #end def read_eshdf_nofk_data
 
 
-def first_eshdf_file(args):
-    # check files provided
-    eshdf_files = sorted(args[1:])
-    if len(eshdf_files)!=1:
-        msg = (
-            'exactly one ESHDF file is allowed as input.\n'
-            f'You provided: {eshdf_files}'
-            )
-        raise ValueError(msg)
-    #end if
-    eshdf_filepath = eshdf_files[0]
-    if not os.path.exists(eshdf_filepath):
-        msg = (
-            'ESHDF file does not exist.\n'
-            'Please check the path provided:\n'
-            f'  {eshdf_filepath}'
-            )
-        raise FileNotFoundError(msg)
-    elif not eshdf_filepath.endswith('.h5'):
-        msg = (
-            'file provided is not an HDF5 file.\n'
-            'An ESHDF file must have a .h5 extension.\n'
-            'Please check the path provided:\n'
-            f'  {eshdf_filepath}'
-            )
-        raise ValueError(msg)
-    #end if
-    return eshdf_filepath
-#end def first_eshdf_file
+def kinetic(
+    eshdf_filepath: Path,
+    *,
+    E_fermi: float,
+    ncore: int,
+    nval: int,
+    norm_tol: float,
+    orb_info: bool,
+):
 
+    eshdf_data = read_eshdf_n_of_k_data(
+        filename=eshdf_filepath,
+        E_fermi=E_fermi,
+        ncore=ncore,
+        nval=nval,
+    )
 
-def interpret_nk_options(parser):
-    options,args = parser.parse_args()
-    opt.update(**options.__dict__)
-    for k,v in opt.items():
-        if v=='None':
-            opt[k] = None
-        #end if
-    #end for
-    eshdf_files = sorted(args[1:])
-    if opt.help or len(eshdf_files)==0:
-        print('\n'+parser.format_help().strip()+'\n')
-        sys.exit()
-    #end if
-    # check Fermi energy
-    if opt.E_fermi is None:
-        msg = 'please provide the Fermi energy via the --Ef option.'
-        raise ValueError(msg)
-    else:
-        try:
-            opt.E_fermi = float(opt.E_fermi)
-        except:
-            msg = (
-                'value provided for Fermi energy is not a real number.\n'
-                f'You provided: {opt.E_fermi}'
-                )
-            raise ValueError(msg)
-        #end try
-    #end if
-    # set active space
-    opt.ncore = int(opt.ncore)
-    opt.nval = int(opt.nval)
-    return opt, args
-#end def interpret_nk_options
-
-
-def kinetic():
-    # read command line inputs
-    usage = '''usage: %prog kinetic [options] [eshdf_file]'''
-    parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
-
-    parser.add_option('-h','--help',dest='help',
-                      action='store_true',default=False,
-                      help='Print help information and exit (default=%default).'
-                      )
-    #parser.add_option('-v','--verbose',dest='verbose',
-    #                  action='store_true',default=False,
-    #                  help='Print detailed information (default=%default).'
-    #                  )
-    parser.add_option('--Ef',dest='E_fermi',
-                      default='None',
-                      help='Fermi energy in eV (default=%default).'
-                      )
-    parser.add_option('--norm_tol',dest='norm_tol',
-                      action='store',type='float',default=1e-6,
-                      help='Fermi energy in eV (default=%default).'
-                      )
-    parser.add_option('-o','--orb',dest='orb_info',
-                      action='store_true',default=False,
-                      help='Print per orbital kinetic energies (default=%default).'
-                      )
-    parser.add_option('--ncore',dest='ncore',default=0,
-                      help='number of core states to exclude (default=%default).'
-                      )
-    parser.add_option('--nval',dest='nval',default=-1,
-                      help='number of valence states to include (default=%default, i.e. all).'
-                      )
-
-
-    opt, args = interpret_nk_options(parser)
-    eshdf_filepath = first_eshdf_file(args)
-
-    d = read_eshdf_nofk_data(eshdf_filepath,opt.E_fermi,ncore=opt.ncore,nval=opt.nval)
-
-    nkpoints = d.nkpoints
-    nspins   = d.nspins
+    nkpoints = eshdf_data.nkpoints
+    nspins   = eshdf_data.nspins
 
     ktot  = 0.0
-    nspin = np.zeros((nspins,),dtype=int)
-    kspin = np.zeros((nspins,),dtype=float)
-    normspin = np.zeros((nspins,),dtype=float)
+    nspin = np.zeros((nspins,), dtype=int)
+    kspin = np.zeros((nspins,), dtype=float)
+    normspin = np.zeros((nspins,), dtype=float)
     norb  = []
     korb  = []
     eorb  = []
-    kpidx= []
+    kpidx = []
     for s in range(nspins):
         nsorb = []
         ksorb = []
         esorb = []
         kpsidx = []
         for k in range(nkpoints):
-            dks = d.data[k,s]
+            dks = eshdf_data.data[k,s]
             nsorb.append(len(dks.kin))
             ksorb.extend(dks.kin)
             esorb.extend(dks.eig)
             kpsidx.extend([k]*len(dks.kin))
             normspin[s] += dks.ne
-        #end for
+
         nsorb = np.array(nsorb,dtype=int)
         ksorb = np.array(ksorb,dtype=float)
         esorb = np.array(esorb,dtype=float)
@@ -338,117 +276,214 @@ def kinetic():
         korb.append(ksorb)
         eorb.append(esorb)
         kpidx.append(kpsidx)
-    #end for
 
     def arr2str(a):
         return f'{a}'.strip().strip('[]')
-    #end def arr2str
 
-    nxs_print(f'\nNumber of spins              : {nspins}')
-    nxs_print(f'Number kpoints               : {nkpoints}')
-    nxs_print(f'Number of electrons per spin : {arr2str(nspin)}')
-    nxs_print(f'Summed orbital norm per spin : {arr2str(normspin)}')
-    nxs_print(f'Total kinetic energy         : {ktot} Ha')
-    nxs_print(f'Kinetic energy per spin      : {arr2str(kspin)} Ha')
+    print()
+    print(f'Number of spins              : {nspins}')
+    print(f'Number kpoints               : {nkpoints}')
+    print(f'Number of electrons per spin : {arr2str(nspin)}')
+    print(f'Summed orbital norm per spin : {arr2str(normspin)}')
+    print(f'Total kinetic energy         : {ktot} Ha')
+    print(f'Kinetic energy per spin      : {arr2str(kspin)} Ha')
 
-    norm_diff = np.abs(normspin-nspin).max()
-    if norm_diff>opt.norm_tol:
-        warn(f'Orbitals are not properly normalized!\nError in the summed norm is: {norm_diff}\nThis exceeds a tolerance of: {opt.norm_tol}')
-    #end if
+    norm_diff = np.abs(normspin - nspin).max()
+    if norm_diff > norm_tol:
+        warn(
+            'Orbitals are not properly normalized!\n'
+            f'Error in the summed norm is: {norm_diff}\n'
+            f'This exceeds a tolerance of: {norm_tol:e}'
+        )
 
-    spin_labels = {0:'up',1:'down'}
-    if opt.orb_info:
-        nxs_print('\nPer orbital kinetic energies')
-        for s in range(nspins):
-            nxs_print(f'  Spin {spin_labels[s]} energies')
-            nxs_print('    index kpoint_index  KS eig (eV)  kinetic (Ha)')
-            for i,(kpi,eig,kin) in enumerate(zip(kpidx[s],eorb[s],korb[s])):
-                nxs_print(f'    {i:>3}      {kpi:>3}        {eig: 10.6f}   {kin: 10.6f}')
-            #end for
-        #end for
-    #end if
+    if not orb_info:
+        return
+
+    print('\nPer orbital kinetic energies')
+    for s in range(nspins):
+        spin = "up" if s == 0 else "down"
+
+        print(f'  Spin {spin} energies')
+        print(
+            '    '
+            f'{"index":>5}'
+            f'{"kpoint_index":^14}'
+            f'{"KS eig (eV)":^13}'
+            f'{"kinetic (Ha)":>13}'
+        )
+        for i,(kpi,eig,kin) in enumerate(zip(kpidx[s], eorb[s], korb[s], strict=True)):
+            print(
+                '    '
+                f'{i:^5}'
+                f'{kpi:^14}'
+                f'{eig:>11.6f}'
+                f'{kin:>13.6f}'
+            )
 #end def kinetic
 
 
-def write_nk():
-    # read command line inputs
-    usage = '''usage: %prog write_nk [options] [eshdf_file]'''
-    parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
-    parser.add_option('-h','--help',dest='help',
-                      action='store_true',default=False,
-                      help='Print help information and exit (default=%default).'
-                      )
-    parser.add_option('--Ef',dest='E_fermi',
-                      default='None',
-                      help='Fermi energy in eV (default=%default).'
-                      )
-    parser.add_option('--ncore',dest='ncore',default=0,
-                      help='number of core states to exclude (default=%default).'
-                      )
-    parser.add_option('--nval',dest='nval',default=-1,
-                      help='number of valence states to include (default=%default, i.e. all).'
-                      )
-    parser.add_option('--ispin',dest='ispin',default=0,
-                      help='spin channel (default=%default).'
-                      )
-    parser.add_option('--outfile',dest='outfile',
-                      default=None,
-                      help='Output 3D momentum distribution'
-                      )
-    opt, args = interpret_nk_options(parser)
-    eshdf_filepath = first_eshdf_file(args)
+def write_nk(
+    eshdf_filepath: Path,
+    *,
+    E_fermi: float,
+    ncore: int,
+    nval: int,
+    ispin0: int,
+    outfile: Path,
+):
+    eshdf_data = read_eshdf_n_of_k_data(
+        filename=eshdf_filepath,
+        E_fermi=E_fermi,
+        ncore=ncore,
+        nval=nval,
+    )
 
-    d = read_eshdf_nofk_data(eshdf_filepath,opt.E_fermi,ncore=opt.ncore,nval=opt.nval)
-
-    ispin0 = int(opt.ispin)
-    nxs_print(f'Writing n(k) to HDF5 {opt.outfile}')
+    print(f'Writing n(k) to HDF5 {outfile}')
     klist = []
     nklist = []
-    for key, val in d.data.items():
-        ik, ispin = key
-        if ispin != ispin0: continue
-        klist.append(val.k)
+    for key, val in eshdf_data.data.items():
+        _, ispin = key
+        if ispin != ispin0:
+            continue
+        klist.append(val.g_vecs)
         nklist.append(val.nk)
     kvecs = np.concatenate(klist, axis=0)
     nk = np.concatenate(nklist, axis=0)
-    data = np.c_[kvecs, nk]
-    with h5py.File(opt.outfile, "w") as fp:
+    data = np.column_stack((kvecs, nk))
+    with h5py.File(outfile, "w") as fp:
         fp.create_dataset(
             "data",
             data=data,
             compression="gzip",
             compression_opts=5,
-            )
+        )
 #end def write_nk
 
 
-
-operations = obj(
-    kinetic = kinetic,
-    write_nk = write_nk,
+if __name__=='__main__':
+    parser = ArgumentParser(
+        prog="eshdf",
+        description="Script for reading and analyzing EinSpline HDF archives.",
+        epilog="Help for specific run types can be accessed with `eshdf {run_type} --help`",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s {}.{}.{}".format(*nexus_version)
+    )
+    subparsers = parser.add_subparsers(
+        title="Run Types",
+        dest="run_type",
+        required=True,
     )
 
+    wnk_parser = subparsers.add_parser(
+        "write_nk",
+        description=(
+            "Write the electron density at all k-points under the Fermi energy "
+            "to an HDF archive."
+        )
+    )
+    kin_parser = subparsers.add_parser(
+        "kinetic",
+        description=(
+            "Calculate and print the per-k-point kinetic energy, "
+            "optionally printing per-orbital information as well."
+        )
+    )
 
+    for subparser in (wnk_parser, kin_parser):
+        subparser.add_argument(
+            "eshdf_file",
+            type=Path,
+            help="Path to HDF archive with data.",
+        )
+        subparser.add_argument(
+            '--E-fermi',
+            '--E_fermi',
+            '--Ef',
+            type=float,
+            help='Fermi energy in eV.',
+            required=True,
+        )
+        subparser.add_argument(
+            '--ncore',
+            type=int,
+            default=0,
+            help='Number of core states to exclude (default: %(default)s).',
+        )
+        subparser.add_argument(
+            '--nval',
+            type=int,
+            default=-1,
+            help='Number of valence states to include (default: %(default)s, i.e. all).',
+        )
 
-if __name__=='__main__':
+    kin_parser.add_argument(
+        '--norm-tol',
+        '--norm_tol',
+        type=float,
+        default=1e-6,
+        help=(
+            'Tolerance for whether or not the orbitals are considered normalized. '
+            '(default: %(default)s).'
+        ),
+    )
+    kin_parser.add_argument(
+        '-o',
+        '--orb',
+        dest="orb_info",
+        action='store_true',
+        help=(
+            'Print per orbital kinetic energies (default: %(default)s).'
+        ),
+    )
 
-    if len(sys.argv)<2:
+    wnk_parser.add_argument(
+        '--outfile',
+        '--output',
+        type=Path,
+        help='Output 3D momentum distribution to this file.',
+        required=True,
+    )
+    wnk_parser.add_argument(
+        '--ispin',
+        type=int,
+        default=0,
+        help='Spin channel (default: %(default)s).',
+    )
+
+    args = parser.parse_args()
+    arg_dict = vars(args)
+    eshdf_file = args.eshdf_file.resolve(strict=True)
+    if eshdf_file.suffix != '.h5':
         msg = (
-            'First argument must be operation to perform on ESHDF file.\n'
-            'e.g. to examine kinetic energies, type "eshdf kinetic ..."\n'
-            f'Valid operations are: {sorted(operations.keys())}'
-            )
+            'File provided is not an HDF5 file.\n'
+            'An ESHDF file must have a .h5 extension.\n'
+            'Please check the path provided:\n'
+            f'  {eshdf_file}'
+        )
         raise ValueError(msg)
-    #end if
-    op_type = sys.argv[1]
-    if op_type in operations:
-        operations[op_type]()
-    else:
-        msg = (
-            f'Unknown operation: {op_type}\n'
-            f'Valid options are: {sorted(operations.keys())}'
-            )
-        raise ValueError(msg)
-    #end if
 
-#end if
+    match args.run_type:
+        case "kinetic":
+            kinetic(
+                eshdf_filepath=eshdf_file,
+                E_fermi=args.E_fermi,
+                ncore=args.ncore,
+                nval=args.nval,
+                norm_tol=args.norm_tol,
+                orb_info=args.orb_info,
+            )
+        case "write_nk":
+            write_nk(
+                eshdf_filepath=eshdf_file,
+                E_fermi=args.E_fermi,
+                ncore=args.ncore,
+                nval=args.nval,
+                ispin0=args.ispin,
+                outfile=args.outfile,
+            )
+        case _:  # pragma: no cover
+            msg = "This should be unreachable code!"
+            raise RuntimeError(msg)
