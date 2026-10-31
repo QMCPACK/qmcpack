@@ -12,7 +12,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     short-bccMo_2x1x1_SOREP-vmc_sdj
     "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
-    Mo-vmc-short
     Mo-vmc-short.in.xml
     1
     16
@@ -31,7 +30,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     long-bccMo_2x1x1_SOREP-vmc_sdj
     "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
-    Mo-vmc-long
     Mo-vmc-long.in.xml
     1
     16
@@ -52,7 +50,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     short-bccMo_2x1x1_SOREP-dmc_sdj
     "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
-    Mo-vmc-dmc-short
     Mo-vmc-dmc-short.in.xml
     1
     16
@@ -66,7 +63,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     long-bccMo_2x1x1_SOREP-dmc_sdj
     "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
-    Mo-vmc-dmc-long
     Mo-vmc-dmc-long.in.xml
     1
     16
@@ -91,7 +87,6 @@ if(QMC_COMPLEX)
     qmc_run_and_check(
       deterministic-bccMo_2x1x1_SOREP-vmc_sdj
       "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
-      det_Mo-vmc
       det_Mo-vmc.in.xml
       1
       1
@@ -113,7 +108,6 @@ if(QMC_COMPLEX)
     qmc_run_and_check(
       deterministic-bccMo_2x1x1_SOREP-vmcbatch_sdj
       "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
-      det_Mo-vmcbatch
       det_Mo-vmcbatch.in.xml
       1
       1
@@ -134,7 +128,6 @@ if(QMC_COMPLEX)
     qmc_run_and_check(
       deterministic-bccMo_2x1x1_SOREP-dmc_sdj
       "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
-      det_Mo-vmc-dmc
       det_Mo-vmc-dmc.in.xml
       1
       1
@@ -155,7 +148,6 @@ if(QMC_COMPLEX)
     qmc_run_and_check(
       deterministic-bccMo_2x1x1_SOREP-dmcbatch_sdj
       "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
-      det_Mo-vmcbatch-dmcbatch
       det_Mo-vmcbatch-dmcbatch.in.xml
       1
       1

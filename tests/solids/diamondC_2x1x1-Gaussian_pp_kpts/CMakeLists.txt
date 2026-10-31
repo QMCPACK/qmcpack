@@ -16,7 +16,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     short-diamondC_2x1x1_pp_kpts-vmc_gaussian_sdj
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_kpts"
-    qmc_short
     qmc_short.in.xml
     1
     16
@@ -43,7 +42,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     long-diamondC_2x1x1_pp_kpts-vmc_gaussian_sdj
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_kpts"
-    qmc_long
     qmc_long.in.xml
     1
     16
@@ -65,7 +63,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     long-diamondC_2x1x1_pp_kpts-dmc_gaussian_sdj
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_kpts"
-    qmc_long_vmc_dmc
     qmc_long_vmc_dmc.in.xml
     1
     16

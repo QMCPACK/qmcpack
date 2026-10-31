@@ -20,7 +20,6 @@ list(APPEND HEG14GSNI_SCALARS "variance" " 0.000000  0.000001") # energy varianc
 qmc_run_and_check(
   short-heg_14_gamma-ni
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_short_NI
   heg-short-NI.xml
   1
   16
@@ -37,7 +36,6 @@ list(APPEND HEG14GSNI_DMC_SCALARS "variance" " 0.000000  0.000001") # energy var
 qmc_run_and_check(
   short-heg_14_gamma-ni_dmc
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_short_NI_dmc
   heg-short-NI-dmc.xml
   1
   16
@@ -55,7 +53,6 @@ list(APPEND HEG14GSHF_SCALARS "variance" " 0.193169  0.018612") # energy varianc
 qmc_run_and_check(
   short-heg_14_gamma-hf
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_short_HF
   heg-short-HF.xml
   1
   16
@@ -73,7 +70,6 @@ list(APPEND HEG14GSSJ_SCALARS "variance" " 0.024574  0.000181") # energy varianc
 qmc_run_and_check(
   short-heg_14_gamma-sj
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_short_SJ
   heg-short-SJ.xml
   1
   16
@@ -92,7 +88,6 @@ list(APPEND HEG14GSSJ_NEW_SCALARS "variance" " 0.024564  0.000342") # energy var
 qmc_run_and_check(
   short-heg_14_gamma-sj_new
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_short_SJ_new
   heg-short-SJ-new.xml
   1
   16
@@ -105,7 +100,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-heg_14_gamma-sj_batch
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
-  short_heg_SJ_batch
   short-heg-SJ-batch.xml
   1
   16
@@ -120,7 +114,6 @@ list(APPEND HEG14GSSJ_DMC_SCALARS "variance" " 0.022894  0.000060") # energy var
 qmc_run_and_check(
   short-heg_14_gamma-sj-dmc_batch
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
-  short_heg_SJ_dmc_batch
   short-heg-SJ-dmc-batch.xml
   1
   16
@@ -134,7 +127,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-heg_14_gamma-sj_eden_batch
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
-  short_heg_SJ_eden_batch
   short-heg-SJ-eden-batch.xml
   4
   4
@@ -147,7 +139,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-heg_14_gamma-sj_dmc_eden_batch
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
-  short_heg_SJ_dmc_eden_batch
   short-heg-SJ-dmc-eden-batch.xml
   4
   4
@@ -208,7 +199,6 @@ endif()
 qmc_run_and_check(
   deterministic-heg_14_gamma-sj-batch
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
-  deter_heg_SJ_batch
   deter-heg-SJ-batch.xml
   1
   1
@@ -226,7 +216,6 @@ list(APPEND HEG14GSSJ_DMC_SCALARS "variance" " 0.022894  0.000060") # energy var
 qmc_run_and_check(
   short-heg_14_gamma-sj_dmc
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_short_SJ_dmc
   heg-short-SJ-dmc.xml
   1
   16
@@ -248,7 +237,6 @@ list(APPEND HEG14GLNI_SCALARS "variance" " 0.000000  0.000001") # energy varianc
 qmc_run_and_check(
   long-heg_14_gamma-ni
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_long_NI
   heg-long-NI.xml
   1
   16
@@ -266,7 +254,6 @@ list(APPEND HEG14GLNI_DMC_SCALARS "variance" " 0.000000  0.000001") # energy var
 qmc_run_and_check(
   long-heg_14_gamma-ni_dmc
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_long_NI_dmc
   heg-long-NI-dmc.xml
   1
   16
@@ -284,7 +271,6 @@ list(APPEND HEG14GLHF_SCALARS "variance" " 0.193169  0.006142") # energy varianc
 qmc_run_and_check(
   long-heg_14_gamma-hf
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_long_HF
   heg-long-HF.xml
   1
   16
@@ -302,7 +288,6 @@ list(APPEND HEG14GLSJ_SCALARS "variance" " 0.024574  0.000060") # energy varianc
 qmc_run_and_check(
   long-heg_14_gamma-sj
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_long_SJ
   heg-long-SJ.xml
   1
   16
@@ -320,7 +305,6 @@ list(APPEND HEG14GLSJ_NEW_SCALARS "variance" " 0.024564  0.000113") # energy var
 qmc_run_and_check(
   long-heg_14_gamma-sj_new
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_long_SJ_new
   heg-long-SJ-new.xml
   1
   16
@@ -338,7 +322,6 @@ list(APPEND HEG14GLSJ_DMC_SCALARS "variance" " 0.022894  0.000020") # energy var
 qmc_run_and_check(
   long-heg_14_gamma-sj_dmc
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_long_SJ_dmc
   heg-long-SJ-dmc.xml
   1
   16
@@ -357,7 +340,6 @@ list(APPEND HEG14GSSJB_SCALARS "variance" " 0.022667  0.000764") # energy varian
 qmc_run_and_check(
   short-heg_14_gamma-sjb
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_short_SJB
   heg-short-SJB.xml
   16
   1
@@ -369,7 +351,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-heg_14_gamma-sjb
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_short_SJB
   heg-short-SJB.xml
   4
   4
@@ -381,7 +362,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-heg_14_gamma-sjb
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_short_SJB
   heg-short-SJB.xml
   1
   16
@@ -399,7 +379,6 @@ list(APPEND HEG14GLSJB_SCALARS "variance" " 0.022667  0.000252") # energy varian
 qmc_run_and_check(
   long-heg_14_gamma-sjb
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_long_SJB
   heg-long-SJB.xml
   16
   1
@@ -411,7 +390,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   long-heg_14_gamma-sjb
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_long_SJB
   heg-long-SJB.xml
   4
   4
@@ -423,7 +401,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   long-heg_14_gamma-sjb
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  heg_long_SJB
   heg-long-SJB.xml
   1
   16
@@ -445,7 +422,6 @@ endif()
 qmc_run_and_check(
   deterministic-heg_14_gamma-sjb
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  det_heg_SJB
   det_heg-SJB.xml
   1
   1
@@ -457,7 +433,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-heg_14_gamma-sjb-batched
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  det_heg_SJB_batched
   det_heg-SJB_batched.xml
   1
   1
@@ -483,7 +458,6 @@ if(NOT QMC_MIXED_PRECISION)
   qmc_run_and_check(
     deterministic-heg_14_gamma-sjb-opt-vmc
     "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-    det_heg_SJB
     det_heg-SJB_opt.xml
     1
     1
@@ -495,7 +469,6 @@ if(NOT QMC_MIXED_PRECISION)
   qmc_run_and_check(
     deterministic-heg_14_gamma-sjb-optbatch
     "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-    det_heg_SJB_optbatch
     det_heg-SJB_optbatch.xml
     1
     1

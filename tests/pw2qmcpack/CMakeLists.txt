@@ -47,7 +47,6 @@ else()
   qmc_run_and_check(
     ${THIS_TEST_NAME}
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-gamma
     hf_vmc_LiH-gamma.xml
     1
     16
@@ -71,7 +70,6 @@ else()
   qmc_run_and_check(
     ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-x
     hf_vmc_LiH-x.xml
     1
     16
@@ -99,7 +97,6 @@ else()
   qmc_run_and_check(
     ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-gamma
     hf_vmc_LiH-gamma.xml
     1
     16
@@ -115,7 +112,6 @@ else()
   qmc_run_and_check(
     ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-x
     hf_vmc_LiH-x.xml
     1
     16
@@ -144,7 +140,6 @@ else()
   qmc_run_and_check(
     ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-gamma
     hf_vmc_LiH-gamma.xml
     1
     16
@@ -160,7 +155,6 @@ else()
   qmc_run_and_check(
     ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-x
     hf_vmc_LiH-x.xml
     1
     16
@@ -188,7 +182,6 @@ else()
   qmc_run_and_check(
     ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-gamma
     hf_vmc_LiH-gamma.xml
     1
     16
@@ -204,7 +197,6 @@ else()
   qmc_run_and_check(
     ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-x
     hf_vmc_LiH-x.xml
     1
     16
@@ -233,7 +225,6 @@ else()
   qmc_run_and_check(
     ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/fake_nspin2"
-    hf_vmc_LiH-gamma
     hf_vmc_LiH-gamma.xml
     1
     16
@@ -249,7 +240,6 @@ else()
   qmc_run_and_check(
     ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/fake_nspin2"
-    hf_vmc_LiH-x
     hf_vmc_LiH-x.xml
     1
     16
@@ -278,7 +268,6 @@ else()
   qmc_run_and_check(
     ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/fake_nspin2"
-    hf_vmc_LiH-gamma
     hf_vmc_LiH-gamma.xml
     1
     16
@@ -294,7 +283,6 @@ else()
   qmc_run_and_check(
     ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/fake_nspin2"
-    hf_vmc_LiH-x
     hf_vmc_LiH-x.xml
     1
     16
@@ -338,7 +326,6 @@ else()
   qmc_run_and_check(
     ${QE_TEST_NAME}-atomO_pp-vmc_sdj
     "${qmcpack_SOURCE_DIR}/tests/solids/atomO_pp"
-    qmc_short
     qmc_short.in.xml
     1
     16
@@ -358,7 +345,6 @@ else()
   qmc_run_and_check(
     ${QE_TEST_NAME}-atomO_pp-vmc_noj
     "${qmcpack_SOURCE_DIR}/tests/solids/atomO_pp"
-    qmc_short_noj
     qmc_short_noj.in.xml
     1
     16

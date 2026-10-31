@@ -39,7 +39,6 @@ if(NOT MIXED_PRECISION)
   qmc_run_and_check(
     short-bccH_2x2x2_ae-vmc_bf
     "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
-    qmc-short-bf
     qmc-short-bf.in.xml
     1
     16
@@ -51,7 +50,6 @@ if(NOT MIXED_PRECISION)
   qmc_run_and_check(
     short-bccH_2x2x2_ae-vmcbatch_bf
     "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
-    qmc-short-bf-batch
     qmc-short-bf-batch.in.xml
     1
     16
@@ -80,7 +78,6 @@ if(NOT MIXED_PRECISION)
   qmc_run_and_check(
     deterministic-bccH_2x2x2_ae-vmc_bf
     "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
-    det_qmc-bf-opt
     det_qmc-bf-opt.in.xml
     1
     1
@@ -93,7 +90,6 @@ if(NOT MIXED_PRECISION)
   qmc_run_and_check(
     deterministic-bccH_2x2x2_ae-vmc_bf-batched
     "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
-    det_qmc-bf-optbatch
     det_qmc-bf-optbatch.in.xml
     1
     1

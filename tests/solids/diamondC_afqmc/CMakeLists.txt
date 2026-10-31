@@ -5,7 +5,6 @@ list(APPEND SHORT_HYBRID_SCALARS "ElocEstim" "-10.55149 0.00643")
 qmc_run_and_check(
   short-diamondC-afqmc
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc"
-  qmc_short
   qmc_short.in.xml
   16
   1
@@ -18,7 +17,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC-afqmc_nn2
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc"
-  qmc_short_nnodes2
   qmc_short_nnodes2.in.xml
   16
   1
@@ -31,7 +29,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC-afqmc_hyb
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc"
-  qmc_short_hybrid
   qmc_short_hybrid.in.xml
   16
   1
@@ -44,7 +41,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC-afqmc_hyb_nn2
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc"
-  qmc_short_hybrid_nnodes2
   qmc_short_hybrid_nnodes2.in.xml
   16
   1
@@ -57,7 +53,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC-afqmc_incmf
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc"
-  qmc_short_includeMF
   qmc_short_includeMF.in.xml
   16
   1
@@ -70,7 +65,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC-afqmc_incmf_nn2
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc"
-  qmc_short_includeMF_nnodes2
   qmc_short_includeMF_nnodes2.in.xml
   16
   1
@@ -86,7 +80,6 @@ list(APPEND LONG_HYBRID_SCALARS "ElocEstim" "-10.55149 0.00212")
 qmc_run_and_check(
   long-diamondC-afqmc
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc"
-  qmc_long
   qmc_long.in.xml
   16
   1
@@ -98,7 +91,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   long-diamondC-afqmc_hyb
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc"
-  qmc_long_hybrid
   qmc_long_hybrid.in.xml
   16
   1

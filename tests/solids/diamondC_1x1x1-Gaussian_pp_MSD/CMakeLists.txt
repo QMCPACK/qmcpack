@@ -11,7 +11,6 @@ list(APPEND diamondC_1x1x1-Gaussian_pp_MSD_LONG_SCALARS "ionion" "-12.77566743 0
 qmc_run_and_check(
   long-diamondC_1x1x1-Gaussian_pp_MSD
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_MSD"
-  vmc_long
   vmc_long.in.xml
   1
   16
@@ -33,7 +32,6 @@ list(APPEND diamondC_1x1x1-Gaussian_pp_MSD_SHORT_SCALARS "ionion" "-12.77566743 
 qmc_run_and_check(
   short-diamondC_1x1x1-Gaussian_pp_MSD
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_MSD"
-  vmc_short
   vmc_short.in.xml
   1
   16
@@ -104,7 +102,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_1x1x1-Gaussian_pp_MSD
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_MSD"
-  det_vmc_dmc
   det_vmc_dmc.in.xml
   1
   1
@@ -167,7 +164,6 @@ list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "ionion" "-12
 qmc_run_and_check(
   deterministic-diamondC_1x1x1-Gaussian_pp_MSD-batched
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_MSD"
-  det_vmc_dmc_batched
   det_vmc_dmc_batched.in.xml
   1
   1

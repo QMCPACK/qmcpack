@@ -14,7 +14,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     long-diamondC_2x1x1-Gaussian_pp_Tw_cplx
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx"
-    vmc_long
     vmc_long.in.xml
     1
     16
@@ -26,7 +25,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     long-diamondC_2x1x1-Gaussian_pp_Tw_cplx-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx"
-    vmcbatch_long
     vmcbatch_long.in.xml
     1
     16
@@ -49,7 +47,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     short-diamondC_2x1x1-Gaussian_pp_Tw_cplx
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx"
-    vmc_short
     vmc_short.in.xml
     1
     16
@@ -61,7 +58,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     short-diamondC_2x1x1-Gaussian_pp_Tw_cplx-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx"
-    vmcbatch_short
     vmcbatch_short.in.xml
     1
     16

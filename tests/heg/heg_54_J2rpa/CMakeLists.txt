@@ -14,7 +14,6 @@ list(APPEND HEG54J2RPA_SCALARS "totenergy" "-4.209725  0.02") # total energy
 qmc_run_and_check(
   developer-heg_54_J2rpa
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_54_J2rpa"
-  HEG.rs5.rpa
   heg.rpa.rs5.xml
   16
   1
@@ -45,7 +44,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     deterministic-heg_54_J2rpa
     "${qmcpack_SOURCE_DIR}/tests/heg/heg_54_J2rpa"
-    det_HEG.rs5.rpa
     det_heg.rpa.rs5.xml
     1
     1
@@ -56,7 +54,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     deterministic-heg_54_J2rpa-batched
     "${qmcpack_SOURCE_DIR}/tests/heg/heg_54_J2rpa"
-    det_HEG.rs5.rpa_batched
     det_heg.rpa.rs5_batched.xml
     1
     1
