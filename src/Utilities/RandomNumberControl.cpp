@@ -183,12 +183,16 @@ bool RandomNumberControl::put(xmlNodePtr cur)
 void RandomNumberControl::read(const std::string& fname, Communicate& comm)
 {
   std::string h5name = fname + ".random.h5";
-  hdf_archive hin(comm, true); //attempt to read in parallel
+#if defined(ENABLE_PHDF5)
+  hdf_archive hin(comm, true);
   hin.open(h5name, H5F_ACC_RDONLY);
-  if (hin.is_parallel())
-    read_parallel(hin, comm);
-  else
-    read_rank_0(hin, comm);
+  read_parallel(hin, comm);
+#else
+  hdf_archive hin;
+  if (comm.rank() == 0)
+    hin.open(h5name, H5F_ACC_RDONLY);
+  read_rank_0(hin, comm);
+#endif
 }
 
 void RandomNumberControl::write(const std::string& fname, Communicate& comm)
@@ -198,12 +202,16 @@ void RandomNumberControl::write(const std::string& fname, Communicate& comm)
 void RandomNumberControl::write(const RefVector<Generator>& rng, const std::string& fname, Communicate& comm)
 {
   std::string h5name = fname + ".random.h5";
-  hdf_archive hout(comm, true); //attempt to write in parallel
+#if defined(ENABLE_PHDF5)
+  hdf_archive hout(comm, true);
   hout.create(h5name);
-  if (hout.is_parallel())
-    write_parallel(rng, hout, comm);
-  else
-    write_rank_0(rng, hout, comm);
+  write_parallel(rng, hout, comm);
+#else
+  hdf_archive hout;
+  if (comm.rank() == 0)
+    hout.create(h5name);
+  write_rank_0(rng, hout, comm);
+#endif
 }
 
 //Parallel read

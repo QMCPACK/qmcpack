@@ -24,21 +24,74 @@ using namespace qmcplusplus;
 TEST_CASE("hdf_archive_parallel", "[hdf]")
 {
   Communicate& c(*OHMMS::Controller);
-  hdf_archive hd(c);
-  hd.create("test_communicate.hdf");
-  int i     = 23;
-  bool okay = hd.writeEntry(i, "int");
-  REQUIRE(okay);
+#if defined(ENABLE_PHDF5)
+  {
+    hdf_archive hd_write(c, true);
+    REQUIRE(hd_write.create("test_communicate.hdf"));
+    int i     = 23;
+    bool okay = hd_write.writeEntry(i, "int");
+    REQUIRE(okay);
+  }
+#else
+  REQUIRE_THROWS_AS(hdf_archive(c, true), std::runtime_error);
+  if (c.rank() == 0)
+  {
+    hdf_archive hd_write;
+    REQUIRE(hd_write.create("test_communicate.hdf"));
+    int i     = 23;
+    bool okay = hd_write.writeEntry(i, "int");
+    REQUIRE(okay);
+  }
+#endif
+  c.barrier();
+
+  hdf_archive hd_read(c, false);
+  REQUIRE_THROWS_AS(hd_read.create("test_communicate_fail.hdf"), std::runtime_error);
+  REQUIRE_THROWS_AS(hd_read.open("test_communicate.hdf", H5F_ACC_RDWR), std::runtime_error);
+  REQUIRE(hd_read.open("test_communicate.hdf", H5F_ACC_RDONLY));
+  int i_read = 0;
+  REQUIRE(hd_read.readEntry(i_read, "int"));
+  REQUIRE(i_read == 23);
+  REQUIRE_THROWS_AS(hd_read.push("new_group"), std::runtime_error);
+  REQUIRE_THROWS_AS(hd_read.writeEntry(i_read, "int"), std::runtime_error);
+  REQUIRE_THROWS_AS(hd_read.flush(), std::runtime_error);
 }
 
 #ifdef HAVE_MPI
 TEST_CASE("hdf_archive_parallel_mpi3", "[hdf]")
 {
   Communicate& c(*OHMMS::Controller);
-  hdf_archive hd(c.getCommMPI3());
-  hd.create("test_mpi3_communicator.hdf");
-  int i     = 23;
-  bool okay = hd.writeEntry(i, "int");
-  REQUIRE(okay);
+  auto& comm = c.getCommMPI3();
+#if defined(ENABLE_PHDF5)
+  {
+    hdf_archive hd_write(comm, true);
+    REQUIRE(hd_write.create("test_mpi3_communicator.hdf"));
+    int i     = 23;
+    bool okay = hd_write.writeEntry(i, "int");
+    REQUIRE(okay);
+  }
+#else
+  REQUIRE_THROWS_AS(hdf_archive(comm, true), std::runtime_error);
+  if (comm.rank() == 0)
+  {
+    hdf_archive hd_write;
+    REQUIRE(hd_write.create("test_mpi3_communicator.hdf"));
+    int i     = 23;
+    bool okay = hd_write.writeEntry(i, "int");
+    REQUIRE(okay);
+  }
+#endif
+  comm.barrier();
+
+  hdf_archive hd_read(comm, false);
+  REQUIRE_THROWS_AS(hd_read.create("test_mpi3_communicator_fail.hdf"), std::runtime_error);
+  REQUIRE_THROWS_AS(hd_read.open("test_mpi3_communicator.hdf", H5F_ACC_RDWR), std::runtime_error);
+  REQUIRE(hd_read.open("test_mpi3_communicator.hdf", H5F_ACC_RDONLY));
+  int i_read = 0;
+  REQUIRE(hd_read.readEntry(i_read, "int"));
+  REQUIRE(i_read == 23);
+  REQUIRE_THROWS_AS(hd_read.push("new_group"), std::runtime_error);
+  REQUIRE_THROWS_AS(hd_read.writeEntry(i_read, "int"), std::runtime_error);
+  REQUIRE_THROWS_AS(hd_read.flush(), std::runtime_error);
 }
 #endif

@@ -24,7 +24,6 @@
 #include "hdf_stl.h"
 #include "hdf_hyperslab.h"
 
-#include <bitset>
 #include <filesystem>
 #include <stack>
 
@@ -46,34 +45,47 @@ namespace qmcplusplus
 /// Suppress HDF5 warning and error messages.
 extern hdf_error_suppression hide_hdf_errors;
 
-/** class to handle hdf file
+/** Class to handle HDF5 file access.
  *
- *  Wrapper functions necessary because hdf5 c interface h5d_xxx semantics.
+ *  Wrapper functions provide RAII management and type-safe dataset/group operations.
+ *  Supports three distinct I/O modes determined at construction:
+ *
+ *  1. **Serial mode** (`hdf_archive()`):
+ *     - Standard serial POSIX I/O without MPI-IO property lists.
+ *     - Intended for single-rank executions, or when only rank 0 (or a designated rank)
+ *       creates, opens, reads, or writes to an HDF5 file.
+ *     - Both read and write operations are permitted (`read_only_predetermined_ = false`).
+ *
+ *  2. **Parallel independent mode** (`hdf_archive(comm, false)`):
+ *     - All ranks in `comm` open and read the file concurrently with independent access.
+ *     - **Predetermined read-only**: Mutating operations (`create()`, opening with
+ *       `H5F_ACC_RDWR`, creating new groups via `push()`, `writeEntry()`, `appendEntry()`,
+ *       and `flush()`) will throw `std::runtime_error`.
+ *     - When parallel HDF5 is enabled (`ENABLE_PHDF5`) and `comm.size() > 1`, uses the HDF5
+ *       MPI-IO driver (`H5Pset_fapl_mpio`) with independent transfers.
+ *     - When parallel HDF5 is disabled or unavailable, gracefully decays to serial POSIX
+ *       read-only access on each rank.
+ *
+ *  3. **Parallel collective mode** (`hdf_archive(comm, true)`):
+ *     - All ranks in `comm` participate collectively in parallel I/O.
+ *     - Supports both read and write operations (`read_only_predetermined_ = false`).
+ *     - Requires parallel HDF5 support (`ENABLE_PHDF5` and `comm.size() > 1`). Sets collective
+ *       file access properties (`H5Pset_fapl_mpio`, `H5Pset_all_coll_metadata_ops`,
+ *       `H5Pset_coll_metadata_write`) and collective dataset transfer (`H5FD_MPIO_COLLECTIVE`).
+ *     - If parallel HDF5 is not enabled (`!ENABLE_PHDF5`), construction throws `std::runtime_error`.
  */
 class hdf_archive
 {
 private:
-  enum
-  {
-    IS_PARALLEL = 0,
-    IS_MASTER,
-    NOIO
-  };
   static const hid_t is_closed = -1;
-  /** bitset of the io mode
-   * Mode[IS_PARALLEL] : true, if parallel
-   * Mode[IS_MASTER] : true, if the node is master
-   * Mode[NOIO] : true, if I/O is not performed
-   */
-  std::bitset<4> Mode;
+  /// true if file can only be opened read-only
+  const bool read_only_predetermined_{false};
   /// file creation property list
   hid_t file_cpl_{H5I_INVALID_HID};
   /// file access property list
   hid_t file_apl_{H5I_INVALID_HID};
   ///file id
   hid_t file_id{is_closed};
-  ///access id
-  hid_t access_id{H5I_INVALID_HID};
   ///transfer property
   hid_t xfer_plist{H5I_INVALID_HID};
   /// Link creation property list identifier
@@ -98,38 +110,35 @@ private:
 #ifdef HAVE_MPI
   void set_access_plist(boost::mpi3::communicator& comm, bool request_pio);
 #endif
-  void set_access_plist();
 
 public:
-  /** constructor
-   * @param c communicator
-   * @param request_pio turns on parallel I/O,
-   *        if true and PHDF5 is available, hdf_archive is in parallel collective IO mode
-   *        if true and PHDF5 is not available, hdf_archive is in master-only IO mode
-   *        if false, hdf_archive is in independent IO mode
+  /** Parallel constructor (independent read-only or collective read-write).
+   * @param c Communicator across which file access is coordinated.
+   * @param request_pio Flag selecting collective parallel I/O:
+   *        - false (default): parallel independent mode. Enforces read-only access.
+   *          Decays to serial POSIX read-only if ENABLE_PHDF5 is not enabled.
+   *        - true: parallel collective mode. Requires ENABLE_PHDF5; throws
+   *          std::runtime_error if parallel HDF5 is not enabled.
    */
   template<class Comm, typename = std::enable_if_t<!std::is_same_v<std::decay_t<Comm>, hdf_archive>>>
-  hdf_archive(Comm& c, bool request_pio = false) : file_id(is_closed)
+  hdf_archive(Comm& c, bool request_pio = false) : read_only_predetermined_(!request_pio)
   {
     if (!hdf_error_suppression::enabled)
       throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
     set_access_plist(c, request_pio);
   }
 
-  hdf_archive() : file_id(is_closed)
+  /** Serial default constructor.
+   *  Constructs an archive in serial mode for standard read-write POSIX access.
+   */
+  hdf_archive()
   {
     if (!hdf_error_suppression::enabled)
       throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
-    set_access_plist();
+    create_basic_plist();
   }
   ///destructor
   ~hdf_archive();
-
-  ///return true if parallel i/o
-  inline bool is_parallel() const { return Mode[IS_PARALLEL]; }
-
-  ///return true if master in parallel i/o
-  inline bool is_master() const { return Mode[IS_MASTER]; }
 
   ///return file_id. should be only be used for connecting to old codes when porting
   hid_t getFileID() const { return file_id; }
@@ -154,6 +163,8 @@ public:
   ///flush a file
   inline void flush()
   {
+    if (read_only_predetermined_)
+      throw std::runtime_error("Cannot flush file in read-only mode!");
     if (file_id != is_closed)
       if (H5Fflush(file_id, H5F_SCOPE_LOCAL) < 0)
         throw std::runtime_error("H5Fflush failed.");
@@ -174,8 +185,6 @@ public:
    */
   bool is_dataset(const std::string& aname)
   {
-    if (Mode[NOIO])
-      return true;
     hid_t p = group_id.empty() ? file_id : group_id.top();
     int dummy_data;
     h5data_proxy<int> e(dummy_data);
@@ -189,8 +198,6 @@ public:
   template<typename T>
   bool is_dataset_of_type(const std::string& aname)
   {
-    if (Mode[NOIO])
-      return true;
     hid_t p = group_id.empty() ? file_id : group_id.top();
     T dummy_data;
     h5data_proxy<T> e(dummy_data);
@@ -240,8 +247,6 @@ public:
   template<typename T>
   bool getShape(const std::string& aname, std::vector<int>& sizes_out)
   {
-    if (Mode[NOIO])
-      return true;
     hid_t p = group_id.empty() ? file_id : group_id.top();
     return getDataShape<T>(p, aname, sizes_out);
   }
@@ -253,10 +258,8 @@ public:
   template<typename T>
   bool writeEntry(const T& data, const std::string& aname)
   {
-    if (Mode[NOIO])
-      return true;
-    if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
-      throw std::runtime_error("Only write data in parallel or by master but not every rank!");
+    if (read_only_predetermined_)
+      throw std::runtime_error("Cannot write data in read-only mode!");
     hid_t p = group_id.empty() ? file_id : group_id.top();
     h5data_proxy<typename std::remove_const<T>::type> e(data);
     return e.write(data, p, aname, xfer_plist);
@@ -307,10 +310,8 @@ public:
   template<typename T>
   bool appendEntry(T& data, const std::string& aname, hsize_t& current_append_index)
   {
-    if (Mode[NOIO])
-      return true;
-    if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
-      throw std::runtime_error("Only write data in parallel or by master but not every rank!");
+    if (read_only_predetermined_)
+      throw std::runtime_error("Cannot append data in read-only mode!");
     hid_t p = group_id.empty() ? file_id : group_id.top();
     h5data_proxy<typename std::remove_const<T>::type> e(data);
     return e.append(data, p, aname, current_append_index, xfer_plist);
@@ -344,8 +345,6 @@ public:
   template<typename T, typename = std::enable_if_t<!std::is_const<T>::value>>
   bool readEntry(T& data, const std::string& aname)
   {
-    if (Mode[NOIO])
-      return true;
     hid_t p = group_id.empty() ? file_id : group_id.top();
     h5data_proxy<T> e(data);
     return e.read(data, p, aname, xfer_plist);

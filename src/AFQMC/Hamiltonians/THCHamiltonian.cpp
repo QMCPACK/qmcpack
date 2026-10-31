@@ -61,7 +61,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
   }
 
   size_t gnmu, grotnmu, nmu, rotnmu, nmu0, nmuN, rotnmu0, rotnmuN;
-  hdf_archive dump(TGwfn.Global());
+  hdf_archive dump;
   // right now only Node.root() reads
   if (distNode.root())
   {
