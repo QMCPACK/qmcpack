@@ -169,11 +169,12 @@ int main(int argc, char** argv)
       throw UniformCommunicateError(msg);
     }
     //safe to move on
-    if (OHMMS::Controller->size() % ranks_per_group_multiple != 0)
+    if (const int uniform_node_ranks = OHMMS::Controller->getUniformNodeRankCount();
+        uniform_node_ranks % ranks_per_group_multiple != 0)
     {
       std::ostringstream msg;
-      msg << "main(). Current " << OHMMS::Controller->size()
-          << " MPI ranks is not a multiple of --ranks-per-group-multiple " << ranks_per_group_multiple << ".";
+      msg << "main(). --ranks-per-group-multiple (" << ranks_per_group_multiple
+          << ") can only be a factor of the uniform node rank count (" << uniform_node_ranks << ").";
       throw UniformCommunicateError(msg.str());
     }
     if (inputs.size() > 1)
