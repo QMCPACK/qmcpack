@@ -27,6 +27,7 @@
 #include "OhmmsData/FileUtility.h"
 #include "Host/sysutil.h"
 #include "ProjectData.h"
+#include "DeviceManager.h"
 #include "QMCApp/QMCMain.h"
 #include "Utilities/qmc_common.h"
 #include "Concurrency/OpenMP.h"
@@ -212,6 +213,10 @@ int main(int argc, char** argv)
       infoLog.redirectToSameStream(infoSummary);
       infoError.redirectToSameStream(infoSummary);
     }
+
+    Communicate node_comm{OHMMS::Controller->createNodeComm()};
+    // assign accelerators within a node
+    DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
     app_log() << "  Input file(s): ";
     for (int k = 0; k < inputs.size(); ++k)

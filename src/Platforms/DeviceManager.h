@@ -76,8 +76,6 @@ public:
    * arguments are the same as the constructor
    */
   static void initializeGlobalDeviceManager(int local_rank, int local_size);
-  /// check if the global instance is initialized
-  static bool isInitialized();
   /// global instance accessor
   static const DeviceManager& getGlobal();
 
