@@ -181,6 +181,12 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       computeCurData(walkers, curData);
       for (int i = 0, j = LE_MAX; i < num_ranks_; i++, j++)
         num_per_rank_[i] = static_cast<int>(curData[j]);
+
+      // A rank may have no survivors; only global extinction is fatal. The reduced counts
+      // make this error uniform across ranks, before diagnostics or walker deletion.
+      if (std::accumulate(num_per_rank_.begin(), num_per_rank_.end(), 0) == 0)
+        throw UniformCommunicateError("WalkerControl::branch: All walkers were killed in DMC at iteration " +
+                                      std::to_string(iter) + ".");
     }
     // at this point, curData[LE_MAX + rank_num_] and walker->Multiplicity are ready.
 
