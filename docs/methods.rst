@@ -222,6 +222,10 @@ Parameters:
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
   | ``usedrift``                   | text         | yes,no                  | yes         | Use the algorithm with drift                         |
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
+  | ``drift_modifier``             | text         | UNR                     | UNR         | Drift modification scheme                            |
+  +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
+  | ``drift_UNR_a``                | real         | :math:`> 0`             | 1.0         | Parameter :math:`a` of the UNR drift modifier        |
+  +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
   | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move                     |
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
   | ``estimator_period``           | integer      | :math:`> 0`             | 1           | Number of steps between estimator measurements       |
@@ -284,6 +288,16 @@ Additional information:
   electron is proposed with a Gaussian distribution. The standard
   deviation is chosen as the time step input. In the drift algorithm,
   electrons are moved by Langevin dynamics.
+
+- ``drift_modifier`` Specifies the scheme used to scale the drift velocity near nodal surfaces or regions of large gradient. Currently, only ``UNR`` is supported, which implements the drift scaling algorithm of Umrigar, Nightingale, and Runge (Eq. 35 in :cite:`Umrigar1993`):
+
+  .. math::
+
+     \mathbf{d} = \frac{-1 + \sqrt{1 + 2 a \tau v^2}}{a v^2} \mathbf{v}
+
+  where :math:`\mathbf{v} = \text{Re}(\nabla \Psi_T / \Psi_T)` is the drift velocity, :math:`v = |\mathbf{v}|`, :math:`\tau` is the effective time step, and :math:`a` is controlled by ``drift_UNR_a``.
+
+- ``drift_UNR_a`` The scaling parameter :math:`a` in the ``UNR`` drift modifier (Eq. 35 in :cite:`Umrigar1993`). Default is ``1.0``.
 
 - ``timestep`` The meaning of time step depends on whether or not
   the drift is used. In general, larger time steps reduce the
@@ -356,6 +370,10 @@ Parameters:
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``usedrift``                   | text         | yes,no                  | yes         | Use the algorithm with drift                  |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``drift_modifier``             | text         | UNR                     | UNR         | Drift modification scheme                     |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``drift_UNR_a``                | real         | :math:`> 0`             | 1.0         | Parameter :math:`a` of the UNR drift modifier |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``samples``                    | integer      | :math:`\geq 0`          | 0           | Number of walker samples for DMC/optimization |
@@ -404,6 +422,10 @@ Additional information:
   electron is proposed with a Gaussian distribution. The standard
   deviation is chosen as the time step input. In the drift algorithm,
   electrons are moved by Langevin dynamics.
+
+- ``drift_modifier`` See details in :ref:`vmc_batch`.
+
+- ``drift_UNR_a`` See details in :ref:`vmc_batch`.
 
 - ``timestep`` The meaning of time step depends on whether or not
   the drift is used. In general, larger time steps reduce the
@@ -1162,6 +1184,10 @@ Parameters:
   +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
   | ``timestep``                   | real         | :math:`> 0`             | 0.1               | Time step for each electron move                |
   +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
+  | ``drift_modifier``             | string       | UNR                     | UNR               | Drift modification scheme                       |
+  +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
+  | ``drift_UNR_a``                | real         | :math:`> 0`             | 1.0               | Parameter :math:`a` of the UNR drift modifier   |
+  +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
   | ``estimator_period``           | integer      | :math:`> 0`             | 1                 | Number of steps between estimator measurements  |
   +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
   | ``nonlocalmoves``              | string       | yes, no, v0, v1, v3     | no                | Run with T-moves                                |
@@ -1208,6 +1234,10 @@ Parameters:
   ``walkers_per_rank`` times the number MPI ranks.
 
 - ``target_walkers`` The target population size. Population control algorithms work towards this target. Do not confuse it with the actual walker count during random walking. The default will be the number of walkers when a DMC calculation starts, namely ``total_walkers``.
+
+- ``drift_modifier`` See details in :ref:`vmc_batch`.
+
+- ``drift_UNR_a`` See details in :ref:`vmc_batch`.
 
 - ``estimator_period`` The period with which estimators are evaluated, measured in steps. If measurements have a significant correlation time, as is typical in DMC, this can reduce the computational cost of unnecessarily frequent estimator evaluations.
 
@@ -1294,6 +1324,10 @@ Parameters:
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``drift_modifier``             | string       | UNR                     | UNR         | Drift modification scheme                     |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``drift_UNR_a``                | real         | :math:`> 0`             | 1.0         | Parameter :math:`a` of the UNR drift modifier |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``nonlocalmoves``              | string       | yes, no, v0, v1, v3     | no          | Run with T-moves                              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``branching_cutoff_scheme``    |              |                         |             |                                               |
@@ -1372,6 +1406,10 @@ Additional information:
    extrapolate to the infinite time step limit. A good range of time
    steps in which to perform time step extrapolation will typically have
    a minimum of 99% acceptance probability for each step.
+
+-  ``drift_modifier``: See details in :ref:`vmc_batch`.
+
+-  ``drift_UNR_a``: See details in :ref:`vmc_batch`.
 
 -  ``checkproperties``: When using a particle-by-particle driver, this
    variable specifies how often to reset all the variables kept in the

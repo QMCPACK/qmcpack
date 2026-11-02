@@ -43,6 +43,9 @@ public:
   /** Verify live WalkerControl inputs remain active. */
   void testInput();
 
+  /** Verify branching edge cases e.g. zero walkers/extinction. */
+  void testBranching();
+
   /** This test function manipulates walker multiplicity and then checks that after "population control"
    *  that the number of walkers per rank is correct. Multiplicity in normal branching steps is a set
    *  walker->Weight + rng() before swapping and amplification of walker's with multiplicity >= 2

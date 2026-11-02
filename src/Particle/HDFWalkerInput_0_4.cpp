@@ -196,7 +196,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
   bool success = false;
   if (myComm.rank() == 0)
   {
-    hdf_archive hin(myComm, false); // master rank reads this
+    hdf_archive hin; // master rank reads this
     success = hin.open(h5name, H5F_ACC_RDONLY);
     if (success)
     {
@@ -261,7 +261,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
   bool success2 = false;
   if (myComm.rank() == 0)
   {
-    hdf_archive hin(myComm, false);
+    hdf_archive hin;
     success2 = hin.open(h5name, H5F_ACC_RDONLY);
     if (success2)
     {
@@ -303,9 +303,9 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
   bool success      = false;
 
   { // handle small dataset with master rank
-    hdf_archive hin(myComm, false);
     if (myComm.rank() == 0)
     {
+      hdf_archive hin;
       success = hin.open(h5name, H5F_ACC_RDONLY);
       //check if hdf and xml versions can work together
       HDFVersion aversion;
@@ -327,6 +327,14 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
             app_error() << " No walkers in " << h5name << std::endl;
             success = false;
           }
+          else
+          {
+            // load woffsets by master
+            // can not read collectively since the size may differ from Nranks+1.
+            hin.read(woffsets, "walker_partition");
+            woffsets_size = woffsets.size();
+            assert(woffsets[woffsets_size - 1] == nw_in);
+          }
         }
       }
       else
@@ -338,15 +346,6 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
     myComm.bcast(success);
     if (!success)
       return false;
-
-    // load woffsets by master
-    // can not read collectively since the size may differ from Nranks+1.
-    if (myComm.rank() == 0)
-    {
-      hin.read(woffsets, "walker_partition");
-      woffsets_size = woffsets.size();
-      assert(woffsets[woffsets_size - 1] == nw_in);
-    }
 
     myComm.bcast(woffsets_size);
     woffsets.resize(woffsets_size);

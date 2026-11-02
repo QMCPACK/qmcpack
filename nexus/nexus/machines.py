@@ -3928,11 +3928,13 @@ class Frontier(Supercomputer):
         c += f'#SBATCH -A {job.account}\n'
         c += f'#SBATCH -p {job.queue}\n'
         c += f'#SBATCH -J {job.name}\n'
-        c += f'#SBATCH -t {job.lsf_walltime()}\n'
+        c += f'#SBATCH -t {job.sbatch_walltime()}\n'
         c += f'#SBATCH -N {job.nodes}\n'
         c += '#SBATCH -S 8\n' # Uses default low-noise mode layout(default), reduces number of cores from 64 to 56.
         c += f'#SBATCH -o {job.name}.out\n'
         c += f'#SBATCH -e {job.name}.err\n'
+        if job.qos:
+            c+=f'#SBATCH -q {job.qos}\n'
         return c
 
 
