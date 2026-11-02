@@ -5,9 +5,11 @@ pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_SIMULATION)
 
 
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 from . import isolate_nexus_core, create_pseudo_files, TEST_DIR
 
+from ..qmcpack_input import QmcpackInput
 from ..testing import clear_all_sims
 from ..testing import failed
 from ..testing import value_eq,text_eq
@@ -595,12 +597,10 @@ def test_check_sim_status(tmp_path):
 def test_coefs_mem_ranks(tmp_path, shared_ranks, distributed_ranks):
     # Cover omitted options, each option alone, and both options together,
     # including the minimum allowed value of 1.
-    from xml.etree import ElementTree as ET
-    from ..qmcpack_input import QmcpackInput
-
     # Use separate spin SPOs to check that both receive the memory settings.
     sim = get_qmcpack_sim(
-        shared_ranks=shared_ranks, distributed_ranks=distributed_ranks,
+        shared_ranks=shared_ranks,
+        distributed_ranks=distributed_ranks,
         spin_polarized=True,
     )
     root = ET.fromstring(sim.input.write_text())
