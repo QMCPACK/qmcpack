@@ -76,11 +76,11 @@ qmc_run_and_check(
 
 list(APPEND DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
 list(APPEND DIAMOND_KSPACE_SCALARS "variance" "0.312264 0.028662")
-# Reduce statistical failures in the one-rank legacy case with more samples,
-# retaining the original energy and variance acceptance bounds.
-set(DIAMOND_KSPACE_LEGACY_R1_SCALARS ${DIAMOND_KSPACE_SCALARS})
-list(APPEND DIAMOND_KSPACE_LEGACY_R1_SCALARS "samples" "512000 0.0")
 list(APPEND DIAMOND_KSPACE_SCALARS "samples" "128000 0.0")
+# Independent 10x reference and error calibration: qmc-ref/kspace-pbyp/README.md.
+list(APPEND DIAMOND_KSPACE_LEGACY_R1_SCALARS "totenergy" "-10.499826273 0.001810012")
+list(APPEND DIAMOND_KSPACE_LEGACY_R1_SCALARS "variance" "0.312264 0.028662")
+list(APPEND DIAMOND_KSPACE_LEGACY_R1_SCALARS "samples" "128000 0.0")
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-vmc_sdj_kspace
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
