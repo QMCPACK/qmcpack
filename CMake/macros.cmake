@@ -226,20 +226,18 @@ function(
   PROCS
   THREADS
   TEST_ADDED
+  INPUT_FILE
   ${ARGN})
-  set(INPUT_FILE "")
-  if(ARGN)
-    list(GET ARGN 0 INPUT_FILE)
-  endif()
-
   copy_directory_maybe_using_symlink("${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" "${INPUT_FILE}")
   set(TEST_ADDED_TEMP FALSE)
+  # ARGN holds the optional qmcpack command-line options following INPUT_FILE
   run_qmc_app_no_copy(
     ${TESTNAME}
     ${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}
     ${PROCS}
     ${THREADS}
     TEST_ADDED_TEMP
+    ${INPUT_FILE}
     ${ARGN})
   set(${TEST_ADDED}
       ${TEST_ADDED_TEMP}
