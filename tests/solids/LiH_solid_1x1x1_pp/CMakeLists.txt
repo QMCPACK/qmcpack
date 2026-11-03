@@ -298,13 +298,13 @@ qmc_run_and_check(
 # No check on results
 # Arrange for "imbalanced" ensemble and assume will crash or hang/timeout on major error
 # Should abort if number of MPI tasks is smaller than ensemble
-qmc_run_and_check(
-  deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
-  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  det_ensemble_blocks_hf_vmc_LiH-gamma.txt
-  4
-  1
-  TRUE)
+simple_run_and_check(
+  BASE_NAME deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+  BASE_DIR "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  INPUT_FILE det_ensemble_blocks_hf_vmc_LiH-gamma.txt
+  PROCS 4
+  CHECK_SCRIPT check_ensemble.py
+  CHECK_ARGS --ranks 4 --prefix det_ensemble_blocks_hf_vmc_LiH-gamma --ionion -3.68927954)
 
 qmc_run_and_check(
   deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
@@ -314,13 +314,13 @@ qmc_run_and_check(
   1
   FALSE)
 
-qmc_run_and_check(
-  deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
-  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  det_ensemble_blocks_hf_vmc_LiH-gamma.txt
-  5
-  1
-  TRUE)
+simple_run_and_check(
+  BASE_NAME deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+  BASE_DIR "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  INPUT_FILE det_ensemble_blocks_hf_vmc_LiH-gamma.txt
+  PROCS 5
+  CHECK_SCRIPT check_ensemble.py
+  CHECK_ARGS --ranks 5 --prefix det_ensemble_blocks_hf_vmc_LiH-gamma --ionion -3.68927954)
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
 add_labels_for_tests("${CURRENT_TESTS}")
