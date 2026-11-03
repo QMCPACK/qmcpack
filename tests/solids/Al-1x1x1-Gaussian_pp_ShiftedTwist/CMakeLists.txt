@@ -14,7 +14,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     long-Al-1x1x1-Gaussian-pp-cplx
     "${qmcpack_SOURCE_DIR}/tests/solids/Al-1x1x1-Gaussian_pp_ShiftedTwist"
-    vmc_long
     vmc_long.in.xml
     1
     16
@@ -37,7 +36,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     short-Al-1x1x1-Gaussian-pp-cplx
     "${qmcpack_SOURCE_DIR}/tests/solids/Al-1x1x1-Gaussian_pp_ShiftedTwist"
-    vmc_short
     vmc_short.in.xml
     1
     16

@@ -16,7 +16,6 @@ list(REMOVE_ITEM DIAMOND_SCALARS_NO_MPC "mpc")
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-vmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_short
   qmc_short.in.xml
   1
   16
@@ -28,7 +27,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-vmcbatch_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_short
   qmc_short_vmcbatch.in.xml
   1
   16
@@ -40,7 +38,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-vmcbatch_pw_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_short_pw
   qmc_short_vmcbatch_pw.in.xml
   1
   16
@@ -53,7 +50,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_short
   qmc_short_hybridrep.in.xml
   1
   16
@@ -65,7 +61,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-vmc_sdj-meshf
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_short-meshf
   qmc_short-meshf.in.xml
   1
   16
@@ -80,7 +75,6 @@ list(APPEND DIAMOND_KSPACE_SCALARS "samples" "128000 0.0")
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-vmc_sdj_kspace
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_short_kspace
   qmc_short_kspace.in.xml
   1
   16
@@ -92,7 +86,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-vmc_sdj_kspace
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_short_kspace_4_4
   qmc_short_kspace_4_4.in.xml
   4
   4
@@ -104,7 +97,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-vmcbatch_sdj_kspace
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_short_vmcbatch_kspace
   qmc_short_vmcbatch_kspace.in.xml
   1
   16
@@ -116,7 +108,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-vmcbatch_sdj_kspace
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_short_vmcbatch_kspace
   qmc_short_vmcbatch_kspace.in.xml
   4
   4
@@ -135,7 +126,6 @@ list(APPEND DIAMOND_OPT_SCALARS "samples" "128000 0.0")
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-opt_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_short
   qmc_short_opt.in.xml
   1
   16
@@ -147,7 +137,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-sdj-optbatch
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_short
   qmc_short_optbatch.in.xml
   1
   3
@@ -168,7 +157,6 @@ list(APPEND DIAMOND_DMC_SCALARS "mpc" "-2.47994 0.00779")
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-dmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_short_vmc_dmc
   qmc_short_vmc_dmc.in.xml
   1
   16
@@ -191,7 +179,6 @@ list(APPEND DIAMOND_EXCITED_SCALARS "mpc" "-2.52740814 0.004392")
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-vmc_sdj_excited
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_short_excited
   qmc_short_excited.in.xml
   1
   16
@@ -211,7 +198,6 @@ list(APPEND DIAMOND_DMC_EXCITED_SCALARS "mpc" "-2.55372811 0.00795")
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-dmc_sdj_excited
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_short_vmc_dmc_excited
   qmc_short_vmc_dmc_excited.in.xml
   1
   16
@@ -223,7 +209,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_vmc_dmc_allp
   qmc_short_vmc_dmc_allp.in.xml
   1
   16
@@ -264,7 +249,6 @@ list(APPEND LONG_DIAMOND_SCALARS "mpc" "-2.453044 0.000143")
 qmc_run_and_check(
   long-diamondC_1x1x1_pp-vmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_long
   qmc_long.in.xml
   1
   16
@@ -276,7 +260,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   long-diamondC_1x1x1_pp-vmc_sdj-meshf
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_long-meshf
   qmc_long-meshf.in.xml
   1
   16
@@ -307,7 +290,6 @@ list(APPEND LONG_DIAMOND_DMC_ALLP_SCALARS "mpc" "-2.47943 0.00268")
 qmc_run_and_check(
   long-diamondC_1x1x1_pp-vmc-dmc-allp_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_vmc_dmc_allp
   qmc_long_vmc_dmc_allp.in.xml
   1
   16
@@ -325,7 +307,6 @@ list(APPEND LONG_DIAMOND_KSPACE_SCALARS "variance" "0.312264 0.028662")
 qmc_run_and_check(
   long-diamondC_1x1x1_pp-vmc_sdj_kspace
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_long_kspace
   qmc_long_kspace.in.xml
   1
   16
@@ -341,7 +322,6 @@ list(APPEND LONG_DIAMOND_DMC_SCALARS "mpc" "-2.47994 0.00246")
 qmc_run_and_check(
   long-diamondC_1x1x1_pp-dmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_long_vmc_dmc
   qmc_long_vmc_dmc.in.xml
   1
   16
@@ -358,7 +338,6 @@ list(APPEND LONG_DIAMOND_EXCITED_SCALARS "flux" "-0.01538267 0.03786")
 qmc_run_and_check(
   long-diamondC_1x1x1_pp-vmc_sdj_excited
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_long_excited
   qmc_long_excited.in.xml
   1
   16
@@ -372,7 +351,6 @@ list(APPEND LONG_DIAMOND_DMC_EXCITED_SCALARS "totenergy" "-10.33047547 0.00086")
 qmc_run_and_check(
   long-diamondC_1x1x1_pp-dmc_sdj_excited
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  qmc_long_vmc_dmc_excited
   qmc_long_vmc_dmc_excited.in.xml
   1
   16
@@ -897,7 +875,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc
   det_qmc.in.xml
   1
   1
@@ -933,7 +910,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj_excited
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_excited
   det_qmc_excited.in.xml
   1
   1
@@ -969,7 +945,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj-meshf
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc-meshf
   det_qmc_meshf.in.xml
   1
   1
@@ -1005,7 +980,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj_kspace
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_kspace
   det_qmc_kspace.in.xml
   1
   1
@@ -1039,7 +1013,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-dmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_vmc_dmc
   det_qmc_vmc_dmc.in.xml
   1
   1
@@ -1073,7 +1046,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-dmc_sdj_excited
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_vmc_dmc_excited
   det_qmc_vmc_dmc_excited.in.xml
   1
   1
@@ -1149,7 +1121,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-multi_dmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_vmc_multi_dmc
   det_qmc_vmc_multi_dmc.in.xml
   1
   1
@@ -1249,7 +1220,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc-dmc-mwalkers_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_vmc_dmc_mwalkers
   det_qmc_vmc_dmc_mwalkers.in.xml
   1
   1
@@ -1267,7 +1237,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc-dmc-mwalkers-checks_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_vmc_dmc_mwalkers
   det_qmc_vmc_dmc_mwalkers_with_checks.in.xml
   1
   1
@@ -1307,7 +1276,6 @@ if((NOT QMC_MIXED_PRECISION) AND (NOT QMC_COMPLEX))
   qmc_run_and_check(
     deterministic-diamondC_1x1x1_pp-vmc-dmc-multi_ts_sdj
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_vmc_dmc_lg_ts
     det_qmc_vmc_dmc_lg_ts.in.xml
     1
     1
@@ -1340,7 +1308,6 @@ if((NOT QMC_MIXED_PRECISION) AND (NOT QMC_COMPLEX))
   qmc_run_and_check(
     deterministic-diamondC_1x1x1_pp-vmc-dmc-multi_ts_sdj-batched
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_vmc_dmc_lg_ts_batched
     det_qmc_vmc_dmc_lg_ts_batched.in.xml
     1
     1
@@ -1412,7 +1379,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-dmc-tmoves_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_vmc_dmc_tm
   det_qmc_vmc_dmc_tm.in.xml
   1
   1
@@ -1486,7 +1452,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-dmcbatch-tmoves_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_vmcbatch_dmcbatch_tm
   det_qmc_vmcbatch_dmcbatch_tm.in.xml
   1
   1
@@ -1757,7 +1722,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj-batched
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_batched
   det_qmc_batched.in.xml
   1
   1
@@ -1768,7 +1732,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj_excited-batched
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_excited_batched
   det_qmc_excited_batched.in.xml
   1
   1
@@ -1779,7 +1742,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj-meshf-batched
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_meshf_batched
   det_qmc_meshf_batched.in.xml
   1
   1
@@ -1790,7 +1752,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj_kspace-batched
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_kspace_batched
   det_qmc_kspace_batched.in.xml
   1
   1
@@ -1801,7 +1762,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-dmc_sdj-batched
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_vmc_dmc_batched
   det_qmc_vmc_dmc_batched.in.xml
   1
   1
@@ -1812,7 +1772,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-dmc_sdj_excited-batched
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_vmc_dmc_excited_batched
   det_qmc_vmc_dmc_excited_batched.in.xml
   1
   1
@@ -1823,7 +1782,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-multi_dmc_sdj-batched
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_vmc_multi_dmc_batched
   det_qmc_vmc_multi_dmc_batched.in.xml
   1
   1
@@ -1838,7 +1796,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc-dmc-mwalkers_sdj-batched
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_vmc_dmc_mwalkers_batched
   det_qmc_vmc_dmc_mwalkers_batched.in.xml
   1
   1
@@ -1855,7 +1812,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc-dmc-mwalkers-checks_sdj-batched
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_vmc_dmc_mwalkers_with_checks_batched
   det_qmc_vmc_dmc_mwalkers_with_checks_batched.in.xml
   1
   1
@@ -2007,8 +1963,6 @@ if(NOT QMC_MIXED_PRECISION)
     deterministic-diamondC_1x1x1_pp-param-grad
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    PREFIX
-    det_qmc_param_grad.param
     INPUT_FILE
     det_qmc_param_grad.xml
     PROCS
@@ -2034,8 +1988,6 @@ if(NOT QMC_MIXED_PRECISION)
     deterministic-diamondC_1x1x1_pp-param-grad-legacy-driver
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    PREFIX
-    det_qmc_param_grad.param
     INPUT_FILE
     det_qmc_param_grad_legacy_driver.xml
     PROCS
@@ -2056,7 +2008,6 @@ endif()
 qmc_run_and_check(
   deterministic-input_check_broken_xml
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_input_check_broken_xml
   det_qmc_input_check_broken_xml.in.xml
   1
   1
@@ -2065,7 +2016,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-input_check_no_ham
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_input_check_no_ham
   det_qmc_input_check_no_ham.in.xml
   1
   1
@@ -2074,7 +2024,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-input_check_no_pp
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_input_check_no_pp
   det_qmc_input_check_no_pp.in.xml
   1
   1
@@ -2083,7 +2032,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-input_check_no_pset
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_input_check_no_pset
   det_qmc_input_check_no_pset.in.xml
   1
   1
@@ -2092,7 +2040,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-input_check_no_qmc
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_input_check_no_qmc
   det_qmc_input_check_no_qmc.in.xml
   1
   1
@@ -2101,7 +2048,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-input_check_no_splineh5
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_input_check_no_splineh5
   det_qmc_input_check_no_splineh5.in.xml
   1
   1
@@ -2110,7 +2056,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-input_check_bad_splineh5
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_input_check_bad_splineh5
   det_qmc_input_check_bad_splineh5.in.xml
   1
   1
@@ -2119,7 +2064,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-input_check_no_wf
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_input_check_no_wf
   det_qmc_input_check_no_wf.in.xml
   1
   1
@@ -2128,7 +2072,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-input_check_not_xml
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_input_check_not_xml
   det_qmc_input_check_not_xml.in.xml
   1
   1
@@ -2138,7 +2081,6 @@ qmc_run_and_check(
   qmc_run_and_check(
   deterministic-input_check_not_present_not_xml_suffix
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_input_check_not_present_not_xml_suffix
   det_qmc_input_check_not_present_not_xml_suffix.in.notxml
   1
   1
@@ -2181,7 +2123,6 @@ add_test_check_file_existence(deterministic-diamondC_1x1x1_pp-orbital_images-1-1
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj-estimator-energydensity-cell
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_edens_cell
   det_qmc_edens_cell.in.xml
   1
   1
@@ -2193,7 +2134,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj-estimator-energydensity-voronoi
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_edens_voronoi
   det_qmc_edens_voronoi.in.xml
   1
   1
@@ -2205,7 +2145,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmcbatch_sdj-estimator-energydensity-cell
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_vmcbatch_edens_cell
   det_qmc_vmcbatch_edens_cell.in.xml
   1
   1
@@ -2217,7 +2156,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmcbatch_sdj-estimator-energydensity-voronoi
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_vmcbatch_edens_voronoi
   det_qmc_vmcbatch_edens_voronoi.in.xml
   1
   1

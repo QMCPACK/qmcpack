@@ -36,7 +36,6 @@ list(APPEND SHORT_BCCH333_SCALARS "samples" "1600 0.000000")
 qmc_run_and_check(
   short-bccH_3x3x3_ae-vmc_bf
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_3x3x3_ae"
-  qmc-short-bf
   qmc-short-bf.in.xml
   1
   4
@@ -48,7 +47,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-bccH_3x3x3_ae-vmcbatch_bf
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_3x3x3_ae"
-  qmc-short-bf-batch
   qmc-short-bf-batch.in.xml
   1
   4
@@ -67,7 +65,6 @@ list(APPEND DET_BCCH333_SCALARS "samples" "20 0.000000")
 qmc_run_and_check(
   deterministic-bccH_3x3x3_ae-vmc_bf
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_3x3x3_ae"
-  det-qmc-bf
   det-qmc-bf.in.xml
   1
   1
@@ -79,7 +76,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-bccH_3x3x3_ae-vmcbatch_bf
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_3x3x3_ae"
-  det-qmc-bf-batch
   det-qmc-bf-batch.in.xml
   1
   1
