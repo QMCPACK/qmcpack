@@ -61,5 +61,13 @@ foreach(NUM_RANKS 1 2 3)
   add_unit_test(BASENAME ${UTEST_NAME} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 endforeach()
 
+foreach(NUM_RANKS 1 2 3)
+  add_unit_test(
+    BASENAME deterministic-unit_stochastic_comb_walker_io
+    PROCS ${NUM_RANKS}
+    TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>
+    ARGS "[stochastic_comb]")
+endforeach()
+
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
 add_labels_for_tests("${CURRENT_TESTS}")

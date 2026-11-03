@@ -17,6 +17,7 @@
 
 #include <array>
 #include <cassert>
+#include <cmath>
 #include <stdexcept>
 #include <numeric>
 #include <sstream>
@@ -27,6 +28,7 @@
 #include "type_traits/template_types.hpp"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/UniformCommunicateError.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -98,11 +100,14 @@ void WalkerControl::start(const std::string& root_name)
 void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& curData)
 {
   //taking average over the walkers
-  FullPrecRealType wgtInv(1.0 / curData[WEIGHT_INDEX]);
-  FullPrecRealType eavg         = curData[ENERGY_INDEX] * wgtInv;
+  FullPrecRealType wgtInv(use_fixed_pop_ ? 0.0 : 1.0 / curData[WEIGHT_INDEX]);
+  FullPrecRealType eavg =
+      use_fixed_pop_ ? curData[ENERGY_INDEX] / curData[WEIGHT_INDEX] : curData[ENERGY_INDEX] * wgtInv;
+  const FullPrecRealType second_moment =
+      use_fixed_pop_ ? curData[ENERGY_SQ_INDEX] / curData[WEIGHT_INDEX] : curData[ENERGY_SQ_INDEX] * wgtInv;
   ensemble_property_.Energy     = eavg;
   ensemble_property_.Weight     = curData[WEIGHT_INDEX];
-  ensemble_property_.Variance   = (curData[ENERGY_SQ_INDEX] * wgtInv - eavg * eavg);
+  ensemble_property_.Variance   = second_moment - eavg * eavg;
   ensemble_property_.NumSamples = curData[WALKERSIZE_INDEX];
   ensemble_property_.R2Accepted = curData[R2ACCEPTED_INDEX];
   ensemble_property_.R2Proposed = curData[R2PROPOSED_INDEX];
@@ -156,18 +161,29 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 
   ScopedTimer branch_timer(my_timers_[WC_branch]);
   auto& walkers = pop.get_walkers();
+  FullPrecRealType offspring_weight = 1.0;
 
   {
     ScopedTimer prebalance_timer(my_timers_[WC_prebalance]);
     ///any temporary data includes many ridiculous conversions of integral types to and from fp
-    std::vector<FullPrecRealType> curData(LE_MAX + num_ranks_, 0.0);
+    // Fixed population mode packs its common offset and invalid-input flag into the single reduction.
+    std::vector<FullPrecRealType> curData(LE_MAX + num_ranks_ + (use_fixed_pop_ ? 2 : 0), 0.0);
 
     if (use_fixed_pop_)
     {
-      computeCurData(walkers, curData);
-      // convert  node local num of walkers after combing
-      // curData[LE_MAX + rank_num_] = wsum to num_total_copies
-      // calculate walker->Multiplicity;
+      computeCurData(walkers, curData, do_not_branch);
+      const int population = pop.get_num_global_walkers();
+      if (population <= 0 || curData[WALKERSIZE_INDEX] != population)
+        throw UniformCommunicateError("WalkerControl: unexpected inconsistent fixed population. BUG.");
+      if (curData[WEIGHT_INDEX] / population == 0)
+        throw UniformCommunicateError("WalkerControl: fixed population descendant weight underflow.");
+      if (!do_not_branch)
+      {
+        const std::vector<FullPrecRealType> rank_weights(curData.begin() + LE_MAX,
+                                                         curData.begin() + LE_MAX + num_ranks_);
+        assignStochasticComb(walkers, rank_weights, rank_num_, population, curData[LE_MAX + num_ranks_], num_per_rank_);
+        offspring_weight = curData[WEIGHT_INDEX] / population;
+      }
     }
     else
     {
@@ -178,7 +194,7 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       else
         for (auto& walker : walkers)
           walker->Multiplicity = static_cast<int>(walker->Weight + rng_());
-      computeCurData(walkers, curData);
+      computeCurData(walkers, curData, do_not_branch);
       for (int i = 0, j = LE_MAX; i < num_ranks_; i++, j++)
         num_per_rank_[i] = static_cast<int>(curData[j]);
     }
@@ -187,6 +203,10 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
     writeDMCdat(iter, curData);
     pop.set_ensemble_property(ensemble_property_);
   }
+
+  // Do not migrate walkers with fixed population and a skipped comb.
+  if (use_fixed_pop_ && do_not_branch)
+    return;
 
   auto untouched_walkers = walkers.size();
 #if defined(HAVE_MPI)
@@ -224,10 +244,7 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
   if (!do_not_branch)
     for (UPtr<MCPWalker>& walker : pop.get_walkers())
     {
-      // This may be the correct location for walker Weight to be set to 1 for the next step but... its also
-      // set to 1.00 or zero many other locations.
-      walker->Weight = 1.0;
-      // This code implies that previous code left population walkers in invalid state however that should not be the case.
+      walker->Weight       = offspring_weight;
       walker->Multiplicity = 1.0;
     }
 
@@ -238,21 +255,30 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
     pop.get_walkers()[iw]->wasTouched = true;
 }
 
-void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers, std::vector<FullPrecRealType>& curData)
+void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers,
+                                   std::vector<FullPrecRealType>& curData,
+                                   bool do_not_branch)
 {
   FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
   int num_good_walkers(0), num_total_copies(0);
+  bool invalid_weights = false;
   for (const auto& walker : walkers)
   {
-    const int num_copies = static_cast<int>(walker->Multiplicity);
-    num_good_walkers += num_copies > 0 ? 1 : 0;
+    const int num_copies = use_fixed_pop_ ? 0 : static_cast<int>(walker->Multiplicity);
+    // In fixed mode LivingFraction describes the positive-weight input
+    num_good_walkers += (use_fixed_pop_ ? walker->Weight > 0 : num_copies > 0) ? 1 : 0;
     num_total_copies += num_copies;
     // Ye : not sure about these r2
     r2_accepted += walker->Properties(WP::R2ACCEPTED);
     r2_proposed += walker->Properties(WP::R2PROPOSED);
     FullPrecRealType e   = walker->Properties(WP::LOCALENERGY);
     FullPrecRealType wgt = walker->Weight;
+    if (use_fixed_pop_ && (!qmcplusplus::isfinite(wgt) || wgt < 0))
+    {
+      invalid_weights = true;
+      continue;
+    }
     esum += wgt * e;
     e2sum += wgt * e * e;
     wsum += wgt;
@@ -268,13 +294,126 @@ void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers, std::ve
   curData[FNSIZE_INDEX]      = num_good_walkers; // num of good walkers before branching
   curData[SENTWALKERS_INDEX] = saved_num_walkers_sent_;
   if (use_fixed_pop_)
+  {
     curData[LE_MAX + rank_num_] = wsum; // node sum of walker weights
+    curData[LE_MAX + num_ranks_]     = rank_num_ == 0 && !do_not_branch ? rng_() : 0.0; // random offset for stochastic comb computed only on rank 0
+    curData[LE_MAX + num_ranks_ + 1] = invalid_weights ? 1.0 : 0.0;
+  }
   else
     curData[LE_MAX + rank_num_] = num_total_copies; // node num of walkers after local branching
 
   {
     ScopedTimer allreduce_timer(my_timers_[WC_allreduce]);
     myComm.allreduce(curData);
+  }
+
+  if (use_fixed_pop_)
+  {
+    curData[WEIGHT_INDEX] =
+        std::accumulate(curData.begin() + LE_MAX, curData.begin() + LE_MAX + num_ranks_, FullPrecRealType(0));
+    if (curData[LE_MAX + num_ranks_ + 1] != 0 || !qmcplusplus::isfinite(curData[WEIGHT_INDEX]) ||
+        curData[WEIGHT_INDEX] <= 0 || !qmcplusplus::isfinite(curData[ENERGY_INDEX]) ||
+        !qmcplusplus::isfinite(curData[ENERGY_SQ_INDEX]))
+      throw UniformCommunicateError("WalkerControl: fixed population found erroneous weights.");
+  }
+}
+
+void WalkerControl::assignStochasticComb(const UPtrVector<MCPWalker>& walkers,
+                                         const std::vector<FullPrecRealType>& rank_weights,
+                                         int rank,
+                                         int population,
+                                         FullPrecRealType offset,
+                                         std::vector<int>& num_per_rank)
+{
+  // Stochastic comb implementation for assigning walker multiplicities based on rank weights and a shared offset.
+  // No communication is performed. All ranks independently compute the entire comb using the shared rank_weights and offset.
+  // For N=population and W=total, comb teeth are x_k=(k+offset)*W/N, k=0,...,N-1. Each weight w walker owns the interval [C, C+w).
+  // branch() later balances/copies the selected walkers and given every descendant the appropriate weight W/N.
+
+  // 1. Compute W from the shared rank_weights, using the same rank order on every MPI rank.
+  // Validate N, the normalized offset, and W before evaluating the comb spacing or tooth indices.
+  const FullPrecRealType total = std::accumulate(rank_weights.begin(), rank_weights.end(), FullPrecRealType(0));
+  if (population <= 0 || !qmcplusplus::isfinite(total) || total <= 0 || total / population == 0 ||
+      !qmcplusplus::isfinite(offset) || offset < 0 || offset >= 1 ||
+      std::any_of(
+          rank_weights.begin(), rank_weights.end(),
+          [](FullPrecRealType weight) { return !qmcplusplus::isfinite(weight) || weight < 0; }))
+    throw UniformCommunicateError("WalkerControl: invalid stochastic comb input.");
+
+  // 2. Express the comb in power-of-two-scaled weight coordinates. frexp writes exponent=e such that
+  // W=mantissa*2^e; spacing is (W*2^-e)/N, not the unscaled W/N.
+  // Scaling both C and W equally leaves C/(W/N) unchanged; binary exponent scaling is exact unless it underflows.
+  // Keeping spacing near 1/N avoids reciprocal overflow/underflow if the compiler rewrites x/y as x*(1/y).
+  int exponent;
+  const FullPrecRealType spacing = std::frexp(total, &exponent) / population;
+
+  // toothBoundary(C) counts teeth strictly below the cumulative global weight C.
+  // Subtracting boundary counts at a walker's endpoints implements the half-open interval convention,
+  // so a tooth exactly at an endpoint belongs to the interval *beginning* there, not ending there.
+  const auto toothBoundary = [spacing, exponent, population, offset](FullPrecRealType cumulative) {
+    // scaled is C/(W/N), the endpoint in units of comb spacing.
+    const FullPrecRealType scaled = std::ldexp(cumulative, -exponent) / spacing;
+    if (scaled == 0 && cumulative > 0 && offset == 0)
+      return 1; // The tooth at zero belongs to the first positive interval even if C/delta underflows.
+    // whole is the integral part of scaled. The fractional part determines whether one more tooth
+    // precedes C. This is ceil(scaled-offset), clamped to [0,N], without subtracting offset directly:
+    // direct subtraction can round down to an integer when offset is immediately below one.
+    const FullPrecRealType whole = std::floor(scaled);
+    return static_cast<int>(
+        std::clamp(whole + (scaled - whole > offset ? 1 : 0), FullPrecRealType(0), FullPrecRealType(population)));
+  };
+
+  // 3. boundaries[r] is the global tooth index at the beginning of source rank r.
+  // prefix accumulates the global weight through each rank ir; local_start records the weight
+  // preceding this rank's walkers, needed to convert local cumulative weights to global endpoints.
+  std::vector<int> boundaries(rank_weights.size() + 1, 0);
+  FullPrecRealType prefix      = 0;
+  FullPrecRealType local_start = 0;
+  for (int ir = 0; ir < rank_weights.size(); ++ir)
+  {
+    if (ir == rank)
+      local_start = prefix;
+    prefix += rank_weights[ir];
+    boundaries[ir + 1] = toothBoundary(prefix);
+  }
+  // The final endpoint must include all N teeth, independently of floating-point boundary arithmetic.
+  boundaries.back() = population;
+
+  // Adjacent rank boundaries determine how many offspring each source rank supplies, with no further
+  // MPI communication. These num_per_rank counts are not the balanced destination-rank walker counts.
+  num_per_rank.resize(rank_weights.size());
+  for (int ir = 0; ir < rank_weights.size(); ++ir)
+    num_per_rank[ir] = boundaries[ir + 1] - boundaries[ir];
+
+  // 4. Find the last positive-weight local walker. last_positive stays at walkers.end() for an all-zero
+  // rank; otherwise its interval will consume exactly the remaining teeth allocated to this source rank.
+  // Pinning this endpoint avoids disagreement between local and shared rank sums, without assigning
+  // offspring to any trailing zero-weight walkers.
+  auto last_positive = walkers.end();
+  for (auto it = walkers.begin(); it != walkers.end(); ++it)
+    if ((*it)->Weight > 0)
+      last_positive = it;
+
+  // 5. Walk the local intervals in order. cumulative is the local weight through the current walker it;
+  // previous is the tooth index at its left endpoint, initially this rank's first tooth index.
+  FullPrecRealType cumulative = 0;
+  int previous                = boundaries[rank];
+  for (auto it = walkers.begin(); it != walkers.end(); ++it)
+  {
+    // weight is this walker's w; local_start+cumulative becomes its global right endpoint C+w.
+    const auto weight = (*it)->Weight;
+    cumulative += weight;
+
+    // next is the tooth index at the right endpoint. Zero weight leaves the boundary unchanged.
+    // The final positive walker uses the shared rank endpoint; other walkers use the computed boundary,
+    // clamped between previous and the rank endpoint to keep multiplicities nonnegative and on this rank.
+    const int next = weight == 0 ? previous
+        : it == last_positive    ? boundaries[rank + 1]
+                                 : std::clamp(toothBoundary(local_start + cumulative), previous, boundaries[rank + 1]);
+    // The boundary difference counts this walker's teeth/offspring. Carry next forward as the left
+    // endpoint for the following walker. Local multiplicities sum to num_per_rank[rank], globally to N.
+    (*it)->Multiplicity = next - previous;
+    previous            = next;
   }
 }
 

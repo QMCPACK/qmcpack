@@ -646,3 +646,29 @@ function(add_test_check_file_existence TEST_DEP_IN FILE_NAME SHOULD_SUCCEED)
     set_tests_properties(${TESTNAME} PROPERTIES DEPENDS ${TEST_DEP_IN})
   endif()
 endfunction()
+
+# Check DMC population does not vary.
+function(add_test_check_fixed_population TEST_DEP_IN REPORT EXPECTED)
+  if(TEST ${TEST_DEP_IN})
+    get_test_property(${TEST_DEP_IN} WORKING_DIRECTORY WORK_DIR)
+    set(TESTNAME ${TEST_DEP_IN}-fixed-population)
+    add_test(
+      NAME ${TESTNAME}
+      COMMAND ${CMAKE_COMMAND} "-DREPORT=${WORK_DIR}/${REPORT}" "-DEXPECTED=${EXPECTED}"
+              -P "${qmcpack_SOURCE_DIR}/tests/scripts/check_fixed_population.cmake")
+    set_tests_properties(${TESTNAME} PROPERTIES DEPENDS ${TEST_DEP_IN} LABELS "QMCPACK-checking-results")
+  endif()
+endfunction()
+
+# Check DMC population varies.
+function(add_test_check_variable_population TEST_DEP_IN REPORT)
+  if(TEST ${TEST_DEP_IN})
+    get_test_property(${TEST_DEP_IN} WORKING_DIRECTORY WORK_DIR)
+    set(TESTNAME ${TEST_DEP_IN}-variable-population)
+    add_test(
+      NAME ${TESTNAME}
+      COMMAND ${CMAKE_COMMAND} "-DREPORT=${WORK_DIR}/${REPORT}"
+              -P "${qmcpack_SOURCE_DIR}/tests/scripts/check_variable_population.cmake")
+    set_tests_properties(${TESTNAME} PROPERTIES DEPENDS ${TEST_DEP_IN} LABELS "QMCPACK-checking-results")
+  endif()
+endfunction()

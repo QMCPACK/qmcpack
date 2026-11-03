@@ -43,6 +43,23 @@ public:
   /** Verify live WalkerControl inputs remain active. */
   void testInput();
 
+  /** Exercise deterministic comb assignment without constructing physical walker elements. */
+  static std::vector<int> comb(const std::vector<QMCTraits::FullPrecRealType>& weights,
+                               const std::vector<QMCTraits::FullPrecRealType>& rank_weights,
+                               int rank,
+                               int population,
+                               QMCTraits::FullPrecRealType offset,
+                               std::vector<int>& counts);
+
+  /** Check real population copying, MPI balancing, conserved non-unit weights, and RNG consumption. */
+  void testFixedPopulation(int scenario, bool blocking);
+
+  /** Check skipped/debug combs preserve unequal weights and unbalanced rank distributions without RNG draws. */
+  void testSkippedComb(bool debug);
+
+  /** Reject invalid weights on one rank uniformly before modifying populations. */
+  void testInvalidWeights(QMCTraits::FullPrecRealType invalid_weight);
+
   /** This test function manipulates walker multiplicity and then checks that after "population control"
    *  that the number of walkers per rank is correct. Multiplicity in normal branching steps is a set
    *  walker->Weight + rng() before swapping and amplification of walker's with multiplicity >= 2

@@ -108,6 +108,13 @@ endif()
 add_unit_test(BASENAME ${UTEST_NAME} THREADS 8 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
 add_unit_test(BASENAME ${UTEST_NAME} PROCS 2 THREADS 3 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
 
+add_unit_test(
+  BASENAME deterministic-unit_stochastic_comb_lifecycle
+  THREADS 4
+  TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>
+  ARGS "[stochastic_comb]"
+  INPUT_FILES ${UTEST_INPUT_FILES})
+
 if(HAVE_MPI)
   set(UTEST_EXE test_new_${SRC_DIR}_mpi)
   #this is dependent on the directory creation and sym linking of earlier driver tests
@@ -131,6 +138,15 @@ if(HAVE_MPI)
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   foreach(NUM_RANKS 1 2 3 4 16)
     add_unit_test(BASENAME ${UTEST_NAME} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
+  endforeach()
+
+  foreach(NUM_RANKS 1 2 3 4 16)
+    add_unit_test(
+      BASENAME deterministic-unit_stochastic_comb
+      PROCS ${NUM_RANKS}
+      TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>
+      ARGS "[stochastic_comb]"
+      INPUT_FILES ${UTEST_INPUT_FILES})
   endforeach()
 endif(HAVE_MPI)
 

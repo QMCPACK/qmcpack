@@ -37,6 +37,7 @@ if(NOT QMC_COMPLEX)
     2
     LI2STOSJS_DMC_SCALARS # DMC
   )
+  add_test_check_variable_population(short-li2_sto-sj_dmcbatch-r1-t16 Li2.STO.short.s002.dmc.dat)
 
   qmc_run_and_check(
     short-li2_sto-sj_dmc
@@ -65,6 +66,7 @@ if(NOT QMC_COMPLEX)
     2
     LI2STOSJS_DMC_SCALARS # DMC
   )
+  add_test_check_variable_population(short-li2_sto-sj_dmcbatch-r4-t4 Li2.STO.short.s002.dmc.dat)
 
   # Long tests
   list(APPEND LI2STOSJL_VMC_SCALARS "totenergy" "-14.947214  0.000166") # total energy
@@ -99,6 +101,34 @@ if(NOT QMC_COMPLEX)
     2
     LI2STOSJL_DMC_SCALARS # DMC
   )
+
+  foreach(PROCS 1 4)
+    math(EXPR THREADS "16 / ${PROCS}")
+    qmc_run_and_check(
+      short-li2_sto-sj_dmcbatch_reconfig
+      "${CMAKE_CURRENT_SOURCE_DIR}"
+      Li2.STO.short.reconfig
+      Li2.STO.short-batch-reconfig.in.xml
+      ${PROCS}
+      ${THREADS}
+      TRUE
+      0 LI2STOSJS_VMC_SCALARS
+      2 LI2STOSJS_DMC_SCALARS)
+    add_test_check_fixed_population(short-li2_sto-sj_dmcbatch_reconfig-r${PROCS}-t${THREADS}
+                                   Li2.STO.short.reconfig.s002.dmc.dat 1600)
+  endforeach()
+
+  qmc_run_and_check(
+    long-li2_sto-sj_dmcbatch_reconfig
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    Li2.STO.long.reconfig
+    Li2.STO.long-batch-reconfig.in.xml
+    1
+    16
+    TRUE
+    0 LI2STOSJL_VMC_SCALARS
+    2 LI2STOSJL_DMC_SCALARS)
+  add_test_check_fixed_population(long-li2_sto-sj_dmcbatch_reconfig-r1-t16 Li2.STO.long.reconfig.s002.dmc.dat 1600)
 
 else()
   message(VERBOSE "Skipping Li2_STO_ae tests because the basis sets are not supported by complex build (QMC_COMPLEX=1)")

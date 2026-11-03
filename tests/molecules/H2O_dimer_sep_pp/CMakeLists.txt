@@ -203,6 +203,51 @@ if(NOT QMC_COMPLEX)
     2
     LONG_H2OS2_DMCTM3_SCALARS)
 
+  foreach(LENGTH short long)
+    foreach(MOVE LA TM1)
+      string(TOLOWER "${MOVE}" MOVE_SUFFIX)
+      set(SCALARS H2OS2_DMC${MOVE}_SCALARS)
+      if(LENGTH STREQUAL "long")
+        set(SCALARS LONG_${SCALARS})
+      endif()
+      qmc_run_and_check(
+        ${LENGTH}-H2O_dimer_sep_pp-j3_dmcbatch_${MOVE_SUFFIX}_reconfig
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+        H2O.reconfig
+        ${LENGTH}-H2O-${MOVE}-batch-reconfig.xml
+        1
+        16
+        TRUE
+        2 ${SCALARS})
+      add_test_check_fixed_population(${LENGTH}-H2O_dimer_sep_pp-j3_dmcbatch_${MOVE_SUFFIX}_reconfig-r1-t16
+                                     H2O.reconfig.s002.dmc.dat 512)
+    endforeach()
+  endforeach()
+
+  foreach(MODE variable reconfig)
+    set(PROFILE_INPUT short-H2O-LA-batch.xml)
+    if(MODE STREQUAL "reconfig")
+      set(PROFILE_INPUT short-H2O-LA-batch-reconfig.xml)
+    endif()
+    set(PROFILE_TEST performance-H2O_dimer_sep_pp-dmcbatch_la_${MODE}-r4-t4)
+    set(PROFILE_DIR "${CMAKE_CURRENT_BINARY_DIR}/${PROFILE_TEST}")
+    copy_directory_maybe_using_symlink("${CMAKE_CURRENT_SOURCE_DIR}" "${PROFILE_DIR}" "${PROFILE_INPUT}")
+    run_qmc_app_no_copy(
+      ${PROFILE_TEST}
+      "${PROFILE_DIR}"
+      4
+      4
+      PROFILE_ADDED
+      --enable-timers=medium ${PROFILE_INPUT})
+    if(PROFILE_ADDED)
+      set_property(TEST ${PROFILE_TEST} APPEND PROPERTY ENVIRONMENT
+                   OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 BLIS_NUM_THREADS=1)
+    endif()
+    if(MODE STREQUAL "reconfig")
+      add_test_check_fixed_population(${PROFILE_TEST} H2O.reconfig.s002.dmc.dat 512)
+    endif()
+  endforeach()
+
 else()
   message(
     VERBOSE
