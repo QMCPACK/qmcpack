@@ -71,7 +71,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     short-diamondC_2x1x1-Gaussian_pp_cplx_ground_MSD
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"
-    vmc_short_ground
     vmc_short_ground_noj.in.xml
     1
     16
@@ -93,7 +92,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     long-diamondC_2x1x1-Gaussian_pp_cplx_ground_MSD
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"
-    vmc_long_ground_noj
     vmc_long_ground_noj.in.xml
     1
     16
@@ -115,7 +113,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     long-diamondC_2x1x1-Gaussian_pp_cplx_excited_MSD
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"
-    vmc_long_excited_noj
     vmc_long_excited_noj.in.xml
     1
     16
@@ -137,7 +134,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     short-diamondC_2x1x1-Gaussian_pp_cplx_excited_MSD
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"
-    vmc_short_excited_noj
     vmc_short_excited_noj.in.xml
     1
     16

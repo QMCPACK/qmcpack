@@ -11,7 +11,6 @@ list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_LONG_SCALARS "ionion" "-25.55132719 0
 qmc_run_and_check(
   long-diamondC_2x1x1-Gaussian_pp_MSD
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_MSD"
-  vmc_long
   vmc_long.in.xml
   1
   16
@@ -33,7 +32,6 @@ list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "ionion" "-25.55132719 
 qmc_run_and_check(
   short-diamondC_2x1x1-Gaussian_pp_MSD
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_MSD"
-  vmc_short
   vmc_short.in.xml
   1
   16
@@ -120,7 +118,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_2x1x1-Gaussian_pp_MSD
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_MSD"
-  det_vmc_dmc
   det_vmc_dmc.in.xml
   1
   1
@@ -320,7 +317,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_2x1x1-gaussian_pp_MSD-vmcbatch-dmcbatch-mwalkers_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_MSD"
-  det_qmc_vmcbatch_dmcbatch_mwalkers
   det_qmc_vmcbatch_dmcbatch_mwalkers.in.xml
   1
   4
@@ -522,7 +518,6 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_2x1x1-gaussian_pp_MSD-vmcbatch-dmcbatch-mwalkers_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_MSD"
-  det_qmc_vmcbatch_dmcbatch_mwalkers
   det_qmc_vmcbatch_dmcbatch_mwalkers.in.xml
   2
   3
