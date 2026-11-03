@@ -1234,9 +1234,9 @@ class Settings(NexusCore):
         # Set up logger after all settings have been set, so we don't accidentally
         # overwrite a user's logs.
         nexus_config.main_log_handler.backupCount = nexus_config.logfile_num_backups
-        logfile = f"{nexus_config.logger_name}.log"
+        logfile = Path(f"{nexus_config.logger_name}.nexus.log").resolve()
         if (
-            Path(logfile).exists()
+            logfile.exists()
             and os.path.getsize(logfile) > 0
         ): # Rollover when the file exists and has something in it.
             nexus_config.main_log_handler.doRollover()
