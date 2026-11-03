@@ -9,8 +9,10 @@
 // File created by: Mark Dewing, mdewing@anl.gov Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
-#include "Utilities/for_testing/Catch2Approx.h"
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
+#include "Message/UniformCommunicateError.h"
 
 
 #include "Message/Communicate.h"
@@ -93,6 +95,12 @@ TEST_CASE("WaveFunctionPool", "[wavefunction]")
   CHECK_THROWS_WITH(wp.getWaveFunction("abc"),
                     Catch::Matchers::Equals(
                         "The wavefunction pool is empty. Need at least one wavefunction node in the xml input!"));
+
+  const char* invalid_target = R"(<wavefunction target='nonexistent_target'/>)";
+  Libxml2Document doc_bad;
+  REQUIRE(doc_bad.parseFromString(invalid_target));
+  CHECK_THROWS_MATCHES(wp.put(doc_bad.getRoot()), UniformCommunicateError,
+                       Catch::Matchers::Message("target particle set named 'nonexistent_target' not found"));
 
   const char* wf_input = R"(<wavefunction target='e'>
      <determinantset type='einspline' href='diamondC_1x1x1.pwscf.h5' tilematrix='1 0 0 0 1 0 0 0 1' twistnum='0' source='ion' meshfactor='1.0' precision='float'>

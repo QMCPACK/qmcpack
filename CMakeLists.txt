@@ -33,6 +33,37 @@ include(macros)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 include(AddRPATH)
 
+#--------------------------------------------------------------------
+# Check environment variables
+#--------------------------------------------------------------------
+if(DEFINED ENV{CPATH} OR DEFINED ENV{CPLUS_INCLUDE_PATH})
+  set(_env_include_msg "Include environment variable(s) are set:\n")
+  if(DEFINED ENV{CPATH})
+    string(APPEND _env_include_msg "  CPATH = $ENV{CPATH}\n")
+  endif()
+  if(DEFINED ENV{CPLUS_INCLUDE_PATH})
+    string(APPEND _env_include_msg "  CPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n")
+  endif()
+  string(APPEND _env_include_msg
+    "If QMCPACK dependent library header files are located in these directories, "
+    "ensure these variables carry consistent entries during compilation as during CMake configuration.\n"
+    "Commonly on HPC systems using modules, the same modules loaded during CMake configuration "
+    "must also be loaded during compilation.")
+  message(WARNING "${_env_include_msg}")
+endif()
+
+if(DEFINED ENV{LIBRARY_PATH})
+  message(WARNING
+    "LIBRARY_PATH environment variable is set:\n"
+    "  LIBRARY_PATH = $ENV{LIBRARY_PATH}\n"
+    "LIBRARY_PATH is used by the linker during compilation. If QMCPACK dependent libraries (static or dynamic) "
+    "are located in these directories, ensure LIBRARY_PATH remains consistent during compilation as during CMake configuration.\n"
+    "Additionally, if dependent dynamic libraries are located in these directories, LD_LIBRARY_PATH must carry "
+    "consistent entries during run time as during CMake configuration.\n"
+    "Commonly on HPC systems using modules, the same modules loaded during CMake configuration must be loaded "
+    "during compilation, and for dynamic libraries, also during run time.")
+endif()
+
 ######################################################################
 # Build and install options
 ######################################################################
