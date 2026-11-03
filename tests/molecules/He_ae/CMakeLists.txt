@@ -4,46 +4,28 @@ if(MIXED_PRECISION)
   message(VERBOSE "Skipping optimizer deterministic He tests in mixed precision (QMC_MIXED_PRECISION=1)")
 else()
   simple_run_and_check(
-    deterministic-He_ae-opt
-    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt.xml
-    1
-    1
-    check_opt.py
-    -s
-    1
-    -p
-    det_He_opt
-    -r
-    reference.det_He_opt.s001.opt.xml)
+    BASE_NAME deterministic-He_ae-opt
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    INPUT_FILE det_He_opt.xml
+    CHECK_SCRIPT check_opt.py
+    CHECK_ARGS -s 1 -p det_He_opt -r reference.det_He_opt.s001.opt.xml)
 
   simple_run_and_check(
-    deterministic-He_ae-opt
-    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_mwalkers.xml
-    1
-    16
-    check_opt.py
-    -s
-    1
-    -p
-    det_He_opt_mwalkers
-    -r
-    reference.det_He_opt_mwalkers_1-16.s001.opt.xml)
+    BASE_NAME deterministic-He_ae-opt
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    INPUT_FILE det_He_opt_mwalkers.xml
+    THREADS 16
+    CHECK_SCRIPT check_opt.py
+    CHECK_ARGS -s 1 -p det_He_opt_mwalkers -r reference.det_He_opt_mwalkers_1-16.s001.opt.xml)
 
   simple_run_and_check(
-    deterministic-He_ae-opt
-    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_mwalkers.xml
-    2
-    3
-    check_opt.py
-    -s
-    1
-    -p
-    det_He_opt_mwalkers
-    -r
-    reference.det_He_opt_mwalkers_2-3.s001.opt.xml)
+    BASE_NAME deterministic-He_ae-opt
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    INPUT_FILE det_He_opt_mwalkers.xml
+    PROCS 2
+    THREADS 3
+    CHECK_SCRIPT check_opt.py
+    CHECK_ARGS -s 1 -p det_He_opt_mwalkers -r reference.det_He_opt_mwalkers_2-3.s001.opt.xml)
 
   list(APPEND He_VMC_SCALARS "totenergy" "-3.25291030 0.000001")
 
@@ -96,46 +78,28 @@ else()
   list(APPEND He_batch_VMC_MWALKERS_2-3_SCALARS "totenergy" "-2.92537421 0.000001")
 
   simple_run_and_check(
-    deterministic-He_ae-optbatch
-    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_optbatch.xml
-    1
-    1
-    check_opt.py
-    -s
-    1
-    -p
-    det_He_optbatch
-    -r
-    reference.det_He_opt.s001.opt.xml)
+    BASE_NAME deterministic-He_ae-optbatch
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    INPUT_FILE det_He_optbatch.xml
+    CHECK_SCRIPT check_opt.py
+    CHECK_ARGS -s 1 -p det_He_optbatch -r reference.det_He_opt.s001.opt.xml)
 
   simple_run_and_check(
-    deterministic-He_ae-optbatch-mwalkers
-    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_optbatch_mwalkers.xml
-    1
-    16
-    check_opt.py
-    -s
-    1
-    -p
-    det_He_optbatch_mwalkers
-    -r
-    reference.det_He_optbatch_mwalkers_1-16.s001.opt.xml)
+    BASE_NAME deterministic-He_ae-optbatch-mwalkers
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    INPUT_FILE det_He_optbatch_mwalkers.xml
+    THREADS 16
+    CHECK_SCRIPT check_opt.py
+    CHECK_ARGS -s 1 -p det_He_optbatch_mwalkers -r reference.det_He_optbatch_mwalkers_1-16.s001.opt.xml)
 
   simple_run_and_check(
-    deterministic-He_ae-optbatch-mwalkers
-    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_optbatch_mwalkers.xml
-    2
-    3
-    check_opt.py
-    -s
-    1
-    -p
-    det_He_optbatch_mwalkers
-    -r
-    reference.det_He_optbatch_mwalkers_2-3.s001.opt.xml)
+    BASE_NAME deterministic-He_ae-optbatch-mwalkers
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    INPUT_FILE det_He_optbatch_mwalkers.xml
+    PROCS 2
+    THREADS 3
+    CHECK_SCRIPT check_opt.py
+    CHECK_ARGS -s 1 -p det_He_optbatch_mwalkers -r reference.det_He_optbatch_mwalkers_2-3.s001.opt.xml)
 
   qmc_run_and_check(
     deterministic-He_ae-optbatch-vmcbatch

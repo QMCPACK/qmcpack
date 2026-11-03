@@ -167,7 +167,11 @@ qmc_run_and_check(
   DET_SHO_NODRIFT_VMCBATCH_SCALARS
 )
 
-simple_run_and_check(deterministic-sho-grad_lap "${qmcpack_SOURCE_DIR}/tests/models/sho" grad_lap.xml 1 1 check_grad_lap.py)
+simple_run_and_check(
+  BASE_NAME deterministic-sho-grad_lap
+  BASE_DIR "${qmcpack_SOURCE_DIR}/tests/models/sho"
+  INPUT_FILE grad_lap.xml
+  CHECK_SCRIPT check_grad_lap.py)
 
 qmc_run_and_check(
   short-grid_ext_pot-vmc
