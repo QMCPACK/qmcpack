@@ -53,11 +53,15 @@ int main(int argc, char** argv)
 #endif
   try
   {
-    std::optional<int> vnode_ranks;
+    Communicate node_comm{OHMMS::Controller->createNodeComm()};
+    // assign accelerators within a physical node
+    DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
     //qmc_common  and MPI is initialized
     qmcplusplus::qmc_common.initialize(argc, argv);
     std::vector<std::string> fgroup_names_cmd, fgroup_names_txt;
+    std::optional<int> vnode_ranks;
+
     int i = 1;
     while (i < argc)
     {
@@ -220,10 +224,6 @@ int main(int argc, char** argv)
       infoLog.redirectToSameStream(infoSummary);
       infoError.redirectToSameStream(infoSummary);
     }
-
-    Communicate node_comm{OHMMS::Controller->createNodeComm()};
-    // assign accelerators within a node
-    DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
     app_log() << "  Input file(s): ";
     for (int k = 0; k < inputs.size(); ++k)
