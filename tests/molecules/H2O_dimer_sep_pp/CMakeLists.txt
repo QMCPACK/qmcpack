@@ -8,7 +8,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H2O_dimer_sep_pp-j3_dmc_la
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     short-H2O-LA.xml
     1
     16
@@ -19,7 +18,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H2O_dimer_sep_pp-j3_dmcbatch_la
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     short-H2O-LA-batch.xml
     1
     16
@@ -33,7 +31,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H2O_dimer_sep_pp-j3_dmc_tm0
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     short-H2O-TM0.xml
     1
     16
@@ -44,7 +41,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H2O_dimer_sep_pp-j3_dmcbatch_tm0
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     short-H2O-TM0-batch.xml
     1
     16
@@ -58,7 +54,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H2O_dimer_sep_pp-j3_dmc_tm1
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     short-H2O-TM1.xml
     1
     16
@@ -69,7 +64,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H2O_dimer_sep_pp-j3_dmcbatch_tm1
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     short-H2O-TM1-batch.xml
     1
     16
@@ -83,7 +77,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H2O_dimer_sep_pp-j3_dmc_tm3
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     short-H2O-TM3.xml
     1
     16
@@ -94,7 +87,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-H2O_dimer_sep_pp-j3_dmcbatch_tm3
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     short-H2O-TM3-batch.xml
     1
     16
@@ -109,7 +101,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-H2O_dimer_sep_pp-j3_dmc_la
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     long-H2O-LA.xml
     1
     16
@@ -120,7 +111,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-H2O_dimer_sep_pp-j3_dmcbatch_la
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     long-H2O-LA-batch.xml
     1
     16
@@ -134,7 +124,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-H2O_dimer_sep_pp-j3_dmc_tm0
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     long-H2O-TM0.xml
     1
     16
@@ -145,7 +134,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-H2O_dimer_sep_pp-j3_dmcbatch_tm0
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     long-H2O-TM0-batch.xml
     1
     16
@@ -159,7 +147,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-H2O_dimer_sep_pp-j3_dmc_tm1
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     long-H2O-TM1.xml
     1
     16
@@ -170,7 +157,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-H2O_dimer_sep_pp-j3_dmcbatch_tm1
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     long-H2O-TM1-batch.xml
     1
     16
@@ -184,7 +170,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-H2O_dimer_sep_pp-j3_dmc_tm3
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     long-H2O-TM3.xml
     1
     16
@@ -195,7 +180,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-H2O_dimer_sep_pp-j3_dmcbatch_tm3
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
-    H2O
     long-H2O-TM3-batch.xml
     1
     16

@@ -59,6 +59,8 @@ public:
 
   /** Reject invalid weights on one rank uniformly before modifying populations. */
   void testInvalidWeights(QMCTraits::FullPrecRealType invalid_weight);
+  /** Verify branching edge cases e.g. zero walkers/extinction. */
+  void testBranching();
 
   /** This test function manipulates walker multiplicity and then checks that after "population control"
    *  that the number of walkers per rank is correct. Multiplicity in normal branching steps is a set

@@ -12,7 +12,6 @@ list(APPEND BCC_H_SCALARS "samples" "960000 0.0")
 qmc_run_and_check(
   short-bccH_1x1x1_ae-vmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_short
   qmc_short.in.xml
   1
   16
@@ -30,7 +29,6 @@ list(APPEND BCC_H_DMC_SCALARS "eeenergy" "-0.77985 0.00069")
 qmc_run_and_check(
   short-bccH_1x1x1_ae-dmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_short_vmc_dmc
   qmc_short_vmc_dmc.in.xml
   1
   16
@@ -43,7 +41,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-bccH_1x1x1_ae-vmc-all-nodrift_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_short_vmc_all_nodrift
   qmc_short_vmc_all_nodrift.in.xml
   1
   16
@@ -56,7 +53,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-bccH_1x1x1_ae-vmc-all_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_short_vmc_all
   qmc_short_vmc_all.in.xml
   1
   16
@@ -69,7 +65,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-bccH_1x1x1_ae-dmc-all_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_short_vmc_dmc_all
   qmc_short_vmc_dmc_all.in.xml
   1
   16
@@ -89,7 +84,6 @@ list(APPEND DET_BCC_H_CSVMC_SCALARS "dionion_AB" "-0.0047340219 0.0000001")
 qmc_run_and_check(
   deterministic-bccH_1x1x1_ae-csvmc-all_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  det_qmc_csvmc_all
   det_qmc_csvmc_all.in.xml
   1
   1
@@ -113,7 +107,6 @@ list(APPEND BCC_H_CSVMC_SCALARS "deeenergy_AB" "-0.000603 0.00005")
 qmc_run_and_check(
   short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_short_csvmc_pbyp_nodrift
   qmc_short_csvmc_pbyp_nodrift.in.xml
   16
   1
@@ -136,7 +129,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_short_csvmc_all_nodrift
   qmc_short_csvmc_all_nodrift.in.xml
   16
   1
@@ -149,7 +141,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-bccH_1x1x1_ae-csvmc-all_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_short_csvmc_all
   qmc_short_csvmc_all.in.xml
   16
   1
@@ -163,7 +154,6 @@ list(APPEND BCC_H_RMC_SCALARS "totenergy" "-1.8420 0.0011")
 qmc_run_and_check(
   short-bccH_1x1x1_ae-rmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_short_vmc_rmc
   qmc_short_vmc_rmc.in.xml
   1
   16
@@ -175,7 +165,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-bccH_1x1x1_ae-rmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_short_vmc_rmc
   qmc_short_vmc_rmc.in.xml
   4
   4
@@ -196,7 +185,6 @@ list(APPEND BCC_H_PW_SCALARS "samples" "96000 0.0")
 qmc_run_and_check(
   short-bccH_1x1x1_ae-vmc_sdj-pw
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_short_pw
   qmc_short_pw.in.xml
   1
   16
@@ -208,7 +196,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-bccH_1x1x1_ae-vmcbatch_sdj-pw
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_short_batch_pw
   qmc_short_batch_pw.in.xml
   1
   16
@@ -220,7 +207,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-bccH_1x1x1_ae-vmcbatch_sdj-pw
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_short_batch_pw
   qmc_short_batch_pw.in.xml
   16
   1
@@ -232,7 +218,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-bccH_1x1x1_ae-vmcbatch_sdj-pw
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_short_batch_pw
   qmc_short_batch_pw.in.xml
   4
   4
@@ -251,7 +236,6 @@ list(APPEND LONG_BCC_H_SCALARS "samples" "921600000 0.0")
 qmc_run_and_check(
   long-bccH_1x1x1_ae-vmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_long
   qmc_long.in.xml
   1
   16
@@ -266,7 +250,6 @@ list(APPEND LONG_BCC_H_DMC_SCALARS "totenergy" "-1.841204 0.000285")
 qmc_run_and_check(
   long-bccH_1x1x1_ae-dmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_long_vmc_dmc
   qmc_long_vmc_dmc.in.xml
   1
   16
@@ -285,7 +268,6 @@ list(APPEND LONG_BCC_H_RMC_SCALARS "eeenergy_pure" "-0.78335 0.00019")
 qmc_run_and_check(
   long-bccH_1x1x1_ae-rmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  qmc_long_vmc_rmc
   qmc_long_vmc_rmc.in.xml
   1
   16

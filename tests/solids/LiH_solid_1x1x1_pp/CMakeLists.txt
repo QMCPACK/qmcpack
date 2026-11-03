@@ -10,7 +10,6 @@ list(APPEND LIH_GAMMA_SCALARS "samples" "1600000 0.0")
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_LiH-gamma
   hf_vmc_LiH-gamma.xml
   1
   16
@@ -22,7 +21,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_LiH-gamma-drift
   hf_vmc_LiH-gamma-drift.xml
   1
   16
@@ -34,7 +32,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-gamma-drift-vmcbatch_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-gamma-drift
   hf_vmcbatch_LiH-gamma-drift.xml
   1
   16
@@ -51,7 +48,6 @@ list(APPEND LIH_X_SCALARS "samples" "1600000 0.0")
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-x-vmc_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_LiH-x
   hf_vmc_LiH-x.xml
   1
   16
@@ -63,7 +59,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_LiH-x-drift
   hf_vmc_LiH-x-drift.xml
   1
   16
@@ -75,7 +70,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-x-drift-vmcbatch_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-x-drift
   hf_vmcbatch_LiH-x-drift.xml
   1
   16
@@ -88,7 +82,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_LiH-x
   hf_vmc_LiH-x_hybridrep.xml
   1
   16
@@ -112,7 +105,6 @@ endif()
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_LiH-arb
   hf_vmc_LiH-arb.xml
   1
   16
@@ -124,7 +116,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_LiH-arb-drift
   hf_vmc_LiH-arb-drift.xml
   1
   16
@@ -136,7 +127,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-arb-drift-vmcbatch_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-arb-drift
   hf_vmcbatch_LiH-arb-drift.xml
   1
   16
@@ -151,7 +141,6 @@ if(QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_solid_1x1x1_pp-gamma-vmc_msdj
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    md_cc_vmc_LiH-gamma
     md_cc_vmc_LiH-gamma.xml
     1
     16
@@ -164,7 +153,6 @@ else()
   qmc_run_and_check(
     short-LiH_solid_1x1x1_pp-gamma-vmc_msdj
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    md_rc_vmc_LiH-gamma
     md_rc_vmc_LiH-gamma.xml
     1
     16
@@ -180,7 +168,6 @@ list(APPEND LIH_GAMMA_DMC_SCALARS "totenergy" "-8.54823 0.004")
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_dmc_short_LiH-gamma
   hf_vmc_dmc_short_LiH-gamma.xml
   1
   16
@@ -193,7 +180,6 @@ list(APPEND LIH_X_DMC_SCALARS "totenergy" "-8.31413 0.005")
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-x-dmc-hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_dmc_short_LiH-x
   hf_vmc_dmc_short_LiH-x.xml
   1
   16
@@ -206,7 +192,6 @@ list(APPEND LIH_ARB_DMC_SCALARS "totenergy" "-8.45401 0.004")
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_dmc_short_LiH-arb
   hf_vmc_dmc_short_LiH-arb.xml
   1
   16
@@ -219,7 +204,6 @@ list(APPEND LIH_GAMMA_DMCNL_SCALARS "totenergy" "-8.54979 0.004")
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_dmcnl_short_LiH-gamma
   hf_vmc_dmcnl_short_LiH-gamma.xml
   1
   16
@@ -232,7 +216,6 @@ list(APPEND LIH_X_DMCNL_SCALARS "totenergy" "-8.31369 0.004")
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_dmcnl_short_LiH-x
   hf_vmc_dmcnl_short_LiH-x.xml
   1
   16
@@ -245,7 +228,6 @@ list(APPEND LIH_ARB_DMCNL_SCALARS "totenergy" "-8.45174 0.004")
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_dmcnl_short_LiH-arb
   hf_vmc_dmcnl_short_LiH-arb.xml
   1
   16
@@ -294,7 +276,6 @@ endif()
 qmc_run_and_check(
   deterministic-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  det_hf_vmc_LiH-gamma
   det_hf_vmc_LiH-gamma.xml
   1
   1
@@ -306,7 +287,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-batched
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  det_hf_vmc_LiH-gamma_batched
   det_hf_vmc_LiH-gamma_batched.xml
   1
   1
@@ -321,7 +301,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  det_ensemble_blocks_hf_vmc_LiH-gamma
   det_ensemble_blocks_hf_vmc_LiH-gamma.txt
   4
   1
@@ -330,7 +309,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  det_ensemble_blocks_hf_vmc_LiH-gamma
   det_ensemble_blocks_hf_vmc_LiH-gamma.txt
   3
   1
@@ -339,7 +317,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  det_ensemble_blocks_hf_vmc_LiH-gamma
   det_ensemble_blocks_hf_vmc_LiH-gamma.txt
   5
   1
