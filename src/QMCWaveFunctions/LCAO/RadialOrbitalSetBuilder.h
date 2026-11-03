@@ -26,6 +26,7 @@
 #include "OptimizableFunctorBase.h"
 #include "Numerics/OneDimGridFactory.h"
 #include "Message/MPIObjectBase.h"
+#include "Message/UniformCommunicateError.h"
 #include "MultiQuinticSpline1D.h"
 
 
@@ -203,7 +204,7 @@ bool RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive& hin)
   myComm.bcast(npts);
 
   if (gridtype.empty())
-    myComm.barrier_and_abort("Grid type is not specified.");
+    throw UniformCommunicateError("Grid type is not specified.");
 
   if (gridtype == "log")
   {
@@ -245,7 +246,7 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbital(xmlNodePtr cur,
   else if (radtype == "Slater" || radtype == "STO")
     addSlater(cur);
   else
-    myComm.barrier_and_abort("Purely numerical atomic orbitals are not supported any longer.");
+    throw UniformCommunicateError("Purely numerical atomic orbitals are not supported any longer.");
   return true;
 }
 
@@ -264,10 +265,10 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbitalH5(hdf_archive& hin,
     addGaussianH5(hin);
   else if (radtype == "Slater" || radtype == "STO")
     // addSlaterH5(hin);
-    myComm.barrier_and_abort(
+    throw UniformCommunicateError(
         " RadType: Slater. Any type other than Gaussian not implemented in H5 format. Please contact developers.");
   else
-    myComm.barrier_and_abort(
+    throw UniformCommunicateError(
         " RadType: Numerical. Any type other than Gaussian not implemented in H5 format. Please contact developers.");
   return true;
 }

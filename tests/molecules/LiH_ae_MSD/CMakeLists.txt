@@ -12,8 +12,18 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_ae-vmc_msdj_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
-    vmc_short_noj
     vmc_short_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    LiH_ae_MSD_NOJ_SHORT_SCALARS #VMC
+  )
+
+  qmc_run_and_check(
+    short-LiH_ae-vmcbatch_msdj_noj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+    vmcbatch_short_noj.in.xml
     1
     16
     TRUE
@@ -35,8 +45,18 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_ae-vmc_msdj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
-    vmc_short
     vmc_short.in.xml
+    1
+    16
+    TRUE
+    0
+    LiH_ae_MSD_SHORT_SCALARS # VMC
+  )
+
+  qmc_run_and_check(
+    short-LiH_ae-vmcbatch_msdj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+    vmcbatch_short.in.xml
     1
     16
     TRUE
@@ -57,8 +77,18 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_ae-msdj_optCI-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
-    vmc_short_opt_CI
     vmc_short_opt_CI.in.xml
+    1
+    16
+    TRUE
+    0
+    LiH_ae_MSD_OPT_CI_SHORT_SCALARS # VMC
+  )
+
+  qmc_run_and_check(
+    short-LiH_ae-msdj_optCI-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+    vmcbatch_short_opt_CI.in.xml
     1
     16
     TRUE
@@ -80,8 +110,18 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-LiH_ae-vmc_msdj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
-    vmc_long
     vmc_long.in.xml
+    1
+    16
+    TRUE
+    0
+    LiH_ae_MSD_SCALARS # VMC
+  )
+
+  qmc_run_and_check(
+    long-LiH_ae-vmcbatch_msdj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+    vmcbatch_long.in.xml
     1
     16
     TRUE
@@ -103,8 +143,18 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-LiH_ae-vmc_msdj_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
-    vmc_long_noj
     vmc_long_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    LiH_ae_MSD_NOJ_SCALARS # VMC
+  )
+
+  qmc_run_and_check(
+    long-LiH_ae-vmcbatch_msdj_noj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+    vmcbatch_long_noj.in.xml
     1
     16
     TRUE
@@ -124,8 +174,18 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-LiH_ae-msdj_optCI-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
-    vmc_long_opt_CI
     vmc_long_opt_CI.in.xml
+    1
+    16
+    TRUE
+    0
+    LiH_ae_MSD_OPT_CI_SCALARS # VMC
+  )
+
+  qmc_run_and_check(
+    long-LiH_ae-msdj_optCI-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+    vmcbatch_long_opt_CI.in.xml
     1
     16
     TRUE
@@ -140,16 +200,29 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     deterministic-ensemble_blocks_LiH_ae-vmc_msdj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
-    det_ensemble_blocks_vmc_msdj
     det_ensemble_blocks_vmc_msdj.txt
     4
     1
     TRUE)
 
+  simple_run_and_check(
+    deterministic-ensemble_blocks_LiH_ae-vmcbatch_msdj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+    det_ensemble_blocks_vmcbatch_msdj.txt
+    4
+    1
+    check_ensemble.py
+    --ranks
+    4
+    --prefix
+    det_ensemble_blocks_vmc_msdj
+    --ionion
+    0.995380119260
+  )
+
   qmc_run_and_check(
     deterministic-ensemble_blocks_LiH_ae-vmc_msdj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
-    det_ensemble_blocks_vmc_msdj
     det_ensemble_blocks_vmc_msdj.txt
     3
     1
@@ -158,11 +231,25 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     deterministic-ensemble_blocks_LiH_ae-vmc_msdj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
-    det_ensemble_blocks_vmc_msdj
     det_ensemble_blocks_vmc_msdj.txt
     5
     1
     TRUE)
+
+  simple_run_and_check(
+    deterministic-ensemble_blocks_LiH_ae-vmcbatch_msdj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+    det_ensemble_blocks_vmcbatch_msdj.txt
+    5
+    1
+    check_ensemble.py
+    --ranks
+    5
+    --prefix
+    det_ensemble_blocks_vmc_msdj
+    --ionion
+    0.995380119260
+  )
 
 
   # self-healing deterministic vmc tests

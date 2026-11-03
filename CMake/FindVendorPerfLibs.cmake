@@ -28,6 +28,8 @@
 
 # FindVendorPerfLibs.cmake
 #
+# This module is maintained at https://github.com/ye-luo/cmake_repo/tree/master/VendorPerfLibs
+#
 # Searches for Vendor Performance Libraries (such as Intel MKL, AMD AOCL, or generic
 # equivalents like Netlib LAPACK and FFTW) and provides a unified interface.
 #
@@ -35,6 +37,11 @@
 # - lapack : Linear Algebra PACKage
 # - fft    : Fast Fourier Transform
 # - vml    : Vector Math Library
+#
+# Requirements:
+# - The fft component for the Generic and AOCL vendors relies on a project-supplied FindFFTW.cmake
+#   (it is not part of CMake). It must be reachable via CMAKE_MODULE_PATH and support the COMPONENTS
+#   "seq" and "omp", and define FFTW_FOUND, FFTW_INCLUDE_DIR and FFTW_LIBRARIES.
 #
 # Example usage:
 #   find_package(VendorPerfLibs COMPONENTS lapack fft vml REQUIRED)
@@ -44,6 +51,13 @@
 # - VPL::lapack
 # - VPL::fft
 # - VPL::vml
+#
+# These imported targets are the supported interface of this module. Link against them rather than
+# relying on any other variable set by this module.
+#
+# Result variables:
+# - VendorPerfLibs_FOUND         : TRUE if the requested components were found.
+# - VendorPerfLibs_<comp>_FOUND  : TRUE if component <comp> (lapack, fft or vml) was found.
 #
 # Input variables:
 # - VPL_ID: Specifies the vendor performance library family to search for.
@@ -64,13 +78,16 @@
 #     6. "CrayLibSci" if the Cray libsci pkg-config package was found.
 #     7. "Generic" if all previous rules fail.
 #
+#   Note: Autodetection skips (with a warning) AOCL if CMake < 3.27 and NVPL if CMake < 4.1, since the
+#   corresponding BLA_VENDOR values are unavailable. Setting VPL_ID=AOCL or VPL_ID=NVPL explicitly with an
+#   older CMake is a fatal error.
+#
 # - VPL_OMP: If ON, OpenMP threading is requested. If OFF (default), sequential is used.
 #   Note: If ON, you must call find_package(OpenMP) before finding VendorPerfLibs.
 #   It is recommended to set the following in the project top-level for consistent selection of threading.
 #   option(VPL_OMP "Use OpenMP threading for Vendor Performance Libraries" ${<project_OpenMP_variable>})
 #
 # Advanced Component-Specific Variables:
-# - VPL_lapack_ID: Overrides VPL_ID specifically for the LAPACK component.
 # - VPL_fft_ID: Overrides VPL_ID specifically for the FFT component.
 # - VPL_vml_ID: Overrides VPL_ID specifically for the VML component.
 #
@@ -79,6 +96,13 @@ include(FindPackageHandleStandardArgs)
 include(FindPackageMessage)
 include(CMakePushCheckState)
 find_package(PkgConfig QUIET)
+
+# Cray prefixes must be on CMAKE_PREFIX_PATH for FindBLAS/FindLAPACK (pkg-config) and pkg_check_modules.
+# Save the caller's value, so that it can be restored if the libraries are not found (see end of this module).
+set(_vpl_saved_CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH}")
+if(DEFINED ENV{CRAY_LIBSCI_PREFIX_DIR} AND NOT "$ENV{CRAY_LIBSCI_PREFIX_DIR}" IN_LIST CMAKE_PREFIX_PATH)
+  list(APPEND CMAKE_PREFIX_PATH "$ENV{CRAY_LIBSCI_PREFIX_DIR}")
+endif()
 
 if(NOT (CMAKE_C_COMPILER_LOADED OR CMAKE_CXX_COMPILER_LOADED))
   message(FATAL_ERROR "VendorPerfLibs: C or CXX compiler must be loaded before calling find_package(VendorPerfLibs)")
@@ -90,29 +114,78 @@ if(VPL_OMP)
   if(NOT OpenMP_FOUND)
     message(FATAL_ERROR "VendorPerfLibs: VPL_OMP is ON but OpenMP_FOUND is false. Please invoke find_package(OpenMP) before VendorPerfLibs.")
   endif()
+  # CMAKE_REQUIRED_LINK_OPTIONS expects a list, whereas OpenMP_<lang>_FLAGS is a space-separated string.
+  # (CMAKE_REQUIRED_LIBRARIES cannot be used here since FindBLAS/FindLAPACK overwrite it.)
+  set(_vpl_omp_flags)
   if(CMAKE_Fortran_COMPILER_LOADED AND OpenMP_Fortran_FOUND)
-    set(CMAKE_REQUIRED_LINK_OPTIONS ${OpenMP_Fortran_FLAGS})
+    separate_arguments(_vpl_omp_flags NATIVE_COMMAND "${OpenMP_Fortran_FLAGS}")
   elseif(CMAKE_C_COMPILER_LOADED AND OpenMP_C_FOUND)
-    set(CMAKE_REQUIRED_LINK_OPTIONS ${OpenMP_C_FLAGS})
+    separate_arguments(_vpl_omp_flags NATIVE_COMMAND "${OpenMP_C_FLAGS}")
   elseif(CMAKE_CXX_COMPILER_LOADED AND OpenMP_CXX_FOUND)
-    set(CMAKE_REQUIRED_LINK_OPTIONS ${OpenMP_CXX_FLAGS})
+    separate_arguments(_vpl_omp_flags NATIVE_COMMAND "${OpenMP_CXX_FLAGS}")
   endif()
+  set(CMAKE_REQUIRED_LINK_OPTIONS ${_vpl_omp_flags})
+  unset(_vpl_omp_flags)
 endif()
 
 set(_VPL_VALID_IDS "IntelMKL" "AOCL" "ARMPL" "NVPL" "CrayLibSci" "Generic")
-function(check_VPL_ID var_name id_to_check)
+function(_vpl_check_ID var_name id_to_check)
   if(NOT id_to_check IN_LIST _VPL_VALID_IDS)
     message(FATAL_ERROR "VendorPerfLibs: Unknown ${var_name} '${id_to_check}'. Acceptable values are: 'IntelMKL', 'AOCL', 'ARMPL', 'NVPL', 'CrayLibSci', 'Generic'")
   endif()
 endfunction()
 
-macro(speculateVendor)
+# FindBLAS/FindLAPACK are driven through BLA_* variables, which this module sets.
+# Save the caller's values on entry so that they can be restored for a Generic search, or on module exit
+# when the vendor libraries were not found. When found, the BLA_* variables intentionally persist.
+set(_VPL_BLA_VARS BLA_VENDOR BLA_THREAD BLA_PREFER_PKGCONFIG BLA_PKGCONFIG_BLAS BLA_PKGCONFIG_LAPACK)
+macro(_vpl_save_BLA_vars)
+  foreach(_vpl_bla_var IN LISTS _VPL_BLA_VARS)
+    if(DEFINED ${_vpl_bla_var})
+      set(_vpl_saved_${_vpl_bla_var} "${${_vpl_bla_var}}")
+      set(_vpl_had_${_vpl_bla_var} TRUE)
+    else()
+      set(_vpl_had_${_vpl_bla_var} FALSE)
+    endif()
+  endforeach()
+  unset(_vpl_bla_var)
+endmacro()
+macro(_vpl_restore_BLA_vars)
+  foreach(_vpl_bla_var IN LISTS _VPL_BLA_VARS)
+    if(_vpl_had_${_vpl_bla_var})
+      set(${_vpl_bla_var} "${_vpl_saved_${_vpl_bla_var}}")
+    else()
+      unset(${_vpl_bla_var})
+    endif()
+  endforeach()
+  unset(_vpl_bla_var)
+endmacro()
+macro(_vpl_clear_BLA_vars)
+  foreach(_vpl_bla_var IN LISTS _VPL_BLA_VARS)
+    unset(_vpl_saved_${_vpl_bla_var})
+    unset(_vpl_had_${_vpl_bla_var})
+  endforeach()
+  unset(_vpl_bla_var)
+endmacro()
+
+_vpl_save_BLA_vars()
+
+# MKL search hints from MKLROOT. Only add them when MKLROOT is set: otherwise "$ENV{MKLROOT}/include" would
+# expand to "/include" and search the filesystem root.
+set(_VPL_MKL_LIB_HINTS)
+set(_VPL_MKL_INC_HINTS)
+if(DEFINED ENV{MKLROOT} AND NOT "$ENV{MKLROOT}" STREQUAL "")
+  set(_VPL_MKL_LIB_HINTS "$ENV{MKLROOT}/lib/intel64" "$ENV{MKLROOT}/lib")
+  set(_VPL_MKL_INC_HINTS "$ENV{MKLROOT}/include")
+endif()
+
+macro(_vpl_speculate_vendor)
   find_library(_MKL_CORE_TEST_LIB NAMES mkl_core
     HINTS
-      "$ENV{MKLROOT}/lib/intel64"
+      ${_VPL_MKL_LIB_HINTS}
   )
 
-  find_library(AOCL_UTILS_LIB NAMES aoclutils)
+  find_library(_AOCL_UTILS_LIB NAMES aoclutils)
 
   find_library(_ARMPL_TEST_LIB NAMES armpl_lp64 armpl_lp64_mp armpl)
 
@@ -122,12 +195,29 @@ macro(speculateVendor)
     pkg_check_modules(_CRAY_LIBSCI_PKG QUIET sci)
   endif()
 
+  # Do not guess a vendor whose BLA_VENDOR support requires a newer CMake than the one running:
+  # fall back to the next candidate (eventually Generic) with a warning instead of failing later.
+  set(_vpl_aocl_usable ${_AOCL_UTILS_LIB})
+  if(_AOCL_UTILS_LIB AND CMAKE_VERSION VERSION_LESS 3.27)
+    set(_vpl_aocl_usable FALSE)
+    if(NOT VendorPerfLibs_FIND_QUIETLY)
+      message(WARNING "VendorPerfLibs: aoclutils library file found but AOCL support requires CMake 3.27 or newer (current: ${CMAKE_VERSION}). Ignoring AOCL.")
+    endif()
+  endif()
+  set(_vpl_nvpl_usable ${nvpl_FOUND})
+  if(nvpl_FOUND AND CMAKE_VERSION VERSION_LESS 4.1)
+    set(_vpl_nvpl_usable FALSE)
+    if(NOT VendorPerfLibs_FIND_QUIETLY)
+      message(WARNING "VendorPerfLibs: nvpl package found but NVPL support requires CMake 4.1 or newer (current: ${CMAKE_VERSION}). Ignoring NVPL.")
+    endif()
+  endif()
+
   if(_MKL_CORE_TEST_LIB)
     set(VPL_ID_GUESS "IntelMKL")
     if(NOT VendorPerfLibs_FIND_QUIETLY)
       message(STATUS "Found mkl_core library file. Guessed VPL_ID 'IntelMKL'.")
     endif()
-  elseif(AOCL_UTILS_LIB)
+  elseif(_vpl_aocl_usable)
     set(VPL_ID_GUESS "AOCL")
     if(NOT VendorPerfLibs_FIND_QUIETLY)
       message(STATUS "Found aoclutils library file. Guessed VPL_ID 'AOCL'.")
@@ -137,7 +227,7 @@ macro(speculateVendor)
     if(NOT VendorPerfLibs_FIND_QUIETLY)
       message(STATUS "Found armpl library file. Guessed VPL_ID 'ARMPL'.")
     endif()
-  elseif(nvpl_FOUND)
+  elseif(_vpl_nvpl_usable)
     set(VPL_ID_GUESS "NVPL")
     if(NOT VendorPerfLibs_FIND_QUIETLY)
       message(STATUS "Found nvpl package. Guessed VPL_ID 'NVPL'.")
@@ -153,6 +243,8 @@ macro(speculateVendor)
       message(STATUS "Signs of vendor performance libraries not found. Guessed VPL_ID 'Generic'.")
     endif()
   endif()
+  unset(_vpl_aocl_usable)
+  unset(_vpl_nvpl_usable)
 endmacro()
 
 if(NOT VPL_ID)
@@ -163,21 +255,22 @@ if(NOT VPL_ID)
       message(STATUS "BLA_VENDOR has been set to '${BLA_VENDOR}'. Guessed VPL_ID 'Generic'.")
     endif()
   else()
-    speculateVendor()
+    _vpl_speculate_vendor()
   endif()
 else()
-  check_VPL_ID("VPL_ID" "${VPL_ID}")
+  _vpl_check_ID("VPL_ID" "${VPL_ID}")
   set(VPL_ID_GUESS "${VPL_ID}")
 endif()
 
 set(VPL_ID "${VPL_ID_GUESS}" CACHE STRING "Vendor Performance Library ID (IntelMKL, AOCL, ARMPL, NVPL, CrayLibSci, Generic)")
+set_property(CACHE VPL_ID PROPERTY STRINGS ${_VPL_VALID_IDS})
 
 set(_find_package_args)
 if(VendorPerfLibs_FIND_QUIETLY)
   list(APPEND _find_package_args QUIET)
 endif()
 
-function(warn_MKL_Fortran_ABI_issue CORE_LIB_VAR)
+function(_vpl_warn_MKL_Fortran_ABI_issue CORE_LIB_VAR)
   # https://gitlab.kitware.com/cmake/cmake/-/merge_requests/12479
   # Switch to GNU Fortran ABI regarding how functions return complex numbers and how characters are passed (but not on Apple, where MKL does not provide it).
   # GNU and LLVMFlang families of compilers follow modern C99 _Complex ABI convention.
@@ -197,7 +290,7 @@ function(warn_MKL_Fortran_ABI_issue CORE_LIB_VAR)
   endif()
 endfunction()
 
-macro(find_VPL_core)
+macro(_vpl_find_core)
   set(VPL_CORE_FOUND TRUE)
   if(VPL_ID STREQUAL "IntelMKL")
     # MKL core library support BLAS/LAPACK and FFT.
@@ -214,13 +307,18 @@ macro(find_VPL_core)
     # Try to find MKL include directory
     find_path(VendorPerfLibs_INCLUDE_DIR NAMES mkl.h
       HINTS
-        "$ENV{MKLROOT}/include"
+        ${_VPL_MKL_INC_HINTS}
       PATH_SUFFIXES mkl
     )
 
     if(BLAS_FOUND AND VendorPerfLibs_INCLUDE_DIR)
-      warn_MKL_Fortran_ABI_issue(BLAS_LIBRARIES)
-      set(VPL_CORE_LIBRARIES ${BLAS_LIBRARIES})
+      _vpl_warn_MKL_Fortran_ABI_issue(BLAS_LIBRARIES)
+      # Prefer the BLAS::BLAS target: unlike BLAS_LIBRARIES it also carries BLAS_LINKER_FLAGS.
+      if(TARGET BLAS::BLAS)
+        set(VPL_CORE_LIBRARIES BLAS::BLAS)
+      else()
+        set(VPL_CORE_LIBRARIES ${BLAS_LIBRARIES})
+      endif()
     else()
       set(VPL_CORE_FOUND FALSE)
       if(NOT VendorPerfLibs_FIND_QUIETLY)
@@ -229,10 +327,10 @@ macro(find_VPL_core)
           list(APPEND _vpl_warning_core_mkl "Intel header file mkl.h not found.\n")
         endif()
         if(NOT BLAS_FOUND)
-          # exactly the same check as in speculateVendor in case it was not called.
+          # exactly the same check as in _vpl_speculate_vendor in case it was not called.
           find_library(_MKL_CORE_TEST_LIB NAMES mkl_core
             HINTS
-              "$ENV{MKLROOT}/lib/intel64"
+              ${_VPL_MKL_LIB_HINTS}
           )
           if(_MKL_CORE_TEST_LIB)
             list(APPEND _vpl_warning_core_mkl "Intel mkl_core library file was found. FindBLAS failed most likely when testing linking MKL for complex reasons.\n")
@@ -247,6 +345,9 @@ macro(find_VPL_core)
       endif()
     endif()
   elseif(VPL_ID STREQUAL "AOCL")
+    if(CMAKE_VERSION VERSION_LESS 3.27)
+      message(FATAL_ERROR "VendorPerfLibs: AOCL support requires CMake 3.27 or newer (current: ${CMAKE_VERSION})")
+    endif()
     list(APPEND _vpl_required_vars VendorPerfLibs_INCLUDE_DIR)
 
     set(_vpl_warning_core_aocl)
@@ -272,7 +373,12 @@ macro(find_VPL_core)
     find_path(VendorPerfLibs_INCLUDE_DIR NAMES armpl.h)
 
     if(BLAS_FOUND AND VendorPerfLibs_INCLUDE_DIR)
-      set(VPL_CORE_LIBRARIES ${BLAS_LIBRARIES})
+      # Prefer the BLAS::BLAS target: unlike BLAS_LIBRARIES it also carries BLAS_LINKER_FLAGS.
+      if(TARGET BLAS::BLAS)
+        set(VPL_CORE_LIBRARIES BLAS::BLAS)
+      else()
+        set(VPL_CORE_LIBRARIES ${BLAS_LIBRARIES})
+      endif()
     else()
       set(VPL_CORE_FOUND FALSE)
       if(NOT VendorPerfLibs_FIND_QUIETLY)
@@ -343,14 +449,8 @@ macro(find_VPL_core)
   endif()
 endmacro()
 
-macro(find_VPL_lapack)
-  set(VPL_lapack_ID ${VPL_ID} CACHE STRING "Vendor LAPACK ID (IntelMKL, AOCL, ARMPL, NVPL, CrayLibSci, Generic)")
-  check_VPL_ID("VPL_lapack_ID" "${VPL_lapack_ID}")
-
-  if(VPL_lapack_ID STREQUAL "IntelMKL")
-    if(NOT VPL_ID STREQUAL "IntelMKL")
-      message(FATAL_ERROR "VendorPerfLibs: VPL_lapack_ID is IntelMKL but VPL_ID is not IntelMKL. Unsupported.")
-    endif()
+macro(_vpl_find_lapack)
+  if(VPL_ID STREQUAL "IntelMKL")
     if(NOT VPL_OMP)
       set(BLA_VENDOR "Intel10_64lp_seq")
     else()
@@ -358,32 +458,23 @@ macro(find_VPL_lapack)
     endif()
     find_package(LAPACK ${_find_package_args})
     if(LAPACK_FOUND)
-      warn_MKL_Fortran_ABI_issue(LAPACK_LIBRARIES)
+      _vpl_warn_MKL_Fortran_ABI_issue(LAPACK_LIBRARIES)
     endif()
-  elseif(VPL_lapack_ID STREQUAL "AOCL")
-    if(NOT VPL_ID STREQUAL "AOCL")
-      message(FATAL_ERROR "VendorPerfLibs: VPL_lapack_ID is AOCL but VPL_ID is not AOCL. Unsupported.")
-    endif()
+  elseif(VPL_ID STREQUAL "AOCL")
     if(NOT VPL_OMP)
       set(BLA_VENDOR "AOCL")
     else()
       set(BLA_VENDOR "AOCL_mt")
     endif()
     find_package(LAPACK ${_find_package_args})
-  elseif(VPL_lapack_ID STREQUAL "ARMPL")
-    if(NOT VPL_ID STREQUAL "ARMPL")
-      message(FATAL_ERROR "VendorPerfLibs: VPL_lapack_ID is ARMPL but VPL_ID is not ARMPL. Unsupported.")
-    endif()
+  elseif(VPL_ID STREQUAL "ARMPL")
     if(NOT VPL_OMP)
       set(BLA_VENDOR "Arm")
     else()
       set(BLA_VENDOR "Arm_mp")
     endif()
     find_package(LAPACK ${_find_package_args})
-  elseif(VPL_lapack_ID STREQUAL "NVPL")
-    if(NOT VPL_ID STREQUAL "NVPL")
-      message(FATAL_ERROR "VendorPerfLibs: VPL_lapack_ID is NVPL but VPL_ID is not NVPL. Unsupported.")
-    endif()
+  elseif(VPL_ID STREQUAL "NVPL")
     if(NOT VPL_OMP)
       set(BLA_THREAD "SEQ")
     else()
@@ -391,10 +482,7 @@ macro(find_VPL_lapack)
     endif()
     set(BLA_VENDOR "NVPL")
     find_package(LAPACK ${_find_package_args})
-  elseif(VPL_lapack_ID STREQUAL "CrayLibSci")
-    if(NOT VPL_ID STREQUAL "CrayLibSci")
-      message(FATAL_ERROR "VendorPerfLibs: VPL_lapack_ID is CrayLibSci but VPL_ID is not CrayLibSci. Unsupported.")
-    endif()
+  elseif(VPL_ID STREQUAL "CrayLibSci")
     if(VPL_OMP)
       set(_cray_libsci_name "sci_mp")
     else()
@@ -412,30 +500,38 @@ macro(find_VPL_lapack)
   endif()
 
   if(LAPACK_FOUND)
-    list(APPEND _vpl_lib_found_ids "lapack(${VPL_lapack_ID})")
+    # Prefer the LAPACK::LAPACK target: unlike LAPACK_LIBRARIES it also carries LAPACK_LINKER_FLAGS.
+    if(TARGET LAPACK::LAPACK)
+      set(VPL_LAPACK_LINK LAPACK::LAPACK)
+    else()
+      set(VPL_LAPACK_LINK ${LAPACK_LIBRARIES})
+    endif()
+    list(APPEND _vpl_lib_found_ids "lapack(${VPL_ID})")
     set(VendorPerfLibs_lapack_FOUND TRUE)
   else()
     set(VendorPerfLibs_lapack_FOUND FALSE)
     if(NOT VendorPerfLibs_FIND_QUIETLY)
-      message(WARNING "LAPACK for VPL_lapack_ID '${VPL_lapack_ID}' with OpenMP ${VPL_OMP}, not found")
+      message(WARNING "LAPACK for VPL_ID '${VPL_ID}' with OpenMP ${VPL_OMP}, not found")
     endif()
   endif()
 endmacro()
 
-macro(find_VPL_fft)
-  set(VPL_fft_ID ${VPL_ID} CACHE STRING "Vendor FFT ID (IntelMKL, AOCL, ARMPL, NVPL, CrayLibSci, Generic)")
-  check_VPL_ID("VPL_fft_ID" "${VPL_fft_ID}")
-  list(APPEND _vpl_required_vars VPL_FFT_LIBRARIES)
+macro(_vpl_find_fft)
+  # Default to VPL_ID without caching, so that changing VPL_ID later is not defeated by a stale cached value.
+  if(NOT VPL_fft_ID)
+    set(VPL_fft_ID "${VPL_ID}")
+    list(APPEND _vpl_defaulted_ids VPL_fft_ID)
+  endif()
+  _vpl_check_ID("VPL_fft_ID" "${VPL_fft_ID}")
 
   set(VPL_FFT_FOUND TRUE)
   if(VPL_fft_ID STREQUAL "IntelMKL")
     if(NOT VPL_ID STREQUAL "IntelMKL")
       message(FATAL_ERROR "VendorPerfLibs: VPL_fft_ID is IntelMKL but VPL_ID is not IntelMKL. Unsupported.")
     endif()
-    list(APPEND _vpl_required_vars VendorPerfLibs_FFTW_INCLUDE_DIR)
     find_path(VendorPerfLibs_FFTW_INCLUDE_DIR NAMES fftw3.f03
       HINTS
-        "$ENV{MKLROOT}/include"
+        ${_VPL_MKL_INC_HINTS}
       PATH_SUFFIXES fftw mkl/fftw
     )
     set(VPL_FFT_LIBRARIES ${VPL_CORE_LIBRARIES})
@@ -446,7 +542,6 @@ macro(find_VPL_fft)
     if(NOT VPL_ID STREQUAL "ARMPL")
       message(FATAL_ERROR "VendorPerfLibs: VPL_fft_ID is ARMPL but VPL_ID is not ARMPL. Unsupported.")
     endif()
-    list(APPEND _vpl_required_vars VendorPerfLibs_FFTW_INCLUDE_DIR)
     find_path(VendorPerfLibs_FFTW_INCLUDE_DIR NAMES fftw3.f03 fftw3.h)
     set(VPL_FFT_LIBRARIES ${VPL_CORE_LIBRARIES})
     if(NOT VendorPerfLibs_FFTW_INCLUDE_DIR OR NOT VPL_FFT_LIBRARIES)
@@ -463,7 +558,6 @@ macro(find_VPL_fft)
       set(VPL_FFT_FOUND FALSE)
     endif()
   else()
-    list(APPEND _vpl_required_vars VendorPerfLibs_FFTW_INCLUDE_DIR)
     # search for fftw
     if(VPL_OMP)
       find_package(FFTW ${_find_package_args} COMPONENTS seq omp)
@@ -493,9 +587,13 @@ macro(find_VPL_fft)
   endif()
 endmacro()
 
-macro(find_VPL_vml)
-  set(VPL_vml_ID ${VPL_ID} CACHE STRING "Vendor VML ID (IntelMKL, AOCL, ARMPL, NVPL, CrayLibSci, Generic)")
-  check_VPL_ID("VPL_vml_ID" "${VPL_vml_ID}")
+macro(_vpl_find_vml)
+  # Default to VPL_ID without caching, so that changing VPL_ID later is not defeated by a stale cached value.
+  if(NOT VPL_vml_ID)
+    set(VPL_vml_ID "${VPL_ID}")
+    list(APPEND _vpl_defaulted_ids VPL_vml_ID)
+  endif()
+  _vpl_check_ID("VPL_vml_ID" "${VPL_vml_ID}")
 
   set(VPL_VML_FOUND TRUE)
   if(VPL_vml_ID STREQUAL "IntelMKL")
@@ -540,20 +638,24 @@ macro(find_VPL_vml)
   endif()
 endmacro()
 
+set(_vpl_defaulted_ids)
+unset(VendorPerfLibs_lapack_FOUND)
+unset(VPL_CORE_LIBRARIES)
+unset(VPL_LAPACK_LINK)
 set(_vpl_lib_found_ids)
 set(_vpl_required_vars _vpl_lib_found_ids)
-find_VPL_core()
+_vpl_find_core()
 
 if(NOT VendorPerfLibs_FIND_COMPONENTS OR "lapack" IN_LIST VendorPerfLibs_FIND_COMPONENTS)
-  find_VPL_lapack()
+  _vpl_find_lapack()
 endif()
 
 if(NOT VendorPerfLibs_FIND_COMPONENTS OR "fft" IN_LIST VendorPerfLibs_FIND_COMPONENTS)
-  find_VPL_fft()
+  _vpl_find_fft()
 endif()
 
 if(NOT VendorPerfLibs_FIND_COMPONENTS OR "vml" IN_LIST VendorPerfLibs_FIND_COMPONENTS)
-  find_VPL_vml()
+  _vpl_find_vml()
 endif()
 
 find_package_handle_standard_args(VendorPerfLibs
@@ -568,7 +670,7 @@ if(VendorPerfLibs_FOUND)
       add_library(vpl_lapack INTERFACE IMPORTED)
       set_target_properties(vpl_lapack PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${VendorPerfLibs_INCLUDE_DIR}"
-        INTERFACE_LINK_LIBRARIES "${LAPACK_LIBRARIES}"
+        INTERFACE_LINK_LIBRARIES "${VPL_LAPACK_LINK}"
       )
       add_library(VPL::lapack ALIAS vpl_lapack)
     endif()
@@ -577,12 +679,16 @@ if(VendorPerfLibs_FOUND)
   # Create vpl_fft
   if(NOT VendorPerfLibs_FIND_COMPONENTS OR "fft" IN_LIST VendorPerfLibs_FIND_COMPONENTS)
     if(NOT TARGET vpl_fft)
+      # Unquoted expansion drops empty variables (e.g. no vendor include dir for Generic).
+      set(_vpl_fft_include_dirs ${VendorPerfLibs_INCLUDE_DIR} ${VendorPerfLibs_FFTW_INCLUDE_DIR})
+      list(REMOVE_DUPLICATES _vpl_fft_include_dirs)
       add_library(vpl_fft INTERFACE IMPORTED)
       set_target_properties(vpl_fft PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${VendorPerfLibs_INCLUDE_DIR};${VendorPerfLibs_FFTW_INCLUDE_DIR}"
+        INTERFACE_INCLUDE_DIRECTORIES "${_vpl_fft_include_dirs}"
         INTERFACE_LINK_LIBRARIES "${VPL_FFT_LIBRARIES}"
       )
       add_library(VPL::fft ALIAS vpl_fft)
+      unset(_vpl_fft_include_dirs)
     endif()
   endif()
 
@@ -599,9 +705,38 @@ if(VendorPerfLibs_FOUND)
   endif()
 endif()
 
+# If the BLAS/LAPACK libraries were found, keep the BLA_* variables as set above so that later find_package(BLAS)
+# and find_package(LAPACK) calls outside this module follow the same discovery.
+# Otherwise restore the caller's original values.
+# The same applies to the Cray prefixes appended to CMAKE_PREFIX_PATH.
+# The lapack result is authoritative when the lapack search ran; otherwise (e.g. only fft or vml requested)
+# use the result of the core (BLAS) search.
+if(DEFINED VendorPerfLibs_lapack_FOUND)
+  set(_vpl_blas_lapack_ok "${VendorPerfLibs_lapack_FOUND}")
+else()
+  set(_vpl_blas_lapack_ok "${VPL_CORE_FOUND}")
+endif()
+if(NOT _vpl_blas_lapack_ok)
+  _vpl_restore_BLA_vars()
+  set(CMAKE_PREFIX_PATH "${_vpl_saved_CMAKE_PREFIX_PATH}")
+endif()
+unset(_vpl_saved_CMAKE_PREFIX_PATH)
+unset(_vpl_blas_lapack_ok)
+_vpl_clear_BLA_vars()
+
 cmake_pop_check_state()
 
 # Scope cleanup
+unset(_VPL_BLA_VARS)
+unset(VPL_CORE_LIBRARIES)
+unset(VPL_LAPACK_LINK)
+unset(_VPL_MKL_LIB_HINTS)
+unset(_VPL_MKL_INC_HINTS)
+foreach(_vpl_id_var IN LISTS _vpl_defaulted_ids)
+  unset(${_vpl_id_var})
+endforeach()
+unset(_vpl_id_var)
+unset(_vpl_defaulted_ids)
 unset(_find_package_args)
 unset(_vpl_required_vars)
 unset(_vpl_lib_found_ids)

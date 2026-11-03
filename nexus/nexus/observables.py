@@ -45,7 +45,7 @@ class VLog(DevBase):
     def __init__(self):
         self.tstart    = process_time()
         self.tlast     = self.tstart
-        self.mstart    = memory.resident(children=True)
+        self.mstart    = sum(memory.resident(children=True))
         self.mlast     = self.mstart
         self.verbosity = self.verbosity_levels.low
         self.indent    = 0
@@ -63,7 +63,7 @@ class VLog(DevBase):
                 #end if
                 if mem:
                     dm = 1e6 # MB
-                    mnow = memory.resident(children=True)
+                    mnow = sum(memory.resident(children=True))
                     msg += f'  (mem add {(mnow-self.mlast)/dm:6.2f}, tot {(mnow-self.mstart)/dm:6.2f})'
                     self.mlast = mnow
                 #end if

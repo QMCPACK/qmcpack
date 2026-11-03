@@ -29,8 +29,6 @@ struct QMCState
   size_t memory_allocated{0};
   ///init for <qmc/> section
   int qmc_counter{0};
-  ///number of mpi groups
-  int mpi_groups{1};
   ///true, if density is used, e.g. MPC
   bool use_density{false};
   ///true, if it is a dryrun
@@ -52,6 +50,21 @@ struct QMCState
 
   /// Print git info (commit hash, etc) if project was build from git repository
   void print_git_info_if_present(std::ostream& os);
+
+  /** Setup the filename infix used for ensemble jobs.
+   *  When num_jobs > 1, sets the infix to ".gXXX" based on my_job_id (e.g., ".g001" for my_job_id = 1).
+   *  Otherwise, clears the infix to an empty string.
+   *  @param my_job_id ID of the current job in the ensemble
+   *  @param num_jobs total number of ensemble jobs
+   */
+  void setupFilenameInfixForEnsembleJobs(int my_job_id, int num_jobs);
+
+  /// Return the filename infix for ensemble jobs (e.g., ".g001" if num_jobs > 1, or empty string otherwise).
+  const std::string& get_filename_infix_for_ensemble_jobs() const noexcept { return filename_infix_for_ensemble_jobs_; }
+
+private:
+  /// Filename infix for ensemble jobs (e.g., ".g001" for job 1, or empty string if not an ensemble run)
+  std::string filename_infix_for_ensemble_jobs_;
 };
 
 ///a unique QMCState during a run

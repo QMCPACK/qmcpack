@@ -54,7 +54,6 @@ else()
   qmc_run_and_check(
     deterministic-He_ae-opt-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt
     det_He_opt.xml
     1
     1
@@ -66,7 +65,6 @@ else()
   qmc_run_and_check(
     deterministic-He_ae-opt-vmc-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_mwalkers
     det_He_opt_mwalkers.xml
     1
     16
@@ -78,7 +76,6 @@ else()
   qmc_run_and_check(
     deterministic-He_ae-opt-vmc-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_mwalkers
     det_He_opt_mwalkers.xml
     2
     3
@@ -140,7 +137,6 @@ else()
   qmc_run_and_check(
     deterministic-He_ae-optbatch-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_optbatch
     det_He_optbatch.xml
     1
     1
@@ -152,7 +148,6 @@ else()
   qmc_run_and_check(
     deterministic-He_ae-optbatch-vmcbatch-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_optbatch_mwalkers
     det_He_optbatch_mwalkers.xml
     1
     16
@@ -164,7 +159,6 @@ else()
   qmc_run_and_check(
     deterministic-He_ae-optbatch-vmcbatch-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_optbatch_mwalkers
     det_He_optbatch_mwalkers.xml
     2
     3
@@ -173,6 +167,21 @@ else()
     He_batch_VMC_MWALKERS_2-3_SCALARS # VMC
   )
 
+  set(HE_OPTBATCH_RUNTIME_TEST deterministic-He_ae-optbatch-cpu_limit)
+  run_qmc_app(
+    ${HE_OPTBATCH_RUNTIME_TEST}
+    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    1
+    1
+    HE_OPTBATCH_RUNTIME_TEST_ADDED
+    det_He_optbatch_cpu_limit.xml)
+  if(HE_OPTBATCH_RUNTIME_TEST_ADDED)
+    set_tests_properties(
+      ${HE_OPTBATCH_RUNTIME_TEST}
+      PROPERTIES TIMEOUT 120 PASS_REGULAR_EXPRESSION
+                 "Insufficient time for the current optimization iteration. Stopping before optimization iteration [1-9][0-9]*(.|\\n)*QMCPACK execution completed successfully")
+    add_test_check_file_existence(${HE_OPTBATCH_RUNTIME_TEST} det_He_optbatch_cpu_limit.s000.opt.xml TRUE)
+  endif()
 endif()
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)

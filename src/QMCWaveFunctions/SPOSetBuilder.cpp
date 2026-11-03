@@ -35,7 +35,7 @@ void SPOSetBuilder::reserve_states(int nsets)
 
 std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
-  myComm.barrier_and_abort("BasisSetBase::createSPOSet(cur,input_info) has not been implemented");
+  throw UniformCommunicateError("BasisSetBase::createSPOSet(cur,input_info) has not been implemented");
   return 0;
 }
 
@@ -59,7 +59,7 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   app_summary() << std::endl;
 
   if (spo_object_name.empty())
-    myComm.barrier_and_abort("SPOSet object \"name\" attribute not given in the input!");
+    throw UniformCommunicateError("SPOSet object \"name\" attribute not given in the input!");
 
   // read specialized sposet construction requests
   //   and translate them into a set of orbital indices
@@ -69,20 +69,13 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   //   and preserve legacy interface
   std::unique_ptr<SPOSet> sposet;
 
-  try
-  {
-    if (legacy && input_info.legacy_request)
-      sposet = createSPOSetFromXML(cur);
-    else
-      sposet = createSPOSet(cur, input_info);
-  }
-  catch (const UniformCommunicateError& ue)
-  {
-    myComm.barrier_and_abort(ue.what());
-  }
+  if (legacy && input_info.legacy_request)
+    sposet = createSPOSetFromXML(cur);
+  else
+    sposet = createSPOSet(cur, input_info);
 
   if (!sposet)
-    myComm.barrier_and_abort("SPOSetBuilder::createSPOSet sposet creation failed");
+    throw UniformCommunicateError("SPOSetBuilder::createSPOSet sposet creation failed");
 
   if (optimize == "rotation" || optimize == "yes")
   {
@@ -94,8 +87,8 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     auto& sposet_ref = *sposet;
     app_log() << "  SPOSet " << sposet_ref.getName() << " is optimizable\n";
     if (!sposet_ref.isRotationSupported())
-      myComm.barrier_and_abort("Orbital rotation not supported with '" + sposet_ref.getName() + "' of type '" +
-                               sposet_ref.getClassName() + "'.");
+      throw UniformCommunicateError("Orbital rotation not supported with '" + sposet_ref.getName() + "' of type '" +
+                                    sposet_ref.getClassName() + "'.");
     auto rot_spo    = std::make_unique<RotatedSPOs>(sposet_ref.getName(), std::move(sposet));
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while (tcur != NULL)
@@ -139,11 +132,11 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
   });
 
   if (!sposet)
-    myComm.barrier_and_abort("Rotated SPO needs an SPOset");
+    throw UniformCommunicateError("Rotated SPO needs an SPOset");
 
   if (!sposet->isRotationSupported())
-    myComm.barrier_and_abort("Orbital rotation not supported with '" + sposet->getName() + "' of type '" +
-                             sposet->getClassName() + "'.");
+    throw UniformCommunicateError("Orbital rotation not supported with '" + sposet->getName() + "' of type '" +
+                                  sposet->getClassName() + "'.");
 
   sposet->storeParamsBeforeRotation();
   auto rot_spo = std::make_unique<RotatedSPOs>(spo_object_name, std::move(sposet));

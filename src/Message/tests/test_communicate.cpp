@@ -28,18 +28,6 @@ TEST_CASE("test_communicate_split_one", "[message]")
   auto& inter_group_comm = c2->getInterGroupComm();
   REQUIRE(inter_group_comm.size() == 1);
   REQUIRE(inter_group_comm.rank() == 0);
-
-  std::string real_name = c.getName();
-
-  std::string name = "myname";
-  c.setName(name);
-  REQUIRE(c.getName() == name);
-
-  std::string other_name = "myothername";
-  c.setName(other_name.data(), other_name.size());
-  REQUIRE(c.getName() == other_name);
-
-  c.setName(real_name);
 }
 
 TEST_CASE("test_communicate_split_two", "[message]")

@@ -26,6 +26,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "type_traits/template_types.hpp"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -72,11 +73,11 @@ WalkerControl::WalkerControl(Communicate& c, RandomBase<FullPrecRealType>& rng, 
 
 WalkerControl::~WalkerControl() = default;
 
-void WalkerControl::start()
+void WalkerControl::start(const std::string& root_name)
 {
   if (rank_num_ == 0)
   {
-    std::filesystem::path hname(myComm.getName());
+    std::filesystem::path hname(root_name);
     hname.concat(".dmc.dat");
     if (hname != dmcFname)
     {
@@ -180,6 +181,12 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       computeCurData(walkers, curData);
       for (int i = 0, j = LE_MAX; i < num_ranks_; i++, j++)
         num_per_rank_[i] = static_cast<int>(curData[j]);
+
+      // A rank may have no survivors; only global extinction is fatal. The reduced counts
+      // make this error uniform across ranks, before diagnostics or walker deletion.
+      if (std::accumulate(num_per_rank_.begin(), num_per_rank_.end(), 0) == 0)
+        throw UniformCommunicateError("WalkerControl::branch: All walkers were killed in DMC at iteration " +
+                                      std::to_string(iter) + ".");
     }
     // at this point, curData[LE_MAX + rank_num_] and walker->Multiplicity are ready.
 
@@ -570,7 +577,7 @@ bool WalkerControl::put(xmlNodePtr cur)
   }
   catch (const std::runtime_error& re)
   {
-    myComm.barrier_and_abort("WalkerControl::put parsing error. " + std::string(re.what()));
+    throw UniformCommunicateError("WalkerControl::put parsing error. " + std::string(re.what()));
   }
 
   app_log() << "  WalkerControl parameters " << std::endl;

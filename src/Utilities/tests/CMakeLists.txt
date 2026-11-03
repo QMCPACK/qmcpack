@@ -25,6 +25,7 @@ add_executable(
   test_ResourceCollection.cpp
   test_infostream.cpp
   test_project_data.cpp
+  test_qmc_common.cpp
   test_rng_control.cpp
   test_ModernStringUtils.cpp
   test_string_utils.cpp

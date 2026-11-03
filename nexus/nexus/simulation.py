@@ -521,6 +521,7 @@ class Simulation(NexusCore):
         self._exited_queue = False
         self._timed_out = False
         self.timestamps = obj()
+        self.timeout_started = False
         self.subcascade_finished = False
         self.block            = block
         self.block_subcascade = block_subcascade
@@ -1306,14 +1307,17 @@ class Simulation(NexusCore):
 
 
     def idstr(self):
-        return '  '+str(self.simid)+' '+str(self.identifier)
+        return f"{self.simid} {self.identifier}"
     #end def idstr
 
 
     def write_inputs(self,*,save_image=True):
         self.pre_write_inputs(save_image)
-        self.enter(self.locdir,changedir=False,msg=self.simid)
-        self.nxs_print('writing input files'+self.idstr(),n=3)
+        self.enter(self.locdir, changedir=False, msg=f"(Sim #{self.simid})")
+        self.nxs_print(
+            f"Writing input files (Sim #{self.simid}, '{self.identifier}')",
+            n=3,
+        )
         self.write_prep()
         if self.infile is not None:
             infile = os.path.join(self.locdir,self.infile)
@@ -1347,9 +1351,12 @@ class Simulation(NexusCore):
     def send_files(self,*,enter=True):
         self.pre_send_files(enter)
         if enter:
-            self.enter(self.locdir,changedir=False,msg=self.simid)
+            self.enter(self.locdir,changedir=False,msg=f"(Sim #{self.simid})")
         #end if
-        self.nxs_print('sending required files'+self.idstr(),n=3)
+        self.nxs_print(
+            f"Sending required files (Sim #{self.simid}, '{self.identifier}')",
+            n=3,
+        )
         if not os.path.exists(self.remdir):
             os.makedirs(self.remdir)
         #end if
@@ -1400,7 +1407,10 @@ class Simulation(NexusCore):
                 self.block_dependents(block_self=True)
                 return
             #end if
-            self.nxs_print('submitting job'+self.idstr(),n=3)
+            self.nxs_print(
+                f"Submitting job (Sim #{self.simid}, '{self.identifier}')",
+                n=3,
+            )
             if not self.skip_submit:
                 if not self.job.local:
                     self.job.submit()
@@ -1445,22 +1455,32 @@ class Simulation(NexusCore):
             if self.errfile is not None:
                 errfile = os.path.join(self.locdir,self.errfile)
                 should_check &= os.path.exists(errfile)
-            #end if
+
             if not self.finished and should_check:
                 self.check_sim_status()
-            elif not self.finished:
-                exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
-                elapsed = datetime.now().astimezone() - exited_queue
-                if elapsed.total_seconds()>nexus_config.timeout:
-                    self.timed_out = True
-                    self.failed = True
-                #end if
-            #end if
+
+            if not self.finished:
+                if not self.timeout_started:
+                    self.timeout_started = True
+                    self.logger.info("Started countdown to timeout")
+                else:
+                    exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
+                    elapsed = datetime.now().astimezone() - exited_queue
+                    if elapsed.total_seconds()>nexus_config.timeout:
+                        self.timed_out = True
+                        self.failed = True
+                        self.timeout_started = False
+
             if self.failed:
                 self.finished = True
             #end if
         #end if
-        if self.finished or newly_exited_queue:
+        if self.finished:
+            self.save_image()
+            if self.timeout_started:
+                self.timeout_started = False
+                self.logger.info("Timeout countdown aborted")
+        elif newly_exited_queue:
             self.save_image()
         #end if
     #end def check_status
@@ -1485,8 +1505,11 @@ class Simulation(NexusCore):
             self.load_image(results_image)
         #end if
         if self.finished:
-            self.enter(self.locdir,changedir=False,msg=self.simid)
-            self.nxs_print('copying results'+self.idstr(),n=3)
+            self.enter(self.locdir,changedir=False,msg=f"(Sim #{self.simid})")
+            self.nxs_print(
+                f"Copying results (Sim #{self.simid}, '{self.identifier}')",
+                n=3,
+            )
             if not nexus_config.generate_only:
                 output_files = self.get_output_files()
                 if self.infile is not None:
@@ -1508,7 +1531,7 @@ class Simulation(NexusCore):
                     #end if
                 #end for
                 if len(files_missing)>0:
-                    self.nxs_print('warning: the following files were missing',n=4)
+                    self.nxs_print('Warning: The following files were missing:',n=4)
                     for file in files_missing:
                         self.nxs_print(file,n=5)
                     #end for
@@ -1525,8 +1548,8 @@ class Simulation(NexusCore):
             os.makedirs(self.imresdir)
         #end if
         if self.finished:
-            self.enter(self.locdir,changedir=False,msg=self.simid)
-            self.nxs_print('analyzing'+self.idstr(),n=3)
+            self.enter(self.locdir,changedir=False,msg=f"(Sim #{self.simid})")
+            self.nxs_print(f"Analyzing (Sim #{self.simid}, '{self.identifier}')", n=3)
             if not nexus_config.generate_only:
                 analyzer = self.analyzer_type(self)
                 analyzer.analyze()
@@ -1718,7 +1741,7 @@ class Simulation(NexusCore):
 
 
     def execute(self,run_command=None):
-        pad = self.enter(self.locdir)
+        pad = self.enter(self.locdir, msg=f"(Sim #{self.simid})")
         if run_command is None:
             job = self.job
             command = 'export OMP_NUM_THREADS='+str(job.threads)+'\n'
@@ -1739,9 +1762,9 @@ class Simulation(NexusCore):
             env = job.env
         #end if
         if nexus_config.generate_only:
-            self.nxs_print(pad+'Would have executed:  '+command)
+            self.nxs_print(pad+'Would have executed:\n'+command.strip("\n"))
         else:
-            self.nxs_print(pad+'Executing:  '+command)
+            self.nxs_print(pad+'Executing:\n'+command.strip("\n"))
             with open(self.outfile,'w') as fout, open(self.errfile,'w') as ferr:
                 out,err = Popen(command,env=env,stdout=fout,stderr=ferr,shell=True,close_fds=True).communicate()
         #end if

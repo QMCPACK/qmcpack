@@ -971,9 +971,11 @@ General Options:
 -  **move**: (default “walker”) Type of electron move. Options: “pbyp”
    and “walker.”
 
--  **checkpoint**: (default “-1”) (If > 0) Generate checkpoint files
-   with given frequency. The calculations can be restarted/continued
-   with the produced checkpoint files.
+-  **checkpoint**: (default "0") Generate checkpoint files with given
+   frequency. Values can be <0 (no checkpoint files written), 0 (written
+   after the completion of the QMC section, default), or n (written every
+   n blocks and at the end of the QMC section). The calculations can be
+   restarted/continued with the produced checkpoint files.
 
 -  **useDrift**: (default “yes”) Defines the sampling mode. useDrift =
    “yes” will use Langevin acceleration to sample the VMC and DMC

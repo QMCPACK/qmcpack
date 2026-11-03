@@ -43,7 +43,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   /*
     BEGIN Boilerplate stuff to make a simple SPOSet. Copied from test_einset.cpp
   */
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool pp(c);

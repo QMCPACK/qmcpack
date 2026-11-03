@@ -164,7 +164,7 @@ def test_resolve_file_collisions():
 
     with pytest.raises(
         FileExistsError,
-        match="file collisions found in directory",
+        match="File collisions found in directory",
         ):
         pm.resolve_file_collisions()
 
@@ -291,7 +291,7 @@ def test_write_simulation_status(capsys):
 
     assert(nexus_config.status is ShowStatusMode.none)
     status_ref = '''
-  cascade status
+  Cascade Status:
     setup, sent_files, submitted, finished, got_output, analyzed, failed
     000000           ------    test_sim_s11  ./runs/
     000000           ------    test_sim_s21  ./runs/
@@ -309,7 +309,7 @@ def test_write_simulation_status(capsys):
 
     nexus_config.status = ShowStatusMode.active
     status_ref = '''
-  cascade status
+  Cascade Status:
     setup, sent_files, submitted, finished, got_output, analyzed, failed
     000000           ------    test_sim_s11  ./runs/
     000000           ------    test_sim_s12  ./runs/
@@ -322,7 +322,7 @@ def test_write_simulation_status(capsys):
 
     nexus_config.status = ShowStatusMode.failed
     status_ref = '''
-  cascade status
+  Cascade Status:
     setup, sent_files, submitted, finished, got_output, analyzed, failed
     (No simulations present)
     setup, sent_files, submitted, finished, got_output, analyzed, failed

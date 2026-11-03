@@ -120,15 +120,13 @@ bool CSVMC::put(xmlNodePtr q)
 
   m_param.get(app_log());
 
-  if (DumpConfig)
-  {
-    app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint
+  if (Period4CheckPoint > 0)
+    app_log() << "  Configurations are dumped to config.h5 with a period of " << Period4CheckPoint
               << " blocks" << std::endl;
-  }
+  else if (Period4CheckPoint == 0)
+    app_log() << "  Configurations are dumped to config.h5 at the end of the run" << std::endl;
   else
-  {
-    app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << std::endl;
-  }
+    app_log() << "  Nothing (configurations, state) will be saved." << std::endl;
 
   if (Period4WalkerDump > 0)
     app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << std::endl;
@@ -147,7 +145,7 @@ void CSVMC::run()
 {
   resetRun();
   //start the main estimator
-  Estimators->start(nBlocks);
+  Estimators->start(nBlocks, RootName);
   for (int ip = 0; ip < NumThreads; ++ip)
     CSMovers[ip]->startRun(nBlocks, false);
 
@@ -198,10 +196,11 @@ void CSVMC::run()
   for (int ip = 0; ip < NumThreads; ++ip)
     RandomNumberControl::Children[ip] = Rng[ip]->makeClone();
   ///write samples to a file
-  bool wrotesamples = DumpConfig;
-  if (DumpConfig)
+  const bool dump_config = Period4CheckPoint >= 0;
+  bool wrotesamples      = dump_config;
+  if (dump_config)
   {
-    wrotesamples = MCWalkerConfiguration::dumpEnsemble(wClones, *wOut, myComm.size(), nBlocks);
+    wrotesamples = MCWalkerConfiguration::dumpEnsemble(wClones, *wOut, RootName, myComm.size(), nBlocks);
     if (wrotesamples)
       app_log() << "  samples are written to the config.h5" << std::endl;
   }

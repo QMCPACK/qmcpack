@@ -625,7 +625,7 @@ void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool
            "calculations. "
         << "If this is your intent, please replace 'spindataset=1' with 'spindataset=0' in the input file."
         << std::endl;
-    myComm.barrier_and_abort(msg.str());
+    throw UniformCommunicateError(msg.str());
   }
 
   std::string exception_msg;
@@ -642,7 +642,10 @@ void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool
 
   myComm.bcast(NumDistinctOrbitals);
   if (NumDistinctOrbitals == 0)
-    myComm.barrier_and_abort(exception_msg);
+  {
+    myComm.bcast(exception_msg);
+    throw UniformCommunicateError(exception_msg);
+  }
 
   bcastBandInfoSet(*FullBands[spin]);
 }

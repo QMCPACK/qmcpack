@@ -86,9 +86,15 @@ protected:
    */
   std::optional<EstimatorManagerInput> estimator_manager_input_;
 
-  // from putQMCInfo
+  /** Period of dumping walker configurations and everything else for restart.
+   *
+   * The unit is in blocks.
+   *   < 0 : No checkpoint files are written.
+   *   = 0 : Write checkpoint files after the completion of the QMC section (default).
+   *   > 0 : Write checkpoint files after every n blocks (excluding the last block),
+   *         and at the end of the QMC section.
+   */
   IndexType check_point_period_ = 0;
-  bool dump_config_             = false;
 
   // for drift modifer
   std::string drift_modifier_{"UNR"};
@@ -113,7 +119,6 @@ public:
   bool get_append_run() const { return append_run_; }
   IndexType get_estimator_measurement_period() const { return estimator_measurement_period_; }
   IndexType get_check_point_period() const { return check_point_period_; }
-  bool get_dump_config() const { return dump_config_; }
 
   const std::string& get_qmc_method() const { return qmc_method_; }
   const std::string& get_update_mode() const { return update_mode_; }

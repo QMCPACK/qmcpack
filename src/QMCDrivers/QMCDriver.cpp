@@ -62,7 +62,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
 {
   ResetRandom       = false;
   AppendRun         = false;
-  DumpConfig        = false;
   IsQMCDriver       = true;
   allow_traces      = false;
   allow_walker_logs = false;
@@ -121,9 +120,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   m_param.add(Tau, "time_step");
   //m_param.add(Tau,"Tau");
   m_param.add(Tau, "tau");
-  MaxCPUSecs = 360000; //100 hours
-  m_param.add(MaxCPUSecs, "maxcpusecs", {}, TagStatus::DEPRECATED);
-  m_param.add(MaxCPUSecs, "max_seconds");
   // by default call recompute at the end of each block in the mixed precision case.
 #ifdef MIXED_PRECISION
   // cpu mixed precision
@@ -201,8 +197,7 @@ void QMCDriver::process(xmlNodePtr cur)
   branchEngine->put(cur);
   Estimators->put(H, cur);
   if (!wOut)
-    wOut = std::make_unique<HDFWalkerOutput>(W.getTotalNum(), RootName, myComm);
-  branchEngine->start(RootName);
+    wOut = std::make_unique<HDFWalkerOutput>(W.getTotalNum(), myComm);
   branchEngine->write(RootName);
   //use new random seeds
   if (ResetRandom)
@@ -293,10 +288,10 @@ std::string QMCDriver::getLastRotationName(std::string RootName)
 
 void QMCDriver::recordBlock(int block)
 {
-  if (DumpConfig && block % Period4CheckPoint == 0)
+  if (Period4CheckPoint > 0 && (block + 1) % Period4CheckPoint == 0 && (block + 1) < nBlocks)
   {
     ScopedTimer local(checkpoint_timer_);
-    wOut->dump(W, block);
+    wOut->dump(W, RootName, block);
     branchEngine->write(RootName, true); //save energy_history
     RandomNumberControl::write(RootName, myComm);
   }
@@ -304,8 +299,9 @@ void QMCDriver::recordBlock(int block)
 
 void QMCDriver::finalize(int block, bool dumpwalkers)
 {
-  if (DumpConfig && dumpwalkers)
-    wOut->dump(W, block);
+  const bool dump_config = Period4CheckPoint >= 0;
+  if (dump_config && dumpwalkers)
+    wOut->dump(W, RootName, block);
   nTargetWalkers = W.getActiveWalkers();
   MyCounter++;
   infoSummary.flush();
@@ -313,7 +309,7 @@ void QMCDriver::finalize(int block, bool dumpwalkers)
 
   branchEngine->finalize(W);
 
-  if (DumpConfig)
+  if (dump_config)
     RandomNumberControl::write(RootName, myComm);
 }
 
@@ -428,7 +424,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
         rAttrib.add(Period4CheckPoint, "stride");
         rAttrib.add(Period4CheckPoint, "period");
         rAttrib.put(tcur);
-        //DumpConfig=(Period4CheckPoint>0);
       }
       else if (cname == "random")
       {
@@ -461,9 +456,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     nSubSteps = 1;
   }
 
-  DumpConfig = (Period4CheckPoint >= 0);
-  if (Period4CheckPoint < 1)
-    Period4CheckPoint = nBlocks;
   //reset CurrentStep to zero if qmc/@continue='no'
   if (!AppendRun)
     CurrentStep = 0;

@@ -55,6 +55,8 @@ void DeviceManager::initializeGlobalDeviceManager(int local_rank, int local_size
   global = std::make_unique<DeviceManager>(local_rank, local_size);
 }
 
+bool DeviceManager::isInitialized() { return global != nullptr; }
+
 const DeviceManager& DeviceManager::getGlobal()
 {
   if (!global)

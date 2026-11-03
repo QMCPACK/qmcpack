@@ -48,12 +48,9 @@ TEST_CASE("EstimatorManagerBase", "[estimators]")
   EstimatorManagerBase em2(em);
   REQUIRE(em.size() == 1);
 
-  em.start(2, true);
+  em.start(2, "test", true);
 
   em.stop();
-  // compute averages over threads
-  //em.stop();
-  em.reset();
 }
 
 TEST_CASE("Estimator adhoc addVector operator", "[estimators]")

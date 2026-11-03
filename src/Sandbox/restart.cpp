@@ -108,7 +108,6 @@ int main(int argc, char** argv)
     }
   }
 
-  myComm.setName(directory + "restart");
   myComm.barrier();
 
   // set the number of walkers equal to the threads.
@@ -226,10 +225,10 @@ int main(int argc, char** argv)
   }
 
   // dump electron coordinates.
-  HDFWalkerOutput wOut(elecs_with_walkers.getTotalNum(), directory + "restart", myComm);
+  HDFWalkerOutput wOut(elecs_with_walkers.getTotalNum(), myComm);
   myComm.barrier();
   h5clock.restart(); //start timer
-  wOut.dump(elecs_with_walkers, 1);
+  wOut.dump(elecs_with_walkers, directory + "restart", 1);
   myComm.barrier();
   walkerWrite += h5clock.elapsed(); //store timer
   if (!myComm.rank())
@@ -302,7 +301,6 @@ int main(int argc, char** argv)
   if (myComm.size() > 1)
   {
     Communicate subComm(myComm.split(2));
-    subComm.setName("restart2");
 
     if (subComm.getGroupID() == 0)
     {
@@ -313,8 +311,8 @@ int main(int argc, char** argv)
       if (!subComm.rank())
         std::cout << "Walkers are loaded again by the subgroup!\n";
       setWalkerOffsets(elecs_with_walkers, subComm);
-      HDFWalkerOutput subwOut(elecs_with_walkers.getTotalNum(), "XXXX", subComm);
-      subwOut.dump(elecs_with_walkers, 1);
+      HDFWalkerOutput subwOut(elecs_with_walkers.getTotalNum(), subComm);
+      subwOut.dump(elecs_with_walkers, "restart2", 1);
       if (!subComm.rank())
         std::cout << "Walkers are dumped again by the subgroup!\n";
     }

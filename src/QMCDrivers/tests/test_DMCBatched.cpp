@@ -56,7 +56,7 @@ TEST_CASE("QMCDriverFactory rejects invalid L2 diffusion configurations for DMCB
 {
   using namespace testing;
   RandomNumberGeneratorPool rng_pool(1);
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   Libxml2Document doc;
@@ -133,9 +133,9 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   outputManager.resume();
 
   dmcdriver.process(node);
-  CHECK(dmcdriver.get_num_living_walkers() == 8);
+  CHECK(dmcdriver.get_num_living_walkers() == 8 / comm.size());
   const QMCTraits::IndexType reserved_walkers = dmcdriver.get_num_living_walkers() + dmcdriver.get_num_dead_walkers();
-  CHECK(reserved_walkers == 10);
+  CHECK(reserved_walkers == 10 / comm.size());
   // What else should we expect after process
 }
 #endif
