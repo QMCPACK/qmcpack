@@ -101,7 +101,6 @@ if(NOT QMC_COMPLEX)
     qmc_run_and_check(
       short-li2_sto-sj_dmcbatch_reconfig
       "${CMAKE_CURRENT_SOURCE_DIR}"
-      Li2.STO.short.reconfig
       Li2.STO.short-batch-reconfig.in.xml
       ${PROCS}
       ${THREADS}
@@ -115,7 +114,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-li2_sto-sj_dmcbatch_reconfig
     "${CMAKE_CURRENT_SOURCE_DIR}"
-    Li2.STO.long.reconfig
     Li2.STO.long-batch-reconfig.in.xml
     1
     16

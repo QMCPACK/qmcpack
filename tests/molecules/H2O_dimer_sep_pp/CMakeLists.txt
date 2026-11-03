@@ -197,7 +197,6 @@ if(NOT QMC_COMPLEX)
       qmc_run_and_check(
         ${LENGTH}-H2O_dimer_sep_pp-j3_dmcbatch_${MOVE_SUFFIX}_reconfig
         "${CMAKE_CURRENT_SOURCE_DIR}"
-        H2O.reconfig
         ${LENGTH}-H2O-${MOVE}-batch-reconfig.xml
         1
         16

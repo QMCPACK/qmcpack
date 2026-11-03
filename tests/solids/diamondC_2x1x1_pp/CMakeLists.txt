@@ -104,7 +104,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC_2x1x1_pp-dmcbatch_sdj
   "${CMAKE_CURRENT_SOURCE_DIR}"
-  qmc_short_vmc_dmc_batched
   qmc_short_vmc_dmc_batched.in.xml
   1
   16
@@ -177,7 +176,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC_2x1x1_pp-dmcbatch-reconf_sdj
   "${CMAKE_CURRENT_SOURCE_DIR}"
-  qmc_short_vmc_dmc_reconf_batched
   qmc_short_vmc_dmc_reconf_batched.in.xml
   1
   16
@@ -270,7 +268,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   long-diamondC_2x1x1_pp-dmcbatch_sdj
   "${CMAKE_CURRENT_SOURCE_DIR}"
-  qmc_long_vmc_dmc_batched
   qmc_long_vmc_dmc_batched.in.xml
   1
   16
@@ -293,7 +290,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   long-diamondC_2x1x1_pp-dmcbatch-reconf_sdj
   "${CMAKE_CURRENT_SOURCE_DIR}"
-  qmc_long_vmc_dmc_reconf_batched
   qmc_long_vmc_dmc_reconf_batched.in.xml
   1
   16
