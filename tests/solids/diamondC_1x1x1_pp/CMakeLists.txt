@@ -704,13 +704,6 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
     CHECK_SCRIPT check_stats.py
     CHECK_ARGS -s 0 -q spindensity -e 0 -c 8 -p det_qmc_spindens_mw -r qmc-ref/det_qmc_spindens_mw.s000.stat_ref_spindensity_4_4.dat)
 
-  # SIMPLE_RUN_AND_CHECK(
-  # deterministic-diamondC_1x1x1_pp-vmcbatch-estimator-spindensity
-  # "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  # det_qmc_spindens_vmcbatched.in.xml 1 1 check_stats.py -s 0 -q
-  # spindensity -e 0 -c 8 -p det_qmc_spindens -r
-  # qmc-ref/det_qmc_vmcbatch_spindens.s000.stat_ref_spindensity_1_1.dat )
-
   simple_run_and_check(
     BASE_NAME deterministic-diamondC_1x1x1_pp-dmc-estimator-spindensity
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
