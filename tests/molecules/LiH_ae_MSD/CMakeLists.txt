@@ -197,13 +197,13 @@ if(NOT QMC_COMPLEX)
   # No check on results
   # Arrange for "imbalanced" ensemble and assume will crash or hang/timeout on major error
   # Should abort if number of MPI tasks is smaller than ensemble
-  qmc_run_and_check(
-    deterministic-ensemble_blocks_LiH_ae-vmc_msdj
-    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
-    det_ensemble_blocks_vmc_msdj.txt
-    4
-    1
-    TRUE)
+  simple_run_and_check(
+    BASE_NAME deterministic-ensemble_blocks_LiH_ae-vmc_msdj
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+    INPUT_FILE det_ensemble_blocks_vmc_msdj.txt
+    PROCS 4
+    CHECK_SCRIPT check_ensemble.py
+    CHECK_ARGS --ranks 4 --prefix det_ensemble_blocks_vmc_msdj --ionion 0.995380119260)
 
   simple_run_and_check(
     BASE_NAME deterministic-ensemble_blocks_LiH_ae-vmcbatch_msdj
@@ -221,13 +221,13 @@ if(NOT QMC_COMPLEX)
     1
     FALSE)
 
-  qmc_run_and_check(
-    deterministic-ensemble_blocks_LiH_ae-vmc_msdj
-    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
-    det_ensemble_blocks_vmc_msdj.txt
-    5
-    1
-    TRUE)
+  simple_run_and_check(
+    BASE_NAME deterministic-ensemble_blocks_LiH_ae-vmc_msdj
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+    INPUT_FILE det_ensemble_blocks_vmc_msdj.txt
+    PROCS 5
+    CHECK_SCRIPT check_ensemble.py
+    CHECK_ARGS --ranks 5 --prefix det_ensemble_blocks_vmc_msdj --ionion 0.995380119260)
 
   simple_run_and_check(
     BASE_NAME deterministic-ensemble_blocks_LiH_ae-vmcbatch_msdj
