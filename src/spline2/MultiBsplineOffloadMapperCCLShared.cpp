@@ -77,7 +77,7 @@ void MultiBsplineOffloadMapperCCLShared<T>::mapToDevice()
     omptarget_mem_usage.creditUsage(alloc_bytes);
 
   // 4. Register communication window across ranks
-  NCCLCHECK(ncclCommWindowRegister(nccl_comm_, local_dev_ptr_, alloc_bytes, &win_, 0));
+  NCCLCHECK(ncclCommWindowRegister(nccl_comm_, local_dev_ptr_, alloc_bytes, &win_, NCCL_WIN_DEFAULT));
 
   // 5. Query device pointers for peer access for all distributed blocks
   block_coefs_dev_.resize(distributed_ranks);
