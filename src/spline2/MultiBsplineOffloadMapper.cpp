@@ -40,6 +40,17 @@ void MultiBsplineOffloadMapper<T>::mapToDevice()
 }
 
 template<typename T>
+void MultiBsplineOffloadMapper<T>::updateToDevice()
+{
+  for (int ib = 0; ib < host_bsplines_.getNumBlocks(); ib++)
+  {
+    auto* spline_m = &host_bsplines_.getBlock(ib);
+    auto* coefs    = host_bsplines_.getBlock(ib).coefs;
+    PRAGMA_OFFLOAD("omp target update to(coefs[:spline_m->coefs_size])")
+  }
+}
+
+template<typename T>
 MultiBsplineOffloadMapper<T>::~MultiBsplineOffloadMapper()
 {
   for (int ib = 0; ib < host_bsplines_.getNumBlocks(); ib++)

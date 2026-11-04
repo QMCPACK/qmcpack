@@ -158,6 +158,10 @@ public:
 
   /// Frees the shared memory window and deletes local spline block metadata.
   ~MultiBsplineMPIShared() override;
+
+  const Communicate& getComm() const { return *comm_; }
+  unsigned getDistributedRanks() const { return distributed_ranks_; }
+  bool getContiguousShared() const { return contiguous_shared_; }
 };
 
 extern template class MultiBsplineMPIShared<float>;
