@@ -113,7 +113,8 @@ private:
   std::vector<RealType> OneBodyPhase, TwoBodyPhase;
   //
   std::vector<ComplexType> OneBody_e2iGr, TwoBody_e2iGr_new, TwoBody_e2iGr_old;
-  Matrix<ComplexType> Delta_e2iGr;
+  // Proposed log-amplitude change cached by ratio/ratioGrad; applied by acceptMove and discarded by restore.
+  RealType pending_log_ratio_ = 0;
 
   // Map of the optimizable variables:
   //std::map<std::string,RealType*> VarMap;
