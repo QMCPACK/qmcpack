@@ -112,7 +112,7 @@ include(DetermineGPUFeatures)
 # So the dependency must be explicitly specified with USE_OBJECT_TARGET.
 cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 cmake_dependent_option(QMC_OFFLOAD_USM "Require OpenMP unified shared memory" OFF "ENABLE_OFFLOAD" OFF)
-cmake_dependent_option(QMC_CCL "Enable collective communication library for GPU" ON "QMC_MPI;ENABLE_OFFLOAD;ENABLE_CUDA;NOT QMC_CUDA2HIP" OFF)
+cmake_dependent_option(QMC_CCL "Enable collective communication library for GPU" ON "QMC_MPI;ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
 
 include(DetermineDeviceArchitectures)
 
@@ -840,6 +840,9 @@ if(QMC_CCL)
   if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
     find_package(NCCL 2.29.0 REQUIRED)
     target_link_libraries(Platform::CCL INTERFACE NCCL::NCCL)
+  elseif(ENABLE_ROCM)
+    find_package(rccl 2.29.0 CONFIG REQUIRED)
+    target_link_libraries(Platform::CCL INTERFACE roc::rccl)
   endif()
 endif()
 
