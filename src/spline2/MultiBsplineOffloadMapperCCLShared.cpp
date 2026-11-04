@@ -16,6 +16,7 @@
 #include <omp.h>
 #include <string>
 #include <stdexcept>
+#include <nccl_device.h>
 
 namespace qmcplusplus
 {

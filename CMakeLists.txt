@@ -112,7 +112,7 @@ include(DetermineGPUFeatures)
 # So the dependency must be explicitly specified with USE_OBJECT_TARGET.
 cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 cmake_dependent_option(QMC_OFFLOAD_USM "Require OpenMP unified shared memory" OFF "ENABLE_OFFLOAD" OFF)
-cmake_dependent_option(QMC_CCL "Enable collective communication library for GPU" ON "ENABLE_OFFLOAD" OFF)
+cmake_dependent_option(QMC_CCL "Enable collective communication library for GPU" ON "QMC_MPI;ENABLE_OFFLOAD;ENABLE_CUDA;NOT QMC_CUDA2HIP" OFF)
 
 include(DetermineDeviceArchitectures)
 
