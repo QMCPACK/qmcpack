@@ -89,24 +89,12 @@ void MultiBsplineOffloadMapperCCLShared<T>::mapToDevice()
     block_coefs_dev_[i] = static_cast<const T*>(peer_ptr);
   }
 
-  // 6. Map spline metadata to device and establish host-device pointer mapping via omp_target_associate_ptr
-  const int device_num = omp_get_default_device();
+  // 6. Map spline metadata to device
   for (int ib = 0; ib < host_bsplines_shared_.getNumBlocks(); ib++)
   {
-    auto* spline_m                = &host_bsplines_shared_.getBlock(ib);
-    auto* coefs                   = host_bsplines_shared_.getBlock(ib).coefs;
-    const size_t coefs_size_bytes = spline_m->coefs_size * sizeof(T);
-
+    auto* spline_m = &host_bsplines_shared_.getBlock(ib);
     PRAGMA_OFFLOAD("omp target enter data map(to: spline_m[:1])")
     omptarget_mem_usage.creditUsage(sizeof(decltype(*spline_m)));
-
-    if (spline_m->coefs_size > 0)
-    {
-      const int status =
-          omp_target_associate_ptr(coefs, const_cast<T*>(block_coefs_dev_[ib]), coefs_size_bytes, 0, device_num);
-      if (status != 0)
-        throw std::runtime_error("omp_target_associate_ptr failed in MultiBsplineOffloadMapperCCLShared::mapToDevice!");
-    }
   }
   comm.barrier();
 }
@@ -116,11 +104,13 @@ void MultiBsplineOffloadMapperCCLShared<T>::updateToDevice()
 {
   if (is_allocating_rank_)
   {
-    auto* spline_m = &host_bsplines_shared_.getBlock(allocated_block_);
-    if (spline_m->coefs_size > 0)
+    const auto& spline_m = host_bsplines_shared_.getBlock(allocated_block_);
+    if (spline_m.coefs_size > 0)
     {
-      auto* coefs = spline_m->coefs;
-      PRAGMA_OFFLOAD("omp target update to(coefs[:spline_m->coefs_size])")
+      const int status = omp_target_memcpy(local_dev_ptr_, spline_m.coefs, spline_m.coefs_size * sizeof(T), 0, 0,
+                                           omp_get_default_device(), omp_get_initial_device());
+      if (status != 0)
+        throw std::runtime_error("omp_target_memcpy failed in MultiBsplineOffloadMapperCCLShared::updateToDevice!");
     }
   }
   host_bsplines_shared_.getComm().barrier();
@@ -129,15 +119,9 @@ void MultiBsplineOffloadMapperCCLShared<T>::updateToDevice()
 template<typename T>
 MultiBsplineOffloadMapperCCLShared<T>::~MultiBsplineOffloadMapperCCLShared()
 {
-  const int device_num = omp_get_default_device();
   for (int ib = 0; ib < host_bsplines_shared_.getNumBlocks(); ib++)
   {
     auto* spline_m = &host_bsplines_shared_.getBlock(ib);
-    auto* coefs    = host_bsplines_shared_.getBlock(ib).coefs;
-
-    if (spline_m->coefs_size > 0)
-      omp_target_disassociate_ptr(coefs, device_num);
-
     PRAGMA_OFFLOAD("omp target exit data map(delete: spline_m[:1])")
     omptarget_mem_usage.debitUsage(sizeof(decltype(*spline_m)));
   }

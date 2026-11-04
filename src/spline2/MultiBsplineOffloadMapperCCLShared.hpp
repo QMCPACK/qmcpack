@@ -24,13 +24,11 @@ namespace qmcplusplus
 {
 /** @ingroup spline2
  * @brief Offload mapper that manages 3D multi-B-spline coefficients distributed across GPUs
- *        using NCCL memory windows and mapped into OpenMP target runtime via
- *        omp_target_associate_ptr.
+ *        using NCCL memory windows.
  *
  * Analogous to MultiBsplineMPIShared on the host, MultiBsplineOffloadMapperCCLShared
  * allocates device memory using ncclMemAlloc, registers a shared window across ranks via
- * ncclCommWindowRegister, retrieves direct peer device pointers via ncclGetPeerDevicePointer,
- * and associates host and device pointers using omp_target_associate_ptr.
+ * ncclCommWindowRegister, and retrieves direct peer device pointers via ncclGetPeerDevicePointer.
  *
  * @tparam T The precision of spline coefficients (float or double).
  */
