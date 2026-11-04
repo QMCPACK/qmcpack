@@ -13,6 +13,7 @@
 add_library(spline2_omptarget OBJECT MultiBsplineOffloadMapperBase.cpp MultiBsplineOffloadMapper.cpp)
 if(QMC_CCL)
   target_sources(spline2_omptarget PRIVATE MultiBsplineOffloadMapperCCLShared.cpp)
+  target_link_libraries(spline2_omptarget PUBLIC Platform::CCL)
 endif()
 target_link_libraries(spline2_omptarget PUBLIC einspline platform_runtime containers)
 

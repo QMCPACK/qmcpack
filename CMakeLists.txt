@@ -112,6 +112,7 @@ include(DetermineGPUFeatures)
 # So the dependency must be explicitly specified with USE_OBJECT_TARGET.
 cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 cmake_dependent_option(QMC_OFFLOAD_USM "Require OpenMP unified shared memory" OFF "ENABLE_OFFLOAD" OFF)
+cmake_dependent_option(QMC_CCL "Enable collective communication library for GPU" ON "ENABLE_OFFLOAD" OFF)
 
 include(DetermineDeviceArchitectures)
 
@@ -830,6 +831,17 @@ if(ENABLE_SYCL)
     target_link_libraries(MKL::sycl INTERFACE OneAPI::DPCPP-host)
   endif()
 endif(ENABLE_SYCL)
+
+#-------------------------------------------------------------------
+#  set up GPU collective communication libraries
+#-------------------------------------------------------------------
+if(QMC_CCL)
+  add_library(Platform::CCL INTERFACE IMPORTED)
+  if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
+    find_package(NCCL REQUIRED)
+    target_link_libraries(Platform::CCL INTERFACE NCCL::NCCL)
+  endif()
+endif()
 
 #-----------------------------------------------------
 #  Resolve Vendor and OpenMP runtime incompatibilities
