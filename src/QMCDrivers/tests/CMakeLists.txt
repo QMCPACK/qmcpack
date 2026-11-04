@@ -78,7 +78,9 @@ set(DRIVER_TEST_SRC
     test_QMCDriverInput.cpp
     test_QMCDriverNew.cpp
     test_VMCDriverInput.cpp
+    VMCBatchedTest.cpp
     test_VMCBatched.cpp
+    test_CountingWaveFunctionComponent.cpp
     test_DMCBatched.cpp
     test_L2Diffusion.cpp
     test_SFNBranch.cpp
@@ -111,7 +113,12 @@ add_unit_test(BASENAME ${UTEST_NAME} PROCS 2 THREADS 3 TEST_BINARY $<TARGET_FILE
 if(HAVE_MPI)
   set(UTEST_EXE test_new_${SRC_DIR}_mpi)
   #this is dependent on the directory creation and sym linking of earlier driver tests
-  set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp test_QMCDriverNew.cpp)
+  set(DRIVER_TEST_SRC
+      SetupPools.cpp
+      test_WalkerControl.cpp
+      test_QMCDriverNew.cpp
+      VMCBatchedTest.cpp
+      test_VMCBatched_mpi.cpp)
   add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
   target_link_libraries(${UTEST_EXE} catch_main qmcdriver minimal_test_pools)
   if(USE_OBJECT_TARGET)
