@@ -52,6 +52,9 @@ set(UTEST_EXE test_walker_io)
 set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 
 add_executable(${UTEST_EXE} test_walker.cpp test_HDFWalkerInput_0_4.cpp)
+# These tests deliberately construct Inf/NaN inputs, which finite-only math can optimize away.
+set_property(SOURCE test_HDFWalkerInput_0_4.cpp APPEND PROPERTY COMPILE_OPTIONS
+             "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang,IntelLLVM>:-fno-finite-math-only>")
 target_link_libraries(${UTEST_EXE} catch_main qmcparticle minimal_particle_pool)
 if(USE_OBJECT_TARGET)
   target_link_libraries(${UTEST_EXE} qmcutil qmcparticle_omptarget)

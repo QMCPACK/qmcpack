@@ -20,6 +20,7 @@
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Message/UniformCommunicateError.h"
+#include "CPU/math.hpp"
 #include <catch2/matchers/catch_matchers_exception.hpp>
 #include "Particle/WalkerConfigurations.h"
 #include "Particle/HDFWalkerOutput.h"
@@ -42,6 +43,7 @@ TEST_CASE("HDFWalkerInput_0_4 missing malformed and invalid weights", "[particle
   const std::filesystem::path file = root + ".config.h5";
   for (int mode = 0; mode < 7; ++mode)
   {
+    CAPTURE(mode);
     if (comm.rank() == 0)
     {
       hdf_archive output;
@@ -60,9 +62,15 @@ TEST_CASE("HDFWalkerInput_0_4 missing malformed and invalid weights", "[particle
         if (mode == 3)
           weights.back() = -1;
         else if (mode == 4)
+        {
           weights.back() = std::numeric_limits<double>::infinity();
+          REQUIRE(qmcplusplus::isinf(weights.back()));
+        }
         else if (mode == 5)
+        {
           weights.back() = std::numeric_limits<double>::quiet_NaN();
+          REQUIRE(qmcplusplus::isnan(weights.back()));
+        }
         if (mode == 2)
         {
           const std::array<size_t, 2> bad_shape{4, 4};
@@ -84,6 +92,7 @@ TEST_CASE("HDFWalkerInput_0_4 missing malformed and invalid weights", "[particle
          ;
          ++reader)
     {
+      CAPTURE(reader);
       WalkerConfigurations configurations;
       HDFWalkerInput_0_4 input(configurations, particles, comm, HDFVersion(0, 4));
       // Exercise all supported backends against the same missing/malformed/value-invalid dataset.

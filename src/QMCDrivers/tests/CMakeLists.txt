@@ -14,6 +14,10 @@ set(SRC_DIR drivers)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
+# These tests deliberately construct Inf/NaN inputs, which finite-only math can optimize away.
+set_property(SOURCE test_MCPopulation.cpp test_WalkerControl.cpp APPEND PROPERTY COMPILE_OPTIONS
+             "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang,IntelLLVM>:-fno-finite-math-only>")
+
 # test_drivers shouldn't be dependent on wavefunctions
 set(ALIASED_FILES)
 make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5 diamondC_1x1x1.pwscf.h5)
