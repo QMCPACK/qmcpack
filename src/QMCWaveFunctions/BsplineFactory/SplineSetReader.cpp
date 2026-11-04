@@ -94,25 +94,22 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   {
     auto mpi_shared_splines = std::make_unique<MultiBsplineMPIShared<ST>>(xyz_grid, xyz_bc, num_splines,
                                                                           std::move(dist_comm_ptr), distributed_ranks);
-    if (use_offload)
 #if defined(QMC_CCL)
+    if (use_offload && distributed_ranks > 1)
       offload_mapper = std::make_unique<MultiBsplineOffloadMapperCCLShared<ST>>(*mpi_shared_splines);
-#else
-      offload_mapper = std::make_unique<MultiBsplineOffloadMapper<ST>>(*mpi_shared_splines);
 #endif
     multi_splines_ptr = std::move(mpi_shared_splines);
   }
   else
 #endif
-  {
     multi_splines_ptr = std::make_unique<MultiBspline<ST>>(xyz_grid, xyz_bc, num_splines);
-    if (use_offload)
-      offload_mapper = std::make_unique<MultiBsplineOffloadMapper<ST>>(*multi_splines_ptr);
-  }
 
   auto& multi_splines(*multi_splines_ptr);
   app_log() << "MEMORY " << multi_splines.sizeInByte() / (1 << 20) << " MB allocated "
             << "for the coefficients in 3D spline orbital representation" << std::endl;
+
+  if (use_offload && !offload_mapper)
+    offload_mapper = std::make_unique<MultiBsplineOffloadMapper<ST>>(*multi_splines_ptr);
 
   std::unique_ptr<BsplineSet> bspline;
 #if defined(QMC_COMPLEX)
