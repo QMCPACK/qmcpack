@@ -130,6 +130,37 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
   }
 }
 
+TEST_CASE("QMCDriverFactory move modes for batched VMC", "[qmcapp]")
+{
+  using namespace testing;
+  Communicate& comm(*OHMMS::Controller);
+  ProjectData test_project;
+  QMCDriverFactory driver_factory(test_project);
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]));
+  xmlNodePtr node = doc.getRoot();
+  xmlSetProp(node, BAD_CAST "move", BAD_CAST "allp");
+  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
+  auto qmc_driver = testing::createDriver(test_project.getRuntimeOptions(), comm, driver_factory, node, das);
+  REQUIRE(qmc_driver != nullptr);
+  REQUIRE_NOTHROW(dynamic_cast<VMCBatched&>(*qmc_driver));
+
+  xmlSetProp(node, BAD_CAST "move", BAD_CAST "unknown");
+  REQUIRE_THROWS(driver_factory.readSection(node));
+
+  xmlSetProp(node, BAD_CAST "move", BAD_CAST "allp");
+  xmlSetProp(node, BAD_CAST "method", BAD_CAST "dmc");
+  REQUIRE_THROWS(driver_factory.readSection(node));
+
+  // Legacy drivers retain their existing all-particle support.
+  ProjectData legacy_project(ProjectData::DriverVersion::LEGACY);
+  QMCDriverFactory legacy_factory(legacy_project);
+  REQUIRE_NOTHROW(legacy_factory.readSection(node));
+  xmlSetProp(node, BAD_CAST "move", BAD_CAST "wbyw");
+  REQUIRE_NOTHROW(legacy_factory.readSection(node));
+}
+
 TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
 {
   using namespace testing;

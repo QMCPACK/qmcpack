@@ -78,8 +78,11 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   aAttrib.add(das.traces_tag, "trace");
   aAttrib.add(das.walkerlogs_tag, "walkerlog");
   aAttrib.put(cur);
-  das.append_run              = (append_tag == "yes");
-  das.enable_profiling        = (profiling_tag == "yes");
+  das.append_run       = (append_tag == "yes");
+  das.enable_profiling = (profiling_tag == "yes");
+  if (project_data_.getDriverVersion() == ProjectData::DriverVersion::BATCH && update_mode != "pbyp" &&
+      update_mode != "allp")
+    throw UniformCommunicateError("Unknown move mode. Valid modes are: pbyp, allp.");
   das.what_to_do[UPDATE_MODE] = (update_mode == "pbyp");
   infoSummary.flush();
   infoLog.flush();
@@ -127,6 +130,9 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
     else
       throw std::runtime_error("qmc method cannot be empty!");
   }
+  if (update_mode == "allp" && project_data_.getDriverVersion() == DV::BATCH &&
+      das.new_run_type != QMCRunType::VMC_BATCH)
+    throw UniformCommunicateError("All-particle moves are supported only by batched VMC.");
   return das;
 }
 
@@ -211,9 +217,6 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
     }
     else if (das.new_run_type == QMCRunType::VMC_BATCH)
     {
-      if (!das.what_to_do[UPDATE_MODE])
-        throw UniformCommunicateError("Batched driver only supports particle-by-particle moves.");
-
       app_summary() << "\n========================================"
                        "\n  Reading VMC driver XML input section"
                        "\n========================================"
@@ -241,7 +244,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
                                        MCPopulation(comm.size(), comm.rank(), qmc_system, primaryPsi, primaryH),
                                        RandomNumberControl::getChildrenRefs(), qmc_system.getSampleStack(), comm);
 
-      new_driver->setUpdateMode(1);
+      new_driver->setUpdateMode(das.what_to_do[UPDATE_MODE]);
     }
     else if (das.new_run_type == QMCRunType::DMC)
     {
