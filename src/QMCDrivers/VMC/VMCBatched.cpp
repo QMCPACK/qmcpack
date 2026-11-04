@@ -107,6 +107,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
       std::vector<bool> are_valid(num_walkers * num_particles);
       std::vector<bool> is_accepted(num_walkers);
+      const std::vector<bool> evaluate_all(num_walkers, true);
       std::vector<RealType> old_logpsi(num_walkers);
       MCCoords<CT> walker_deltas(num_walkers * num_particles);
 
@@ -128,14 +129,13 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
           old_logpsi[iw] = walker_twfs[iw].getLogPsi();
 
         ps_dispatcher.flex_makeMoveAllParticles(walker_elecs, walker_deltas, are_valid);
-        twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
+        // Evaluate proposals for every walker, then resolve only rejected wavefunction transactions.
+        twf_dispatcher.flex_evaluateLogAllParticles(walker_twfs, walker_elecs, evaluate_all);
 
-        bool any_walker_rejection = false;
         for (int iw = 0; iw < num_walkers; ++iw)
         {
           const RealType probability = std::exp(2.0 * (walker_twfs[iw].getLogPsi() - old_logpsi[iw]));
           is_accepted[iw]            = step_context.get_random_gen()() < probability;
-          any_walker_rejection |= !is_accepted[iw];
 
           // Account at particle granularity. Invalid particles remain in place and do not reject their walker.
           for (int iat = 0; iat < num_particles; ++iat)
@@ -146,9 +146,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         }
 
         ps_dispatcher.flex_accept_rejectMoveAllParticles(walker_elecs, is_accepted);
-        // Walker rejections restore ParticleSet coordinates, so refresh the wavefunction state after resolution.
-        if (any_walker_rejection)
-          twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
+        twf_dispatcher.flex_accept_rejectMoveAllParticles(walker_twfs, walker_elecs, is_accepted);
       }
     }
   }

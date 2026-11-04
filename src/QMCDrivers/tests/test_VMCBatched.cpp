@@ -30,9 +30,59 @@
 
 #include <cmath>
 #include <limits>
+#include <memory>
 
 namespace qmcplusplus
 {
+namespace
+{
+struct EvaluationCounts
+{
+  int evaluate_log    = 0;
+  bool mixed_outcomes = false;
+};
+
+class CountingWaveFunctionComponent : public WaveFunctionComponent
+{
+public:
+  explicit CountingWaveFunctionComponent(std::shared_ptr<EvaluationCounts> evaluate_log_count)
+      : evaluate_log_count_(evaluate_log_count)
+  {}
+
+  void mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                        const RefVectorWithLeader<ParticleSet>& p_list,
+                                        const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                        const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                        const std::vector<bool>& accepted) const override
+  {
+    // This test has one crowd of two walkers, so only one thread updates the counters.
+    evaluate_log_count_->mixed_outcomes |= accepted[0] != accepted[1];
+    WaveFunctionComponent::mw_accept_rejectMoveAllParticles(wfc_list, p_list, G_list, L_list, accepted);
+  }
+
+  std::string getClassName() const override { return "CountingWaveFunctionComponent"; }
+  LogValue evaluateLog(const ParticleSet&, ParticleSet::ParticleGradient&, ParticleSet::ParticleLaplacian&) override
+  {
+    ++evaluate_log_count_->evaluate_log;
+    return LogValue(0);
+  }
+  void acceptMove(ParticleSet&, int, bool) override {}
+  void restore(int) override {}
+  PsiValue ratio(ParticleSet&, int) override { return PsiValue(1); }
+  void registerData(ParticleSet&, WFBufferType&) override {}
+  LogValue updateBuffer(ParticleSet&, WFBufferType&, bool) override { return LogValue(0); }
+  void copyFromBuffer(ParticleSet&, WFBufferType&) override {}
+  void evaluateDerivatives(ParticleSet&, const OptVariables&, Vector<ValueType>&, Vector<ValueType>&) override {}
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet&) const override
+  {
+    return std::make_unique<CountingWaveFunctionComponent>(evaluate_log_count_);
+  }
+
+private:
+  std::shared_ptr<EvaluationCounts> evaluate_log_count_;
+};
+} // namespace
+
 namespace testing
 {
 class VMCBatchedTest
@@ -44,7 +94,7 @@ public:
     constexpr const char* allp_input  = R"(
       <qmc method="vmc_batch" move="allp" checkpoint="-1">
         <parameter name="crowds">1</parameter>
-        <parameter name="total_walkers">2</parameter>
+        <parameter name="walkers_per_rank">2</parameter>
         <parameter name="warmupsteps">0</parameter>
         <parameter name="substeps">2</parameter>
         <parameter name="steps">1</parameter>
@@ -53,7 +103,6 @@ public:
         <parameter name="usedrift">no</parameter>
       </qmc>
     )";
-
     ProjectData project_data("test", ProjectData::DriverVersion::BATCH);
     Communicate& comm = *OHMMS::Controller;
     RandomForTest<QMCTraits::FullPrecRealType> random_for_test;
@@ -74,11 +123,15 @@ public:
     auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
     auto wavefunction_pool =
         MinimalWaveFunctionPool::make_diamondC_1x1x1(project_data.getRuntimeOptions(), comm, particle_pool);
+    auto evaluate_log_count = std::make_shared<EvaluationCounts>();
+    wavefunction_pool.getWaveFunction().value().get().addComponent(
+        std::make_unique<CountingWaveFunctionComponent>(evaluate_log_count));
     auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
 
     using RNG = RandomBase<QMCTraits::FullPrecRealType>;
+    // This seed exercises a mixed accept/reject crowd in addition to an all-accept substep.
     StdRandom<QMCTraits::FullPrecRealType> rng0(
-        static_cast<StdRandom<QMCTraits::FullPrecRealType>::uint_type>(random_for_test() * 1000000));
+        static_cast<StdRandom<QMCTraits::FullPrecRealType>::uint_type>(random_for_test() * 1000000) + 2);
     RefVector<RNG> rng_refs;
     rng_refs.push_back(rng0);
 
@@ -99,6 +152,11 @@ public:
 
     vmc_driver.run();
     CHECK(walker_confs.getActiveWalkers() == 2);
+    // Two initial evaluations, four proposals, one rejected-walker restoration,
+    // and two final evaluateGL fallbacks. Accepted walkers must not be reevaluated
+    // when the other walker is rejected.
+    CHECK(evaluate_log_count->mixed_outcomes);
+    CHECK(evaluate_log_count->evaluate_log == 2 + 2 * 2 + 1 + 2);
     std::vector<QMCTraits::FullPrecRealType> final_log_psis;
     std::vector<int> move_accepts;
     std::vector<int> move_rejects;
@@ -122,9 +180,9 @@ public:
                 << NativePrint<std::vector<QMCTraits::FullPrecRealType>>(final_log_psis) << '\n';
     else
     {
-      const std::vector<int> expected_move_accepts{16};
-      const std::vector<int> expected_move_rejects{16};
-      const std::vector<QMCTraits::FullPrecRealType> expected_final_log_psis{-4.2715065656, -3.6563663443};
+      const std::vector<int> expected_move_accepts{24};
+      const std::vector<int> expected_move_rejects{8};
+      const std::vector<QMCTraits::FullPrecRealType> expected_final_log_psis{-3.9787127622, -5.0220633704};
       const auto log_psi_epsilon = std::numeric_limits<QMCTraits::FullPrecRealType>::epsilon() * 1000000;
 
       CHECK(move_accepts == expected_move_accepts);
