@@ -18,6 +18,7 @@
 #include "config.h"
 #if defined(ENABLE_CUDA)
 #include <nccl.h>
+#include <nccl_device/core.h>
 #elif defined(ENABLE_SYCL)
 #include <oneapi/ccl.h>
 #endif
