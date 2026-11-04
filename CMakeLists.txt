@@ -112,7 +112,6 @@ include(DetermineGPUFeatures)
 # So the dependency must be explicitly specified with USE_OBJECT_TARGET.
 cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 cmake_dependent_option(QMC_OFFLOAD_USM "Require OpenMP unified shared memory" OFF "ENABLE_OFFLOAD" OFF)
-cmake_dependent_option(QMC_CCL "Enable collective communication library for GPU" ON "QMC_MPI;ENABLE_OFFLOAD;ENABLE_CUDA OR ENABLE_SYCL" OFF)
 
 include(DetermineDeviceArchitectures)
 
@@ -835,16 +834,35 @@ endif(ENABLE_SYCL)
 #-------------------------------------------------------------------
 #  set up GPU collective communication libraries
 #-------------------------------------------------------------------
+set(CCL_FOUND OFF)
+if(QMC_MPI AND ENABLE_OFFLOAD AND (NOT DEFINED QMC_CCL OR QMC_CCL))
+  if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
+    find_package(NCCL 2.29.0)
+    set(CCL_FOUND ${NCCL_FOUND})
+  elseif(ENABLE_ROCM)
+    find_package(rccl 2.29.0 CONFIG)
+    set(CCL_FOUND ${rccl_FOUND})
+  elseif(ENABLE_SYCL)
+    find_package(oneCCL 2022.2.0 CONFIG)
+    set(CCL_FOUND ${oneCCL_FOUND})
+  endif()
+endif()
+
+cmake_dependent_option(QMC_CCL "Enable collective communication library for GPU" ${CCL_FOUND}
+                       "QMC_MPI;ENABLE_OFFLOAD;ENABLE_CUDA OR ENABLE_SYCL" OFF)
+
 if(QMC_CCL)
+  if(NOT CCL_FOUND)
+    message(FATAL_ERROR "QMC_CCL=ON requested, but a compatible GPU collective communication library "
+                        "(NCCL >= 2.29.0, RCCL >= 2.29.0, or oneCCL >= 2022.2.0) was not found! "
+                        "Please provide a compatible library or set QMC_CCL=OFF.")
+  endif()
   add_library(Platform::CCL INTERFACE IMPORTED)
   if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
-    find_package(NCCL 2.29.0 REQUIRED)
     target_link_libraries(Platform::CCL INTERFACE NCCL::NCCL)
   elseif(ENABLE_ROCM)
-    find_package(rccl 2.29.0 CONFIG REQUIRED)
     target_link_libraries(Platform::CCL INTERFACE roc::rccl)
   elseif(ENABLE_SYCL)
-    find_package(oneCCL 2022.2.0 CONFIG REQUIRED)
     target_link_libraries(Platform::CCL INTERFACE oneCCL)
   else()
     message(FATAL_ERROR "QMC_CCL requires a supported GPU vendor backend (CUDA, ROCm, or SYCL).")
