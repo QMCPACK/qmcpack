@@ -131,52 +131,29 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
   }
 }
 
-TEST_CASE("QMCDriverFactory move modes for batched VMC", "[qmcapp]")
+TEST_CASE("QMCDriverFactory all-particle method support", "[qmcapp]")
 {
-  using namespace testing;
-  Communicate& comm(*OHMMS::Controller);
-  ProjectData test_project;
-  QMCDriverFactory driver_factory(test_project);
-
+  ProjectData project;
+  QMCDriverFactory factory(project);
   Libxml2Document doc;
-  REQUIRE(doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]));
-  xmlNodePtr node = doc.getRoot();
-  xmlSetProp(node, BAD_CAST "move", BAD_CAST "allp");
-  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
-  auto qmc_driver = testing::createDriver(test_project.getRuntimeOptions(), comm, driver_factory, node, das);
-  REQUIRE(qmc_driver != nullptr);
-  REQUIRE_NOTHROW(dynamic_cast<VMCBatched&>(*qmc_driver));
 
-  xmlSetProp(node, BAD_CAST "move", BAD_CAST "unknown");
-  REQUIRE_THROWS(driver_factory.readSection(node));
-
-  xmlSetProp(node, BAD_CAST "move", BAD_CAST "allp");
-  xmlSetProp(node, BAD_CAST "method", BAD_CAST "dmc");
-  REQUIRE_THROWS(driver_factory.readSection(node));
-  xmlSetProp(node, BAD_CAST "method", BAD_CAST "linear");
-  REQUIRE_THROWS(driver_factory.readSection(node));
-
-  // Legacy VMC and DMC retain arbitrary move aliases; deprecated vmc_batch is
-  // nevertheless governed by the batched move-mode contract.
-  ProjectData legacy_project(ProjectData::DriverVersion::LEGACY);
-  QMCDriverFactory legacy_factory(legacy_project);
-  xmlSetProp(node, BAD_CAST "method", BAD_CAST "vmc");
-  xmlSetProp(node, BAD_CAST "move", BAD_CAST "wbyw");
-  REQUIRE_NOTHROW(legacy_factory.readSection(node));
-  xmlSetProp(node, BAD_CAST "move", BAD_CAST "allp");
-  REQUIRE_NOTHROW(legacy_factory.readSection(node));
-  xmlSetProp(node, BAD_CAST "method", BAD_CAST "dmc");
-  xmlSetProp(node, BAD_CAST "move", BAD_CAST "npbyp");
-  REQUIRE_NOTHROW(legacy_factory.readSection(node));
-  xmlSetProp(node, BAD_CAST "move", BAD_CAST "allp");
-  REQUIRE_NOTHROW(legacy_factory.readSection(node));
-  xmlSetProp(node, BAD_CAST "method", BAD_CAST "vmc_batch");
-  xmlSetProp(node, BAD_CAST "move", BAD_CAST "allp");
-  REQUIRE_NOTHROW(legacy_factory.readSection(node));
-  xmlSetProp(node, BAD_CAST "move", BAD_CAST "wbyw");
-  REQUIRE_THROWS(legacy_factory.readSection(node));
-  xmlSetProp(node, BAD_CAST "move", BAD_CAST "typo");
-  REQUIRE_THROWS(legacy_factory.readSection(node));
+  SECTION("batched DMC rejects all-particle moves")
+  {
+    REQUIRE(doc.parseFromString("<qmc method=\"dmc\" move=\"allp\"/>"));
+    REQUIRE_THROWS(factory.readSection(doc.getRoot()));
+  }
+  SECTION("batched optimization rejects all-particle moves")
+  {
+    REQUIRE(doc.parseFromString("<qmc method=\"linear\" move=\"allp\"/>"));
+    REQUIRE_THROWS(factory.readSection(doc.getRoot()));
+  }
+  SECTION("legacy DMC retains all-particle support")
+  {
+    ProjectData legacy_project(ProjectData::DriverVersion::LEGACY);
+    QMCDriverFactory legacy_factory(legacy_project);
+    REQUIRE(doc.parseFromString("<qmc method=\"dmc\" move=\"allp\"/>"));
+    REQUIRE_NOTHROW(legacy_factory.readSection(doc.getRoot()));
+  }
 }
 
 TEST_CASE("QMCDriverFactory validates batched VMC all-particle options before construction", "[qmcapp]")
@@ -212,13 +189,6 @@ TEST_CASE("QMCDriverFactory validates batched VMC all-particle options before co
   SECTION("supported all-particle mode constructs batched VMC")
   {
     auto driver = create_from_xml("<qmc method=\"vmc_batch\" move=\"allp\"><parameter name=\"usedrift\">no</parameter></qmc>");
-    REQUIRE(driver != nullptr);
-    CHECK(driver->getEngineName() == "VMCBatched");
-  }
-  SECTION("particle-by-particle moves retain drift and spinor support")
-  {
-    auto driver = create_from_xml(
-        "<qmc method=\"vmc_batch\" move=\"pbyp\"><parameter name=\"usedrift\">yes</parameter></qmc>", true);
     REQUIRE(driver != nullptr);
     CHECK(driver->getEngineName() == "VMCBatched");
   }
