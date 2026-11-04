@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include <memory>
 #include <optional>
+#include <iostream>
 #include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Message/UniformCommunicateError.h"
@@ -50,6 +51,10 @@ int main(int argc, char** argv)
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
   OHMMS::Controller = std::make_unique<Communicate>(env.world());
+  if (const auto [min_ranks, max_ranks] = OHMMS::Controller->getMinMaxNodeRankCount();
+      min_ranks != max_ranks && OHMMS::Controller->rank() == 0)
+    std::cerr << "Warning: Unequal number of MPI ranks per node (min: " << min_ranks << ", max: " << max_ranks << ")."
+              << std::endl;
 #endif
   try
   {
