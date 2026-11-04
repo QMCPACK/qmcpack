@@ -23,7 +23,6 @@ if(NOT QMC_COMPLEX)
     qmc_run_and_check(
       deterministic-Co_L2_std-vmc_dmc
       "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
-      det_dmc_std_diff
       det_dmc_std_diff.in.xml
       1
       1
@@ -49,7 +48,6 @@ if(NOT QMC_COMPLEX)
     qmc_run_and_check(
       deterministic-Co_L2_std-vmc_dmc-batched
       "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
-      det_dmc_std_diff_batched
       det_dmc_std_diff_batched.in.xml
       1
       1
@@ -74,7 +72,6 @@ if(NOT QMC_COMPLEX)
     qmc_run_and_check(
       deterministic-Co_L2_L2-vmc_dmc-batched
       "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
-      det_dmc_L2_diff_batched
       det_dmc_L2_diff_batched.in.xml
       1
       4
@@ -99,7 +96,6 @@ if(NOT QMC_COMPLEX)
     qmc_run_and_check(
       deterministic-Co_L2_L2-vmc_dmc
       "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
-      det_dmc_L2_diff
       det_dmc_L2_diff.in.xml
       1
       1
@@ -108,6 +104,25 @@ if(NOT QMC_COMPLEX)
       DET_CO_L2_L2_VMC_1_1_SCALARS # VMC
       1
       DET_CO_L2_L2_DMC_1_1_SCALARS # DMC
+    )
+
+    list(APPEND DET_CO_L2_L2_BATCHED_DMC_1_1_SCALARS "totenergy" "-145.23443851 0.000001")
+    list(APPEND DET_CO_L2_L2_BATCHED_DMC_1_1_SCALARS "kinetic" "73.09023927 0.000001")
+    list(APPEND DET_CO_L2_L2_BATCHED_DMC_1_1_SCALARS "potential" "-218.32467778 0.000001")
+    list(APPEND DET_CO_L2_L2_BATCHED_DMC_1_1_SCALARS "localecp" "-292.99258254 0.000001")
+    list(APPEND DET_CO_L2_L2_BATCHED_DMC_1_1_SCALARS "samples" "1114.00846151 0.000001")
+
+    qmc_run_and_check(
+      deterministic-Co_L2_L2-vmcbatch_dmcbatch
+      "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
+      det_dmcbatch_L2_diff.in.xml
+      1
+      1
+      TRUE
+      0
+      DET_CO_L2_STD_BATCHED_VMC_1_1_SCALARS # VMC
+      1
+      DET_CO_L2_L2_BATCHED_DMC_1_1_SCALARS # DMC
     )
 
   endif()

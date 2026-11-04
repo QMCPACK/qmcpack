@@ -1440,17 +1440,17 @@ class Workstation(Machine):
 
 
     def submit_job(self,job):
-        pad = self.enter(job.directory,msg=job.simid)
+        pad = self.enter(job.directory,msg=f"(Sim #{job.simid})")
         command = self.job_command(job,pad=pad)
         job.status = job.states.running
         process = obj()
         process.job = job
         if nexus_config.generate_only:
-            self.nxs_print(pad+'Would have executed:  '+command)
+            self.nxs_print(pad+'Would have executed:\n'+command.strip("\n"))
             job.system_id = job.internal_id
         else:
             if nexus_config.monitor:
-                self.nxs_print(pad+'Executing:  '+command)
+                self.nxs_print(pad+'Executing:\n'+command.strip("\n"))
                 job.out = open(job.outfile,'w')
                 job.err = open(job.errfile,'w')
                 p = Popen(command,env=job.env,stdout=job.out,stderr=job.err,shell=True)
@@ -1458,7 +1458,7 @@ class Workstation(Machine):
                 job.system_id = p.pid
             else:
                 command+=' >'+job.outfile+' 2>'+job.errfile+'&'
-                self.nxs_print(pad+'Executing:  '+command)
+                self.nxs_print(pad+'Executing:\n'+command.strip("\n"))
                 os.system(command)
                 job.system_id = job.internal_id
             #end if
@@ -3930,11 +3930,13 @@ class Frontier(Supercomputer):
         c += f'#SBATCH -A {job.account}\n'
         c += f'#SBATCH -p {job.queue}\n'
         c += f'#SBATCH -J {job.name}\n'
-        c += f'#SBATCH -t {job.lsf_walltime()}\n'
+        c += f'#SBATCH -t {job.sbatch_walltime()}\n'
         c += f'#SBATCH -N {job.nodes}\n'
         c += '#SBATCH -S 8\n' # Uses default low-noise mode layout(default), reduces number of cores from 64 to 56.
         c += f'#SBATCH -o {job.name}.out\n'
         c += f'#SBATCH -e {job.name}.err\n'
+        if job.qos:
+            c+=f'#SBATCH -q {job.qos}\n'
         return c
 
 

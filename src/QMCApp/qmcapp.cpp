@@ -31,8 +31,6 @@
 #include "Utilities/qmc_common.h"
 #include "Concurrency/OpenMP.h"
 
-#include <array>
-
 void output_hardware_info(Communicate& comm, Libxml2Document& doc, xmlNodePtr root);
 
 /** @file qmcapp.cpp
@@ -55,160 +53,151 @@ int main(int argc, char** argv)
   {
     std::vector<std::string> inputs;
     int ranks_per_group_multiple = 1;
-    try
-    {
-      //qmc_common  and MPI is initialized
-      qmcplusplus::qmc_common.initialize(argc, argv);
-      std::vector<std::string> fgroup_names_cmd, fgroup_names_txt;
-      int i = 1;
-      while (i < argc)
-      {
-        std::string c(argv[i]);
-        if (c[0] == '-')
-        {
-          if (c == "-debug")
-            ReportEngine::enableOutput();
 
-          // Default setting is 'timer_level_coarse'
-          if (c.find("-enable-timers") < c.size())
-          {
+    //qmc_common  and MPI is initialized
+    qmcplusplus::qmc_common.initialize(argc, argv);
+    std::vector<std::string> fgroup_names_cmd, fgroup_names_txt;
+    int i = 1;
+    while (i < argc)
+    {
+      std::string c(argv[i]);
+      if (c[0] == '-')
+      {
+        if (c == "-debug")
+          ReportEngine::enableOutput();
+
+        // Default setting is 'timer_level_coarse'
+        if (c.find("-enable-timers") < c.size())
+        {
 #ifndef ENABLE_TIMERS
-            std::cerr
-                << "The '-enable-timers' command line option will have no effect. This executable was built without "
-                   "ENABLE_TIMER set."
-                << std::endl;
+          std::cerr
+              << "The '-enable-timers' command line option will have no effect. This executable was built without "
+                 "ENABLE_TIMER set."
+              << std::endl;
 #endif
-            int pos = c.find("=");
-            if (pos != std::string::npos)
-            {
-              std::string timer_level = c.substr(pos + 1);
-              getGlobalTimerManager().set_timer_threshold(timer_level);
-            }
-          }
-          if (c.find("-verbosity") < c.size())
+          int pos = c.find("=");
+          if (pos != std::string::npos)
           {
-            int pos = c.find("=");
-            if (pos != std::string::npos)
-            {
-              std::string verbose_level = c.substr(pos + 1);
-              if (verbose_level == "low")
-              {
-                outputManager.setVerbosity(Verbosity::LOW);
-              }
-              else if (verbose_level == "high")
-              {
-                outputManager.setVerbosity(Verbosity::HIGH);
-              }
-              else if (verbose_level == "debug")
-              {
-                outputManager.setVerbosity(Verbosity::DEBUG);
-              }
-              else
-              {
-                throw UniformCommunicateError("Unknown verbosity level: " + verbose_level);
-              }
-            }
-          }
-          if (c.find("ranks-per-group-multiple") < c.size())
-          {
-            int pos = c.find("=");
-            try
-            {
-              if (pos != std::string::npos)
-                ranks_per_group_multiple = std::stoi(c.substr(pos + 1));
-              else if (i + 1 < argc)
-                ranks_per_group_multiple = std::stoi(argv[++i]);
-              else
-                throw UniformCommunicateError("Missing argument for --ranks-per-group-multiple");
-            }
-            catch (const std::invalid_argument&)
-            {
-              throw UniformCommunicateError("Invalid argument for --ranks-per-group-multiple");
-            }
-            catch (const std::out_of_range&)
-            {
-              throw UniformCommunicateError("Argument out of range for --ranks-per-group-multiple");
-            }
-            if (ranks_per_group_multiple <= 0)
-              throw UniformCommunicateError("--ranks-per-group-multiple must be a positive integer.");
+            std::string timer_level = c.substr(pos + 1);
+            getGlobalTimerManager().set_timer_threshold(timer_level);
           }
         }
+        if (c.find("-verbosity") < c.size())
+        {
+          int pos = c.find("=");
+          if (pos != std::string::npos)
+          {
+            std::string verbose_level = c.substr(pos + 1);
+            if (verbose_level == "low")
+            {
+              outputManager.setVerbosity(Verbosity::LOW);
+            }
+            else if (verbose_level == "high")
+            {
+              outputManager.setVerbosity(Verbosity::HIGH);
+            }
+            else if (verbose_level == "debug")
+            {
+              outputManager.setVerbosity(Verbosity::DEBUG);
+            }
+            else
+            {
+              throw UniformCommunicateError("Unknown verbosity level: " + verbose_level);
+            }
+          }
+        }
+        if (c.find("ranks-per-group-multiple") < c.size())
+        {
+          int pos = c.find("=");
+          try
+          {
+            if (pos != std::string::npos)
+              ranks_per_group_multiple = std::stoi(c.substr(pos + 1));
+            else if (i + 1 < argc)
+              ranks_per_group_multiple = std::stoi(argv[++i]);
+            else
+              throw UniformCommunicateError("Missing argument for --ranks-per-group-multiple");
+          }
+          catch (const std::invalid_argument&)
+          {
+            throw UniformCommunicateError("Invalid argument for --ranks-per-group-multiple");
+          }
+          catch (const std::out_of_range&)
+          {
+            throw UniformCommunicateError("Argument out of range for --ranks-per-group-multiple");
+          }
+          if (ranks_per_group_multiple <= 0)
+            throw UniformCommunicateError("--ranks-per-group-multiple must be a positive integer.");
+        }
+      }
+      else
+      {
+        if (c.find(".xml") == c.size() - 4)
+          fgroup_names_cmd.push_back(argv[i]);
         else
         {
-          if (c.find(".xml") == c.size() - 4)
-            fgroup_names_cmd.push_back(argv[i]);
-          else
+          std::ifstream fin(argv[i], std::ifstream::in);
+          bool valid = !fin.fail();
+          while (valid)
           {
-            std::ifstream fin(argv[i], std::ifstream::in);
-            bool valid = !fin.fail();
-            while (valid)
+            std::vector<std::string> words;
+            getwords(words, fin);
+            if (words.size())
             {
-              std::vector<std::string> words;
-              getwords(words, fin);
-              if (words.size())
-              {
-                if (words[0].find(".xml") == words[0].size() - 4)
-                  fgroup_names_txt.push_back(words[0]);
-              }
-              else
-                valid = false;
+              if (words[0].find(".xml") == words[0].size() - 4)
+                fgroup_names_txt.push_back(words[0]);
             }
+            else
+              valid = false;
           }
         }
-        ++i;
       }
-      inputs.resize(fgroup_names_cmd.size() + fgroup_names_txt.size());
-      copy(fgroup_names_txt.begin(), fgroup_names_txt.end(), inputs.begin());
-      i = fgroup_names_txt.size();
-      for (int k = 0; k < fgroup_names_cmd.size(); ++k)
-        inputs[i++] = fgroup_names_cmd[k];
-      if (inputs.empty())
-      {
-        std::string msg = "No valid input file is given.\n"
-                          "Usage: qmcpack [options] <input-files.xml>\n"
-                          "Ensemble runs may be initialized by specifying either multiple .xml files or text files "
-                          "containing lists of .xml input files.";
-        throw UniformCommunicateError(msg);
-      }
-      //safe to move on
-      if (OHMMS::Controller->size() % ranks_per_group_multiple != 0)
+      ++i;
+    }
+    inputs.resize(fgroup_names_cmd.size() + fgroup_names_txt.size());
+    copy(fgroup_names_txt.begin(), fgroup_names_txt.end(), inputs.begin());
+    i = fgroup_names_txt.size();
+    for (int k = 0; k < fgroup_names_cmd.size(); ++k)
+      inputs[i++] = fgroup_names_cmd[k];
+    if (inputs.empty())
+    {
+      std::string msg = "No valid input file is given.\n"
+                        "Usage: qmcpack [options] <input-files.xml>\n"
+                        "Ensemble runs may be initialized by specifying either multiple .xml files or text files "
+                        "containing lists of .xml input files.";
+      throw UniformCommunicateError(msg);
+    }
+    //safe to move on
+    if (OHMMS::Controller->size() % ranks_per_group_multiple != 0)
+    {
+      std::ostringstream msg;
+      msg << "main(). Current " << OHMMS::Controller->size()
+          << " MPI ranks is not a multiple of --ranks-per-group-multiple " << ranks_per_group_multiple << ".";
+      throw UniformCommunicateError(msg.str());
+    }
+    if (inputs.size() > 1)
+    {
+      const int total_blocks = OHMMS::Controller->size() / ranks_per_group_multiple;
+      if (total_blocks < inputs.size())
       {
         std::ostringstream msg;
-        msg << "main(). Current " << OHMMS::Controller->size()
-            << " MPI ranks is not a multiple of --ranks-per-group-multiple " << ranks_per_group_multiple << ".";
+        msg << "main(). Current " << OHMMS::Controller->size() << " MPI ranks (" << total_blocks << " blocks of size "
+            << ranks_per_group_multiple << ") cannot accommodate all the " << inputs.size()
+            << " individual calculations in the ensemble. "
+            << "Increase the number of MPI ranks or reduce the number of calculations.";
         throw UniformCommunicateError(msg.str());
       }
-      if (inputs.size() > 1)
-      {
-        const int total_blocks = OHMMS::Controller->size() / ranks_per_group_multiple;
-        if (total_blocks < inputs.size())
-        {
-          std::ostringstream msg;
-          msg << "main(). Current " << OHMMS::Controller->size() << " MPI ranks (" << total_blocks << " blocks of size "
-              << ranks_per_group_multiple << ") cannot accommodate all the " << inputs.size()
-              << " individual calculations in the ensemble. "
-              << "Increase the number of MPI ranks or reduce the number of calculations.";
-          throw UniformCommunicateError(msg.str());
-        }
-      }
-    }
-    catch (const UniformCommunicateError& ue)
-    {
-      OHMMS::Controller->barrier_and_abort(ue.what());
     }
 
     std::unique_ptr<Communicate> comm_job;
     if (inputs.size() > 1)
     {
-      comm_job              = std::make_unique<Communicate>(OHMMS::Controller->split(inputs.size(), ranks_per_group_multiple));
+      comm_job = std::make_unique<Communicate>(OHMMS::Controller->split(inputs.size(), ranks_per_group_multiple));
       qmc_common.setupFilenameInfixForEnsembleJobs(comm_job->getGroupID(), comm_job->getNumGroups());
     }
-    Communicate& qmcComm = inputs.size() > 1 ? *comm_job : *OHMMS::Controller;
-    std::stringstream logname;
-    int inpnum          = (inputs.size() > 1) ? qmcComm.getGroupID() : 0;
-    std::string myinput = inputs[qmcComm.getGroupID()];
-    myinput             = myinput.substr(0, myinput.size() - 4);
-    logname << myinput;
+
+    Communicate& qmcComm          = inputs.size() > 1 ? *comm_job : *OHMMS::Controller;
+    const std::string& input_name = inputs.size() > 1 ? inputs[qmcComm.getGroupID()] : inputs[0];
 
     if (qmcComm.rank() != 0)
     {
@@ -217,15 +206,13 @@ int main(int argc, char** argv)
     }
     if (inputs.size() > 1 && qmcComm.rank() == 0)
     {
-      std::array<char, 128> fn;
-      if (std::snprintf(fn.data(), fn.size(), "%s.g%03d.qmc", logname.str().c_str(), qmcComm.getGroupID()) < 0)
-        throw std::runtime_error("Error generating filename");
-      infoSummary.redirectToFile(fn.data());
+      const std::string fn =
+          input_name.substr(0, input_name.size() - 4) + qmc_common.get_filename_infix_for_ensemble_jobs() + ".qmc";
+      infoSummary.redirectToFile(fn);
       infoLog.redirectToSameStream(infoSummary);
       infoError.redirectToSameStream(infoSummary);
     }
 
-    bool validInput = false;
     app_log() << "  Input file(s): ";
     for (int k = 0; k < inputs.size(); ++k)
       app_log() << inputs[k] << " ";
@@ -233,17 +220,24 @@ int main(int argc, char** argv)
 
     auto qmc = std::make_unique<QMCMain>(qmcComm);
 
-    if (inputs.size() > 1)
-      validInput = qmc->parse(inputs[qmcComm.getGroupID()]);
-    else
-      validInput = qmc->parse(inputs[0]);
+    try
+    {
+      if (!qmc->parse(input_name))
+        throw UniformCommunicateError("main(). Input invalid.");
 
-    if (!validInput)
-      qmcComm.barrier_and_abort("main(). Input invalid.");
-
-    bool qmcSuccess = qmc->execute();
-    if (!qmcSuccess)
-      qmcComm.barrier_and_abort("main(). QMC Execution failed.");
+      if (!qmc->execute())
+        throw UniformCommunicateError("main(). QMC execution failed.");
+    }
+    catch (const UniformCommunicateError& ue)
+    {
+      std::ostringstream msg;
+      if (inputs.size() > 1)
+        msg << "Ensemble job " << qmcComm.getGroupID() << ", input file " << input_name << ": ";
+      else
+        msg << "Input file " << input_name << ": ";
+      msg << ue.what();
+      qmcComm.barrier_and_abort(msg.str());
+    }
 
     Libxml2Document timingDoc;
     timingDoc.newDoc("resources");
@@ -258,14 +252,18 @@ int main(int argc, char** argv)
 
     qmc.reset();
   }
+  catch (const UniformCommunicateError& ue)
+  {
+    OHMMS::Controller->barrier_and_abort("Global parallel scope: " + std::string(ue.what()));
+  }
   catch (const std::exception& e)
   {
-    std::cerr << e.what() << std::endl;
-    APP_ABORT("Unhandled Exception");
+    APP_ABORT("Global rank " + std::to_string(OHMMS::Controller->rank()) + " Unhandled Exception: " + e.what());
   }
   catch (...)
   {
-    APP_ABORT("Unhandled Exception (not derived from std::exception)");
+    APP_ABORT("Global rank " + std::to_string(OHMMS::Controller->rank()) +
+              " Unhandled Exception (not derived from std::exception)");
   }
 
   OHMMS::Controller->barrier(); // Barrier needed to ensure all groups in ensemble runs complete successfully
