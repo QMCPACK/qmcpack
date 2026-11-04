@@ -125,11 +125,6 @@ private:
   /// Sample collection flag
   bool collect_samples_;
 
-  /// Throws for unsupported configurations of the internal "allp" update mode.
-  static void validateAllParticleMode(const QMCDriverInput& qmcdriver_input,
-                                      const VMCDriverInput& vmcdriver_input,
-                                      bool is_spinor);
-
   /** Refactor of VMCUpdatePbyP in crowd context
    *
    *  MCWalkerConfiguration layer removed.

@@ -17,6 +17,7 @@
 #include <sstream>
 #include "Utilities/RandomGenerator.h"
 #include "Message/Communicate.h"
+#include "Message/UniformCommunicateError.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCDrivers/QMCDriverInterface.h"
@@ -152,13 +153,91 @@ TEST_CASE("QMCDriverFactory move modes for batched VMC", "[qmcapp]")
   xmlSetProp(node, BAD_CAST "move", BAD_CAST "allp");
   xmlSetProp(node, BAD_CAST "method", BAD_CAST "dmc");
   REQUIRE_THROWS(driver_factory.readSection(node));
+  xmlSetProp(node, BAD_CAST "method", BAD_CAST "linear");
+  REQUIRE_THROWS(driver_factory.readSection(node));
 
-  // Legacy drivers retain their existing all-particle support.
+  // Legacy VMC and DMC retain arbitrary move aliases; deprecated vmc_batch is
+  // nevertheless governed by the batched move-mode contract.
   ProjectData legacy_project(ProjectData::DriverVersion::LEGACY);
   QMCDriverFactory legacy_factory(legacy_project);
-  REQUIRE_NOTHROW(legacy_factory.readSection(node));
+  xmlSetProp(node, BAD_CAST "method", BAD_CAST "vmc");
   xmlSetProp(node, BAD_CAST "move", BAD_CAST "wbyw");
   REQUIRE_NOTHROW(legacy_factory.readSection(node));
+  xmlSetProp(node, BAD_CAST "move", BAD_CAST "allp");
+  REQUIRE_NOTHROW(legacy_factory.readSection(node));
+  xmlSetProp(node, BAD_CAST "method", BAD_CAST "dmc");
+  xmlSetProp(node, BAD_CAST "move", BAD_CAST "npbyp");
+  REQUIRE_NOTHROW(legacy_factory.readSection(node));
+  xmlSetProp(node, BAD_CAST "move", BAD_CAST "allp");
+  REQUIRE_NOTHROW(legacy_factory.readSection(node));
+  xmlSetProp(node, BAD_CAST "method", BAD_CAST "vmc_batch");
+  xmlSetProp(node, BAD_CAST "move", BAD_CAST "allp");
+  REQUIRE_NOTHROW(legacy_factory.readSection(node));
+  xmlSetProp(node, BAD_CAST "move", BAD_CAST "wbyw");
+  REQUIRE_THROWS(legacy_factory.readSection(node));
+  xmlSetProp(node, BAD_CAST "move", BAD_CAST "typo");
+  REQUIRE_THROWS(legacy_factory.readSection(node));
+}
+
+TEST_CASE("QMCDriverFactory validates batched VMC all-particle options before construction", "[qmcapp]")
+{
+  using namespace testing;
+  Communicate& comm(*OHMMS::Controller);
+  ProjectData project;
+  QMCDriverFactory factory(project);
+
+  QMCDriverPools pools(project.getRuntimeOptions(), comm);
+  MCWalkerConfiguration* qmc_system = pools.particle.getWalkerSet("e");
+  const auto create_from_xml = [&](const char* xml, bool spinor = false) {
+    qmc_system->setSpinor(spinor);
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(xml));
+    xmlNodePtr node = doc.getRoot();
+    auto das        = factory.readSection(node);
+    return factory.createQMCDriver(node, das, std::nullopt, *qmc_system, pools.particle, pools.wavefunction,
+                                   pools.hamiltonian, comm);
+  };
+  const auto require_error = [&](const char* xml, const char* expected_message, bool spinor = false) {
+    try
+    {
+      create_from_xml(xml, spinor);
+      FAIL("Expected factory validation to throw");
+    }
+    catch (const UniformCommunicateError& error)
+    {
+      CHECK(std::string(error.what()) == expected_message);
+    }
+  };
+
+  SECTION("supported all-particle mode constructs batched VMC")
+  {
+    auto driver = create_from_xml("<qmc method=\"vmc_batch\" move=\"allp\"><parameter name=\"usedrift\">no</parameter></qmc>");
+    REQUIRE(driver != nullptr);
+    CHECK(driver->getEngineName() == "VMCBatched");
+  }
+  SECTION("particle-by-particle moves retain drift and spinor support")
+  {
+    auto driver = create_from_xml(
+        "<qmc method=\"vmc_batch\" move=\"pbyp\"><parameter name=\"usedrift\">yes</parameter></qmc>", true);
+    REQUIRE(driver != nullptr);
+    CHECK(driver->getEngineName() == "VMCBatched");
+  }
+  SECTION("drift is rejected")
+  {
+    require_error("<qmc method=\"vmc_batch\" move=\"allp\"><parameter name=\"usedrift\">yes</parameter></qmc>",
+                  "VMCBatched all-particle moves do not support drift.");
+  }
+  SECTION("serialized walkers are rejected through the parsed public input")
+  {
+    require_error("<qmc method=\"vmc_batch\" move=\"allp\"><parameter name=\"usedrift\">no</parameter><parameter "
+                  "name=\"crowd_serialize_walkers\">yes</parameter></qmc>",
+                  "VMCBatched all-particle moves do not support serialized crowd walkers.");
+  }
+  SECTION("spinor particle systems are rejected")
+  {
+    require_error("<qmc method=\"vmc_batch\" move=\"allp\"><parameter name=\"usedrift\">no</parameter></qmc>",
+                  "VMCBatched all-particle moves support position coordinates only.", true);
+  }
 }
 
 TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")

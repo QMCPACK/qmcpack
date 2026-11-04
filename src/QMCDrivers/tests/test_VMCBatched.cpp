@@ -40,8 +40,4 @@ TEST_CASE("VMCBatched all-particle moves without drift", "[drivers]")
   CHECK(total_mixed > 0);
 }
 
-TEST_CASE("VMCBatched all-particle mode validation", "[drivers]")
-{
-  testing::VMCBatchedTest::testAllParticleModeValidation();
-}
 } // namespace qmcplusplus

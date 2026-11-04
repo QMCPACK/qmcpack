@@ -54,20 +54,6 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
       collect_samples_(false)
 {}
 
-void VMCBatched::validateAllParticleMode(const QMCDriverInput& qmcdriver_input,
-                                         const VMCDriverInput& vmcdriver_input,
-                                         bool is_spinor)
-{
-  if (qmcdriver_input.get_update_mode() != "allp")
-    return;
-  if (vmcdriver_input.get_use_drift())
-    throw UniformCommunicateError("VMCBatched all-particle moves do not support drift.");
-  if (qmcdriver_input.areWalkersSerialized())
-    throw UniformCommunicateError("VMCBatched all-particle moves do not support serialized crowd walkers.");
-  if (is_spinor)
-    throw UniformCommunicateError("VMCBatched all-particle moves support position coordinates only.");
-}
-
 template<CoordsType CT>
 void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
@@ -340,8 +326,6 @@ void VMCBatched::process(xmlNodePtr node)
 {
   ScopedTimer local_timer(timers_.startup_timer);
   print_mem("VMCBatched before initialization", app_log());
-
-  validateAllParticleMode(qmcdriver_input_, vmcdriver_input_, population_.get_golden_electrons().isSpinor());
 
   QMCDriverNew::AdjustedWalkerCounts awc =
       adjustGlobalWalkerCount(myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),

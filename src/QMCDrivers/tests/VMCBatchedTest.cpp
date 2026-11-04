@@ -192,31 +192,4 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
   return summary;
 }
 
-void VMCBatchedTest::testAllParticleModeValidation()
-{
-  const auto validate = [](const char* input, bool position, const char* message) {
-    Libxml2Document doc;
-    REQUIRE(doc.parseFromString(input));
-    QMCDriverInput qmc;
-    qmc.readXML(doc.getRoot());
-    VMCDriverInput vmc;
-    vmc.readXML(doc.getRoot());
-    REQUIRE_THROWS_WITH(VMCBatched::validateAllParticleMode(qmc, vmc, position), message);
-  };
-  validate("<qmc method=\"vmc_batch\" move=\"allp\"><parameter name=\"usedrift\">yes</parameter></qmc>", false,
-           "VMCBatched all-particle moves do not support drift.");
-  validate("<qmc method=\"vmc_batch\" move=\"allp\"><parameter "
-           "name=\"crowd_serialize_walkers\">yes</parameter><parameter name=\"usedrift\">no</parameter></qmc>",
-           false, "VMCBatched all-particle moves do not support serialized crowd walkers.");
-  validate("<qmc method=\"vmc_batch\" move=\"allp\"><parameter name=\"usedrift\">no</parameter></qmc>", true,
-           "VMCBatched all-particle moves support position coordinates only.");
-  Libxml2Document doc;
-  REQUIRE(doc.parseFromString(
-      "<qmc method=\"vmc_batch\" move=\"pbyp\"><parameter name=\"usedrift\">yes</parameter></qmc>"));
-  QMCDriverInput qmc;
-  qmc.readXML(doc.getRoot());
-  VMCDriverInput vmc;
-  vmc.readXML(doc.getRoot());
-  REQUIRE_NOTHROW(VMCBatched::validateAllParticleMode(qmc, vmc, true));
-}
 } // namespace qmcplusplus::testing
