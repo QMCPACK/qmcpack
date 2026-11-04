@@ -18,17 +18,17 @@
 
 #include "MultiBsplineOffloadMapperBase.hpp"
 #include "MultiBsplineMPIShared.hpp"
-#include <nccl.h>
+#include "ccl_wrapper.hpp"
 
 namespace qmcplusplus
 {
 /** @ingroup spline2
  * @brief Offload mapper that manages 3D multi-B-spline coefficients distributed across GPUs
- *        using NCCL memory windows.
+ *        using CCL (NCCL/RCCL/oneCCL) memory windows.
  *
  * Analogous to MultiBsplineMPIShared on the host, MultiBsplineOffloadMapperCCLShared
- * allocates device memory using ncclMemAlloc, registers a shared window across ranks via
- * ncclCommWindowRegister, and retrieves direct peer device pointers via ncclGetPeerDevicePointer.
+ * allocates device memory using cclMemAlloc, registers a shared window across ranks via
+ * cclCommWindowRegister, and retrieves direct peer device pointers via cclGetPeerDevicePointer.
  *
  * @tparam T The precision of spline coefficients (float or double).
  */
@@ -44,11 +44,11 @@ private:
   /// Reference to the host distributed and shared splines.
   const HostBsplineMPIShared& host_bsplines_shared_;
 
-  /// NCCL communicator created from the host MPI communicator.
-  ncclComm_t nccl_comm_{nullptr};
-  /// NCCL memory window handle.
-  ncclWindow_t win_{nullptr};
-  /// Local device memory buffer allocated via ncclMemAlloc.
+  /// CCL communicator created from the host MPI communicator.
+  cclComm_t ccl_comm_{nullptr};
+  /// CCL memory window handle.
+  cclWindow_t win_{nullptr};
+  /// Local device memory buffer allocated via cclMemAlloc.
   void* local_dev_ptr_{nullptr};
   /// Whether this rank allocates device memory for a block.
   bool is_allocating_rank_{false};

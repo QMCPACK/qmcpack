@@ -16,19 +16,18 @@
 #include <omp.h>
 #include <string>
 #include <stdexcept>
-#include <nccl_device.h>
 
 namespace qmcplusplus
 {
 extern MemoryUsageAccount omptarget_mem_usage;
 
-#define NCCLCHECK(cmd)                                                                                \
+#define CCLCHECK(cmd)                                                                                 \
   do                                                                                                  \
   {                                                                                                   \
-    ncclResult_t res = (cmd);                                                                         \
-    if (res != ncclSuccess)                                                                           \
-      throw std::runtime_error(std::string("NCCL error at ") + __FILE__ + ":" +                      \
-                               std::to_string(__LINE__) + " - " + ncclGetErrorString(res));           \
+    cclResult_t res = (cmd);                                                                          \
+    if (res != cclSuccess)                                                                            \
+      throw std::runtime_error(std::string("CCL error at ") + __FILE__ + ":" +                        \
+                               std::to_string(__LINE__) + " - " + cclGetErrorString(res));            \
   } while (0)
 
 template<typename T>
@@ -49,12 +48,13 @@ void MultiBsplineOffloadMapperCCLShared<T>::mapToDevice()
   const bool contiguous_shared     = host_bsplines_shared_.getContiguousShared();
   const unsigned shared_ranks      = comm_size / distributed_ranks;
 
-  // 1. Create NCCL communicator using the MPI communicator stored in MultiBsplineMPIShared
-  ncclUniqueId id;
+  CCLCHECK(cclSetDevice(omp_get_default_device()));
+  // 1. Create CCL communicator using the MPI communicator stored in MultiBsplineMPIShared
+  cclUniqueId id;
   if (comm_rank == 0)
-    NCCLCHECK(ncclGetUniqueId(&id));
+    CCLCHECK(cclGetUniqueId(&id));
   MPI_Bcast(&id, sizeof(id), MPI_BYTE, 0, comm.getMPI());
-  NCCLCHECK(ncclCommInitRank(&nccl_comm_, comm_size, id, comm_rank));
+  CCLCHECK(cclCommInitRank(&ccl_comm_, comm_size, id, comm_rank));
 
   // 2. Identify the allocating ranks and their corresponding blocks
   if (contiguous_shared)
@@ -68,16 +68,16 @@ void MultiBsplineOffloadMapperCCLShared<T>::mapToDevice()
     allocated_block_    = comm_rank;
   }
 
-  // 3. Allocate device memory using ncclMemAlloc (with 1-element padding if coefs_size is 0)
+  // 3. Allocate device memory using cclMemAlloc (with 1-element padding if coefs_size is 0)
   const size_t coefs_size  = is_allocating_rank_ ? host_bsplines_shared_.getBlock(allocated_block_).coefs_size : 0;
   const size_t alloc_bytes = (coefs_size > 0 ? coefs_size : 1) * sizeof(T);
-  NCCLCHECK(ncclMemAlloc(&local_dev_ptr_, alloc_bytes));
+  CCLCHECK(cclMemAlloc(&local_dev_ptr_, alloc_bytes));
 
   if (is_allocating_rank_)
     omptarget_mem_usage.creditUsage(alloc_bytes);
 
   // 4. Register communication window across ranks
-  NCCLCHECK(ncclCommWindowRegister(nccl_comm_, local_dev_ptr_, alloc_bytes, &win_, NCCL_WIN_DEFAULT));
+  CCLCHECK(cclCommWindowRegister(ccl_comm_, local_dev_ptr_, alloc_bytes, &win_, CCL_WIN_DEFAULT));
 
   // 5. Query device pointers for peer access for all distributed blocks
   block_coefs_dev_.resize(distributed_ranks);
@@ -85,7 +85,7 @@ void MultiBsplineOffloadMapperCCLShared<T>::mapToDevice()
   {
     const int target_rank = contiguous_shared ? i * shared_ranks : i;
     void* peer_ptr        = nullptr;
-    NCCLCHECK(ncclGetPeerDevicePointer(win_, 0, target_rank, &peer_ptr));
+    CCLCHECK(cclGetPeerDevicePointer(win_, 0, target_rank, &peer_ptr));
     block_coefs_dev_[i] = static_cast<const T*>(peer_ptr);
   }
 
@@ -128,13 +128,13 @@ MultiBsplineOffloadMapperCCLShared<T>::~MultiBsplineOffloadMapperCCLShared()
 
   if (win_)
   {
-    ncclCommWindowDeregister(nccl_comm_, win_);
+    cclCommWindowDeregister(ccl_comm_, win_);
     win_ = nullptr;
   }
 
   if (local_dev_ptr_)
   {
-    ncclMemFree(local_dev_ptr_);
+    cclMemFree(local_dev_ptr_);
     local_dev_ptr_ = nullptr;
   }
 
@@ -145,10 +145,10 @@ MultiBsplineOffloadMapperCCLShared<T>::~MultiBsplineOffloadMapperCCLShared()
     omptarget_mem_usage.debitUsage(alloc_bytes);
   }
 
-  if (nccl_comm_)
+  if (ccl_comm_)
   {
-    ncclCommDestroy(nccl_comm_);
-    nccl_comm_ = nullptr;
+    cclCommDestroy(ccl_comm_);
+    ccl_comm_ = nullptr;
   }
 }
 
