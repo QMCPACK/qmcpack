@@ -55,7 +55,7 @@ public:
     )";
 
     ProjectData project_data("test", ProjectData::DriverVersion::BATCH);
-    Communicate* comm = OHMMS::Controller;
+    Communicate& comm = *OHMMS::Controller;
     RandomForTest<QMCTraits::FullPrecRealType> random_for_test;
     Random.init(static_cast<int>(random_for_test() * 1000000));
 
@@ -85,7 +85,7 @@ public:
     WalkerConfigurations walker_confs;
     SampleStack samples;
     VMCBatched vmc_driver(project_data, std::move(qmcdriver_input), nullptr, std::move(vmcdriver_input), walker_confs,
-                          MCPopulation(comm->size(), comm->rank(), *particle_pool.getParticleSet("e"),
+                          MCPopulation(comm.size(), comm.rank(), *particle_pool.getParticleSet("e"),
                                        wavefunction_pool.getWaveFunction().value(),
                                        hamiltonian_pool.getHamiltonian().value()),
                           rng_refs, samples, comm);

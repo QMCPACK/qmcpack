@@ -30,11 +30,11 @@ from .machines import Workstation,Job
 from .simulation import Simulation,NullSimulationInput,NullSimulationAnalyzer
 
 class SimulationBundleInput(NullSimulationInput):
-    None
+    pass
 #end class SimulationBundleInput
 
 class SimulationBundleAnalyzer(NullSimulationAnalyzer):
-    None
+    pass
 #end class SimulationBundleAnalyzer
 
 

@@ -23,23 +23,27 @@ inline void Communicate::allreduce(T&)
 {}
 
 template<typename T>
-inline void Communicate::reduce(T&)
-{}
-
-
-template<typename T>
-inline void Communicate::reduce_in_place(T* restrict res, int n)
+inline void Communicate::reduce(T&, int)
 {}
 
 template<typename T>
-inline void Communicate::bcast(T&)
+inline void Communicate::reduce(const T* sb, T* rb, int n, int dest)
+{
+  if (d_mycontext == dest)
+    std::copy_n(sb, n, rb);
+}
+
+template<typename T>
+inline void Communicate::reduce_in_place(T* res, int n, int)
 {}
 
 template<typename T>
-inline void Communicate::bcast(T* restrict, int n)
+inline void Communicate::bcast(T&, int)
 {}
 
-
+template<typename T>
+inline void Communicate::bcast(T*, int, int)
+{}
 
 
 template<typename T>
@@ -47,20 +51,12 @@ inline void Communicate::gather(T& sb, T& rb, int dest)
 { rb = sb; }
 
 template<typename T>
-inline void Communicate::allgather(T& sb, T& rb, int count)
-{
-  for (size_t i = 0; i < count; i++)
-    rb[i] = sb[i];
-}
+inline void Communicate::allgather(T& sb, T& rb)
+{ rb = sb; }
 
 template<typename T>
 inline void Communicate::scatter(T& sb, T& rb, int dest)
 { rb = sb; }
-
-
-
-
-
 
 
 template<typename T, typename IT>
@@ -79,11 +75,11 @@ inline void Communicate::gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int
 }
 
 template<typename T, typename TMPI, typename IT>
-inline void Communicate::gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest)
+inline void Communicate::gatherv_in_place(T* buf, const TMPI& datatype, IT& counts, IT& displ, int dest)
 {}
 
 template<typename T>
-inline void Communicate::allgather(T* sb, T* rb, int count)
+inline void Communicate::allgather(const T* sb, T* rb, int count)
 {
   for (int i = 0; i < count; ++i)
     rb[i] = sb[i];

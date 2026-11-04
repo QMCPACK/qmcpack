@@ -23,8 +23,8 @@
 
 namespace spline2
 {
-template<typename T>
-inline void evaluate_vghgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
+template<typename ST, typename T>
+inline void evaluate_vghgh_impl(const typename qmcplusplus::bspline_traits<ST, 3>::SplineType* restrict spline_m,
                                 T x,
                                 T y,
                                 T z,
@@ -107,10 +107,10 @@ inline void evaluate_vghgh_impl(const typename qmcplusplus::bspline_traits<T, 3>
   for (int i = 0; i < 4; i++)
     for (int j = 0; j < 4; j++)
     {
-      const T* restrict coefs    = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
-      const T* restrict coefszs  = coefs + zs;
-      const T* restrict coefs2zs = coefs + 2 * zs;
-      const T* restrict coefs3zs = coefs + 3 * zs;
+      const ST* restrict coefs    = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
+      const ST* restrict coefszs  = coefs + zs;
+      const ST* restrict coefs2zs = coefs + 2 * zs;
+      const ST* restrict coefs3zs = coefs + 3 * zs;
 
       const T pre20 = d2a[i] * b[j];
       const T pre10 = da[i] * b[j];

@@ -6,7 +6,7 @@
 
 namespace qmcplusplus
 {
-FreeOrbitalBuilder::FreeOrbitalBuilder(ParticleSet& els, Communicate* comm, xmlNodePtr cur)
+FreeOrbitalBuilder::FreeOrbitalBuilder(ParticleSet& els, Communicate& comm, xmlNodePtr cur)
     : SPOSetBuilder("PW", comm), targetPtcl(els)
 {}
 

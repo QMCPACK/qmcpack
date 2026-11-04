@@ -9,6 +9,9 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
+#include "Message/UniformCommunicateError.h"
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
@@ -32,7 +35,7 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string,
                             int check_spo_size,
                             int check_basisset_size)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -76,6 +79,13 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string,
   auto& spo = dynamic_cast<const LCAOrbitalSet&>(twf_ptr->getSPOSet(check_sponame));
   REQUIRE(spo.getOrbitalSetSize() == check_spo_size);
   REQUIRE(spo.getBasisSetSize() == check_basisset_size);
+
+  // These entries are in the latter half of KPTS_0/eigenset_0 in LiH.orbs.h5.
+  // Check every rank: complex raw-pointer broadcasts must transfer both scalar
+  // components of the full coefficient matrix.
+  CHECK((*spo.C)(42, 53) == ValueApprox(0.674748765612011));
+  CHECK((*spo.C)(52, 73) == ValueApprox(5.05678043217509));
+  CHECK((*spo.C)(62, 73) == ValueApprox(5.06863977624421));
 }
 
 TEST_CASE("SPO input spline from xml LiH_msd", "[wavefunction]")
@@ -194,7 +204,7 @@ void test_LiH_msd_xml_input_with_positron(const std::string& spo_xml_string,
                                           int check_spo_size,
                                           int check_basisset_size)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -307,5 +317,83 @@ TEST_CASE("SPO input spline from h5 LiH_msd arbitrary species", "[wavefunction]"
 </wavefunction>
 )";
   test_LiH_msd_xml_input_with_positron(spo_xml_string1, "spo-ps", 5, 105);
+}
+
+TEST_CASE("LCAOrbitalBuilder putFromH5 throws", "[wavefunction]")
+{
+  Communicate& c(*OHMMS::Controller);
+  RuntimeOptions runtime_options;
+
+  SECTION("Insufficient rows in h5")
+  {
+    ParticleSetPool ptcl = ParticleSetPool(c);
+    auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+    auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+    ParticleSet& ions_(*ions_uptr);
+    ParticleSet& elec_(*elec_uptr);
+
+    ions_.setName("ion0");
+    ptcl.addParticleSet(std::move(ions_uptr));
+    ions_.create({1, 1});
+    SpeciesSet& ispecies = ions_.getSpeciesSet();
+    ispecies.addSpecies("Li");
+    ispecies.addSpecies("H");
+
+    elec_.setName("elec");
+    ptcl.addParticleSet(std::move(elec_uptr));
+    elec_.create({2, 2});
+
+    WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+
+    const char* spo_xml = R"(<wavefunction name="psi0" target="elec">
+      <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" cuspCorrection="no" href="LiH.orbs.h5">
+        <sposet basisset="LCAOBSet" name="spo-up" size="5000">
+          <occupation mode="ground"/>
+          <coefficient size="5000" spindataset="0"/>
+        </sposet>
+      </sposet_collection>
+    </wavefunction>
+    )";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(spo_xml));
+    CHECK_THROWS_MATCHES(wf_factory.buildTWF(doc.getRoot(), runtime_options), UniformCommunicateError,
+                         Catch::Matchers::Message("Need 5000 orbitals. Insufficient rows of MO coefficients 85 from h5.\n"));
+  }
+
+  SECTION("Basis set size mismatch in h5")
+  {
+    ParticleSetPool ptcl = ParticleSetPool(c);
+    auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+    auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+    ParticleSet& ions_(*ions_uptr);
+    ParticleSet& elec_(*elec_uptr);
+
+    ions_.setName("ion0");
+    ptcl.addParticleSet(std::move(ions_uptr));
+    ions_.create({2, 1});
+    SpeciesSet& ispecies = ions_.getSpeciesSet();
+    ispecies.addSpecies("Li");
+    ispecies.addSpecies("H");
+
+    elec_.setName("elec");
+    ptcl.addParticleSet(std::move(elec_uptr));
+    elec_.create({2, 2});
+
+    WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+
+    const char* spo_xml = R"(<wavefunction name="psi0" target="elec">
+      <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" cuspCorrection="no" href="LiH.orbs.h5">
+        <sposet basisset="LCAOBSet" name="spo-up" size="1">
+          <occupation mode="ground"/>
+          <coefficient size="1" spindataset="0"/>
+        </sposet>
+      </sposet_collection>
+    </wavefunction>
+    )";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(spo_xml));
+    CHECK_THROWS_MATCHES(wf_factory.buildTWF(doc.getRoot(), runtime_options), UniformCommunicateError,
+                         Catch::Matchers::Message("Basis set size 175 mismatched the number of MO coefficients columns 105 from h5.\n"));
+  }
 }
 } // namespace qmcplusplus

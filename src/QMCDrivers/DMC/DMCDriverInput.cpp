@@ -21,17 +21,10 @@ void DMCDriverInput::readXML(xmlNodePtr node)
   std::string reconfig_str;
   std::string refE_update_scheme_str;
   std::string nonlocalmove_str;
+  std::string l2_diffusion_str;
   parameter_set_.add(reconfig_str, "reconfiguration", {"no", "yes", "runwhileincorrect"});
-  parameter_set_.add(max_age_, "MaxAge");
   parameter_set_.add(feedback_, "feedback");
   parameter_set_.add(refE_update_scheme_str, "refenergy_update_scheme", {"unlimited_history", "limited_history"});
-
-  // from DMC.cpp put(xmlNodePtr)
-  parameter_set_.add(branch_interval_, "branchInterval");
-  parameter_set_.add(branch_interval_, "branchinterval");
-  parameter_set_.add(branch_interval_, "substeps");
-  parameter_set_.add(branch_interval_, "subStep");
-  parameter_set_.add(branch_interval_, "sub_stepd");
 
   //for NonLocalTOperator
   parameter_set_.add(alpha_, "alpha");
@@ -39,8 +32,11 @@ void DMCDriverInput::readXML(xmlNodePtr node)
   parameter_set_.add(reserve_, "reserve");
   parameter_set_.add(nonlocalmove_str, "nonlocalmove", {"no", "yes", "v0", "v1", "v3"});
   parameter_set_.add(nonlocalmove_str, "nonlocalmoves", {"no", "yes", "v0", "v1", "v3"});
+  parameter_set_.add(l2_diffusion_str, "L2_diffusion", {"no", "yes"});
 
   parameter_set_.put(node);
+
+  l2_diffusion_ = l2_diffusion_str == "yes";
 
   if (reconfig_str == "yes")
     throw std::runtime_error("Reconfiguration is currently broken and gives incorrect results. Use dynamic "
@@ -70,12 +66,6 @@ void DMCDriverInput::readXML(xmlNodePtr node)
     tmove_kind_ = TmoveKind::OFF;
   }
   app_summary() << std::endl;
-
-  // TODO: similar check for alpha and gamma
-  if (max_age_ < 0)
-    throw std::runtime_error("Illegal input for MaxAge in DMC input section");
-  if (branch_interval_ < 0)
-    throw std::runtime_error("Illegal input for branchInterval or substeps in DMC input section");
 
   if (reserve_ < 1.0)
     throw std::runtime_error("You can only reserve walkers above the target walker count");

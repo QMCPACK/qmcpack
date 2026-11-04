@@ -31,7 +31,6 @@ struct HDFWalkerInput_0_4
   {
     bool parallel;
     bool collected;
-    int rank;
     int nprocs;
     hid_t h_plist;
     HDFVersion version;
@@ -40,7 +39,6 @@ struct HDFWalkerInput_0_4
     {
       parallel  = false;
       collected = false;
-      rank      = 0;
       nprocs    = 1;
     }
   };
@@ -50,7 +48,7 @@ struct HDFWalkerInput_0_4
   /// number of particles
   const size_t num_ptcls_;
   //pointer to the communicator
-  Communicate* myComm;
+  Communicate& myComm;
   //current version this class supports
   HDFVersion cur_version;
   //information of the input files
@@ -68,7 +66,7 @@ struct HDFWalkerInput_0_4
    * @param c communicator
    * @param v version
    */
-  HDFWalkerInput_0_4(WalkerConfigurations& wc_list, size_t num_ptcls, Communicate* c, const HDFVersion& v);
+  HDFWalkerInput_0_4(WalkerConfigurations& wc_list, size_t num_ptcls, Communicate& c, const HDFVersion& v);
   ~HDFWalkerInput_0_4();
 
   /** read walkers

@@ -19,14 +19,14 @@ set(SRC_DIR hamiltonian)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(COULOMB_SRCS test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
-                 test_coulomb_pbcAA_ewald.cpp test_EwaldRef.cpp test_NonLocalECPotential.cpp)
+                 test_coulomb_pbcAA_ewald.cpp test_EwaldRef.cpp)
 set(EWALD2D_SRCS test_ewald2d.cpp test_ewald_quasi2d.cpp)
 set(FORCE_SRCS test_force.cpp test_force_ewald.cpp test_stress.cpp test_spacewarp.cpp)
+set(ECP_SRCS test_NonLocalECPotential.cpp test_ecp_builder.cpp test_ecp.cpp test_NonLocalTOperator.cpp)
 set(HAM_SRCS
     test_bare_kinetic.cpp
     test_density_estimator.cpp
-    test_NonLocalTOperator.cpp
-    test_ecp.cpp
+    test_L2Potential.cpp
     test_hamiltonian_pool.cpp
     test_hamiltonian_factory.cpp
     test_PairCorrEstimator.cpp
@@ -43,31 +43,24 @@ endif()
 
 set(FORCE_SRCS ${FORCE_SRCS} test_ion_derivs.cpp)
 
-set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
-maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
+set(ALIASED_FILES)
+make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5 diamondC_1x1x1.pwscf.h5)
+make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp/pwscf.pwscf.h5 hcpBe.pwscf.h5)
 
-set(UTEST_HDF_INPUT2 ${qmcpack_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp/pwscf.pwscf.h5)
-maybe_symlink(${UTEST_HDF_INPUT2} ${UTEST_DIR}/hcpBe.pwscf.h5)
-
-set(UTEST_HDF_INPUT5 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx/C_diamond-twist-third.h5)
-maybe_symlink(${UTEST_HDF_INPUT5} ${UTEST_DIR}/C_diamond-twist-third.h5)
-
-set(UTEST_HDF_INPUT5 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx/C_diamond-twist-third-cart.h5)
-maybe_symlink(${UTEST_HDF_INPUT5} ${UTEST_DIR}/C_diamond-twist-third-cart.h5)
-
-foreach(fname Na2.structure.xml simple.txt)
-  maybe_symlink(${CMAKE_CURRENT_SOURCE_DIR}/${fname} ${UTEST_DIR}/${fname})
-endforeach()
+set(UTEST_INPUT_FILES ${ALIASED_FILES}
+    ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx/C_diamond-twist-third.h5
+    ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx/C_diamond-twist-third-cart.h5
+    fname Na2.structure.xml simple.txt)
 
 foreach(fname cn.wfnoj.xml cn.wfj.xml cn.msd-wfnoj.xml cn.msd-1det-wfnoj.xml cn.msd-1det-wfj.xml cn.msd-wfj.xml C_diamond-twist-third-cart.wfj.xml)
-  maybe_symlink(${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/${fname} ${UTEST_DIR}/${fname})
+  list(APPEND UTEST_INPUT_FILES ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/${fname})
 endforeach()
 
 foreach(fname C.BFD.xml Na.BFD.xml so_ecp_test.xml C.ccECP.xml N.ccECP.xml Be.BFD.xml)
-  maybe_symlink(${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/${fname} ${UTEST_DIR}/${fname})
+  list(APPEND UTEST_INPUT_FILES ${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/${fname})
 endforeach()
 
-foreach(CATEGORY coulomb force ham ewald2d)
+foreach(CATEGORY coulomb force ham ewald2d ecp)
   set(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   string(TOUPPER "${CATEGORY}_SRCS" SOURCE_FILE_VAR_NAME)
@@ -78,8 +71,8 @@ foreach(CATEGORY coulomb force ham ewald2d)
     target_link_libraries(${UTEST_EXE} qmcwfs qmcwfs_omptarget qmcparticle qmcparticle_omptarget spline2 spline2_omptarget qmcutil platform_omptarget_LA)
   endif()
 
-  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
-  set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+  add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
+  add_unit_test(BASENAME ${UTEST_NAME} PROCS 2 THREADS 3 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES} )
 endforeach()
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)

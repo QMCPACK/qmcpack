@@ -22,14 +22,14 @@ template<class SFNB>
 class BranchIO
 {
 public:
-  using RealType = typename SFNB::RealType;
+  using RealType       = typename SFNB::RealType;
   using BranchModeType = typename SFNB::BranchModeType;
-  using IParamType = typename SFNB::IParamType;
-  using VParamType = typename SFNB::VParamType;
+  using IParamType     = typename SFNB::IParamType;
+  using VParamType     = typename SFNB::VParamType;
 
   SFNB& ref;
-  Communicate* myComm;
-  BranchIO(SFNB& source, Communicate* c) : ref(source), myComm(c) {}
+  Communicate& myComm;
+  BranchIO(SFNB& source, Communicate& c) : ref(source), myComm(c) {}
 
   bool write(const std::string& fname);
   bool read(const std::string& fname);

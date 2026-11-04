@@ -408,9 +408,9 @@ def get_grids():
             )
 
         supported = obj(
-            parallelotope    = obj(dims=set([(1,1),(1,2),(1,3),(2,2),(2,3),(3,3)])),
-            spheroid         = obj(dims=set([(2,2),(2,3),(3,3)])),
-            spheroid_surface = obj(dims=set([(1,2),(1,3),(2,3)])),
+            parallelotope    = obj(dims={(1,1),(1,2),(1,3),(2,2),(2,3),(3,3)}),
+            spheroid         = obj(dims={(2,2),(2,3),(3,3)}),
+            spheroid_surface = obj(dims={(1,2),(1,3),(2,3)}),
             )
 
         gdict = dict(
@@ -518,7 +518,7 @@ def test_grid_initialization():
     #end for
 
     # check properties
-    bcs = set(tuple('op'))
+    bcs = set('op')
     for name in sorted(grids.keys()):
         g = grids[name]
         p = props[name]
@@ -794,8 +794,8 @@ def test_grid_reshape():
         if p.bconds is None and p.sheared and p.translated:
             g = deepcopy(grids[name])
             gref = deepcopy(g)
-            points_shape = tuple(list(g.points.shape))
-            grid_shape   = tuple(list(g.shape))
+            points_shape = tuple(g.points.shape)
+            grid_shape   = tuple(g.shape)
             g.reshape_full()
             assert(g.shape==gref.shape)
             assert(g.points.shape==gref.shape+(p.space_dim,))
@@ -1200,7 +1200,7 @@ def test_grid_volume():
                     assert(1==0)
                 #end if
             else:
-                None # not supported
+                pass # not supported
             #end if
         else:
             assert(1==0)
@@ -1221,7 +1221,7 @@ def test_grid_cell_volumes():
         if not isinstance(g,SpheroidSurfaceGrid) or g.isotropic:
             assert(value_eq(g.volume(),g.cell_volumes().sum()))
         else:
-            None # not supported
+            pass # not supported
         #end if
     #end for
 #end def test_grid_cell_volumes

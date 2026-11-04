@@ -237,6 +237,7 @@ void test_hyperslab()
 
   int nwtot = (world += nwalk);
 
+#if defined(ENABLE_PHDF5)
   hdf_archive dump(world, true);
   if (!dump.create("dummy_walkers.h5", H5F_ACC_EXCL))
   {
@@ -251,6 +252,7 @@ void test_hyperslab()
   dump.write(hslab, "Walkers");
   dump.close();
   world.barrier();
+#endif
 
   {
     hdf_archive read(world, false);
@@ -282,93 +284,7 @@ void test_hyperslab()
     remove("dummy_walkers.h5");
 }
 
-void test_double_hyperslab()
-{
-  auto world = boost::mpi3::environment::get_world_instance();
 
-  using Type   = std::complex<double>;
-  using Matrix = boost::multi::array<Type, 2>;
-
-  int rank = world.rank();
-
-  int nwalk         = 9;
-  int nprop         = 3;
-  int nprop_to_safe = 3;
-  Matrix Data({nwalk, nprop});
-
-  for (int i = 0; i < nwalk; i++)
-    for (int j = 0; j < nprop; j++)
-      Data[i][j] = i * 10 + rank * 100 + j;
-
-  int nwtot = (world += nwalk);
-
-  hdf_archive dump(world, true);
-  if (!dump.create("dummy_walkers.h5", H5F_ACC_EXCL))
-  {
-    app_error() << " Error opening restart file. \n";
-    APP_ABORT("");
-  }
-  dump.push("WalkerSet");
-
-  //double_hyperslab_proxy<Matrix,2> hslab(Data,
-  hyperslab_proxy<Matrix, 2> hslab(Data,
-                                   std::array<size_t, 2>{static_cast<size_t>(nwtot),
-                                                         static_cast<size_t>(nprop_to_safe)},
-                                   std::array<size_t, 2>{static_cast<size_t>(nwalk),
-                                                         static_cast<size_t>(nprop_to_safe)},
-                                   std::array<size_t, 2>{static_cast<size_t>(rank * nwalk), 0}); //,
-
-  //                                  std::array<int,2>{nwalk,nprop},
-  //                                  std::array<int,2>{nwalk,nprop_to_safe},
-  //                                  std::array<int,2>{0,0});
-  dump.write(hslab, "Walkers");
-  dump.close();
-  world.barrier();
-
-  {
-    hdf_archive read(world, false);
-    if (!read.open("dummy_walkers.h5", H5F_ACC_RDONLY))
-    {
-      app_error() << " Error opening restart file. \n";
-      APP_ABORT("");
-    }
-    read.push("WalkerSet");
-
-    //Matrix DataIn({nwalk,nprop});
-    Matrix DataIn({nwalk, nprop_to_safe});
-
-    //double_hyperslab_proxy<Matrix,2> hslab(DataIn,
-    hyperslab_proxy<Matrix, 2> hslab(DataIn,
-                                     std::array<size_t, 2>{static_cast<size_t>(nwtot),
-                                                           static_cast<size_t>(nprop_to_safe)},
-                                     std::array<size_t, 2>{static_cast<size_t>(nwalk),
-                                                           static_cast<size_t>(nprop_to_safe)},
-                                     std::array<size_t, 2>{static_cast<size_t>(rank * nwalk), 0}); //,
-    //                                  std::array<int,2>{nwalk,nprop},
-    //                                  std::array<int,2>{nwalk,nprop_to_safe},
-    //                                  std::array<int,2>{0,0});
-    read.read(hslab, "Walkers");
-    read.close();
-
-    for (int i = 0; i < nwalk; i++)
-    {
-      for (int j = 0; j < nprop_to_safe; j++)
-      {
-        REQUIRE(real(DataIn[i][j]) == i * 10 + rank * 100 + j);
-        REQUIRE(imag(DataIn[i][j]) == 0);
-      }
-      /*
-     for(int j=nprop_to_safe; j<nprop; j++) {
-       REQUIRE( real(DataIn[i][j]) == 0);
-       REQUIRE( imag(DataIn[i][j]) == 0);
-     }
-*/
-    }
-  }
-  world.barrier();
-  if (world.root())
-    remove("dummy_walkers.h5");
-}
 
 void test_walker_io(std::string wtype)
 {
@@ -439,7 +355,7 @@ void test_walker_io(std::string wtype)
   hdf_archive dump(world, true);
   {
 #else
-  hdf_archive dump(world, false);
+  hdf_archive dump;
   if (TG.Global().root())
   {
 #endif
@@ -455,14 +371,9 @@ void test_walker_io(std::string wtype)
   dump.close();
 
   {
-#if defined(ENABLE_PHDF5)
-    hdf_archive read(world, true);
-    {
-#else
-    hdf_archive read(world, false);
+    hdf_archive read;
     if (TG.Global().root())
     {
-#endif
       if (!read.open("dummy_walkers.h5", H5F_ACC_RDONLY))
       {
         app_error() << " Error opening restart file. \n";
@@ -504,7 +415,7 @@ TEST_CASE("swset_test_serial", "[shared_wset]")
 TEST_CASE("hyperslab_tests", "[shared_wset]")
 {
  // test_hyperslab();
-  test_double_hyperslab();
+  test_hyperslab();
 }
 */
 TEST_CASE("walker_io", "[shared_wset]")

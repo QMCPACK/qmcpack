@@ -62,8 +62,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal, TypeAlias
 
-if sys.version_info[0:3] < (3, 10, 0):
-    msg = "This script must be run with Python 3.10.0 or greater!\n"
+if sys.version_info[0:3] < (3, 12, 0):
+    msg = "This script must be run with Python 3.12.0 or greater!\n"
     raise RuntimeError(msg)
 
 try:
@@ -180,9 +180,7 @@ def get_total_dict(
 
         all_inputs_dict[qe_version] = temp_dict
 
-    all_inputs_dict = {
-        key: val for key, val in sorted(all_inputs_dict.items(), key=lambda x: x[0])
-    }
+    all_inputs_dict = dict(sorted(all_inputs_dict.items(), key=lambda x: x[0]))
 
     if save_json:
         with open(f"INPUT_PW_{EARLIEST!s}_to_{LATEST!s}.json", "w") as out:

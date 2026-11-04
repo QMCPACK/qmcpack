@@ -4,46 +4,28 @@ if(MIXED_PRECISION)
   message(VERBOSE "Skipping optimizer deterministic He tests in mixed precision (QMC_MIXED_PRECISION=1)")
 else()
   simple_run_and_check(
-    deterministic-He_ae-opt
-    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt.xml
-    1
-    1
-    check_opt.py
-    -s
-    1
-    -p
-    det_He_opt
-    -r
-    reference.det_He_opt.s001.opt.xml)
+    BASE_NAME deterministic-He_ae-opt
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    INPUT_FILE det_He_opt.xml
+    CHECK_SCRIPT check_opt.py
+    CHECK_ARGS -s 1 -p det_He_opt -r reference.det_He_opt.s001.opt.xml)
 
   simple_run_and_check(
-    deterministic-He_ae-opt
-    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_mwalkers.xml
-    1
-    16
-    check_opt.py
-    -s
-    1
-    -p
-    det_He_opt_mwalkers
-    -r
-    reference.det_He_opt_mwalkers_1-16.s001.opt.xml)
+    BASE_NAME deterministic-He_ae-opt
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    INPUT_FILE det_He_opt_mwalkers.xml
+    THREADS 16
+    CHECK_SCRIPT check_opt.py
+    CHECK_ARGS -s 1 -p det_He_opt_mwalkers -r reference.det_He_opt_mwalkers_1-16.s001.opt.xml)
 
   simple_run_and_check(
-    deterministic-He_ae-opt
-    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_mwalkers.xml
-    2
-    3
-    check_opt.py
-    -s
-    1
-    -p
-    det_He_opt_mwalkers
-    -r
-    reference.det_He_opt_mwalkers_2-3.s001.opt.xml)
+    BASE_NAME deterministic-He_ae-opt
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    INPUT_FILE det_He_opt_mwalkers.xml
+    PROCS 2
+    THREADS 3
+    CHECK_SCRIPT check_opt.py
+    CHECK_ARGS -s 1 -p det_He_opt_mwalkers -r reference.det_He_opt_mwalkers_2-3.s001.opt.xml)
 
   list(APPEND He_VMC_SCALARS "totenergy" "-3.25291030 0.000001")
 
@@ -52,9 +34,8 @@ else()
   list(APPEND He_VMC_MWALKERS_2-3_SCALAR "totenergy" "-2.81743526 0.000001")
 
   qmc_run_and_check(
-    deterministic-He_ae-opt_vmc
+    deterministic-He_ae-opt-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt
     det_He_opt.xml
     1
     1
@@ -64,9 +45,8 @@ else()
   )
 
   qmc_run_and_check(
-    deterministic-He_ae-opt_vmc-mwalkers
+    deterministic-He_ae-opt-vmc-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_mwalkers
     det_He_opt_mwalkers.xml
     1
     16
@@ -76,9 +56,8 @@ else()
   )
 
   qmc_run_and_check(
-    deterministic-He_ae-opt_vmc-mwalkers
+    deterministic-He_ae-opt-vmc-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_mwalkers
     det_He_opt_mwalkers.xml
     2
     3
@@ -96,52 +75,33 @@ else()
   list(APPEND He_batch_VMC_MWALKERS_2-3_SCALARS "totenergy" "-2.92537421 0.000001")
 
   simple_run_and_check(
-    deterministic-He_ae-opt-batch
-    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_batch.xml
-    1
-    1
-    check_opt.py
-    -s
-    1
-    -p
-    det_He_opt_batch
-    -r
-    reference.det_He_opt.s001.opt.xml)
+    BASE_NAME deterministic-He_ae-optbatch
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    INPUT_FILE det_He_optbatch.xml
+    CHECK_SCRIPT check_opt.py
+    CHECK_ARGS -s 1 -p det_He_optbatch -r reference.det_He_opt.s001.opt.xml)
 
   simple_run_and_check(
-    deterministic-He_ae-opt-batch-mwalkers
-    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_batch_mwalkers.xml
-    1
-    16
-    check_opt.py
-    -s
-    1
-    -p
-    det_He_opt_batch_mwalkers
-    -r
-    reference.det_He_opt_batch_mwalkers_1-16.s001.opt.xml)
+    BASE_NAME deterministic-He_ae-optbatch-mwalkers
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    INPUT_FILE det_He_optbatch_mwalkers.xml
+    THREADS 16
+    CHECK_SCRIPT check_opt.py
+    CHECK_ARGS -s 1 -p det_He_optbatch_mwalkers -r reference.det_He_optbatch_mwalkers_1-16.s001.opt.xml)
 
   simple_run_and_check(
-    deterministic-He_ae-opt-batch-mwalkers
-    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_batch_mwalkers.xml
-    2
-    3
-    check_opt.py
-    -s
-    1
-    -p
-    det_He_opt_batch_mwalkers
-    -r
-    reference.det_He_opt_batch_mwalkers_2-3.s001.opt.xml)
+    BASE_NAME deterministic-He_ae-optbatch-mwalkers
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    INPUT_FILE det_He_optbatch_mwalkers.xml
+    PROCS 2
+    THREADS 3
+    CHECK_SCRIPT check_opt.py
+    CHECK_ARGS -s 1 -p det_He_optbatch_mwalkers -r reference.det_He_optbatch_mwalkers_2-3.s001.opt.xml)
 
   qmc_run_and_check(
-    deterministic-He_ae-opt_vmc-batch
+    deterministic-He_ae-optbatch-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_batch
-    det_He_opt_batch.xml
+    det_He_optbatch.xml
     1
     1
     TRUE
@@ -150,10 +110,9 @@ else()
   )
 
   qmc_run_and_check(
-    deterministic-He_ae-opt_vmc-batch-mwalkers
+    deterministic-He_ae-optbatch-vmcbatch-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_batch_mwalkers
-    det_He_opt_batch_mwalkers.xml
+    det_He_optbatch_mwalkers.xml
     1
     16
     TRUE
@@ -162,10 +121,9 @@ else()
   )
 
   qmc_run_and_check(
-    deterministic-He_ae-opt_vmc-batch-mwalkers
+    deterministic-He_ae-optbatch-vmcbatch-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
-    det_He_opt_batch_mwalkers
-    det_He_opt_batch_mwalkers.xml
+    det_He_optbatch_mwalkers.xml
     2
     3
     TRUE
@@ -173,6 +131,21 @@ else()
     He_batch_VMC_MWALKERS_2-3_SCALARS # VMC
   )
 
+  set(HE_OPTBATCH_RUNTIME_TEST deterministic-He_ae-optbatch-cpu_limit)
+  run_qmc_app(
+    ${HE_OPTBATCH_RUNTIME_TEST}
+    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    1
+    1
+    HE_OPTBATCH_RUNTIME_TEST_ADDED
+    det_He_optbatch_cpu_limit.xml)
+  if(HE_OPTBATCH_RUNTIME_TEST_ADDED)
+    set_tests_properties(
+      ${HE_OPTBATCH_RUNTIME_TEST}
+      PROPERTIES TIMEOUT 120 PASS_REGULAR_EXPRESSION
+                 "Insufficient time for the current optimization iteration. Stopping before optimization iteration [1-9][0-9]*(.|\\n)*QMCPACK execution completed successfully")
+    add_test_check_file_existence(${HE_OPTBATCH_RUNTIME_TEST} det_He_optbatch_cpu_limit.s000.opt.xml TRUE)
+  endif()
 endif()
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)

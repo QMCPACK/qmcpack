@@ -90,7 +90,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   using ValueType = QMCTraits::ValueType;
   using PosType   = QMCTraits::PosType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   //Cell definition:
 

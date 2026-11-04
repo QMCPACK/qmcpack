@@ -11,7 +11,7 @@
 
 
 #include "MultiBsplineOffloadMapper.hpp"
-#include "OMPTarget/OMPTargetMath.hpp"
+#include "OMPTarget/OMPrequires.hpp"
 #include "OMPTarget/OMPTargetUsage.hpp"
 
 namespace qmcplusplus

@@ -18,7 +18,6 @@ else()
     qmc_run_and_check(
       long-NiO_afm-afqmc
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_afqmc"
-      qmc_long_afm
       qmc_long_afm.in.xml
       16
       1
@@ -34,7 +33,6 @@ else()
     qmc_run_and_check(
       long-NiO_nm-afqmc
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_afqmc"
-      qmc_long_nm
       qmc_long_nm.in.xml
       16
       1

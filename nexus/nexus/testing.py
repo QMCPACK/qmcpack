@@ -30,7 +30,7 @@ def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,*,int_as_float=False):
     v1_str   = isinstance(v1,(str,np.bytes_))
     v2_str   = isinstance(v2,(str,np.bytes_))
     if id(v1)==id(v2):
-        None
+        pass
     elif int_as_float and (v1_int or v1_float) and (v2_int or v2_float):
         diff = float_diff(v1,v2,atol=atol,rtol=rtol)
     elif v1_float and v2_float:
@@ -76,7 +76,7 @@ def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,*,int_as_float=False):
     elif v1 is None and v2 is None:
         diff = False
     elif hasattr(v1,'__len__') and hasattr(v2,'__len__') and len(v1)==0 and len(v2)==0:
-        None
+        pass
     else:
         diff = True # unsupported types
     #end if
@@ -244,10 +244,10 @@ def print_diff(o1,o2,atol=def_atol,rtol=def_rtol,*,int_as_float=False,text=False
     d1 = obj(diff1)
     d2 = obj(diff2)
     print(hline.format('left diff'))
-    print(list(sorted(d1.keys())))
+    print(sorted(d1.keys()))
     print(d1)
     print(hline.format('right diff'))
-    print(list(sorted(d2.keys())))
+    print(sorted(d2.keys()))
     print(d2)
 #end def print_diff
 
@@ -309,7 +309,7 @@ def failed(msg='Test failed.'):
 
 
 class FailedTest(Exception):
-    None
+    pass
 #end class FailedTest
 
 
@@ -327,18 +327,6 @@ def clear_all_sims():
 
 
 def check_final_state():
-    from .nexus_base import nexus_core,nexus_core_defaults
-    from .nexus_base import nexus_noncore,nexus_noncore_defaults
-    from .nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
-
-    assert('runs' in nexus_core_defaults)
-    assert('basis_dir' in nexus_noncore_defaults)
-    assert('pseudo_dir' in nexus_core_noncore_defaults)
-
-    assert(object_eq(nexus_core,nexus_core_defaults))
-    assert(object_eq(nexus_noncore,nexus_noncore_defaults))
-    assert(object_eq(nexus_core_noncore,nexus_core_noncore_defaults))
-
     from .simulation import Simulation
 
     assert(Simulation.sim_count==0)

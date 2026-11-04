@@ -82,12 +82,14 @@
       </hamiltonian>
    </qmcsystem>
 
-   <qmc method="vmc" move="pbyp">
-      <parameter name="total_walkers"             >    16              </parameter>
-      <parameter name="blocks"              >    3               </parameter>
-      <parameter name="steps"               >    2               </parameter>
-      <parameter name="subSteps"            >    2               </parameter>
-      <parameter name="timestep"            >    0.3             </parameter>
-      <parameter name="warmupSteps"         >    10              </parameter>
+   <mcwalkerset fileroot="qmc_batched.s000" node="-1" nprocs="1" version="0 4" collected="yes"/>
+
+   <qmc method="vmc" move="pbyp" checkpoint="-1">
+      <parameter name="total_walkers">    16            </parameter>
+      <parameter name="blocks">           1             </parameter>
+      <parameter name="steps">            1             </parameter>
+      <parameter name="subSteps">         1             </parameter>
+      <parameter name="timestep">         0.0           </parameter>
+      <parameter name="warmupSteps">      0             </parameter>
    </qmc>
 </simulation>

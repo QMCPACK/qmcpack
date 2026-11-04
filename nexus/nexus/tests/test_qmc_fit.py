@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMC_FIT)
@@ -17,7 +19,7 @@ def test_fit(tmp_path):
     dmc_infile = dmc_path / 'dmc.in.xml'
     assert(dmc_infile.exists())
 
-    command = f"{exe} ts --noplot -e 10 -s 1 -t '0.02 0.01 0.005' -f linear {dmc_path}/*scalar*"
+    command = f"{sys.executable} {exe} ts --noplot -e 10 -s 1 -t '0.02 0.01 0.005' -f linear {dmc_path}/*scalar*"
 
     out,err,rc = execute(command)
 

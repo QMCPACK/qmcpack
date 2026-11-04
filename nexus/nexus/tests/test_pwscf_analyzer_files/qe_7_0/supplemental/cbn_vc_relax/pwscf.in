@@ -2,8 +2,8 @@
   calculation = 'vc-relax'
   verbosity = 'high'
   restart_mode = 'from_scratch'
-  prefix = 'cbn_vc_relax'
-  outdir = './tmp'
+  prefix = 'pwscf'
+  outdir = '.'
   pseudo_dir = '../../additional_pseudos'
   tstress = .true.
   tprnfor = .true.

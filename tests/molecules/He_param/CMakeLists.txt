@@ -10,8 +10,6 @@ if(NOT QMC_MIXED_PRECISION)
     short-He_param_grad
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-    PREFIX
-    He_param_grad.param
     INPUT_FILE
     He_param_grad.xml
     PROCS
@@ -29,8 +27,6 @@ if(NOT QMC_MIXED_PRECISION)
     short-He_param_grad_legacy_driver
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-    PREFIX
-    He_param_grad_legacy_driver.param
     INPUT_FILE
     He_param_grad_legacy_driver.xml
     PROCS
@@ -63,8 +59,6 @@ if(NOT QMC_MIXED_PRECISION)
       He_param_grad_load
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_param_grad_load.param
       INPUT_FILE
       He_param_grad_load.xml
       PROCS
@@ -92,8 +86,6 @@ if(NOT QMC_MIXED_PRECISION)
       short-He_orb_rot_param_grad_legacy
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_orb_rot_param_grad_legacy.param
       INPUT_FILE
       He_orb_rot_param_grad_legacy.xml
       PROCS
@@ -110,8 +102,6 @@ if(NOT QMC_MIXED_PRECISION)
       short-He_orb_rot_param_grad_legacy
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_orb_rot_param_grad_legacy.param
       INPUT_FILE
       He_orb_rot_param_grad_legacy.xml
       PROCS
@@ -128,8 +118,6 @@ if(NOT QMC_MIXED_PRECISION)
       short-He_orb_rot_param_grad_batch
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_orb_rot_param_grad_batch.param
       INPUT_FILE
       He_orb_rot_param_grad_batch.xml
       PROCS
@@ -146,8 +134,6 @@ if(NOT QMC_MIXED_PRECISION)
       short-He_orb_rot_param_grad_batch
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_orb_rot_param_grad_batch.param
       INPUT_FILE
       He_orb_rot_param_grad_batch.xml
       PROCS
@@ -165,8 +151,6 @@ if(NOT QMC_MIXED_PRECISION)
       short-He_orb_rot_param_grad_rhf
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_orb_rot_param_grad_rhf.param
       INPUT_FILE
       He_orb_rot_param_grad_rhf.xml
       PROCS
@@ -189,8 +173,6 @@ if(NOT QMC_MIXED_PRECISION)
       short-He_orb_rot_jastrow_param_grad_legacy
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_orb_rot_jastrow_param_grad_legacy.param
       INPUT_FILE
       He_orb_rot_jastrow_param_grad_legacy.xml
       PROCS
@@ -207,8 +189,6 @@ if(NOT QMC_MIXED_PRECISION)
       short-He_orb_rot_jastrow_param_grad_batch
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_orb_rot_jastrow_param_grad_batch.param
       INPUT_FILE
       He_orb_rot_jastrow_param_grad_batch.xml
       PROCS

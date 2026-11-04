@@ -22,7 +22,7 @@
 from typing import NoReturn
 
 from .developer_tools import save,load,_pp_repr,_pp_str,dotdict,obj,DevBase  # noqa: F401
-from .developer_tools import sorted_py2 as sorted_generic
+from .developer_tools import sorted_py2 as sorted_generic  # noqa: F401
 from .debug import ci, interact  # noqa: F401
 
 

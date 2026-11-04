@@ -49,6 +49,38 @@ void SPOSetT<T>::checkOutVariables(const OptVariables& active)
 }
 
 template<typename T>
+void SPOSetT<T>::evaluateValue(const ParticleSet& P, int iat, ValueVectorT<ValueAlias<float, ValueType>>& psi)
+{
+  throw std::runtime_error("Need specialization of " + getClassName() + "::evaluateValue for float precision.");
+}
+
+template<typename T>
+void SPOSetT<T>::evaluateValue(const ParticleSet& P, int iat, ValueVectorT<ValueAlias<double, ValueType>>& psi)
+{
+  throw std::runtime_error("Need specialization of " + getClassName() + "::evaluateValue for double precision.");
+}
+
+template<typename T>
+void SPOSetT<T>::evaluateVGL(const ParticleSet& P,
+                             int iat,
+                             ValueVectorT<ValueAlias<float, ValueType>>& psi,
+                             GradVectorT<ValueAlias<float, ValueType>>& dpsi,
+                             ValueVectorT<ValueAlias<float, ValueType>>& d2psi)
+{
+  throw std::runtime_error("Need specialization of " + getClassName() + "::evaluateVGL for float precision.");
+}
+
+template<typename T>
+void SPOSetT<T>::evaluateVGL(const ParticleSet& P,
+                             int iat,
+                             ValueVectorT<ValueAlias<double, ValueType>>& psi,
+                             GradVectorT<ValueAlias<double, ValueType>>& dpsi,
+                             ValueVectorT<ValueAlias<double, ValueType>>& d2psi)
+{
+  throw std::runtime_error("Need specialization of " + getClassName() + "::evaluateVGL for double precision.");
+}
+
+template<typename T>
 void SPOSetT<T>::evaluateDetRatios(const VirtualParticleSet& VP,
                                    ValueVector& psi,
                                    const ValueVector& psiinv,
@@ -224,6 +256,28 @@ void SPOSetT<T>::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSetT>& spo
   assert(this == &spo_list.getLeader());
   for (int iw = 0; iw < spo_list.size(); iw++)
     spo_list[iw].evaluate_notranspose(P_list[iw], first, last, logdet_list[iw], dlogdet_list[iw], d2logdet_list[iw]);
+}
+
+template<typename T>
+void SPOSetT<T>::evaluate_notranspose(const ParticleSet& P,
+                                      int first,
+                                      int last,
+                                      ValueMatrixT<ValueAlias<float, ValueType>>& logdet,
+                                      GradMatrixT<ValueAlias<float, ValueType>>& dlogdet,
+                                      ValueMatrixT<ValueAlias<float, ValueType>>& d2logdet)
+{
+  throw std::runtime_error("Need specialization of " + getClassName() + "::evaluate_notranspose for float precision.\n");
+}
+
+template<typename T>
+void SPOSetT<T>::evaluate_notranspose(const ParticleSet& P,
+                                      int first,
+                                      int last,
+                                      ValueMatrixT<ValueAlias<double, ValueType>>& logdet,
+                                      GradMatrixT<ValueAlias<double, ValueType>>& dlogdet,
+                                      ValueMatrixT<ValueAlias<double, ValueType>>& d2logdet)
+{
+  throw std::runtime_error("Need specialization of " + getClassName() + "::evaluate_notranspose for double precision.\n");
 }
 
 template<typename T>

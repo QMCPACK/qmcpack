@@ -24,11 +24,12 @@
 #include "Platforms/Host/OutputManager.h"
 #include <cmath>
 #include "Utilities/qmc_common.h"
+#include "Message/UniformCommunicateError.h"
 
 
 namespace qmcplusplus
 {
-ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule, int llocal, int srule)
+ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate& c, int nrule, int llocal, int srule)
     : MPIObjectBase(c),
       NumNonLocal(0),
       Lmax(0),
@@ -81,7 +82,7 @@ void ReadFileBuffer::reset()
 {
   if (is_open)
   {
-    if (myComm == NULL || myComm->rank() == 0)
+    if (myComm.rank() == 0)
     {
       delete fin;
       fin = NULL;
@@ -97,14 +98,13 @@ bool ReadFileBuffer::open_file(const std::string& fname)
 {
   reset();
 
-  if (myComm == NULL || myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     fin = new std::ifstream(fname.c_str());
     if (fin->is_open())
       is_open = true;
   }
-  if (myComm)
-    myComm->bcast(is_open);
+  myComm.bcast(is_open);
   return is_open;
 }
 
@@ -113,21 +113,19 @@ bool ReadFileBuffer::read_contents()
   if (!is_open)
     return false;
 
-  if (myComm == NULL || myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     length = get_file_length(fin);
   }
-  if (myComm)
-    myComm->bcast(length);
+  myComm.bcast(length);
 
   cbuffer         = new char[length + 1];
   cbuffer[length] = '\0';
 
-  if (myComm == NULL || myComm->rank() == 0)
+  if (myComm.rank() == 0)
     fin->read(cbuffer, length);
 
-  if (myComm != NULL)
-    myComm->bcast(cbuffer, length);
+  myComm.bcast(cbuffer, length);
 
   return true;
 }
@@ -138,25 +136,25 @@ bool ECPComponentBuilder::read_pp_file(const std::string& fname)
   ReadFileBuffer buf(myComm);
   bool okay = buf.open_file(fname);
   if (!okay)
-    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
+    throw UniformCommunicateError("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
 
   okay = buf.read_contents();
   if (!okay)
-    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
+    throw UniformCommunicateError("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
 
   xmlDocPtr m_doc = xmlReadMemory(buf.contents(), buf.length, NULL, NULL, 0);
 
   if (m_doc == NULL)
   {
     xmlFreeDoc(m_doc);
-    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file xml file " + fname + " is invalid");
+    throw UniformCommunicateError("ECPComponentBuilder::read_pp_file xml file " + fname + " is invalid");
   }
   // Check the document is of the right kind
   xmlNodePtr cur = xmlDocGetRootElement(m_doc);
   if (cur == NULL)
   {
     xmlFreeDoc(m_doc);
-    myComm->barrier_and_abort("Empty document");
+    throw UniformCommunicateError("Empty document");
   }
   bool success = put(cur);
   xmlFreeDoc(m_doc);
@@ -222,7 +220,7 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
 
 void ECPComponentBuilder::printECPTable()
 {
-  if (!qmc_common.io_node || qmc_common.mpi_groups > 1)
+  if (!qmc_common.io_node || !qmc_common.get_filename_infix_for_ensemble_jobs().empty())
     return;
   if (!outputManager.isActive(Verbosity::DEBUG))
     return;

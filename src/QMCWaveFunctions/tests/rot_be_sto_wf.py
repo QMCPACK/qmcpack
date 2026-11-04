@@ -1,14 +1,12 @@
-
 # Compute wavefunction values and parameter derivatives
 # for a wavefunction with STO Be orbitals, single determinant, and orbital rotation
 
 import autograd.numpy as np
-from autograd import hessian, grad
-from run_qmc import run_qmc
 import read_qmcpack
+from autograd import grad, hessian
+from run_qmc import run_qmc
 from slater_orbitals import STO
 
-import scipy.linalg
 
 # From construct_rot.py
 def construct_antisym(p):
@@ -138,6 +136,7 @@ class Wavefunction_Be_STO:
         h = -0.5 * lapl / psi_val + pot
         return h
 
+
 # Create reference values for
 # "Rotated LCAO Be single determinant" and "Rotated LCAO Be multi determinant with one determinant"
 # in test_RotatedSPOs_LCAO.cpp
@@ -159,7 +158,7 @@ def generate_point_values():
     print("dlogpsi = ", dp / p)
     dlogpsi = dp / p
     for i in range(dlogpsi.shape[0]):
-        print("    CHECK(dlogpsi[{}] == ValueApprox({}));".format(i, dlogpsi[i]))
+        print(f"    CHECK(dlogpsi[{i}] == ValueApprox({dlogpsi[i]}));")
 
     en = wf.local_energy(r, VP)
     print("en = ", en)
@@ -168,7 +167,7 @@ def generate_point_values():
     print("den = ", den)
 
     for i in range(den.shape[0]):
-        print("    CHECK(dhpsioverpsi[{}] == ValueApprox({}));".format(i, den[i]))
+        print(f"    CHECK(dhpsioverpsi[{i}] == ValueApprox({den[i]}));")
 
 
 def run():
@@ -182,4 +181,4 @@ def run():
 
 if __name__ == "__main__":
     generate_point_values()
-    #run()
+    # run()

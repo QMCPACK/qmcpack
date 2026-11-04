@@ -30,7 +30,7 @@
 
 namespace qmcplusplus
 {
-QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
+QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate& comm)
     : MPIObjectBase(comm),
       reportH5(false),
       CI_Opt(false),
@@ -158,7 +158,7 @@ void QMCCostFunctionBase::reportParameters()
 {
   //final reset
   resetPsi(true);
-  if (!myComm->rank())
+  if (!myComm.rank())
   {
     // Pretty print the wave function parameters.
     *msg_stream << "  Updated wave function parameters:\n";
@@ -195,7 +195,7 @@ void QMCCostFunctionBase::reportParameters()
 */
 void QMCCostFunctionBase::reportParametersH5()
 {
-  if (!myComm->rank())
+  if (!myComm.rank())
   {
     int ci_size = 0;
     std::vector<OptVariables::real_type> CIcoeff;
@@ -927,23 +927,5 @@ void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi, const 
     if (obj.isOptimized())
       obj.resetParametersExclusive(opt_variables);
 }
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  If the LMYEngine is available, returns the cost function calculated by the engine.
-///         Otherwise, returns the usual cost function.
-///
-/// \param[in]      needDeriv             whether derivative vectors should be computed
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef HAVE_LMY_ENGINE
-QMCCostFunctionBase::Return_rt QMCCostFunctionBase::LMYEngineCost(const bool needDeriv,
-                                                                  cqmc::engine::LMYEngine<Return_t>& EngineObj)
-{
-  // prepare local energies, weights, and possibly derivative vectors
-  correlatedSampling(needDeriv);
-  // since we are using the LMYEngine, compute and return it's cost function value
-  return this->LMYEngineCost_detail(EngineObj);
-}
-#endif
 
 } // namespace qmcplusplus

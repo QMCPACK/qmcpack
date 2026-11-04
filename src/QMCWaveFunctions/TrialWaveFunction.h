@@ -191,6 +191,23 @@ public:
   static void mw_evaluateLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                              const RefVectorWithLeader<ParticleSet>& p_list);
 
+  /** Evaluate selected walkers after an all-particle move.
+   * The nonempty wf_list, p_list, and evaluate_mask are complete, same-size,
+   * index-aligned lists from the all-particle ParticleSet transaction.
+   */
+  static void mw_evaluateLogAllParticles(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                         const RefVectorWithLeader<ParticleSet>& p_list,
+                                         const std::vector<bool>& evaluate_mask);
+
+  /** Resolve a TrialWaveFunction all-particle move after ParticleSet resolution.
+   * The nonempty wf_list, p_list, and accepted lists are complete, same-size,
+   * index-aligned lists from the all-particle ParticleSet transaction.
+   * Rejected walkers are re-evaluated; accepted walker state is retained.
+   */
+  static void mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                               const RefVectorWithLeader<ParticleSet>& p_list,
+                                               const std::vector<bool>& accepted);
+
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(const ParticleSet& P);
 

@@ -49,7 +49,7 @@ import os
 import sys
 from copy import deepcopy
 from types import MappingProxyType
-from typing import ClassVar, Literal, TypeAlias
+from typing import ClassVar, TypeAlias
 
 import numpy as np
 from numpy import pi
@@ -66,7 +66,6 @@ from .pwscf_input_defs import (
     ElectronsDefinitions,
     FcpDefinitions,
     IonsDefinitions,
-    PwscfInputType,
     RismDefinitions,
     SystemDefinitions,
 )
@@ -347,7 +346,7 @@ class Element(PwscfInputBase):
     #end def write
 
     def post_process_read(self,parent):
-        None
+        pass
     #end def post_process_read
 #end class Element
 
@@ -540,7 +539,7 @@ class Section(Element):
                         sind = f'({index})'
                     elif isinstance(index,tuple):
                         if not allow_spec:
-                            None
+                            pass
                         #end if
                         sind = str(index).replace(' ','')
                     else:
@@ -907,7 +906,7 @@ class atomic_positions(Card):
         if spec=='alat' or spec=='':
             pos *= scale
         elif spec=='bohr':
-            None
+            pass
         elif spec=='angstrom':
             pos *= convert(1.,'A','B')
         elif spec=='crystal':
@@ -926,7 +925,7 @@ class atomic_positions(Card):
         if spec=='alat' or spec=='':
             pos /= scale
         elif spec=='bohr':
-            None
+            pass
         elif spec=='angstrom':
             pos /= convert(1.,'A','B')
         elif spec=='crystal':
@@ -996,7 +995,7 @@ class k_points(Card):
             self.grid  = a[0:3]
             self.shift = a[3:]
         elif self.specifier == 'gamma':
-            None
+            pass
         else:
             msg = 'k_points specifier '+self.specifier+' is unrecognized'
             raise ValueError(msg)
@@ -1018,7 +1017,7 @@ class k_points(Card):
             c+=array_to_string(np.array(self.grid),pad='',format='{0}',converter=int,rowsep='')
             c+=array_to_string(np.array(self.shift),pad=' ',format='{0}',converter=int)
         elif self.specifier == 'gamma':
-            None
+            pass
         else:
             msg = 'k_points specifier '+self.specifier+' is unrecognized'
             raise ValueError(msg)
@@ -1105,7 +1104,7 @@ class cell_parameters(Card):
         if spec=='alat' or spec=='':
             vec *= scale
         elif spec=='bohr':
-            None
+            pass
         elif spec=='angstrom':
             vec *= convert(1.,'A','B')
         else:
@@ -1121,7 +1120,7 @@ class cell_parameters(Card):
         if spec=='alat' or spec=='':
             vec /= scale
         elif spec=='bohr':
-            None
+            pass
         elif spec=='angstrom':
             vec /= convert(1.,'A','B')
         else:
@@ -1293,7 +1292,7 @@ class hubbard(Card):
                     contents += f"{param} {label_manifold} {value} \n"
                 elif isinstance(label_manifold, tuple):
                     assert(len(label_manifold) == 2)
-                    assert(all([isinstance(_, str) for _ in label_manifold]))
+                    assert(all(isinstance(_, str) for _ in label_manifold))
                     if isinstance(value, (int, float)):
                         # Ex: {'V' : {('C-2p', 'C-2p'): 1e-8}}
                         atom1, manifold1 = label_manifold[0].split('-')
@@ -1629,7 +1628,7 @@ class PwscfInput(SimulationInput):
             self.atomic_species.masses[name] = element.atomic_weight
         #end for
         if elem_order is None:
-            self.atomic_species.atoms = list(sorted(system.ion_labels))
+            self.atomic_species.atoms = sorted(system.ion_labels)
         else:
             if set(elem_order)!=set(system.ion_labels):
                 msg = (
@@ -1737,7 +1736,7 @@ class PwscfInput(SimulationInput):
             is_elem, element = Elements.is_element(name, return_element=True)
             masses[name] = element.atomic_weight
         #end for
-        self.atomic_species.atoms  = list(sorted(system.ion_labels))
+        self.atomic_species.atoms  = sorted(system.ion_labels)
         self.atomic_species.masses = masses
         # set pseudopotentials for renamed atoms (e.g. Cu3 is same as Cu)
         pp = self.atomic_species.pseudopotentials
@@ -2028,10 +2027,10 @@ def generate_any_pwscf_input(**kwargs):
     hubbard_u         = kwargs.get('hubbard_u',None)
     # Pre 7.2 Hubbard tags
     hub_keys_pre72 = 'hubbard_u hubbard_j0 hubbard_j U_projection_type'.lower().split()
-    has_pre72_keys = any(([_ in kwargs.keys() for _ in hub_keys_pre72]))
+    has_pre72_keys = any((_ in kwargs.keys() for _ in hub_keys_pre72))
     # QE >=7.2 Hubbard tags
     hub_keys_v72 = 'hubbard hubbard_proj'.lower().split()
-    has_v72_keys = any(([_ in kwargs.keys() for _ in hub_keys_v72]))
+    has_v72_keys = any((_ in kwargs.keys() for _ in hub_keys_v72))
     if has_pre72_keys + has_v72_keys > 1:
         msg = f'Please use {hub_keys_pre72} for QE version <7.2 and {hub_keys_v72} for QE version >=7.2'
         raise ValueError(msg)
@@ -2104,7 +2103,7 @@ def generate_any_pwscf_input(**kwargs):
         pseudopotentials[element] = ppname
     #end for
     pw.atomic_species.update(
-        atoms            = list(sorted(atom_species)),
+        atoms            = sorted(atom_species),
         pseudopotentials = pseudopotentials,
         )
 
@@ -2146,7 +2145,7 @@ def generate_any_pwscf_input(**kwargs):
                 #end if
                 pw.atomic_species.atoms = list(elem_order)
             else:
-                pw.atomic_species.atoms = list(sorted(species))
+                pw.atomic_species.atoms = sorted(species)
             #end if
             pw.atomic_species.masses = obj(mass)
             pp = pw.atomic_species.pseudopotentials

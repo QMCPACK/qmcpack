@@ -87,8 +87,7 @@ struct PSetsAndRefList
 PSetsAndRefList makePsets()
 {
   auto lattice = testing::makeTestLattice();
-  Communicate* comm;
-  comm               = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto& pset         = *(particle_pool.getParticleSet("e"));
   auto& pset_ions    = *(particle_pool.getParticleSet("ion"));

@@ -32,9 +32,9 @@ namespace qmcplusplus
 {
 TEST_CASE("Fixed node branch", "[drivers][walker_control]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  auto emb_uptr = std::make_unique<EstimatorManagerBase>(c);
+  auto emb_uptr = std::make_unique<EstimatorManagerBase>(&c);
   auto emb      = emb_uptr.get();
 
   double tau = 0.5;

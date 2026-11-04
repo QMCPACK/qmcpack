@@ -77,7 +77,7 @@ public:
 
 TEST_CASE("Crowd integration", "[drivers]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
   using namespace testing;
   SetupPools pools;
 

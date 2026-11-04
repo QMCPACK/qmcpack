@@ -853,7 +853,7 @@ def test_input_spec():
     assert(documented_count==271)
     assert(len(input_spec.keywords)==284)
 
-    added_keywords = set([
+    added_keywords = {
         'AFM',
         'BerryPhase',
         'BerryPhaseCycle',
@@ -910,14 +910,13 @@ def test_input_spec():
         'use_energy_correction',
         'use_gpu_fd',
         'use_rmm_diis',
-        ])
+        }
     assert(added_keywords <= set(input_spec.keywords.keys()))
 
     assert(input_spec.keywords.AFM.key_type=='boolean')
     assert(input_spec.keywords.adaptive_cmix.max_value==10.0)
     assert(input_spec.keywords.electric_field.key_type=='double array')
-    assert(input_spec.keywords.tddft_mode.allowed==set(
-        ['electric field','point charge','vector potential']))
+    assert(input_spec.keywords.tddft_mode.allowed=={'electric field','point charge','vector potential'})
     assert('Example: 2 means system is missing two electrons' in
            input_spec.keywords.system_charge.description)
     assert(rmg_modes.full_mode('nscf')=='NSCF')
@@ -1494,7 +1493,7 @@ def test_generate():
 
     skeys = mkeys & gkeys & kkeys
 
-    skeys_ref = set([
+    skeys_ref = {
         'atomic_coordinate_type', 'atoms', 'calculation_mode',
         'charge_density_mixing', 'charge_mixing_type', 'compressed_infile',
         'compressed_outfile', 'description', 'energy_convergence_criterion',
@@ -1502,7 +1501,7 @@ def test_generate():
         'localize_localpp', 'localize_projectors', 'max_scf_steps',
         'occupations_type', 'potential_acceleration_constant_step',
         'potential_grid_refinement', 'states_count_and_occupation',
-        'subdiag_driver', 'wavefunction_grid', 'write_data_period'])
+        'subdiag_driver', 'wavefunction_grid', 'write_data_period'}
 
     assert(skeys==skeys_ref)
 

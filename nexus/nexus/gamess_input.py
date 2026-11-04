@@ -37,7 +37,7 @@ from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
 from .developer import DevBase, obj, warn, FileFormatError
-from .nexus_base import nexus_noncore
+from .nexus_base import nexus_config
 from .pseudoset import pp_elem_label, PseudoSet
 from .simulation import SimulationInput
 from .utilities import path_string
@@ -595,7 +595,7 @@ class ScfGroup(KeywordSpecGroup):
             })
 
     allowed_values = obj(
-        kproj = set([0,1,2]),
+        kproj = {0,1,2},
         )
 #end class ScfGroup
 
@@ -644,10 +644,10 @@ class DftGroup(KeywordSpecGroup):
     strings  = frozenset({'method','auxfun'})
 
     allowed_values = obj(
-        method = set(['grid','gridfree']),
-        idcver = set([1,2,3]),
-        jans   = set([1,2]),
-        auxfun = set(['aux0','aux3']),
+        method = {'grid','gridfree'},
+        idcver = {1,2,3},
+        jans   = {1,2},
+        auxfun = {'aux0','aux3'},
         )
 #end class DftGroup
 
@@ -680,11 +680,11 @@ class DrtGroup(KeywordSpecGroup):
     strings  = frozenset({'group','stsym'})
 
     allowed_values = obj(
-        group = set(['c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h']),
-        stsym = set(['a','ag','au','ap','app','a','b','a1','a2','b1','b2','ag',
-                     'bu','bg','au','a','b1','b2','b3','ag','b1g','b2g','b3g',
-                     'au','b1u','b2u','b3u']),
-        nprt = set([0,1,2,3]),
+        group = {'c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h'},
+        stsym = {'a','ag','au','ap','app','b','a1','a2','b1','b2',
+                     'bu','bg','b3','b1g','b2g','b3g',
+                     'b1u','b2u','b3u'},
+        nprt = {0,1,2,3},
         )
 #end class DrtGroup
 
@@ -703,11 +703,11 @@ class CidrtGroup(KeywordSpecGroup):
     strings  = frozenset({'group','stsym'})
 
     allowed_values = obj(
-        group = set(['c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h']),
-        stsym = set(['a','ag','au','ap','app','a','b','a1','a2','b1','b2','ag',
-                     'bu','bg','au','a','b1','b2','b3','ag','b1g','b2g','b3g',
-                     'au','b1u','b2u','b3u']),
-        nprt = set([0,1,2,3]),
+        group = {'c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h'},
+        stsym = {'a','ag','au','ap','app','b','a1','a2','b1','b2',
+                     'bu','bg','b3','b1g','b2g','b3g',
+                     'b1u','b2u','b3u'},
+        nprt = {0,1,2,3},
         )
 #end class CidrtGroup
 
@@ -729,10 +729,10 @@ class DetGroup(KeywordSpecGroup):
     arrays   = frozenset({'irreps','nflgdm','wstate'})
 
     allowed_values = obj(
-        group = set(['c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h']),
-        stsym = set(['a','ag','au','ap','app','a','b','a1','a2','b1','b2','ag',
-                     'bu','bg','au','a','b1','b2','b3','ag','b1g','b2g','b3g',
-                     'au','b1u','b2u','b3u']),
+        group = {'c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h'},
+        stsym = {'a','ag','au','ap','app','b','a1','a2','b1','b2',
+                     'bu','bg','b3','b1g','b2g','b3g',
+                     'b1u','b2u','b3u'},
         )
 #end class DetGroup
 
@@ -752,9 +752,9 @@ class BasisGroup(KeywordSpecGroup):
     allowed_values = obj(
         #gbasis = set(['sto','n21','n31','n311','g3l','g3lx','mini','midi','dzv',
         #              'dh','tzv','mc']) # many others
-        ndfunc = set([0,1,2,3]),
-        nffunc = set([0,1]),
-        polar  = set(['common','popn31','popn311','dunning','huzinaga','hondo7']),
+        ndfunc = {0,1,2,3},
+        nffunc = {0,1},
+        polar  = {'common','popn31','popn311','dunning','huzinaga','hondo7'},
         )
 #end class BasisGroup
 
@@ -949,7 +949,7 @@ class GamessInput(SimulationInput,GIbase):
                         group_text = ''
                     #end if
                 elif not ingroup:
-                    None
+                    pass
                 else:
                     msg = (
                         f'invalid text encountered during read of line number {n}:\n'
@@ -958,7 +958,7 @@ class GamessInput(SimulationInput,GIbase):
                     raise FileFormatError(msg)
                 #end if
             elif ls=='' or line[0]!=' ' or not ingroup:
-                None
+                pass
             else:
                 msg = (
                     f'invalid text encountered during read of line number {n}:\n'
@@ -1185,7 +1185,7 @@ def generate_any_gamess_input(**kwargs):
             del kw[vname]
             del kwrem[vname]
         elif name in GamessInput.group_keyword_overlap:
-            None
+            pass
         else:
             msg = (
                 f'invalid information provided to initialize group {vname}\n'
@@ -1253,7 +1253,7 @@ def generate_any_gamess_input(**kwargs):
         #end if
         if pskw.pseudos is None:
             if pskw.bases is not None:
-                bss = nexus_noncore.basissets.bases_by_atom(*pskw.bases)
+                bss = nexus_config.basissets.bases_by_atom(*pskw.bases)
             else:
                 bss = obj()
                 if 'coord' not in gi.contrl:

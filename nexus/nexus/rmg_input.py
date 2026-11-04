@@ -3201,7 +3201,7 @@ class RmgKeyword(DevBase):
             #end if
             if RmgInputSettings.enforce_allowed:
                 if self.allowed is not None and value not in self.allowed:
-                    msg += f'Value for keyword "{self.key_name}" is not allowed.\n  Value provided: {value}\n  Allowed values: {list(sorted(self.allowed))}'
+                    msg += f'Value for keyword "{self.key_name}" is not allowed.\n  Value provided: {value}\n  Allowed values: {sorted(self.allowed)}'
                 #end if
             #end if
         #end if
@@ -3455,7 +3455,7 @@ class AtomsKeyword(FormattedTableRmgKeyword):
             positions = positions,
             )
 
-        boolset = set(['0','1'])
+        boolset = {'0','1'}
         invalid_format = False
         if nvals==4:
             v.format = 'basic'
@@ -3856,7 +3856,7 @@ class RmgInput(SimulationInput):
             unrec = obj({k:values[k] for k in unrecognized})
             msg = (
                 'Unrecognized keywords encountered during assignment.\n'
-                f'Unrecognized keywords: {list(sorted(unrecognized))}\n'
+                f'Unrecognized keywords: {sorted(unrecognized)}\n'
                 'Corresponding values:\n'
                 f'{unrec}'
                 )
@@ -3937,8 +3937,8 @@ class RmgInput(SimulationInput):
         if len(unrecognized)>0:
             msg += (
                 'Unrecognized keywords encountered.\n'
-                f'  Unrecognized keywords: {list(sorted(unrecognized))}\n'
-                f'  Valid keywords are: {list(sorted(allowed))}\n'
+                f'  Unrecognized keywords: {sorted(unrecognized)}\n'
+                f'  Valid keywords are: {sorted(allowed)}\n'
                 )
         #end if
         recognized = present-unrecognized

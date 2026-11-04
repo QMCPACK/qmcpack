@@ -168,7 +168,7 @@ def read_qexml(inp):
                     ls = ls[0:-1]
                 #end if
                 instr=False
-                lsl = list(tuple(ls))
+                lsl = list(ls)
                 ls = ''
                 for i in range(len(lsl)):
                     c = lsl[i]

@@ -45,7 +45,7 @@ public:
                          QMCHamiltonian& h,
                          SampleStack& samples,
                          const std::vector<int>& walkers_per_crowd,
-                         Communicate* comm);
+                         Communicate& comm);
 
   ///Destructor
   ~QMCCostFunctionBatched() override;
@@ -53,10 +53,6 @@ public:
   void getConfigurations(const std::string& aroot) override;
   void checkConfigurations(EngineHandle& handle) override;
   void checkConfigurationsSR(EngineHandle& handle) override;
-#ifdef HAVE_LMY_ENGINE
-  void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                  OptionalRef<DescentEngine> descentEngineObj) override;
-#endif
 
 
   void resetPsi(bool final_reset = false) override;
@@ -66,8 +62,6 @@ public:
   void calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec) override;
 
 protected:
-
-
   Matrix<Return_rt> RecordsOnNode_;
 
   /** Temp derivative properties and Hderivative properties of all the walkers
@@ -89,11 +83,6 @@ protected:
   NewTimer& corr_sampling_timer_;
   NewTimer& fill_timer_;
 
-
-#ifdef HAVE_LMY_ENGINE
-  size_t total_samples();
-  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>& EngineObj) override;
-#endif
 
   friend testing::LinearMethodTestSupport;
 };

@@ -1,7 +1,7 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-cmake_minimum_required(VERSION 3.21.0)
+cmake_minimum_required(VERSION 3.28.0)
 # Note that cmake_minimum_required affects policy defaults.
 # All policies known to the running version of CMake and introduced in
 # cmake_minimum_required version or earlier will be set to use NEW behavior
@@ -32,6 +32,37 @@ include(macros)
 # which point to directories outside the build tree to the install RPATH
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 include(AddRPATH)
+
+#--------------------------------------------------------------------
+# Check environment variables
+#--------------------------------------------------------------------
+if(DEFINED ENV{CPATH} OR DEFINED ENV{CPLUS_INCLUDE_PATH})
+  set(_env_include_msg "Include environment variable(s) are set:\n")
+  if(DEFINED ENV{CPATH})
+    string(APPEND _env_include_msg "  CPATH = $ENV{CPATH}\n")
+  endif()
+  if(DEFINED ENV{CPLUS_INCLUDE_PATH})
+    string(APPEND _env_include_msg "  CPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n")
+  endif()
+  string(APPEND _env_include_msg
+    "If QMCPACK dependent library header files are located in these directories, "
+    "ensure these variables carry consistent entries during compilation as during CMake configuration.\n"
+    "Commonly on HPC systems using modules, the same modules loaded during CMake configuration "
+    "must also be loaded during compilation.")
+  message(WARNING "${_env_include_msg}")
+endif()
+
+if(DEFINED ENV{LIBRARY_PATH})
+  message(WARNING
+    "LIBRARY_PATH environment variable is set:\n"
+    "  LIBRARY_PATH = $ENV{LIBRARY_PATH}\n"
+    "LIBRARY_PATH is used by the linker during compilation. If QMCPACK dependent libraries (static or dynamic) "
+    "are located in these directories, ensure LIBRARY_PATH remains consistent during compilation as during CMake configuration.\n"
+    "Additionally, if dependent dynamic libraries are located in these directories, LD_LIBRARY_PATH must carry "
+    "consistent entries during run time as during CMake configuration.\n"
+    "Commonly on HPC systems using modules, the same modules loaded during CMake configuration must be loaded "
+    "during compilation, and for dynamic libraries, also during run time.")
+endif()
 
 ######################################################################
 # Build and install options
@@ -80,6 +111,7 @@ include(DetermineGPUFeatures)
 # CMake does not propagate indirect object files by design.
 # So the dependency must be explicitly specified with USE_OBJECT_TARGET.
 cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
+cmake_dependent_option(QMC_OFFLOAD_USM "Require OpenMP unified shared memory" OFF "ENABLE_OFFLOAD" OFF)
 
 include(DetermineDeviceArchitectures)
 
@@ -146,13 +178,6 @@ option(ENABLE_GCOV "Enable code coverage" OFF)
 option(ENABLE_PYCOV "Enable python code coverage" OFF)
 option(BUILD_UNIT_TESTS "Build unit tests" ON)
 option(BUILD_MICRO_BENCHMARKS "Build micro benchmarks" ON)
-option(BUILD_LMYENGINE_INTERFACE "Build LMY engine" ON)
-if(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
-  message(STATUS "LMY engine is not compatible with mixed precision build! Disabling LMY engine. Some optimizers will not be available.")
-  set(BUILD_LMYENGINE_INTERFACE OFF)
-else()
-  message(STATUS "LMY engine enabled for widest range of wavefunction optimization methods.")
-endif()
 option(BUILD_AFQMC "Build with AFQMC" OFF)
 option(ENABLE_DEEPQMC_INFERENCE "Enable experimental DeepQMC wavefunction inference support" OFF)
 if(ENABLE_DEEPQMC_INFERENCE)
@@ -401,7 +426,13 @@ if(QMC_MPI)
     endif()
   endif()
 
-  if(${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "Open MPI")
+  set(MPI_IS_OPENMPI FALSE)
+  if("${MPI_CXX_LIBRARY_VERSION_STRING}" MATCHES "Open MPI"
+     OR "${MPI_CXX_COMPILER}" MATCHES "openmpi"
+     OR "${MPI_CXX_LIBRARIES}" MATCHES "openmpi")
+    set(MPI_IS_OPENMPI TRUE)
+  endif()
+  if(MPI_IS_OPENMPI)
     if(NOT MPIEXEC_PREFLAGS)
       set(MPIEXEC_PREFLAGS "--bind-to;none")
       message(STATUS "Detected Open MPI. Setting bind-to options for thread affinity in MPIEXEC_PREFLAGS.")
@@ -462,18 +493,7 @@ endif()
 #  set up scalar/vector math libraries
 #-------------------------------------------------------------------
 add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
-
-set(VALID_MATH_VENDORS "GENERIC" "INTEL_VML" "IBM_MASS" "AMD_LIBM")
-set(QMC_MATH_VENDOR
-    "GENERIC"
-    CACHE STRING "Vendor optimized libraries for scalar and vector math functions")
-
-# Perform math vendor option check
-if(NOT QMC_MATH_VENDOR IN_LIST VALID_MATH_VENDORS)
-  message(FATAL_ERROR "Invalid vendor math library ${QMC_MATH_VENDOR}, value must be one of ${VALID_MATH_VENDORS}")
-endif()
-
-find_package(VendorPerfLibs QUIET COMPONENTS vml)
+find_package(VendorPerfLibs COMPONENTS vml)
 if(VendorPerfLibs_FOUND)
   if(VPL_vml_ID STREQUAL "IntelMKL")
     target_compile_definitions(Math::scalar_vector_functions INTERFACE "HAVE_MKL;HAVE_MKL_VML")
@@ -481,18 +501,11 @@ if(VendorPerfLibs_FOUND)
     target_compile_definitions(Math::scalar_vector_functions INTERFACE "HAVE_AMD_LIBM")
   endif()
   target_link_libraries(Math::scalar_vector_functions INTERFACE VPL::vml)
-else()
-  message(STATUS "Selected vendor math library ${QMC_MATH_VENDOR}")
-  # This needs to go before HAVE_SINCOS check
-  set(SINCOS_INCLUDE cmath)
-  if(QMC_MATH_VENDOR STREQUAL "IBM_MASS")
-    include(FindIBMMASS)
-  endif()
-
-  # CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
-  message(STATUS "SINCOS_INCLUDE : ${SINCOS_INCLUDE}")
-  include(CheckSincos)
 endif()
+
+# check the existence of sincos function.
+include(CheckCXXSymbolExists)
+check_cxx_symbol_exists(sincos "cmath" HAVE_SINCOS)
 
 #-------------------------------------------------------------------
 #  set up FFTW3 library
@@ -543,31 +556,57 @@ if(HDF5_FOUND)
     endif()
   endif(HDF5_VERSION)
   if(HDF5_IS_PARALLEL)
-    if(HAVE_MPI)
-      message(STATUS "Parallel HDF5 library found")
-      option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ON)
-    else(HAVE_MPI)
+    if(NOT HAVE_MPI)
       message(FATAL_ERROR "Parallel HDF5 library found but cannot be used with QMCPACK non-MPI build. "
                           "Please provide a serial HDF5 library or switch to building QMCPACK with MPI.")
-    endif(HAVE_MPI)
+    endif(NOT HAVE_MPI)
+    message(STATUS "Parallel HDF5 library found")
   else(HDF5_IS_PARALLEL)
     message(STATUS "Serial HDF5 library found")
-    option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" OFF)
-    if(ENABLE_PHDF5)
-      if(HAVE_MPI)
-        message(FATAL_ERROR "Parallel HDF5 code paths requested but serial HDF5 library found! "
-                            "Please either provide parallel HDF5 library or set ENABLE_PHDF5=0.")
-      else(HAVE_MPI)
-        message(FATAL_ERROR "Parallel HDF5 code paths cannot be enabled on non-MPI builds! Please set ENABLE_PHDF5=0.")
-      endif(HAVE_MPI)
-    endif(ENABLE_PHDF5)
   endif(HDF5_IS_PARALLEL)
 
+  option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ${HDF5_IS_PARALLEL})
+
   if(ENABLE_PHDF5)
+    if(NOT HDF5_IS_PARALLEL)
+        message(FATAL_ERROR "Parallel HDF5 code paths requested but serial HDF5 library in use! "
+                            "Please either provide parallel HDF5 library or set ENABLE_PHDF5=OFF.")
+    endif()
     message(STATUS "Using HDF5 parallel collective I/O code paths")
   else(ENABLE_PHDF5)
     message(STATUS "Using HDF5 non-scalable serial I/O code paths")
   endif(ENABLE_PHDF5)
+
+  # best effort to check if parallel hdf5 library is built with the same flavor of MPI
+  if(HDF5_IS_PARALLEL AND HDF5_C_LIBRARIES)
+    list(GET HDF5_C_LIBRARIES 0 _hdf5_main_lib)
+    if(EXISTS "${_hdf5_main_lib}")
+      get_filename_component(_hdf5_lib_dir "${_hdf5_main_lib}" DIRECTORY)
+      set(HDF5_SETTINGS_FILE "${_hdf5_lib_dir}/libhdf5.settings")
+      if(EXISTS "${HDF5_SETTINGS_FILE}")
+        file(STRINGS "${HDF5_SETTINGS_FILE}" _hdf5_flavor_line REGEX "Flavor name:")
+        if(_hdf5_flavor_line)
+          list(GET _hdf5_flavor_line 0 _hdf5_flavor_first_line)
+          if(_hdf5_flavor_first_line MATCHES "Flavor name:[ \t]*([a-zA-Z0-9_-]+)")
+            string(TOLOWER "${CMAKE_MATCH_1}" _hdf5_flavor)
+            if(_hdf5_flavor STREQUAL "openmpi" AND NOT MPI_IS_OPENMPI)
+              message(
+                FATAL_ERROR
+                  "Parallel HDF5 was built with Open MPI (Flavor name: openmpi), but MPI is not Open MPI! "
+                  "Please use Open MPI or an HDF5 library consistent with the MPI vendor. "
+                  "Alternatively, search for serial HDF5 library by setting HDF5_PREFER_PARALLEL=OFF. ")
+            elseif(_hdf5_flavor STREQUAL "mpich" AND MPI_IS_OPENMPI)
+              message(
+                FATAL_ERROR
+                  "Parallel HDF5 was built with MPICH (Flavor name: mpich), but MPI is Open MPI! "
+                  "Please use Open MPI or an HDF5 library consistent with the MPI vendor. "
+                  "Alternatively, search for serial HDF5 library by setting HDF5_PREFER_PARALLEL=OFF. ")
+            endif()
+          endif()
+        endif()
+      endif()
+    endif()
+  endif()
 
   if(HAVE_MPI AND NOT ENABLE_PHDF5)
     message(
@@ -597,18 +636,9 @@ endif(HDF5_FOUND)
 #-------------------------------------------------------------------
 #  set up libboost library, header only
 #-------------------------------------------------------------------
-if(CMAKE_VERSION VERSION_LESS 3.30.0)
-  set(Boost_NO_BOOST_CMAKE on)
-  find_package(Boost 1.61.0 REQUIRED)
-else()
-  find_package(Boost 1.70.0 CONFIG REQUIRED headers)
-endif()
-if(Boost_FOUND)
-  target_compile_definitions(Boost::boost INTERFACE "HAVE_LIBBOOST")
-  message(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
-else()
-  message(FATAL_ERROR "Need boost 1.61.0 or higher.  Set BOOST_ROOT")
-endif()
+find_package(Boost 1.70.0 CONFIG REQUIRED headers)
+target_compile_definitions(Boost::boost INTERFACE "HAVE_LIBBOOST")
+message(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
 
 #-------------------------------------------------------------------
 #  set up CUDA compiler options and libraries

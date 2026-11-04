@@ -33,7 +33,7 @@ public:
    * \param els reference to the electrons
    * \param ions reference to the ions
    */
-  SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, const PSetMap& psets);
+  SPOSetBuilderFactory(Communicate& comm, ParticleSet& els, const PSetMap& psets);
 
   ~SPOSetBuilderFactory();
 

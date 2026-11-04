@@ -17,8 +17,8 @@
 namespace spline2
 {
 /** define evaluate: common to any implementation */
-template<typename T>
-inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
+template<typename ST, typename T>
+inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<ST, 3>::SplineType* restrict spline_m,
                             T x,
                             T y,
                             T z,
@@ -29,7 +29,7 @@ inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T, 3>::Sp
   int ix, iy, iz;
   T a[4], b[4], c[4];
 
-  computeLocationAndFractional(spline_m, x, y, z, ix, iy, iz, a, b, c);
+  computeLocationAndFractional<ST, T>(spline_m, x, y, z, ix, iy, iz, a, b, c);
 
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;
@@ -42,12 +42,12 @@ inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T, 3>::Sp
   for (int i = 0; i < 4; i++)
     for (int j = 0; j < 4; j++)
     {
-      const T pre00              = a[i] * b[j];
-      const T* restrict coefs    = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
-      const T* restrict coefszs  = coefs + zs;
-      const T* restrict coefs2zs = coefs + 2 * zs;
-      const T* restrict coefs3zs = coefs + 3 * zs;
-#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, vals: QMC_SIMD_ALIGNMENT)
+      const T pre00               = a[i] * b[j];
+      const ST* restrict coefs    = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
+      const ST* restrict coefszs  = coefs + zs;
+      const ST* restrict coefs2zs = coefs + 2 * zs;
+      const ST* restrict coefs3zs = coefs + 3 * zs;
+#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, vals : QMC_SIMD_ALIGNMENT)
       for (int n = 0; n < num_splines; n++)
         vals[n] += pre00 * (c[0] * coefs[n] + c[1] * coefszs[n] + c[2] * coefs2zs[n] + c[3] * coefs3zs[n]);
     }
