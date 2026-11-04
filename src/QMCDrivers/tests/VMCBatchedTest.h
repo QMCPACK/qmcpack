@@ -32,7 +32,9 @@ struct VMCBatchedSummary
 class VMCBatchedTest
 {
 public:
-  static constexpr int substeps = 2;
+  static constexpr int steps            = 2;
+  static constexpr int substeps         = 1;
+  static constexpr int moves_per_walker = steps * substeps;
 
   static VMCBatchedSummary runAllParticleNoDrift(int walkers_per_crowd = 1);
   static void testAllParticleModeValidation();

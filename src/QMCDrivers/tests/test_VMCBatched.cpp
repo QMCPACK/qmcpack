@@ -27,8 +27,8 @@ TEST_CASE("VMCBatched all-particle moves without drift", "[drivers]")
     CHECK(summary.walkers == expected_walkers);
     CAPTURE(walkers_per_crowd, summary.failures);
     CHECK(summary.failures.empty());
-    CHECK(summary.proposals == testing::VMCBatchedTest::substeps * expected_walkers);
-    CHECK(summary.resolutions == testing::VMCBatchedTest::substeps * expected_walkers);
+    CHECK(summary.proposals == testing::VMCBatchedTest::moves_per_walker * expected_walkers);
+    CHECK(summary.resolutions == testing::VMCBatchedTest::moves_per_walker * expected_walkers);
     CHECK(summary.accepted + summary.rejected == summary.resolutions);
     CHECK(summary.particle_moves == summary.expected_particle_moves);
     total_accepted += summary.accepted;

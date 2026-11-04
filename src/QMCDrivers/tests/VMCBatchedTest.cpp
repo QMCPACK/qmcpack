@@ -51,8 +51,9 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
       "</parameter>"
       "<parameter name=\"warmupsteps\">0</parameter><parameter name=\"substeps\">" +
       std::to_string(VMCBatchedTest::substeps) +
-      "</parameter>"
-      "<parameter name=\"steps\">1</parameter><parameter name=\"blocks\">1</parameter>"
+      "</parameter><parameter name=\"steps\">" +
+      std::to_string(VMCBatchedTest::steps) +
+      "</parameter><parameter name=\"blocks\">1</parameter>"
       "<parameter name=\"timestep\">0.01</parameter><parameter name=\"usedrift\">no</parameter></qmc>";
   ProjectData project_data("test", ProjectData::DriverVersion::BATCH);
   Communicate& comm = *OHMMS::Controller;
@@ -117,7 +118,7 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
     const auto& walker_twfs  = crowd->get_walker_twfs();
     const auto& walker_elecs = crowd->get_walker_elecs();
     for (const auto& particles : walker_elecs)
-      summary.expected_particle_moves += VMCBatchedTest::substeps * particles.get().getTotalNum();
+      summary.expected_particle_moves += VMCBatchedTest::moves_per_walker * particles.get().getTotalNum();
     if (walker_twfs.size() != walker_elecs.size())
       fail("missing component", crowd_index);
     for (std::size_t walker = 0; walker < walker_twfs.size(); ++walker)
@@ -141,8 +142,8 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
       const auto& resolutions = counter->getResolutions();
       summary.proposals += proposals.size();
       summary.resolutions += resolutions.size();
-      if (proposals.size() != static_cast<std::size_t>(VMCBatchedTest::substeps) ||
-          resolutions.size() != static_cast<std::size_t>(VMCBatchedTest::substeps))
+      if (proposals.size() != static_cast<std::size_t>(VMCBatchedTest::moves_per_walker) ||
+          resolutions.size() != static_cast<std::size_t>(VMCBatchedTest::moves_per_walker))
         fail("record count mismatch", crowd_index, walker);
       for (const auto& proposal : proposals)
         if (!proposal.evaluate || proposal.evaluations != 1)

@@ -57,7 +57,7 @@ TEST_CASE("VMCBatched all-particle observations across MPI ranks", "[drivers][mp
       // Reduce observations before checking rank-local failures.
       comm.allreduce(totals);
       const int expected_walkers = Concurrency::maxCapacity<>() * walkers_per_crowd * comm.size();
-      const int expected_records = testing::VMCBatchedTest::substeps * expected_walkers;
+      const int expected_records = testing::VMCBatchedTest::moves_per_walker * expected_walkers;
       CAPTURE(comm.rank(), walkers_per_crowd, local.failures);
       CHECK(local.failures.empty());
       CHECK(totals[WALKERS] == expected_walkers);
