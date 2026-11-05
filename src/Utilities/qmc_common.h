@@ -62,9 +62,17 @@ struct QMCState
   /// Return the filename infix for ensemble jobs (e.g., ".g001" if num_jobs > 1, or empty string otherwise).
   const std::string& get_filename_infix_for_ensemble_jobs() const noexcept { return filename_infix_for_ensemble_jobs_; }
 
+  /// Set the rank count of uniform virtual node
+  void set_virtual_node_rank_count(int count) noexcept { virtual_node_rank_count_ = count; }
+
+  /// Return the rank count of uniform virtual node
+  int get_virtual_node_rank_count() const noexcept { return virtual_node_rank_count_; }
+
 private:
   /// Filename infix for ensemble jobs (e.g., ".g001" for job 1, or empty string if not an ensemble run)
   std::string filename_infix_for_ensemble_jobs_;
+  /// Rank count of uniform virtual node
+  int virtual_node_rank_count_{1};
 };
 
 ///a unique QMCState during a run
