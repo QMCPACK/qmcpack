@@ -840,7 +840,7 @@ if(QMC_MPI AND ENABLE_OFFLOAD AND (NOT DEFINED QMC_CCL OR QMC_CCL))
     find_package(NCCL 2.29.0)
     set(CCL_FOUND ${NCCL_FOUND})
   elseif(ENABLE_ROCM)
-    find_package(rccl 2.29.0 CONFIG)
+    find_package(rccl 2.30.7 CONFIG)
     set(CCL_FOUND ${rccl_FOUND})
   elseif(ENABLE_SYCL)
     find_package(oneCCL 2022.2.0 CONFIG)
@@ -854,7 +854,7 @@ cmake_dependent_option(QMC_CCL "Enable collective communication library for GPU"
 if(QMC_CCL)
   if(NOT CCL_FOUND)
     message(FATAL_ERROR "QMC_CCL=ON requested, but a compatible GPU collective communication library "
-                        "(NCCL >= 2.29.0, RCCL >= 2.29.0, or oneCCL >= 2022.2.0) was not found! "
+                        "(NCCL >= 2.29.0, RCCL >= 2.30.7, or oneCCL >= 2022.2.0) was not found! "
                         "Please provide a compatible library or set QMC_CCL=OFF.")
   endif()
   add_library(Platform::CCL INTERFACE IMPORTED)
