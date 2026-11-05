@@ -1,9 +1,16 @@
+from shutil import copytree
+
+import numpy as np
 import pytest
 
+from ..developer import obj
+from ..rmg_analyzer import RmgAnalyzer, RmgOutData
+from ..rmg_input import RmgInput
+from ..structure import Structure
+from ..unit_converter import UnitConverter, convert
 from . import TEST_DIR, NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.RMG_ANALYZER)
-
 
 representative_root = TEST_DIR/'test_rmg_analyzer_files'
 representative_runs = (
@@ -108,11 +115,7 @@ representative_runs = (
     )
 
 
-
 def test_empty_init():
-    from ..developer import obj
-    from ..rmg_analyzer import RmgAnalyzer
-
     analyzer = RmgAnalyzer()
 
     expected_members = {
@@ -188,8 +191,6 @@ Initial Ionic Positions And Displacements (Angstrom)
         ],
     )
 def test_run_modes(tmp_path,calculation_type,short_mode):
-    from ..rmg_analyzer import RmgAnalyzer, RmgOutData
-    from ..structure import Structure
 
     logfile = tmp_path/'rmg.log'
     logfile.write_text(rmg_log(calculation_type))
@@ -243,8 +244,6 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
         ),
     )
 def test_outer_run_mode_takes_precedence(tmp_path,calculation_types):
-    from ..rmg_analyzer import RmgOutData
-
     logfile = tmp_path/'rmg.log'
     logfile.write_text(
         rmg_log(calculation_types[0])
@@ -264,8 +263,6 @@ def test_outer_run_mode_takes_precedence(tmp_path,calculation_types):
         ],
     )
 def test_input_run_mode(tmp_path,calculation_type,input_mode,run_mode):
-    from ..rmg_analyzer import RmgOutData
-
     input_file = tmp_path/'input'
     log_file   = tmp_path/'rmg.log'
     input_file.write_text(f'calculation_mode = "{input_mode}"')
@@ -280,9 +277,6 @@ def test_input_run_mode(tmp_path,calculation_type,input_mode,run_mode):
 
 
 def test_analyzer_input_forms(tmp_path):
-    from ..rmg_analyzer import RmgAnalyzer
-    from ..rmg_input import RmgInput
-
     input_file = tmp_path/'input'
     log_file   = tmp_path/'rmg.log'
     input_file.write_text('calculation_mode = "Quench Electrons"')
@@ -310,7 +304,6 @@ def test_analyzer_input_forms(tmp_path):
 
 
 def test_output_discovery_from_path(tmp_path):
-    from ..rmg_analyzer import RmgAnalyzer
 
     (tmp_path/'rmg.log').write_text(rmg_log('Quench electrons'))
     analyzer = RmgAnalyzer(path=tmp_path,analyze=True)
@@ -334,8 +327,6 @@ def test_output_discovery_from_path(tmp_path):
 
 
 def test_inconsistent_input_run_mode(tmp_path):
-    from ..rmg_analyzer import RmgAnalyzer, RmgOutData
-
     input_file = tmp_path/'input'
     log_file   = tmp_path/'rmg.log'
     input_file.write_text('calculation_mode = "NSCF"')
@@ -360,12 +351,6 @@ def test_inconsistent_input_run_mode(tmp_path):
     argvalues=representative_runs,
     )
 def test_representative_outputs(relative_path,run_mode,energy,positions_shape):
-    import numpy as np
-
-    from ..rmg_analyzer import RmgAnalyzer, RmgOutData
-    from ..rmg_input import RmgInput
-    from ..structure import Structure
-
     logfile  = representative_root/relative_path
     outdata  = RmgOutData(str(logfile))
     analyzer = RmgAnalyzer(outfile=str(logfile),analyze=True)
@@ -390,11 +375,6 @@ def test_representative_outputs(relative_path,run_mode,energy,positions_shape):
 
 
 def test_representative_physical_results():
-    import numpy as np
-
-    from ..rmg_analyzer import RmgAnalyzer
-    from ..structure import Structure
-
     electronic = representative_root/'electronic'
     scf         = RmgAnalyzer(outfile=str(electronic/'input.scf.02.log'),analyze=True)
     nscf        = RmgAnalyzer(outfile=str(electronic/'input.nscf.05.log'),analyze=True)
@@ -438,10 +418,6 @@ def test_representative_physical_results():
 
 
 def test_representative_neb_results():
-    import numpy as np
-
-    from ..rmg_analyzer import RmgAnalyzer
-
     neb_root = representative_root/'neb'
     image01 = RmgAnalyzer(
         outfile=str(neb_root/'image01/input.02.log'),
@@ -499,10 +475,6 @@ def test_representative_neb_results():
 
 
 def test_variable_cell_history(tmp_path):
-    import numpy as np
-
-    from ..rmg_analyzer import RmgAnalyzer
-
     body = '''
 Cell Vectors (a0)
 1 4.0 0.0 0.0
@@ -544,10 +516,6 @@ Cell Vectors (a0)
 
 
 def test_representative_produced_files(tmp_path):
-    from shutil import copytree
-
-    from ..rmg_analyzer import RmgAnalyzer
-
     electronic = tmp_path/'electronic'
     copytree(representative_root/'electronic',electronic)
     waves = electronic/'Waves'
@@ -574,10 +542,6 @@ def test_representative_produced_files(tmp_path):
 
 
 def test_mode_specific_results(tmp_path):
-    import numpy as np
-
-    from ..rmg_analyzer import RmgAnalyzer
-
     band_log = tmp_path/'band.log'
     band_log.write_text(rmg_log('Band structure calculation.'))
     (tmp_path/'band_spin0.bandstructure.dat').write_text(
@@ -632,10 +596,6 @@ def test_mode_specific_results(tmp_path):
 
 
 def test_physical_results(tmp_path):
-    import numpy as np
-
-    from ..rmg_analyzer import RmgAnalyzer
-
     body = '''
 K-points
     Kx Ky Kz Weight in crystal unit
@@ -677,9 +637,6 @@ potential convergence has been achieved. stopping ...
     logfile = tmp_path/'scf.log'
     logfile.write_text(rmg_log('Quench electrons',body))
     analyzer = RmgAnalyzer(outfile=str(logfile),analyze=True)
-
-    from ..structure import Structure
-    from ..unit_converter import UnitConverter, convert
 
     assert analyzer.results.timing is not None
     assert analyzer.results.timing.total==3.0
@@ -805,7 +762,6 @@ potential convergence has been achieved. stopping ...
 
 
 def test_missing_property_data(tmp_path):
-    from ..rmg_analyzer import RmgAnalyzer
 
     logfile = tmp_path/'missing.log'
     logfile.write_text(rmg_log('Quench electrons'))
@@ -824,7 +780,6 @@ def test_missing_property_data(tmp_path):
 
 
 def test_required_available_and_validation(tmp_path):
-    from ..rmg_analyzer import RmgAnalyzer
 
     logfile = tmp_path/'missing.log'
     logfile.write_text(rmg_log('Quench electrons'))
@@ -868,7 +823,6 @@ def test_required_available_and_validation(tmp_path):
 
 
 def test_strict_at_analysis_time(tmp_path):
-    from ..rmg_analyzer import RmgAnalyzer
 
     missing = tmp_path/'missing.log'
     strict = RmgAnalyzer(outfile=missing)
@@ -906,10 +860,6 @@ def test_strict_at_analysis_time(tmp_path):
 
 
 def test_unknown_run_mode_is_parsed_permissively(tmp_path):
-    import numpy as np
-
-    from ..rmg_analyzer import RmgAnalyzer
-
     body = '''
 final total energy from eig sum = -1.25 Ha
 @ION Ion Species X Y Z Charge Mag FX FY FZ Movable
@@ -937,8 +887,6 @@ final total energy from eig sum = -1.25 Ha
 
 
 def test_reader_failures_are_not_masked(monkeypatch,tmp_path):
-    from ..rmg_analyzer import RmgAnalyzer, RmgOutData
-
     def fail_energies(self,lines):
         raise ValueError('damaged energy section')
     #end def fail_energies
@@ -956,10 +904,6 @@ def test_reader_failures_are_not_masked(monkeypatch,tmp_path):
 
 
 def test_whitespace_and_trailing_fields(tmp_path):
-    import numpy as np
-
-    from ..rmg_analyzer import RmgAnalyzer
-
     log = rmg_log('Quench electrons').replace(
         'Calculation type:', 'Calculation\t type   :').replace(
         'Initial Ionic Positions And Displacements',
@@ -1030,7 +974,6 @@ potential   convergence has been achieved trailing status
 
 
 def test_convergence_patterns(tmp_path):
-    from ..rmg_analyzer import RmgAnalyzer
 
     body = '''
 Potential convergence has not been achieved
@@ -1052,7 +995,6 @@ Force convergence has been achieved
 
 
 def test_malformed_sections_do_not_stop_analysis(tmp_path):
-    from ..rmg_analyzer import RmgAnalyzer
 
     body = '''
 @@ TOTAL ENERGY = malformed

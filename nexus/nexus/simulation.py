@@ -65,11 +65,10 @@
 #====================================================================#
 from __future__ import annotations
 
-
 import logging
 import os
-import sys
 import shutil
+import sys
 import tempfile
 import traceback
 from collections.abc import Collection, Mapping
@@ -77,24 +76,23 @@ from copy import deepcopy
 from datetime import datetime
 from inspect import signature
 from logging.handlers import MemoryHandler
+from os import PathLike
 from pathlib import Path
 from string import Template
 from subprocess import Popen
-from typing import Any, ClassVar, TypeAlias, TYPE_CHECKING
-from os import PathLike
-from .developer import DevBase, obj, FileFormatError, NexusError
-from .developer_tools import Unset
-from .structure import Structure, read_structure
-from .physical_system import PhysicalSystem
+from typing import TYPE_CHECKING, ClassVar
+
+from .developer import DevBase, FileFormatError, NexusError, obj
 from .machines import Job, Workstation, get_machine
-from .nexus_base import NexusCore, nexus_config, SimStage, dynamic_storage
+from .nexus_base import NexusCore, SimStage, dynamic_storage, nexus_config
+from .physical_system import PhysicalSystem
+from .structure import Structure, read_structure
 from .utilities import path_string
 
 if TYPE_CHECKING:
-    from .bundle import SimulationBundle
     from .qmcpack_analyzer import QmcpackAnalysisRequest
 
-StrPath: TypeAlias = str
+type StrPath = str
 
 
 class SimulationInput(NexusCore):
@@ -2020,7 +2018,7 @@ def generate_simulation(**kwargs):
 # ability to graph simulation workflows
 exit_call = sys.exit
 def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,display=True):
-    from pydot import Dot, Node, Edge
+    from pydot import Dot, Edge, Node
 
     if sims is None:
         sims = Simulation.all_sims
@@ -2078,7 +2076,7 @@ def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,displ
     # display the image
     if fmt=='png' and display:
         from matplotlib.image import imread
-        from matplotlib.pyplot import imshow,show,xticks,yticks
+        from matplotlib.pyplot import imshow, show, xticks, yticks
         imshow(imread(savefile))
         xticks([])
         yticks([])

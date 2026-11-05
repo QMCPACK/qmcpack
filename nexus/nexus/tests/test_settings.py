@@ -10,7 +10,7 @@ from ..developer import obj
 from ..gamess import Gamess
 from ..generic import NexusUserWarning
 from ..machines import Job, Workstation
-from ..nexus_base import nexus_config, ShowStatusMode, SimStage
+from ..nexus_base import ShowStatusMode, SimStage, nexus_config
 from ..project_manager import ProjectManager
 from ..pseudoset import PseudoSet
 from ..pwscf import Pwscf

@@ -1,19 +1,21 @@
 import numpy as np
 import pytest
 
-from . import NexusTestOrder,TEST_DIR
-
+from ..qmcpack_analyzer_new import (
+    QmcpackInputInfo,
+    ReadScalarIssues,
+    qmcpack_analyzer_outfiles,
+    read_scalar_file,
+    scalar_info,
+)
+from . import TEST_DIR, NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_ANALYZER)
-
 
 ANALYZER_FILES = TEST_DIR / 'test_qmcpack_analyzer_files'
 INPUT_FILES = TEST_DIR / 'test_qmcpack_input_files'
 
-
 def test_scalar_info():
-    from ..qmcpack_analyzer_new import scalar_info
-
     assert scalar_info.aliases.LocalEnergy == 'E'
     assert scalar_info.inv_aliases.E == 'LocalEnergy'
     assert scalar_info.integer == {'TotalSamples', 'NumOfWalkers'}
@@ -23,8 +25,6 @@ def test_scalar_info():
 
 
 def test_read_scalar_issues_complete_is_independent(monkeypatch):
-    from ..qmcpack_analyzer_new import ReadScalarIssues
-
     def failed_should_not_be_called(self):
         raise AssertionError('complete() called failed()')
     #end def failed_should_not_be_called
@@ -54,12 +54,6 @@ def test_read_scalar_issues_complete_is_independent(monkeypatch):
 
 
 def test_qmcpack_analyzer_new_argument_errors():
-    from ..qmcpack_analyzer_new import (
-        ReadScalarIssues,
-        qmcpack_analyzer_outfiles,
-        read_scalar_file,
-        )
-
     issues = ReadScalarIssues()
     with pytest.raises(ValueError, match='unrecognized scalar-read issue'):
         issues.add('not_an_issue')
@@ -75,8 +69,6 @@ def test_qmcpack_analyzer_new_argument_errors():
 
 
 def test_read_scalar_file_header_check_is_independent(monkeypatch, tmp_path):
-    from ..qmcpack_analyzer_new import ReadScalarIssues, read_scalar_file
-
     def failed_should_not_be_called(self):
         raise AssertionError('header validation called failed()')
     #end def failed_should_not_be_called
@@ -107,8 +99,6 @@ def test_read_scalar_file_header_check_is_independent(monkeypatch, tmp_path):
         ],
     )
 def test_read_scalar_file(relative_path, nrows):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = ANALYZER_FILES / relative_path
     data, issues = read_scalar_file(
         str(filepath), issues=True, add_variance=True, remove_index=True,
@@ -132,8 +122,6 @@ def test_read_scalar_file(relative_path, nrows):
 
 
 def test_read_scalar_file_missing():
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     data, issues = read_scalar_file(
         str(ANALYZER_FILES / 'missing.scalar.dat'), issues=True
         )
@@ -160,8 +148,6 @@ def test_read_scalar_file_missing():
 def test_read_scalar_file_header_and_data_issues(
     tmp_path, contents, nrows, expected
     ):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'header_or_data_issue.scalar.dat'
     filepath.write_text(contents)
     data, issues = read_scalar_file(str(filepath), issues=True, nrows=nrows)
@@ -174,8 +160,6 @@ def test_read_scalar_file_header_and_data_issues(
 
 
 def test_read_scalar_file_no_usable_scalar_values(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'no_usable.scalar.dat'
     filepath.write_text('# index ignored\n0 1.0\n')
     data, issues = read_scalar_file(
@@ -190,8 +174,6 @@ def test_read_scalar_file_no_usable_scalar_values(tmp_path):
 
 
 def test_read_scalar_file_index_usability_exception(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     index_only = tmp_path / 'index_only.scalar.dat'
     index_only.write_text('# index\n0\n1\n')
     data, issues = read_scalar_file(
@@ -211,8 +193,6 @@ def test_read_scalar_file_index_usability_exception(tmp_path):
 
 
 def test_read_scalar_file_single_column(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     one_row = tmp_path / 'one_row.scalar.dat'
     one_row.write_text('# LocalEnergy\n-1.25\n')
     data, issues = read_scalar_file(str(one_row), issues=True)
@@ -238,8 +218,6 @@ def test_read_scalar_file_single_column(tmp_path):
         ],
     )
 def test_read_scalar_file_bad_column_count(tmp_path, header, rows):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'bad_col_count.scalar.dat'
     filepath.write_text(header + rows)
     data, issues = read_scalar_file(str(filepath), issues=True)
@@ -253,8 +231,6 @@ def test_read_scalar_file_bad_column_count(tmp_path, header, rows):
 
 
 def test_read_scalar_file_nan_rows_and_trailing_columns(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'nan_rows.scalar.dat'
     filepath.write_text(
         '# index LocalEnergy Kinetic ignored LocalPotential\n'
@@ -279,8 +255,6 @@ def test_read_scalar_file_nan_rows_and_trailing_columns(tmp_path):
 
 
 def test_read_scalar_file_nan_usability_depends_on_trimming(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'only_nan.scalar.dat'
     filepath.write_text('# index LocalEnergy\n0 nan\n')
 
@@ -299,8 +273,6 @@ def test_read_scalar_file_nan_usability_depends_on_trimming(tmp_path):
 
 
 def test_read_scalar_file_ignores_nan_outside_scalar_columns(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'ignored_nan.scalar.dat'
     filepath.write_text(
         '# index LocalEnergy ignored\n'
@@ -317,8 +289,6 @@ def test_read_scalar_file_ignores_nan_outside_scalar_columns(tmp_path):
 
 
 def test_read_scalar_file_corrupt_end(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'corrupt_end.scalar.dat'
     filepath.write_text(
         '# index LocalEnergy Kinetic\n'
@@ -338,8 +308,6 @@ def test_read_scalar_file_corrupt_end(tmp_path):
 
 
 def test_read_scalar_file_middle_corruption(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'middle_corruption.scalar.dat'
     filepath.write_text(
         '# index LocalEnergy Kinetic\n'
@@ -363,8 +331,6 @@ def test_read_scalar_file_middle_corruption(tmp_path):
 
 
 def test_read_scalar_file_continues_after_exact_width_unparsable_row(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'continue_after_unparsable.scalar.dat'
     filepath.write_text(
         '# index LocalEnergy Kinetic\n'
@@ -389,8 +355,6 @@ def test_read_scalar_file_continues_after_exact_width_unparsable_row(tmp_path):
 
 
 def test_read_scalar_file_wholly_corrupt_end(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'wholly_corrupt.scalar.dat'
     filepath.write_text(
         '# index LocalEnergy Kinetic\n'
@@ -410,8 +374,6 @@ def test_read_scalar_file_wholly_corrupt_end(tmp_path):
 
 
 def test_read_scalar_file_nrows_uses_complete_numeric_rows(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'incomplete.scalar.dat'
     filepath.write_text(
         '# index LocalEnergy Kinetic\n'
@@ -447,8 +409,6 @@ def test_read_scalar_file_nrows_uses_complete_numeric_rows(tmp_path):
 
 
 def test_read_scalar_file_final_short_numeric_row(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'short_final.scalar.dat'
     filepath.write_text(
         '# index LocalEnergy Kinetic\n'
@@ -490,8 +450,6 @@ def test_read_scalar_file_final_short_numeric_row(tmp_path):
 
 
 def test_read_scalar_file_bad_nonfinal_widths(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     short_middle = tmp_path / 'short_middle.scalar.dat'
     short_middle.write_text(
         '# index LocalEnergy Kinetic\n'
@@ -520,8 +478,6 @@ def test_read_scalar_file_bad_nonfinal_widths(tmp_path):
 
 
 def test_read_scalar_file_width_error_stops_extraction_and_counting(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'width_boundary.scalar.dat'
     filepath.write_text(
         '# index LocalEnergy Kinetic\n'
@@ -540,8 +496,6 @@ def test_read_scalar_file_width_error_stops_extraction_and_counting(tmp_path):
 
 
 def test_read_scalar_file_unparsable_rows_affect_width_check(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'unparsable_width.scalar.dat'
     filepath.write_text(
         '# index LocalEnergy Kinetic\n'
@@ -586,8 +540,6 @@ def test_read_scalar_file_unparsable_rows_affect_width_check(tmp_path):
 def test_read_scalar_file_middle_and_end_corruption_interact(
     tmp_path, rows, nrows, expected_issues, expected_indices
     ):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'corruption_position.scalar.dat'
     filepath.write_text('# index LocalEnergy Kinetic\n' + rows)
 
@@ -639,8 +591,6 @@ def test_read_scalar_file_middle_and_end_corruption_interact(
 def test_read_scalar_file_partial_and_width_issues_interact(
     tmp_path, rows, nrows, expected_issues, expected_indices
     ):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'partial_or_width.scalar.dat'
     filepath.write_text('# index LocalEnergy Kinetic\n' + rows)
 
@@ -655,8 +605,6 @@ def test_read_scalar_file_partial_and_width_issues_interact(
 
 
 def test_read_scalar_file_width_boundary_suppresses_later_issues(tmp_path):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'issue_boundary.scalar.dat'
     filepath.write_text(
         '# index LocalEnergy Kinetic\n'
@@ -703,8 +651,6 @@ def test_read_scalar_file_width_boundary_suppresses_later_issues(tmp_path):
 def test_read_scalar_file_no_data_and_row_validation_interact(
     tmp_path, nrows, expected_issues
     ):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'no_data_nrows.scalar.dat'
     filepath.write_text('# index LocalEnergy\n')
 
@@ -727,8 +673,6 @@ def test_read_scalar_file_no_data_and_row_validation_interact(
 def test_read_scalar_file_nan_and_usable_value_issues_interact(
     tmp_path, rows, trim_nan, expected_issues, expected_indices
     ):
-    from ..qmcpack_analyzer_new import read_scalar_file
-
     filepath = tmp_path / 'nan_usability.scalar.dat'
     filepath.write_text('# index LocalEnergy\n' + rows)
 
@@ -753,8 +697,6 @@ def test_read_scalar_file_nan_and_usable_value_issues_interact(
         ],
     )
 def test_qmcpack_analyzer_outfiles(qmc, prefix, series, group_index, expected):
-    from ..qmcpack_analyzer_new import qmcpack_analyzer_outfiles
-
     assert qmcpack_analyzer_outfiles(qmc, prefix, series, group_index) == expected
 #end def test_qmcpack_analyzer_outfiles
 
@@ -782,8 +724,6 @@ def test_qmcpack_analyzer_outfiles(qmc, prefix, series, group_index, expected):
 def test_qmcpack_input_info_from_run_inputs(
     relative_path, qmc_type, prefix, group_index, nseries, expected_outfiles
     ):
-    from ..qmcpack_analyzer_new import QmcpackInputInfo
-
     info = QmcpackInputInfo(str(ANALYZER_FILES / relative_path))
 
     assert info.qmc_type == qmc_type
@@ -833,8 +773,6 @@ def test_qmcpack_input_info_from_run_inputs(
 def test_qmcpack_input_info_qmc_sections_from_fixtures(
     base, relative_path, expected
     ):
-    from ..qmcpack_analyzer_new import QmcpackInputInfo
-
     filepath = base / relative_path
     info = QmcpackInputInfo(str(filepath))
 
@@ -857,8 +795,6 @@ def test_qmcpack_input_info_qmc_sections_from_fixtures(
 
 
 def test_qmcpack_input_info_from_input_fixture():
-    from ..qmcpack_analyzer_new import QmcpackInputInfo
-
     info = QmcpackInputInfo(str(INPUT_FILES / 'VO2_M1_afm.in.xml'))
 
     assert info.qmc_type == 'dmc'
@@ -875,8 +811,6 @@ def test_qmcpack_input_info_from_input_fixture():
 
 
 def test_qmcpack_input_info_method_aliases_and_multi_qmc_loop(tmp_path):
-    from ..qmcpack_analyzer_new import QmcpackInputInfo
-
     filepath = tmp_path / 'methods.in.xml'
     filepath.write_text(
         '<simulation>\n'
@@ -911,8 +845,6 @@ def test_qmcpack_input_info_method_aliases_and_multi_qmc_loop(tmp_path):
     [('linear',), ('cslinear',), ('linear_batch',)],
     )
 def test_qmcpack_input_info_optimization_method_aliases(tmp_path, method):
-    from ..qmcpack_analyzer_new import QmcpackInputInfo
-
     filepath = tmp_path / f'{method}.in.xml'
     filepath.write_text(
         '<simulation>\n'
@@ -944,8 +876,6 @@ def test_qmcpack_input_info_optimization_method_aliases(tmp_path, method):
 def test_qmcpack_input_info_does_not_reproduce_qmcpack_defaults(
     tmp_path, method, qmc_type
     ):
-    from ..qmcpack_analyzer_new import QmcpackInputInfo
-
     filepath = tmp_path / f'{method}.in.xml'
     filepath.write_text(
         '<simulation>\n'
@@ -967,8 +897,6 @@ def test_qmcpack_input_info_does_not_reproduce_qmcpack_defaults(
 
 
 def test_qmcpack_input_info_projectless_qmc(tmp_path):
-    from ..qmcpack_analyzer_new import QmcpackInputInfo
-
     filepath = tmp_path / 'no_project.in.xml'
     filepath.write_text(
         '<simulation>\n'
@@ -989,8 +917,6 @@ def test_qmcpack_input_info_projectless_qmc(tmp_path):
 
 
 def test_qmcpack_input_info_projectless_input_fixture():
-    from ..qmcpack_analyzer_new import QmcpackInputInfo
-
     info = QmcpackInputInfo(str(INPUT_FILES / 'OH_mixed_pos.in.xml'))
 
     assert info.prefix is None
@@ -1013,8 +939,6 @@ def test_qmcpack_input_info_projectless_input_fixture():
         ],
     )
 def test_qmcpack_input_info_standalone_element_fixtures(relative_path):
-    from ..qmcpack_analyzer_new import QmcpackInputInfo
-
     filepath = ANALYZER_FILES / relative_path
     info = QmcpackInputInfo(str(filepath))
 
@@ -1044,8 +968,6 @@ def test_qmcpack_input_info_standalone_element_fixtures(relative_path):
 def test_qmcpack_input_info_malformed_qmc_info_is_none(
     tmp_path, project, qmc
     ):
-    from ..qmcpack_analyzer_new import QmcpackInputInfo
-
     filepath = tmp_path / 'malformed_qmc_info.in.xml'
     filepath.write_text(
         '<simulation>\n'
@@ -1063,8 +985,6 @@ def test_qmcpack_input_info_malformed_qmc_info_is_none(
 
 
 def test_qmcpack_input_info_unavailable_data_retain_none(tmp_path):
-    from ..qmcpack_analyzer_new import QmcpackInputInfo
-
     filepath = tmp_path / 'standalone_project.xml'
     filepath.write_text('<project id="standalone" series="0" />\n')
 
@@ -1080,8 +1000,6 @@ def test_qmcpack_input_info_unavailable_data_retain_none(tmp_path):
 
 
 def test_qmcpack_input_info_non_loop_qmc_is_not_expanded(tmp_path):
-    from ..qmcpack_analyzer_new import QmcpackInputInfo
-
     filepath = tmp_path / 'non_loop_qmc.in.xml'
     filepath.write_text(
         '<simulation>\n'
