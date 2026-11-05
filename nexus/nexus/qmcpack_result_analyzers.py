@@ -26,11 +26,13 @@
 #====================================================================#
 
 
-import numpy as np
 from copy import deepcopy
+
+import numpy as np
+
 from .developer import obj
+from .qmcpack_analyzer_base import QAanalyzer, QAobject
 from .unit_converter import convert
-from .qmcpack_analyzer_base import QAobject,QAanalyzer
 
 
 class ResultAnalyzer(QAanalyzer):
@@ -286,7 +288,17 @@ class OptimizationAnalyzer(ResultAnalyzer):
         else:
             ts = title
         #end if
-        from matplotlib.pyplot import figure,subplot,xlabel,ylabel,plot,errorbar,title,xticks,xlim
+        from matplotlib.pyplot import (
+            errorbar,
+            figure,
+            plot,
+            subplot,
+            title,
+            xlabel,
+            xlim,
+            xticks,
+            ylabel,
+        )
 
         opt = self.opts
         nopt = len(opt)
@@ -328,7 +340,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
         else:
             tsin = title
         #end if
-        from matplotlib.pyplot import figure,subplot,xlabel,ylabel,title
+        from matplotlib.pyplot import figure, subplot, title, xlabel, ylabel
 
         opt = self.opts
         nopt = len(opt)
@@ -438,7 +450,19 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
     #end def summarize
 
     def plot_timestep_convergence(self):
-        from matplotlib.pyplot import figure,xlabel,ylabel,plot,errorbar,title,text,xticks,rcParams,savefig,xlim
+        from matplotlib.pyplot import (
+            errorbar,
+            figure,
+            plot,
+            rcParams,
+            savefig,
+            text,
+            title,
+            xlabel,
+            xlim,
+            xticks,
+            ylabel,
+        )
 
         params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
           'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}

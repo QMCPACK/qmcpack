@@ -1,15 +1,51 @@
-import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.NUMERICS)
-
 from importlib.util import find_spec
 
-def test_ndgrid():
-    import numpy as np
-    from ..testing import value_eq
-    from ..numerics import ndgrid
-    from .. import numpy_extensions as npe
+import numpy as np
+import pytest
 
+from .. import numpy_extensions as npe
+from ..numerics import (
+    convex_hull,
+    distance_table,
+    eos_eval,
+    eos_fit,
+    eos_param,
+    equilibration_length,
+    jackknife,
+    morse,
+    morse_a,
+    morse_De,
+    morse_depth,
+    morse_E0,
+    morse_Ee,
+    morse_Einf,
+    morse_En,
+    morse_fit,
+    morse_fit_fine,
+    morse_freq,
+    morse_harmfreq,
+    morse_k,
+    morse_params,
+    morse_rDw_fit,
+    morse_re,
+    morse_reduced_mass,
+    morse_w,
+    morse_width,
+    morse_zero_point,
+    ndgrid,
+    nearest_neighbors,
+    simplestats,
+    simstats,
+    ttest,
+    voronoi_neighbors,
+)
+from ..testing import value_eq
+from ..unit_converter import convert
+from . import NexusTestOrder
+
+pytestmark = pytest.mark.order(NexusTestOrder.NUMERICS)
+
+def test_ndgrid():
     x = [0,1,2.]
     y = [3,4.,5,6]
     z = [7,8,9,10,11.]
@@ -36,10 +72,6 @@ def test_ndgrid():
 
 
 def test_distance_table():
-    import numpy as np
-    from ..testing import value_eq
-    from ..numerics import distance_table
-
     points = [
         [0,0,0],
         [1,0,0],
@@ -117,10 +149,6 @@ def test_distance_table():
 
 
 def test_nearest_neighbors():
-    import numpy as np
-    from ..testing import value_eq
-    from ..numerics import nearest_neighbors
-
     points = [
         [0,0,0],
         [1,0,0],
@@ -182,10 +210,6 @@ def test_nearest_neighbors():
 
 def test_voronoi_neighbors():
     _ = pytest.importorskip("scipy")
-    import numpy as np
-    from ..testing import value_eq
-    from ..numerics import voronoi_neighbors
-
     points = [
         [0,0,0],
         [1,0,0],
@@ -253,9 +277,6 @@ def test_voronoi_neighbors():
 
 def test_convex_hull():
     _ = pytest.importorskip("scipy")
-    import numpy as np
-    from ..numerics import convex_hull
-
     points = [
         [0,0,0],
         [1,0,0],
@@ -276,8 +297,6 @@ def test_convex_hull():
 #end def test_convex_hull
 
 
-
-import numpy as np
 def random_stream(n):
 
     def rng(m=2**32, a=1103515245, c=12345):
@@ -297,10 +316,6 @@ rstream_wide = np.array(10*[rstream])
 
 
 def test_simplestats():
-    import numpy as np
-    from ..testing import value_eq
-    from ..numerics import simplestats
-
     m,e = simplestats(rstream)
 
     m_ref = 0.507154277182
@@ -321,10 +336,6 @@ def test_simplestats():
 
 
 def test_simstats():
-    import numpy as np
-    from ..testing import value_eq
-    from ..numerics import simstats
-
     m,v,e,k = simstats(rstream)
 
     m_ref = 0.507154277182
@@ -353,9 +364,6 @@ def test_simstats():
 
 
 def test_equilibration_length():
-    import numpy as np
-    from ..numerics import equilibration_length
-
     eq = equilibration_length(rstream,random=False)
     assert(eq==0)
 
@@ -371,8 +379,6 @@ def test_equilibration_length():
 
 def test_ttest():
     _ = pytest.importorskip("scipy")
-    from ..testing import value_eq
-    from ..numerics import ttest
 
     p = ttest(0.,1.,100,0.,1.,100)
     assert(value_eq(float(p),1.0))
@@ -384,9 +390,6 @@ def test_ttest():
 
 
 def test_jackknife():
-    from ..testing import value_eq
-    from ..numerics import jackknife
-
     def value(v):
         return v
     #end def value
@@ -403,14 +406,6 @@ def test_jackknife():
 
 
 def test_morse():
-    from ..testing import value_eq
-    from ..unit_converter import convert
-    from ..numerics import morse,morse_re,morse_a,morse_De,morse_Einf,morse_width
-    from ..numerics import morse_depth,morse_Ee,morse_k,morse_params
-    from ..numerics import morse_reduced_mass,morse_freq,morse_w
-    from ..numerics import morse_E0,morse_En,morse_zero_point,morse_harmfreq
-    from ..numerics import morse_rDw_fit
-
     rm = morse_reduced_mass('Ti','O')
     assert(value_eq(rm, 21858.453534035318))
 
@@ -492,11 +487,6 @@ def test_morse():
 
 def test_morse_fit():
     _ = pytest.importorskip("scipy")
-    import numpy as np
-    from ..testing import value_eq
-    from ..unit_converter import convert
-    from ..numerics import morse
-    from ..numerics import morse_rDw_fit,morse_fit,morse_fit_fine
 
     r_ref,D_ref,w_ref = 1.620,6.87,1009.18
     r_ref_A = r_ref
@@ -524,11 +514,6 @@ def test_morse_fit():
 
 
 def test_eos():
-    import numpy as np
-    from ..testing import value_eq
-    from ..unit_converter import convert
-    from ..numerics import eos_eval,eos_param
-
     data = np.array([
             [0.875, -83.31851261],
             [0.900, -83.38085214],
@@ -571,11 +556,6 @@ def test_eos():
 
 def test_eos_fit():
     _ = pytest.importorskip("scipy")
-    import numpy as np
-    from ..testing import value_eq
-    from ..unit_converter import convert
-    from ..numerics import eos_fit,eos_eval
-
     data = np.array([
             [0.875, -83.31851261],
             [0.900, -83.38085214],

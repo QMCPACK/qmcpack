@@ -1,11 +1,9 @@
 import pytest
 
+from ..memory import memory, resident, stacksize
 from . import NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.MEMORY)
-
-from ..memory import memory, resident, stacksize
-
 
 def test_memory():
     self_mem, child_mem = memory()

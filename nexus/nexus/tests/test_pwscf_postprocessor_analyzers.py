@@ -1,9 +1,18 @@
 import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_POSTPROCESSOR_ANALYZERS)
 
-from . import TEST_DIR
-from ..testing import object_eq,text_eq
+from ..developer import obj, to_obj
+from ..pwscf_postprocessors import (
+    BandsAnalyzer,
+    CpppAnalyzer,
+    DosAnalyzer,
+    PPAnalyzer,
+    ProjwfcAnalyzer,
+    PwexportAnalyzer,
+)
+from ..testing import object_eq, text_eq
+from . import TEST_DIR, NexusTestOrder
+
+pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_POSTPROCESSOR_ANALYZERS)
 
 
 TEST_FILES = {
@@ -16,13 +25,6 @@ for file in TEST_FILES.values():
 
 
 def test_empty_init():
-    from ..pwscf_postprocessors import PPAnalyzer
-    from ..pwscf_postprocessors import DosAnalyzer
-    from ..pwscf_postprocessors import BandsAnalyzer
-    from ..pwscf_postprocessors import ProjwfcAnalyzer
-    from ..pwscf_postprocessors import CpppAnalyzer
-    from ..pwscf_postprocessors import PwexportAnalyzer
-
     pa = PPAnalyzer(None)
     pa = DosAnalyzer(None)
     pa = BandsAnalyzer(None)
@@ -33,9 +35,6 @@ def test_empty_init():
 
 
 def test_projwfc_analyzer(tmp_path):
-    from ..developer import obj, to_obj
-    from ..pwscf_postprocessors import ProjwfcAnalyzer
-
     projwfc_in = TEST_FILES["pwf.in"]
 
     pa = ProjwfcAnalyzer(projwfc_in)
