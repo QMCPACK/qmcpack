@@ -6,7 +6,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.SIMULATION)
 
 from pathlib import Path
 from copy import deepcopy
-from . import isolate_nexus_core
+from . import isolate_nexus_core, TEST_DIR
 from nexus.nexus_base import nexus_config, SimStage
 
 from ..testing import value_eq,object_eq
@@ -17,6 +17,12 @@ from ..developer import obj
 from ..machines import Job
 from ..simulation import Simulation,SimulationInput,SimulationAnalyzer
 
+TEST_FILES = {
+    "old_sim_image": TEST_DIR / "reference/simulation_module/old_sim.p", # commit 9d0d968139fc33f71dbf9159f526dd7b47f10a3b
+    }
+
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
 
 class SimulationInputForTests(SimulationInput):
     def __init__(self,*args,**kwargs):
@@ -1678,18 +1684,11 @@ def test_copy_file(tmp_path):
 @isolate_nexus_core
 def test_save_load_image(tmp_path):
     from ..developer import obj, load
-    from ..simulation import Simulation,SimulationImage
+    from ..simulation import Simulation
 
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
-
-    nsave = 31
-    nload = 23
-
-    assert(len(SimulationImage.save_fields)==nsave)
-    assert(len(SimulationImage.load_fields)==nload)
-    assert(len(SimulationImage.save_only_fields&SimulationImage.load_fields)==0)
 
     sim = get_sim()
     sim.record_timestamp('setup')
@@ -1702,10 +1701,10 @@ def test_save_load_image(tmp_path):
     assert(imagefile.exists())
 
     image = load(imagefile)
-    assert(len(image)==nsave)
-    assert(isinstance(sim.timestamps,obj))
-    assert(type(image.timestamps) is dict)
-    for field in SimulationImage.save_fields:
+    assert(len(image)==len(Simulation.save_fields))
+    assert(isinstance(sim.timestamps, obj))
+    assert(type(image["timestamps"]) is dict)
+    for field in Simulation.save_fields:
         assert(field in image)
         assert(field in sim)
         if field=='timestamps':
@@ -1716,13 +1715,13 @@ def test_save_load_image(tmp_path):
     #end for
 
     orig = obj()
-    for field in SimulationImage.load_fields:
+    for field in Simulation.save_fields:
         orig[field] = sim[field]
         del sim[field]
     #end for
     sim.sim_image = orig.sim_image
-    sim.load_image()
-    for field in SimulationImage.load_fields:
+    sim.load_image(imagefile)
+    for field in Simulation.save_fields:
         assert(field in sim)
         if field=='timestamps':
             assert(dict(sim[field])==dict(orig[field]))
@@ -2912,3 +2911,45 @@ def test_graph_sims():
 
     Simulation.clear_all_sims()
 #end def test_graph_sims
+
+
+def test_load_old_image():
+    """Test that old simulation images can still be loaded."""
+
+    sim = Simulation(job=Job(machine='ws1', app_command='test.x'))
+
+    sim.load_image(TEST_FILES["old_sim_image"])
+
+    assert(sim.analyzer_image      == "analyzer.p")
+    assert(sim.app_name            == "pw.x")
+    assert(sim.app_props           == ['mpi', 'serial'])
+    assert(sim.block               is False)
+    assert(sim.block_subcascade    is False)
+    assert(sim.errfile             == "scf.err")
+    assert(sim.files               == {'scf.in', 'C.BFD.upf'})
+    assert(sim.identifier          == "scf")
+    assert(sim.image_dir           == "sim_scf")
+    assert(sim.imlocdir            == "./runs/diamond/scf/sim_scf")
+    assert(sim.imremdir            == "./runs/diamond/scf/sim_scf")
+    assert(sim.imresdir            == "./runs/diamond/scf/sim_scf")
+    assert(sim.infile              == "scf.in")
+    assert(sim.input_image         == "input.p")
+    assert(sim.locdir              == "./runs/diamond/scf")
+    assert(sim.outfile             == "scf.out")
+    assert(sim.outputs             is None)
+    assert(sim.path                == "diamond/scf")
+    assert(sim.process_id          == 548572)
+    assert(sim.remdir              == "./runs/diamond/scf")
+    assert(sim.resdir              == "./runs/diamond/scf")
+    assert(sim.sim_image           == "sim.p")
+    assert(sim.subcascade_finished is False)
+
+    # Affected by legacy migration
+    assert(sim.setup      is True)
+    assert(sim.sent_files is True)
+    assert(sim.submitted  is True)
+    assert(sim.finished   is True)
+    assert(sim.failed     is False)
+    assert(sim.got_output is True)
+    assert(sim.analyzed   is True)
+#end def test_load_old_image
