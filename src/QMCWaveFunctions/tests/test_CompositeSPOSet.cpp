@@ -23,7 +23,7 @@ TEST_CASE("CompositeSPO::diamond_1x1x1", "[wavefunction]")
 {
   Libxml2Document doc;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
   outputManager.pause();
 

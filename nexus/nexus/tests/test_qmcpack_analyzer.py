@@ -1,16 +1,15 @@
 import pytest
-from . import NexusTestOrder
+from numpy import array
+
+from ..developer import obj, to_obj
+from ..qmcpack_analyzer import QmcpackAnalyzer
+from ..qmcpack_input import wavefunction
+from ..testing import object_eq, text_eq, value_eq
+from . import TEST_DIR, NexusTestOrder, isolate_nexus_core
+
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_ANALYZER)
 
-
-from . import isolate_nexus_core, TEST_DIR
-from ..testing import value_eq,object_eq,text_eq
-
-
 def test_empty_init():
-    from ..developer import obj,to_obj
-    from ..qmcpack_analyzer import QmcpackAnalyzer
-
     qa = QmcpackAnalyzer()
 
     qa_ref = obj(
@@ -60,9 +59,6 @@ def test_empty_init():
 
 
 def test_vmc_dmc_analysis():
-    from ..developer import obj,to_obj
-    from ..qmcpack_analyzer import QmcpackAnalyzer
-
     test_files = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma"
 
     # test load of vmc data
@@ -226,10 +222,6 @@ def test_vmc_dmc_analysis():
 
 @isolate_nexus_core
 def test_optimization_analysis():
-    from numpy import array
-    from ..developer import obj,to_obj
-    from ..qmcpack_analyzer import QmcpackAnalyzer
-
     infile = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/opt/opt.in.xml"
 
     qa = QmcpackAnalyzer(infile,analyze=True,equilibration=5)
@@ -284,8 +276,6 @@ def test_optimization_analysis():
         '''.split()
 
     assert(set(opt.keys())==set(opt_keys))
-
-    from ..qmcpack_input import wavefunction
 
     assert(isinstance(opt.optimal_wavefunction,wavefunction))
 
@@ -361,8 +351,6 @@ def test_optimization_analysis():
 
 
 def test_twist_average_analysis():
-    from ..developer import obj
-    from ..qmcpack_analyzer import QmcpackAnalyzer
 
     infile = TEST_DIR / "test_qmcpack_analyzer_files/diamond_twist/vmc/vmc.in"
 
@@ -405,8 +393,6 @@ def test_twist_average_analysis():
 
 def test_density_analysis():
     _ = pytest.importorskip("h5py")
-    from numpy import array
-    from ..qmcpack_analyzer import QmcpackAnalyzer
 
     infile = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/dmc/dmc.in.xml"
     qa = QmcpackAnalyzer(infile,analyze=True,equilibration=5)

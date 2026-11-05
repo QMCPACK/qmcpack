@@ -300,7 +300,6 @@ TEST_CASE("DMC move-all node-crossing mover selection", "[drivers][dmc]")
 TEST_CASE("DMC repeated loop output files", "[drivers][dmc]")
 {
   ProjectData project_data("dmc_loop_test", ProjectData::DriverVersion::LEGACY);
-  project_data.reset();
   Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;

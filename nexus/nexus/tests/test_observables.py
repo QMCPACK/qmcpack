@@ -1,15 +1,13 @@
 import pytest
+
+from ..developer import obj
+from ..observables import AttributeProperties, DefinedAttributeBase
+from ..testing import check_object_eq
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.OBSERVABLES)
 
-from ..testing import check_object_eq
-
-
-
 def test_defined_attribute_base():
-    from ..developer import obj
-    from ..observables import AttributeProperties,DefinedAttributeBase
-
     # empty init
     p = AttributeProperties()
     o = DefinedAttributeBase()

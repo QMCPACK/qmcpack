@@ -1,15 +1,14 @@
-import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.UTILITIES)
-
 import os
 from pathlib import Path
 
+import pytest
 
+from ..utilities import is_relative_path, is_valid_filename, is_valid_path, path_string
+from . import NexusTestOrder
+
+pytestmark = pytest.mark.order(NexusTestOrder.UTILITIES)
 
 def test_is_valid_path():
-    from nexus.utilities import is_valid_path,is_valid_filename
-
     valid_paths = [
         '',
         '.',
@@ -101,8 +100,6 @@ def test_is_valid_path():
 
 
 def test_path_string():
-    from nexus.utilities import path_string
-
     # path_string for str paths
     in_out_paths = [
         # in         out ps(str) out ps(Path)
@@ -198,8 +195,6 @@ def test_path_string():
 
 
 def test_is_relative_path():
-    from nexus.utilities import is_relative_path
-
     relative_paths = [
         '',
         '.',

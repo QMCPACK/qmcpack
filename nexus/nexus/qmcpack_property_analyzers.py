@@ -35,10 +35,12 @@
 
 
 import os
+
 import numpy as np
-from .qmcpack_input import QmcpackInput
-from .qmcpack_analyzer_base import QAobject,QAanalyzer
+
 from . import numpy_extensions as npe
+from .qmcpack_analyzer_base import QAanalyzer, QAobject
+from .qmcpack_input import QmcpackInput
 
 
 class Bspline(QAobject):

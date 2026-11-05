@@ -1,13 +1,15 @@
 import pytest
+
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_SIMULATION)
 
 
 from pathlib import Path
-from . import isolate_nexus_core
+
 from .. import testing
-from ..testing import failed,FailedTest
-from ..testing import object_eq
+from ..testing import FailedTest, failed, object_eq
+from . import isolate_nexus_core
 
 
 def clear_all_sims():
@@ -20,8 +22,8 @@ def clear_all_sims():
 
 
 def get_gamess_sim(type='rhf'):
+    from ..gamess import Gamess, GamessInput, generate_gamess
     from ..machines import job
-    from ..gamess import Gamess,generate_gamess,GamessInput
     from .test_gamess_input import TEST_FILES
 
     sim = None
@@ -50,8 +52,8 @@ def get_gamess_sim(type='rhf'):
 
 
 def test_minimal_init():
+    from ..gamess import Gamess, generate_gamess
     from ..machines import job
-    from ..gamess import Gamess,generate_gamess
 
     Gamess.ericfmt = ''
 

@@ -73,7 +73,7 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
 
   // Instantiate other dependencies (internal QMCPACK objects)
   auto lattice = testing::makeTestLattice();
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
@@ -118,7 +118,7 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
 
   // Instantiate other dependencies (internal QMCPACK objects)
   auto lattice = testing::makeTestLattice();
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
   outputManager.pause();
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
@@ -225,7 +225,7 @@ TEST_CASE("MomentumDistribution::spawnCrowdClone", "[estimators]")
 
   // Instantiate other dependencies (internal QMCPACK objects)
   auto lattice = testing::makeTestLattice();
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
