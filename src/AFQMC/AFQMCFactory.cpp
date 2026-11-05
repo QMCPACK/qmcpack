@@ -202,10 +202,7 @@ bool AFQMCFactory::execute(xmlNodePtr cur)
   if (cur == nullptr)
     return false;
 
-  int groupid = 0; //myComm.getGroupID();
   std::array<char, 256> fileroot;
-
-  bool no_gtag = (qmc_common.mpi_groups == 1);
 
   xmlNodePtr curRoot = cur;
   cur                = curRoot->children;
@@ -214,12 +211,8 @@ bool AFQMCFactory::execute(xmlNodePtr cur)
     std::string cname((const char*)(cur->name));
     if (cname == "execute")
     {
-      int length{0};
-      if (no_gtag) //qnproc_g == nproc)
-        length = std::snprintf(fileroot.data(), fileroot.size(), "%s.s%03d", project_title.c_str(), m_series);
-      else
-        length =
-            std::snprintf(fileroot.data(), fileroot.size(), "%s.g%03d.s%03d", project_title.c_str(), groupid, m_series);
+      int length = std::snprintf(fileroot.data(), fileroot.size(), "%s%s.s%03d", project_title.c_str(),
+                                 qmc_common.get_filename_infix_for_ensemble_jobs().c_str(), m_series);
 
       if (length < 0)
         throw std::runtime_error("Error generating fileroot");

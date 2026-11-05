@@ -1,15 +1,17 @@
-import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_INPUT)
-
-
 from pathlib import Path
 
-from ..testing import object_eq, dict_serialize
+import numpy as np
+import pytest
 
+from ..developer import obj
+from ..physical_system import generate_physical_system
+from ..quantum_package_input import QuantumPackageInput, generate_quantum_package_input
+from ..testing import dict_serialize, object_eq
+from . import NexusTestOrder
+
+pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_INPUT)
 
 def format_value(v):
-    import numpy as np
     s = ''
     if isinstance(v,np.ndarray):
         pad = 12*' '
@@ -37,7 +39,6 @@ def format_value(v):
 
 
 def make_serial_reference(qi):
-    from ..developer import obj
     s = dict_serialize(qi,dict_type=obj)
     ref = '    ref = {\n'
     for k in sorted(s.keys()):
@@ -53,9 +54,6 @@ serial_references = dict()
 
 
 def generate_serial_references():
-    import numpy as np
-    from ..developer import obj
-
     # references for read
     serial_references['h2o.ezfio read'] = {
         'ao_basis/ao_basis' : 'cc-pvtz',
@@ -228,7 +226,6 @@ def get_serial_references():
 
 
 def check_vs_serial_reference(qi,name):
-    from ..developer import obj
     sr = obj(get_serial_references()[name])
     sg = dict_serialize(qi,dict_type=obj)
     assert(object_eq(sg,sr))
@@ -252,8 +249,6 @@ o2_xyz = '''2
 
 
 def test_empty_init():
-    from ..quantum_package_input import QuantumPackageInput
-
     qi = QuantumPackageInput()
 
     qi.set(elec_alpha_num=2)
@@ -266,8 +261,6 @@ def test_empty_init():
 
 
 def test_read():
-    from ..quantum_package_input import QuantumPackageInput
-
     ezfio = Path(__file__+"/../test_quantum_package_input_files/h2o.ezfio").resolve()
 
     qi = QuantumPackageInput(ezfio)
@@ -278,9 +271,6 @@ def test_read():
 
 
 def test_generate(tmp_path):
-    from ..physical_system import generate_physical_system
-    from ..quantum_package_input import generate_quantum_package_input
-
     # water molecule rhf
     xyz_path = tmp_path / 'H2O.xyz'
     xyz_path.write_text(h2o_xyz)

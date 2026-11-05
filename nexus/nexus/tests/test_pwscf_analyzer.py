@@ -1,5 +1,18 @@
+import numpy as np
 import pytest
 
+from .. import pwscf_analyzer as pa_module
+from ..developer import obj
+from ..pwscf_analyzer import (
+    Pw2CasinoAnalyzer,
+    PwscfAnalyzer,
+    PwscfOutData,
+    PwscfXmlData,
+    parse_float,
+)
+from ..pwscf_input import PwscfInput
+from ..structure import Structure
+from ..unit_converter import UnitConverter
 from . import TEST_DIR, NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_ANALYZER)
@@ -89,9 +102,6 @@ def write_schema(directory,calculation='scf',energy=-1.0,prefix='pwscf'):
 
 
 def test_analyzer_input_object():
-    from ..pwscf_analyzer import PwscfAnalyzer
-    from ..pwscf_input import PwscfInput
-
     fixture = PWSCF_ANALYZER_FIXTURES/'qe_7_0/default/scf'
     input_data = PwscfInput(fixture/'pwscf.in')
     analyzer = PwscfAnalyzer(
@@ -107,8 +117,6 @@ def test_analyzer_input_object():
 
 
 def test_explicit_xml_only(tmp_path):
-    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
-
     schema_file = write_schema(tmp_path,energy=-2.5)
     analyzer = PwscfAnalyzer(
         xmlfile = schema_file,
@@ -131,8 +139,6 @@ def test_explicit_xml_only(tmp_path):
         ),
     )
 def test_parse_float(text,expected):
-    from ..pwscf_analyzer import parse_float
-
     assert(parse_float(text)==expected)
 #end def test_parse_float
 
@@ -144,8 +150,6 @@ def test_parse_float(text,expected):
         ),
     )
 def test_parse_float_rejects(text):
-    from ..pwscf_analyzer import parse_float
-
     assert(parse_float(text) is None)
 #end def test_parse_float_rejects
 
@@ -159,10 +163,6 @@ def test_parse_float_rejects(text):
         ),
     )
 def test_fermi_energy_parsing(tmp_path,text,expected):
-    import numpy as np
-
-    from ..pwscf_analyzer import PwscfOutData
-
     outfile = tmp_path/'pwscf.out'
     outfile.write_text(f'Self-consistent Calculation\n{text}\n')
     assert(np.allclose(PwscfOutData(outfile).fermi_energies,expected))
@@ -179,8 +179,6 @@ def test_fermi_energy_parsing(tmp_path,text,expected):
         ),
     )
 def test_fermi_energy_rejects(tmp_path,text):
-    from ..pwscf_analyzer import PwscfOutData
-
     outfile = tmp_path/'pwscf.out'
     outfile.write_text(f'Self-consistent Calculation\n{text}\n')
     assert(PwscfOutData(outfile).fermi_energies is None)
@@ -188,14 +186,6 @@ def test_fermi_energy_rejects(tmp_path,text):
 
 
 def test_empty_init():
-    from .. import pwscf_analyzer as pa_module
-    from ..pwscf_analyzer import (
-        Pw2CasinoAnalyzer,
-        PwscfAnalyzer,
-        PwscfOutData,
-        PwscfXmlData,
-    )
-
     pa = PwscfAnalyzer()
     assert(pa.read_all)
     assert(pa.strict)
@@ -239,8 +229,6 @@ def test_empty_init():
     ids=lambda path:str(path.relative_to(PWSCF_ANALYZER_FIXTURES)),
     )
 def test_all_schema_fixtures_are_parsed(schema_file):
-    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
-
     fixture_path = schema_file.parent
     while (
         fixture_path!=PWSCF_ANALYZER_FIXTURES
@@ -269,11 +257,6 @@ def test_all_schema_fixtures_are_parsed(schema_file):
     ids=[case[0] for case in TRIPLE_SOURCE_CASES],
     )
 def test_query_agreement_across_sources(case,relative_path,quantities):
-    import numpy as np
-
-    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
-    from ..structure import Structure
-
     fixture_path = PWSCF_ANALYZER_FIXTURES/relative_path
     analyzers = {
         mode:PwscfAnalyzer(
@@ -351,8 +334,6 @@ def test_query_agreement_across_sources(case,relative_path,quantities):
         ),
     )
 def test_result_initialization(tmp_path,calculation,log_text):
-    from ..pwscf_analyzer import PwscfOutData
-
     outfile = tmp_path / f'{calculation}.out'
     outfile.write_text(log_text)
     out = PwscfOutData(outfile)
@@ -379,10 +360,6 @@ def test_result_initialization(tmp_path,calculation,log_text):
 
 
 def test_tokenized_log_parsing(tmp_path):
-    import numpy as np
-
-    from ..pwscf_analyzer import PwscfOutData
-
     scf_file = tmp_path/'scf.out'
     scf_file.write_text('''\
 Self-consistent Calculation
@@ -485,10 +462,6 @@ End final coordinates
 
 
 def test_malformed_log_records_are_skipped(tmp_path):
-    import numpy as np
-
-    from ..pwscf_analyzer import PwscfOutData
-
     md_file = tmp_path/'md.out'
     md_file.write_text('''\
 ! total energy =
@@ -552,8 +525,6 @@ End final coordinates
 
 
 def test_calculation_sources_are_independent(tmp_path):
-    from ..pwscf_analyzer import PwscfAnalyzer
-
     (tmp_path/'pwscf.in').write_text('''\
 &CONTROL
   calculation = 'relax'
@@ -589,8 +560,6 @@ CELL_PARAMETERS (alat= 5.0)
 
 
 def test_pw2casino_analyzer_read(tmp_path):
-    from ..pwscf_analyzer import Pw2CasinoAnalyzer, PwscfAnalyzer, PwscfOutData
-
     (tmp_path/'pwscf.in').write_text("&CONTROL\n  calculation = 'scf'\n/\n")
     (tmp_path/'pwscf.out').write_text('Self-consistent Calculation\n')
     (tmp_path/'pw2casino.out').write_text('Kinetic energy from orbitals = 1.25D+01\n')
@@ -633,10 +602,6 @@ def test_pw2casino_analyzer_read(tmp_path):
         ),
     )
 def test_qe_7_0_calculation_modes(verbosity,calculation):
-    import numpy as np
-
-    from ..pwscf_analyzer import PwscfAnalyzer, PwscfOutData
-
     fixture_path = (
         TEST_DIR/'test_pwscf_analyzer_files'/'qe_7_0'/verbosity/calculation
         )
@@ -743,8 +708,6 @@ def test_qe_7_0_calculation_modes(verbosity,calculation):
         ),
     )
 def test_supported_calculation_modes(verbosity,calculation):
-    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
-
     fixture_path = (
         TEST_DIR/'test_pwscf_analyzer_files'/'qe_7_0'/verbosity/calculation
         )
@@ -787,10 +750,6 @@ def test_supplemental_qe_runs(
     eigenvalue_shape,
     has_schema,
     ):
-    import numpy as np
-
-    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
-
     fixture_path = (
         TEST_DIR/'test_pwscf_analyzer_files'/version/'supplemental'/case
         )
@@ -843,8 +802,6 @@ def test_supplemental_qe_runs(
         ),
     )
 def test_supplemental_md_runs(version,case):
-    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
-
     fixture_path = (
         TEST_DIR/'test_pwscf_analyzer_files'/version/'supplemental'/case
         )
@@ -875,11 +832,6 @@ def test_supplemental_md_runs(version,case):
 
 
 def test_quantity_accessors():
-    import numpy as np
-
-    from ..pwscf_analyzer import PwscfAnalyzer
-    from ..unit_converter import UnitConverter
-
     fixture_root = TEST_DIR/'test_pwscf_analyzer_files'/'qe_7_0'/'high'
     scf = PwscfAnalyzer(
         input   = 'pwscf.in',
@@ -968,10 +920,6 @@ def test_quantity_accessors():
 
 
 def test_legacy_xml(tmp_path,monkeypatch):
-    from .. import pwscf_analyzer as pa_module
-    from ..developer import obj
-    from ..pwscf_analyzer import PwscfAnalyzer
-
     savedir = tmp_path/'pwscf.save'
     savedir.mkdir()
     datafile = savedir/'data-file.xml'
@@ -1033,10 +981,6 @@ def test_legacy_xml(tmp_path,monkeypatch):
 
 def test_schema_queries_are_preferred(tmp_path):
     """Modern XML supplies query data even when the text output is sparse."""
-    import numpy as np
-
-    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
-
     (tmp_path/'pwscf.in').write_text("""&CONTROL
  calculation = 'relax'
  prefix = 'pwscf'
@@ -1100,10 +1044,6 @@ def test_schema_queries_are_preferred(tmp_path):
 
 
 def test_schema_semantic_errors_are_field_local(tmp_path):
-    import numpy as np
-
-    from ..pwscf_analyzer import PwscfXmlData
-
     schema_file = tmp_path/'data-file-schema.xml'
     schema_file.write_text('''\
 <espresso>
@@ -1146,8 +1086,6 @@ def test_schema_semantic_errors_are_field_local(tmp_path):
 
 
 def test_default_source_requires_one_file(tmp_path):
-    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
-
     (tmp_path/'pwscf.in').write_text("""&CONTROL
  calculation = 'scf'
  prefix = 'pwscf'
@@ -1183,8 +1121,6 @@ def test_default_source_requires_one_file(tmp_path):
 
 
 def test_source_required_and_strict_validation(tmp_path):
-    from ..pwscf_analyzer import PwscfAnalyzer
-
     quantities = {
         'initial_structure','energy','kpoints','kweights','eigenvalues',
         'occupations','Ef','Evbm','Ecbm','band_gap','fractional_occs',
@@ -1219,8 +1155,6 @@ def test_source_required_and_strict_validation(tmp_path):
 
 
 def test_file_requirements_are_checked_at_analysis_time(tmp_path):
-    from ..pwscf_analyzer import PwscfAnalyzer
-
     analyzer = PwscfAnalyzer(
         input   = 'missing.in',
         outfile = 'missing.out',
@@ -1271,8 +1205,6 @@ def test_file_requirements_are_checked_at_analysis_time(tmp_path):
 
 
 def test_strict_source_file_matrix(tmp_path):
-    from ..pwscf_analyzer import PwscfAnalyzer
-
     write_input(tmp_path)
     write_schema(tmp_path)
     (tmp_path/'pwscf.out').write_text(
@@ -1297,8 +1229,6 @@ def test_strict_source_file_matrix(tmp_path):
 
 
 def test_ambiguous_source_discovery(tmp_path):
-    from ..pwscf_analyzer import PwscfAnalyzer
-
     write_schema(tmp_path,energy=-1.0,prefix='one')
     write_schema(tmp_path,energy=-2.0,prefix='two')
     with pytest.raises(RuntimeError,match='multiple.*schema XML'):
@@ -1345,8 +1275,6 @@ def test_ambiguous_source_discovery(tmp_path):
 
 
 def test_unique_output_discovery_excludes_auxiliary(tmp_path):
-    from ..pwscf_analyzer import PwscfAnalyzer
-
     (tmp_path/'actual.out').write_text(
         'Self-consistent Calculation\n'
         '! total energy = -4.0 Ry\n'
@@ -1368,10 +1296,6 @@ def test_unique_output_discovery_excludes_auxiliary(tmp_path):
 
 
 def test_required_controls_both_source_fallback(tmp_path):
-    import numpy as np
-
-    from ..pwscf_analyzer import PwscfAnalyzer
-
     write_input(tmp_path)
     write_schema(tmp_path,energy=-1.0)
     (tmp_path/'pwscf.out').write_text('''\
@@ -1441,8 +1365,6 @@ atom 1 type 1 force = 0.1 0.2 0.3
 
 
 def test_require_only_updates_policy(tmp_path):
-    from ..pwscf_analyzer import PwscfAnalyzer
-
     write_input(tmp_path)
     write_schema(tmp_path)
     (tmp_path/'pwscf.out').write_text('Self-consistent Calculation\n')
@@ -1471,8 +1393,6 @@ def test_require_only_updates_policy(tmp_path):
 
 
 def test_available_is_policy_free(tmp_path):
-    from ..pwscf_analyzer import PwscfAnalyzer
-
     write_schema(tmp_path,energy=0.0)
     analyzer = PwscfAnalyzer(
         path = tmp_path,
@@ -1502,8 +1422,6 @@ def test_available_is_policy_free(tmp_path):
 
 
 def test_internal_query_dependencies_ignore_requirements(tmp_path):
-    from ..pwscf_analyzer import PwscfAnalyzer
-
     outfile = tmp_path/'pwscf.out'
     outfile.write_text('''\
 Self-consistent Calculation
@@ -1523,8 +1441,6 @@ malformed stress row
 
 
 def test_malformed_xml_field_falls_back_to_output(tmp_path):
-    from ..pwscf_analyzer import PwscfAnalyzer
-
     write_input(tmp_path)
     schema_file = write_schema(tmp_path)
     schema_file.write_text('''\
@@ -1544,8 +1460,6 @@ def test_malformed_xml_field_falls_back_to_output(tmp_path):
 
 
 def test_legacy_xml_does_not_satisfy_modern_xml_source(tmp_path):
-    from ..pwscf_analyzer import PwscfAnalyzer
-
     savedir = tmp_path/'pwscf.save'
     savedir.mkdir()
     (savedir/'data-file.xml').write_text('<legacy/>')
@@ -1569,8 +1483,6 @@ def test_legacy_xml_does_not_satisfy_modern_xml_source(tmp_path):
 
 
 def test_calculation_disagreement_tuple(tmp_path):
-    from ..pwscf_analyzer import PwscfAnalyzer
-
     write_input(tmp_path,calculation='relax')
     write_schema(tmp_path,calculation='nscf')
     (tmp_path/'pwscf.out').write_text('Self-consistent Calculation\n')
@@ -1605,10 +1517,6 @@ def test_calculation_disagreement_tuple(tmp_path):
 
 
 def test_output_reader_selection_uses_detected_run_type(tmp_path):
-    import numpy as np
-
-    from ..pwscf_analyzer import PwscfAnalyzer, PwscfOutData
-
     outfile = tmp_path/'pwscf.out'
     outfile.write_text('''\
 Band Structure Calculation
@@ -1655,10 +1563,6 @@ End final coordinates
 
 
 def test_undetected_run_type_permissively_reads_md(tmp_path):
-    import numpy as np
-
-    from ..pwscf_analyzer import PwscfOutData
-
     outfile = tmp_path/'unknown.out'
     outfile.write_text('''\
 ! total energy = -1.0 Ry

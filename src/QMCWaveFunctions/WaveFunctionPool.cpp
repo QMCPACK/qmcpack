@@ -46,7 +46,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   ParticleSet* qp = ptcl_pool_.getParticleSet(target);
 
   if (qp == nullptr)
-    myComm.barrier_and_abort("target particle set named '" + target + "' not found");
+    throw UniformCommunicateError("target particle set named '" + target + "' not found");
 
   if (psi_name.empty())
     throw UniformCommunicateError(

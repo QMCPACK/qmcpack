@@ -94,12 +94,11 @@ public:
 
   /** Start the manager at the beginning of a driver run().
    * Open files. Setting zeros.
-   * @param blocks number of blocks
-   * @param record if true, will write to a file
+   * @param root_name root name for output files
    *
    * Replace reportHeader and reset functon.
    */
-  void startDriverRun();
+  void startDriverRun(const std::string& root_name);
 
   /** Stop the manager at the end of a driver run().
    * Flush/close files.

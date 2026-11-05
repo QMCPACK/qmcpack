@@ -28,18 +28,6 @@ TEST_CASE("test_communicate_split_one", "[message]")
   auto& inter_group_comm = c2->getInterGroupComm();
   REQUIRE(inter_group_comm.size() == 1);
   REQUIRE(inter_group_comm.rank() == 0);
-
-  std::string real_name = c.getName();
-
-  std::string name = "myname";
-  c.setName(name);
-  REQUIRE(c.getName() == name);
-
-  std::string other_name = "myothername";
-  c.setName(other_name.data(), other_name.size());
-  REQUIRE(c.getName() == other_name);
-
-  c.setName(real_name);
 }
 
 TEST_CASE("test_communicate_split_two", "[message]")
@@ -160,6 +148,11 @@ TEST_CASE("test_communicate_uniform_node_rank_count", "[message]")
   // In a homogeneous environment (such as local test machine), uniform_size matches local node_comm size
   auto node_comm = c.createNodeComm();
   REQUIRE(uniform_size == node_comm.size());
+
+  // Homogeneous test environment should report identical min and max node rank counts
+  const auto [min_size, max_size] = c.getMinMaxNodeRankCount();
+  REQUIRE(min_size == max_size);
+  REQUIRE(min_size == uniform_size);
 }
 
 #ifdef HAVE_MPI

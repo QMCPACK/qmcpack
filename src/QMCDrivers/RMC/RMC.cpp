@@ -69,7 +69,7 @@ void RMC::run()
 {
   resetRun();
   //start the main estimator
-  Estimators->start(nBlocks);
+  Estimators->start(nBlocks, RootName);
   for (int ip = 0; ip < NumThreads; ++ip)
     Movers[ip]->startRun(nBlocks, false);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -112,6 +112,8 @@ void RMC::run()
         branchEngine->collect(
             CurrentStep,
             W); //Ray Clay:  For now, collects and syncs based on first reptile.  Need a better way to do this.
+        //accumulate collectables and energies for scalar.dat
+        Estimators->accumulate(W);
       }
       Movers[ip]->stopBlock(false);
     } //end-of-parallel for
@@ -283,6 +285,7 @@ void RMC::resetRun()
     {
       Movers[ip]->advanceWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1], false);
       branchEngine->collect(CurrentStep, W);
+      Estimators->accumulate(W);
     }
   }
 

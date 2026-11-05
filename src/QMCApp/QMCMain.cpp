@@ -70,10 +70,6 @@ QMCMain::QMCMain(Communicate& c)
       traces_xml_(NULL)
 #endif
 {
-  Communicate node_comm{OHMMS::Controller->createNodeComm()};
-  // assign accelerators within a node
-  DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
-
   app_summary() << "================================================================\n"
                 << "                        QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
                 << QMCPACK_VERSION_PATCH << "\n"
@@ -98,7 +94,7 @@ QMCMain::QMCMain(Communicate& c)
       << "\n  Number of MPI groups      = " << myComm.getNumGroups()
       << "\n  MPI group ID              = " << myComm.getGroupID()
       << "\n  Number of ranks in group  = " << myComm.size()
-      << "\n  MPI ranks per node        = " << node_comm.size()
+      << "\n  Virtual node rank count   = " << qmc_common.get_virtual_node_rank_count()
 #if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM) || defined(ENABLE_SYCL)
       << "\n  Accelerators per rank     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
@@ -136,7 +132,9 @@ QMCMain::QMCMain(Communicate& c)
     app_summary() << "  Real build. QMC_COMPLEX=OFF" << std::endl;
 
   app_summary() << "  Output verbosity = "
-                << (outputManager.isDebugActive() ? "debug" : outputManager.isHighActive() ? "high" : "low")
+                << (outputManager.isDebugActive()      ? "debug"
+                        : outputManager.isHighActive() ? "high"
+                                                       : "low")
                 << " (options: --verbosity=low|high|debug)" << std::endl;
 #ifdef ENABLE_TIMERS
   app_summary() << "  Timer level = " << getGlobalTimerManager().get_timer_threshold_string()
@@ -152,6 +150,10 @@ QMCMain::QMCMain(Communicate& c)
 
 QMCMain::~QMCMain()
 {
+  for (auto& qmcactionPair : qmc_action_)
+    if (!qmcactionPair.second)
+      xmlFreeNode(qmcactionPair.first);
+
   // free last_driver before clearing P,Psi,H clones
   last_driver_.reset();
   CloneManager::clearClones();
@@ -217,7 +219,7 @@ bool QMCMain::execute()
   //validate the input file
   bool success = validateXML();
   if (!success)
-    myComm.barrier_and_abort("QMCMain::execute. Input document does not contain valid objects");
+    throw UniformCommunicateError("QMCMain::execute. Input document does not contain valid objects");
 
   //initialize all the instances of distance tables and evaluate them
   particle_set_pool_->reset();
@@ -301,9 +303,21 @@ bool QMCMain::execute()
       xmlReplaceNode(mcptr, newmcptr);
       xmlFreeNode(mcptr);
     }
-    saveXml();
+    writeContinuationInputXML();
   }
   return true;
+}
+
+void QMCMain::writeContinuationInputXML()
+{
+  if (!xml_doc_stack_.empty())
+  {
+    std::string newxml(my_project_.currentMainRoot());
+    newxml.append(".cont.xml");
+    app_log() << "\n========================================================="
+              << "\n  A new xml input file : " << newxml << std::endl;
+    xml_doc_stack_.top()->dump(newxml);
+  }
 }
 
 void QMCMain::executeLoop(xmlNodePtr cur)
@@ -375,22 +389,11 @@ bool QMCMain::validateXML()
 {
   xmlXPathContextPtr m_context = xml_doc_stack_.top()->getXPathContext();
   OhmmsXPathObject result("//project", m_context);
-  my_project_.setCommunicator(&myComm);
   if (result.empty())
-  {
     app_warning() << "Project is not defined" << std::endl;
-    my_project_.reset();
-  }
   else
   {
-    try
-    {
-      my_project_.put(result[0]);
-    }
-    catch (const UniformCommunicateError& ue)
-    {
-      myComm.barrier_and_abort(ue.what());
-    }
+    my_project_.put(result[0]);
   }
   app_summary() << std::endl;
   my_project_.get(app_summary());
@@ -458,10 +461,10 @@ bool QMCMain::validateXML()
           popDocument();
         }
         else
-          myComm.barrier_and_abort("Invalid XML document");
+          throw UniformCommunicateError("Invalid XML document");
       }
       else
-        myComm.barrier_and_abort(R"(tag "include" must include an "href" attribute.)");
+        throw UniformCommunicateError(R"(tag "include" must include an "href" attribute.)");
     }
     else if (cname == "qmcsystem")
     {
@@ -494,13 +497,13 @@ bool QMCMain::validateXML()
   }
 
   if (particle_set_pool_->empty())
-    myComm.barrier_and_abort("QMCMain::validateXML. Illegal input. Missing particleset.");
+    throw UniformCommunicateError("QMCMain::validateXML. Illegal input. Missing particleset.");
 
   if (psi_pool_->empty())
-    myComm.barrier_and_abort("QMCMain::validateXML. Illegal input. Missing wavefunction.");
+    throw UniformCommunicateError("QMCMain::validateXML. Illegal input. Missing wavefunction.");
 
   if (ham_pool_->empty())
-    myComm.barrier_and_abort("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");
+    throw UniformCommunicateError("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");
 
   //randomize any particleset with random="yes" && random_source="ion0"
   particle_set_pool_->randomize();
@@ -552,17 +555,10 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     else if (cname == "estimators")
     {
       inputnode = true;
-      try
-      {
-        if (estimator_manager_input_)
-          throw UniformCommunicateError(
-              "QMCMain::validateXML. Illegal Input, only one global <estimators> node is permitted");
-        estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, cur);
-      }
-      catch (const UniformCommunicateError& ue)
-      {
-        myComm.barrier_and_abort(ue.what());
-      }
+      if (estimator_manager_input_)
+        throw UniformCommunicateError(
+            "QMCMain::validateXML. Illegal Input, only one global <estimators> node is permitted");
+      estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, cur);
     }
     else
     //add to m_qmcaction
@@ -591,17 +587,10 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   else
   {
     QMCDriverFactory driver_factory(my_project_);
-    try
-    {
-      QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
-      qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmc_system_, *particle_set_pool_,
-                                                  *psi_pool_, *ham_pool_, myComm);
-      append_run = das.append_run;
-    }
-    catch (const UniformCommunicateError& ue)
-    {
-      myComm.barrier_and_abort(ue.what());
-    }
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
+    qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmc_system_, *particle_set_pool_,
+                                                *psi_pool_, *ham_pool_, myComm);
+    append_run = das.append_run;
   }
 
   if (qmc_driver)

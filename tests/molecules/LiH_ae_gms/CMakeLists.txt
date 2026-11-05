@@ -15,8 +15,18 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-LiH_ae_gms-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
-    vmc_short_noj
     vmc_short_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    LIH_SHORT # VMC
+  )
+
+  qmc_run_and_check(
+    short-LiH_ae_gms-vmcbatch_hf_noj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
+    vmcbatch_short_noj.in.xml
     1
     16
     TRUE
@@ -29,10 +39,20 @@ if(NOT QMC_COMPLEX)
   list(APPEND LIH_LONG "eeenergy" "3.488823 0.00027") # e-e energy
   list(APPEND LIH_LONG "samples" "96000000 0.0") # samples
   qmc_run_and_check(
-    long-LiH_ae_qp-vmc_hf_noj
+    long-LiH_ae_gms-vmc_hf_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
-    vmc_long_noj
     vmc_long_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    LIH_LONG # VMC
+  )
+
+  qmc_run_and_check(
+    long-LiH_ae_gms-vmcbatch_hf_noj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
+    vmcbatch_long_noj.in.xml
     1
     16
     TRUE
@@ -45,44 +65,40 @@ if(NOT QMC_COMPLEX)
   check_python_reqs("numpy;h5py" diamond-estimator add_tests)
   if(add_tests)
     simple_run_and_check(
-      short-LiH_ae-vmc_hf_noj_estimator_energydensity_voronoi
-      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
-      vmc_noj_edens_vor_short.in.xml
-      4
-      4
-      check_stats.py
-      -s
-      0
-      -q
-      'energydensity,EDvoronoi'
-      -e
-      2
-      -c
-      2
-      -p
-      vmc_noj_edens_vor_short
-      -r
-      qmc-ref/vmc_noj_edens_vor_short.s000.stat_ref_energydensity.dat)
+      BASE_NAME short-LiH_ae-vmc_hf_noj_estimator_energydensity_voronoi
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
+      INPUT_FILE vmc_noj_edens_vor_short.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_noj_edens_vor_short -r qmc-ref/vmc_noj_edens_vor_short.s000.stat_ref_energydensity.dat)
 
     simple_run_and_check(
-      long-LiH_ae-vmc_hf_noj_estimator_energydensity_voronoi
-      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
-      vmc_noj_edens_vor_long.in.xml
-      4
-      4
-      check_stats.py
-      -s
-      0
-      -q
-      'energydensity,EDvoronoi'
-      -e
-      2
-      -c
-      2
-      -p
-      vmc_noj_edens_vor_long
-      -r
-      qmc-ref/vmc_noj_edens_vor_long.s000.stat_ref_energydensity.dat)
+      BASE_NAME short-LiH_ae-vmcbatch_hf_noj_estimator_energydensity_voronoi
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
+      INPUT_FILE vmcbatch_noj_edens_vor_short.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_noj_edens_vor_short -r qmc-ref/vmc_noj_edens_vor_short.s000.stat_ref_energydensity.dat)
+
+    simple_run_and_check(
+      BASE_NAME long-LiH_ae-vmc_hf_noj_estimator_energydensity_voronoi
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
+      INPUT_FILE vmc_noj_edens_vor_long.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_noj_edens_vor_long -r qmc-ref/vmc_noj_edens_vor_long.s000.stat_ref_energydensity.dat)
+
+    simple_run_and_check(
+      BASE_NAME long-LiH_ae-vmcbatch_hf_noj_estimator_energydensity_voronoi
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
+      INPUT_FILE vmcbatch_noj_edens_vor_long.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_noj_edens_vor_long -r qmc-ref/vmc_noj_edens_vor_long.s000.stat_ref_energydensity.dat)
   endif()
 
 else()

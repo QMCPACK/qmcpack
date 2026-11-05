@@ -135,6 +135,17 @@ public:
    */
   int getUniformNodeRankCount() const;
 
+  /** return the minimum and maximum rank counts per node across all nodes.
+   *
+   *  Each rank determines its local node size, then an MPI_Allreduce finds
+   *  the minimum and maximum node sizes across the communicator.
+   *  If min == max, all nodes have an identical number of ranks (uniform).
+   *
+   *  In non-MPI (serial) builds, this returns {1, 1}.
+   *  @return std::pair<int, int> {min_node_ranks, max_node_ranks}
+   */
+  std::pair<int, int> getMinMaxNodeRankCount() const;
+
   void barrier() const;
   void abort() const;
   void barrier_and_abort(const std::string& msg) const;
@@ -162,9 +173,6 @@ public:
   int getNumGroups() const { return d_ngroups; }
   // Avoid public access to unique_ptr.
   Communicate& getInterGroupComm() const;
-  void setName(const std::string& aname) { myName = aname; }
-  void setName(const char* aname, int alen) { myName = std::string(aname, alen); }
-  const std::string& getName() const { return myName; }
 
   ///return true if the current MPI rank is the group lead
   bool isGroupLeader() { return d_mycontext == 0; }
@@ -235,8 +243,6 @@ private:
    *  After switching to mpi3::communicator, myMPI is only a reference to the raw communicator owned by mpi3::communicator
    */
   mpi_comm_type myMPI;
-  /// Communicator name
-  std::string myName;
   /// Rank
   int d_mycontext;
   /// Size

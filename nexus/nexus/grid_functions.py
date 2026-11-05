@@ -82,13 +82,12 @@ Module contents
 
 import os
 from copy import deepcopy
-from .developer import DevBase, obj, error
-from .fileio import StandardFile,XsfFile
-from . import numpy_extensions as npe
 
 import numpy as np
 
-
+from . import numpy_extensions as npe
+from .developer import DevBase, error, obj
+from .fileio import StandardFile, XsfFile
 
 
 def polar_to_cartesian(points,surface=False):

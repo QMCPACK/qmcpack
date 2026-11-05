@@ -271,24 +271,16 @@ void VMCBatched::process(xmlNodePtr node)
   ScopedTimer local_timer(timers_.startup_timer);
   print_mem("VMCBatched before initialization", app_log());
 
-  try
-  {
-    QMCDriverNew::AdjustedWalkerCounts awc =
-        adjustGlobalWalkerCount(myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
-                                qmcdriver_input_.get_walkers_per_rank(), 1.0,
-                                determineNumCrowds(qmcdriver_input_.get_num_crowds(), rngs_.size()));
+  QMCDriverNew::AdjustedWalkerCounts awc =
+      adjustGlobalWalkerCount(myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
+                              qmcdriver_input_.get_walkers_per_rank(), 1.0,
+                              determineNumCrowds(qmcdriver_input_.get_num_crowds(), rngs_.size()));
 
-    steps_per_block_ =
-        determineStepsPerBlock(awc.global_walkers, qmcdriver_input_.get_requested_samples(),
-                               qmcdriver_input_.get_requested_steps(), qmcdriver_input_.get_max_blocks());
+  steps_per_block_ = determineStepsPerBlock(awc.global_walkers, qmcdriver_input_.get_requested_samples(),
+                                            qmcdriver_input_.get_requested_steps(), qmcdriver_input_.get_max_blocks());
 
-    initPopulationAndCrowds(awc);
-    createStepContexts(crowds_.size());
-  }
-  catch (const UniformCommunicateError& ue)
-  {
-    myComm.barrier_and_abort(ue.what());
-  }
+  initPopulationAndCrowds(awc);
+  createStepContexts(crowds_.size());
 
   if (qmcdriver_input_.get_measure_imbalance())
     measureImbalance("Startup");
@@ -316,7 +308,7 @@ void VMCBatched::run()
 {
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
   //start the main estimator
-  estimator_manager_->startDriverRun();
+  estimator_manager_->startDriverRun(get_root_name());
 
   //initialize WalkerLogManager and collectors
   WalkerLogManager wlog_manager(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
