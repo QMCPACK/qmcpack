@@ -7,10 +7,12 @@ import os
 from copy import deepcopy
 from pathlib import Path
 from types import MappingProxyType
+
 import numpy as np
-from .periodic_table import Elements
-from .developer import DevBase, obj, nxs_print, NexusError
+
+from .developer import DevBase, NexusError, nxs_print, obj
 from .fileio import TextFile
+from .periodic_table import Elements
 from .utilities import path_string, to_str
 
 

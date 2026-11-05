@@ -1,12 +1,14 @@
-import pytest
 from copy import deepcopy
-from . import NexusTestOrder
+
+import numpy as np
+import pytest
+
+from ..developer import to_obj
+from ..pseudopotential import CasinoPP, GaussianPP, QmcpackPP, SemilocalPP
+from ..testing import object_eq, value_eq
+from . import TEST_DIR, NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.PSEUDOPOTENTIAL)
-
-
-from . import TEST_DIR
-from ..testing import value_eq, object_eq
-
 
 TEST_FILES = {
     "C.BFD.gms": TEST_DIR / "test_pseudopotential_files/C.BFD.gms",
@@ -19,13 +21,6 @@ for file in TEST_FILES.values():
 
 
 def test_pseudopotential_classes(tmp_path):
-    import numpy as np
-    from ..developer import to_obj
-    from ..pseudopotential import SemilocalPP
-    from ..pseudopotential import GaussianPP
-    from ..pseudopotential import QmcpackPP
-    from ..pseudopotential import CasinoPP
-
     # empty initialization
     SemilocalPP()
     GaussianPP()
