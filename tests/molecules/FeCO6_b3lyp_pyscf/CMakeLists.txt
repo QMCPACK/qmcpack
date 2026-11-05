@@ -15,8 +15,18 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     short-FeCO6_pyscf-vmc_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
-    vmc_short_noj
     vmc_short_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    FeCO6_PYSCF_SHORT # VMC
+  )
+
+  qmc_run_and_check(
+    short-FeCO6_pyscf-vmcbatch_noj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
+    vmcbatch_short_noj.in.xml
     1
     16
     TRUE
@@ -31,8 +41,18 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     long-FeCO6_pyscf-vmc_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
-    vmc_long_noj
     vmc_long_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    FeCO6_PYSCF_LONG # VMC
+  )
+
+  qmc_run_and_check(
+    long-FeCO6_pyscf-vmcbatch_noj
+    "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
+    vmcbatch_long_noj.in.xml
     1
     16
     TRUE
@@ -63,7 +83,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     deterministic-FeCO6_pyscf-vmc_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
-    det_vmc_noj
     det_vmc_noj.in.xml
     1
     1
@@ -95,7 +114,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     deterministic-FeCO6_pyscf-vmcbatch_noj
     "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
-    det_vmcbatch_noj
     det_vmcbatch_noj.in.xml
     1
     1

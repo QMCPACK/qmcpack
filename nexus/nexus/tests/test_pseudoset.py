@@ -1,9 +1,3 @@
-import pytest
-
-from . import NexusTestOrder
-
-pytestmark = pytest.mark.order(NexusTestOrder.PSEUDOSET)
-
 import re
 from copy import deepcopy
 from pathlib import Path
@@ -11,14 +5,24 @@ from types import MappingProxyType
 from typing import Literal
 
 import numpy as np
+import pytest
 
-from nexus.nexus_base import nexus_core
+from nexus.nexus_base import nexus_config
 from nexus.physical_system import generate_physical_system
-from nexus.pseudoset import PseudoSet, ppset, generate_pseudoset
-from nexus.pseudoset import read_potcar_z_valence, read_qmcpack_xml_z_valence, read_upf_z_valence
+from nexus.pseudoset import (
+    PseudoSet,
+    generate_pseudoset,
+    ppset,
+    read_potcar_z_valence,
+    read_qmcpack_xml_z_valence,
+    read_upf_z_valence,
+)
 
-from ..generic import NexusUserWarning
-from . import TEST_DIR, isolate_nexus_core
+from ..pseudopotential import pp_elem_label
+from . import TEST_DIR, NexusTestOrder, isolate_nexus_core
+
+pytestmark = pytest.mark.order(NexusTestOrder.PSEUDOSET)
+
 
 TEST_FILES = {
     "C.BFD.gms": TEST_DIR / "test_pseudopotential_files/C.BFD.gms",
@@ -114,8 +118,6 @@ def setup_psps(
 
 
 def test_pp_elem_label():
-    from ..pseudopotential import pp_elem_label
-
     ppfiles = [
         ('C'  , 'C'  , 'C.BFD.xml'   ),
         ('C2' , 'C'  , 'C2.ONCV.upf' ),
@@ -1903,7 +1905,7 @@ def test_legacy_ppset(tmp_path):
     psp_dir.mkdir()
     assert psp_dir.exists(), "Failed to create pseudo directory!"
 
-    nexus_core.file_locations += [str(psp_dir)]
+    nexus_config.file_locations += [str(psp_dir)]
 
     pseudo_list = []
     for psp in pseudo_names:
@@ -2014,7 +2016,7 @@ def test_get_pseudos(tmp_path):
     psp_dir.mkdir()
     assert psp_dir.exists(), "Failed to create pseudo directory!"
 
-    nexus_core.file_locations += [str(psp_dir)]
+    nexus_config.file_locations += [str(psp_dir)]
 
     pseudo_list = []
     for psp in pseudo_names:
@@ -2207,8 +2209,7 @@ PseudoSet(
         'C': 4,
         'O': 6,
     }},
-)
-"""
+)"""
     assert(repr(pseudoset) == ref_repr)
 #end def test_pseudoset_repr
 

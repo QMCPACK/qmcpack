@@ -159,7 +159,7 @@ sycl::event calcGradients_batched(sycl::queue& aq,
 
                        for (int iend = COLBS / 2; iend > 0; iend /= 2)
                        {
-                         item.barrier(sycl::access::fence_space::local_space);
+                         sycl::group_barrier(item.get_group());
                          for (int idim = 0; idim < DIM; idim++)
                            if (tid < iend)
                              sum[idim * COLBS + tid] += sum[idim * COLBS + tid + iend];

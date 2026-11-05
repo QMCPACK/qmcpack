@@ -1,24 +1,36 @@
-import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.MACHINES)
-
-from ..generic import NexusError
-
 import os
-from random import randint
+import time
 from copy import deepcopy
-from . import isolate_nexus_core
+from random import randint
+
+import pytest
+
 from .. import testing
-from ..testing import object_eq,object_diff, check_object_eq
+from ..developer import obj, to_obj
+from ..machines import (
+    Job,
+    Machine,
+    Options,
+    Supercomputer,
+    Theta,
+    Workstation,
+    get_cpu_cores,
+    job,
+    job_defaults,
+    job_defaults_assign,
+    job_defaults_nonassign,
+    register_supercomputer,
+)
+from ..testing import object_diff, object_eq
 from ..utilities import path_string
+from . import NexusTestOrder, isolate_nexus_core
+
+pytestmark = pytest.mark.order(NexusTestOrder.MACHINES)
 
 all_machines = []
 machines_data = dict()
 
-
 def get_machine_data():
-    from ..developer import obj
-    from ..machines import Machine,Workstation,Supercomputer
     if len(machines_data)==0:
         workstations   = obj()
         supercomputers = obj()
@@ -42,7 +54,6 @@ def get_machine_data():
 
 
 def get_all_machines():
-    from ..machines import Machine
     if len(all_machines)==0:
         for m in Machine.machines.values():
             all_machines.append(m)
@@ -60,7 +71,6 @@ def get_supercomputers():
 
 
 def test_get_cpu_cores():
-    from ..machines import get_cpu_cores
     assert(isinstance(get_cpu_cores(), int))
     assert(get_cpu_cores() >= 0)
     assert(get_cpu_cores() <= os.cpu_count())
@@ -69,9 +79,6 @@ def test_get_cpu_cores():
 
 
 def test_options():
-    from ..developer import obj, to_obj
-    from ..machines import Options
-
     # empty init
     o = Options()
     assert(len(o)==0)
@@ -108,11 +115,6 @@ def test_options():
 
 
 def test_job_init():
-    from ..developer import obj
-    from ..machines import Job,job
-    from ..machines import job_defaults
-    from ..machines import job_defaults_assign,job_defaults_nonassign
-
     jda  = set(job_defaults_assign.keys())
     jdna = set(job_defaults_nonassign.keys())
     jd   = set(job_defaults.keys())
@@ -145,9 +147,6 @@ def test_job_init():
 
 
 def test_job_time():
-    from ..developer import obj
-    from ..machines import job,Job
-
     def check_time(j,d,h,m,s,td,th,tm,ts):
         t = obj(days=d,hours=h,minutes=m,seconds=s)
         assert(object_eq(j.get_time(),t))
@@ -205,8 +204,6 @@ def test_job_time():
 
 
 def test_job_set_id():
-    from ..machines import job
-
     j1 = job(skip_machine=True)
     j2 = job(skip_machine=True)
 
@@ -221,8 +218,6 @@ def test_job_set_id():
 
 
 def test_job_get_machine():
-    from ..machines import job
-
     machines = get_all_machines()
     for m in machines:
         j = job(machine=m.name,skip_machine=True)
@@ -237,8 +232,6 @@ def first(d):
     return d[min(d.keys())]
 
 def test_job_set_environment():
-    from ..machines import job
-
     workstations,supercomputers = get_machine_data()
 
     machines = []
@@ -256,8 +249,6 @@ def test_job_set_environment():
 
 
 def test_job_clone():
-    from ..machines import job
-
     j1 = job(skip_machine=True)
     j1.set_id()
 
@@ -272,8 +263,6 @@ def test_job_clone():
 
 
 def test_job_serial_clone():
-    from ..machines import job
-
     j1 = job(skip_machine=True)
     assert(not j1.serial)
 
@@ -291,7 +280,6 @@ def test_job_serial_clone():
 
 
 def test_machine_virtuals():
-    from ..machines import Machine
     arg0 = None
     arg1 = None
     with pytest.raises(
@@ -329,8 +317,6 @@ def test_machine_virtuals():
 
 
 def test_machine_list():
-    from ..machines import Machine
-
     assert(len(Machine.machines)>0)
     for m in Machine.machines.values():
         assert(isinstance(m,Machine))
@@ -344,7 +330,6 @@ def test_machine_list():
 
 
 def test_machine_add():
-    from ..machines import Machine
     mtest = first(Machine.machines)
     assert(isinstance(mtest,Machine))
     with pytest.raises(
@@ -363,7 +348,6 @@ def test_machine_add():
 
 
 def test_machine_get():
-    from ..machines import Machine
     mtest = first(Machine.machines)
     assert(isinstance(mtest,Machine))
 
@@ -386,7 +370,6 @@ def test_machine_get():
 
 
 def test_machine_instantiation():
-    from ..machines import Machine
     # test guards against empty/invalid instantiation
     with pytest.raises(
         TypeError,
@@ -424,9 +407,6 @@ def test_machine_instantiation():
 
 
 def test_workstation_init():
-    from ..developer import obj, to_obj
-    from ..machines import Workstation
-
     ws = Workstation('wsi',16,'mpirun')
 
     refws = obj(
@@ -458,7 +438,6 @@ def init_job(j,
              identifier = 'job_ident',
              directory  = './',
              ):
-    import os
     identifier = identifier
     directory  = path_string(directory)
     j.set_id()
@@ -478,10 +457,6 @@ def init_job(j,
 
 @isolate_nexus_core
 def test_workstation_scheduling(tmp_path):
-    import time
-    from ..machines import Workstation
-    from ..machines import job,Job
-
     # create workstation for testing
     ws = Workstation('wss',16,'mpirun')
 
@@ -560,9 +535,6 @@ def test_workstation_scheduling(tmp_path):
 
 @isolate_nexus_core
 def test_workstation_requeue(tmp_path):
-    import time
-    from ..machines import Workstation, job, Job
-
     ws = Workstation('ws_requeue',16,'mpirun')
     j = job(machine=ws.name,serial=True)
     init_job(j,directory=tmp_path)
@@ -606,9 +578,6 @@ def test_workstation_requeue(tmp_path):
 
 
 def test_supercomputer_init():
-    from ..developer import obj, to_obj
-    from ..machines import Theta, Machine, register_supercomputer
-
     @register_supercomputer
     class ThetaInit(Theta):
         name = 'theta_init'
@@ -654,12 +623,6 @@ def test_supercomputer_init():
 
 @isolate_nexus_core
 def test_supercomputer_scheduling(tmp_path):
-    import os
-    import time
-    from ..developer import obj, to_obj
-    from ..machines import Theta, Machine, register_supercomputer
-    from ..machines import job,Job
-
     # create supercomputer for testing
     @register_supercomputer
     class ThetaSched(Theta):
@@ -790,9 +753,6 @@ def select_random(d):
     return d[randint(0,len(d)-1)]
 
 def test_process_job():
-    from ..developer import obj
-    from ..machines import Machine,Job
-
     nw  = 5
     nwj = 5
     nsj = 5
@@ -983,9 +943,6 @@ def test_process_job():
 
 
 def test_job_run_command():
-    from ..developer import obj
-    from ..machines import Machine,Job
-
     _workstations,supercomputers = get_machine_data()
 
     allow_warn = Machine.allow_warnings
@@ -1456,9 +1413,6 @@ def test_job_run_command():
 
 
 def test_write_job():
-    from ..developer import obj
-    from ..machines import Machine,job
-
     supercomputers = get_supercomputers()
 
     allow_warn = Machine.allow_warnings
@@ -2189,11 +2143,12 @@ srun test.x''',
 #SBATCH -A ABC123
 #SBATCH -p batch
 #SBATCH -J jobname
-#SBATCH -t 06:30
+#SBATCH -t 00:30:00
 #SBATCH -N 2
 #SBATCH -S 8
 #SBATCH -o jobname.out
 #SBATCH -e jobname.err
+#SBATCH -q debug
 
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
@@ -2292,6 +2247,9 @@ srun -N 2 -n 64 test.x
         ji = deepcopy(job_inputs)
         if name=='summit': # exceptional treatment for summit nodes
             ji.gpus = 6
+        if name=='frontier': # test a 30 minute debug job on frontier
+            ji.hours = 0
+            ji.qos = 'debug'
         if name=='flight':
             ji.reservation='test_reservation_name'
         #end if

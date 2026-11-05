@@ -34,8 +34,7 @@ constexpr bool generate_test_data = false;
 TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
 {
   RuntimeOptions runtime_options;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);
@@ -63,7 +62,7 @@ TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
 TEST_CASE("integrateListeners", "[hamiltonian]")
 {
   RuntimeOptions runtime_options;
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);

@@ -21,7 +21,7 @@
 
 #if defined(__INTEL_COMPILER)
   #define ASSUME_ALIGNED(x) __assume_aligned(x,QMC_SIMD_ALIGNMENT)
-#elif defined(__GNUC__) && !defined(__ibmxl__)
+#elif defined(__GNUC__)
   #define ASSUME_ALIGNED(x) (x) = (__typeof__(x)) __builtin_assume_aligned(x,QMC_SIMD_ALIGNMENT)
 #else
   #define ASSUME_ALIGNED(x)

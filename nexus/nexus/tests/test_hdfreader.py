@@ -1,15 +1,14 @@
+import numpy as np
 import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.HDFREADER)
 
-
+from ..hdfreader import read_hdf
 from ..testing import value_eq
+from . import NexusTestOrder
 
+pytestmark = pytest.mark.order(NexusTestOrder.HDFREADER)
 
 def test_read(tmp_path):
     h5py = pytest.importorskip("h5py")
-    import numpy as np
-    from ..hdfreader import read_hdf
 
     ds = 'string value'
     di = 100

@@ -67,26 +67,20 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   std::string curName(castXMLCharToChar(cur->name));
   std::string update_mode("pbyp");
   std::string qmc_mode;
-  std::string multi_tag("no");
-  std::string warp_tag("no");
   std::string append_tag("no");
   std::string profiling_tag("no");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(qmc_mode, "method",
               {"", "vmc", "vmc_batch", "dmc", "dmc_batch", "csvmc", "rmc", "linear", "linear_batch", "wftest"});
   aAttrib.add(update_mode, "move");
-  aAttrib.add(multi_tag, "multiple");
-  aAttrib.add(warp_tag, "warp");
   aAttrib.add(append_tag, "append");
   aAttrib.add(profiling_tag, "profiling");
   aAttrib.add(das.traces_tag, "trace");
   aAttrib.add(das.walkerlogs_tag, "walkerlog");
   aAttrib.put(cur);
-  das.append_run                 = (append_tag == "yes");
-  das.enable_profiling           = (profiling_tag == "yes");
-  das.what_to_do[SPACEWARP_MODE] = (warp_tag == "yes");
-  das.what_to_do[MULTIPLE_MODE]  = (multi_tag == "yes");
-  das.what_to_do[UPDATE_MODE]    = (update_mode == "pbyp");
+  das.append_run              = (append_tag == "yes");
+  das.enable_profiling        = (profiling_tag == "yes");
+  das.what_to_do[UPDATE_MODE] = (update_mode == "pbyp");
   infoSummary.flush();
   infoLog.flush();
 
@@ -143,7 +137,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
                                                                       ParticleSetPool& particle_pool,
                                                                       WaveFunctionPool& wavefunction_pool,
                                                                       HamiltonianPool& hamiltonian_pool,
-                                                                      Communicate* comm) const
+                                                                      Communicate& comm) const
 {
   std::unique_ptr<QMCDriverInterface> new_driver;
 
@@ -244,7 +238,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
           std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input),
                                        makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input()),
                                        std::move(vmcdriver_input), qmc_system,
-                                       MCPopulation(comm->size(), comm->rank(), qmc_system, primaryPsi, primaryH),
+                                       MCPopulation(comm.size(), comm.rank(), qmc_system, primaryPsi, primaryH),
                                        RandomNumberControl::getChildrenRefs(), qmc_system.getSampleStack(), comm);
 
       new_driver->setUpdateMode(1);
@@ -273,11 +267,19 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
         throw UniformCommunicateError(e.what());
       }
 
+      if (dmcdriver_input.get_l2_diffusion())
+      {
+        if (qmc_system.isSpinor())
+          throw UniformCommunicateError("L2 diffusion is not supported for spinor particle sets.");
+        if (!primaryH.has_L2())
+          throw UniformCommunicateError("L2 diffusion was requested, but the Hamiltonian has no L2 potential.");
+      }
+
       new_driver =
           std::make_unique<DMCBatched>(project_data_, std::move(qmcdriver_input),
                                        makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input()),
                                        std::move(dmcdriver_input), qmc_system,
-                                       MCPopulation(comm->size(), comm->rank(), qmc_system, primaryPsi, primaryH),
+                                       MCPopulation(comm.size(), comm.rank(), qmc_system, primaryPsi, primaryH),
                                        RandomNumberControl::getChildrenRefs(), comm);
     }
     else if (das.new_run_type == QMCRunType::RMC)
@@ -328,7 +330,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
 
       auto opt = std::make_unique<QMCFixedSampleLinearOptimizeBatched>(project_data_, std::move(qmcdriver_input),
                                                                        std::move(vmcdriver_input), qmc_system,
-                                                                       MCPopulation(comm->size(), comm->rank(),
+                                                                       MCPopulation(comm.size(), comm.rank(),
                                                                                     qmc_system, primaryPsi, primaryH),
                                                                        RandomNumberControl::getChildrenRefs(),
                                                                        qmc_system.getSampleStack(), comm);

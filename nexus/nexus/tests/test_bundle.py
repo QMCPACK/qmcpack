@@ -1,23 +1,16 @@
 import pytest
+
+from .. import testing
+from ..bundle import SimulationBundle, bundle
+from ..machines import get_machine, job
+from ..testing import object_eq
 from . import NexusTestOrder
+from .test_simulation_module import get_test_workflow
+
 pytestmark = pytest.mark.order(NexusTestOrder.BUNDLE)
 
 
-
-from .. import testing
-from ..testing import failed,FailedTest
-from ..testing import object_eq
-
-
-
 def test_bundle():
-    from ..developer import NexusError
-    from ..machines import job,get_machine
-    from ..bundle import bundle
-    from ..bundle import SimulationBundle
-
-    from .test_simulation_module import get_test_workflow
-
     # empty init
     with pytest.raises(
         ValueError,
@@ -58,7 +51,7 @@ def test_bundle():
 
     with pytest.raises(
         ValueError,
-        match="multiple simulations in a single directory have the same identifier"
+        match="Multiple simulations in a single directory have the same identifier"
         ):
         bundle(levels[1]+[sims.s9])
 

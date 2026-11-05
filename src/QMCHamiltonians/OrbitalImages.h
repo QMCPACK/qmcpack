@@ -149,10 +149,6 @@ public:
   ///ion particleset
   ParticleSet* Pion;
 
-  ///mpi communicator
-  Communicate* comm;
-
-
   ///file format selection
   formats_enum format;
 
@@ -214,7 +210,7 @@ public:
   std::vector<ValueType> orbital;
 
   //constructors
-  OrbitalImages(ParticleSet& P, const PSPool& PSP, Communicate* mpicomm, const SPOMap& spomap);
+  OrbitalImages(ParticleSet& P, const PSPool& PSP, Communicate& mpicomm, const SPOMap& spomap);
   OrbitalImages(const OrbitalImages& other);
 
   std::string getClassName() const override { return "OrbitalImages"; }
@@ -270,6 +266,7 @@ public:
 private:
   /// reference to the sposet_builder_factory
   const SPOMap& spomap_;
+  Communicate& comm_;
 };
 
 } // namespace qmcplusplus

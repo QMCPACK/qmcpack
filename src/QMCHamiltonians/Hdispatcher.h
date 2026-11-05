@@ -25,6 +25,8 @@ class Hdispatcher
 {
 public:
   using FullPrecRealType = QMCHamiltonian::FullPrecRealType;
+  using PosType          = QMCHamiltonian::PosType;
+  using TensorType       = QMCHamiltonian::TensorType;
 
   Hdispatcher(bool use_batch);
 
@@ -35,6 +37,17 @@ public:
   std::vector<FullPrecRealType> flex_evaluateWithToperator(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
                                                            const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                            const RefVectorWithLeader<ParticleSet>& p_list) const;
+
+  void flex_computeL2DK(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                        const RefVectorWithLeader<ParticleSet>& p_list,
+                        int iel,
+                        std::vector<TensorType>& diffusion_tensors,
+                        std::vector<PosType>& drift_corrections) const;
+
+  void flex_computeL2D(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                       const RefVectorWithLeader<ParticleSet>& p_list,
+                       int iel,
+                       std::vector<TensorType>& diffusion_tensors) const;
 
   std::vector<int> flex_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
                                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,

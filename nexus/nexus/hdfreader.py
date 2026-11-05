@@ -18,11 +18,14 @@
 #                                                                    #
 #====================================================================#
 
-import numpy as np
 import keyword
 from inspect import getmembers
+
+import numpy as np
+
 from .developer import DevBase, obj
 from .utilities import path_string, valid_variable_name
+
 
 class HDFglobals(DevBase):
     view = False
@@ -39,18 +42,15 @@ class HDFgroup(DevBase):
 
     def _set_parent(self,parent):
         self._parent=parent
-        return
     #end def set_parent
 
     def _add_dataset(self,name,dataset):
         self._datasets[name]=dataset
-        return
     #end def add_dataset
 
     def _add_group(self,name,group):
         group._name=name
         self._groups[name]=group
-        return
     #end def add_group
 
     def _contains_group(self,name):
@@ -95,7 +95,6 @@ class HDFgroup(DevBase):
 
         self._escape_names=None
         self._escape_names=set(dict(getmembers(self)).keys()) | set(keyword.kwlist)
-        return
     #end def __init__
 
 
@@ -319,7 +318,6 @@ class HDFreader(DevBase):
             print('  end HDFreader Initialization')
         #end if
 
-        return
     #end def __init__
 
 
@@ -331,13 +329,11 @@ class HDFreader(DevBase):
             self.hcur.append(None)
         #end if
         self.pad = self.ilevel*'  '
-        return
     #end def increment_level
 
     def decrement_level(self):
         self.ilevel-=1
         self.pad = self.ilevel*'  '
-        return
     #end def decrement_level
 
     def add_dataset(self,cur,k,v):
@@ -347,7 +343,6 @@ class HDFreader(DevBase):
             cur[k] = v
         #end if
         cur._add_dataset(k,cur[k])
-        return
     #end def add_dataset
 
     def add_group(self,hcur,cur,k,v):
@@ -374,7 +369,6 @@ class HDFreader(DevBase):
             #end if
         #end for
 
-        return
     #end def add_group
 #end class HDFreader
 

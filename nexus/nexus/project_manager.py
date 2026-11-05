@@ -16,16 +16,18 @@
 #====================================================================#
 
 
+import datetime as dt
 import gc
 import os
 import sys
 import time
-from typing import ClassVar,Literal,TextIO
+from typing import ClassVar, Literal, TextIO
+
 from . import memory
-from .developer import obj, NexusError
-from .nexus_base import NexusCore, nexus_core, dynamic_storage
-from .simulation import Simulation, sim_err_handler
-from .machines import Machine,Job
+from .developer import NexusError, obj
+from .machines import Job, Machine
+from .nexus_base import NexusCore, ShowStatusMode, dynamic_storage, nexus_config
+from .simulation import Simulation, sim_err_handler, sim_log_handler
 
 
 def color_status_result(result: Literal['SUCCESS','FAILURE'] | str,logfile: TextIO) -> str:
@@ -49,7 +51,7 @@ def color_status_result(result: Literal['SUCCESS','FAILURE'] | str,logfile: Text
 
 
 def trivial(sim,*args,**kwargs):
-    None
+    pass
 #end def trivial
 
 
@@ -63,8 +65,6 @@ class ProjectManager(NexusCore):
     #end def restore_default_settings
 
     def __init__(self):
-        modes = nexus_core.modes
-        self.persistent_modes = {modes.submit,modes.all}
         self.simulations = obj()
         self.cascades = obj()
         self.progressing_cascades = obj()
@@ -97,26 +97,26 @@ class ProjectManager(NexusCore):
 
 
     def run_project(self,*,status=False,status_only=False):
-        self.nxs_print('\nProject starting',n=0)
+        start_time = dt.datetime.now().astimezone()
+        self.nxs_print(
+            f"\nProject Starting ({start_time.strftime('%Y-%m-%d %T %Z')})\n"
+        )
         self.init_cascades()
-        status_only = status_only or nexus_core.status_only
-        status = status or status_only or nexus_core.status!=nexus_core.status_modes.none
+        status_only = status_only or nexus_config.status_only
+        status = status or status_only or nexus_config.status is not ShowStatusMode.none
         if status:
             self.write_simulation_status()
             if status_only:
                 return
             #end if
         #end if
-        self.nxs_print('\nstarting runs:\n'+30*'~',n=1)
-        if nexus_core.dependent_modes <= nexus_core.stages_set:
-            if nexus_core.monitor:
-                start_time = time.time()
+        self.nxs_print('\nStarting runs:\n'+30*'~',n=1)
+        if nexus_config.dependent_modes in nexus_config.stages:
+            if nexus_config.monitor:
                 ipoll = 0
                 while len(self.progressing_cascades)>0:
-                    elapsed_time = time.time() - start_time
-                    mem_usage = (memory.resident(children=True)/1e6)
                     self.nxs_print(
-                        f'elapsed time {elapsed_time:.1f} s memory {mem_usage:3.2f} MB',
+                        self.progress_line(start_time),
                         n=1,
                         progress=True,
                         )
@@ -126,9 +126,9 @@ class ProjectManager(NexusCore):
                     self.progress_cascades()
                     self.machine.submit_jobs()
                     self.update_process_ids()
-                    time.sleep(nexus_core.sleep)
+                    time.sleep(nexus_config.sleep)
                     if NexusCore.wrote_something:
-                        if nexus_core.progress_tty:
+                        if nexus_config.progress_tty:
                             self.nxs_print("\n")
                         else:
                             self.nxs_print()
@@ -143,7 +143,10 @@ class ProjectManager(NexusCore):
         else:
             self.progress_cascades()
         #end if
-        self.nxs_print('Project finished\n')
+        end_time = dt.datetime.now().astimezone()
+        self.nxs_print(f"Project Finished ({end_time.strftime('%Y-%m-%d %T %Z')})")
+        runtime = end_time - start_time
+        self.nxs_print(f"Total Runtime: {runtime}")
     #end def run_project
 
 
@@ -151,15 +154,16 @@ class ProjectManager(NexusCore):
         self.screen_fake_sims()
         self.resolve_file_collisions()
         self.propagate_blockages()
-        self.nxs_print('loading cascade images',n=1)
-        if nexus_core.load_images:
+        self.nxs_print('Loading cascade images...',n=1)
+        if nexus_config.load_images:
             self.load_cascades()
         else:
-            self.nxs_print('cascades',n=1)
+            self.nxs_print('Cascades',n=1)
         #end if
         for c in self.progressing_cascades.values():
-            self.nxs_print('cascade',c.simid,'checking in',n=2)
+            self.nxs_print(f'Cascade {c.simid} checking in.',n=2)
         #end for
+        self.nxs_print()
         self.check_dependencies()
     #end def init_cascades
 
@@ -174,9 +178,9 @@ class ProjectManager(NexusCore):
         self.traverse_cascades(collect_fake,fake)
         if len(fake)>0:
             msg = (
-                'fake/temporary simulation objects detected in cascade\n'
-                'this is a developer error\n'
-                'list of fake sims and directories:\n'
+                'Fake/temporary simulation objects detected in cascade\n'
+                'This is a developer error\n'
+                'List of fake sims and directories:\n'
                 )
             for sim in fake:
                 msg +=f'  {sim.simid:>8}  {sim.locdir}\n'
@@ -187,7 +191,7 @@ class ProjectManager(NexusCore):
 
 
     def resolve_file_collisions(self):
-        self.nxs_print('checking for file collisions',n=1)
+        self.nxs_print('Checking for file collisions...',n=1)
         entry_order = obj()
         def set_entry_order(sim,entry_order):
             locdir = sim.locdir
@@ -219,24 +223,25 @@ class ProjectManager(NexusCore):
                 for f,sims in filespace.items():
                     if len(sims)>1 and f is not None:
                         any_collisions = True
-                        msg = 'collision: file '+f+' is overwritten by '
+                        msg = f"Collision: file '{f}' is overwritten by "
                         for sim in sims:
-                            msg +=str(sim.identifier)+' '+str(sim.simid)+','
+                            msg += f"'{sim.identifier} {sim.simid}',"
                         #end for
                         self.nxs_print(msg[:-1],n=2)
-                        collpath = path
+                        collpath += f"  {path}\n"
                     #end if
                 #end for
             #end if
         #end for
         if any_collisions:
             msg = (
-                'file collisions found in directory\n'
-                '  '+path+'\n'
-                '  set a unique identifier for each simulation'
+                'File collisions found in directory\n'
+                f'{collpath}'
+                '  Set a unique identifier for each simulation'
                 )
             raise FileExistsError(msg)
-        #end if
+        else:
+            self.nxs_print("No file collisions found.\n", n=2)
     #end def resolve_file_collisions
 
 
@@ -268,14 +273,14 @@ class ProjectManager(NexusCore):
 
 
     def check_dependencies(self):
-        self.nxs_print('checking cascade dependencies',n=1)
+        self.nxs_print('Checking cascade dependencies...',n=1)
         result = obj()
         result.dependencies_satisfied = True
         self.traverse_cascades(Simulation.check_dependencies,result)
         if result.dependencies_satisfied:
-            self.nxs_print('all simulation dependencies satisfied',n=2)
+            self.nxs_print('All simulation dependencies satisfied.',n=2)
         else:
-            msg = 'some simulation dependecies are not satisfied'
+            msg = 'Some simulation dependecies are not satisfied.'
             raise RuntimeError(msg)
         #end if
     #end def check_dependencies
@@ -288,23 +293,21 @@ class ProjectManager(NexusCore):
         for cascade in self.cascades.values():
             cascade.traverse_cascade(operation,*args,**kwargs)
         #end for
-        return
     #end def traverse_cascades
 
 
     def write_simulation_status(self):
-        status       = nexus_core.status
-        status_modes = nexus_core.status_modes
-        self.nxs_print('\ncascade status',n=1)
+        status = nexus_config.status
+        self.nxs_print('\nCascade Status:',n=1)
         self.nxs_print('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
         all_sids = set()
         for sim in self.simulations.values():
             add = False
-            if status==status_modes.active:
+            if status is ShowStatusMode.active:
                 add = sim.active()
-            elif status==status_modes.ready:
+            elif status is ShowStatusMode.ready:
                 add = sim.ready()
-            elif status==status_modes.failed:
+            elif status is ShowStatusMode.failed:
                 add = sim.failed
             else:
                 add = True
@@ -317,7 +320,7 @@ class ProjectManager(NexusCore):
         for isim in sorted(all_sids):
             sim = self.simulations[isim]
             if not sim.bundled:
-                if status==status_modes.active and not sim.active():
+                if status is ShowStatusMode.active and not sim.active():
                     continue
                 #end if
                 self.status_line(sim)
@@ -332,7 +335,7 @@ class ProjectManager(NexusCore):
         #end for
         sids = all_sids-sids
         if len(sids)>0:
-            self.nxs_print('==== sims missed, part of bundles? ====',n=2)
+            self.nxs_print('==== Sims missed, part of bundles? ====',n=2)
             for isim in sorted(sids):
                 sim = self.simulations[isim]
                 self.status_line(sim)
@@ -367,17 +370,32 @@ class ProjectManager(NexusCore):
     #end def status_line
 
 
+    def progress_line(self, start_time: dt.datetime) -> str:
+        self_mem, child_mem = memory.resident(children=True)
+        now = dt.datetime.now().astimezone()
+        elapsed_time = (now - start_time).total_seconds()
+        msg = (
+            f"{now.strftime('%b %d %H:%M')} - "
+            f"Elapsed time {elapsed_time:.1f} s - "
+            f"Memory {self_mem / 1024.0**2:3.2f} MB (Nexus) - "
+            f"{child_mem / 1024.0**2:3.2f} MB (Subprocesses)"
+        )
+        return msg
+    #end def progress_line
+
+
     def progress_cascades(self):
         gc.collect()
         finished = []
         progressing_cascades = self.progressing_cascades
         for cascade in progressing_cascades.values():
-            with sim_err_handler(sim=cascade): # Wrap execution in sim error handler
+            # Use error and log handlers to redirect output and prevent total crashes
+            with sim_err_handler(sim=cascade), sim_log_handler(sim=cascade):
                 cascade.reset_wait_ids()
         #end for
         for cid,cascade in progressing_cascades.items():
-            with sim_err_handler(sim=cascade): # Wrap execution in sim error handler
-
+            # Use error and log handlers to redirect output and prevent total crashes
+            with sim_err_handler(sim=cascade), sim_log_handler(sim=cascade):
                 if not cascade.bundled or cascade.bundler.finished:
                     cascade.progress()
 
@@ -417,7 +435,7 @@ class ProjectManager(NexusCore):
 
     # test needed
     def write_cascade_dependents(self):
-        self.nxs_print('cascade dependents',n=1)
+        self.nxs_print('Cascade dependents:',n=1)
         for cascade in self.cascades:
             cascade.reset_wait_ids()
         #end for
@@ -425,7 +443,6 @@ class ProjectManager(NexusCore):
             self.nxs_print(cascade.__class__.__name__+' '+str(cascade.simid),n=2)
             cascade.write_dependents(n=2)
         #end for
-        return
     #end def write_cascade_dependents
 #end class ProjectManager
 
@@ -490,7 +507,7 @@ class DynamicWorkflowManager(NexusCore):
 
     def poll(self,sleep=None):
         if sleep is None:
-            sleep = nexus_core.sleep
+            sleep = nexus_config.sleep
 
         # find and add newly created dynamic process objects
         self.add_new_dyn_procs()
@@ -564,7 +581,7 @@ def workflow_manager(**kw):
         workflow_manager.first = True
     else:
         workflow_manager.first = False
-    if not nexus_core.dynamic:
+    if not nexus_config.dynamic:
         msg = (
             'workflow_manager is only compatible with dynamic workflows.\n'
             'If you intend to use dynamic workflows, please set dynamic=True in settings.'

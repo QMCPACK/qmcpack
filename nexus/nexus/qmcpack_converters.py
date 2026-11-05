@@ -45,17 +45,18 @@
 
 import os
 from types import MappingProxyType
+
 import numpy as np
-from .developer import obj, FileFormatError
-from .nexus_base import nexus_core
-from .simulation import Simulation, SimulationInput, SimulationAnalyzer
-from .simulation import DynamicProcess
-from .pwscf import Pwscf
+
+from .developer import FileFormatError, obj
 from .gamess import Gamess
+from .hdfreader import read_hdf
+from .nexus_base import nexus_config
+from .pwscf import Pwscf
 from .pyscf_sim import Pyscf
 from .quantum_package import QuantumPackage
+from .simulation import DynamicProcess, Simulation, SimulationAnalyzer, SimulationInput
 from .unit_converter import convert
-from .hdfreader import read_hdf
 
 
 # read/write functions associated with pw2qmcpack only
@@ -537,7 +538,7 @@ class Pw2qmcpack(Simulation):
 
 def generate_pw2qmcpack(**kwargs):
 
-    if nexus_core.dynamic:
+    if nexus_config.dynamic:
         dp,dyn_args = DynamicProcess.check_first_gen(kwargs)
         if dp is not None:
             return dp
@@ -549,7 +550,7 @@ def generate_pw2qmcpack(**kwargs):
     #end if
     pw2qmcpack = Pw2qmcpack(**sim_args)
 
-    if nexus_core.dynamic:
+    if nexus_config.dynamic:
         pw2qmcpack = DynamicProcess(sim=pw2qmcpack,**dyn_args)
 
     return pw2qmcpack
@@ -798,7 +799,7 @@ class Convert4qmcInput(SimulationInput):
 
 
     def read(self,filepath):
-        None
+        pass
     #end def read
 
 
@@ -836,7 +837,7 @@ class Convert4qmcAnalyzer(SimulationAnalyzer):
     #end def __init__
 
     def analyze(self):
-        None
+        pass
     #end def analyze
 #end class Convert4qmcAnalyzer
 
@@ -863,7 +864,7 @@ class Convert4qmc(Simulation):
 
 
     def propagate_identifier(self):
-        None
+        pass
         #self.input.prefix = self.identifier
     #end def propagate_identifier
 
@@ -1042,11 +1043,11 @@ class Convertpw4qmcInput(SimulationInput):
     #end def __init__
 
     def read(self, filepath):
-        None
+        pass
     #end def read
 
     def write(self, filepath):
-        None
+        pass
 
 #end class Convertpw4qmcInput
 
@@ -1064,7 +1065,7 @@ class Convertpw4qmcAnalyzer(SimulationAnalyzer):
     #end def __init__
 
     def analyze(self):
-        None
+        pass
     #end def analyze
 #end class Convertpw4qmcAnalyzer
 
@@ -1083,7 +1084,7 @@ class Convertpw4qmc(Simulation):
     #end def set_app_name
 
     def propagate_identifier(self):
-        None
+        pass
     #end def propagate_identifier
 
     def set_files(self):
@@ -1399,7 +1400,7 @@ class PyscfToAfqmcInput(SimulationInput):
 
 
     def read(self,filepath):
-        None
+        pass
     #end def read
 
 
@@ -1426,7 +1427,7 @@ class PyscfToAfqmcAnalyzer(SimulationAnalyzer):
     #end def __init__
 
     def analyze(self):
-        None
+        pass
     #end def analyze
 #end class PyscfToAfqmcAnalyzer
 

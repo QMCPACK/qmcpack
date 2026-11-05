@@ -63,27 +63,37 @@
 #      User-facing function to create SimulationInputMultiTemplate's.#
 #                                                                    #
 #====================================================================#
+from __future__ import annotations
 
-
-import contextlib
+import logging
 import os
-import sys
 import shutil
+import sys
 import tempfile
 import traceback
-from functools import partial
+from collections.abc import Collection, Mapping
 from copy import deepcopy
 from datetime import datetime
+from inspect import signature
+from os import PathLike
 from pathlib import Path
 from string import Template
 from subprocess import Popen
-from typing import ClassVar
-from .developer import DevBase, obj, FileFormatError, NexusError
-from .structure import Structure, read_structure
-from .physical_system import PhysicalSystem
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
+
+from .developer import DevBase, FileFormatError, NexusError, obj
+from .developer_tools import Unset
 from .machines import Job, Workstation, get_machine
-from .nexus_base import NexusCore, nexus_core, dynamic_storage
+from .nexus_base import NexusCore, SimStage, dynamic_storage, nexus_config
+from .physical_system import PhysicalSystem
+from .structure import Structure, read_structure
 from .utilities import path_string
+
+if TYPE_CHECKING:
+    from .bundle import SimulationBundle
+    from .qmcpack_analyzer import QmcpackAnalysisRequest
+
+StrPath: TypeAlias = str
 
 
 class SimulationInput(NexusCore):
@@ -228,7 +238,7 @@ class SimulationImage(NexusCore):
     save_fields = load_fields | save_only_fields
 
     def __init__(self):
-        None
+        pass
     #end def __init__
 
     def save_image(self,sim,imagefile):
@@ -275,13 +285,6 @@ class Simulation(NexusCore):
     application_properties = frozenset({'serial'})
     application_results    = frozenset()
     allow_overlapping_files = False
-    allowed_inputs = frozenset({
-        'identifier','path','infile','outfile','errfile','imagefile',
-        'input','job','files','dependencies','analysis_request',
-        'block','block_subcascade','app_name','app_props','system',
-        'skip_submit','force_write','simlabel','fake_sim',
-        'restartable','force_restart'
-        })
     sim_imagefile      = 'sim.p'
     input_imagefile    = 'input.p'
     analyzer_imagefile = 'analyzer.p'
@@ -311,116 +314,261 @@ class Simulation(NexusCore):
 
     # test needed
     @classmethod
-    def separate_inputs(cls,kwargs,overlapping_kw=-1,sim_kw=None):
-        if overlapping_kw==-1:
-            overlapping_kw = {'system'}
-        elif overlapping_kw is None:
+    def separate_inputs(
+        cls,
+        kwargs: Mapping,
+        overlapping_kw: set[str] | None = frozenset({'system'}),
+        sim_kw: Collection[str] | None = None,
+        ) -> tuple[obj, obj]:
+        if overlapping_kw is None:
             overlapping_kw = set()
-        #end if
+
+        sim_inputs = Simulation.allowed_inputs
         if sim_kw is None:
-            sim_kw = set()
+            sim_kw = sim_inputs
         else:
-            sim_kw = set(sim_kw)
-        #end if
+            sim_kw = sim_inputs.union(set(sim_kw))
+
         kw       = set(kwargs.keys())
-        sim_kw   = kw & (Simulation.allowed_inputs | sim_kw)
-        inp_kw   = (kw - sim_kw) | (kw & overlapping_kw)
-        sim_args = obj()
-        inp_args = obj()
+        sim_kw   = kw.intersection(sim_kw)
+        inp_kw   = kw - sim_kw # Get all non-simulation keywords
+        inp_kw  |= kw.intersection(overlapping_kw) # Get any overlapping keywords too
+        sim_args = {}
+        inp_args = {}
         for k in sim_kw:
             sim_args[k] = kwargs[k]
+
         for k in inp_kw:
             inp_args[k] = kwargs[k]
-        system = inp_args.get('system',None)
-        if system is not None:
-            if not isinstance(system,PhysicalSystem):
-                extra=''
-                if not isinstance(extra,obj):
-                    extra = f'\nwith value: {system}'
-                #end if
-                msg = (
-                    'invalid input for variable "system"\n'
-                    'system object must be of type PhysicalSystem\n'
-                    f'you provided type: {system.__class__.__name__}'
-                    +extra
-                    )
-                raise TypeError(msg)
-            #end if
-        #end if
-        return sim_args,inp_args
+
+        system = inp_args.get('system')
+        if system is not None and not isinstance(system, PhysicalSystem):
+            msg = (
+                "Invalid input for variable 'system'\n"
+                "System object must be of type PhysicalSystem\n"
+                f"You provided type: {type(system).__name__}"
+                )
+            raise TypeError(msg)
+
+        return obj(sim_args), obj(inp_args)
     #end def separate_inputs
 
 
-    def __init__(self,**kwargs):
-        #user specified variables
-        self.path          = ''     #directory where sim will be run
-        self.job           = None   #Job object for machine
-        self.dependencies  = obj()  #Simulation results on which sim serially depends
-        self.restartable   = False  #if True, job can be automatically restarted as deemed appropriate
-        self.force_restart = False  #force a restart of the run
+    def __init__(
+        self,
+        *,
+        job: Job,
+        identifier: str | None = None,
+        path: PathLike = '',
+        infile: PathLike | None = None,
+        outfile: PathLike | None = None,
+        errfile: PathLike | None = None,
+        nexus_logfile: PathLike | None = None,
+        imagefile: PathLike | None = None,
+        input: SimulationInput | None = None,
+        files: Collection[PathLike] | None = None,
+        dependencies: tuple[Simulation, str] | list[tuple[Simulation, str]] | None = None,
+        analysis_request: QmcpackAnalysisRequest | None = None,
+        block: bool = False,
+        block_subcascade: bool = False,
+        app_name: str | PathLike | None = None,
+        app_props: Collection[str] | None = None,
+        system: PhysicalSystem | None = None,
+        skip_submit: bool | None = None,
+        force_write: bool = False,
+        simlabel: str | None = None,
+        fake_sim: bool | None = None,
+        restartable: bool = False,
+        force_restart: bool = False,
+    ):
+        cls = self.__class__
+        # User specified variables
+        if not isinstance(path, str | PathLike):
+            msg = (
+                f'path must be a string or PathLike, you provided {path} (type {type(path).__name__})'
+                )
+            raise TypeError(msg)
+        else:
+            path: str = path_string(path)
 
-        #variables determined by self
-        self.identifier     = self.generic_identifier
-        self.simid          = Simulation.sim_count
-        self.simlabel       = None
-        Simulation.sim_count+=1
-        self.files          = set()
-        self.app_name       = self.application
-        self.app_props      = list(self.application_properties)
-        self.sim_image      = self.sim_imagefile
-        self.input_image    = self.input_imagefile
-        self.analyzer_image = self.analyzer_imagefile
-        self.image_dir      = self.image_directory
-        self.input          = self.input_type()
-        self.system         = None
-        self.dependents     = obj()
+        path = path.removeprefix("./")
+
+        ld = nexus_config.local_directory
+
+        if path.startswith(ld):
+            path = path.split(ld)[1].lstrip('/')
+
+        self.path = path # Directory where sim will be run
+        if (
+            (restartable or force_restart)
+            and not cls.supports_restarts
+        ):
+            self.warn(f'restarts are not supported by {cls.__name__}, request ignored')
+        self.restartable   = restartable  # If True, job can be automatically restarted as deemed appropriate
+        self.force_restart = force_restart  # Force a restart of the run
+
+        # Variables determined by self
+        self.identifier = identifier if identifier is not None else self.generic_identifier
+        self.simid      = Simulation.sim_count
+        self.simlabel   = simlabel
+        Simulation.sim_count += 1
+        self.files = {path_string(f) for f in files} if files is not None else set()
+        self.app_name = app_name if app_name is not None else self.application
+        self.app_props = app_props if app_props is not None else list(self.application_properties)
+        self.sim_image = imagefile if imagefile is not None else self.sim_imagefile
+
+        if analysis_request is not None:
+            self.analysis_request = analysis_request
+
+        if input is None:
+            self.input = self.input_type()
+        elif isinstance(input, self.input_type | GenericSimulationInput):
+            self.input = input
+        else:
+            msg = (
+                f'input must be of type {self.input_type.__name__}\n'
+                f'received {type(input).__name__}\n'
+                f'please provide input appropriate to {type(self).__name__}'
+                )
+            raise TypeError(msg)
+
+        if system is None:
+            self.system = system
+        elif isinstance(system, PhysicalSystem):
+            self.system = deepcopy(system)
+            consistent,msg = self.system.check_consistent(exit=False,message=True)
+            if not consistent:
+                locdir = os.path.join(nexus_config.local_directory,nexus_config.runs,self.path)
+                msg = (
+                    'user provided physical system is not internally consistent\n'
+                    f'simulation identifier: {self.identifier}\n'
+                    f'local directory: {locdir}\n'
+                    'more details on the user error are given below\n\n'
+                    f'{msg}'
+                    )
+                raise ValueError(msg)
+        else:
+            msg = (
+                'system must be a PhysicalSystem object\n'
+                f'you provided an object of type: {type(system).__name__}'
+                )
+            raise TypeError(msg)
+
         self.created_directories = False
         self.got_dependencies = False
-        self.setup          = False
-        self.sent_files     = False
-        self.submitted      = False
-        self.finished       = False
-        self.failed         = False
-        self.got_output     = False
-        self.analyzed       = False
-        self.timestamps     = obj()
+        self.setup      = False
+        self.sent_files = False
+        self.submitted  = False
+        self.finished   = False
+        self.failed     = False
+        self.got_output = False
+        self.analyzed   = False
+        self.timestamps = obj()
+        self.timeout_started = False
         self.subcascade_finished = False
-        self.dependency_ids = set()
-        self.wait_ids       = set()
-        self.block          = False
-        self.block_subcascade = False
-        self.skip_submit    = nexus_core.skip_submit
-        self.force_write    = False
+        self.block            = block
+        self.block_subcascade = block_subcascade
+        self.skip_submit    = skip_submit if skip_submit is not None else nexus_config.skip_submit
+        self.force_write    = force_write
         self.loaded         = False
-        self.ordered_dependencies = []
         self.process_id     = None
-        self.infile         = None
-        self.outfile        = None
-        self.errfile        = None
-        self.nexus_logfile  = None
+
+        if infile is None:
+            self.infile  = self.identifier + self.infile_extension
+        else:
+            self.infile = path_string(infile)
+
+        if outfile is None:
+            self.outfile = self.identifier + self.outfile_extension
+        else:
+            self.outfile = path_string(outfile)
+
+        if errfile is None:
+            self.errfile = self.identifier + self.errfile_extension
+        else:
+            self.errfile = path_string(errfile)
+
+        if nexus_logfile is None:
+            self.nexus_logfile = self.identifier + ".nexus.log"
+        else:
+            self.nexus_logfile = path_string(nexus_logfile)
+
         self.bundleable     = True
         self.bundled        = False
         self.bundler        = None
-        self.fake_sim       = Simulation.creating_fake_sims
+
+        self.fake_sim = fake_sim if fake_sim is not None else Simulation.creating_fake_sims
 
         #variables determined by derived classes
-        self.outputs = None  #object representing output data
+        self.outputs = None  # object representing output data
                              # accessed by dependents when calling get_dependencies
 
-        self.set(**kwargs)
         self.pre_init()
-        self.set_directories()
-        self.set_files()
-        self.propagate_identifier()
-        if len(kwargs)>0:
-            self.init_job()
+
+        self.dependencies   = obj()  # Simulation results on which sim serially depends
+        self.wait_ids       = set()
+        self.dependency_ids = set()
+        self.dependents     = obj()
+        self.ordered_dependencies = []
+        if dependencies is not None:
+            self.depends(*dependencies)
+
+        nc_locdir = nexus_config.local_directory
+        nc_remdir = nexus_config.remote_directory
+        nc_rundir = nexus_config.runs
+        nc_resdir = nexus_config.results
+        self.locdir = os.path.join(nc_locdir, nc_rundir, self.path)
+        self.remdir = os.path.join(nc_remdir, nc_rundir, self.path)
+        self.resdir = os.path.join(nc_locdir, nc_resdir, nc_rundir, self.path)
+
+        if not self.fake():
+            if self.locdir not in self.sim_directories:
+                self.sim_directories[self.locdir] = {self.identifier}
+            else:
+                idset = self.sim_directories[self.locdir]
+                if self.identifier not in idset:
+                    idset.add(self.identifier)
+                else:
+                    msg = (
+                        'Multiple simulations in a single directory have the same identifier\n'
+                        'Please assign unique identifiers to each simulation\n'
+                        f'Simulation directory: {self.locdir}\n'
+                        f'Repeated identifier: {self.identifier}\n'
+                        f'Other identifiers: {sorted(idset)}\n'
+                        'Between the directory shown and the identifiers listed, it should be clear which simulations are involved\n'
+                        f'Most likely, you described two simulations with identifier {self.identifier}'
+                        )
+                    raise ValueError(msg)
+                #end if
+            #end if
         #end if
+
+        self.input_image = self.input_imagefile
+        self.analyzer_image = self.analyzer_imagefile
+        self.image_dir = self.image_directory
+        self.image_dir = self.image_dir+'_'+self.identifier
+        self.imlocdir = os.path.join(self.locdir,self.image_dir)
+        self.imremdir = os.path.join(self.remdir,self.image_dir)
+        self.imresdir = os.path.join(self.resdir,self.image_dir)
+        self.propagate_identifier()
+
+        if not isinstance(job, Job): # Job object for machine
+            msg = (
+                'Input field job must be set to a Job object\n'
+                f'You provided an object of type: {type(job).__name__}\n'
+                f'With value: {job}'
+                )
+            raise TypeError(msg)
+        self.job = deepcopy(job)
+        self.init_job_extra()
+        self.job.initialize(self)
         self.post_init()
+        self.logger = logging.getLogger(f"{self.identifier}{self.simid}")
 
         Simulation.all_sims.append(self)
 
         # dynamic workflow support
-        if nexus_core.dynamic:
+        if nexus_config.dynamic:
             assert self.simid not in dynamic_storage.simulation_ids
             self.produces = set()
             self.products = obj()
@@ -443,25 +591,13 @@ class Simulation(NexusCore):
 
 
     def init_job(self):
-        if self.job is None:
-            msg = 'job not provided.  Input field job must be set to a Job object.'
-            raise ValueError(msg)
-        elif not isinstance(self.job,Job):
-            msg = (
-                'Input field job must be set to a Job object\n'
-                f'you provided an object of type: {self.job.__class__.__name__}\n'
-                f'with value: {self.job}'
-                )
-            raise TypeError(msg)
-        #end if
-        self.job = deepcopy(self.job)
-        self.init_job_extra()
-        self.job.initialize(self)
+        msg = "Called Simulation.init_job()"
+        raise RuntimeError(msg)
     #end def init_job
 
 
     def init_job_extra(self):
-        None
+        pass
     #end def init_job_extra
 
 
@@ -470,91 +606,10 @@ class Simulation(NexusCore):
     #end def set_app_name
 
 
-    def set(self,**kw):
-        cls = self.__class__
-        if 'dependencies' in kw:
-            self.depends(*kw['dependencies'])
-            del kw['dependencies']
-        #end if
-        kwset = set(kw.keys())
-        invalid = kwset - self.allowed_inputs
-        if len(invalid)>0:
-            msg = (
-                'received invalid inputs\n'
-                f'invalid inputs: {sorted(invalid)}\n'
-                f'allowed inputs are: {sorted(self.allowed_inputs)}'
-                )
-            raise ValueError(msg)
-        #end if
-        allowed =  kwset & self.allowed_inputs
-        for name in allowed:
-            self[name] = kw[name]
-        #end for
-        if 'path' in allowed:
-            if not isinstance(self.path, str | Path):
-                msg = (
-                    f'path must be a string or Path, you provided {self.path} (type {self.path.__class__.__name__})'
-                    )
-                raise TypeError(msg)
-            else:
-                self.path = path_string(self.path)
-                p = self.path
-
-            #end if
-            if p.startswith('./'):
-                p = p[2:]
-            #end if
-            ld = nexus_core.local_directory
-
-            if p.startswith(ld):
-                p = p.split(ld)[1].lstrip('/')
-            #end if
-            self.path = p
-        #end if
-        if 'files' in allowed:
-            self.files = {path_string(f) for f in self.files}
-        #end if
-        if not isinstance(self.input,(self.input_type,GenericSimulationInput)):
-            msg = (
-                f'input must be of type {self.input_type.__name__}\n'
-                f'received {type(self.input).__name__}\n'
-                f'please provide input appropriate to {type(self).__name__}'
-                )
-            raise TypeError(msg)
-        #end if
-        if isinstance(self.system,PhysicalSystem):
-            self.system = deepcopy(self.system)
-            consistent,msg = self.system.check_consistent(exit=False,message=True)
-            if not consistent:
-                locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
-                msg = (
-                    'user provided physical system is not internally consistent\n'
-                    f'simulation identifier: {self.identifier}\n'
-                    f'local directory: {locdir}\n'
-                    'more details on the user error are given below\n\n'
-                    f'{msg}'
-                    )
-                raise ValueError(msg)
-            #end if
-        elif self.system is not None:
-            msg = (
-                'system must be a PhysicalSystem object\n'
-                f'you provided an object of type: {type(self.system).__name__}'
-                )
-            raise TypeError(msg)
-        #end if
-        if self.restartable or self.force_restart:
-            if not cls.supports_restarts:
-                self.warn(f'restarts are not supported by {cls.__name__}, request ignored')
-            #end if
-        #end if
-    #end def set
-
-
     def set_directories(self):
-        self.locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
-        self.remdir = os.path.join(nexus_core.remote_directory,nexus_core.runs,self.path)
-        self.resdir = os.path.join(nexus_core.local_directory,nexus_core.results,nexus_core.runs,self.path)
+        self.locdir = os.path.join(nexus_config.local_directory,nexus_config.runs,self.path)
+        self.remdir = os.path.join(nexus_config.remote_directory,nexus_config.runs,self.path)
+        self.resdir = os.path.join(nexus_config.local_directory,nexus_config.results,nexus_config.runs,self.path)
 
         if not self.fake():
             #print '  creating sim {0} in {1}'.format(self.simid,self.locdir)
@@ -587,21 +642,6 @@ class Simulation(NexusCore):
     #end def set_directories
 
 
-    def set_files(self):
-        if self.infile is None:
-            self.infile  = self.identifier + self.infile_extension
-        #end if
-        if self.outfile is None:
-            self.outfile = self.identifier + self.outfile_extension
-        #end if
-        if self.errfile is None:
-            self.errfile = self.identifier + self.errfile_extension
-        #end if
-        if self.nexus_logfile is None:
-            self.nexus_logfile = self.identifier + ".nexus.log"
-    #end def set_files
-
-
     def reset_indicators(self):
         #this is needed to support restarts
         self.got_dependencies = False
@@ -618,6 +658,19 @@ class Simulation(NexusCore):
     def record_timestamp(self,event):
         if event not in self.timestamps:
             self.timestamps[event] = datetime.now().astimezone().isoformat()
+            log_msgs = {
+                "setup":        ("Simulation Setup Completed",  logging.INFO),
+                "sent_files":   ("Simulation Sent Files",       logging.INFO),
+                "submitted":    ("Simulation Submitted",        logging.INFO),
+                "exited_queue": ("Simulation Exited Queue",     logging.INFO),
+                "timed_out":    ("Simulation Reached Timeout!", logging.WARNING),
+                "failed":       ("Simulation Failed!",          logging.ERROR),
+                "finished":     ("Simulation Finished",         logging.INFO),
+                "got_output":   ("Got Simulation Output",       logging.INFO),
+                "analyzed":     ("Exited Queue",                logging.INFO),
+            }
+            msg, level = log_msgs.get(event, (event, logging.INFO))
+            self.logger.log(level, msg)
         #end if
     #end def record_timestamp
 
@@ -681,43 +734,43 @@ class Simulation(NexusCore):
 
 
     def propagate_identifier(self):
-        None
+        pass
     #end def propagate_identifier
 
     def pre_init(self):
-        None
+        pass
     #end def pre_init
 
     def post_init(self):
-        None
+        pass
     #end def post_init
 
     def pre_create_directories(self):
-        None
+        pass
     #end def pre_create_directories
 
     def write_prep(self):
-        None
+        pass
     #end def write_prep
 
     def pre_write_inputs(self,save_image):
-        None
+        pass
     #end def pre_write_inputs
 
     def pre_send_files(self,enter):
-        None
+        pass
     #end def pre_send_files
 
     def post_submit(self):
-        None
+        pass
     #end def post_submit
 
     def pre_check_status(self):
-        None
+        pass
     #end def pre_check_status
 
     def post_analyze(self,analyzer):
-        None
+        pass
     #end def post_analyze
 
 
@@ -768,7 +821,7 @@ class Simulation(NexusCore):
 
 
     def depends(self,*dependencies):
-        if nexus_core.dynamic:
+        if nexus_config.dynamic:
             msg = 'dynamic workflows do not allow explicit dependencies between simulations'
             raise ValueError(msg)
         if len(dependencies)==0:
@@ -906,7 +959,7 @@ class Simulation(NexusCore):
 
 
     def get_dependencies(self):
-        if nexus_core.generate_only or self.finished:
+        if nexus_config.generate_only or self.finished:
             for dep in self.dependencies.values():
                 for result_name in dep.result_names:
                     dep.results[result_name] = result_name
@@ -1062,14 +1115,17 @@ class Simulation(NexusCore):
 
 
     def idstr(self):
-        return '  '+str(self.simid)+' '+str(self.identifier)
+        return f"{self.simid} {self.identifier}"
     #end def idstr
 
 
     def write_inputs(self,*,save_image=True):
         self.pre_write_inputs(save_image)
-        self.enter(self.locdir,changedir=False,msg=self.simid)
-        self.nxs_print('writing input files'+self.idstr(),n=3)
+        self.enter(self.locdir, changedir=False, msg=f"(Sim #{self.simid})")
+        self.nxs_print(
+            f"Writing input files (Sim #{self.simid}, '{self.identifier}')",
+            n=3,
+        )
         self.write_prep()
         if self.infile is not None:
             infile = os.path.join(self.locdir,self.infile)
@@ -1104,9 +1160,12 @@ class Simulation(NexusCore):
     def send_files(self,*,enter=True):
         self.pre_send_files(enter)
         if enter:
-            self.enter(self.locdir,changedir=False,msg=self.simid)
+            self.enter(self.locdir,changedir=False,msg=f"(Sim #{self.simid})")
         #end if
-        self.nxs_print('sending required files'+self.idstr(),n=3)
+        self.nxs_print(
+            f"Sending required files (Sim #{self.simid}, '{self.identifier}')",
+            n=3,
+        )
         if not os.path.exists(self.remdir):
             os.makedirs(self.remdir)
         #end if
@@ -1117,7 +1176,7 @@ class Simulation(NexusCore):
             self.files.add(self.infile)
         #end if
         send_files = self.files
-        file_locations = [self.locdir]+nexus_core.file_locations
+        file_locations = [self.locdir]+nexus_config.file_locations
         remote = self.remdir
         for file in send_files:
             found_file = False
@@ -1158,7 +1217,10 @@ class Simulation(NexusCore):
                 self.block_dependents(block_self=True)
                 return
             #end if
-            self.nxs_print('submitting job'+self.idstr(),n=3)
+            self.nxs_print(
+                f"Submitting job (Sim #{self.simid}, '{self.identifier}')",
+                n=3,
+            )
             if not self.skip_submit:
                 if not self.job.local:
                     self.job.submit()
@@ -1168,7 +1230,7 @@ class Simulation(NexusCore):
             #end if
             self.submitted = True
             self.record_timestamp('submitted')
-            if (self.job.batch_mode or not nexus_core.monitor) and not nexus_core.generate_only:
+            if (self.job.batch_mode or not nexus_config.monitor) and not nexus_config.generate_only:
                 self.save_image()
             #end if
         elif not self.finished:
@@ -1193,7 +1255,7 @@ class Simulation(NexusCore):
             newly_exited_queue = 'exited_queue' not in self.timestamps
             self.record_timestamp('exited_queue')
         #end if
-        if nexus_core.generate_only:
+        if nexus_config.generate_only:
             self.finished = self.job.finished
         elif self.job.finished:
             should_check = True
@@ -1204,17 +1266,22 @@ class Simulation(NexusCore):
             if self.errfile is not None:
                 errfile = os.path.join(self.locdir,self.errfile)
                 should_check &= os.path.exists(errfile)
-            #end if
+
             if not self.finished and should_check:
                 self.check_sim_status()
-            elif not self.finished:
-                exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
-                elapsed = datetime.now().astimezone() - exited_queue
-                if elapsed.total_seconds()>nexus_core.timeout:
-                    self.record_timestamp('timed_out')
-                    self.failed = True
-                #end if
-            #end if
+
+            if not self.finished:
+                if not self.timeout_started:
+                    self.timeout_started = True
+                    self.logger.info("Started countdown to timeout")
+                else:
+                    exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
+                    elapsed = datetime.now().astimezone() - exited_queue
+                    if elapsed.total_seconds()>nexus_config.timeout:
+                        self.record_timestamp('timed_out')
+                        self.failed = True
+                        self.timeout_started = False
+
             if self.failed:
                 self.finished = True
             #end if
@@ -1225,6 +1292,9 @@ class Simulation(NexusCore):
         if self.finished:
             self.record_timestamp('finished')
             self.save_image()
+            if self.timeout_started:
+                self.timeout_started = False
+                self.logger.info("Timeout countdown aborted")
         elif newly_exited_queue:
             self.save_image()
         #end if
@@ -1250,9 +1320,12 @@ class Simulation(NexusCore):
             self.load_image(results_image)
         #end if
         if self.finished:
-            self.enter(self.locdir,changedir=False,msg=self.simid)
-            self.nxs_print('copying results'+self.idstr(),n=3)
-            if not nexus_core.generate_only:
+            self.enter(self.locdir,changedir=False,msg=f"(Sim #{self.simid})")
+            self.nxs_print(
+                f"Copying results (Sim #{self.simid}, '{self.identifier}')",
+                n=3,
+            )
+            if not nexus_config.generate_only:
                 output_files = self.get_output_files()
                 if self.infile is not None:
                     output_files.append(self.infile)
@@ -1273,7 +1346,7 @@ class Simulation(NexusCore):
                     #end if
                 #end for
                 if len(files_missing)>0:
-                    self.nxs_print('warning: the following files were missing',n=4)
+                    self.nxs_print('Warning: The following files were missing:',n=4)
                     for file in files_missing:
                         self.nxs_print(file,n=5)
                     #end for
@@ -1291,9 +1364,9 @@ class Simulation(NexusCore):
             os.makedirs(self.imresdir)
         #end if
         if self.finished:
-            self.enter(self.locdir,changedir=False,msg=self.simid)
-            self.nxs_print('analyzing'+self.idstr(),n=3)
-            if not nexus_core.generate_only:
+            self.enter(self.locdir,changedir=False,msg=f"(Sim #{self.simid})")
+            self.nxs_print(f"Analyzing (Sim #{self.simid}, '{self.identifier}')", n=3)
+            if not nexus_config.generate_only:
                 analyzer = self.analyzer_type(self)
                 analyzer.analyze()
                 self.post_analyze(analyzer)
@@ -1305,7 +1378,7 @@ class Simulation(NexusCore):
             self.save_image()
 
             # support dynamic workflows
-            if nexus_core.dynamic:
+            if nexus_config.dynamic:
                 self.fill_products()
         #end if
     #end def analyze
@@ -1345,96 +1418,72 @@ class Simulation(NexusCore):
     def progress(self,dependency_id=None):
         if dependency_id is not None:
             self.wait_ids.remove(dependency_id)
-        #end if
-        if len(self.wait_ids)==0 and not self.block and not self.failed:
-            modes = nexus_core.modes
-            mode  = nexus_core.mode
-            progress = True
-            if mode==modes.none:
-                return
-            elif mode==modes.setup:
-                self.write_inputs()
-            elif mode==modes.send_files:
-                self.send_files()
-            elif mode==modes.submit:
-                self.submit()
-                progress = self.finished
-            elif mode==modes.get_output:
+
+        if len(self.wait_ids) > 0:
+            return
+
+        if self.block or self.failed:
+            if self.force_write:
+                if not self.got_dependencies:
+                    self.get_dependencies()
+
+                if SimStage.write_input in nexus_config.stages:
+                    # Wouldn't this fail if the directories haven't been created?
+                    self.write_inputs()
+
+                if not self.sent_files and SimStage.send_files in nexus_config.stages:
+                    self.send_files()
+            return
+
+        progress = True
+        if not self.created_directories:
+            self.create_directories()
+
+        if not self.got_dependencies:
+            self.get_dependencies()
+
+        if (
+            not self.setup
+            and SimStage.write_input in nexus_config.stages
+            ):
+            self.write_inputs()
+
+        if (
+            not self.sent_files
+            and SimStage.send_files in nexus_config.stages
+            ):
+            self.send_files()
+
+        if (
+            not self.finished
+            and SimStage.submit in nexus_config.stages
+            ):
+            self.submit()
+
+        if nexus_config.dependent_modes in nexus_config.stages:
+            progress_post = self.finished
+            progress = self.finished and self.analyzed
+        else:
+            progress_post = progress
+
+        if progress_post:
+            if (
+                not self.got_output
+                and SimStage.get_output in nexus_config.stages
+                ):
                 self.get_output()
-                progress = self.finished
-            elif mode==modes.analyze:
+
+            if (
+                not self.analyzed
+                and SimStage.analyze in nexus_config.stages
+                ):
                 self.analyze()
-                progress = self.finished
-            elif mode==modes.stages:
-                if not self.created_directories:
-                    self.create_directories()
-                #end if
-                if not self.got_dependencies:
-                    self.get_dependencies()
-                #end if
-                if not self.setup and 'setup' in nexus_core.stages:
-                    self.write_inputs()
-                #end if
-                if not self.sent_files and 'send_files' in nexus_core.stages:
-                    self.send_files()
-                #end if
-                if not self.finished and 'submit' in nexus_core.stages:
-                    self.submit()
-                #end if
-                if nexus_core.dependent_modes <= nexus_core.stages_set:
-                    progress_post = self.finished
-                    progress = self.finished and self.analyzed
-                else:
-                    progress_post = progress
-                #end if
-                if progress_post:
-                    if not self.got_output and 'get_output' in nexus_core.stages:
-                        self.get_output()
-                    #end if
-                    if not self.analyzed and 'analyze' in nexus_core.stages:
-                        self.analyze()
-                    #end if
-                #end if
-            elif mode==modes.all:
-                if not self.setup:
-                    self.write_inputs()
-                    self.send_files(enter=False)
-                #end if
-                if not self.finished:
-                    self.submit()
-                #end if
-                if self.finished:
-                    if not self.got_output:
-                        self.get_output()
-                    #end if
-                    if not self.analyzed:
-                        self.analyze()
-                    #end if
-                #end if
-                progress = self.finished
-            #end if
-            if progress and not self.block_subcascade and not self.failed:
-                for sim in self.dependents.values():
-                    if not sim.bundled:
+
+        if progress and not (self.block_subcascade or self.failed):
+            for sim in self.dependents.values():
+                if not sim.bundled:
+                    with sim_err_handler(sim), sim_log_handler(sim):
                         sim.progress(self.simid)
-                    #end if
-                #end for
-            #end if
-        elif len(self.wait_ids)==0 and self.force_write:
-            modes = nexus_core.modes
-            mode  = nexus_core.mode
-            if mode==modes.stages:
-                if not self.got_dependencies:
-                    self.get_dependencies()
-                #end if
-                if 'setup' in nexus_core.stages:
-                    self.write_inputs()
-                #end if
-                if not self.sent_files and 'send_files' in nexus_core.stages:
-                    self.send_files()
-                #end if
-            #end if
-        #end if
     #end def progress
 
 
@@ -1444,7 +1493,7 @@ class Simulation(NexusCore):
             self.load_image()
             # continue from interruption
             if self.submitted and not self.finished and self.process_id is not None:
-                if nexus_core.dynamic:
+                if nexus_config.dynamic:
                     machine = get_machine(Job.machine)
                     if isinstance(machine,Workstation):
                         # fully rerun following interrupt
@@ -1509,7 +1558,7 @@ class Simulation(NexusCore):
 
 
     def execute(self,run_command=None):
-        pad = self.enter(self.locdir)
+        pad = self.enter(self.locdir, msg=f"(Sim #{self.simid})")
         if run_command is None:
             job = self.job
             command = 'export OMP_NUM_THREADS='+str(job.threads)+'\n'
@@ -1529,10 +1578,10 @@ class Simulation(NexusCore):
         else:
             env = job.env
         #end if
-        if nexus_core.generate_only:
-            self.nxs_print(pad+'Would have executed:  '+command)
+        if nexus_config.generate_only:
+            self.nxs_print(pad+'Would have executed:\n'+command.strip("\n"))
         else:
-            self.nxs_print(pad+'Executing:  '+command)
+            self.nxs_print(pad+'Executing:\n'+command.strip("\n"))
             with open(self.outfile,'w') as fout, open(self.errfile,'w') as ferr:
                 out,err = Popen(command,env=env,stdout=fout,stderr=ferr,shell=True,close_fds=True).communicate()
         #end if
@@ -1570,7 +1619,7 @@ class Simulation(NexusCore):
     #end def fill_products
 #end class Simulation
 
-
+Simulation.allowed_inputs = frozenset(signature(Simulation).parameters)
 
 
 
@@ -1586,23 +1635,23 @@ class NullSimulationInput(SimulationInput):
     #end def is_valid
 
     def read(self,filepath):
-        None
+        pass
     #end def read
 
     def write(self,filepath=None):
-        None
+        pass
     #end def write
 
     def read_text(self,text,filepath=None):
-        None
+        pass
     #end def read_text
 
     def write_text(self,filepath=None):
-        None
+        pass
     #end def write_text
 
     def incorporate_system(self,system):
-        None
+        pass
     #end def incorporate_system
 
     def return_system(self):
@@ -1615,17 +1664,17 @@ class NullSimulationInput(SimulationInput):
 
 class NullSimulationAnalyzer(SimulationAnalyzer):
     def __init__(self,sim):
-        None
+        pass
     #end def __init__
 
     def analyze(self):
-        None
+        pass
     #end def analyze
 #end class NullSimulationAnalyzer
 
 
 class GenericSimulationInput: # marker class for generic user input
-    None
+    pass
 #end class GenericSimulationInput
 
 
@@ -1857,11 +1906,11 @@ class SimulationInputMultiTemplateDev(SimulationInput):
 
 # these are for user access, *Dev are for development
 class SimulationInputTemplate(SimulationInputTemplateDev,GenericSimulationInput):
-    None
+    pass
 #end class SimulationInputTemplate
 
 class SimulationInputMultiTemplate(SimulationInputMultiTemplateDev,GenericSimulationInput):
-    None
+    pass
 #end class SimulationInputMultiTemplate
 
 
@@ -1923,7 +1972,7 @@ def generate_simulation(**kwargs):
 # ability to graph simulation workflows
 exit_call = sys.exit
 def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,display=True):
-    from pydot import Dot, Node, Edge
+    from pydot import Dot, Edge, Node
 
     if sims is None:
         sims = Simulation.all_sims
@@ -1981,7 +2030,7 @@ def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,displ
     # display the image
     if fmt=='png' and display:
         from matplotlib.image import imread
-        from matplotlib.pyplot import imshow,show,xticks,yticks
+        from matplotlib.pyplot import imshow, show, xticks, yticks
         imshow(imread(savefile))
         xticks([])
         yticks([])
@@ -2024,8 +2073,8 @@ class DynamicProcess(DevBase):
 
     @classmethod
     def check_first_gen(cls,kw):
-        nc_loc     = nexus_core.local_directory
-        runs       = nexus_core.runs
+        nc_loc     = nexus_config.local_directory
+        runs       = nexus_config.runs
         path       = kw['path']
         identifier = kw['identifier']
         locdir = os.path.join(nc_loc,runs,path)
@@ -2416,7 +2465,7 @@ class DynamicProcess(DevBase):
 
 
 class sim_err_handler:
-    """Context manager for simulation-specific error handling/logging."""
+    """Context manager for simulation-specific error handling/reporting."""
     def __init__(self, sim: Simulation):
         self.sim = sim
         self.logfile = Path(sim.remdir).resolve() / sim.nexus_logfile
@@ -2455,3 +2504,79 @@ class sim_err_handler:
 
         return True
 #end class sim_err_handler
+
+
+class sim_log_handler:
+    """Context manager for simulation-specific logging."""
+
+    def __init__(self, sim: Simulation):
+        self.sim = sim
+        self.logger = sim.logger
+        self.null_handler = logging.NullHandler()
+
+        if not hasattr(self, "initialized"):
+            self.initialized = False
+
+        if sim.created_directories and not self.initialized:
+            self.logfile = Path(sim.remdir).resolve() / sim.nexus_logfile
+            if not self.logfile.exists():
+                self.logfile.touch()
+
+            self.stream_handler = logging.StreamHandler(sys.stdout)
+            self.file_handler = logging.FileHandler(filename=self.logfile)
+
+            log_fmt = "{asctime}  {filename:>16}:{lineno:<5} - {levelname:<8} {name}: {message}"
+            self.stream_handler.setFormatter(
+                logging.Formatter("    " + log_fmt, style="{")
+            )
+            self.file_handler.setFormatter(
+                logging.Formatter(log_fmt, style="{")
+            )
+
+            self.initialized = True
+        else:
+            self.initialized = False
+
+    def __enter__(self):
+        if not self.initialized:
+            return
+
+        self.original_log_level = self.logger.getEffectiveLevel()
+        self.original_log_handlers = self.logger.handlers
+        for handler in self.original_log_handlers:
+            self.logger.removeHandler(handler)
+
+        if nexus_config.disable_logging:
+            self.logger.addHandler(self.null_handler)
+            return
+
+        if nexus_config.debug:
+            self.logger.setLevel(logging.DEBUG)
+            self.stream_handler.setLevel(logging.DEBUG)
+            self.file_handler.setLevel(logging.DEBUG)
+        # Disabled since currently Nexus does not have a proper verbose setting
+        # elif nexus_config.verbose:
+        #     self.logger.setLevel(logging.INFO)
+        #     self.stream_handler.setLevel(logging.INFO)
+        #     self.file_handler.setLevel(logging.INFO)
+        else:
+            self.logger.setLevel(logging.INFO)
+            self.stream_handler.setLevel(logging.WARNING)
+            self.file_handler.setLevel(logging.INFO)
+
+        self.logger.addHandler(self.stream_handler)
+        self.logger.addHandler(self.file_handler)
+        self.logger.addHandler(nexus_config.main_log_handler)
+
+    def __exit__(self, *exc_details):
+        if not self.initialized:
+            return
+
+        for handler in self.logger.handlers:
+            self.logger.removeHandler(handler)
+
+        for handler in self.original_log_handlers:
+            self.logger.addHandler(handler)
+
+        self.logger.setLevel(self.original_log_level)
+#end class sim_log_handler

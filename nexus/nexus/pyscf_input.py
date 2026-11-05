@@ -17,7 +17,9 @@
 
 
 from copy import deepcopy
+
 import numpy as np
+
 from .developer import obj
 from .simulation import SimulationInputTemplateDev
 
@@ -271,7 +273,7 @@ $calculation
                 sys_inputs.update(**cell)
             #end if
         else:
-            None # no action needed if not molecule or periodic solid
+            pass # no action needed if not molecule or periodic solid
         #end if
 
         if calculation is not None and 'calculation' not in self.values:

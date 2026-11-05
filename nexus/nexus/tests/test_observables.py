@@ -1,16 +1,13 @@
 import pytest
+
+from ..developer import obj
+from ..observables import AttributeProperties, DefinedAttributeBase
+from ..testing import check_object_eq
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.OBSERVABLES)
 
-from ..testing import check_object_eq
-from ..testing import FailedTest,failed
-
-
-
 def test_defined_attribute_base():
-    from ..developer import obj, NexusError
-    from ..observables import AttributeProperties,DefinedAttributeBase
-
     # empty init
     p = AttributeProperties()
     o = DefinedAttributeBase()
@@ -50,7 +47,7 @@ def test_defined_attribute_base():
 
     # define attributes
     class DA(DefinedAttributeBase):
-        None
+        pass
     #end class DA
 
     da_attributes = obj(
@@ -155,7 +152,7 @@ def test_defined_attribute_base():
 
 
     class DA2(DA):
-        None
+        pass
     #end class DA2
 
     DA2.define_attributes(
@@ -282,12 +279,12 @@ def test_defined_attribute_base():
 
     # default values
     class DA_def(DefinedAttributeBase):
-        None
+        pass
     #end class DA_def
     DA_def.set_unassigned_default(None)
 
     class DA_def2(DA_def):
-        None
+        pass
     #end class DA_def2
 
     DA_def2.define_attributes(**da_attributes)

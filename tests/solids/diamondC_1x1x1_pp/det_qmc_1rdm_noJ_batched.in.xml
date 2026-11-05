@@ -60,14 +60,12 @@
       </hamiltonian>
       <estimators>
          <estimator type="OneBodyDensityMatrices" name="DensityMatrices">
-            <parameter name="energy_matrix"       >    no                    </parameter>
             <parameter name="integrator"          >    uniform_grid          </parameter>
             <parameter name="points"              >    6                     </parameter>
             <parameter name="scale"               >    1.0                   </parameter>
             <parameter name="basis"               >    spo_ud spo_dm         </parameter>
             <parameter name="evaluator"           >    matrix                </parameter>
             <parameter name="center"              >    0 0 0                 </parameter>
-            <parameter name="check_overlap"       >    no                    </parameter>
          </estimator>
       </estimators>
    </qmcsystem>

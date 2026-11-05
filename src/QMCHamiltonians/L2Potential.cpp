@@ -90,16 +90,18 @@ void L2Potential::evaluateDK(ParticleSet& P, int iel, TensorType& D, PosType& K)
   D.diagonal(1.0);
 
   const auto& d_table(P.getDistTableAB(myTableIndex));
+  const auto& distances     = d_table.getDistRow(iel);
+  const auto& displacements = d_table.getDisplRow(iel);
 
   for (int iat = 0; iat < NumIons; iat++)
   {
     L2RadialPotential* ppot = PP[iat];
     if (ppot == nullptr)
       continue;
-    RealType r = d_table.getTempDists()[iat];
+    RealType r = distances[iat];
     if (r < ppot->rcut)
     {
-      PosType rv   = -1 * d_table.getTempDispls()[iat];
+      PosType rv   = -1 * displacements[iat];
       RealType vL2 = ppot->evaluate(r);
       K += 2 * rv * vL2;
       for (int i = 0; i < DIM; ++i)

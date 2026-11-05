@@ -36,7 +36,6 @@ TEST_CASE("readCuspInfo", "[wavefunction]")
   REQUIRE(okay);
 
   // N
-  CHECK(info(0, 0).redo == Approx(0.0));                   // redo
   CHECK(info(0, 0).C == Approx(0.0));                      // C
   CHECK(info(0, 0).sg == Approx(1.0));                     // sg
   CHECK(info(0, 0).Rc == Approx(0.0769130700800000));      // rc
@@ -58,7 +57,7 @@ TEST_CASE("readCuspInfo", "[wavefunction]")
 
 TEST_CASE("applyCuspInfo", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parse("hcn.structure.xml"));
@@ -223,7 +222,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
 TEST_CASE("HCN MO with cusp", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parse("hcn.structure.xml"));
@@ -394,7 +393,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 // Test case with multiple atoms of the same type
 TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parse("ethanol.structure.xml"));
@@ -531,10 +530,10 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 
 TEST_CASE("broadcastCuspInfo", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
   CuspCorrectionParameters cp;
   int root = 0;
-  if (c->rank() == root)
+  if (c.rank() == root)
   {
     cp.Rc       = 2.0;
     cp.C        = 3.0;
@@ -544,10 +543,9 @@ TEST_CASE("broadcastCuspInfo", "[wavefunction]")
     cp.alpha[2] = 1.3;
     cp.alpha[3] = 1.4;
     cp.alpha[4] = 1.5;
-    cp.redo     = 1;
   }
 
-  broadcastCuspInfo(cp, *c, root);
+  broadcastCuspInfo(cp, *&c, root);
 
   CHECK(cp.Rc == Approx(2.0));
   CHECK(cp.C == Approx(3.0));
@@ -557,7 +555,6 @@ TEST_CASE("broadcastCuspInfo", "[wavefunction]")
   CHECK(cp.alpha[2] == Approx(1.3));
   CHECK(cp.alpha[3] == Approx(1.4));
   CHECK(cp.alpha[4] == Approx(1.5));
-  REQUIRE(cp.redo == 1);
 }
 
 

@@ -335,7 +335,7 @@ public:
 
   /** determine if L2 potential is present
    */
-  bool has_L2() { return l2_ptr != nullptr; }
+  bool has_L2() const { return l2_ptr != nullptr; }
 
   /** compute D matrix and K vector for L2 potential propagator
     * @param r single particle coordinate
@@ -357,6 +357,17 @@ public:
     if (l2_ptr != nullptr)
       l2_ptr->evaluateD(P, iel, D);
   }
+
+  static void mw_computeL2DK(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                             const RefVectorWithLeader<ParticleSet>& p_list,
+                             int iel,
+                             std::vector<TensorType>& diffusion_tensors,
+                             std::vector<PosType>& drift_corrections);
+
+  static void mw_computeL2D(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            int iel,
+                            std::vector<TensorType>& diffusion_tensors);
 
   static std::vector<int> mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
                                                const RefVectorWithLeader<TrialWaveFunction>& wf_list,

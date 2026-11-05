@@ -1,21 +1,19 @@
+from copy import deepcopy
+from pathlib import Path
+
 import pytest
-from . import NexusTestOrder
+
+from ..developer import obj, to_obj
+from ..machines import job
+from ..nexus_base import nexus_config
+from ..physical_system import generate_physical_system
+from ..pwscf import Pwscf, generate_pwscf
+from ..testing import clear_all_sims, failed, object_eq, value_eq
+from . import NexusTestOrder, create_pseudo_files, isolate_nexus_core
+
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_SIMULATION)
 
-
-from pathlib import Path
-from copy import deepcopy
-
-from . import isolate_nexus_core, create_pseudo_files
-from nexus.nexus_base import nexus_core
-from ..testing import clear_all_sims
-from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq
-
-
 def get_system():
-    from ..physical_system import generate_physical_system
-
     system = generate_physical_system(
         units  = 'A',
         axes   = [[ 1.785,  1.785,  0.   ],
@@ -35,11 +33,7 @@ def get_system():
 
 
 def get_pwscf_sim(type='scf'):
-    from ..nexus_base import nexus_core
-    from ..machines import job
-    from ..pwscf import Pwscf,generate_pwscf
-
-    nexus_core.runs = ''
+    nexus_config.runs = ''
 
     sim = None
 
@@ -72,9 +66,6 @@ def get_pwscf_sim(type='scf'):
 
 
 def test_minimal_init():
-    from ..machines import job
-    from ..pwscf import Pwscf,generate_pwscf
-
     sim = generate_pwscf(
         job    = job(machine='ws1',cores=1),
         system = get_system(),
@@ -89,9 +80,9 @@ def test_minimal_init():
 @isolate_nexus_core
 def test_check_result(tmp_path):
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
@@ -109,11 +100,10 @@ def test_check_result(tmp_path):
 
 @isolate_nexus_core
 def test_get_result(tmp_path):
-    from ..developer import NexusError
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
@@ -162,15 +152,15 @@ def test_get_result(tmp_path):
 
 @isolate_nexus_core
 def test_incorporate_result(tmp_path):
-    from ..developer import obj, to_obj
-
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
     sim = get_pwscf_sim('scf')
+
+    del sim.logger # Can't deepcopy a logger.
 
     sim_start = deepcopy(to_obj(sim))
 
@@ -222,9 +212,9 @@ def test_incorporate_result(tmp_path):
 @isolate_nexus_core
 def test_check_sim_status(tmp_path):
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
@@ -239,7 +229,7 @@ def test_check_sim_status(tmp_path):
     try:
         sim.check_sim_status()
     except IOError:
-        None
+        pass
     except Exception as e:
         failed(str(e))
     #end try

@@ -17,16 +17,18 @@ from collections.abc import Mapping
 from copy import deepcopy
 from functools import partial
 from types import MappingProxyType
+
 import numpy as np
+
+from . import numpy_extensions as npe
+from .developer import DevBase, error, obj
+from .nexus_base import nexus_config
 from .periodic_table import Elements
-from .nexus_base import nexus_noncore
-from .simulation import SimulationInput
-from .structure import interpolate_structures, Structure
 from .physical_system import PhysicalSystem
 from .pseudoset import PseudoSet
-from .developer import DevBase, obj, error
+from .simulation import SimulationInput
+from .structure import Structure, interpolate_structures
 from .utilities import path_string
-from . import numpy_extensions as npe
 
 # support functions for keyword files
 
@@ -2627,7 +2629,7 @@ class VaspInput(SimulationInput,Vobj):
                 ordered_pseudos.append(pseudo_map[symbol])
             #end for
         #end if
-        self.potcar = Potcar(nexus_noncore.pseudo_dir,ordered_pseudos)
+        self.potcar = Potcar(nexus_config.pseudo_dir,ordered_pseudos)
     #end def set_potcar
 
 

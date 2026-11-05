@@ -30,7 +30,7 @@ void test_lcao_spinor()
 
   using ValueType = SPOSet::ValueType;
   using RealType  = SPOSet::RealType;
-  Communicate* c  = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -356,7 +356,7 @@ void test_lcao_spinor_excited()
 
   using ValueType = SPOSet::ValueType;
   using RealType  = SPOSet::RealType;
-  Communicate* c  = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -678,7 +678,7 @@ void test_lcao_spinor_ion_derivs()
 
   using ValueType = SPOSet::ValueType;
   using RealType  = SPOSet::RealType;
-  Communicate* c  = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());

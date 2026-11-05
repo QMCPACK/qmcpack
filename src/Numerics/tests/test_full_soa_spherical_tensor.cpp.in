@@ -1,0 +1,77 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2026 QMCPACK developers.
+//
+// File developed by: Shiv Upadhyay, shivnupadhyay@gmail.com, University of Washington
+//
+// File created by: Shiv Upadhyay, shivnupadhyay@gmail.com, University of Washington
+//////////////////////////////////////////////////////////////////////////////////////
+
+#include <catch2/catch_test_macros.hpp>
+
+#include "Numerics/SoaSphericalTensor.h"
+#include "Utilities/for_testing/Catch2Approx.h"
+
+namespace qmcplusplus
+{
+
+// Use gen_gto.py to generate the checks.
+
+TEST_CASE("SoA Spherical Tensor evaluateV full", "[numerics]")
+{
+  SoaSphericalTensor<double> st(6, true);
+
+  const double x = 1.3;
+  const double y = 1.2;
+  const double z = -0.5;
+  st.evaluateV(x, y, z);
+
+  const double* Ylm = st[0];
+
+%test_evaluateV
+}
+
+TEST_CASE("SoA Spherical Tensor evaluateVGL full", "[numerics]")
+{
+  SoaSphericalTensor<double> st(6, true);
+
+  const double x = 1.3;
+  const double y = 1.2;
+  const double z = -0.5;
+  st.evaluateVGL(x, y, z);
+
+  const double* Ylm = st[0];
+  const double* gr0 = st[1];
+  const double* gr1 = st[2];
+  const double* gr2 = st[3];
+  const double* lap = st[4];
+
+%test_evaluateVGL
+}
+
+TEST_CASE("SoA Spherical Tensor evaluateVGH full", "[numerics]")
+{
+  SoaSphericalTensor<double> st(6, true);
+
+  const double x = 1.3;
+  const double y = 1.2;
+  const double z = -0.5;
+  st.evaluateVGH(x, y, z);
+
+  const double* Ylm = st[0];
+  const double* gr0 = st[1];
+  const double* gr1 = st[2];
+  const double* gr2 = st[3];
+  const double* h00 = st[4];
+  const double* h01 = st[5];
+  const double* h02 = st[6];
+  const double* h11 = st[7];
+  const double* h12 = st[8];
+  const double* h22 = st[9];
+
+%test_evaluateVGH
+}
+
+} // namespace qmcplusplus

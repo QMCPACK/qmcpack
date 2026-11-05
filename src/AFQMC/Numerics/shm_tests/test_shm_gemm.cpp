@@ -111,5 +111,4 @@ int main(int argc, char* argv[])
   if (argc > 1)
     c = atoi(argv[1]);
   timing_shm_blas(c);
-  OHMMS::Controller->finalize();
 }

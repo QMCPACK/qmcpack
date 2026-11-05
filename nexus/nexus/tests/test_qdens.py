@@ -3,19 +3,14 @@ import shutil
 import numpy as np
 import pytest
 
+from ..testing import execute, text_eq
+from . import TEST_DIR, NexusTestOrder
+
 h5py = pytest.importorskip('h5py')
 
-from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QDENS)
 
-
-
-from . import TEST_DIR
-from ..testing import execute, text_eq
-
-
 def test_density(tmp_path):
-
     exe = TEST_DIR.parent / "bin/qdens"
 
     qa_files_path = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma"

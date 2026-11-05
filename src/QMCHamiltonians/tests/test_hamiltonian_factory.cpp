@@ -11,9 +11,14 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "Message/Communicate.h"
+#include "Message/UniformCommunicateError.h"
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include "OhmmsData/Libxml2Doc.h"
+#include "QMCHamiltonians/OrbitalImages.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCHamiltonians/HamiltonianFactory.h"
+#include "MinimalParticlePool.h"
+#include "MinimalWaveFunctionPool.h"
 #include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
@@ -40,7 +45,7 @@ std::unique_ptr<ParticleSet> createElectronParticleSet(const SimulationCell& sim
 
 TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto elec_ptr = createElectronParticleSet(simulation_cell);
@@ -64,6 +69,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
          <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
          <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
          <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"/>
+         <estimator type="Pressure" name="pressure"/>
 </hamiltonian>)";
 
   Libxml2Document doc;
@@ -76,15 +82,36 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 
   REQUIRE(ham);
   REQUIRE(ham->size() == 3);
-  REQUIRE(ham->total_size() == 3);
+  REQUIRE(ham->total_size() == 4);
 
   REQUIRE(ham->getOperatorType("ElecElec") == "coulomb");
   REQUIRE(ham->getOperatorType("ElecIon") == "coulomb");
+  REQUIRE(ham->getOperatorType("pressure") == "Pressure");
+}
+
+TEST_CASE("OrbitalImages rejects one-past-end orbital index", "[hamiltonian]")
+{
+  Communicate& comm(*OHMMS::Controller);
+  RuntimeOptions runtime_options;
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);
+  auto& electrons        = *particle_pool.getParticleSet("e");
+  auto& wavefunction     = wavefunction_pool.getWaveFunction().value().get();
+
+  OrbitalImages orbital_images(electrons, particle_pool.getPool(), comm, wavefunction.getSPOMap());
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<estimator name="orbital_images" ions="ion">
+    <parameter name="sposets">spo_ud</parameter>
+    <parameter name="spo_ud">4</parameter>
+    <parameter name="grid">1 1 1</parameter>
+  </estimator>)"));
+
+  CHECK_THROWS_AS(orbital_images.put(doc.getRoot()), std::runtime_error);
 }
 
 TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto elec_ptr = createElectronParticleSet(simulation_cell);
@@ -116,6 +143,7 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
     <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
         <pseudo elementType="C" href="C.BFD.xml"/>
      </pairpot>
+    <estimator type="Force" name="force" mode="bare" source="ion0" target="e"/>
 </hamiltonian>)";
 
   Libxml2Document doc;
@@ -123,6 +151,35 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
 
   xmlNodePtr root = doc.getRoot();
   hf.put(root);
+
+  auto ham = hf.releaseHamiltonian();
+  REQUIRE(ham);
+  CHECK(ham->size() == 3);
+  CHECK(ham->total_size() == 4);
+  CHECK(ham->getOperatorType("force") == "Force");
+}
+
+TEST_CASE("HamiltonianFactory addMPCPotential throws when electron density missing", "[hamiltonian]")
+{
+  Communicate& c(*OHMMS::Controller);
+  const SimulationCell simulation_cell;
+  auto elec_ptr = createElectronParticleSet(simulation_cell);
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options, "psi0");
+  auto& elec = *particle_set_map["e"];
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<hamiltonian name="h0" type="generic" target="e">
+    <pairpot type="MPC" name="mpc" source="e" target="e"/>
+  </hamiltonian>)"));
+  CHECK_THROWS_MATCHES(hf.put(doc.getRoot()), UniformCommunicateError,
+                       Catch::Matchers::Message("HamiltonianFactory::addMPCPotential\n"
+                                                "************************\n"
+                                                "** Error in MPC setup **\n"
+                                                "************************\n"
+                                                "    The electron density was not setup by the wave function builder.\n"));
 }
 
 } // namespace qmcplusplus

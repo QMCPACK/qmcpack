@@ -13,6 +13,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "ProjectData.h"
+#include "Utilities/qmc_common.h"
 
 
 #include <stdio.h>
@@ -26,10 +27,6 @@ namespace qmcplusplus
 {
 TEST_CASE("ProjectData", "[ohmmsapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
-
   ProjectData proj1;
   // If no name given, it gets set to time and date
   //   and the title is set equal to the name
@@ -41,9 +38,16 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   REQUIRE(proj2.getSeriesIndex() == 1);
   REQUIRE(proj2.getTitle() == std::string("asample"));
 
-  proj2.setCommunicator(c);
   std::stringstream o2;
   proj2.get(o2);
+
+  qmc_common.setupFilenameInfixForEnsembleJobs(1, 4);
+  ProjectData proj_multi("my_group");
+  REQUIRE(proj_multi.currentMainRoot() == "my_group.g001.s000");
+
+  qmc_common.setupFilenameInfixForEnsembleJobs(0, 1);
+  ProjectData proj_single("single_group");
+  REQUIRE(proj_single.currentMainRoot() == "single_group.s000");
 }
 
 TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
@@ -83,6 +87,9 @@ TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
   using DV = ProjectData::DriverVersion;
   SECTION("driver version batch")
   {
+    ProjectData proj_batch(DV::BATCH);
+    REQUIRE(proj_batch.getDriverVersion() == DV::BATCH);
+
     ProjectData proj;
     REQUIRE(proj.getDriverVersion() == DV::BATCH);
 
@@ -104,8 +111,10 @@ TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
   }
   SECTION("driver version legacy")
   {
-    ProjectData proj;
+    ProjectData proj_legacy(DV::LEGACY);
+    REQUIRE(proj_legacy.getDriverVersion() == DV::LEGACY);
 
+    ProjectData proj;
     const char* xml_input = R"(
       <project id="test1" series="1">
         <parameter name='driver_version'>

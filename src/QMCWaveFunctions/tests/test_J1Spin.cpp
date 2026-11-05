@@ -27,7 +27,7 @@ using ValueType = QMCTraits::ValueType;
 
 TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -130,7 +130,7 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 
 TEST_CASE("J1 spin evaluate derivatives multiparticle Jastrow", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());

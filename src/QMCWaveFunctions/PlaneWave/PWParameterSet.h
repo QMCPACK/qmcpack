@@ -66,7 +66,7 @@ struct PWParameterSet : public MPIObjectBase
   ///xml processor
   ParameterSet m_param;
 
-  PWParameterSet(Communicate* comm);
+  PWParameterSet(Communicate& comm);
 
   bool put(xmlNodePtr cur) { return m_param.put(cur); }
 

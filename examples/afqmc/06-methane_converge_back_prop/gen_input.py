@@ -11,15 +11,12 @@ options = {
             "back_propagation": {
                 "ortho": 1,
                 "naverages": 4,
-                "obs": {
-                    "OneRDM": {}
-                    },
+                "obs": {"OneRDM": {}},
                 "block_size": 2,
-                "nsteps": 200
+                "nsteps": 200,
             }
-        }
+        },
     }
 }
 
-write_xml_input("afqmc.xml", "afqmc.h5", "afqmc.h5",
-                options=options, rng_seed=7)
+write_xml_input("afqmc.xml", "afqmc.h5", "afqmc.h5", options=options, rng_seed=7)

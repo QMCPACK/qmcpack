@@ -86,7 +86,8 @@ public:
     GRID_AND_DR = 0,
     CORNER_AND_CENTER,
     CELL_WITHOUT_CENTER_OR_CORNER,
-    MALFORMED_CELL
+    MALFORMED_CELL,
+    SINGULAR_CELL
   };
 
   static std::string_view getXml(invalid val) { return xml[static_cast<std::size_t>(val)]; }
@@ -94,11 +95,12 @@ public:
   auto end() { return xml.end(); }
 
 private:
-  static constexpr std::array<std::string_view, 4> xml{
+  static constexpr std::array<std::string_view, 5> xml{
       R"XML(<estimator type="spindensity"><parameter name="dr">1 1 1</parameter><parameter name="grid">1 1 1</parameter></estimator>)XML",
       R"XML(<estimator type="spindensity"><parameter name="grid">1 1 1</parameter><parameter name="corner">0 0 0</parameter><parameter name="center">0 0 0</parameter></estimator>)XML",
       R"XML(<estimator type="spindensity"><parameter name="grid">1 1 1</parameter><parameter name="cell">1 0 0 0 1 0 0 0 1</parameter></estimator>)XML",
-      R"XML(<estimator type="spindensity"><parameter name="grid">1 1 1</parameter><parameter name="center">0 0 0</parameter><parameter name="cell">1 0 0 0 1 0 0 0</parameter></estimator>)XML"};
+      R"XML(<estimator type="spindensity"><parameter name="grid">1 1 1</parameter><parameter name="center">0 0 0</parameter><parameter name="cell">1 0 0 0 1 0 0 0</parameter></estimator>)XML",
+      R"XML(<estimator type="spindensity"><parameter name="grid">1 1 1</parameter><parameter name="center">0 0 0</parameter><parameter name="cell">1 0 0 1 0 0 0 0 1</parameter></estimator>)XML"};
 };
 
 } // namespace testing

@@ -29,8 +29,8 @@
 
 namespace spline2offload
 {
-template<typename T>
-inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
+template<typename ST, typename T>
+inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<ST, 3>::SplineType* restrict spline_m,
                               T x,
                               T y,
                               T z,
@@ -44,7 +44,7 @@ inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::
   int ix, iy, iz;
   T a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
 
-  computeLocationAndFractional(spline_m, x, y, z, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
+  spline2::computeLocationAndFractional<ST, T>(spline_m, x, y, z, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
 
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;
@@ -77,10 +77,10 @@ inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::
       const T pre01 = a[i] * db[j];
       const T pre02 = a[i] * d2b[j];
 
-      const T* restrict coefs    = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
-      const T* restrict coefszs  = coefs + zs;
-      const T* restrict coefs2zs = coefs + 2 * zs;
-      const T* restrict coefs3zs = coefs + 3 * zs;
+      const ST* restrict coefs    = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
+      const ST* restrict coefszs  = coefs + zs;
+      const ST* restrict coefs2zs = coefs + 2 * zs;
+      const ST* restrict coefs3zs = coefs + 3 * zs;
 
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
@@ -129,8 +129,8 @@ inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::
   }
 }
 
-template<typename T>
-inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
+template<typename ST, typename T>
+inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<ST, 3>::SplineType* restrict spline_m,
                               T x,
                               T y,
                               T z,
@@ -144,7 +144,7 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
   int ix, iy, iz;
   T a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
 
-  computeLocationAndFractional(spline_m, x, y, z, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
+  spline2::computeLocationAndFractional<ST, T>(spline_m, x, y, z, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
 
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;
@@ -177,10 +177,10 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
   for (int i = 0; i < 4; i++)
     for (int j = 0; j < 4; j++)
     {
-      const T* restrict coefs    = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
-      const T* restrict coefszs  = coefs + zs;
-      const T* restrict coefs2zs = coefs + 2 * zs;
-      const T* restrict coefs3zs = coefs + 3 * zs;
+      const ST* restrict coefs    = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
+      const ST* restrict coefszs  = coefs + zs;
+      const ST* restrict coefs2zs = coefs + 2 * zs;
+      const ST* restrict coefs3zs = coefs + 3 * zs;
 
       const T pre20 = d2a[i] * b[j];
       const T pre10 = da[i] * b[j];
@@ -265,9 +265,9 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
  * @param val_grads_hess Structure-of-Array output in strides of size out_offset
  * @param out_offset The stride of val_grads_hess
  */
-template<typename T>
-inline void evaluate_vgh_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
-                                 const T* restrict spline_coefs,
+template<typename ST, typename T>
+inline void evaluate_vgh_impl_v2(const typename qmcplusplus::bspline_traits<ST, 3>::SplineType* restrict spline_m,
+                                 const ST* restrict spline_coefs,
                                  int ix,
                                  int iy,
                                  int iz,
@@ -302,11 +302,11 @@ inline void evaluate_vgh_impl_v2(const typename qmcplusplus::bspline_traits<T, 3
   for (int i = 0; i < 4; i++)
     for (int j = 0; j < 4; j++)
     {
-      const T* restrict coefs = spline_coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs);
-      const T coefsv          = coefs[index];
-      const T coefsvzs        = coefs[index + zs];
-      const T coefsv2zs       = coefs[index + 2 * zs];
-      const T coefsv3zs       = coefs[index + 3 * zs];
+      const ST* restrict coefs = spline_coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs);
+      const T coefsv           = coefs[index];
+      const T coefsvzs         = coefs[index + zs];
+      const T coefsv2zs        = coefs[index + 2 * zs];
+      const T coefsv3zs        = coefs[index + 3 * zs];
 
 
       const T pre20 = d2a[i] * b[j];

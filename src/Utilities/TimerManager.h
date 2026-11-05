@@ -67,8 +67,8 @@ private:
 
   void initializeTimer(TIMER& t);
 
-  void print_flat(Communicate* comm);
-  void print_stack(Communicate* comm);
+  void print_flat(Communicate& comm);
+  void print_stack(Communicate& comm);
 
 public:
 #ifdef USE_VTUNE_TASKS
@@ -104,7 +104,7 @@ public:
 
 
   void reset();
-  void print(Communicate* comm);
+  void print(Communicate& comm);
 
   using nameList_t = std::map<std::string, int>;
   using timeList_t = std::vector<double>;
@@ -127,11 +127,11 @@ public:
     callList_t callList;
   };
 
-  void collate_flat_profile(Communicate* comm, FlatProfileData& p);
+  void collate_flat_profile(Communicate& comm, FlatProfileData& p);
 
-  void collate_stack_profile(Communicate* comm, StackProfileData& p);
+  void collate_stack_profile(Communicate& comm, StackProfileData& p);
 
-  void output_timing(Communicate* comm, Libxml2Document& doc, xmlNodePtr root);
+  void output_timing(Communicate& comm, Libxml2Document& doc, xmlNodePtr root);
 
   void get_stack_name_from_id(const StackKey& key, std::string& name);
 };

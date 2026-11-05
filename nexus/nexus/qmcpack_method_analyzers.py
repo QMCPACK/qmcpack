@@ -19,9 +19,10 @@
 
 import os
 from copy import deepcopy
-from .developer import obj, NexusError
+
+from .developer import NexusError, obj
 from .hdfreader import HDFreader
-from .qmcpack_analyzer_base import Checks,QAanalyzer,QAHDFdata
+from .qmcpack_analyzer_base import Checks, QAanalyzer, QAHDFdata
 from .qmcpack_property_analyzers import WavefunctionAnalyzer
 from .qmcpack_quantity_analyzers import HDFAnalyzer
 
@@ -320,9 +321,9 @@ class OptAnalyzer(MethodAnalyzer):
 #end class OptAnalyzer
 
 class VmcAnalyzer(MethodAnalyzer):
-    None
+    pass
 #end class OptAnalyzer
 
 class DmcAnalyzer(MethodAnalyzer):
-    None
+    pass
 #end class OptAnalyzer

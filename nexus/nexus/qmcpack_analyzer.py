@@ -22,34 +22,37 @@
 
 
 #python standard library imports
+import importlib
 import os
 import sys
 import traceback
-import importlib
-from pathlib import Path
 from copy import deepcopy
+from pathlib import Path
+
 import numpy as np
+
 #custom library imports
-from .developer import obj, DevBase, sorted_generic
+from .developer import DevBase, obj, sorted_generic
 from .physical_system import ghost_atoms
+
 #QmcpackAnalyzer classes imports
-from .qmcpack_analyzer_base import QAobject, QAanalyzer, QAanalyzerCollection
+from .qmcpack_analyzer_base import QAanalyzer, QAanalyzerCollection, QAobject
+from .qmcpack_input import QmcpackInput
+from .qmcpack_method_analyzers import DmcAnalyzer, OptAnalyzer, VmcAnalyzer
 from .qmcpack_property_analyzers import WavefunctionAnalyzer
 from .qmcpack_quantity_analyzers import (
-    ScalarsDatAnalyzer,
-    ScalarsHDFAnalyzer,
+    DensityAnalyzer,
+    DensityMatricesAnalyzer,
     DmcDatAnalyzer,
     EnergyDensityAnalyzer,
-    TracesAnalyzer,
-    DensityMatricesAnalyzer,
+    ScalarsDatAnalyzer,
+    ScalarsHDFAnalyzer,
     SpinDensityAnalyzer,
     StructureFactorAnalyzer,
-    DensityAnalyzer,
-    )
-from .qmcpack_method_analyzers import OptAnalyzer, VmcAnalyzer, DmcAnalyzer
+    TracesAnalyzer,
+)
 from .qmcpack_result_analyzers import OptimizationAnalyzer, TimestepStudyAnalyzer
-from .simulation import SimulationAnalyzer,Simulation
-from .qmcpack_input import QmcpackInput
+from .simulation import Simulation, SimulationAnalyzer
 
 
 class QmcpackAnalyzerCapabilities(QAobject):
@@ -90,7 +93,6 @@ class QmcpackAnalyzerCapabilities(QAobject):
         #end for
 
         self.future_quantities={'StructureFactor','MomentumDistribution'}
-        return
     #end def __init__
 #end class QmcpackCapabilities
 
@@ -155,7 +157,6 @@ class QmcpackAnalysisRequest(QAobject):
         #end if
         self.equilibration = eq
 
-        return
     #end def __init__
 
     def complete(self):
@@ -257,7 +258,6 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             self.analyze()
         #end if
 
-        return
     #end def __init__
 
 
@@ -686,7 +686,6 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         QAobject._global = self.saved_global
         del self.saved_global
         self._relink_dynamic_methods()
-        return
     #end def load
 
 
@@ -711,7 +710,6 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             if verbose:
                 self.nxs_print(pad+'\nNo traces to check')
             #end if
-            return None
         #end if
     #end def check_traces
 

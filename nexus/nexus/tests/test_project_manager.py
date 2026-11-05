@@ -1,23 +1,17 @@
-import sys
-
 import pytest
-from . import NexusTestOrder
+
+from ..developer import NexusError, obj
+from ..nexus_base import ShowStatusMode, SimStage, nexus_config
+from ..project_manager import ProjectManager, color_status_result
+from ..simulation import Simulation, input_template
+from ..testing import FailedTest, failed
+from . import NexusTestOrder, isolate_nexus_core
+from .test_simulation_module import get_test_workflow, n_test_workflows
+
 pytestmark = pytest.mark.order(NexusTestOrder.PROJECT_MANAGER)
 
-from . import isolate_nexus_core
-from ..testing import value_eq
-from ..testing import failed,FailedTest
-
-
 def test_init():
-    from ..developer import obj
-    from ..nexus_base import nexus_core
-    from ..project_manager import ProjectManager
-
     pm = ProjectManager()
-
-    modes = nexus_core.modes
-    assert(pm.persistent_modes=={modes.submit,modes.all})
     def check(v):
         assert isinstance(v,obj)
         assert len(v)==0
@@ -29,10 +23,6 @@ def test_init():
 
 
 def test_add_simulations():
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
@@ -69,11 +59,6 @@ def test_add_simulations():
 
 
 def test_traverse_cascades():
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow,n_test_workflows
-
     sims = []
     for n in range(n_test_workflows):
         wf = get_test_workflow(n)
@@ -110,12 +95,6 @@ def test_traverse_cascades():
 
 
 def test_screen_fake_sims():
-    from ..developer import NexusError
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow,n_test_workflows
-
     sims = []
     for n in range(n_test_workflows):
         wf = get_test_workflow(n)
@@ -134,7 +113,7 @@ def test_screen_fake_sims():
         pm.screen_fake_sims()
         raise FailedTest
     except NexusError:
-        None
+        pass
     except FailedTest:
         failed()
     except Exception as e:
@@ -147,12 +126,6 @@ def test_screen_fake_sims():
 
 @isolate_nexus_core
 def test_resolve_file_collisions():
-    from ..developer import NexusError
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow,n_test_workflows
-
     sims = []
     for n in range(n_test_workflows):
         wf = get_test_workflow(n)
@@ -172,7 +145,7 @@ def test_resolve_file_collisions():
 
     with pytest.raises(
         FileExistsError,
-        match="file collisions found in directory",
+        match="File collisions found in directory",
         ):
         pm.resolve_file_collisions()
 
@@ -182,11 +155,6 @@ def test_resolve_file_collisions():
 
 
 def test_propagate_blockages():
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow,n_test_workflows
-
     sims = []
     for n in range(n_test_workflows):
         wf = get_test_workflow(n)
@@ -228,11 +196,6 @@ def test_propagate_blockages():
 
 
 def test_load_cascades():
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow
-
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
@@ -257,11 +220,6 @@ def test_load_cascades():
 
 
 def test_check_dependencies():
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow
-
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
@@ -277,12 +235,6 @@ def test_check_dependencies():
 
 
 def test_write_simulation_status(capsys):
-    from ..nexus_base import nexus_core
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow
-
     sims = get_test_workflow(3)
     for id,sim in sims.items():
         sim.identifier = 'test_sim_'+id
@@ -291,8 +243,6 @@ def test_write_simulation_status(capsys):
     pm = ProjectManager()
     pm.add_simulations(list(sims.values()))
 
-    status_modes = nexus_core.status_modes
-
     def status_log():
         pm.write_simulation_status()
         s = capsys.readouterr().out
@@ -300,9 +250,9 @@ def test_write_simulation_status(capsys):
         return '\n'.join(line.rstrip() for line in s.splitlines())
     #end def status_log
 
-    assert(nexus_core.status==status_modes.none)
+    assert(nexus_config.status is ShowStatusMode.none)
     status_ref = '''
-  cascade status
+  Cascade Status:
     setup, sent_files, submitted, finished, got_output, analyzed, failed
     000000           ------    test_sim_s11  ./runs/
     000000           ------    test_sim_s21  ./runs/
@@ -315,12 +265,12 @@ def test_write_simulation_status(capsys):
     '''
     assert(status_log().strip()==status_ref.strip())
 
-    nexus_core.status = status_modes.standard
+    nexus_config.status = ShowStatusMode.all
     assert(status_log().strip()==status_ref.strip())
 
-    nexus_core.status = status_modes.active
+    nexus_config.status = ShowStatusMode.active
     status_ref = '''
-  cascade status
+  Cascade Status:
     setup, sent_files, submitted, finished, got_output, analyzed, failed
     000000           ------    test_sim_s11  ./runs/
     000000           ------    test_sim_s12  ./runs/
@@ -328,12 +278,12 @@ def test_write_simulation_status(capsys):
     '''
     assert(status_log().strip()==status_ref.strip())
 
-    nexus_core.status = status_modes.ready
+    nexus_config.status = ShowStatusMode.ready
     assert(status_log().strip()==status_ref.strip())
 
-    nexus_core.status = status_modes.failed
+    nexus_config.status = ShowStatusMode.failed
     status_ref = '''
-  cascade status
+  Cascade Status:
     setup, sent_files, submitted, finished, got_output, analyzed, failed
     (No simulations present)
     setup, sent_files, submitted, finished, got_output, analyzed, failed
@@ -360,14 +310,11 @@ def test_write_simulation_status(capsys):
     pm.status_line(sim)
     assert(capsys.readouterr().out.strip()=='111111  FAILURE  ------    test_sim_s11  ./runs/')
 
-    nexus_core.status = 0
     Simulation.clear_all_sims()
 #end def test_write_simulation_status
 
 
 def test_color_status_result(monkeypatch):
-    from ..project_manager import color_status_result
-
     class TestLog:
         def __init__(self,is_tty):
             self.is_tty = is_tty
@@ -397,28 +344,15 @@ def test_color_status_result(monkeypatch):
 
 @isolate_nexus_core
 def test_run_project(tmp_path):
-    from ..nexus_base import nexus_core
-    from ..simulation import Simulation,input_template
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow,n_test_workflows
-
     # divert_nexus()
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
+    nexus_config.disable_logging = True
 
-    assert(nexus_core.mode==nexus_core.modes.stages)
-    assert(len(nexus_core.stages)==0)
+    assert(nexus_config.stages is SimStage.all)
 
-    nexus_core.stages     = list(nexus_core.primary_modes)
-    nexus_core.stages_set = set(nexus_core.stages)
-
-    primary_modes = ['setup','send_files','submit','get_output','analyze']
-    assert(value_eq(nexus_core.stages,primary_modes))
-    assert(value_eq(nexus_core.stages_set,set(primary_modes)))
-
-    nexus_core.sleep = 0.1
+    nexus_config.sleep = 0.1
 
     flags = ['setup','sent_files','submitted','finished','got_output','analyzed']
 

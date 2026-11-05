@@ -60,7 +60,7 @@ import numpy as np
 
 from .developer import DevBase, NexusError, obj, warn
 from .execute import execute
-from .nexus_base import NexusCore, nexus_core
+from .nexus_base import NexusCore, nexus_config
 from .utilities import path_string
 
 
@@ -640,7 +640,7 @@ class Job(NexusCore):
         #end if
         if self.subdir is None:
             if machine.local_directory is not None:
-                self.subdir = os.path.join(machine.local_directory,nexus_core.runs,sim.path)
+                self.subdir = os.path.join(machine.local_directory,nexus_config.runs,sim.path)
                 self.abs_subdir = self.subdir
             else:
                 self.subdir = self.directory
@@ -762,7 +762,7 @@ class Job(NexusCore):
 
     # remove?
     def determine_end_status(self,status):
-        if not nexus_core.generate_only:
+        if not nexus_config.generate_only:
             self.successful = False # not really implemented yet
         #end if
     #end def determine_end_status
@@ -1245,7 +1245,7 @@ class Machine(NexusCore):
 
 
     def requeue_job(self,job):
-        None
+        pass
     #end def requeue_job
 
 
@@ -1375,7 +1375,7 @@ class Workstation(Machine):
         self.validate()
         done = []
         for pid,process in self.processes.items():
-            if nexus_core.generate_only or not nexus_core.monitor:
+            if nexus_config.generate_only or not nexus_config.monitor:
                 qpid,status = pid,0
             else:
                 qpid,status = os.waitpid(pid,os.WNOHANG)
@@ -1389,7 +1389,7 @@ class Workstation(Machine):
                 self.running.remove(iid)
                 self.finished.add(iid)
                 done.append(pid)
-                if not nexus_core.generate_only:
+                if not nexus_config.generate_only:
                     job.out.close()
                     job.err.close()
                 #end if
@@ -1432,7 +1432,7 @@ class Workstation(Machine):
         job_req  = job_req[order]
 
         for job in job_req:
-            if job.cores>self.cores and not nexus_core.generate_only:
+            if job.cores>self.cores and not nexus_config.generate_only:
                 msg = (
                     'job '+str(job.internal_id)+' is too large to run on this machine\n'
                     'cores requested: '+str(job.cores)+'\n'
@@ -1501,17 +1501,17 @@ class Workstation(Machine):
 
 
     def submit_job(self,job):
-        pad = self.enter(job.directory,msg=job.simid)
+        pad = self.enter(job.directory,msg=f"(Sim #{job.simid})")
         command = self.job_command(job,pad=pad)
         job.status = job.states.running
         process = obj()
         process.job = job
-        if nexus_core.generate_only:
-            self.nxs_print(pad+'Would have executed:  '+command)
+        if nexus_config.generate_only:
+            self.nxs_print(pad+'Would have executed:\n'+command.strip("\n"))
             job.system_id = job.internal_id
         else:
-            if nexus_core.monitor:
-                self.nxs_print(pad+'Executing:  '+command)
+            if nexus_config.monitor:
+                self.nxs_print(pad+'Executing:\n'+command.strip("\n"))
                 job.out = open(job.outfile,'w')
                 job.err = open(job.errfile,'w')
                 p = Popen(command,env=job.env,stdout=job.out,stderr=job.err,shell=True)
@@ -1519,7 +1519,7 @@ class Workstation(Machine):
                 job.system_id = p.pid
             else:
                 command+=' >'+job.outfile+' 2>'+job.errfile+'&'
-                self.nxs_print(pad+'Executing:  '+command)
+                self.nxs_print(pad+'Executing:\n'+command.strip("\n"))
                 os.system(command)
                 job.system_id = job.internal_id
             #end if
@@ -1855,7 +1855,7 @@ class Supercomputer(Machine):
             #end if
             self.process_job(job)
             self.jobs[jid] = job
-            if not nexus_core.dynamic:
+            if not nexus_config.dynamic:
                 self.running.add(jid)
                 process = obj(job=job)
                 self.processes[pid] = process
@@ -2195,7 +2195,7 @@ class Supercomputer(Machine):
         #end if
         done = []
         for pid,process in self.processes.items():
-            if pid not in self.system_queue or self.system_queue[pid]=='complete' or nexus_core.generate_only:
+            if pid not in self.system_queue or self.system_queue[pid]=='complete' or nexus_config.generate_only:
                 job = process.job
                 job.status = job.states.finished
                 job.finished = True
@@ -2246,7 +2246,7 @@ class Supercomputer(Machine):
             raise FileNotFoundError(msg)
         #end if
         command = self.sub_command(job)
-        if nexus_core.generate_only:
+        if nexus_config.generate_only:
             self.nxs_print(pad+'Would have executed:  '+command)
             job.status = job.states.running
             process = obj()
@@ -2993,6 +2993,7 @@ class Perlmutter(NerscMachine):
         #end if
 
         # Check if the user gave reasonable queue inputs
+        # See https://docs.nersc.gov/jobs/policy/#perlmutter-cpu and https://docs.nersc.gov/jobs/policy/#perlmutter-gpu
         if job.queue == 'debug':
             base_partition = 1
             max_partition = 8
@@ -3000,15 +3001,15 @@ class Perlmutter(NerscMachine):
         elif job.queue == 'regular':
             base_partition = 1
             max_partition = self.nodes
-            max_time = 12
+            max_time = 48
         elif job.queue == 'preempt':
             base_partition = 1
             max_partition = 128
-            max_time = 24
+            max_time = 48
         elif job.queue == 'overrun':
             base_partition = 1
             max_partition = self.nodes
-            max_time = 12
+            max_time = 48
         else:
             msg = 'The requested queue is not implemented.'
             raise NotImplementedError(msg)
@@ -4426,11 +4427,13 @@ class Frontier(Supercomputer):
         c += f'#SBATCH -A {job.account}\n'
         c += f'#SBATCH -p {job.queue}\n'
         c += f'#SBATCH -J {job.name}\n'
-        c += f'#SBATCH -t {job.lsf_walltime()}\n'
+        c += f'#SBATCH -t {job.sbatch_walltime()}\n'
         c += f'#SBATCH -N {job.nodes}\n'
         c += '#SBATCH -S 8\n' # Uses default low-noise mode layout(default), reduces number of cores from 64 to 56.
         c += f'#SBATCH -o {job.name}.out\n'
         c += f'#SBATCH -e {job.name}.err\n'
+        if job.qos:
+            c+=f'#SBATCH -q {job.qos}\n'
         return c
 #end class Frontier
 
@@ -5550,7 +5553,7 @@ class Lassen(Supercomputer):
             #    job.alloc_flags = 'smt1'
             ##end if
             if job.gpus==0:
-                None
+                pass
             else:
                 opt.mgpu = '-M "-gpu"'
             #end if

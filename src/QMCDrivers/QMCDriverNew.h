@@ -163,7 +163,7 @@ public:
                MCPopulation&& population,
                const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                const std::string timer_prefix,
-               Communicate* comm,
+               Communicate& comm,
                const std::string& QMC_driver_type);
 
   ///Move Constructor
@@ -393,7 +393,6 @@ protected:
    *  or are live state.
    *  @{
    */
-  RealType max_disp_sq_;
   ///the number of saved samples
   IndexType target_samples_;
 
@@ -408,12 +407,6 @@ protected:
 
   ///drift modifer
   std::unique_ptr<DriftModifierBase> drift_modifier_;
-
-  /** period of recording walker configurations
-   *
-   * Default is 0 indicating that only the last configuration will be saved.
-   */
-  int walker_dump_period;
 
   IndexType current_step_;
   /// actual number of steps per block
@@ -472,12 +465,6 @@ protected:
   // ///samples per thread
   // IndexType nSamplesPerThread;
 
-  //  TODO: restart
-  //  /** period of dumping walker configurations and everything else for restart
-  //  *
-  //  * The unit is a block.
-  //  */
-  // int check_point_period_;
 
   /** }@ */
 
@@ -493,7 +480,7 @@ protected:
   WalkerConfigurations& walker_configs_ref_;
 
   /// update the global offsets of walker configurations after active walkers being touched.
-  static void setWalkerOffsets(WalkerConfigurations&, Communicate* comm);
+  static void setWalkerOffsets(WalkerConfigurations&, Communicate& comm);
 
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);

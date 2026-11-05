@@ -28,7 +28,7 @@ namespace qmcplusplus
 {
 void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // diamondC_2x1x1
   Lattice lattice;

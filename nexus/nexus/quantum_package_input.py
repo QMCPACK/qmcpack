@@ -18,12 +18,12 @@
 
 import os
 from copy import deepcopy
-from .developer import DevBase, obj, nxs_print, NexusError
-from .structure import Structure
+
+from .developer import DevBase, nxs_print, obj
+from .execute import execute
 from .physical_system import PhysicalSystem
 from .simulation import SimulationInput
-from .execute import execute
-
+from .structure import Structure
 
 bool_values = dict(T=True,F=False)
 bool_values_inv = {True:'T',False:'F'}
@@ -294,7 +294,7 @@ def extract_input_specification(*ezfio_paths):
 
 
 class Section(DevBase):
-    None
+    pass
 #end class Section
 
 

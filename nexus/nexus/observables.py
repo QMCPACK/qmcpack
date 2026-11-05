@@ -1,28 +1,33 @@
 # Python standard library imports
+import inspect
 import os
 import sys
-import inspect
-from time import process_time
 from copy import deepcopy
+from time import process_time
 
 # Non-standard Python imports
 import numpy as np
 
 # Nexus imports
 from . import memory
-from .unit_converter import convert
-from .developer import DevBase, obj, nxs_print, NexusError, FileFormatError
-from .numerics import simstats
-from .grid_functions import grid_function, read_grid, StructuredGrid, grid as generate_grid
-from .grid_functions import SpheroidGrid,ParallelotopeGridFunction
-from .structure import Structure, get_seekpath_full
-from .fileio import XsfFile
-from .hdfreader import read_hdf
 from . import numpy_extensions as npe
 
 # Referenced in MomentumDistribution.backfold()
 from .debug import ci
-
+from .developer import DevBase, FileFormatError, NexusError, nxs_print, obj
+from .fileio import XsfFile
+from .grid_functions import (
+    ParallelotopeGridFunction,
+    SpheroidGrid,
+    StructuredGrid,
+    grid_function,
+    read_grid,
+)
+from .grid_functions import grid as generate_grid
+from .hdfreader import read_hdf
+from .numerics import simstats
+from .structure import Structure, get_seekpath_full
+from .unit_converter import convert
 
 
 def get_path(o, path, value=None):
@@ -45,7 +50,7 @@ class VLog(DevBase):
     def __init__(self):
         self.tstart    = process_time()
         self.tlast     = self.tstart
-        self.mstart    = memory.resident(children=True)
+        self.mstart    = sum(memory.resident(children=True))
         self.mlast     = self.mstart
         self.verbosity = self.verbosity_levels.low
         self.indent    = 0
@@ -63,7 +68,7 @@ class VLog(DevBase):
                 #end if
                 if mem:
                     dm = 1e6 # MB
-                    mnow = memory.resident(children=True)
+                    mnow = sum(memory.resident(children=True))
                     msg += f'  (mem add {(mnow-self.mlast)/dm:6.2f}, tot {(mnow-self.mstart)/dm:6.2f})'
                     self.mlast = mnow
                 #end if
@@ -1523,12 +1528,12 @@ Density.define_attributes(
 
 
 class ChargeDensity(Density):
-    None
+    pass
 #end class ChargeDensity
 
 
 class EnergyDensity(Density):
-    None
+    pass
 #end class EnergyDensity
 
 

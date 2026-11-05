@@ -117,25 +117,27 @@ Module contents
 """
 
 from __future__ import annotations
+
+import itertools
 import os
+from copy import deepcopy
 from pathlib import Path
+from random import randint
 from types import MappingProxyType
 from typing import TypeAlias
-import numpy as np
-from copy import deepcopy
-from random import randint
-import itertools
-from numpy import cos, cross, dot, pi, sin, sqrt
-from numpy.linalg import inv, det, norm
-import numpy.typing as npt
-from .unit_converter import convert
-from .numerics import nearest_neighbors, convex_hull, voronoi_neighbors
-from .periodic_table import Elements
-from .fileio import XsfFile, PoscarFile
-from .developer import DevBase, obj, FileFormatError, NotAnElementError
-from .utilities import path_string
-from . import numpy_extensions as npe
 
+import numpy as np
+import numpy.typing as npt
+from numpy import cos, cross, dot, pi, sin, sqrt
+from numpy.linalg import det, inv, norm
+
+from . import numpy_extensions as npe
+from .developer import DevBase, FileFormatError, NotAnElementError, obj
+from .fileio import PoscarFile, XsfFile
+from .numerics import convex_hull, nearest_neighbors, voronoi_neighbors
+from .periodic_table import Elements
+from .unit_converter import convert
+from .utilities import path_string
 
 IdType: TypeAlias = "Structure | npt.NDArray[np.bool_] | int | str | Elements | list[str | Elements | int | float]"
 """Alias for identifiers that can be used to locate specific atoms in a Structure."""
@@ -763,7 +765,7 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
 
 
 class Sobj(DevBase):
-    None
+    pass
 #end class Sobj
 
 
@@ -3244,7 +3246,7 @@ class Structure(Sobj):
             elem = set(self.elem[indices])
             spec = set(spec_max.keys())
             if spec==elem or rmax is not None:
-                None
+                pass
             elif spec<elem and nmax is not None:
                 for e in elem:
                     if e not in spec:
@@ -3771,7 +3773,7 @@ class Structure(Sobj):
         elem = set(self.elem[indices])
         spec = set(spec_max.keys())
         if spec==elem or rmax is not None or voronoi:
-            None
+            pass
         elif spec<elem and nmax is not None:
             for e in elem:
                 if e not in spec:
@@ -5718,7 +5720,7 @@ class Structure(Sobj):
                 elif t0=='constrain_relaxation':
                     constrain_relax.append(tokens[1])
                 elif t0.startswith('initial'):
-                    None
+                    pass
                 else:
                     #None
                     msg = (

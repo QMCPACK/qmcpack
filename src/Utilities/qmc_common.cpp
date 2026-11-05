@@ -16,6 +16,10 @@
 
 
 #include "qmc_common.h"
+#include <array>
+#include <cassert>
+#include <cstdio>
+#include <stdexcept>
 #include "config.h"
 #include "qmcpack_version.h"
 #include "Message/Communicate.h"
@@ -78,7 +82,6 @@ void QMCState::initialize(int argc, char** argv)
   }
   if (stopit)
   {
-    OHMMS::Controller->finalize();
     exit(1);
   }
 }
@@ -105,6 +108,23 @@ void QMCState::print_git_info_if_present(std::ostream& os)
   os << "  Last git commit date: " << QMCPACK_GIT_COMMIT_LAST_CHANGED << std::endl;
   os << "  Last git commit subject: " << QMCPACK_GIT_COMMIT_SUBJECT << std::endl;
 #endif
+}
+
+void QMCState::setupFilenameInfixForEnsembleJobs(int my_job_id, int num_jobs)
+{
+  assert(num_jobs > 0);
+  assert(my_job_id >= 0);
+
+  if (num_jobs > 1)
+  {
+    std::array<char, 16> infix;
+    int len = std::snprintf(infix.data(), infix.size(), ".g%03d", my_job_id);
+    if (len < 0)
+      throw std::runtime_error("Error generating filename_infix_for_ensemble_jobs");
+    filename_infix_for_ensemble_jobs_ = std::string(infix.data(), len);
+  }
+  else
+    filename_infix_for_ensemble_jobs_.clear();
 }
 
 

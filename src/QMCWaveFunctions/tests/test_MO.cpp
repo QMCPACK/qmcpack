@@ -29,7 +29,7 @@ void test_He(bool transform)
 
   SECTION(section_name.str())
   {
-    Communicate* c = OHMMS::Controller;
+    Communicate& c(*OHMMS::Controller);
 
     const SimulationCell simulation_cell;
     auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -133,7 +133,7 @@ TEST_CASE("ReadMolecularOrbital Numerical He", "[wavefunction]") { test_He(true)
 void test_He_mw(bool transform)
 {
   // set up ion particle set as normal
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -280,7 +280,7 @@ TEST_CASE("mw_evaluate Numerical He", "[wavefunction]") { test_He_mw(true); }
 void test_EtOH_mw(bool transform)
 {
   // set up ion particle set as normal
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parse("ethanol.structure.xml"));
@@ -460,7 +460,7 @@ void test_Ne(bool transform)
 
   SECTION(section_name.str())
   {
-    Communicate* c = OHMMS::Controller;
+    Communicate& c(*OHMMS::Controller);
 
     const SimulationCell simulation_cell;
     auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -588,7 +588,7 @@ void test_HCN(bool transform)
 
   SECTION(section_name.str())
   {
-    Communicate* c = OHMMS::Controller;
+    Communicate& c(*OHMMS::Controller);
 
     Libxml2Document doc;
     REQUIRE(doc.parse("hcn.structure.xml"));

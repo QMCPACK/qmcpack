@@ -46,7 +46,7 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
                      MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
-                     Communicate* comm,
+                     Communicate& comm,
                      const std::string& QMC_driver_type,
                      bool enable_profiling)
     : MPIObjectBase(comm),
@@ -62,7 +62,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
 {
   ResetRandom       = false;
   AppendRun         = false;
-  DumpConfig        = false;
   IsQMCDriver       = true;
   allow_traces      = false;
   allow_walker_logs = false;
@@ -80,10 +79,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   //m_param.add(Period4WalkerDump,"recordWalkers");
   m_param.add(Period4WalkerDump, "record_walkers");
   m_param.add(Period4WalkerDump, "recordwalkers");
-  Period4ConfigDump = 0;
-  //m_param.add(Period4ConfigDump,"recordConfigs");
-  m_param.add(Period4ConfigDump, "recordconfigs");
-  m_param.add(Period4ConfigDump, "record_configs");
   CurrentStep = 0;
   m_param.add(CurrentStep, "current");
   nBlocks = 1;
@@ -125,9 +120,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   m_param.add(Tau, "time_step");
   //m_param.add(Tau,"Tau");
   m_param.add(Tau, "tau");
-  MaxCPUSecs = 360000; //100 hours
-  m_param.add(MaxCPUSecs, "maxcpusecs", {}, TagStatus::DEPRECATED);
-  m_param.add(MaxCPUSecs, "max_seconds");
   // by default call recompute at the end of each block in the mixed precision case.
 #ifdef MIXED_PRECISION
   // cpu mixed precision
@@ -183,7 +175,7 @@ void QMCDriver::process(xmlNodePtr cur)
   Estimators = branchEngine->getEstimatorManager();
   if (Estimators == nullptr)
   {
-    branchEngine->setEstimatorManager(std::make_unique<EstimatorManagerBase>(myComm));
+    branchEngine->setEstimatorManager(std::make_unique<EstimatorManagerBase>(&myComm));
     Estimators = branchEngine->getEstimatorManager();
     branchEngine->read(h5FileRoot);
   }
@@ -193,7 +185,7 @@ void QMCDriver::process(xmlNodePtr cur)
 #if !defined(REMOVE_TRACEMANAGER)
   //create and initialize traces
   if (!Traces)
-    Traces = std::make_unique<TraceManager>(myComm);
+    Traces = std::make_unique<TraceManager>(&myComm);
   Traces->put(traces_xml, allow_traces, RootName);
 #endif
   //create and initialize traces
@@ -205,8 +197,7 @@ void QMCDriver::process(xmlNodePtr cur)
   branchEngine->put(cur);
   Estimators->put(H, cur);
   if (!wOut)
-    wOut = std::make_unique<HDFWalkerOutput>(W.getTotalNum(), RootName, myComm);
-  branchEngine->start(RootName);
+    wOut = std::make_unique<HDFWalkerOutput>(W.getTotalNum(), myComm);
   branchEngine->write(RootName);
   //use new random seeds
   if (ResetRandom)
@@ -253,13 +244,13 @@ void QMCDriver::putWalkers(std::vector<xmlNodePtr>& wset)
   //clear the walker set
   wset.clear();
   int nwtot = W.getActiveWalkers();
-  myComm->bcast(nwtot);
+  myComm.bcast(nwtot);
   if (nwtot)
   {
-    int np = myComm->size();
+    int np = myComm.size();
     std::vector<int> nw(np, 0), nwoff(np + 1, 0);
-    nw[myComm->rank()] = W.getActiveWalkers();
-    myComm->allreduce(nw);
+    nw[myComm.rank()] = W.getActiveWalkers();
+    myComm.allreduce(nw);
     for (int ip = 0; ip < np; ++ip)
       nwoff[ip + 1] = nwoff[ip] + nw[ip];
     W.setWalkerOffsets(nwoff);
@@ -297,10 +288,10 @@ std::string QMCDriver::getLastRotationName(std::string RootName)
 
 void QMCDriver::recordBlock(int block)
 {
-  if (DumpConfig && block % Period4CheckPoint == 0)
+  if (Period4CheckPoint > 0 && (block + 1) % Period4CheckPoint == 0 && (block + 1) < nBlocks)
   {
     ScopedTimer local(checkpoint_timer_);
-    wOut->dump(W, block);
+    wOut->dump(W, RootName, block);
     branchEngine->write(RootName, true); //save energy_history
     RandomNumberControl::write(RootName, myComm);
   }
@@ -308,8 +299,9 @@ void QMCDriver::recordBlock(int block)
 
 void QMCDriver::finalize(int block, bool dumpwalkers)
 {
-  if (DumpConfig && dumpwalkers)
-    wOut->dump(W, block);
+  const bool dump_config = Period4CheckPoint >= 0;
+  if (dump_config && dumpwalkers)
+    wOut->dump(W, RootName, block);
   nTargetWalkers = W.getActiveWalkers();
   MyCounter++;
   infoSummary.flush();
@@ -317,7 +309,7 @@ void QMCDriver::finalize(int block, bool dumpwalkers)
 
   branchEngine->finalize(W);
 
-  if (DumpConfig)
+  if (dump_config)
     RandomNumberControl::write(RootName, myComm);
 }
 
@@ -353,28 +345,28 @@ void QMCDriver::addWalkers(int nwalkers)
 
   ////update the global number of walkers
   ////int nw=W.getActiveWalkers();
-  ////myComm->allreduce(nw);
+  ////myComm.allreduce(nw);
 }
 
 void QMCDriver::setWalkerOffsets()
 {
-  std::vector<int> nw(myComm->size(), 0), nwoff(myComm->size() + 1, 0);
-  nw[myComm->rank()] = W.getActiveWalkers();
-  myComm->allreduce(nw);
-  for (int ip = 0; ip < myComm->size(); ip++)
+  std::vector<int> nw(myComm.size(), 0), nwoff(myComm.size() + 1, 0);
+  nw[myComm.rank()] = W.getActiveWalkers();
+  myComm.allreduce(nw);
+  for (int ip = 0; ip < myComm.size(); ip++)
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
   W.setWalkerOffsets(nwoff);
-  long id = nwoff[myComm->rank()];
-  for (int iw = 0; iw < nw[myComm->rank()]; ++iw, ++id)
+  long id = nwoff[myComm.rank()];
+  for (int iw = 0; iw < nw[myComm.rank()]; ++iw, ++id)
   {
     W[iw]->setWalkerID(id);
     W[iw]->setParentID(id);
   }
   // Compute total walker weights and counts. W.EnsembleProperty.NumSamples and W.EnsembleProperty.Weight are only set during branching / measureProperties.
   QMCTraits::FullPrecRealType total_weight = 0;
-  for (int iw = 0; iw < nw[myComm->rank()]; ++iw)
+  for (int iw = 0; iw < nw[myComm.rank()]; ++iw)
     total_weight += W[iw]->Weight;
-  myComm->allreduce(total_weight);
+  myComm.allreduce(total_weight);
 
   app_log() << "  Total number of walkers: " << nwoff.back() << std::endl;
   app_log() << "  Total weight: " << total_weight << std::endl;
@@ -432,14 +424,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
         rAttrib.add(Period4CheckPoint, "stride");
         rAttrib.add(Period4CheckPoint, "period");
         rAttrib.put(tcur);
-        //DumpConfig=(Period4CheckPoint>0);
-      }
-      else if (cname == "dumpconfig")
-      {
-        OhmmsAttributeSet rAttrib;
-        rAttrib.add(Period4ConfigDump, "stride");
-        rAttrib.add(Period4ConfigDump, "period");
-        rAttrib.put(tcur);
       }
       else if (cname == "random")
       {
@@ -472,9 +456,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     nSubSteps = 1;
   }
 
-  DumpConfig = (Period4CheckPoint >= 0);
-  if (Period4CheckPoint < 1)
-    Period4CheckPoint = nBlocks;
   //reset CurrentStep to zero if qmc/@continue='no'
   if (!AppendRun)
     CurrentStep = 0;
