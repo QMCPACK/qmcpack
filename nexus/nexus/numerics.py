@@ -81,15 +81,17 @@
 #====================================================================#
 
 
-import sys
 import importlib
 import inspect
+import sys
+
 import numpy as np
-from numpy import pi, exp, sqrt, sin, cos
+from numpy import cos, exp, pi, sin, sqrt
 from numpy.linalg import norm
+
 from .developer import obj
-from .unit_converter import convert
 from .periodic_table import Elements
+from .unit_converter import convert
 
 
 # cost functions
@@ -1094,7 +1096,7 @@ def equilibration_length(x,tail=.5,*,plot=False,xlim=None,bounces=2,random=True,
     if plot:
         xlims = xlim
         del plot,xlim
-        from matplotlib.pyplot import plot, figure, show, xlim
+        from matplotlib.pyplot import figure, plot, show, xlim
         figure()
         ix = np.arange(nx)
         plot(ix,x,'b.-')
