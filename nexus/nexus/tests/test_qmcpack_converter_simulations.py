@@ -1,26 +1,37 @@
-import pytest
+import os
 from copy import deepcopy
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_SIMULATIONS)
-
-
 from pathlib import Path
 
-from . import isolate_nexus_core, create_pseudo_files
-from nexus.nexus_base import nexus_config
-from ..testing import clear_all_sims
-from ..testing import failed,FailedTest
-from ..testing import object_eq
+import pytest
 
+from ..developer import obj
+from ..gamess import Gamess
+from ..machines import job
+from ..nexus_base import nexus_config
+from ..qmcpack_converters import (
+    Convert4qmc,
+    Pw2qmcpack,
+    PyscfToAfqmc,
+    generate_convert4qmc,
+    generate_pw2qmcpack,
+    generate_pyscf_to_afqmc,
+)
+from ..quantum_package import QuantumPackage
+from ..simulation import Simulation
+from ..testing import FailedTest, clear_all_sims, failed, object_eq
+from . import NexusTestOrder, create_pseudo_files, isolate_nexus_core
+from .test_gamess_simulation import get_gamess_sim
+from .test_pwscf_simulation import get_pwscf_sim
+from .test_pyscf_simulation import get_pyscf_sim
+from .test_quantum_package_simulation import get_quantum_package_sim
+
+pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_SIMULATIONS)
 
 #====================================================================#
 #                         pw2qmcpack tests                           #
 #====================================================================#
 
 def get_pw2qmcpack_sim(**kwargs):
-    from ..machines import job
-    from ..qmcpack_converters import Pw2qmcpack,generate_pw2qmcpack
-
     sim = generate_pw2qmcpack(
         job = job(machine='ws1',cores=1),
         **kwargs
@@ -34,9 +45,6 @@ def get_pw2qmcpack_sim(**kwargs):
 
 
 def test_pw2qmcpack_minimal_init():
-    from ..machines import job
-    from ..qmcpack_converters import Pw2qmcpack,generate_pw2qmcpack
-
     sim = generate_pw2qmcpack(
         job = job(machine='ws1',cores=1),
         )
@@ -60,8 +68,6 @@ def test_pw2qmcpack_check_result():
 
 
 def test_pw2qmcpack_get_result():
-    from ..developer import obj
-
     sim = get_pw2qmcpack_sim()
 
     with pytest.raises(
@@ -86,10 +92,6 @@ def test_pw2qmcpack_get_result():
 
 @isolate_nexus_core
 def test_pw2qmcpack_incorporate_result(tmp_path):
-    from ..simulation import Simulation
-    from ..machines import job
-    from .test_pwscf_simulation import get_pwscf_sim
-
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
@@ -116,8 +118,6 @@ def test_pw2qmcpack_incorporate_result(tmp_path):
 
 @isolate_nexus_core
 def test_pw2qmcpack_check_sim_status(tmp_path):
-    from ..nexus_base import nexus_config
-
     nexus_config.runs = ''
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
@@ -171,9 +171,6 @@ def test_pw2qmcpack_check_sim_status(tmp_path):
 #====================================================================#
 
 def get_convert4qmc_sim(**kwargs):
-    from ..machines import job
-    from ..qmcpack_converters import Convert4qmc,generate_convert4qmc
-
     sim = generate_convert4qmc(
         job = job(machine='ws1',cores=1),
         **kwargs
@@ -187,9 +184,6 @@ def get_convert4qmc_sim(**kwargs):
 
 
 def test_convert4qmc_minimal_init():
-    from ..machines import job
-    from ..qmcpack_converters import Convert4qmc,generate_convert4qmc
-
     sim = generate_convert4qmc(
         job = job(machine='ws1',cores=1),
         )
@@ -214,8 +208,6 @@ def test_convert4qmc_check_result():
 
 
 def test_convert4qmc_get_result():
-    from ..developer import obj
-
     sim = get_convert4qmc_sim()
 
     with pytest.raises(
@@ -247,15 +239,6 @@ def test_convert4qmc_get_result():
 
 
 def test_convert4qmc_incorporate_result():
-    from ..developer import obj
-    from ..simulation import Simulation
-    from ..gamess import Gamess
-    from ..machines import job
-    from ..quantum_package import QuantumPackage
-    from .test_gamess_simulation import get_gamess_sim
-    from .test_pyscf_simulation import get_pyscf_sim
-    from .test_quantum_package_simulation import get_quantum_package_sim
-
     other = Simulation(job=job(machine='ws1',app_command='test.x'))
 
     gms = get_gamess_sim('rhf')
@@ -331,8 +314,6 @@ def test_convert4qmc_incorporate_result():
 
 @isolate_nexus_core
 def test_convert4qmc_check_sim_status(tmp_path):
-    from ..nexus_base import nexus_config
-
     nexus_config.runs = ''
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
@@ -383,9 +364,6 @@ def test_convert4qmc_check_sim_status(tmp_path):
 #====================================================================#
 
 def get_pyscf_to_afqmc_sim(**kwargs):
-    from ..machines import job
-    from ..qmcpack_converters import PyscfToAfqmc,generate_pyscf_to_afqmc
-
     sim = generate_pyscf_to_afqmc(
         job = job(machine='ws1',cores=1),
         **kwargs
@@ -399,9 +377,6 @@ def get_pyscf_to_afqmc_sim(**kwargs):
 
 
 def test_pyscf_to_afqmc_minimal_init():
-    from ..machines import job
-    from ..qmcpack_converters import PyscfToAfqmc,generate_pyscf_to_afqmc
-
     sim = generate_pyscf_to_afqmc(
         job = job(machine='ws1',cores=1),
         )
@@ -431,8 +406,6 @@ def test_pyscf_to_afqmc_check_result():
 
 
 def test_pyscf_to_afqmc_get_result():
-    from ..developer import obj
-
     sim = get_pyscf_to_afqmc_sim()
 
     sim.input.output = 'afqmc.h5'
@@ -461,12 +434,6 @@ def test_pyscf_to_afqmc_get_result():
 
 
 def test_pyscf_to_afqmc_incorporate_result():
-    import os
-    from ..developer import obj
-    from ..simulation import Simulation
-    from ..machines import job
-    from .test_pyscf_simulation import get_pyscf_sim
-
     other = Simulation(job=job(machine='ws1',app_command='test.x'))
 
     scf = get_pyscf_sim()
@@ -495,8 +462,6 @@ def test_pyscf_to_afqmc_incorporate_result():
 
 @isolate_nexus_core
 def test_pyscf_to_afqmc_check_sim_status(tmp_path):
-    from ..nexus_base import nexus_config
-
     nexus_config.runs = ''
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)

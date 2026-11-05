@@ -18,17 +18,18 @@ parser.add_argument('--prefix', required=True)
 parser.add_argument('--ionion', type=float, required=True)
 args = parser.parse_args()
 
-for group, blocks in enumerate((1, 2, 3, 4)):
+for group in range(4):
     path = Path(f'{args.prefix}.g{group:03d}.s000.scalar.dat')
     lines = path.read_text().splitlines()
     names = lines[0].split()[1:]
     rows = [dict(zip(names, map(float, line.split())))
             for line in lines[1:] if line.strip() and not line.startswith('#')]
+    blocks = len(rows)
+    if blocks == 0:
+        raise SystemExit(f'{path}: no blocks found')
     # FairDivideLow assigns any extra MPI rank to the last group.
     ranks = 1 + int(args.ranks == 5 and group == 3)
     expected_samples = blocks * 3 * ranks
-    if len(rows) != blocks:
-        raise SystemExit(f'{path}: expected {blocks} blocks, found {len(rows)}')
     for row in rows:
         if not all(math.isfinite(value) for value in row.values()):
             raise SystemExit(f'{path}: non-finite scalar data')

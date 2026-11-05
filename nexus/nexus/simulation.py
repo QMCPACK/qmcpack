@@ -65,28 +65,28 @@
 #====================================================================#
 from __future__ import annotations
 
-
 import logging
 import os
-import sys
 import shutil
+import sys
 import tempfile
 import traceback
 from collections.abc import Collection, Mapping
 from copy import deepcopy
 from datetime import datetime
 from inspect import signature
+from os import PathLike
 from pathlib import Path
 from string import Template
 from subprocess import Popen
-from typing import Any, ClassVar, TypeAlias, TYPE_CHECKING
-from os import PathLike
-from .developer import DevBase, obj, FileFormatError, NexusError
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
+
+from .developer import DevBase, FileFormatError, NexusError, obj
 from .developer_tools import Unset
-from .structure import Structure, read_structure
-from .physical_system import PhysicalSystem
 from .machines import Job, Workstation, get_machine
-from .nexus_base import NexusCore, nexus_config, SimStage, dynamic_storage
+from .nexus_base import NexusCore, SimStage, dynamic_storage, nexus_config
+from .physical_system import PhysicalSystem
+from .structure import Structure, read_structure
 from .utilities import path_string
 
 if TYPE_CHECKING:
@@ -464,6 +464,7 @@ class Simulation(NexusCore):
         self.got_output = False
         self.analyzed   = False
         self.timestamps = obj()
+        self.timeout_started = False
         self.subcascade_finished = False
         self.block            = block
         self.block_subcascade = block_subcascade
@@ -1265,17 +1266,22 @@ class Simulation(NexusCore):
             if self.errfile is not None:
                 errfile = os.path.join(self.locdir,self.errfile)
                 should_check &= os.path.exists(errfile)
-            #end if
+
             if not self.finished and should_check:
                 self.check_sim_status()
-            elif not self.finished:
-                exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
-                elapsed = datetime.now().astimezone() - exited_queue
-                if elapsed.total_seconds()>nexus_config.timeout:
-                    self.record_timestamp('timed_out')
-                    self.failed = True
-                #end if
-            #end if
+
+            if not self.finished:
+                if not self.timeout_started:
+                    self.timeout_started = True
+                    self.logger.info("Started countdown to timeout")
+                else:
+                    exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
+                    elapsed = datetime.now().astimezone() - exited_queue
+                    if elapsed.total_seconds()>nexus_config.timeout:
+                        self.record_timestamp('timed_out')
+                        self.failed = True
+                        self.timeout_started = False
+
             if self.failed:
                 self.finished = True
             #end if
@@ -1286,6 +1292,9 @@ class Simulation(NexusCore):
         if self.finished:
             self.record_timestamp('finished')
             self.save_image()
+            if self.timeout_started:
+                self.timeout_started = False
+                self.logger.info("Timeout countdown aborted")
         elif newly_exited_queue:
             self.save_image()
         #end if
@@ -1963,7 +1972,7 @@ def generate_simulation(**kwargs):
 # ability to graph simulation workflows
 exit_call = sys.exit
 def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,display=True):
-    from pydot import Dot, Node, Edge
+    from pydot import Dot, Edge, Node
 
     if sims is None:
         sims = Simulation.all_sims
@@ -2021,7 +2030,7 @@ def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,displ
     # display the image
     if fmt=='png' and display:
         from matplotlib.image import imread
-        from matplotlib.pyplot import imshow,show,xticks,yticks
+        from matplotlib.pyplot import imshow, show, xticks, yticks
         imshow(imread(savefile))
         xticks([])
         yticks([])

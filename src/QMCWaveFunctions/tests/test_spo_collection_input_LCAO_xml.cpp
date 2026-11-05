@@ -9,13 +9,17 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
+#include "Message/UniformCommunicateError.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+#include "ConstantSPOSet.h"
 #include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
@@ -245,5 +249,128 @@ TEST_CASE("SPO input spline from xml He_sto3g", "[wavefunction]")
 </wavefunction>
 )";
   test_He_sto3g_xml_input(spo_xml_string3);
+}
+
+TEST_CASE("SPOSetBuilder and SPOSetBuilderFactory exceptions", "[wavefunction]")
+{
+  Communicate& c(*OHMMS::Controller);
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  elec_uptr->setName("e");
+  elec_uptr->create({1});
+  elec_uptr->update();
+  ions_uptr->setName("ion0");
+  SpeciesSet& ispecies = ions_uptr->getSpeciesSet();
+  ispecies.addSpecies("He");
+  ions_uptr->create({1});
+  ions_uptr->update();
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
+
+  auto& elec = *ptcl.getParticleSet("e");
+  SPOSetBuilderFactory factory(c, elec, ptcl.getPool());
+
+  Libxml2Document doc;
+
+  SECTION("createSPOSetBuilder unknown type throws")
+  {
+    REQUIRE(doc.parseFromString(R"(<sposet_collection type="unknown_type"/>)"));
+    CHECK_THROWS_MATCHES(factory.createSPOSetBuilder(doc.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message("SPOSetBuilderFactory::createSPOSetBuilder SPOSetBuilder creation failed."));
+  }
+
+#ifndef QMC_COMPLEX
+  SECTION("createSPOSetBuilder spinor without QMC_COMPLEX throws")
+  {
+    elec.setSpinor(true);
+    REQUIRE(doc.parseFromString(R"(<sposet_collection type="molecularorbital" source="ion0"/>)"));
+    CHECK_THROWS_MATCHES(factory.createSPOSetBuilder(doc.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message("SPOSetBuilderFactory::createSPOSetBuilder Use of lcao spinors requires QMC_COMPLEX=1. Rebuild with this option"));
+    elec.setSpinor(false);
+  }
+#endif
+
+  SECTION("buildSPOSetCollection with no sposet elements throws")
+  {
+    const char* no_spo_xml = R"(
+      <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0">
+        <basisset keyword="GTO" name="LCAOBSet">
+          <atomicBasisSet name="Gaussian" angular="spherical" type="Gaussian" elementType="He" normalized="no">
+            <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+            <basisGroup rid="He00" n="0" l="0" type="Gaussian">
+              <radfunc exponent="1.0" contraction="1.0"/>
+            </basisGroup>
+          </atomicBasisSet>
+        </basisset>
+      </sposet_collection>
+    )";
+    REQUIRE(doc.parseFromString(no_spo_xml));
+    CHECK_THROWS_MATCHES(factory.buildSPOSetCollection(doc.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message("SPOSetBuilderFactory::buildSPOSetCollection  no <sposet/> elements found"));
+  }
+
+  SECTION("addSPOSet unnamed sposet throws")
+  {
+    CHECK_THROWS_MATCHES(factory.addSPOSet(std::make_unique<ConstantSPOSet<QMCTraits::ValueType>>("", 1, 1)),
+                         UniformCommunicateError,
+                         Catch::Matchers::Message("sposet created in sposet_collection must have a name!"));
+  }
+
+  SECTION("addSPOSet duplicate sposet name throws")
+  {
+    factory.addSPOSet(std::make_unique<ConstantSPOSet<QMCTraits::ValueType>>("c_spo", 1, 1));
+    CHECK_THROWS_MATCHES(factory.addSPOSet(std::make_unique<ConstantSPOSet<QMCTraits::ValueType>>("c_spo", 1, 1)),
+                         UniformCommunicateError,
+                         Catch::Matchers::Message("The name of each sposet must be unique! 'c_spo' exists."));
+  }
+
+  SECTION("SPOSetBuilder missing name attribute throws")
+  {
+    const char* builder_xml = R"(
+      <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0">
+        <basisset name="LCAOBSet" keyword="GTO">
+          <atomicBasisSet name="Gaussian" angular="cartesian" type="Gaussian" elementType="He" normalized="no">
+            <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+            <basisGroup rid="He00" n="0" l="0" type="Gaussian">
+              <radfunc exponent="1.0" contraction="1.0"/>
+            </basisGroup>
+          </atomicBasisSet>
+        </basisset>
+      </sposet_collection>
+    )";
+    REQUIRE(doc.parseFromString(builder_xml));
+    auto builder = factory.createSPOSetBuilder(doc.getRoot());
+    REQUIRE(builder != nullptr);
+
+    Libxml2Document spo_doc;
+    REQUIRE(spo_doc.parseFromString(R"(<sposet size="1"/>)"));
+    CHECK_THROWS_MATCHES(builder->createSPOSet(spo_doc.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message("SPOSet object \"name\" attribute not given in the input!"));
+  }
+
+  SECTION("SPOSetBuilder createRotatedSPOSet without sposet child throws")
+  {
+    const char* builder_xml = R"(
+      <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0">
+        <basisset name="LCAOBSet" keyword="GTO">
+          <atomicBasisSet name="Gaussian" angular="cartesian" type="Gaussian" elementType="He" normalized="no">
+            <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+            <basisGroup rid="He00" n="0" l="0" type="Gaussian">
+              <radfunc exponent="1.0" contraction="1.0"/>
+            </basisGroup>
+          </atomicBasisSet>
+        </basisset>
+      </sposet_collection>
+    )";
+    REQUIRE(doc.parseFromString(builder_xml));
+    auto builder = factory.createSPOSetBuilder(doc.getRoot());
+    REQUIRE(builder != nullptr);
+
+    Libxml2Document spo_doc;
+    REQUIRE(spo_doc.parseFromString(R"(<sposet name="rot_spo"/>)"));
+    CHECK_THROWS_MATCHES(builder->createRotatedSPOSet(spo_doc.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message("Rotated SPO needs an SPOset"));
+  }
 }
 } // namespace qmcplusplus
