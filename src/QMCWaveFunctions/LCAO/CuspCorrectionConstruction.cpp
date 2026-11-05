@@ -16,6 +16,7 @@
 
 #include "CuspCorrectionConstruction.h"
 #include "Message/Communicate.h"
+#include "Message/CommOperators.h"
 #include "SoaCuspCorrectionBasisSet.h"
 #include "Utilities/FairDivide.h"
 #include "SoaLocalizedBasisSet.h"
@@ -206,7 +207,7 @@ void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int r
   buffer[6] = param.alpha[3];
   buffer[7] = param.alpha[4];
 
-  Comm.comm.broadcast(buffer.begin(), buffer.end(), root);
+  Comm.bcast(buffer, root);
 
   param.Rc       = buffer[0];
   param.C        = buffer[1];

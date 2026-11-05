@@ -61,6 +61,7 @@ if(USE_OBJECT_TARGET)
 endif()
 
 add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
+add_unit_test(BASENAME ${UTEST_NAME} PROCS 2 THREADS 3 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
 
 # New Driver Only test program
 # to avoid dealing with the build dependencies
@@ -105,6 +106,7 @@ if(USE_OBJECT_TARGET)
 endif()
 
 add_unit_test(BASENAME ${UTEST_NAME} THREADS 8 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
+add_unit_test(BASENAME ${UTEST_NAME} PROCS 2 THREADS 3 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
 
 if(HAVE_MPI)
   set(UTEST_EXE test_new_${SRC_DIR}_mpi)
@@ -126,8 +128,8 @@ if(HAVE_MPI)
       qmcutil
       platform_omptarget_LA)
   endif()
+  set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   foreach(NUM_RANKS 1 2 3 4 16)
-    set(UTEST_NAME deterministic-unit_${UTEST_EXE}-r${NUM_RANKS})
     add_unit_test(BASENAME ${UTEST_NAME} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
   endforeach()
 endif(HAVE_MPI)

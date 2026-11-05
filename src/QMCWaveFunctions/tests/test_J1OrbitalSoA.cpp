@@ -22,7 +22,7 @@ namespace qmcplusplus
 {
 TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -113,7 +113,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
 
 TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 {
-  Communicate* c       = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -212,7 +212,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 
 TEST_CASE("J1 evaluate derivatives Jastrow with two species one without Jastrow", "[wavefunction]")
 {
-  Communicate* c       = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());

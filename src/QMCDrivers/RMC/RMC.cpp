@@ -39,7 +39,7 @@ RMC::RMC(const ProjectData& project_data,
          MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
-         Communicate* comm)
+         Communicate& comm)
     : QMCDriver(project_data, w, psi, h, comm, "RMC"),
       prestepsVMC(-1),
       rescaleDrift("no"),
@@ -69,7 +69,7 @@ void RMC::run()
 {
   resetRun();
   //start the main estimator
-  Estimators->start(nBlocks);
+  Estimators->start(nBlocks, RootName);
   for (int ip = 0; ip < NumThreads; ++ip)
     Movers[ip]->startRun(nBlocks, false);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -78,10 +78,13 @@ void RMC::run()
   const bool has_collectables = W.Collectables.size();
 
   LoopTimer<> rmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
+  LoopRunTimeControl<> runtimeControl(run_time_manager, project_data_, "RMC driver", "block", myComm);
   for (int block = 0; block < nBlocks; ++block)
   {
-    rmc_loop.start();
+    if (runtimeControl.checkStop(rmc_loop, block))
+      break;
+
+    ScopeGuard<LoopTimer<>> rmc_local_timer(rmc_loop);
 #pragma omp parallel
     {
       int ip                 = omp_get_thread_num();
@@ -109,27 +112,14 @@ void RMC::run()
         branchEngine->collect(
             CurrentStep,
             W); //Ray Clay:  For now, collects and syncs based on first reptile.  Need a better way to do this.
+        //accumulate collectables and energies for scalar.dat
+        Estimators->accumulate(W);
       }
       Movers[ip]->stopBlock(false);
     } //end-of-parallel for
     CurrentStep += nSteps;
     Estimators->stopBlock(estimatorClones);
     recordBlock(block);
-    rmc_loop.stop();
-
-    bool stop_requested = false;
-    // Rank 0 decides whether the time limit was reached
-    if (!myComm->rank())
-      stop_requested = runtimeControl.checkStop(rmc_loop);
-    myComm->bcast(stop_requested);
-
-    if (stop_requested)
-    {
-      if (!myComm->rank())
-        app_log() << runtimeControl.generateStopMessage("RMC", block);
-      run_time_manager.markStop();
-      break;
-    }
   } //block
   Estimators->stop(estimatorClones);
   //copy back the random states
@@ -295,6 +285,7 @@ void RMC::resetRun()
     {
       Movers[ip]->advanceWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1], false);
       branchEngine->collect(CurrentStep, W);
+      Estimators->accumulate(W);
     }
   }
 

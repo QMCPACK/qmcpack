@@ -23,7 +23,7 @@ class SlaterDetOperations : public MPIObjectBase, public AFQMCInfo
 public:
   using HamPtr = HamiltonianBase*;
 
-  SlaterDetOperations(Communicate* c) : MPIObjectBase(c), ham(NULL) {}
+  SlaterDetOperations(Communicate& c) : MPIObjectBase(c), ham(NULL) {}
 
   void setup(HamPtr h, myTimer* timer_)
   {
@@ -205,7 +205,7 @@ public:
             ComplexMatrix* HF,
             bool getEigV = false)
   {
-    if (myComm->size() > 1)
+    if (myComm.size() > 1)
       APP_ABORT(" ERROR: Estimators::SlaterDetOperations::diag(): Only implemented in serial. \n");
 
     int N = 0;
@@ -342,7 +342,7 @@ APP_ABORT("Testing. \n");
     std::vector<char> buffer_in;
     std::vector<char> buffer_out;
     std::vector<int> to(1);
-    std::vector<int> from(myComm->size());
+    std::vector<int> from(myComm.size());
     int sz    = itbegin->sizeForDump();
     int nWtot = 0, nW = 0, nWmax = 0;
     for (std::vector<SlaterDetWalker>::iterator it1 = itbegin; it1 != itend; it1++)
@@ -350,8 +350,8 @@ APP_ABORT("Testing. \n");
         nW++;
 
     to[0] = nW;
-    myComm->allgather(to, from);
-    for (int i = 0; i < myComm->size(); i++)
+    myComm.allgather(to, from);
+    for (int i = 0; i < myComm.size(); i++)
     {
       nWtot += from[i];
       if (from[i] > nWmax)
@@ -384,18 +384,18 @@ APP_ABORT("Testing. \n");
       }
     }
 
-    if (myComm->size() == 1)
+    if (myComm.size() == 1)
       return ovlp[0] / std::sqrt(std::abs(ovlp[1]));
     buffer_in.resize(nWmax * sz);
-    int rec  = (myComm->rank() + 1) % (myComm->size());
-    int send = (myComm->rank() - 1) % (myComm->size());
-    for (int i = 0; i < myComm->size() - 1; i++)
+    int rec  = (myComm.rank() + 1) % (myComm.size());
+    int send = (myComm.rank() - 1) % (myComm.size());
+    for (int i = 0; i < myComm.size() - 1; i++)
     {
-      //        myComm->isend(send, send*myComm->size()+myComm->rank() ,buffer_out);
-      //        myComm->irecv(rec, myComm->rank()*myComm->size()+rec ,buffer_in);
+      //        myComm.isend(send, send*myComm.size()+myComm.rank() ,buffer_out);
+      //        myComm.irecv(rec, myComm.rank()*myComm.size()+rec ,buffer_in);
 
       // dump way to avoid double counting, but efficiency depends heavily on load balance
-      if (rec < myComm->rank())
+      if (rec < myComm.rank())
       {
         // I only do the top half
         for (int i = 0; i < from[rec] / 2; i++)
@@ -426,12 +426,12 @@ APP_ABORT("Testing. \n");
         }
       }
 
-      rec  = (rec + 1) % (myComm->size());
-      send = (send - 1) % (myComm->size());
+      rec  = (rec + 1) % (myComm.size());
+      send = (send - 1) % (myComm.size());
     }
 
     std::vector<ComplexType> res(2);
-    //myComm->gsum(ovlp);
+    //myComm.gsum(ovlp);
     return res[0] / std::sqrt(std::abs(res[1]));
   }
 

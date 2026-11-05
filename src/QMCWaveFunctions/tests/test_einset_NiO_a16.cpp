@@ -31,7 +31,7 @@ namespace qmcplusplus
 
 TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   lattice.R = {3.94055, 3.94055, 7.8811, 3.94055, 3.94055, -7.8811, -7.8811, 7.8811, 0};

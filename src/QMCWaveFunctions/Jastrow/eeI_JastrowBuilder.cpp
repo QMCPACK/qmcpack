@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-eeI_JastrowBuilder::eeI_JastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source)
+eeI_JastrowBuilder::eeI_JastrowBuilder(Communicate& comm, ParticleSet& target, ParticleSet& source)
     : WaveFunctionComponentBuilder(comm, target, "eeI_JastroBuilder"), sourcePtcl(&source)
 {}
 

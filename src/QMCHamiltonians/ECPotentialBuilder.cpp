@@ -21,8 +21,8 @@
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/L2Potential.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Numerics/OneDimNumGridFunctor.h"
 #include "Message/UniformCommunicateError.h"
+#include <sstream>
 
 namespace qmcplusplus
 {
@@ -31,7 +31,7 @@ namespace qmcplusplus
  *\param els the positions of the electrons
  *\param psi trial wavefunction
  */
-ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h, ParticleSet& ions, ParticleSet& els, Communicate* c)
+ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h, ParticleSet& ions, ParticleSet& els, Communicate& c)
     : MPIObjectBase(c),
       hasLocalPot(false),
       hasNonLocalPot(false),
@@ -84,7 +84,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
   else
   {
-    useSimpleTableFormat();
+    throw UniformCommunicateError("Only XML format ECPs are currently supported.");
   }
 
   ///create LocalECPotential
@@ -218,6 +218,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       int AtomicNumberIndex = ion_species.findAttribute("atomicnumber");
       if (AtomicNumberIndex == -1)
         AtomicNumberIndex = ion_species.findAttribute("atomic_number");
+      std::ostringstream errors;
       bool success = false;
       if (speciesIndex < ion_species.getTotalNum())
       {
@@ -273,7 +274,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
           }
           if (chargeIndex == -1)
           {
-            app_error() << "  Ion species " << ionName << " needs parameter \'charge\'" << std::endl;
+            errors << "  Ion species " << ionName << " needs parameter \'charge\'" << std::endl;
             success = false;
           }
           else
@@ -281,14 +282,14 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
             RealType ion_charge = ion_species(chargeIndex, speciesIndex);
             if (std::fabs(ion_charge - ecp.Zeff) > 1e-4)
             {
-              app_error() << "  Ion species " << ionName << " charge " << ion_charge << " pseudopotential charge "
-                          << ecp.Zeff << " mismatch!" << std::endl;
+              errors << "  Ion species " << ionName << " charge " << ion_charge << " pseudopotential charge "
+                     << ecp.Zeff << " mismatch!" << std::endl;
               success = false;
             }
           }
           if (AtomicNumberIndex == -1)
           {
-            app_error() << "  Ion species " << ionName << " needs parameter \'atomicnumber\'" << std::endl;
+            errors << "  Ion species " << ionName << " needs parameter \'atomicnumber\'" << std::endl;
             success = false;
           }
           else
@@ -296,8 +297,8 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
             int atomic_number = ion_species(AtomicNumberIndex, speciesIndex);
             if (atomic_number != ecp.AtomicNumber)
             {
-              app_error() << "  Ion species " << ionName << " atomicnumber " << atomic_number
-                          << " pseudopotential atomic-number " << ecp.AtomicNumber << " mismatch!" << std::endl;
+              errors << "  Ion species " << ionName << " atomicnumber " << atomic_number
+                     << " pseudopotential atomic-number " << ecp.AtomicNumber << " mismatch!" << std::endl;
               success = false;
             }
           }
@@ -305,129 +306,16 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       }
       else
       {
-        app_error() << "  Ion species " << ionName << " is not found." << std::endl;
+        errors << "  Ion species " << ionName << " is not found." << std::endl;
       }
       if (!success)
       {
-        app_error() << "  Failed to add pseudopotential for element " << ionName << std::endl;
-        myComm->barrier_and_abort("ECPotentialBuilder::useXmlFormat failed!");
+        errors << "  Failed to add pseudopotential for element " << ionName << std::endl;
+        throw UniformCommunicateError("ECPotentialBuilder::useXmlFormat failed:\n" + errors.str());
       }
     }
     cur = cur->next;
   }
 }
 
-/** reimplement simple table format used by NonLocalPPotential
- */
-void ECPotentialBuilder::useSimpleTableFormat()
-{
-  SpeciesSet& Species(IonConfig.getSpeciesSet());
-  int ng(Species.getTotalNum());
-  int icharge(Species.addAttribute("charge"));
-  for (int ig = 0; ig < ng; ig++)
-  {
-    std::vector<RealType> grid_temp, pp_temp;
-    std::string species(Species.speciesName[ig]);
-    std::string fname = species + ".psf";
-    std::ifstream fin(fname.c_str(), std::ios_base::in);
-    if (!fin)
-    {
-      app_error() << "Could not open file " << fname << std::endl;
-      exit(-1);
-    }
-    // Read Number of potentials (local and non) for this atom
-    int npotentials;
-    fin >> npotentials;
-    int lmax      = -1;
-    int numnonloc = 0;
-    RealType rmax(0.0);
-    app_log() << "  ECPotential for " << species << std::endl;
-    std::unique_ptr<NonLocalECPComponent> mynnloc;
-    using CubicSplineFuncType = OneDimCubicSpline<RealType>;
-    for (int ij = 0; ij < npotentials; ij++)
-    {
-      int angmom, npoints;
-      fin >> angmom >> npoints;
-      OneDimNumGridFunctor<RealType> inFunc;
-      inFunc.put(npoints, fin);
-      if (angmom < 0)
-      //local potential, input is rescale by -r/z
-      {
-        RealType zinv = -1.0 / Species(icharge, ig);
-        int ng        = npoints - 1;
-        RealType rf   = 5.0;
-        ng            = static_cast<int>(rf * 100) + 1; //use 1e-2 resolution
-        auto agrid    = std::make_unique<LinearGrid<RealType>>();
-        agrid->set(0, rf, ng);
-        std::vector<RealType> pp_temp(ng);
-        pp_temp[0] = 0.0;
-        for (int j = 1; j < ng; j++)
-        {
-          RealType r((*agrid)[j]);
-          pp_temp[j] = r * zinv * inFunc.splint(r);
-        }
-        pp_temp[ng - 1] = 1.0;
-        auto app        = std::make_unique<RadialPotentialType>(std::move(agrid), pp_temp);
-        app->spline();
-        localPot[ig] = std::move(app);
-        app_log() << "    LocalECP l=" << angmom << std::endl;
-        app_log() << "      Linear grid=[0," << rf << "] npts=" << ng << std::endl;
-        hasLocalPot = true; //will create LocalECPotential
-      }
-      else
-      {
-        hasNonLocalPot = true; //will create NonLocalECPotential
-        if (!mynnloc)
-          mynnloc = std::make_unique<NonLocalECPComponent>();
-        RealType rf = inFunc.rmax();
-        auto agrid  = std::make_unique<LinearGrid<RealType>>();
-        int ng      = static_cast<int>(rf * 100) + 1;
-        agrid->set(0.0, rf, ng);
-        app_log() << "    NonLocalECP l=" << angmom << " rmax = " << rf << std::endl;
-        app_log() << "      Linear grid=[0," << rf << "] npts=" << ng << std::endl;
-        std::vector<RealType> pp_temp(ng);
-        //get the value
-        pp_temp[0] = inFunc(0);
-        for (int j = 1; j < ng; j++)
-        {
-          pp_temp[j] = inFunc.splint((*agrid)[j]);
-        }
-        auto app = new RadialPotentialType(std::move(agrid), pp_temp);
-        app->spline();
-        mynnloc->add(angmom, app);
-        lmax = std::max(lmax, angmom);
-        rmax = std::max(rmax, rf);
-        numnonloc++;
-      }
-      if (mynnloc)
-      {
-        mynnloc->setLmax(lmax);
-        mynnloc->setRmax(rmax);
-        app_log() << "    Maximum cutoff of NonLocalECP " << rmax << std::endl;
-      }
-    }
-    fin.close();
-    if (mynnloc)
-    {
-      int numsgridpts   = 0;
-      std::string fname = species + ".sgr";
-      std::ifstream fin(fname.c_str(), std::ios_base::in);
-      if (!fin)
-      {
-        app_error() << "Could not open file " << fname << std::endl;
-        exit(-1);
-      }
-      PosType xyz;
-      RealType weight;
-      while (fin >> xyz >> weight)
-      {
-        mynnloc->addknot(xyz, weight);
-        numsgridpts++;
-      }
-      //cout << "Spherical grid : " << numsgridpts << " points" << std::endl;
-      mynnloc->resize_warrays(numsgridpts, numnonloc, lmax);
-      nonLocalPot[ig] = std::move(mynnloc);
-    }
-  } //species
-}
 } // namespace qmcplusplus

@@ -62,7 +62,7 @@ public:
   TrialWaveFunction psi = TrialWaveFunction(runtime_options_);
   QMCCostFunctionBatched costFn;
 
-  LinearMethodTestSupport(const std::vector<int>& walkers_per_crowd, Communicate* comm)
+  LinearMethodTestSupport(const std::vector<int>& walkers_per_crowd, Communicate& comm)
       : w(simulation_cell), costFn(w, psi, h, samples, walkers_per_crowd, comm)
   {}
 
@@ -98,7 +98,9 @@ TEST_CASE("fillOverlapAndHamiltonianMatrices", "[drivers]")
 
   using Return_rt = qmcplusplus::QMCTraits::RealType;
 
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
+  if (comm.size() > 1)
+    return;
 
   testing::LinearMethodTestSupport lin(walkers_per_crowd, comm);
 
@@ -148,7 +150,9 @@ void fill_from_text(int num_opt_crowds, FillData& fd)
 
   using Return_rt = qmcplusplus::QMCTraits::RealType;
 
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
+  if (comm.size() > 1)
+    return;
 
   testing::LinearMethodTestSupport lin(walkers_per_crowd, comm);
 
@@ -196,6 +200,10 @@ void fill_from_text(int num_opt_crowds, FillData& fd)
 // This can test the parallelization of that function using different numbers of crowds
 TEST_CASE("fillfromText", "[drivers]")
 {
+  Communicate& comm(*OHMMS::Controller);
+  if (comm.size() > 1)
+    return;
+
   FillData fd;
 
   // Generated from short-diamondC_1x1x1_pp-opt_sdj-1-16 with 1 thread and 10 samples

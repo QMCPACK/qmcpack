@@ -45,7 +45,7 @@ public:
                          QMCHamiltonian& h,
                          SampleStack& samples,
                          const std::vector<int>& walkers_per_crowd,
-                         Communicate* comm);
+                         Communicate& comm);
 
   ///Destructor
   ~QMCCostFunctionBatched() override;
@@ -62,8 +62,6 @@ public:
   void calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec) override;
 
 protected:
-
-
   Matrix<Return_rt> RecordsOnNode_;
 
   /** Temp derivative properties and Hderivative properties of all the walkers
@@ -84,7 +82,6 @@ protected:
   NewTimer& check_config_timer_;
   NewTimer& corr_sampling_timer_;
   NewTimer& fill_timer_;
-
 
 
   friend testing::LinearMethodTestSupport;

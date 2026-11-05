@@ -69,7 +69,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   app_log() << std::setprecision(8);
   using RealType = QMCTraits::RealType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // XML parser
   Libxml2Document doc;

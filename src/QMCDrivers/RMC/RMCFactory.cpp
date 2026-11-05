@@ -21,7 +21,7 @@ std::unique_ptr<QMCDriver> RMCFactory::create(const ProjectData& project_data,
                                               MCWalkerConfiguration& w,
                                               TrialWaveFunction& psi,
                                               QMCHamiltonian& h,
-                                              Communicate* comm)
+                                              Communicate& comm)
 {
   std::unique_ptr<QMCDriver> qmc;
 

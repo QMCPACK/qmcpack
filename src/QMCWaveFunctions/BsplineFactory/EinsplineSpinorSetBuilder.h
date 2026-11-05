@@ -32,7 +32,7 @@ class EinsplineSpinorSetBuilder : public EinsplineSetBuilder
 
 public:
   ///constructor
-  EinsplineSpinorSetBuilder(ParticleSet& p, const PSetMap& psets, Communicate* comm, xmlNodePtr cur)
+  EinsplineSpinorSetBuilder(ParticleSet& p, const PSetMap& psets, Communicate& comm, xmlNodePtr cur)
       : EinsplineSetBuilder(p, psets, comm, cur) {};
 
   ///destructor

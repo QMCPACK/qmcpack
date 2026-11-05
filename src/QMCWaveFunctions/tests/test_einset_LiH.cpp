@@ -36,7 +36,7 @@ using OffloadVector = Vector<T, OffloadPinnedAllocator<T>>;
 
 void test_einset_LiH_x(bool use_offload)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   lattice.R = {-3.55, 0.0, 3.55, 0.0, 3.55, 3.55, -3.55, 3.55, 0.0};

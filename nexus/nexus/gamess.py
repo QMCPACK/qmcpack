@@ -32,11 +32,13 @@
 
 
 import os
+
 import numpy as np
+
 from .developer import obj
-from .simulation import Simulation, AppResult
-from .gamess_input import GamessInput, generate_gamess_input, FormattedGroup, GuessGroup, GIarray
 from .gamess_analyzer import GamessAnalyzer
+from .gamess_input import FormattedGroup, GamessInput, GIarray, GuessGroup, generate_gamess_input
+from .simulation import AppResult, Simulation
 
 
 class Gamess(Simulation):

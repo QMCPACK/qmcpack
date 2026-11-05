@@ -51,7 +51,7 @@ public:
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
                      ParticleSetPool& ptclPool,
-                     Communicate* comm);
+                     Communicate& comm);
 
   ~WaveFunctionTester() override;
 

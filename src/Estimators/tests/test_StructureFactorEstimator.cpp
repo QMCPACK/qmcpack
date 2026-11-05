@@ -35,8 +35,7 @@ using Real  = RealAlias<Value>;
 TEST_CASE("StructureFactorEstimator::StructureFactorEstimator", "[estimators]")
 {
   using Input = qmcplusplus::testing::ValidStructureFactorInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(comm)};
 
@@ -64,8 +63,7 @@ TEST_CASE("StructureFactorEstimator::StructureFactorEstimator", "[estimators]")
 TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 {
   using Input = qmcplusplus::testing::ValidStructureFactorInput;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(Input::getXml(Input::valid::SKALL)));
@@ -129,7 +127,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   auto ref_psets = makeRefVector<ParticleSet>(psets);
   RefVectorWithLeader<ParticleSet> rvwl_psets(ref_psets[0], ref_psets);
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
 
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);

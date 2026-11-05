@@ -109,13 +109,24 @@ Output file names also contain the series number, starting at the value given by
 For the input file shown previously, the output files will start with ``vmc.s000``, for example, ``vmc.s000.scalar.dat``.
 If there were another ``<qmc>`` section in the input file, the corresponding output files would use the prefix ``vmc.s001``.
 
-The ``<project>`` tag accepts additional control parameters (using the ``<parameters/>`` tag) that can set time limits and specify the driver version.
+The ``<project>`` tag accepts additional control parameters (using the ``<parameter/>`` tag) that can set time limits and specify the driver version.
 
 Time limits
 ~~~~~~~~~~~
-Batched drivers check against ``max_seconds`` and make efforts to stop the execution cleanly at the end of a block before reaching the maximum time. Classic drivers can also take the now-deprecated ``maxcpusecs`` parameter for the same effect in the per driver XML section.
+Drivers check against the project-level ``max_seconds`` parameter (default: 360,000 seconds, or 100 hours) and make efforts to stop execution cleanly at the end of a block before reaching the maximum time:
 
-In addition, a file named by the project ``id`` plus ``.STOP``, in this case ``my_vmc.STOP``, stops QMCPACK execution on the fly cleanly at the end of the current block once being found in the working directory.
+.. code-block:: xml
+
+  <project id="my_vmc" series="0">
+    <parameter name="max_seconds"> 3600 </parameter>
+  </project>
+
+Input ``<loop>`` elements also honor the ``max_seconds`` parameter in ``<project>``. Before starting a new iteration, QMCPACK checks
+the time remaining since application startup against the average walltime of completed iterations of that loop. The estimate
+includes a 10% margin and 30 seconds for shutdown. If there is insufficient time, QMCPACK reports the reason and finalizes without
+running the next iteration or any later QMC sections.
+
+In addition, a file named by the project ``id`` plus ``.STOP``, in this case ``my_vmc.STOP``, stops QMCPACK execution on the fly cleanly at the end of the current block once being found in the working directory. The file is automatically deleted upon detection so it does not interfere with restarted simulations.
 
 
 .. _driver-version-parameter:
@@ -140,6 +151,6 @@ If the random element is not present, or the seed value is negative, the seed wi
 To initialize the many independent random number generators (one per thread and MPI process), the seed value is used (modulo 1024) as a starting index into a list of prime numbers.
 Entries in this offset list of prime numbers are then used as the seed for the random generator on each thread and process.
 
-If checkpointing is enabled, the random number state is written to an HDF file at the end of each block (suffix: ``.random.h5``).
+If checkpointing is enabled, the random number state is written to an HDF file whenever checkpoint files are written (suffix: ``.random.h5``).
 This file will be read if the ``mcwalkerset`` tag is present to perform a restart.
 For more information, see the ``checkpoint`` element in the QMC methods :ref:`qmcmethods` and :ref:`checkpoint-files` on checkpoint and restart files.

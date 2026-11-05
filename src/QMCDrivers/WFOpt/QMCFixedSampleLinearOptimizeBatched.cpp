@@ -33,6 +33,7 @@
 #include "Message/UniformCommunicateError.h"
 #include "Numerics/DeterminantOperators.h"
 #include "LinearMethod.h"
+#include "Utilities/RunTimeManager.h"
 #include <cassert>
 #include <iostream>
 #include <fstream>
@@ -52,7 +53,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
     MCPopulation&& population,
     const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
     SampleStack& samples,
-    Communicate* comm)
+    Communicate& comm)
     : QMCDriverNew(
           project_data,
           std::move(qmcdriver_input),
@@ -262,8 +263,17 @@ void QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
     return optTarget->computedCost();
   };
 
+  LoopTimer<> cycle_timer;
+  LoopRunTimeControl<> runtime_control(run_time_manager, project_data_, "QMCFixedSampleLinearOptimizeBatched",
+                                       "optimization iteration", myComm);
   while (Total_iterations < Max_iterations)
   {
+    if (runtime_control.checkStop(cycle_timer, Total_iterations))
+      break;
+
+    // Predict the next cycle from the last cycle, rather than the average of all cycles.
+    cycle_timer = LoopTimer<>();
+    ScopeGuard<LoopTimer<>> cycle_scope(cycle_timer);
     Total_iterations += 1;
     app_log() << "Iteration: " << Total_iterations << "/" << Max_iterations << std::endl;
     if (!ValidCostFunction(Valid))
@@ -465,7 +475,6 @@ void QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
   }
 
   finish();
-
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction
@@ -544,9 +553,7 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   processOptXML(q, vmcMove, ReportToH5 == "yes");
 }
 
-bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
-                                                        const std::string& vmcMove,
-                                                        bool reportH5)
+bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5)
 {
   m_param.put(opt_xml);
 
@@ -598,7 +605,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   vmcEngine =
       std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), nullptr,
                                    std::move(vmcdriver_input_copy), walker_configs_ref_,
-                                   MCPopulation(myComm->size(), myComm->rank(), population_.get_golden_electrons(),
+                                   MCPopulation(myComm.size(), myComm.rank(), population_.get_golden_electrons(),
                                                 population_.get_golden_twf(), population_.get_golden_hamiltonian()),
                                    rngs_, samples_, myComm);
 
@@ -613,7 +620,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   auto& qmcdriver_input = vmcEngine->getQMCDriverInput();
   QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
+      adjustGlobalWalkerCount(myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
                               qmcdriver_input_.get_walkers_per_rank(), 1.0,
                               determineNumCrowds(qmcdriver_input_.get_num_crowds(), rngs_.size()));
 
@@ -765,7 +772,7 @@ void QMCFixedSampleLinearOptimizeBatched::one_shift_run()
     for (int i = 0; i < numParams; i++)
       parameterDirections.at(i + 1) *= lambda;
   }
-  myComm->bcast(parameterDirections);
+  myComm.bcast(parameterDirections);
 
   // now that we are done building the matrices, prevent further computation of derivative vectors
   optTarget->setneedGrads(false);
@@ -834,8 +841,6 @@ void QMCFixedSampleLinearOptimizeBatched::one_shift_run()
 
   // perform some finishing touches for this linear method iteration
   finish();
-
-
 }
 
 void QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_gradient()
@@ -988,7 +993,6 @@ void QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
   finish();
 
   // return whether the cost function's report counter is positive
-
 }
 
 //Function for optimizing using gradient descent
@@ -1015,7 +1019,6 @@ void QMCFixedSampleLinearOptimizeBatched::descent_run()
   }
 
   finish();
-
 }
 
 } // namespace qmcplusplus

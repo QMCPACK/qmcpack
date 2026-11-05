@@ -13,17 +13,18 @@
 #include "DriftModifierBuilder.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
 #include "OhmmsData/ParameterSet.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
-DriftModifierBase* createDriftModifier(xmlNodePtr cur, const Communicate* myComm)
+DriftModifierBase* createDriftModifier(xmlNodePtr cur, const Communicate& myComm)
 {
   std::string ModifierName("UNR");
   ParameterSet m_param;
   m_param.add(ModifierName, "drift_modifier");
   m_param.put(cur);
   if (ModifierName != "UNR")
-    myComm->barrier_and_abort("createDriftModifier unknown drift_modifier " + ModifierName);
+    throw UniformCommunicateError("createDriftModifier unknown drift_modifier " + ModifierName);
   DriftModifierBase* DriftModifier = new DriftModifierUNR;
   return DriftModifier;
 }

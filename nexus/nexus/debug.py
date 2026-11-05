@@ -25,6 +25,7 @@
 import code
 import inspect
 
+
 def ci(locs=None,globs=None):
     if locs is None or globs is None:
         cur_frame = inspect.currentframe()

@@ -3,11 +3,10 @@
 ##################################################################
 
 
-from .simulation import Simulation, AppResult
 from .pseudoset import PseudoSet
-from .rmg_input import RmgInput, generate_rmg_input
 from .rmg_analyzer import RmgAnalyzer
-
+from .rmg_input import RmgInput, generate_rmg_input
+from .simulation import AppResult, Simulation
 
 
 class Rmg(Simulation):

@@ -1,19 +1,21 @@
+from pathlib import Path
+
 import pytest
-from . import NexusTestOrder
+
+from .. import testing
+from ..developer import obj
+from ..gamess import Gamess, GamessInput, generate_gamess
+from ..machines import job
+from ..nexus_base import nexus_config
+from ..simulation import AppResult
+from ..testing import FailedTest, failed, object_eq
+from . import NexusTestOrder, isolate_nexus_core
+from .test_gamess_input import TEST_FILES
+
 pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_SIMULATION)
 
 
-from pathlib import Path
-from . import isolate_nexus_core
-from .. import testing
-from ..testing import failed,FailedTest
-from ..testing import object_eq
-from ..simulation import AppResult
-
-
 def clear_all_sims():
-    from ..gamess import Gamess
-
     Gamess.ericfmt = None
 
     testing.clear_all_sims()
@@ -21,10 +23,6 @@ def clear_all_sims():
 
 
 def get_gamess_sim(type='rhf'):
-    from ..machines import job
-    from ..gamess import Gamess,generate_gamess,GamessInput
-    from .test_gamess_input import TEST_FILES
-
     sim = None
 
     Gamess.ericfmt = ''
@@ -51,9 +49,6 @@ def get_gamess_sim(type='rhf'):
 
 
 def test_minimal_init():
-    from ..machines import job
-    from ..gamess import Gamess,generate_gamess
-
     Gamess.ericfmt = ''
 
     sim = generate_gamess(
@@ -80,9 +75,6 @@ def test_check_result():
 
 @isolate_nexus_core
 def test_get_result(tmp_path):
-    from ..developer import obj
-    from ..nexus_base import nexus_config
-
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
@@ -126,9 +118,6 @@ def test_get_result(tmp_path):
 
 
 def test_incorporate_result():
-
-    from ..developer import obj
-
     sim = get_gamess_sim('rhf')
 
     with pytest.raises(
@@ -161,8 +150,6 @@ def test_incorporate_result():
 
 @isolate_nexus_core
 def test_check_sim_status(tmp_path):
-    from ..nexus_base import nexus_config
-
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]

@@ -1,11 +1,12 @@
+import numpy as np
 import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.FILEIO)
 
-
-from . import TEST_DIR
-from ..testing import value_eq, object_eq
 from .. import numpy_extensions as npe
+from ..fileio import ChgcarFile, PoscarFile, TextFile, XsfFile
+from ..testing import object_eq, value_eq
+from . import TEST_DIR, NexusTestOrder
+
+pytestmark = pytest.mark.order(NexusTestOrder.FILEIO)
 
 
 TEST_FILES = {
@@ -21,8 +22,6 @@ for file in TEST_FILES.values():
 
 
 def test_textfile():
-    from ..fileio import TextFile
-
     # test empty initialization
     empty = TextFile()
 
@@ -49,9 +48,6 @@ def test_textfile():
 
 
 def test_xsffile(tmp_path):
-    import numpy as np
-    from ..fileio import XsfFile
-
     # test empty initialization
     empty = XsfFile()
     assert(not empty.is_valid())
@@ -137,9 +133,6 @@ def test_xsffile(tmp_path):
 
 
 def test_xsffile_density(tmp_path):
-    import numpy as np
-    from ..fileio import XsfFile
-
     ref = XsfFile(TEST_FILES['VO2_R_48.xsf'])
 
     grid = 3,5,7
@@ -167,9 +160,6 @@ def test_xsffile_density(tmp_path):
 
 
 def test_poscar_file(tmp_path):
-    import numpy as np
-    from ..fileio import PoscarFile
-
     # test empty initialization
     empty = PoscarFile()
     assert(not empty.is_valid())
@@ -255,7 +245,6 @@ def test_poscar_file(tmp_path):
     assert(object_eq(f2,ref))
 
     # test incorporate xsf
-    from ..fileio import XsfFile
     x = XsfFile(TEST_FILES['VO2_R_48.xsf'])
     f = PoscarFile()
     f.incorporate_xsf(x)
@@ -266,10 +255,6 @@ def test_poscar_file(tmp_path):
 
 
 def test_chgcar_file(tmp_path):
-    from ..fileio import XsfFile
-    from ..fileio import PoscarFile
-    from ..fileio import ChgcarFile
-
     empty = ChgcarFile()
     assert(not empty.is_valid())
 

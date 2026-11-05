@@ -26,6 +26,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "type_traits/template_types.hpp"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -54,12 +55,12 @@ TimerNameList_t<WC_Timers> WalkerControlTimerNames = {{WC_branch, "WalkerControl
                                                       {WC_send, "WalkerControl::send"},
                                                       {WC_recv, "WalkerControl::recv"}};
 
-WalkerControl::WalkerControl(Communicate* c, RandomBase<FullPrecRealType>& rng, bool use_fixed_pop)
+WalkerControl::WalkerControl(Communicate& c, RandomBase<FullPrecRealType>& rng, bool use_fixed_pop)
     : MPIObjectBase(c),
       rng_(rng),
       use_fixed_pop_(use_fixed_pop),
-      rank_num_(c->rank()),
-      num_ranks_(c->size()),
+      rank_num_(c.rank()),
+      num_ranks_(c.size()),
       SwapMode(0),
       use_nonblocking_(true),
       debug_disable_branching_(false),
@@ -72,11 +73,11 @@ WalkerControl::WalkerControl(Communicate* c, RandomBase<FullPrecRealType>& rng, 
 
 WalkerControl::~WalkerControl() = default;
 
-void WalkerControl::start()
+void WalkerControl::start(const std::string& root_name)
 {
   if (rank_num_ == 0)
   {
-    std::filesystem::path hname(myComm->getName());
+    std::filesystem::path hname(root_name);
     hname.concat(".dmc.dat");
     if (hname != dmcFname)
     {
@@ -180,6 +181,12 @@ void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       computeCurData(walkers, curData);
       for (int i = 0, j = LE_MAX; i < num_ranks_; i++, j++)
         num_per_rank_[i] = static_cast<int>(curData[j]);
+
+      // A rank may have no survivors; only global extinction is fatal. The reduced counts
+      // make this error uniform across ranks, before diagnostics or walker deletion.
+      if (std::accumulate(num_per_rank_.begin(), num_per_rank_.end(), 0) == 0)
+        throw UniformCommunicateError("WalkerControl::branch: All walkers were killed in DMC at iteration " +
+                                      std::to_string(iter) + ".");
     }
     // at this point, curData[LE_MAX + rank_num_] and walker->Multiplicity are ready.
 
@@ -273,7 +280,7 @@ void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers, std::ve
 
   {
     ScopedTimer allreduce_timer(my_timers_[WC_allreduce]);
-    myComm->allreduce(curData);
+    myComm.allreduce(curData);
   }
 }
 
@@ -373,7 +380,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
         }
 
       // send the number of copies to the target
-      myComm->comm.send_value(nsentcopy, minus[ic]);
+      myComm.getCommMPI3().send_value(nsentcopy, minus[ic]);
       job_list.push_back(job(ncopy_pairs.back().second, minus[ic]));
 #ifdef MCWALKERSET_MPI_DEBUG
       fout << "rank " << plus[ic] << " sends a walker with " << nsentcopy << " copies to rank " << minus[ic]
@@ -400,7 +407,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
     {
       newW.push_back(pop.spawnWalker());
       // recv the number of copies from the target
-      myComm->comm.receive_n(&nsentcopy, 1, plus[ic]);
+      myComm.getCommMPI3().receive_n(&nsentcopy, 1, plus[ic]);
       job_list.push_back(job(newW.size() - 1, plus[ic]));
       if (plus[ic] != plus[ic + nsentcopy] || minus[ic] != minus[ic + nsentcopy])
         throw std::runtime_error("WalkerControl::swapWalkersSimple send/recv pair checking failed!");
@@ -433,11 +440,11 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
         awalker->SendInProgress = true;
       }
       if (use_nonblocking_)
-        requests.push_back(myComm->comm.isend_n(awalker->DataSet.data(), byteSize, jobit->target));
+        requests.push_back(myComm.getCommMPI3().isend_n(awalker->DataSet.data(), byteSize, jobit->target));
       else
       {
         ScopedTimer local_timer(my_timers_[WC_send]);
-        myComm->comm.send_n(awalker->DataSet.data(), byteSize, jobit->target);
+        myComm.getCommMPI3().send_n(awalker->DataSet.data(), byteSize, jobit->target);
       }
     }
     if (use_nonblocking_)
@@ -472,11 +479,11 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
       auto& awalker         = walker_elements.walker;
       size_t byteSize       = awalker.byteSize();
       if (use_nonblocking_)
-        requests.push_back(myComm->comm.ireceive_n(awalker.DataSet.data(), byteSize, jobit->target));
+        requests.push_back(myComm.getCommMPI3().ireceive_n(awalker.DataSet.data(), byteSize, jobit->target));
       else
       {
         ScopedTimer local_timer(my_timers_[WC_recv]);
-        myComm->comm.receive_n(awalker.DataSet.data(), byteSize, jobit->target);
+        myComm.getCommMPI3().receive_n(awalker.DataSet.data(), byteSize, jobit->target);
         unpackWalker(awalker);
       }
     }
@@ -549,12 +556,12 @@ void WalkerControl::killDeadWalkersOnRank(MCPopulation& pop)
 #endif
 }
 
-std::vector<WalkerControl::IndexType> WalkerControl::syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers)
+std::vector<WalkerControl::IndexType> WalkerControl::syncFutureWalkersPerRank(Communicate& comm, IndexType n_walkers)
 {
-  int ncontexts = comm->size();
+  int ncontexts = comm.size();
   std::vector<IndexType> future_walkers(ncontexts, 0);
-  future_walkers[comm->rank()] = n_walkers;
-  comm->allreduce(future_walkers);
+  future_walkers[comm.rank()] = n_walkers;
+  comm.allreduce(future_walkers);
   return future_walkers;
 }
 
@@ -570,7 +577,7 @@ bool WalkerControl::put(xmlNodePtr cur)
   }
   catch (const std::runtime_error& re)
   {
-    myComm->barrier_and_abort("WalkerControl::put parsing error. " + std::string(re.what()));
+    throw UniformCommunicateError("WalkerControl::put parsing error. " + std::string(re.what()));
   }
 
   app_log() << "  WalkerControl parameters " << std::endl;

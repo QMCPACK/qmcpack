@@ -16,7 +16,6 @@ import sys
 from pathlib import Path
 from typing import Literal
 
-
 NUMBER_PATTERN = re.compile(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?")
 
 

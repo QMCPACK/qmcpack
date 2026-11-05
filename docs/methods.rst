@@ -44,7 +44,7 @@ the particular type of QMC methods that will be run.
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``profiling``  | text         | yes/no       | no          | Activate resume/pause control   |
   +----------------+--------------+--------------+-------------+---------------------------------+
-  | ``checkpoint`` | integer      | -1, 0, n     | 0           | Checkpoint frequency            |
+  | ``checkpoint`` | integer      | <0, 0, n     | 0           | Checkpoint frequency            |
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``record``     | integer      | n            | 0           | Save configuration ever n steps |
   +----------------+--------------+--------------+-------------+---------------------------------+
@@ -77,13 +77,13 @@ Additional information:
 -  ``checkpoint``: This enables and disables checkpointing and
    specifying the frequency of output. Possible values are:
 
-   - **[-1]** No checkpoint files are written.
+   - **[<0]** No checkpoint files are written.
 
    - **[0]** Write the checkpoint files after the completion of the QMC section (default).
 
    - **[n]** Write the checkpoint files after every :math:`n` blocks, and also at the end of the QMC section.
 
-The particle configurations are written to a ``.config.h5`` file.
+The particle configurations are written to a ``.config.h5`` file, and the random number generator state is written to a ``.random.h5`` file.
 
 .. code-block:: xml
   :caption: The following is an example of running a simulation that can be restarted.
@@ -95,9 +95,9 @@ The particle configurations are written to a ``.config.h5`` file.
     <parameter name="steps">            400    </parameter>
   </qmc>
 
-The checkpoint flag instructs QMCPACK to output walker configurations.  This also
-works in VMC.  This outputs an h5 file with the name ``projectid.run-number.config.h5``.
-Check that this file exists before attempting a restart.
+The checkpoint flag instructs QMCPACK to output walker configurations and random number generator state. This also
+works in VMC. This outputs an h5 file with the name ``projectid.run-number.config.h5`` and an RNG state file ``projectid.run-number.random.h5``.
+Check that these files exist before attempting a restart.
 
 To continue a run, specify the ``mcwalkerset`` element before your VMC/DMC block:
 
@@ -222,6 +222,10 @@ Parameters:
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
   | ``usedrift``                   | text         | yes,no                  | yes         | Use the algorithm with drift                         |
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
+  | ``drift_modifier``             | text         | UNR                     | UNR         | Drift modification scheme                            |
+  +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
+  | ``drift_UNR_a``                | real         | :math:`> 0`             | 1.0         | Parameter :math:`a` of the UNR drift modifier        |
+  +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
   | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move                     |
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
   | ``estimator_period``           | integer      | :math:`> 0`             | 1           | Number of steps between estimator measurements       |
@@ -284,6 +288,16 @@ Additional information:
   electron is proposed with a Gaussian distribution. The standard
   deviation is chosen as the time step input. In the drift algorithm,
   electrons are moved by Langevin dynamics.
+
+- ``drift_modifier`` Specifies the scheme used to scale the drift velocity near nodal surfaces or regions of large gradient. Currently, only ``UNR`` is supported, which implements the drift scaling algorithm of Umrigar, Nightingale, and Runge (Eq. 35 in :cite:`Umrigar1993`):
+
+  .. math::
+
+     \mathbf{d} = \frac{-1 + \sqrt{1 + 2 a \tau v^2}}{a v^2} \mathbf{v}
+
+  where :math:`\mathbf{v} = \text{Re}(\nabla \Psi_T / \Psi_T)` is the drift velocity, :math:`v = |\mathbf{v}|`, :math:`\tau` is the effective time step, and :math:`a` is controlled by ``drift_UNR_a``.
+
+- ``drift_UNR_a`` The scaling parameter :math:`a` in the ``UNR`` drift modifier (Eq. 35 in :cite:`Umrigar1993`). Default is ``1.0``.
 
 - ``timestep`` The meaning of time step depends on whether or not
   the drift is used. In general, larger time steps reduce the
@@ -356,6 +370,10 @@ Parameters:
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``usedrift``                   | text         | yes,no                  | yes         | Use the algorithm with drift                  |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``drift_modifier``             | text         | UNR                     | UNR         | Drift modification scheme                     |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``drift_UNR_a``                | real         | :math:`> 0`             | 1.0         | Parameter :math:`a` of the UNR drift modifier |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``samples``                    | integer      | :math:`\geq 0`          | 0           | Number of walker samples for DMC/optimization |
@@ -404,6 +422,10 @@ Additional information:
   electron is proposed with a Gaussian distribution. The standard
   deviation is chosen as the time step input. In the drift algorithm,
   electrons are moved by Langevin dynamics.
+
+- ``drift_modifier`` See details in :ref:`vmc_batch`.
+
+- ``drift_UNR_a`` See details in :ref:`vmc_batch`.
 
 - ``timestep`` The meaning of time step depends on whether or not
   the drift is used. In general, larger time steps reduce the
@@ -1162,6 +1184,10 @@ Parameters:
   +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
   | ``timestep``                   | real         | :math:`> 0`             | 0.1               | Time step for each electron move                |
   +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
+  | ``drift_modifier``             | string       | UNR                     | UNR               | Drift modification scheme                       |
+  +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
+  | ``drift_UNR_a``                | real         | :math:`> 0`             | 1.0               | Parameter :math:`a` of the UNR drift modifier   |
+  +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
   | ``estimator_period``           | integer      | :math:`> 0`             | 1                 | Number of steps between estimator measurements  |
   +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
   | ``nonlocalmoves``              | string       | yes, no, v0, v1, v3     | no                | Run with T-moves                                |
@@ -1208,6 +1234,10 @@ Parameters:
   ``walkers_per_rank`` times the number MPI ranks.
 
 - ``target_walkers`` The target population size. Population control algorithms work towards this target. Do not confuse it with the actual walker count during random walking. The default will be the number of walkers when a DMC calculation starts, namely ``total_walkers``.
+
+- ``drift_modifier`` See details in :ref:`vmc_batch`.
+
+- ``drift_UNR_a`` See details in :ref:`vmc_batch`.
 
 - ``estimator_period`` The period with which estimators are evaluated, measured in steps. If measurements have a significant correlation time, as is typical in DMC, this can reduce the computational cost of unnecessarily frequent estimator evaluations.
 
@@ -1294,15 +1324,15 @@ Parameters:
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``drift_modifier``             | string       | UNR                     | UNR         | Drift modification scheme                     |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``drift_UNR_a``                | real         | :math:`> 0`             | 1.0         | Parameter :math:`a` of the UNR drift modifier |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``nonlocalmoves``              | string       | yes, no, v0, v1, v3     | no          | Run with T-moves                              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``branching_cutoff_scheme``    |              |                         |             |                                               |
   |                                |              |                         |             |                                               |
   |                                | string       | classic/DRV/ZSGMA/YL    | classic     | Branch cutoff scheme                          |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``maxcpusecs``                 | real         | :math:`\geq 0`          | 3.6e5       | Deprecated. Superseded by ``max_seconds``     |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``max_seconds``                | real         | :math:`\geq 0`          | 3.6e5       | Maximum allowed walltime in seconds           |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
@@ -1377,15 +1407,13 @@ Additional information:
    steps in which to perform time step extrapolation will typically have
    a minimum of 99% acceptance probability for each step.
 
+-  ``drift_modifier``: See details in :ref:`vmc_batch`.
+
+-  ``drift_UNR_a``: See details in :ref:`vmc_batch`.
+
 -  ``checkproperties``: When using a particle-by-particle driver, this
    variable specifies how often to reset all the variables kept in the
    buffer.
-
--  ``maxcpusecs``: Deprecated. Superseded by ``max_seconds``.
-
--  ``max_seconds``: The default is 100 hours. Once the specified time has
-   elapsed, the program will finalize the simulation even if all blocks
-   are not completed.
 
 -  ``spinMass`` This is an optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input, the spin mass determines the rate 
    of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}` where 
@@ -1550,10 +1578,10 @@ on diffusion Monte Carlo.
     <parameter name="steps">            400    </parameter>
   </qmc>
 
-The checkpoint flag instructs QMCPACK to output walker configurations.
+The checkpoint flag instructs QMCPACK to output walker configurations and random number generator state.
 This also works in VMC. This will output an h5 file with the name
-``projectid.run-number.config.h5``. Check that this file exists before
-attempting a restart. To read in this file for a continuation run,
+``projectid.run-number.config.h5`` and an RNG state file ``projectid.run-number.random.h5``.
+Check that these files exist before attempting a restart. To read in this file for a continuation run,
 specify the following:
 
 .. code-block:: xml

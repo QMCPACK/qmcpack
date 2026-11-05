@@ -38,7 +38,7 @@ public:
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
-  LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur);
+  LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate& comm, xmlNodePtr cur);
   ~LCAOrbitalBuilder() override;
   std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
 

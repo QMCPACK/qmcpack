@@ -36,6 +36,21 @@ public:
   void flex_evaluateLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                         const RefVectorWithLeader<ParticleSet>& p_list) const;
 
+  /** Dispatch a masked all-particle evaluation to the batched implementation.
+   * @throws std::runtime_error if this dispatcher is not configured for batched execution
+   */
+  void flex_evaluateLogAllParticles(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
+                                    const std::vector<bool>& evaluate_mask) const;
+
+  /** Resolve a batched all-particle wavefunction transaction after ParticleSet resolution.
+   * Must be called immediately after PSdispatcher::flex_accept_rejectMoveAllParticles.
+   * @throws std::runtime_error if this dispatcher is not configured for batched execution
+   */
+  void flex_accept_rejectMoveAllParticles(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                          const std::vector<bool>& accepted) const;
+
   void flex_recompute(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                       const RefVectorWithLeader<ParticleSet>& p_list,
                       const std::vector<bool>& recompute) const;

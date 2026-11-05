@@ -20,17 +20,20 @@
 #====================================================================#
 
 
-import os
-from pathlib import Path
 import mmap
+import os
 from copy import deepcopy
+from pathlib import Path
+
 import numpy as np
 from numpy.linalg import det, norm
-from .developer import DevBase, obj, FileFormatError, NotAnElementError
+
+from . import numpy_extensions as npe
+from .developer import DevBase, FileFormatError, NotAnElementError, obj
 from .periodic_table import Elements
 from .unit_converter import convert
-from . import numpy_extensions as npe
 from .utilities import path_string, to_str
+
 
 class TextFile(DevBase):
     # interface to mmap files

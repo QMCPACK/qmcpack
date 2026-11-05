@@ -23,7 +23,7 @@ namespace qmcplusplus
 class LatticeGaussianProductBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  LatticeGaussianProductBuilder(Communicate* comm, ParticleSet& p, const PSetMap& psets);
+  LatticeGaussianProductBuilder(Communicate& comm, ParticleSet& p, const PSetMap& psets);
 
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 

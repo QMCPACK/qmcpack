@@ -47,7 +47,7 @@ public:
    * \param psi reference to the wavefunction
    * \param ions reference to the ions
    */
-  SlaterDetBuilder(Communicate* comm,
+  SlaterDetBuilder(Communicate& comm,
                    SPOSetBuilderFactory& factory,
                    ParticleSet& els,
                    TrialWaveFunction& psi,

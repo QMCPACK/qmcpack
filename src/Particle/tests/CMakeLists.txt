@@ -23,7 +23,6 @@ add_executable(
   test_ParticleSet.cpp
   test_ParticleSetAllParticleMoves.cpp
   test_VirtualParticleSet.cpp
-  test_walker.cpp
   test_particle_pool.cpp
   test_sample_stack.cpp
   test_DTModes.cpp
@@ -48,6 +47,19 @@ if(USE_OBJECT_TARGET)
 endif()
 
 add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
+
+set(UTEST_EXE test_walker_io)
+set(UTEST_NAME deterministic-unit_${UTEST_EXE})
+
+add_executable(${UTEST_EXE} test_walker.cpp test_HDFWalkerInput_0_4.cpp)
+target_link_libraries(${UTEST_EXE} catch_main qmcparticle minimal_particle_pool)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(${UTEST_EXE} qmcutil qmcparticle_omptarget)
+endif()
+
+foreach(NUM_RANKS 1 2 3)
+  add_unit_test(BASENAME ${UTEST_NAME} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
+endforeach()
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
 add_labels_for_tests("${CURRENT_TESTS}")

@@ -118,7 +118,7 @@ inline bool is_same(const xmlChar* a, const char* b) { return !strcmp((const cha
 
 using BasisSet_t = LCAOrbitalSet::basis_type;
 
-LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur)
+LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate& comm, xmlNodePtr cur)
     : SPOSetBuilder("LCAO", comm, "LCAOrbitalBuilder"),
       targetPtcl(els),
       sourcePtcl(ions),
@@ -143,43 +143,36 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   EvalPeriodicImagePhaseFactors(SuperTwist, PeriodicImagePhaseFactors, PeriodicImageDisplacements);
 
 
-  try
-  {
-    // no need to wait but load the basis set
-    processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
-      if (cname == "basisset")
-      {
-        std::string basisset_name_input(getXMLAttributeValue(element, "name"));
-        std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input);
-        if (basisset_map_.find(basisset_name) != basisset_map_.end())
-        {
-          std::ostringstream err_msg;
-          err_msg << "Cannot create basisset " << basisset_name << " which already exists." << std::endl;
-          throw std::runtime_error(err_msg.str());
-        }
-        if (h5_path != "")
-          basisset_map_[basisset_name] = loadBasisSetFromH5(element);
-        else
-          basisset_map_[basisset_name] = loadBasisSetFromXML(element, cur);
-      }
-    });
-
-    // deprecated h5 basis set handling when basisset element is missing
-    if (basisset_map_.size() == 0 && h5_path != "")
+  // no need to wait but load the basis set
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "basisset")
     {
-      app_warning() << "!!!!!!! Deprecated input style: missing basisset element. "
-                    << "LCAO needs an explicit basisset XML element. "
-                    << "Fallback on loading an implicit one." << std::endl;
-      basisset_map_["LCAOBSet"] = loadBasisSetFromH5(cur);
+      std::string basisset_name_input(getXMLAttributeValue(element, "name"));
+      std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input);
+      if (basisset_map_.find(basisset_name) != basisset_map_.end())
+      {
+        std::ostringstream err_msg;
+        err_msg << "Cannot create basisset " << basisset_name << " which already exists." << std::endl;
+        throw std::runtime_error(err_msg.str());
+      }
+      if (h5_path != "")
+        basisset_map_[basisset_name] = loadBasisSetFromH5(element);
+      else
+        basisset_map_[basisset_name] = loadBasisSetFromXML(element, cur);
     }
+  });
 
-    if (basisset_map_.size() == 0)
-      throw UniformCommunicateError("No basisset found in the XML input!");
-  }
-  catch (const UniformCommunicateError& uce)
+  // deprecated h5 basis set handling when basisset element is missing
+  if (basisset_map_.size() == 0 && h5_path != "")
   {
-    comm->barrier_and_abort(std::string("Failed to create basisset. ") + uce.what());
+    app_warning() << "!!!!!!! Deprecated input style: missing basisset element. "
+                  << "LCAO needs an explicit basisset XML element. "
+                  << "Fallback on loading an implicit one." << std::endl;
+    basisset_map_["LCAOBSet"] = loadBasisSetFromH5(cur);
   }
+
+  if (basisset_map_.size() == 0)
+    throw UniformCommunicateError("No basisset found in the XML input!");
 }
 
 LCAOrbitalBuilder::~LCAOrbitalBuilder()
@@ -281,10 +274,10 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr par
 {
   ReportEngine PRE(class_name_, "loadBasisSetFromH5()");
 
-  hdf_archive hin(myComm);
   int ylm = -1;
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
+    hdf_archive hin;
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       PRE.error("Could not open H5 file", true);
 
@@ -301,7 +294,7 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr par
     hin.close();
   }
 
-  myComm->bcast(ylm);
+  myComm.bcast(ylm);
   if (ylm < 0)
     PRE.error("Missing angular attribute of atomicBasisSet.", true);
 
@@ -414,8 +407,8 @@ std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSet
   /** process atomicBasisSet per ion species */
   app_log() << "Reading BasisSet from HDF5 file:" << h5_path << std::endl;
 
-  hdf_archive hin(myComm);
-  if (myComm->rank() == 0)
+  hdf_archive hin;
+  if (myComm.rank() == 0)
   {
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       PRE.error("Could not open H5 file", true);
@@ -425,7 +418,7 @@ std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSet
     hin.read(Nb_Elements, "NbElements");
   }
 
-  myComm->bcast(Nb_Elements);
+  myComm.bcast(Nb_Elements);
   if (Nb_Elements < 1)
     PRE.error("Missing elementType attribute of atomicBasisSet.", true);
 
@@ -442,7 +435,7 @@ std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSet
     tempElem << ElemID0 << i;
     ElemType = tempElem.str();
 
-    if (myComm->rank() == 0)
+    if (myComm.rank() == 0)
     {
       hin.push(ElemType.c_str(), false);
 
@@ -451,8 +444,8 @@ std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSet
       if (!hin.readEntry(elementType, "elementType"))
         PRE.error("Could not read elementType in H5; Probably Corrupt H5 file", true);
     }
-    myComm->bcast(basiset_name);
-    myComm->bcast(elementType);
+    myComm.bcast(basiset_name);
+    myComm.bcast(elementType);
 
     auto it = std::find(ao_built_centers.begin(), ao_built_centers.end(), elementType);
     if (it == ao_built_centers.end())
@@ -472,11 +465,11 @@ std::unique_ptr<LCAOrbitalBuilder::BasisSet_t> LCAOrbitalBuilder::createBasisSet
       ao_built_centers.push_back(elementType);
     }
 
-    if (myComm->rank() == 0)
+    if (myComm.rank() == 0)
       hin.pop();
   }
 
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
     hin.pop();
     hin.close();
@@ -513,7 +506,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   std::unique_ptr<BasisSet_t> myBasisSet;
   if (basisset_map_.find(basisset_name) == basisset_map_.end())
-    myComm->barrier_and_abort("basisset \"" + basisset_name + "\" cannot be found\n");
+    throw UniformCommunicateError("basisset \"" + basisset_name + "\" cannot be found\n");
   else
     myBasisSet.reset(basisset_map_[basisset_name]->makeClone());
 
@@ -524,7 +517,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (doCuspCorrection)
   {
 #if defined(QMC_COMPLEX)
-    myComm->barrier_and_abort(
+    throw UniformCommunicateError(
         "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
 #else
     app_summary() << "        Using cusp correction." << std::endl;
@@ -572,29 +565,29 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if (cusp_file.empty())
       cusp_file = spo_name + ".cuspInfo.xml";
 
-    bool file_exists(myComm->rank() == 0 && std::ifstream(cusp_file).good());
-    myComm->bcast(file_exists);
+    bool file_exists(myComm.rank() == 0 && std::ifstream(cusp_file).good());
+    myComm.bcast(file_exists);
     app_log() << "  Cusp correction file " << cusp_file << (file_exists ? " exits." : " doesn't exist.") << std::endl;
 
     // validate file if it exists
     if (file_exists)
     {
       bool valid = 0;
-      if (myComm->rank() == 0)
+      if (myComm.rank() == 0)
         valid = readCuspInfo(cusp_file, spo_name, orbital_set_size, info);
-      myComm->bcast(valid);
+      myComm.bcast(valid);
       if (!valid)
-        myComm->barrier_and_abort("Invalid cusp correction file " + cusp_file);
+        throw UniformCommunicateError("Invalid cusp correction file " + cusp_file);
 #ifdef HAVE_MPI
       for (int orb_idx = 0; orb_idx < orbital_set_size; orb_idx++)
         for (int center_idx = 0; center_idx < num_centers; center_idx++)
-          broadcastCuspInfo(info(center_idx, orb_idx), *myComm, 0);
+          broadcastCuspInfo(info(center_idx, orb_idx), myComm, 0);
 #endif
     }
     else
     {
-      generateCuspInfo(info, tmp_targetPtcl, sourcePtcl, lcwc.lcao, spo_name, *myComm);
-      if (myComm->rank() == 0)
+      generateCuspInfo(info, tmp_targetPtcl, sourcePtcl, lcwc.lcao, spo_name, myComm);
+      if (myComm.rank() == 0)
         saveCusp(cusp_file, info, spo_name);
     }
 
@@ -651,10 +644,9 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
     success = putFromXML(spo, coeff_ptr);
   else
   {
-    hdf_archive hin(myComm);
-
-    if (myComm->rank() == 0)
+    if (myComm.rank() == 0)
     {
+      hdf_archive hin;
       if (!hin.open(h5_path, H5F_ACC_RDONLY))
         APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
 
@@ -674,7 +666,7 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
 
       hin.close();
     }
-    myComm->bcast(PBC);
+    myComm.bcast(PBC);
     if (PBC)
       success = putPBCFromH5(spo, coeff_ptr);
     else
@@ -740,13 +732,15 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   aAttrib.add(neig, "size", {}, TagStatus::DEPRECATED);
   aAttrib.add(neig, "orbitals", {}, TagStatus::DELETED);
   aAttrib.put(coeff_ptr);
-  hdf_archive hin(myComm);
-  if (myComm->rank() == 0)
+  int Ctemp_rows = 0;
+  int Ctemp_cols = 0;
+  Matrix<RealType> Ctemp;
+  if (myComm.rank() == 0)
   {
+    hdf_archive hin;
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
 
-    Matrix<RealType> Ctemp;
     std::array<char, 72> name;
 
 
@@ -765,23 +759,32 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     }
     hin.close();
 
-    if (Ctemp.cols() != spo.getBasisSetSize())
-    {
-      std::ostringstream err_msg;
-      err_msg << "Basis set size " << spo.getBasisSetSize() << " mismatched the number of MO coefficients columns "
-              << Ctemp.cols() << " from h5." << std::endl;
-      myComm->barrier_and_abort(err_msg.str());
-    }
+    Ctemp_rows = Ctemp.rows();
+    Ctemp_cols = Ctemp.cols();
+  }
 
-    int norbs = spo.getOrbitalSetSize();
-    if (Ctemp.rows() < norbs)
-    {
-      std::ostringstream err_msg;
-      err_msg << "Need " << norbs << " orbitals. Insufficient rows of MO coefficients " << Ctemp.rows() << " from h5."
-              << std::endl;
-      myComm->barrier_and_abort(err_msg.str());
-    }
+  myComm.bcast(Ctemp_rows);
+  myComm.bcast(Ctemp_cols);
 
+  if (Ctemp_cols != spo.getBasisSetSize())
+  {
+    std::ostringstream err_msg;
+    err_msg << "Basis set size " << spo.getBasisSetSize() << " mismatched the number of MO coefficients columns "
+            << Ctemp_cols << " from h5." << std::endl;
+    throw UniformCommunicateError(err_msg.str());
+  }
+
+  int norbs = spo.getOrbitalSetSize();
+  if (Ctemp_rows < norbs)
+  {
+    std::ostringstream err_msg;
+    err_msg << "Need " << norbs << " orbitals. Insufficient rows of MO coefficients " << Ctemp_rows << " from h5."
+            << std::endl;
+    throw UniformCommunicateError(err_msg.str());
+  }
+
+  if (myComm.rank() == 0)
+  {
     int n = 0, i = 0;
     while (i < norbs)
     {
@@ -793,7 +796,7 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       n++;
     }
   }
-  myComm->bcast(*spo.C);
+  myComm.bcast(*spo.C);
   return true;
 }
 
@@ -816,7 +819,6 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   aAttrib.add(neig, "size", {}, TagStatus::DEPRECATED);
   aAttrib.add(neig, "orbitals", {}, TagStatus::DELETED);
   aAttrib.put(coeff_ptr);
-  hdf_archive hin(myComm);
 
   xmlNodePtr curtemp = coeff_ptr;
 
@@ -847,8 +849,9 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   aAttrib.add(SuperTwist, "twist");
   aAttrib.put(curtemp);
 
-  if (myComm->rank() == 0)
+  if (myComm.rank() == 0)
   {
+    hdf_archive hin;
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
     hin.push("parameters");
@@ -885,7 +888,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 
     hin.close();
   }
-  myComm->bcast(*spo.C);
+  myComm.bcast(*spo.C);
   return true;
 }
 
@@ -1028,9 +1031,9 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(
   ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
   if (h5_path != "" && !usesOpenBC)
   {
-    hdf_archive hin(myComm);
-    if (myComm->rank() == 0)
+    if (myComm.rank() == 0)
     {
+      hdf_archive hin;
       if (!hin.open(h5_path, H5F_ACC_RDONLY))
         APP_ABORT("Could not open H5 file");
 
@@ -1041,7 +1044,7 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(
     }
     for (int i = 0; i < 3; i++)
       for (int j = 0; j < 3; j++)
-        myComm->bcast(Lattice(i, j));
+        myComm.bcast(Lattice(i, j));
   }
   else if (!usesOpenBC)
   {
@@ -1081,9 +1084,9 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(
   ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
   if (h5_path != "" && !usesOpenBC)
   {
-    hdf_archive hin(myComm);
-    if (myComm->rank() == 0)
+    if (myComm.rank() == 0)
     {
+      hdf_archive hin;
       if (!hin.open(h5_path, H5F_ACC_RDONLY))
         APP_ABORT("Could not open H5 file");
 
@@ -1094,7 +1097,7 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(
     }
     for (int i = 0; i < 3; i++)
       for (int j = 0; j < 3; j++)
-        myComm->bcast(Lattice(i, j));
+        myComm.bcast(Lattice(i, j));
   }
   else if (!usesOpenBC)
   {

@@ -25,6 +25,13 @@ endif()
 
 add_unit_test(BASENAME ${UTEST_NAME} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES simple_Sk.dat simple_input.xml)
 
+add_executable(test_convert4qmc test_convert4qmc.cpp ../QMCGaussianParserBase.cpp)
+target_link_libraries(test_convert4qmc PRIVATE catch_main qmcparticle qmcwfs sposets_for_testing)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(test_convert4qmc PRIVATE qmcutil qmcparticle_omptarget qmcwfs_omptarget spline2 spline2_omptarget platform_omptarget_LA)
+endif()
+add_unit_test(BASENAME deterministic-unit_test_convert4qmc TEST_BINARY $<TARGET_FILE:test_convert4qmc>)
+
 # Minimal test for qmc-check-affinity. Check for "OpenMP" in output, no errorcodes.
 if(HAVE_MPI)
   add_test(NAME check-affinity_runs COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
@@ -185,6 +192,13 @@ set_tests_properties(
              OMP_NUM_THREADS=3
              PROCESSOR_AFFINITY
              TRUE)
+
+add_executable(test_csf_excitation test_csf_excitation.cpp ../QMCGaussianParserBase.cpp)
+target_link_libraries(test_csf_excitation PRIVATE catch_main qmcparticle qmcwfs sposets_for_testing)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(test_csf_excitation PRIVATE qmcutil qmcparticle_omptarget qmcwfs_omptarget spline2 spline2_omptarget platform_omptarget_LA)
+endif()
+add_unit_test(BASENAME deterministic-unit_test_csf_excitation TEST_BINARY $<TARGET_FILE:test_csf_excitation>)
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
 add_labels_for_tests("${CURRENT_TESTS}")

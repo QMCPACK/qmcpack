@@ -732,6 +732,26 @@ class Settings(NexusCore):
             version="Nexus {}.{}.{}".format(*nexus_version)
             )
         parser.add_argument(
+            "--disable-logging",
+            "--disable_logging",
+            action="store_true",
+            default=argparse.SUPPRESS,
+            help=(
+                "Disable all Nexus logging functionality. "
+                f"(default: {nexus_config.disable_logging})"
+                ),
+            )
+        parser.add_argument(
+            "--logfile-num-backups",
+            "--logfile_num_backups",
+            type=int,
+            default=argparse.SUPPRESS,
+            help=(
+                "Number of logfiles from previous runs to keep. "
+                f"(default: {nexus_config.logfile_num_backups})"
+                ),
+            )
+        parser.add_argument(
             "--status-only",
             "--status_only",
             action="store_true",
@@ -1204,6 +1224,16 @@ class Settings(NexusCore):
         for cfg_var in NexusConfig.__slots__:
             if (cfg_val := kw.pop(cfg_var, None)) is not None:
                 setattr(nexus_config, cfg_var, cfg_val)
+
+        # Set up logger after all settings have been set, so we don't accidentally
+        # overwrite a user's logs.
+        nexus_config.main_log_handler.backupCount = nexus_config.logfile_num_backups
+        logfile = f"{nexus_config.logger_name}.log"
+        if (
+            Path(logfile).exists()
+            and os.path.getsize(logfile) > 0
+        ): # Rollover when the file exists and has something in it.
+            nexus_config.main_log_handler.doRollover()
     #end def process_config_settings
 #end class Settings
 

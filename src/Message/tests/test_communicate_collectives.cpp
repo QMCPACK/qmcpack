@@ -26,61 +26,61 @@ Complex rank_value(int rank, int element)
 // =======================================================================
 TEST_CASE("communicate_collectives_scalar_bcast", "[message][collectives]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   // Scalar double
   double val_d = 0.0;
-  if (comm->rank() == 0)
+  if (comm.rank() == 0)
     val_d = 3.0;
-  comm->bcast(val_d);
+  comm.bcast(val_d);
   CHECK(val_d == 3.0);
 
   // Scalar complex
   Complex val_c{0.0, 0.0};
-  if (comm->rank() == 0)
+  if (comm.rank() == 0)
     val_c = {1.2, 3.4};
-  comm->bcast(val_c);
+  comm.bcast(val_c);
   CHECK(val_c == Complex{1.2, 3.4});
 
   // Explicit bool
   bool val_b = false;
-  if (comm->rank() == 0)
+  if (comm.rank() == 0)
     val_b = true;
-  comm->bcast(val_b);
+  comm.bcast(val_b);
   CHECK(val_b == true);
 
   // Explicit std::string
   std::string val_s = "";
-  if (comm->rank() == 0)
+  if (comm.rank() == 0)
     val_s = "qmcpack_mpi_string";
-  comm->bcast(val_s);
+  comm.bcast(val_s);
   CHECK(val_s == "qmcpack_mpi_string");
 }
 
 TEST_CASE("communicate_collectives_complex_vector_bcast", "[message][collectives]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
   std::vector<Complex> values{{-1, -1}, {-1, -1}};
-  if (comm->rank() == 0)
+  if (comm.rank() == 0)
     values = {{1, -2}, {3, -4}};
-  comm->bcast(values);
+  comm.bcast(values);
   CHECK(values[0] == Complex{1, -2});
   CHECK(values[1] == Complex{3, -4});
 }
 
 TEST_CASE("communicate_collectives_vector_bool_bcast", "[message][collectives]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   std::vector<bool> val_vb(3, false);
-  if (comm->rank() == 0)
+  if (comm.rank() == 0)
   {
     val_vb[0] = true;
     val_vb[1] = false;
     val_vb[2] = true;
   }
 
-  comm->bcast(val_vb);
+  comm.bcast(val_vb);
 
   REQUIRE(val_vb.size() == 3);
   CHECK(val_vb[0] == true);
@@ -90,15 +90,29 @@ TEST_CASE("communicate_collectives_vector_bool_bcast", "[message][collectives]")
 
 TEST_CASE("communicate_collectives_complex_pointer_bcast", "[message][collectives]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
   std::vector<Complex> values{{-1, -1}, {-1, -1}};
-  if (comm->rank() == 0)
+  if (comm.rank() == 0)
     values = {{1, -2}, {3, -4}};
 
-  comm->bcast(values.data(), static_cast<int>(values.size()));
+  comm.bcast(values.data(), static_cast<int>(values.size()));
 
   CHECK(values[0] == Complex{1, -2});
   CHECK(values[1] == Complex{3, -4});
+
+  if (comm.size() > 1)
+  {
+    const int root = comm.size() - 1;
+    std::vector<double> dvalues(3, -100.0);
+    if (comm.rank() == root)
+      dvalues = {10.5, 20.5, 30.5};
+
+    comm.bcast(dvalues.data(), static_cast<int>(dvalues.size()), root);
+
+    CHECK(dvalues[0] == 10.5);
+    CHECK(dvalues[1] == 20.5);
+    CHECK(dvalues[2] == 30.5);
+  }
 }
 
 // =======================================================================
@@ -106,48 +120,61 @@ TEST_CASE("communicate_collectives_complex_pointer_bcast", "[message][collective
 // =======================================================================
 TEST_CASE("communicate_collectives_scalar_reduce", "[message][collectives]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   // Scalar int
-  int val_i = comm->rank() + 1;
-  comm->reduce(val_i);
-  if (comm->rank() == 0)
+  int val_i = comm.rank() + 1;
+  comm.reduce(val_i);
+  if (comm.rank() == 0)
   {
-    int expected_i = comm->size() * (comm->size() + 1) / 2;
+    int expected_i = comm.size() * (comm.size() + 1) / 2;
     CHECK(val_i == expected_i);
   }
 
   // Scalar double
-  double val_d = static_cast<double>(comm->rank() + 1);
-  comm->reduce(val_d);
-  if (comm->rank() == 0)
+  double val_d = static_cast<double>(comm.rank() + 1);
+  comm.reduce(val_d);
+  if (comm.rank() == 0)
   {
-    double expected_d = static_cast<double>(comm->size() * (comm->size() + 1) / 2);
+    double expected_d = static_cast<double>(comm.size() * (comm.size() + 1) / 2);
     CHECK(val_d == expected_d);
   }
 
   // Scalar complex
-  Complex val_c{static_cast<double>(comm->rank() + 1), static_cast<double>(comm->rank() + 2)};
-  comm->reduce(val_c);
-  if (comm->rank() == 0)
+  Complex val_c{static_cast<double>(comm.rank() + 1), static_cast<double>(comm.rank() + 2)};
+  comm.reduce(val_c);
+  if (comm.rank() == 0)
   {
-    double expected_real = static_cast<double>(comm->size() * (comm->size() + 1) / 2);
-    double expected_imag = static_cast<double>(comm->size() * (comm->size() + 1) / 2 + comm->size());
+    double expected_real = static_cast<double>(comm.size() * (comm.size() + 1) / 2);
+    double expected_imag = static_cast<double>(comm.size() * (comm.size() + 1) / 2 + comm.size());
     CHECK(val_c == Complex{expected_real, expected_imag});
+  }
+
+  // Reduce to non-zero root
+  if (comm.size() > 1)
+  {
+    const int dest = comm.size() - 1;
+    int val_dest = comm.rank() + 1;
+    comm.reduce(val_dest, dest);
+    if (comm.rank() == dest)
+    {
+      int expected_dest = comm.size() * (comm.size() + 1) / 2;
+      CHECK(val_dest == expected_dest);
+    }
   }
 }
 
 TEST_CASE("communicate_collectives_complex_vector_reduce", "[message][collectives]")
 {
-  Communicate* c = OHMMS::Controller;
-  std::vector<Complex> values{{(double)(c->rank() + 1), (double)(c->rank() + 2)},
-                              {(double)(c->rank() + 3), (double)(c->rank() + 4)}};
-  c->reduce(values);
-  if (c->rank() == 0)
+  Communicate& c(*OHMMS::Controller);
+  std::vector<Complex> values{{(double)(c.rank() + 1), (double)(c.rank() + 2)},
+                              {(double)(c.rank() + 3), (double)(c.rank() + 4)}};
+  c.reduce(values);
+  if (c.rank() == 0)
   {
     double expected_real_0 = 0.0, expected_imag_0 = 0.0;
     double expected_real_1 = 0.0, expected_imag_1 = 0.0;
-    for (int i = 0; i < c->size(); i++)
+    for (int i = 0; i < c.size(); i++)
     {
       expected_real_0 += (double)(i + 1);
       expected_imag_0 += (double)(i + 2);
@@ -161,19 +188,19 @@ TEST_CASE("communicate_collectives_complex_vector_reduce", "[message][collective
 
 TEST_CASE("test_communicate_complex_pointer_reduce_in_place", "[message]")
 {
-  Communicate* c = OHMMS::Controller;
-  std::vector<Complex> values{{(double)(c->rank() + 1), (double)(c->rank() + 2)},
-                              {(double)(c->rank() + 3), (double)(c->rank() + 4)}};
+  Communicate& c(*OHMMS::Controller);
+  std::vector<Complex> values{{(double)(c.rank() + 1), (double)(c.rank() + 2)},
+                              {(double)(c.rank() + 3), (double)(c.rank() + 4)}};
 
-  c->reduce_in_place(values.data(), values.size());
+  c.reduce_in_place(values.data(), values.size());
 
-  if (c->rank() == 0)
+  if (c.rank() == 0)
   {
     double expected_real_0 = 0.0;
     double expected_imag_0 = 0.0;
     double expected_real_1 = 0.0;
     double expected_imag_1 = 0.0;
-    for (int i = 0; i < c->size(); i++)
+    for (int i = 0; i < c.size(); i++)
     {
       expected_real_0 += (double)(i + 1);
       expected_imag_0 += (double)(i + 2);
@@ -183,6 +210,61 @@ TEST_CASE("test_communicate_complex_pointer_reduce_in_place", "[message]")
     REQUIRE(values[0] == Complex{expected_real_0, expected_imag_0});
     REQUIRE(values[1] == Complex{expected_real_1, expected_imag_1});
   }
+
+  // Reduce in place to non-zero dest
+  if (c.size() > 1)
+  {
+    const int dest = c.size() - 1;
+    std::vector<Complex> values_dest{{(double)(c.rank() + 1), (double)(c.rank() + 2)},
+                                     {(double)(c.rank() + 3), (double)(c.rank() + 4)}};
+    c.reduce_in_place(values_dest.data(), values_dest.size(), dest);
+    if (c.rank() == dest)
+    {
+      double expected_real_0 = 0.0, expected_imag_0 = 0.0;
+      double expected_real_1 = 0.0, expected_imag_1 = 0.0;
+      for (int i = 0; i < c.size(); i++)
+      {
+        expected_real_0 += (double)(i + 1);
+        expected_imag_0 += (double)(i + 2);
+        expected_real_1 += (double)(i + 3);
+        expected_imag_1 += (double)(i + 4);
+      }
+      REQUIRE(values_dest[0] == Complex{expected_real_0, expected_imag_0});
+      REQUIRE(values_dest[1] == Complex{expected_real_1, expected_imag_1});
+    }
+  }
+}
+
+TEST_CASE("communicate_collectives_pointer_reduce", "[message][collectives]")
+{
+  Communicate& c(*OHMMS::Controller);
+  const std::vector<double> send_buf{static_cast<double>(c.rank() + 1), static_cast<double>(2 * (c.rank() + 1))};
+  std::vector<double> recv_buf(2, 0.0);
+
+  // dest = 0 (default)
+  c.reduce(send_buf.data(), recv_buf.data(), static_cast<int>(send_buf.size()));
+
+  const double expected_0 = static_cast<double>(c.size() * (c.size() + 1) / 2);
+  const double expected_1 = 2.0 * expected_0;
+
+  if (c.rank() == 0)
+  {
+    CHECK(recv_buf[0] == expected_0);
+    CHECK(recv_buf[1] == expected_1);
+  }
+
+  // Non-zero destination
+  if (c.size() > 1)
+  {
+    const int dest = c.size() - 1;
+    std::fill(recv_buf.begin(), recv_buf.end(), 0.0);
+    c.reduce(send_buf.data(), recv_buf.data(), static_cast<int>(send_buf.size()), dest);
+    if (c.rank() == dest)
+    {
+      CHECK(recv_buf[0] == expected_0);
+      CHECK(recv_buf[1] == expected_1);
+    }
+  }
 }
 
 // =======================================================================
@@ -190,44 +272,44 @@ TEST_CASE("test_communicate_complex_pointer_reduce_in_place", "[message]")
 // =======================================================================
 TEST_CASE("communicate_collectives_scalar_allreduce", "[message][collectives]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   // Scalar int
-  int val_i = comm->rank() + 1;
-  comm->allreduce(val_i);
-  int expected_i = comm->size() * (comm->size() + 1) / 2;
+  int val_i = comm.rank() + 1;
+  comm.allreduce(val_i);
+  int expected_i = comm.size() * (comm.size() + 1) / 2;
   CHECK(val_i == expected_i);
 
   // Scalar double
-  double val_d = static_cast<double>(comm->rank() + 1);
-  comm->allreduce(val_d);
-  double expected_d = static_cast<double>(comm->size() * (comm->size() + 1) / 2);
+  double val_d = static_cast<double>(comm.rank() + 1);
+  comm.allreduce(val_d);
+  double expected_d = static_cast<double>(comm.size() * (comm.size() + 1) / 2);
   CHECK(val_d == expected_d);
 
   // Scalar complex
-  Complex val_c{static_cast<double>(comm->rank() + 1), static_cast<double>(comm->rank() + 2)};
-  comm->allreduce(val_c);
-  double expected_real = static_cast<double>(comm->size() * (comm->size() + 1) / 2);
+  Complex val_c{static_cast<double>(comm.rank() + 1), static_cast<double>(comm.rank() + 2)};
+  comm.allreduce(val_c);
+  double expected_real = static_cast<double>(comm.size() * (comm.size() + 1) / 2);
   // Sum of (rank + 2):
   // Sum(rank+1) = S. Sum(1) = size. So S + size.
-  double expected_imag = static_cast<double>(comm->size() * (comm->size() + 1) / 2 + comm->size());
+  double expected_imag = static_cast<double>(comm.size() * (comm.size() + 1) / 2 + comm.size());
   CHECK(val_c == Complex{expected_real, expected_imag});
 }
 
 TEST_CASE("communicate_collectives_complex_matrix_allreduce", "[message][collectives]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
   Matrix<Complex> values(2, 2);
   for (int row = 0; row < 2; ++row)
     for (int column = 0; column < 2; ++column)
     {
-      const int value     = (comm->rank() + 1) * (2 * row + column + 1);
+      const int value     = (comm.rank() + 1) * (2 * row + column + 1);
       values(row, column) = Complex{static_cast<double>(value), static_cast<double>(-value)};
     }
 
-  comm->allreduce(values);
+  comm.allreduce(values);
 
-  const int rank_sum = comm->size() * (comm->size() + 1) / 2;
+  const int rank_sum = comm.size() * (comm.size() + 1) / 2;
   for (int row = 0; row < 2; ++row)
     for (int column = 0; column < 2; ++column)
     {
@@ -238,17 +320,17 @@ TEST_CASE("communicate_collectives_complex_matrix_allreduce", "[message][collect
 
 TEST_CASE("communicate_collectives_complex_vector_gather", "[message][collectives]")
 {
-  Communicate* comm = OHMMS::Controller;
-  std::vector<Complex> send{rank_value(comm->rank(), 0), rank_value(comm->rank(), 1)};
+  Communicate& comm(*OHMMS::Controller);
+  std::vector<Complex> send{rank_value(comm.rank(), 0), rank_value(comm.rank(), 1)};
   std::vector<Complex> receive;
-  if (comm->rank() == 0)
-    receive.resize(comm->size() * send.size(), Complex{-1, -1});
+  if (comm.rank() == 0)
+    receive.resize(comm.size() * send.size(), Complex{-1, -1});
 
-  comm->gather(send, receive, 0);
+  comm.gather(send, receive, 0);
 
-  if (comm->rank() == 0)
+  if (comm.rank() == 0)
   {
-    for (int rank = 0; rank < comm->size(); ++rank)
+    for (int rank = 0; rank < comm.size(); ++rank)
       for (int element = 0; element < static_cast<int>(send.size()); ++element)
         CHECK(receive[rank * send.size() + element] == rank_value(rank, element));
   }
@@ -256,16 +338,16 @@ TEST_CASE("communicate_collectives_complex_vector_gather", "[message][collective
 
 TEST_CASE("communicate_collectives_float_vector_gatherv", "[message][collectives]")
 {
-  Communicate* comm     = OHMMS::Controller;
-  const int local_count = comm->rank() + 1;
+  Communicate& comm(*OHMMS::Controller);
+  const int local_count = comm.rank() + 1;
   std::vector<float> send(local_count);
   for (int element = 0; element < local_count; ++element)
-    send[element] = 10.0f * comm->rank() + element + 1.0f;
+    send[element] = 10.0f * comm.rank() + element + 1.0f;
 
-  std::vector<int> counts(comm->size());
-  std::vector<int> displacements(comm->size());
+  std::vector<int> counts(comm.size());
+  std::vector<int> displacements(comm.size());
   int total_count = 0;
-  for (int rank = 0; rank < comm->size(); ++rank)
+  for (int rank = 0; rank < comm.size(); ++rank)
   {
     counts[rank]        = rank + 1;
     displacements[rank] = total_count;
@@ -273,26 +355,26 @@ TEST_CASE("communicate_collectives_float_vector_gatherv", "[message][collectives
   }
   std::vector<float> receive(total_count, -1.0f);
 
-  comm->gatherv(send, receive, counts, displacements);
+  comm.gatherv(send, receive, counts, displacements);
 
-  if (comm->rank() == 0)
-    for (int rank = 0; rank < comm->size(); ++rank)
+  if (comm.rank() == 0)
+    for (int rank = 0; rank < comm.size(); ++rank)
       for (int element = 0; element < counts[rank]; ++element)
         CHECK(receive[displacements[rank] + element] == 10.0f * rank + element + 1.0f);
 }
 
 TEST_CASE("communicate_collectives_double_pointer_gatherv", "[message][collectives]")
 {
-  Communicate* comm     = OHMMS::Controller;
-  const int local_count = comm->rank() + 1;
+  Communicate& comm(*OHMMS::Controller);
+  const int local_count = comm.rank() + 1;
   std::vector<double> send(local_count);
   for (int element = 0; element < local_count; ++element)
-    send[element] = 10 * comm->rank() + element + 1;
+    send[element] = 10 * comm.rank() + element + 1;
 
-  std::vector<int> counts(comm->size());
-  std::vector<int> displacements(comm->size());
+  std::vector<int> counts(comm.size());
+  std::vector<int> displacements(comm.size());
   int total_count = 0;
-  for (int rank = 0; rank < comm->size(); ++rank)
+  for (int rank = 0; rank < comm.size(); ++rank)
   {
     counts[rank]        = rank + 1;
     displacements[rank] = total_count;
@@ -300,26 +382,26 @@ TEST_CASE("communicate_collectives_double_pointer_gatherv", "[message][collectiv
   }
   std::vector<double> receive(total_count, -1);
 
-  comm->gatherv(send.data(), receive.data(), local_count, counts, displacements);
+  comm.gatherv(send.data(), receive.data(), local_count, counts, displacements);
 
-  if (comm->rank() == 0)
-    for (int rank = 0; rank < comm->size(); ++rank)
+  if (comm.rank() == 0)
+    for (int rank = 0; rank < comm.size(); ++rank)
       for (int element = 0; element < counts[rank]; ++element)
         CHECK(receive[displacements[rank] + element] == 10 * rank + element + 1);
 }
 
 TEST_CASE("communicate_collectives_float_pointer_gatherv", "[message][collectives]")
 {
-  Communicate* comm     = OHMMS::Controller;
-  const int local_count = comm->rank() + 1;
+  Communicate& comm(*OHMMS::Controller);
+  const int local_count = comm.rank() + 1;
   std::vector<float> send(local_count);
   for (int element = 0; element < local_count; ++element)
-    send[element] = 10.0f * comm->rank() + element + 1.0f;
+    send[element] = 10.0f * comm.rank() + element + 1.0f;
 
-  std::vector<int> counts(comm->size());
-  std::vector<int> displacements(comm->size());
+  std::vector<int> counts(comm.size());
+  std::vector<int> displacements(comm.size());
   int total_count = 0;
-  for (int rank = 0; rank < comm->size(); ++rank)
+  for (int rank = 0; rank < comm.size(); ++rank)
   {
     counts[rank]        = rank + 1;
     displacements[rank] = total_count;
@@ -327,21 +409,21 @@ TEST_CASE("communicate_collectives_float_pointer_gatherv", "[message][collective
   }
   std::vector<float> receive(total_count, -1.0f);
 
-  comm->gatherv(send.data(), receive.data(), local_count, counts, displacements);
+  comm.gatherv(send.data(), receive.data(), local_count, counts, displacements);
 
-  if (comm->rank() == 0)
-    for (int rank = 0; rank < comm->size(); ++rank)
+  if (comm.rank() == 0)
+    for (int rank = 0; rank < comm.size(); ++rank)
       for (int element = 0; element < counts[rank]; ++element)
         CHECK(receive[displacements[rank] + element] == 10.0f * rank + element + 1.0f);
 }
 
 TEST_CASE("communicate_collectives_float_pointer_gatherv_in_place", "[message][collectives]")
 {
-  Communicate* comm = OHMMS::Controller;
-  std::vector<int> counts(comm->size());
-  std::vector<int> displacements(comm->size());
+  Communicate& comm(*OHMMS::Controller);
+  std::vector<int> counts(comm.size());
+  std::vector<int> displacements(comm.size());
   int total_count = 0;
-  for (int rank = 0; rank < comm->size(); ++rank)
+  for (int rank = 0; rank < comm.size(); ++rank)
   {
     counts[rank]        = rank + 1;
     displacements[rank] = total_count;
@@ -350,26 +432,26 @@ TEST_CASE("communicate_collectives_float_pointer_gatherv_in_place", "[message][c
 
   std::vector<float> buffer(total_count, -1.0f);
 
-  for (int element = 0; element < counts[comm->rank()]; ++element)
-    buffer[displacements[comm->rank()] + element] = 10.0f * comm->rank() + element + 1.0f;
+  for (int element = 0; element < counts[comm.rank()]; ++element)
+    buffer[displacements[comm.rank()] + element] = 10.0f * comm.rank() + element + 1.0f;
 
-  comm->gatherv_in_place(buffer.data(), qmcplusplus::mpi::get_mpi_datatype(buffer[0]), counts, displacements);
+  comm.gatherv_in_place(buffer.data(), qmcplusplus::mpi::get_mpi_datatype(buffer[0]), counts, displacements);
 
-  if (comm->rank() == 0)
-    for (int rank = 0; rank < comm->size(); ++rank)
+  if (comm.rank() == 0)
+    for (int rank = 0; rank < comm.size(); ++rank)
       for (int element = 0; element < counts[rank]; ++element)
         CHECK(buffer[displacements[rank] + element] == 10.0f * rank + element + 1.0f);
 }
 
 TEST_CASE("communicate_collectives_allgather_count", "[message][collectives]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
-  std::vector<int> send{1 + comm->rank(), 2 + comm->rank(), 3 + comm->rank()};
-  std::vector<int> receive(send.size() * comm->size(), 0);
-  comm->allgather(send, receive);
+  std::vector<int> send{1 + comm.rank(), 2 + comm.rank(), 3 + comm.rank()};
+  std::vector<int> receive(send.size() * comm.size(), 0);
+  comm.allgather(send, receive);
 
-  for (int i = 0; i < comm->size(); i++)
+  for (int i = 0; i < comm.size(); i++)
   {
     CHECK(receive[i * 3 + 0] == 1 + i);
     CHECK(receive[i * 3 + 1] == 2 + i);
@@ -379,38 +461,38 @@ TEST_CASE("communicate_collectives_allgather_count", "[message][collectives]")
 
 TEST_CASE("communicate_collectives_complex_vector_allgather", "[message][collectives]")
 {
-  Communicate* comm = OHMMS::Controller;
-  std::vector<Complex> send{rank_value(comm->rank(), 0), rank_value(comm->rank(), 1)};
-  std::vector<Complex> receive(comm->size() * send.size(), Complex{-1, -1});
+  Communicate& comm(*OHMMS::Controller);
+  std::vector<Complex> send{rank_value(comm.rank(), 0), rank_value(comm.rank(), 1)};
+  std::vector<Complex> receive(comm.size() * send.size(), Complex{-1, -1});
 
-  comm->allgather(send, receive);
+  comm.allgather(send, receive);
 
-  for (int rank = 0; rank < comm->size(); ++rank)
+  for (int rank = 0; rank < comm.size(); ++rank)
     for (int element = 0; element < static_cast<int>(send.size()); ++element)
       CHECK(receive[rank * send.size() + element] == rank_value(rank, element));
 }
 
 TEST_CASE("communicate_collectives_complex_pointer_allgather", "[message][collectives]")
 {
-  Communicate* comm = OHMMS::Controller;
-  std::vector<Complex> send{rank_value(comm->rank(), 0), rank_value(comm->rank(), 1)};
-  std::vector<Complex> receive(comm->size() * send.size(), Complex{-1, -1});
+  Communicate& comm(*OHMMS::Controller);
+  std::vector<Complex> send{rank_value(comm.rank(), 0), rank_value(comm.rank(), 1)};
+  std::vector<Complex> receive(comm.size() * send.size(), Complex{-1, -1});
 
-  comm->allgather(send.data(), receive.data(), static_cast<int>(send.size()));
+  comm.allgather(send.data(), receive.data(), static_cast<int>(send.size()));
 
-  for (int rank = 0; rank < comm->size(); ++rank)
+  for (int rank = 0; rank < comm.size(); ++rank)
     for (int element = 0; element < static_cast<int>(send.size()); ++element)
       CHECK(receive[rank * send.size() + element] == rank_value(rank, element));
 }
 
 TEST_CASE("communicate_collectives_complex_vector_scatter", "[message][collectives]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
   std::vector<Complex> send;
-  if (comm->rank() == 0)
+  if (comm.rank() == 0)
   {
-    send.resize(comm->size() * 2);
-    for (int rank = 0; rank < comm->size(); ++rank)
+    send.resize(comm.size() * 2);
+    for (int rank = 0; rank < comm.size(); ++rank)
     {
       send[rank * 2 + 0] = rank_value(rank, 0);
       send[rank * 2 + 1] = rank_value(rank, 1);
@@ -418,19 +500,19 @@ TEST_CASE("communicate_collectives_complex_vector_scatter", "[message][collectiv
   }
   std::vector<Complex> receive(2, Complex{-1, -1});
 
-  comm->scatter(send, receive, 0);
+  comm.scatter(send, receive, 0);
 
-  CHECK(receive[0] == rank_value(comm->rank(), 0));
-  CHECK(receive[1] == rank_value(comm->rank(), 1));
+  CHECK(receive[0] == rank_value(comm.rank(), 0));
+  CHECK(receive[1] == rank_value(comm.rank(), 1));
 }
 
 TEST_CASE("communicate_collectives_float_vector_scatterv", "[message][collectives]")
 {
-  Communicate* comm = OHMMS::Controller;
-  std::vector<int> counts(comm->size());
-  std::vector<int> displacements(comm->size());
+  Communicate& comm(*OHMMS::Controller);
+  std::vector<int> counts(comm.size());
+  std::vector<int> displacements(comm.size());
   int total_count = 0;
-  for (int rank = 0; rank < comm->size(); ++rank)
+  for (int rank = 0; rank < comm.size(); ++rank)
   {
     counts[rank]        = rank + 1;
     displacements[rank] = total_count;
@@ -438,21 +520,21 @@ TEST_CASE("communicate_collectives_float_vector_scatterv", "[message][collective
   }
 
   std::vector<float> send;
-  if (comm->rank() == 0)
+  if (comm.rank() == 0)
   {
     send.resize(total_count, -1.0f);
-    for (int rank = 0; rank < comm->size(); ++rank)
+    for (int rank = 0; rank < comm.size(); ++rank)
       for (int element = 0; element < counts[rank]; ++element)
         send[displacements[rank] + element] = 10.0f * rank + element + 1.0f;
   }
 
-  const int local_count = comm->rank() + 1;
+  const int local_count = comm.rank() + 1;
   std::vector<float> receive(local_count, -1.0f);
 
-  comm->scatterv(send, receive, counts, displacements, 0);
+  comm.scatterv(send, receive, counts, displacements, 0);
 
   for (int element = 0; element < local_count; ++element)
-    CHECK(receive[element] == 10.0f * comm->rank() + element + 1.0f);
+    CHECK(receive[element] == 10.0f * comm.rank() + element + 1.0f);
 }
 
 } // namespace qmcplusplus

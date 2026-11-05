@@ -20,9 +20,9 @@ class CountingJastrowBuilder : public WaveFunctionComponentBuilder
 {
 public:
   // voronoi constructor
-  CountingJastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source);
+  CountingJastrowBuilder(Communicate& comm, ParticleSet& target, ParticleSet& source);
   // normalized gaussian constructor
-  CountingJastrowBuilder(Communicate* comm, ParticleSet& target);
+  CountingJastrowBuilder(Communicate& comm, ParticleSet& target);
 
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 

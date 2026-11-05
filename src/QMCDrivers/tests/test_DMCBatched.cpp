@@ -56,8 +56,8 @@ TEST_CASE("QMCDriverFactory rejects invalid L2 diffusion configurations for DMCB
 {
   using namespace testing;
   RandomNumberGeneratorPool rng_pool(1);
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
 
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(R"(<qmc method="dmc"><parameter name="L2_diffusion">yes</parameter></qmc>)"));
@@ -98,8 +98,7 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   Concurrency::OverrideMaxCapacity<> override(8);
   RandomNumberGeneratorPool rng_pool(8);
   ProjectData test_project;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
   outputManager.pause();
 
   Libxml2Document doc;
@@ -118,7 +117,7 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   WalkerConfigurations walker_confs;
 
   DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), nullptr, std::move(dmcdriver_input), walker_confs,
-                       MCPopulation(comm->size(), comm->rank(), *particle_pool.getParticleSet("e"),
+                       MCPopulation(comm.size(), comm.rank(), *particle_pool.getParticleSet("e"),
                                     wavefunction_pool.getWaveFunction().value(),
                                     hamiltonian_pool.getHamiltonian().value()),
                        rng_pool.getRngRefs(), comm);
@@ -134,9 +133,9 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   outputManager.resume();
 
   dmcdriver.process(node);
-  CHECK(dmcdriver.get_num_living_walkers() == 8);
+  CHECK(dmcdriver.get_num_living_walkers() == 8 / comm.size());
   const QMCTraits::IndexType reserved_walkers = dmcdriver.get_num_living_walkers() + dmcdriver.get_num_dead_walkers();
-  CHECK(reserved_walkers == 10);
+  CHECK(reserved_walkers == 10 / comm.size());
   // What else should we expect after process
 }
 #endif

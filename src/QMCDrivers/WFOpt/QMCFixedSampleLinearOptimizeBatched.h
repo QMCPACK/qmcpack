@@ -57,7 +57,7 @@ public:
                                       MCPopulation&& population,
                                       const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                                       SampleStack& samples,
-                                      Communicate* comm);
+                                      Communicate& comm);
 
   ///Destructor
   ~QMCFixedSampleLinearOptimizeBatched() override;
