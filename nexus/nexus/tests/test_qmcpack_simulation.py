@@ -1,3 +1,4 @@
+import shutil
 from copy import deepcopy
 from pathlib import Path
 from xml.etree import ElementTree as ET
