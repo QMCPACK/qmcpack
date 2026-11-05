@@ -6170,16 +6170,16 @@ def generate_sposets(type              = None,
             )
         raise ValueError(msg)
     #end if
-    if type in ('bspline','einspline') and (shared_ranks is not None or distributed_ranks is not None):
-        for spo in sposets:
-            spo.coefs_mem = coefs_mem()
-            if shared_ranks is not None:
-                spo.coefs_mem.shared_ranks = shared_ranks
-            #end if
+    if distributed_ranks is not None or shared_ranks is not None:
+        if type in {"bspline", "einspline"}:
+            cm = coefs_mem()
             if distributed_ranks is not None:
-                spo.coefs_mem.distributed_ranks = distributed_ranks
-            #end if
-        #end for
+                cm.distributed_ranks = distributed_ranks
+            if shared_ranks is not None:
+                cm.shared_ranks = shared_ranks
+            for spo in sposets:
+                spo.coefs_mem = cm
+        #end if
     #end if
     if rotate:
         rotated_sposets = []
@@ -6790,17 +6790,16 @@ def generate_determinantset_old(type              = 'bspline',
                 msg = f'{exc1} excitation is not yet available for band type'
                 raise NotImplementedError(msg)
             #end if
-
-            if type in ('bspline','einspline') and (shared_ranks is not None or distributed_ranks is not None):
-                for spo in dset.sposets:
-                    spo.coefs_mem = coefs_mem()
-                    if shared_ranks is not None:
-                        spo.coefs_mem.shared_ranks = shared_ranks
-                    #end if
+            if distributed_ranks is not None or shared_ranks is not None:
+                if type in {"bspline", "einspline"}:
+                    cm = coefs_mem()
                     if distributed_ranks is not None:
-                        spo.coefs_mem.distributed_ranks = distributed_ranks
-                    #end if
-                #end for
+                        cm.distributed_ranks = distributed_ranks
+                    if shared_ranks is not None:
+                        cm.shared_ranks = shared_ranks
+                    for spo in dset.sposets:
+                        spo.coefs_mem = cm
+                #end if
             #end if
             return dset
 
