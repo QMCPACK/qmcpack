@@ -1,19 +1,16 @@
-import pytest
 from copy import deepcopy
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_SIMULATION)
-
-
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from . import isolate_nexus_core, create_pseudo_files, TEST_DIR
+import pytest
 
+from . import NexusTestOrder, isolate_nexus_core, create_pseudo_files, TEST_DIR
 from ..qmcpack_input import QmcpackInput
 from ..testing import clear_all_sims
 from ..testing import failed
 from ..testing import value_eq,text_eq
 
+pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_SIMULATION)
 
 
 def get_system(tiling=(1,1,1),kgrid=(1,1,1)):
@@ -592,11 +589,9 @@ def test_check_sim_status(tmp_path):
 #end def test_check_sim_status()
 
 
-@pytest.mark.parametrize('shared_ranks', [None, 1, 4])
-@pytest.mark.parametrize('distributed_ranks', [None, 1, 2])
+@pytest.mark.parametrize('shared_ranks', [None, 0, 1, 4])
+@pytest.mark.parametrize('distributed_ranks', [None, -1, 1, 2])
 def test_coefs_mem_ranks(tmp_path, shared_ranks, distributed_ranks):
-    # Cover omitted options, each option alone, and both options together,
-    # including the minimum allowed value of 1.
     # Use separate spin SPOs to check that both receive the memory settings.
     sim = get_qmcpack_sim(
         shared_ranks=shared_ranks,
@@ -627,10 +622,3 @@ def test_coefs_mem_ranks(tmp_path, shared_ranks, distributed_ranks):
         node.attrib for node in root.findall('.//coefs_mem')
     ]
     clear_all_sims()
-
-
-@pytest.mark.parametrize('keyword', ['shared_ranks', 'distributed_ranks'])
-@pytest.mark.parametrize('value', [0, -1])
-def test_coefs_mem_ranks_invalid(keyword, value):
-    with pytest.raises(ValueError, match=f'{keyword} must be >= 1'):
-        get_qmcpack_sim(**{keyword: value})

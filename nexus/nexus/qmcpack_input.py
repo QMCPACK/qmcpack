@@ -985,16 +985,7 @@ class QIxml(Names):
         #    c+=' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd"'
         ##end if
         #no_contents = len(set(self.keys())-set(self.elements)-set(self.plurals.keys()))==0
-        contents = set(self.keys())-set(self.attributes)
-        have_text = self.text is not None and self.text in self
-        if have_text and isinstance(self[self.text],str):
-            have_text = self[self.text].strip() != ""
-        #end if
-        # Empty text read from XML should not prevent a self-closing element.
-        if not have_text:
-            contents.discard(self.text)
-        #end if
-        no_contents = len(contents)==0
+        no_contents = len(set(self.keys())-set(self.attributes))==0
         if no_contents:
             c += '/>\n'
         else:
@@ -1071,7 +1062,7 @@ class QIxml(Names):
                     #end for
                 #end if
             #end for
-            if have_text:
+            if self.text is not None and self.text in self:
                 c = c.rstrip('\n')
                 c+=param.write(self[self.text],mode='elem',pad=ip,tag=None,normal_elem=True)
             #end if
@@ -2260,7 +2251,7 @@ class sposet(QIxml):
                   'source','version','precision','tilematrix',
                   'meshfactor')
     elements   = ('occupation','coefficient','coefficients','coefs_mem')
-    text       = 'spos'
+    text       = None
     identifier = 'name'
 #end class sposet
 
@@ -6102,22 +6093,6 @@ def generate_particlesets(*,
 #end def generate_particlesets
 
 
-def _validate_coefs_mem_ranks(
-    shared_ranks: int | None,
-    distributed_ranks: int | None,
-) -> None:
-    for name,value in (('shared_ranks',shared_ranks),('distributed_ranks',distributed_ranks)):
-        if value is None:
-            continue
-        #end if
-        if not isinstance(value,int) or isinstance(value,bool) or value < 1:
-            msg = f'{name} must be >= 1 when provided and must be an integer'
-            raise ValueError(msg)
-        #end if
-    #end for
-#end def _validate_coefs_mem_ranks
-
-
 def generate_sposets(type           = None,
                      *,
                      occupation     = None,
@@ -6131,10 +6106,9 @@ def generate_sposets(type           = None,
                      spindatasets   = False,
                      spinor         = None,
                      rotate         = False,
-                     shared_ranks   = None,
+                     shared_ranks      = None,
                      distributed_ranks = None,
                      ):
-    _validate_coefs_mem_ranks(shared_ranks,distributed_ranks)
     ndn = ndown
     if type is None:
         msg = (
@@ -6196,21 +6170,15 @@ def generate_sposets(type           = None,
             )
         raise ValueError(msg)
     #end if
-    if (
-        type in {"bspline", "einspline"}
-        and not (
-            distributed_ranks is None
-            and shared_ranks is None
-        )
-    ):
+    if type in ('bspline','einspline') and (shared_ranks is not None or distributed_ranks is not None):
         for spo in sposets:
-            spo.coefs_mem = coefs_mem(**{
-                name: value for name, value in (
-                    ('shared_ranks', shared_ranks),
-                    ('distributed_ranks', distributed_ranks),
-                )
-                if value is not None
-            })
+            spo.coefs_mem = coefs_mem()
+            if shared_ranks is not None:
+                spo.coefs_mem.shared_ranks = shared_ranks
+            #end if
+            if distributed_ranks is not None:
+                spo.coefs_mem.distributed_ranks = distributed_ranks
+            #end if
         #end for
     #end if
     if rotate:
@@ -6244,7 +6212,7 @@ def generate_bspline_builder(type           = 'bspline',
                              *,
                              meshfactor     = 1.0,
                              precision      = 'float',
-                             shared_ranks   = None,
+                             shared_ranks      = None,
                              distributed_ranks = None,
                              twistnum       = None,
                              twist          = None,
@@ -6288,7 +6256,7 @@ def generate_bspline_builder(type           = 'bspline',
         spindatasets   = True,
         spinor         = spinor,
         rotate         = rotate,
-        shared_ranks   = shared_ranks,
+        shared_ranks      = shared_ranks,
         distributed_ranks = distributed_ranks,
         )
     if not rotate:
@@ -6602,7 +6570,7 @@ def generate_determinantset_old(type           = 'bspline',
                                 *,
                                 meshfactor     = 1.0,
                                 precision      = 'float',
-                                shared_ranks   = None,
+                                shared_ranks      = None,
                                 distributed_ranks = None,
                                 twistnum       = None,
                                 twist          = None,
@@ -6616,7 +6584,6 @@ def generate_determinantset_old(type           = 'bspline',
                                 system         = None,
                                 spinor         = None,
                                 ):
-    _validate_coefs_mem_ranks(shared_ranks,distributed_ranks)
     if system is None:
         msg = 'generate_determinantset argument system must not be None'
         raise ValueError(msg)
@@ -6824,21 +6791,15 @@ def generate_determinantset_old(type           = 'bspline',
                 raise NotImplementedError(msg)
             #end if
 
-            if (
-                type in {"bspline", "einspline"}
-                and not (
-                    distributed_ranks is None
-                    and shared_ranks is None
-                )
-            ):
+            if type in ('bspline','einspline') and (shared_ranks is not None or distributed_ranks is not None):
                 for spo in dset.sposets:
-                    spo.coefs_mem = coefs_mem(**{
-                        name: value for name, value in (
-                            ('shared_ranks', shared_ranks),
-                            ('distributed_ranks', distributed_ranks),
-                        )
-                        if value is not None
-                    })
+                    spo.coefs_mem = coefs_mem()
+                    if shared_ranks is not None:
+                        spo.coefs_mem.shared_ranks = shared_ranks
+                    #end if
+                    if distributed_ranks is not None:
+                        spo.coefs_mem.distributed_ranks = distributed_ranks
+                    #end if
                 #end for
             #end if
             return dset
@@ -9410,7 +9371,7 @@ gen_basic_input_defaults = obj(
     meshfactor       = 1.0,
     orbspline        = None,
     precision        = 'float',
-    shared_ranks     = None,
+    shared_ranks      = None,
     distributed_ranks = None,
     twistnum         = None,
     twist            = None,
@@ -9534,8 +9495,6 @@ def generate_basic_input(**kwargs):
             )
         raise ValueError(msg)
     #end if
-
-    _validate_coefs_mem_ranks(kw.shared_ranks,kw.distributed_ranks)
 
     batched = kw.driver=='batched'
     legacy  = kw.driver=='legacy'
@@ -9666,7 +9625,7 @@ def generate_basic_input(**kwargs):
                 twistnum       = kw.twistnum,
                 meshfactor     = kw.meshfactor,
                 precision      = kw.precision,
-                shared_ranks   = kw.shared_ranks,
+                shared_ranks      = kw.shared_ranks,
                 distributed_ranks = kw.distributed_ranks,
                 truncate       = kw.truncate,
                 buffer         = kw.buffer,
@@ -9709,7 +9668,7 @@ def generate_basic_input(**kwargs):
             twistnum       = kw.twistnum,
             meshfactor     = kw.meshfactor,
             precision      = kw.precision,
-            shared_ranks   = kw.shared_ranks,
+            shared_ranks      = kw.shared_ranks,
             distributed_ranks = kw.distributed_ranks,
             hybridrep      = kw.hybridrep,
             href           = kw.orbitals_h5,

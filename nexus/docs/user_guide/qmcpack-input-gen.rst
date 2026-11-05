@@ -78,7 +78,6 @@ Nexus adds the following child element to each B-spline ``sposet``:
 
   <coefs_mem shared_ranks="4" distributed_ranks="2"/>
 
-When provided, each rank option must be an integer of at least 1. Nexus emits only the attributes that are provided. If both options are omitted
-or set to ``None``, Nexus does not add a ``coefs_mem`` element. See the QMCPACK documentation on
-`B-spline sposet sub-options <https://qmcpack.readthedocs.io/en/develop/intro_wavefunction.html#b-spline-sposet-sub-options>`__
-for details on MPI layout and rank divisibility requirements and guidance on how to set these options.
+If these options are omitted or set to ``None``, Nexus does not add a ``coefs_mem`` element. See the QMCPACK documentation on
+`B-spline sposet sub-options <https://qmcpack.readthedocs.io/en/develop/intro_wavefunction.html#b-spline-sposet-sub-options>`__ for
+details on MPI layout and rank divisibility requirements and guidance on how to set these options.
