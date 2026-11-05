@@ -1,17 +1,16 @@
-import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.NXS_SIM)
-
 import sys
-from . import isolate_nexus_core, TEST_DIR
-from ..testing import clear_all_sims
-from ..testing import execute,text_eq
 
+import pytest
+
+from ..nexus_base import nexus_config
+from ..testing import clear_all_sims, execute, text_eq
+from . import TEST_DIR, NexusTestOrder, isolate_nexus_core
+from .test_simulation_module import get_sim
+
+pytestmark = pytest.mark.order(NexusTestOrder.NXS_SIM)
 
 @isolate_nexus_core
 def test_sim(tmp_path):
-    from ..nexus_base import nexus_config
-    from .test_simulation_module import get_sim
 
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)

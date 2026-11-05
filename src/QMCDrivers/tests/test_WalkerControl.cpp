@@ -16,12 +16,15 @@
 
 #include "test_WalkerControl.h"
 #include "Message/Communicate.h"
+#include "Message/UniformCommunicateError.h"
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include "ParticleSetPool.h"
 #include "WaveFunctionPool.h"
 #include "HamiltonianPool.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Utilities/MPIExceptionWrapper.hpp"
 #include "Utilities/for_testing/NativeInitializerPrint.hpp"
+#include "Utilities/FakeRandom.h"
 
 
 //#include "Concurrency/Info.hpp"
@@ -85,9 +88,74 @@ void UnifiedDriverWalkerControlMPITest::testInput()
   REQUIRE(wc_.put(configured_doc.getRoot()));
   CHECK_FALSE(wc_.use_nonblocking_);
   CHECK(wc_.debug_disable_branching_);
+
+  const char* const invalid_input = R"(
+  <qmc method="dmc_batch">
+    <parameter name="use_nonblocking">invalid</parameter>
+  </qmc>)";
+  Libxml2Document invalid_doc;
+  REQUIRE(invalid_doc.parseFromString(invalid_input));
+  CHECK_THROWS_MATCHES(wc_.put(invalid_doc.getRoot()), UniformCommunicateError,
+                       Catch::Matchers::Message("WalkerControl::put parsing error. use_nonblocking only accepts 'yes'/'no'/'true'/'false' but the input value is 'invalid'."));
+}
+
+void UnifiedDriverWalkerControlMPITest::testBranching()
+{
+  FakeRandom<WalkerControl::FullPrecRealType> rng;
+  WalkerControl wc(dpools_.comm, rng);
+  wc.setTrialEnergy(0.0);
+  auto& walker = *pop_->get_walkers().front();
+  walker.Properties(WalkerProperties::Indexes::LOCALENERGY) = 1.0;
+  walker.Properties(WalkerProperties::Indexes::R2PROPOSED)  = 1.0;
+
+  SECTION("All weights zero")
+  {
+    walker.Weight = 0.0;
+    CHECK_THROWS_MATCHES(wc.branch(1, *pop_, false), UniformCommunicateError,
+                         Catch::Matchers::Message(
+                             "WalkerControl::branch: All walkers were killed in DMC at iteration 1."));
+    CHECK(pop_->get_num_local_walkers() == 1);
+  }
+
+  SECTION("Positive weights but no offspring")
+  {
+    // FakeRandom returns 0.5, so every positive weight still produces zero copies.
+    walker.Weight = 0.25;
+    CHECK_THROWS_MATCHES(wc.branch(2, *pop_, false), UniformCommunicateError,
+                         Catch::Matchers::Message(
+                             "WalkerControl::branch: All walkers were killed in DMC at iteration 2."));
+    CHECK(pop_->get_num_local_walkers() == 1);
+  }
+
+  SECTION("Survivors only on rank zero")
+  {
+    walker.Weight = getRank() == 0 ? getNumRanks() : 0.0;
+    wc.branch(1, *pop_, false);
+    CHECK(pop_->get_num_global_walkers() == getNumRanks());
+    CHECK(pop_->get_num_local_walkers() == 1);
+  }
+
+  SECTION("No branching preserves walkers")
+  {
+    walker.Weight = 0.25;
+    wc.branch(0, *pop_, true);
+    CHECK(pop_->get_num_global_walkers() == getNumRanks());
+    CHECK(pop_->get_num_local_walkers() == 1);
+    CHECK(walker.Multiplicity == 1.0);
+    CHECK(walker.Weight == 0.25);
+  }
 }
 
 } // namespace testing
+
+TEST_CASE("WalkerControl branching extinction", "[drivers][walker_control]")
+{
+  MPIExceptionWrapper mew;
+  mew([]() {
+    testing::UnifiedDriverWalkerControlMPITest test;
+    test.testBranching();
+  });
+}
 
 TEST_CASE("WalkerControl input", "[drivers][walker_control][input]")
 {

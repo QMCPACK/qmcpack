@@ -1,15 +1,17 @@
+from pathlib import Path
+
 import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.PYSCF_SIMULATION)
 
 from ..developer import obj
-
-from pathlib import Path
-from . import isolate_nexus_core, TEST_DIR
-from nexus.nexus_base import nexus_config
-from nexus.physical_system import generate_physical_system
-from nexus.structure import generate_trimer_structure
+from ..machines import job
+from ..nexus_base import nexus_config
+from ..physical_system import generate_physical_system
+from ..pyscf_sim import Pyscf, generate_pyscf
+from ..structure import generate_trimer_structure
 from ..testing import clear_all_sims
+from . import TEST_DIR, NexusTestOrder, isolate_nexus_core
+
+pytestmark = pytest.mark.order(NexusTestOrder.PYSCF_SIMULATION)
 
 TEST_FILES = {
     "scf_template.py": TEST_DIR / "test_pyscf_simulation_files/scf_template.py",
@@ -17,9 +19,6 @@ TEST_FILES = {
 
 
 def get_pyscf_sim(**kwargs):
-    from ..machines import job
-    from ..pyscf_sim import Pyscf,generate_pyscf
-
     sim = generate_pyscf(
         job = job(machine='ws1',cores=1),
         **kwargs
@@ -33,9 +32,6 @@ def get_pyscf_sim(**kwargs):
 
 
 def test_minimal_init():
-    from ..machines import job
-    from ..pyscf_sim import Pyscf,generate_pyscf
-
     sim = generate_pyscf(
         job = job(machine='ws1',cores=1),
         )
@@ -73,8 +69,6 @@ def test_check_result():
 
 @isolate_nexus_core
 def test_get_result(tmp_path):
-    from ..nexus_base import nexus_config
-
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]

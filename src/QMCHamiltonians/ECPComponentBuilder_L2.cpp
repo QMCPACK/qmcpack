@@ -12,6 +12,7 @@
 
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include <OhmmsData/AttributeSet.h>
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -20,10 +21,7 @@ void ECPComponentBuilder::buildL2(xmlNodePtr cur)
   // report to log and check for global grid (pseudo/grid)
   app_log() << "    ECPComponentBuilder::buildL2 " << std::endl;
   if (grid_global == 0)
-  {
-    app_error() << "    Global grid needs to be defined." << std::endl;
-    myComm.barrier_and_abort("ECPComponentBuilder::buildL2");
-  }
+    throw UniformCommunicateError("ECPComponentBuilder::buildL2: Global grid needs to be defined.");
 
   // read <L2> attributes
   std::string eunits = "hartree";
@@ -52,15 +50,12 @@ void ECPComponentBuilder::buildL2(xmlNodePtr cur)
   else if (format == "V")
     is_r_times_V = false;
   else
-  {
-    app_error() << "  Unrecognized format \"" << format << "\" in PP file." << std::endl;
-    myComm.barrier_and_abort("ECPComponentBuilder::buildL2");
-  }
+    throw UniformCommunicateError("ECPComponentBuilder::buildL2: Unrecognized format \"" + format + "\" in PP file.");
+
   if (rcut < 0.0)
-  {
-    app_error() << "  L2 attribute cutoff is missing or negative.  Cutoff must be a positive real number." << std::endl;
-    myComm.barrier_and_abort("ECPComponentBuilder::buildL2");
-  }
+    throw UniformCommunicateError(
+        "ECPComponentBuilder::buildL2: L2 attribute cutoff is missing or negative. Cutoff must be a positive real "
+        "number.");
   int npts = grid_global->size();
 
   // read in the data
