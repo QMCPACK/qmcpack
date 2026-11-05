@@ -18,7 +18,11 @@
 #include "config.h"
 #if defined(ENABLE_CUDA)
 #include <nccl.h>
+#if NCCL_VERSION_CODE >= NCCL_VERSION(2, 31, 0)
+#include <nccl_device/host.h>
+#else
 #include <nccl_device/core.h>
+#endif
 #elif defined(ENABLE_SYCL)
 #include <oneapi/ccl.h>
 #endif
