@@ -71,6 +71,8 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
       MinimalWaveFunctionPool::make_diamondC_1x1x1(project_data.getRuntimeOptions(), comm, particle_pool);
   wavefunction_pool.getWaveFunction().value().get().addComponent(std::make_unique<CountingWaveFunctionComponent>());
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  // Match QMCMain setup: initialize distance tables and structure factors before cloning walkers.
+  particle_pool.reset();
 
   using RNG = RandomBase<QMCTraits::FullPrecRealType>;
   std::vector<std::unique_ptr<StdRandom<QMCTraits::FullPrecRealType>>> rngs;
