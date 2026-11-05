@@ -6,7 +6,7 @@
 from .pseudoset import PseudoSet
 from .rmg_analyzer import RmgAnalyzer
 from .rmg_input import RmgInput, generate_rmg_input
-from .simulation import Simulation
+from .simulation import AppResult, Simulation
 
 
 class Rmg(Simulation):
@@ -15,7 +15,7 @@ class Rmg(Simulation):
     generic_identifier     = 'rmg'
     application            = 'rmg-cpu'
     application_properties = frozenset({'serial','mpi'})
-    application_results    = frozenset({''})
+    application_results    = AppResult.NONE
 
 
     def check_result(self,result_name,sim):
@@ -26,14 +26,14 @@ class Rmg(Simulation):
 
     def get_result(self,result_name,sim):
         result = None
-        msg = 'Ability to get result '+result_name+' has not been implemented.'
+        msg = f"Ability to get result '{result_name.name}' has not been implemented!"
         raise NotImplementedError(msg)
         return result
     #end def get_result
 
 
     def incorporate_result(self,result_name,result,sim):
-        msg = 'ability to incorporate result '+result_name+' has not been implemented'
+        msg = f"Ability to incorporate result '{result_name.name}' has not been implemented!"
         raise NotImplementedError(msg)
     #end def incorporate_result
 

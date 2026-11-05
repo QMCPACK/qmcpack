@@ -30,7 +30,7 @@ from .quantum_package_input import (
     generate_quantum_package_input,
     read_qp_value,
 )
-from .simulation import Simulation
+from .simulation import AppResult, Simulation
 
 
 class QuantumPackage(Simulation):
@@ -40,7 +40,7 @@ class QuantumPackage(Simulation):
     infile_extension   = '.ezfio'
     application        = 'qp_run'
     application_properties = frozenset({'serial','mpi'})
-    application_results    = frozenset({'orbitals'})
+    application_results    = AppResult.ORBITALS
 
     allow_overlapping_files = True
 
@@ -168,7 +168,7 @@ class QuantumPackage(Simulation):
     def check_result(self,result_name,sim):
         calculating_result = False
         rc = self.input.run_control
-        if result_name=='orbitals':
+        if result_name is AppResult.ORBITALS:
             calculating_result  = rc.run_type=='save_for_qmcpack'
             calculating_result |= rc.save_for_qmcpack
         #end if
@@ -179,7 +179,7 @@ class QuantumPackage(Simulation):
     def get_result(self,result_name,sim):
         result = obj()
         rc = self.input.run_control
-        if result_name=='orbitals':
+        if result_name is AppResult.ORBITALS:
             if rc.run_type=='save_for_qmcpack':
                 result.outfile = os.path.join(self.locdir,self.outfile)
             elif rc.save_for_qmcpack:
@@ -193,7 +193,7 @@ class QuantumPackage(Simulation):
                 raise NexusError(msg)
             #end if
         else:
-            msg = 'ability to get result '+result_name+' has not been implemented'
+            msg = f"Ability to get result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if
         return result
@@ -203,7 +203,7 @@ class QuantumPackage(Simulation):
     def incorporate_result(self,result_name,result,sim):
         not_implemented = False
         if isinstance(sim,Gamess):
-            if result_name=='orbitals':
+            if result_name is AppResult.ORBITALS:
                 loc_file = self.input.run_control.prefix
                 loc_out = os.path.join(self.locdir,loc_file)
                 gms_out = result.outfile
@@ -231,7 +231,7 @@ class QuantumPackage(Simulation):
             not_implemented = True
         #end if
         if not_implemented:
-            msg = f'ability to incorporate result "{result_name}" from {sim.__class__.__name__} has not been implemented'
+            msg = f"Ability to incorporate result '{result_name.name}' from {type(sim).__name__} has not been implemented"
             raise NotImplementedError(msg)
 
         #end if

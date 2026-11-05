@@ -1,20 +1,21 @@
+from pathlib import Path
+
 import pytest
 
-from . import NexusTestOrder
+from .. import testing
+from ..developer import obj
+from ..gamess import Gamess, GamessInput, generate_gamess
+from ..machines import job
+from ..nexus_base import nexus_config
+from ..simulation import AppResult
+from ..testing import FailedTest, failed, object_eq
+from . import NexusTestOrder, isolate_nexus_core
+from .test_gamess_input import TEST_FILES
 
 pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_SIMULATION)
 
 
-from pathlib import Path
-
-from .. import testing
-from ..testing import FailedTest, failed, object_eq
-from . import isolate_nexus_core
-
-
 def clear_all_sims():
-    from ..gamess import Gamess
-
     Gamess.ericfmt = None
 
     testing.clear_all_sims()
@@ -22,10 +23,6 @@ def clear_all_sims():
 
 
 def get_gamess_sim(type='rhf'):
-    from ..gamess import Gamess, GamessInput, generate_gamess
-    from ..machines import job
-    from .test_gamess_input import TEST_FILES
-
     sim = None
 
     Gamess.ericfmt = ''
@@ -52,9 +49,6 @@ def get_gamess_sim(type='rhf'):
 
 
 def test_minimal_init():
-    from ..gamess import Gamess, generate_gamess
-    from ..machines import job
-
     Gamess.ericfmt = ''
 
     sim = generate_gamess(
@@ -72,8 +66,8 @@ def test_check_result():
 
     sim = get_gamess_sim('rhf')
 
-    assert(not sim.check_result('unknown',None))
-    assert(sim.check_result('orbitals',None))
+    assert(not sim.check_result(AppResult.NONE,None))
+    assert(sim.check_result(AppResult.ORBITALS,None))
 
     clear_all_sims()
 #end def test_check_result
@@ -81,9 +75,6 @@ def test_check_result():
 
 @isolate_nexus_core
 def test_get_result(tmp_path):
-    from ..developer import obj
-    from ..nexus_base import nexus_config
-
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
@@ -101,11 +92,11 @@ def test_get_result(tmp_path):
 
     with pytest.raises(
         NotImplementedError,
-        match="ability to get result unknown has not been implemented",
+        match="Ability to get result 'NONE' has not been implemented!",
         ):
-        sim.get_result('unknown',None)
+        sim.get_result(AppResult.NONE,None)
 
-    result = sim.get_result('orbitals',None)
+    result = sim.get_result(AppResult.ORBITALS,None)
 
     result_ref = obj(
         location        = 'rhf/rhf.out',
@@ -127,16 +118,13 @@ def test_get_result(tmp_path):
 
 
 def test_incorporate_result():
-
-    from ..developer import obj
-
     sim = get_gamess_sim('rhf')
 
     with pytest.raises(
         NotImplementedError,
-        match="ability to incorporate result unknown has not been implemented",
+        match="Ability to incorporate result 'NONE' has not been implemented!",
         ):
-        sim.incorporate_result('unknown',None,None)
+        sim.incorporate_result(AppResult.NONE,None,None)
 
     result = obj(
         vec       = 'vec text',
@@ -149,7 +137,7 @@ def test_incorporate_result():
     assert('norb' not in input.guess)
     assert('prtmo' not in input.guess)
 
-    sim.incorporate_result('orbitals',result,None)
+    sim.incorporate_result(AppResult.ORBITALS,result,None)
 
     assert(input.vec.text=='vec text')
     assert(input.guess.guess=='moread')
@@ -162,8 +150,6 @@ def test_incorporate_result():
 
 @isolate_nexus_core
 def test_check_sim_status(tmp_path):
-    from ..nexus_base import nexus_config
-
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
