@@ -41,19 +41,20 @@
 #      (e.g. qsub).                                                  #
 #                                                                    #
 #====================================================================#
-
+from __future__ import annotations
 
 import importlib.machinery
 import importlib.util
 import os
 import platform
 import subprocess
+from collections.abc import Mapping
 from copy import deepcopy
 from pathlib import Path
 from socket import gethostname
 from subprocess import CalledProcessError, Popen
 from types import MappingProxyType
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 import numpy as np
 
@@ -192,9 +193,9 @@ job_defaults_assign = obj(
     seconds            = 0,
     subfile            = None,
     grains             = None,
-    procs              = None,
+    sockets            = None,
     processes          = None,
-    processes_per_proc = None,
+    processes_per_socket = None,
     processes_per_node = None,
     account            = None,
     email              = None,
@@ -279,9 +280,9 @@ class Job(NexusCore):
         node, and follow any machine-specific CPU or GPU limits.  Scheduler
         headers and launchers commonly use it as ``--ntasks-per-node``,
         ``-N``, ``--ppn``, or an equivalent option.
-    processes_per_proc : int, optional
-        MPI processes per physical processor package (typically a socket).
-        Nexus derives this as ``processes / (nodes * procs_per_node)`` only
+    processes_per_socket : int, optional
+        MPI processes per socket or physical processor package.
+        Nexus derives this as ``processes / (nodes * sockets_per_node)`` only
         when the division is exact; otherwise the value is ``None``.  It is
         primarily an output describing the finalized layout.  Some ``aprun``
         machine classes use the derived value for their ``-S`` launcher
@@ -365,11 +366,11 @@ class Job(NexusCore):
     cores, nodes, threads : int or None
         Requested or finalized total CPU cores, node count, and OpenMP threads
         per process.
-    processes, processes_per_node, processes_per_proc : int or None
+    processes, processes_per_node, processes_per_socket : int or None
         Finalized total MPI ranks and their node- and processor-package-level
         decomposition.
-    procs, grains, tot_cores, ppn : int or None
-        Machine-derived processor-package count, allocation granularity,
+    sockets, grains, tot_cores, ppn : int or None
+        Machine-derived socket/processor-package count, allocation granularity,
         allocated core capacity, and machine-specific per-node setting.
     app_options, run_options, sub_options : Options
         Options appended to the application command, run launcher, and
@@ -828,7 +829,7 @@ class Job(NexusCore):
             #end if
         elif machine.special_bundling:
             c+='\n'
-            c+=machine.specialized_bundle_commands(self,launcher,serial)
+            c+=machine.specialized_bundle_commands(self,launcher,serial=serial)
         elif self.relative:
             cdir = self.abs_subdir
             c+='\n'
@@ -976,7 +977,7 @@ class Job(NexusCore):
 
 class Machine(NexusCore):
 
-    machines: ClassVar[dict] = dict()
+    machines: ClassVar[dict[str, Machine]] = {}
 
     modes = obj(
         none        = 0,
@@ -985,19 +986,75 @@ class Machine(NexusCore):
         )
     mode = modes.none
 
-    batch_capable       = False
-    requires_account    = False
-    executable_subfile  = False
-    redirect_output     = False
-    query_with_username = False
-    special_bundling    = False
+    batch_capable: bool = False
+    """Whether or not a machine is capable of using bundled/batched jobs.
 
-    prefixed_output    = False
-    outfile_extension  = None
-    errfile_extension  = None
+    See the ``__init__`` method of :class:`Job`.
+    """
 
-    allow_warnings = True
-    queue_configs = None
+    requires_account: bool = False
+    """Whether or not the machine requires an account.
+
+    If this is ``True``, machine tests will supply the account name ``ABC123``
+    automatically.
+
+    See :meth:`Supercomputer.process_job`.
+    """
+
+    executable_subfile: bool = False
+    """Whether or not the machine uses executable submission files.
+
+    For example, a submission file with a shebang ``#! /usr/bin/env sbatch``
+    can be run as ``./submission_file.sbatch``.
+
+    See :meth:`Supercomputer.write_job` for implementation.
+    """
+
+    redirect_output: bool = False
+    """Whether or not the machine uses Unix-style output redirection.
+
+    See :meth:`Job.run_command`.
+    """
+
+    query_with_username: bool = False
+    """Require that a machine queries the queue with a username.
+
+    See :meth:`Supercomputer.query_queue`.
+    """
+
+    special_bundling: bool = False
+    """Toggle calling the ``specialized_bundle_commands`` method for a machine.
+
+    Some examples can be found at :meth:`Polaris.specialized_bundle_commands`,
+    or :meth:`Aurora.specialized_bundle_commands`.
+    """
+
+    prefixed_output: bool = False
+    """Whether or not the machine uses a special prefix for output/error files.
+
+    If this is set to ``True`` you must also specify :attr:`outfile_extension`
+    and :attr:`errfile_extension`.
+
+    Used by :meth:`Job.initialize`.
+    """
+
+    outfile_extension: str | None = None
+    """If :attr:`prefixed_output` is ``True`` then this is appended to the output file name."""
+
+    errfile_extension: str | None = None
+    """If :attr:`prefixed_output` is ``True`` then this is appended to the error file name."""
+
+    allow_warnings: bool = True
+    """Whether or not to allow the reporting of warnings."""
+
+    queue_configs: Mapping | None = None
+    """A map of configurations for different queues/QOS's.
+
+    Queue configs are validated in :meth:`Supercomputer.validate_queue_config`.
+
+    Some examples can be found in :attr:`Baseline.queue_configs` and
+    :attr:`Frontier.queue_configs`.
+    """
 
     @staticmethod
     def get_hostname():
@@ -1088,37 +1145,43 @@ class Machine(NexusCore):
     #end def validate
 
 
-    def in_batch_mode(self):
+    def in_batch_mode(self) -> bool:
         return self.mode==self.modes.batch
     #end def in_batch_mode
 
 
-    def query_queue(self):
+    def query_queue(self) -> None:
         raise NotImplementedError
     #end def query_queue
 
-    def submit_jobs(self):
+    def submit_jobs(self) -> None:
         raise NotImplementedError
     #end def submit_jobs
 
     # update all job information, must be idempotent
-    def process_job(self,job):
+    def process_job(self, job: Job) -> None:
         raise NotImplementedError
     #end def process_job
 
-    def process_job_options(self,job):
+    def process_job_options(self, job: Job) -> None:
         raise NotImplementedError
     #end def process_job_options
 
-    def write_job(self,job,*,file=False):
+    def write_job(self,job: Job, *, file: bool = False) -> str:
         raise NotImplementedError
     #end def write_job
 
-    def submit_job(self,job):
+    def submit_job(self, job: Job) -> None:
         raise NotImplementedError
     #end def submit_job
 
-    def specialized_bundle_commands(self,job,launcher,serial):
+    def specialized_bundle_commands(
+        self,
+        job: Job,
+        launcher: str,
+        *,
+        serial: bool,
+        ) -> str:
         raise NotImplementedError
     #end def specialized_bundle_commands
 
@@ -1213,8 +1276,6 @@ class Machine(NexusCore):
             self[k] = v
     #end def incorporate_user_info
 #end class Machine
-
-
 
 
 class Workstation(Machine):
@@ -1486,37 +1547,38 @@ class InteractiveCluster(Workstation):
     #end def __init__
 
 
-    def init_from_args(self,
-                       name                = 'icluster',
-                       nodes               = None,
-                       procs_per_node      = None,
-                       cores_per_proc      = None,
-                       process_granularity = None,
-                       ram_per_node        = None,
-                       app_launcher        = None
-                       ):
-        self.name           = name
-        self.nodes          = nodes
-        self.procs_per_node = procs_per_node
-        self.cores_per_proc = cores_per_proc
+    def init_from_args(
+        self,
+        name: str = 'icluster',
+        nodes: int | None = None,
+        sockets_per_node: int | None = None,
+        cores_per_socket: int | None = None,
+        process_granularity: int | None = None,
+        ram_per_node: int | None = None,
+        app_launcher: str | None = None,
+        ):
+        self.name                = name
+        self.nodes               = nodes
+        self.sockets_per_node    = sockets_per_node
+        self.cores_per_socket    = cores_per_socket
         self.process_granularity = process_granularity
-        self.ram_per_node   = ram_per_node
-        self.app_launcher   = app_launcher
+        self.ram_per_node        = ram_per_node
+        self.app_launcher        = app_launcher
 
-        self.cores_per_node = self.cores_per_proc*self.procs_per_node
+        self.cores_per_node = self.cores_per_socket*self.sockets_per_node
         if process_granularity is None:
             self.process_granularity = self.cores_per_node
         #end if
 
-        self.procs = self.procs_per_node*self.nodes
-        self.cores = self.cores_per_proc*self.procs
-        self.ram   = self.ram_per_node*self.nodes
+        self.sockets = self.sockets_per_node * self.nodes
+        self.cores   = self.cores_per_socket * self.sockets
+        self.ram     = self.ram_per_node * self.nodes
 
         self.queue_size = self.cores
     #end def init_from_args
 
 
-    def init_from_supercomputer(self,super,cores):
+    def init_from_supercomputer(self, super: Supercomputer, cores: int):
         nodes = cores//super.cores_per_node
         if cores-nodes*super.cores_per_node!=0:
             msg = (
@@ -1526,19 +1588,25 @@ class InteractiveCluster(Workstation):
                 )
             raise ValueError(msg)
         #end if
-        self.init_from_args(super.name+'_interactive',nodes,super.procs_per_node,
-                            super.cores_per_proc,super.cores_per_node,
-                            super.ram_per_node,super.app_launcher)
+        self.init_from_args(
+            super.name+'_interactive',
+            nodes,
+            super.sockets_per_node,
+            super.cores_per_socket,
+            super.cores_per_node,
+            super.ram_per_node,
+            super.app_launcher,
+            )
     #end def init_from_supercomputer
 
 
-    def process_job(self,job):
+    def process_job(self, job: Job):
         job.cores = min(job.cores,self.cores)
 
         Workstation.process_job(self,job)
 
         job.nodes = job.grains
-        job.procs = job.nodes*self.procs_per_node
+        job.sockets = job.nodes*self.sockets_per_node
 
         if np.mod(job.processes,job.nodes)!=0:
             job.processes_per_node = None
@@ -1546,10 +1614,10 @@ class InteractiveCluster(Workstation):
             job.processes_per_node = job.processes//job.nodes
         #end if
 
-        if np.mod(job.processes,job.procs)!=0:
-            job.processes_per_proc = None
+        if np.mod(job.processes,job.sockets)!=0:
+            job.processes_per_socket = None
         else:
-            job.processes_per_proc = job.processes//job.procs
+            job.processes_per_socket = job.processes//job.sockets
         #end if
     #end def process_job
 #end class InteractiveCluster
@@ -1559,65 +1627,103 @@ class InteractiveCluster(Workstation):
 
 class Supercomputer(Machine):
     mode = Machine.modes.batch
-    name = 'supercomputer'
+    name: str = 'supercomputer'
+    """Lowercase name for the supercomputer. **MUST BE UNIQUE in** :attr:`Machine.machines`!!
+
+    Used by :meth:`Machine.get`, the ``__init__`` of :class:`Job`, and the tests.
+    """
 
     batch_capable = False #only set to true for specific machines
 
-    aprun_options = frozenset({'n','d'})
+    aprun_options: frozenset[Literal['n', 'd', 'N', 'S']] = frozenset({'n','d'})
+    """Options passed to a launcher when :attr:`app_launcher` is ``aprun``.
 
-    required_inputs = (
-        'nodes',
-        'procs_per_node',
-        'cores_per_proc',
-        'ram_per_node',
-        'queue_size',
-        'app_launcher',
-        'sub_launcher',
-        'queue_querier',
-        'job_remover'
-        )
+    See :meth:`Supercomputer.process_job_options` for use/implementation.
+    """
 
-    def __init__(self,
-                 nodes          = None,
-                 procs_per_node = None,
-                 cores_per_proc = None,
-                 ram_per_node   = None,
-                 queue_size     = 0,
-                 app_launcher   = None,
-                 sub_launcher   = None,
-                 queue_querier  = None,
-                 job_remover    = None,
-                 name           = None,
-                 ):
-        if name is None:
-            if self.name is not None:
-                name = self.name
-            else:
-                name = self.__class__.__name__.lower()
-            #end if
-        #end if
-        Machine.__init__(self,name)
-        self.nodes          = nodes          #  # of nodes
-        self.procs_per_node = procs_per_node #  # of processors/sockets on a node
-        self.cores_per_proc = cores_per_proc #  # of cores on a processor/socket
-        self.ram_per_node   = ram_per_node
-        self.queue_size     = queue_size
-        self.app_launcher   = app_launcher
-        self.sub_launcher   = sub_launcher
-        self.queue_querier  = queue_querier
-        self.job_remover    = job_remover
+    # Items that subclasses must define
+    nodes: int
+    """Total number of nodes on the supercomputer (CPU and GPU)."""
 
-        for var in Supercomputer.required_inputs:
-            if self[var] is None:
-                msg = 'input variable '+var+' is required to initialize Supercomputer object.'
-                raise NexusError(msg)
-            #end if
-        #end for
+    sockets_per_node: int
+    """Total number of sockets/processors per node. Usually 1-2."""
 
-        self.cores_per_node = self.cores_per_proc*self.procs_per_node
+    cores_per_socket: int
+    """Number of cores per socket/processor."""
 
-        self.procs = self.procs_per_node*self.nodes
-        self.cores = self.cores_per_proc*self.procs
+    ram_per_node: int
+    """Memory per node, in gigabytes."""
+
+    queue_size: int
+    """Maximum queued/running jobs Nexus should track."""
+
+    app_launcher: Literal[
+        "mpirun",
+        "mpiexec",
+        "aprun",
+        "runjob",
+        "srun",
+        "ibrun",
+        "jsrun",
+        "lrun",
+    ]
+    """The application used to launch a process inside a job.
+
+    Used by :meth:`Job.run_command`.
+    """
+
+    sub_launcher: Literal["sbatch", "llsubmit", "bsub", "qsub"]
+    """The application used to submit a job to the queue.
+
+    Used by :meth:`sub_command`
+    """
+
+    queue_querier: Literal[
+        "qstat",
+        "qstata",
+        "squeue",
+        "sacct",
+        "llq",
+        "bjobs",
+        "test_query",
+    ]
+    """The application used to query the queue.
+
+    Used by :meth:`query_queue`.
+    """
+
+    job_remover: Literal["qdel", "scancel", "llcancel", "bkill"]
+    """The application used to remove a job from the queue.
+
+    Used by :meth:`remove_job`.
+    """
+
+    cores_per_node: int
+    """Computed as :attr:`cores_per_socket` times :attr:`sockets_per_node`.
+
+    Use the actual socket/package layout when it matters for binding or
+    :attr:`Job.processes_per_socket`
+    """
+
+    def __init__(self):
+        Machine.__init__(self, self.name)
+
+        cls = type(self)
+
+        self.nodes = cls.nodes
+        self.sockets_per_node = cls.sockets_per_node
+        self.cores_per_socket = cls.cores_per_socket
+        self.ram_per_node = cls.ram_per_node
+        self.queue_size = cls.queue_size
+        self.app_launcher = cls.app_launcher
+        self.sub_launcher = cls.sub_launcher
+        self.queue_querier = cls.queue_querier
+        self.job_remover = cls.job_remover
+
+        self.cores_per_node = self.cores_per_socket * self.sockets_per_node
+
+        self.sockets = self.sockets_per_node*self.nodes
+        self.cores = self.cores_per_socket*self.sockets
         self.ram   = self.ram_per_node*self.nodes
 
         # 'complete' is the only actively used status so far
@@ -1733,13 +1839,13 @@ class Supercomputer(Machine):
 
 
     # test needed
-    def interactive_representation(self,cores):
+    def interactive_representation(self, cores: int) -> InteractiveCluster:
         return InteractiveCluster(self,cores)
     #end def interactive_representation
 
 
     # test needed
-    def requeue_job(self,job):
+    def requeue_job(self,job: Job):
         if isinstance(job,Job):
             jid = job.internal_id
             pid = job.system_id
@@ -1767,7 +1873,7 @@ class Supercomputer(Machine):
     #end def requeue_job
 
 
-    def process_job(self,job):
+    def process_job(self, job: Job):
         if job.fake_job:
             return
         #end if
@@ -1799,7 +1905,7 @@ class Supercomputer(Machine):
             job.processes = max(1,int(float(job.cores)/job.threads))
         #end if
         job.tot_cores = job.nodes*self.cores_per_node
-        job.procs = job.nodes*self.procs_per_node
+        job.sockets = job.nodes*self.sockets_per_node
 
         if np.mod(job.processes,job.nodes)!=0:
             job.processes_per_node = None
@@ -1807,10 +1913,10 @@ class Supercomputer(Machine):
             job.processes_per_node = job.processes//job.nodes
         #end if
 
-        if np.mod(job.processes,job.procs)!=0:
-            job.processes_per_proc = None
+        if np.mod(job.processes,job.sockets)!=0:
+            job.processes_per_socket = None
         else:
-            job.processes_per_proc = job.processes//job.procs
+            job.processes_per_socket = job.processes//job.sockets
         #end if
 
         if job.ppn is None:
@@ -1833,7 +1939,7 @@ class Supercomputer(Machine):
     #end def process_job
 
 
-    def process_job_options(self,job):
+    def process_job_options(self, job: Job):
         launcher = self.app_launcher
         if launcher=='mpirun':
             job.run_options.add(np='-np '+str(job.processes))
@@ -1849,8 +1955,8 @@ class Supercomputer(Machine):
             if 'N' in self.aprun_options and job.processes_per_node is not None:
                 job.run_options.add(N='-N '+str(job.processes_per_node))
             #end if
-            if 'S' in self.aprun_options and job.processes_per_proc is not None:
-                job.run_options.add(S='-S '+str(job.processes_per_proc))
+            if 'S' in self.aprun_options and job.processes_per_socket is not None:
+                job.run_options.add(S='-S '+str(job.processes_per_socket))
             #end if
         elif launcher=='runjob':
             #bypass setup_environment
@@ -1891,17 +1997,17 @@ class Supercomputer(Machine):
     #end def process_job_options
 
 
-    def pre_process_job(self,job):
-        pass
+    def pre_process_job(self, job: Job):
+        """Set defaults or hardware variants before generic node/core calculations."""
     #end def pre_process_job
 
 
-    def post_process_job(self,job):
-        pass
+    def post_process_job(self, job: Job):
+        """Add launcher options after job nodes, processes, processes_per_node, and threads have been finalized."""
     #end def post_process_job
 
 
-    def query_queue(self,out=None):
+    def query_queue(self, out: str | None = None) -> obj:
         self.system_queue.clear()
         if self.query_with_username and self.user is None:
             msg = (
@@ -2127,7 +2233,7 @@ class Supercomputer(Machine):
     #end def submit_jobs
 
 
-    def submit_job(self,job):
+    def submit_job(self, job: Job):
         pad = self.enter(job.directory,msg=job.internal_id)
         if job.subfile is None:
             msg = 'submission file not specified for job'
@@ -2171,12 +2277,12 @@ class Supercomputer(Machine):
     #end def submit_job
 
 
-    def sub_command(self,job):
+    def sub_command(self, job: Job) -> str:
         return self.sub_launcher+job.sub_options.write()+' '+job.subfile
     #end def sub_command
 
 
-    def remove_job(self,job):
+    def remove_job(self, job: Job):
         if self.job_remover=='qdel':
             command = 'qdel '+str(job.system_id)
         elif self.job_remover=='scancel':
@@ -2189,7 +2295,7 @@ class Supercomputer(Machine):
     #end def remove_job
 
 
-    def setup_environment(self,job):
+    def setup_environment(self, job: Job) -> str:
         env = ''
         if job.env is not None:
             for name,val in job.env.items():
@@ -2200,7 +2306,8 @@ class Supercomputer(Machine):
     #end def setup_environment
 
 
-    def write_job(self,job,*,file=False):
+    def write_job(self, job: Job, *, file: bool = False) -> str:
+        """Calls :meth:`write_job_header` and then appends environment exports and the run command."""
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
         if job.template is None:
             env = self.setup_environment(job)
@@ -2231,12 +2338,13 @@ class Supercomputer(Machine):
     #end def write_job
 
 
-    def write_job_header(self,job):
+    def write_job_header(self, job: Job) -> str:
+        """Should return only the batch-script header and any setup lines."""
         raise NotImplementedError
     #end def write_job_header
 
     @staticmethod
-    def walltime_to_seconds(walltime_str):
+    def walltime_to_seconds(walltime_str: str) -> int:
         """
         Convert walltime string to total seconds
         Handles formats: 'dd:hh:mm:ss', 'hh:mm:ss', 'mm:ss', 'seconds'
@@ -2266,7 +2374,7 @@ class Supercomputer(Machine):
         #end try
     #end def walltime_to_seconds
     @ staticmethod
-    def seconds_to_walltime(seconds):
+    def seconds_to_walltime(seconds: int) -> str:
         """
         Convert total seconds to walltime string
         Handles formats: 'dd:hh:mm:ss', 'hh:mm:ss', 'mm:ss', 'seconds'
@@ -2278,7 +2386,7 @@ class Supercomputer(Machine):
         return f"{days}:{hours:02d}:{minutes:02d}:{seconds:02d}"
     #end def seconds_to_walltime
 
-    def validate_queue_config(self, job):
+    def validate_queue_config(self, job: Job) -> bool:
         """Validate job against queue configuration constraints
 
         Returns
@@ -2336,7 +2444,6 @@ class Supercomputer(Machine):
             # Queue is defined and config is available
             config = self.queue_configs[job.queue]
         #end if
-
 
         errors = []
 
@@ -2413,7 +2520,7 @@ class Supercomputer(Machine):
         return True
     #end def validate_queue_config
 
-    def read_process_id(self,output):
+    def read_process_id(self, output: str) -> int | None:
         pid = None
         lines = output.splitlines()
         if self.sub_launcher=='llsubmit': # specialization for load leveler (SuperMUC)
@@ -2449,9 +2556,12 @@ class Supercomputer(Machine):
         #end if
         return pid
     #end def read_process_id
-
 #end class Supercomputer
 
+
+def register_supercomputer(cls: Supercomputer) -> Supercomputer:
+    cls() # Call the class's __init__
+    return cls
 
 
 # Load local class for local cluster's setting from ~/.nexus/local.py
@@ -2490,11 +2600,22 @@ except:
 #end try
 
 #Decommissioned
+@register_supercomputer
 class Kraken(Supercomputer):
 
     name = 'kraken'
 
     requires_account = True
+
+    nodes            = 9408
+    sockets_per_node = 2
+    cores_per_socket = 6
+    ram_per_node     = 16
+    queue_size       = 100
+    app_launcher     = 'aprun'
+    sub_launcher     = 'qsub'
+    queue_querier    = 'qstat'
+    job_remover      = 'qdel'
 
     def write_job_header(self,job):
         c='#!/bin/bash\n'
@@ -2521,10 +2642,21 @@ export MPI_MSGS_PER_PROC=32768
 
 
 #Decommissioned
+@register_supercomputer
 class Jaguar(Supercomputer):
     name = 'jaguar'
 
     requires_account = True
+
+    nodes            = 18688
+    sockets_per_node = 2
+    cores_per_socket = 8
+    ram_per_node     = 32
+    queue_size       = 100
+    app_launcher     = "aprun"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstat"
+    job_remover      = "qdel"
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -2558,8 +2690,20 @@ export MPI_MSGS_PER_PROC=32768
 
 
 #Unknown
+@register_supercomputer
 class Golub(Supercomputer):
     name = 'golub'
+
+    nodes            = 512
+    sockets_per_node = 2
+    cores_per_socket = 6
+    ram_per_node     = 32
+    queue_size       = 1000
+    app_launcher     = "mpirun"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstat"
+    job_remover      = "qdel"
+
     def write_job_header(self,job):
         if job.queue is None:
             job.queue='secondary'
@@ -2585,10 +2729,21 @@ cd ${PBS_O_WORKDIR}
 
 
 # Decommissioned
+@register_supercomputer
 class OIC5(Supercomputer):
 
     name = 'oic5'
     batch_capable = True
+
+    nodes            = 28
+    sockets_per_node = 2
+    cores_per_socket = 16
+    ram_per_node     = 128
+    queue_size       = 1000
+    app_launcher     = "mpirun"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstat"
+    job_remover      = "qdel"
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -2668,8 +2823,19 @@ cd $SLURM_SUBMIT_DIR
 #end class NerscMachine
 
 #Decommissioned
+@register_supercomputer
 class Cori(NerscMachine):
     name = 'cori'
+
+    nodes            = 9688
+    sockets_per_node = 1
+    cores_per_socket = 68
+    ram_per_node     = 96
+    queue_size       = 100
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 
     def pre_process_job(self,job):
         if job.queue is None:
@@ -2681,17 +2847,17 @@ class Cori(NerscMachine):
         # account for dual nature of Cori
         if 'knl' in job.constraint:
             self.nodes          = 9688
-            self.procs_per_node = 1
+            self.sockets_per_node = 1
             self.cores_per_node = 68
             self.ram_per_node   = 96
         elif 'haswell' in job.constraint:
             self.nodes = 2388
-            self.procs_per_node = 2
+            self.sockets_per_node = 2
             self.cores_per_node = 32
             self.ram_per_node   = 128
         elif 'amd' in job.constraint:
             self.nodes = 20
-            self.procs_per_node = 2
+            self.sockets_per_node = 2
             self.cores_per_node = 32
             self.ram_per_node   = 2048
         else:
@@ -2757,8 +2923,19 @@ export OMP_PLACES=threads
 
 
 # Active
+@register_supercomputer
 class Perlmutter(NerscMachine):
     name = 'perlmutter'
+
+    nodes            = 3072
+    sockets_per_node = 2
+    cores_per_socket = 128
+    ram_per_node     = 512
+    queue_size       = 5000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 
     def pre_process_job(self,job):
         # Set default queue and node type
@@ -2771,12 +2948,12 @@ class Perlmutter(NerscMachine):
         # Account for dual nature of Perlmutter
         if 'cpu' in job.constraint:
             self.nodes          = 3072
-            self.procs_per_node = 2
+            self.sockets_per_node = 2
             self.cores_per_node = 128
             self.ram_per_node   = 512
         elif 'gpu' in job.constraint:
             self.nodes          = 1536
-            self.procs_per_node = 1
+            self.sockets_per_node = 1
             self.cores_per_node = 64
             self.ram_per_node   = 256
             self.gpus_per_node  = 4
@@ -2917,11 +3094,22 @@ export SLURM_CPU_BIND="cores"
 
 
 # Active
+@register_supercomputer
 class BlueWatersXK(Supercomputer):
 
     name = 'bluewaters_xk'
     requires_account = False
     batch_capable    = True
+
+    nodes            = 3072
+    sockets_per_node = 1
+    cores_per_socket = 16
+    ram_per_node     = 32
+    queue_size       = 100
+    app_launcher     = "aprun"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstat"
+    job_remover      = "qdel"
 
     def write_job_header(self,job):
         c='#!/bin/bash\n'
@@ -2944,11 +3132,22 @@ cd $PBS_O_WORKDIR
 
 
 # Active
+@register_supercomputer
 class BlueWatersXE(Supercomputer):
 
     name = 'bluewaters_xe'
     requires_account = False
     batch_capable    = True
+
+    nodes            = 22640
+    sockets_per_node = 2
+    cores_per_socket = 16
+    ram_per_node     = 64
+    queue_size       = 100
+    app_launcher     = "aprun"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstat"
+    job_remover      = "qdel"
 
     def write_job_header(self,job):
         c='#!/bin/bash\n'
@@ -2971,11 +3170,22 @@ cd $PBS_O_WORKDIR
 
 
 #Decommissioned
+@register_supercomputer
 class Titan(Supercomputer):
 
     name = 'titan'
     requires_account = True
     batch_capable    = True
+
+    nodes            = 18688
+    sockets_per_node = 1
+    cores_per_socket = 16
+    ram_per_node     = 32
+    queue_size       = 100
+    app_launcher     = "aprun"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstat"
+    job_remover      = "qdel"
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -3004,11 +3214,22 @@ cd $PBS_O_WORKDIR
 
 
 # Active
+@register_supercomputer
 class EOS(Supercomputer):
 
     name = 'eos'
     requires_account = True
     batch_capable    = True
+
+    nodes            = 744
+    sockets_per_node = 2
+    cores_per_socket = 8
+    ram_per_node     = 64
+    queue_size       = 1000
+    app_launcher     = "aprun"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstat"
+    job_remover      = "qdel"
 
     def post_process_job(self,job):
         if job.threads>1:
@@ -3098,25 +3319,59 @@ class ALCF_Machine(Supercomputer):
 #end class ALCF_Machine
 
 # Decommissioned
+@register_supercomputer
 class Vesta(ALCF_Machine):
     name = 'vesta'
     base_partition = 32
+
+    nodes            = 2048
+    sockets_per_node = 1
+    cores_per_socket = 16
+    ram_per_node     = 16
+    queue_size       = 10
+    app_launcher     = "runjob"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstata"
+    job_remover      = "qdel"
 #end class Vesta
 
 # Decommissioned
+@register_supercomputer
 class Cetus(ALCF_Machine):
     name = 'cetus'
     base_partition = 128
+
+    nodes            = 1024
+    sockets_per_node = 1
+    cores_per_socket = 16
+    ram_per_node     = 16
+    queue_size       = 10
+    app_launcher     = "runjob"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstata"
+    job_remover      = "qdel"
 #end class Cetus
 
 # Decommissioned
+@register_supercomputer
 class Mira(ALCF_Machine):
     name = 'mira'
     base_partition = 512
+
+    nodes            = 49152
+    sockets_per_node = 1
+    cores_per_socket = 16
+    ram_per_node     = 16
+    queue_size       = 10
+    app_launcher     = "runjob"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstata"
+    job_remover      = "qdel"
 #end class Mira
 
 
 # Active
+@register_supercomputer
 class Cooley(Supercomputer):
     name = 'cooley'
     requires_account   = True
@@ -3126,6 +3381,16 @@ class Cooley(Supercomputer):
     prefixed_output    = True
     outfile_extension  = '.output'
     errfile_extension  = '.error'
+
+    nodes            = 126
+    sockets_per_node = 2
+    cores_per_socket = 6
+    ram_per_node     = 384
+    queue_size       = 10
+    app_launcher     = "mpirun"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstata"
+    job_remover      = "qdel"
 
     def post_process_job(self,job):
         #if job.processes_per_node is None and job.threads!=1:
@@ -3154,6 +3419,7 @@ class Cooley(Supercomputer):
 #end class Cooley
 
 # Active
+@register_supercomputer
 class Theta(Supercomputer):
     name = 'theta'
     requires_account   = True
@@ -3163,6 +3429,16 @@ class Theta(Supercomputer):
     prefixed_output    = True
     outfile_extension  = '.output'
     errfile_extension  = '.error'
+
+    nodes            = 4392
+    sockets_per_node = 1
+    cores_per_socket = 64
+    ram_per_node     = 192
+    queue_size       = 1000
+    app_launcher     = "aprun"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstata"
+    job_remover      = "qdel"
 
     def post_process_job(self,job):
         if job.hyperthreads is None:
@@ -3194,11 +3470,22 @@ class Theta(Supercomputer):
 
 
 # Active
+@register_supercomputer
 class Lonestar(Supercomputer):  # Lonestar contribution from Paul Young
 
     name = 'lonestar' # will be converted to lowercase anyway
     requires_account = False
     batch_capable    = True
+
+    nodes            = 22656
+    sockets_per_node = 2
+    cores_per_socket = 6
+    ram_per_node     = 12
+    queue_size       = 128
+    app_launcher     = "ibrun"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstat"
+    job_remover      = "qdel"
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -3265,16 +3552,39 @@ class ICMP_Machine(Supercomputer): # ICMP and Amos contributions from Ryan McAvo
 #end class ICMP_Machine
 
 # Unknown
+@register_supercomputer
 class Komodo(ICMP_Machine):
     name = 'komodo'
+
+    nodes            = 24
+    sockets_per_node = 2
+    cores_per_socket = 6
+    ram_per_node     = 48
+    queue_size       = 2
+    app_launcher     = "mpirun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "sacct"
+    job_remover      = "scancel"
 #end class Komodo
 # Unknown
+@register_supercomputer
 class Matisse(ICMP_Machine):
     name = 'matisse'
+
+    nodes            = 20
+    sockets_per_node = 2
+    cores_per_socket = 8
+    ram_per_node     = 64
+    queue_size       = 2
+    app_launcher     = "mpirun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "sacct"
+    job_remover      = "scancel"
 #end class Matisse
 
 
 # Active
+@register_supercomputer
 class Amos(Supercomputer):
     name = 'amos'
 
@@ -3285,6 +3595,16 @@ class Amos(Supercomputer):
     prefixed_output    = True
     outfile_extension  = '.output'
     errfile_extension  = '.error'
+
+    nodes            = 5120
+    sockets_per_node = 1
+    cores_per_socket = 16
+    ram_per_node     = 16
+    queue_size       = 128
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "sacct"
+    job_remover      = "scancel"
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -3422,48 +3742,147 @@ class SnlMachine(Supercomputer):
     #end def write_job_header
 #end class SnlMachine
 #Unknown
+@register_supercomputer
 class Eclipse(SnlMachine):
     name = 'eclipse'
+
+    nodes            = 1488
+    sockets_per_node = 2
+    cores_per_socket = 18
+    ram_per_node     = 128
+    queue_size       = 1000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 #end class Eclipse
 #Unknown
+@register_supercomputer
 class Attaway(SnlMachine):
     name = 'attaway'
+
+    nodes            = 1488
+    sockets_per_node = 2
+    cores_per_socket = 18
+    ram_per_node     = 192
+    queue_size       = 1000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 #end class Attaway
 #Unknown
+@register_supercomputer
 class Manzano(SnlMachine):
     name = 'manzano'
+
+    nodes            = 1488
+    sockets_per_node = 2
+    cores_per_socket = 24
+    ram_per_node     = 192
+    queue_size       = 1000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 #end class Manzano
 #Unknown
+@register_supercomputer
 class Ghost(SnlMachine):
     name = 'ghost'
+
+    nodes            = 740
+    sockets_per_node = 2
+    cores_per_socket = 18
+    ram_per_node     = 128
+    queue_size       = 1000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 #end class Ghost
 #Unknown
+@register_supercomputer
 class Amber(SnlMachine):
     name = 'amber'
+
+    nodes            = 1496
+    sockets_per_node = 2
+    cores_per_socket = 56
+    ram_per_node     = 256
+    queue_size       = 1000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 #end class Amber
 #Unknown
+@register_supercomputer
 class Solo(SnlMachine):
     name = 'solo'
+
+    nodes            = 374
+    sockets_per_node = 2
+    cores_per_socket = 18
+    ram_per_node     = 128
+    queue_size       = 1000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 #end class Solo
 #Unknown
+@register_supercomputer
 class Flight(SnlMachine):
     name = 'flight'
     reservation_required = True
+
+    nodes            = 744
+    sockets_per_node = 2
+    cores_per_socket = 56
+    ram_per_node     = 256
+    queue_size       = 1000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 #end class Flight
+@register_supercomputer
 class Hops(SnlMachine):
     name          = 'hops'
     gpu_machine   = True
     gpus_per_node = 4
+
+    nodes            = 64
+    sockets_per_node = 2
+    cores_per_socket = 56
+    ram_per_node     = 256
+    queue_size       = 1000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 #end class Hops
 
 
 # Active
 # machines at LRZ  https://www.lrz.de/english/
+@register_supercomputer
 class SuperMUC(Supercomputer):
     name = 'supermuc'
     requires_account    = False
     batch_capable       = True
     query_with_username = False
+
+    nodes            = 512
+    sockets_per_node = 1
+    cores_per_socket = 28
+    ram_per_node     = 256
+    queue_size       = 8
+    app_launcher     = "mpiexec"
+    sub_launcher     = "llsubmit"
+    queue_querier    = "llq"
+    job_remover      = "llcancel"
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -3539,11 +3958,22 @@ class SuperMUC(Supercomputer):
 
 
 # Active
+@register_supercomputer
 class SuperMUC_NG(Supercomputer):
     name                = 'supermucng'
     requires_account    = True
     batch_capable       = True
     query_with_username = True
+
+    nodes            = 6336
+    sockets_per_node = 1
+    cores_per_socket = 48
+    ram_per_node     = 96
+    queue_size       = 1000
+    app_launcher     = "mpiexec"
+    sub_launcher     = "sbatch"
+    queue_querier    = "sacct"
+    job_remover      = "scancel"
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -3601,6 +4031,7 @@ class SuperMUC_NG(Supercomputer):
 
 
 # Decommissioned
+@register_supercomputer
 class Stampede2(Supercomputer):
     name = 'stampede2'
 
@@ -3611,6 +4042,16 @@ class Stampede2(Supercomputer):
     prefixed_output    = True
     outfile_extension  = '.output'
     errfile_extension  = '.error'
+
+    nodes            = 4200
+    sockets_per_node = 1
+    cores_per_socket = 68
+    ram_per_node     = 96
+    queue_size       = 50
+    app_launcher     = "ibrun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -3684,10 +4125,21 @@ class Stampede2(Supercomputer):
 
 # Decommissioned
 # CADES at ORNL
+@register_supercomputer
 class CadesMoab(Supercomputer):
     name = 'cades_moab'
     requires_account = True
     batch_capable    = True
+
+    nodes            = 156
+    sockets_per_node = 2
+    cores_per_socket = 18
+    ram_per_node     = 128
+    queue_size       = 100
+    app_launcher     = "mpirun"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstat"
+    job_remover      = "qdel"
 
     def post_process_job(self,job):
         ppn = job.processes_per_node
@@ -3727,10 +4179,21 @@ cd $PBS_O_WORKDIR
 
 
 # Active
+@register_supercomputer
 class CadesSlurm(Supercomputer):
     name = 'cades'
     requires_account = True
     batch_capable    = True
+
+    nodes            = 156
+    sockets_per_node = 2
+    cores_per_socket = 18
+    ram_per_node     = 128
+    queue_size       = 100
+    app_launcher     = "mpirun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -3762,10 +4225,21 @@ class CadesSlurm(Supercomputer):
 
 # Active
 # Inti at ORNL
+@register_supercomputer
 class Inti(Supercomputer):
     name = 'inti'
     requires_account = False
     batch_capable    = True
+
+    nodes            = 13
+    sockets_per_node = 2
+    cores_per_socket = 64
+    ram_per_node     = 256
+    queue_size       = 100
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -3797,10 +4271,22 @@ class Inti(Supercomputer):
 
 # Active
 # Baseline at ORNL https://docs.cades.olcf.ornl.gov/baseline_user_guide/baseline_user_guide.html
+@register_supercomputer
 class Baseline(Supercomputer):
     name = 'baseline'
     requires_account = True
     batch_capable    = True
+
+    nodes            = 128
+    sockets_per_node = 2
+    cores_per_socket = 64
+    ram_per_node     = 512
+    queue_size       = 100
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
+
     queue_configs=MappingProxyType({
         'default': 'batch_cnms',
         'batch': {
@@ -3852,10 +4338,21 @@ class Baseline(Supercomputer):
     #end def write_job_header
 #end class Baseline
 
+@register_supercomputer
 class Frontier(Supercomputer):
     name = 'frontier'
     requires_account = True
     batch_capable    = True
+
+    nodes            = 9856
+    sockets_per_node = 4
+    cores_per_socket = 14
+    ram_per_node     = 64
+    queue_size       = 1000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 
     queue_configs = MappingProxyType({
         'default': 'batch',
@@ -3938,17 +4435,27 @@ class Frontier(Supercomputer):
         if job.qos:
             c+=f'#SBATCH -q {job.qos}\n'
         return c
-
-
 #end class Frontier
 
 
 # Active
 # BESMS is at ORNL
+@register_supercomputer
 class Besms(Supercomputer):
     name = 'besms'
     requires_account = True
     batch_capable    = True
+
+    nodes            = 166
+    sockets_per_node = 2
+    cores_per_socket = 96
+    ram_per_node     = 768
+    queue_size       = 1000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
+
     # Using sinfo to get the queue configs
     queue_configs=MappingProxyType({
         'default': 't92',
@@ -3993,11 +4500,22 @@ class Besms(Supercomputer):
 
 # Decommissioned
 # Summit at ORNL
+@register_supercomputer
 class Summit(Supercomputer):
 
     name = 'summit'
     requires_account = True
     batch_capable    = True
+
+    nodes            = 4608
+    sockets_per_node = 2
+    cores_per_socket = 21
+    ram_per_node     = 512
+    queue_size       = 100
+    app_launcher     = "jsrun"
+    sub_launcher     = "bsub"
+    queue_querier    = "bjobs"
+    job_remover      = "bkill"
 
     def post_process_job(self,job):
         # add the options only if the user has not supplied options
@@ -4085,6 +4603,7 @@ class Summit(Supercomputer):
 
 # Unknown
 ## Added 28/11/2019 by A Zen
+@register_supercomputer
 class Rhea(Supercomputer):
 
     name = 'rhea'
@@ -4094,6 +4613,16 @@ class Rhea(Supercomputer):
     prefixed_output    = True
     outfile_extension  = '.output'
     errfile_extension  = '.error'
+
+    nodes            = 512
+    sockets_per_node = 2
+    cores_per_socket = 8
+    ram_per_node     = 128
+    queue_size       = 1000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 
     def post_process_job(self,job):
         job.run_options.add(
@@ -4163,14 +4692,25 @@ class Rhea(Supercomputer):
 # Active
 # Leonardo BOOSTER at CINECA
 ## Added 24/11/2025 by A Zen
+@register_supercomputer
 class Leonardo(Supercomputer):
 
-    name             = 'leonardo'
-    requires_account = True
-    batch_capable    = True
-    prefixed_output  = True
+    name              = 'leonardo'
+    requires_account  = True
+    batch_capable     = True
+    prefixed_output   = True
     outfile_extension = '.out'
     errfile_extension = '.err'
+
+    nodes            = 3456
+    sockets_per_node = 1
+    cores_per_socket = 32
+    ram_per_node     = 512
+    queue_size       = 1000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 
     # QOS on Booster (boost_usr_prod)
     # https://docs.hpc.cineca.it/hpc/leonardo.html#file-systems-and-data-managment
@@ -4406,6 +4946,7 @@ class Leonardo(Supercomputer):
 # Active
 # Andes at ORNL
 ## Added 19/03/2021 by A Zen
+@register_supercomputer
 class Andes(Supercomputer):
 
     name = 'andes'
@@ -4415,6 +4956,16 @@ class Andes(Supercomputer):
     prefixed_output    = True
     outfile_extension  = '.output'
     errfile_extension  = '.error'
+
+    nodes            = 704
+    sockets_per_node = 2
+    cores_per_socket = 16
+    ram_per_node     = 256
+    queue_size       = 1000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 
     def post_process_job(self,job):
         if job.threads>1:
@@ -4483,6 +5034,7 @@ class Andes(Supercomputer):
 
 # Active
 ## Added 05/04/2022 by A Zen
+@register_supercomputer
 class Archer2(Supercomputer):
     # https://docs.archer2.ac.uk/user-guide/hardware/
 
@@ -4493,6 +5045,16 @@ class Archer2(Supercomputer):
     prefixed_output    = True
     outfile_extension  = '.output'
     errfile_extension  = '.error'
+
+    nodes            = 5860
+    sockets_per_node = 2
+    cores_per_socket = 64
+    ram_per_node     = 512
+    queue_size       = 1000
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 
     def post_process_job(self,job):
         job.run_options.add(
@@ -4573,11 +5135,22 @@ class Archer2(Supercomputer):
 #end class Archer2
 
 # Unknown
+@register_supercomputer
 class Tomcat3(Supercomputer):
     name             = 'tomcat3'
     requires_account = False
     batch_capable    = True
     redirect_output  = True
+
+    nodes            = 8
+    sockets_per_node = 1
+    cores_per_socket = 64
+    ram_per_node     = 192
+    queue_size       = 1000
+    app_launcher     = "mpirun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "sacct"
+    job_remover      = "scancel"
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -4604,11 +5177,22 @@ class Tomcat3(Supercomputer):
 
 # Active
 # Polaris at ANL
+@register_supercomputer
 class Polaris(Supercomputer):
     name = 'polaris'
     requires_account = True
     batch_capable    = True
     special_bundling = True
+
+    nodes            = 560
+    sockets_per_node = 1
+    cores_per_socket = 32
+    ram_per_node     = 512
+    queue_size       = 8
+    app_launcher     = "mpiexec"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstat"
+    job_remover      = "qdel"
 
     def post_process_job(self,job):
         if len(job.run_options)==0:
@@ -4646,7 +5230,7 @@ class Polaris(Supercomputer):
         return c
     #end def write_job_header
 
-    def specialized_bundle_commands(self,job,launcher,serial):
+    def specialized_bundle_commands(self,job,launcher,*,serial):
         c = ''
         j0 = job.bundled_jobs[0]
         c+=f'split --lines={j0.nodes} --numeric-suffixes=1 --suffix-length=3 $PBS_NODEFILE local_hostfile.\n'
@@ -4667,11 +5251,22 @@ class Polaris(Supercomputer):
 
 # Active
 # Aurora at ANL
+@register_supercomputer
 class Aurora(Supercomputer):
     name = 'aurora'
     requires_account = True
     batch_capable    = True
     special_bundling = True
+
+    nodes            = 10624
+    sockets_per_node = 2
+    cores_per_socket = 102
+    ram_per_node     = 512
+    queue_size       = 1000
+    app_launcher     = "mpiexec"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstat"
+    job_remover      = "qdel"
 
     def pre_process_job(self,job):
         # Set default queue and node type
@@ -4686,11 +5281,11 @@ class Aurora(Supercomputer):
         #end if
         # Account for dual nature of Perlmutter
         if 'cpu' in job.constraint:
-            self.procs_per_node = 2
+            self.sockets_per_node = 2
             self.cores_per_node = 102
             self.ram_per_node   = 1024
         elif 'gpu' in job.constraint:
-            self.procs_per_node = 1
+            self.sockets_per_node = 1
             self.cores_per_node = 102
             self.ram_per_node   = 768
             self.gpus_per_node  = 6
@@ -4752,7 +5347,7 @@ class Aurora(Supercomputer):
         return c
     #end def write_job_header
 
-    def specialized_bundle_commands(self,job,launcher,serial):
+    def specialized_bundle_commands(self,job,launcher,*,serial):
         c = ''
         j0 = job.bundled_jobs[0]
         c+=f'split --lines={j0.nodes} --numeric-suffixes=1 --suffix-length=3 $PBS_NODEFILE local_hostfile.\n'
@@ -4773,15 +5368,26 @@ class Aurora(Supercomputer):
 
 # Active
 # Improv at ANL (LCRC)
+@register_supercomputer
 class Improv(Supercomputer):
     name = 'improv'
     requires_account = True
     batch_capable    = True
 
+    nodes            = 825
+    sockets_per_node = 2
+    cores_per_socket = 64
+    ram_per_node     = 256
+    queue_size       = 100
+    app_launcher     = "mpirun"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstat"
+    job_remover      = "qdel"
+
     def post_process_job(self,job):
         if len(job.run_options)==0:
             opt = obj(
-                mapby   = f'--map-by ppr:{job.processes_per_proc}:package',
+                mapby   = f'--map-by ppr:{job.processes_per_socket}:package',
                 bindto = '--bind-to socket',
                 )
             job.run_options.add(**opt)
@@ -4822,11 +5428,22 @@ class Improv(Supercomputer):
 # Active
 # Kagayaki at JAIST
 ## Added 05/04/2023 by Tom Ichibha
+@register_supercomputer
 class Kagayaki(Supercomputer):
     name = 'kagayaki'
     requires_account = False
     batch_capable    = True
     special_bundling = False
+
+    nodes            = 240
+    sockets_per_node = 2
+    cores_per_socket = 64
+    ram_per_node     = 512
+    queue_size       = 20
+    app_launcher     = "mpirun"
+    sub_launcher     = "qsub"
+    queue_querier    = "qstat"
+    job_remover      = "qdel"
 
     def process_job_options(self,job):
         # job.run_options.add(nodefile='-machinefile $PBS_NODEFILE', np='-np '+str(job.processes))
@@ -4856,10 +5473,21 @@ class Kagayaki(Supercomputer):
 
 # Active
 # Kestrel at NREL
+@register_supercomputer
 class Kestrel(Supercomputer):
     name = 'kestrel'
     requires_account = True
     batch_capable    = True
+
+    nodes            = 2144
+    sockets_per_node = 2
+    cores_per_socket = 52
+    ram_per_node     = 256
+    queue_size       = 100
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -4891,11 +5519,22 @@ cd $SLURM_SUBMIT_DIR
 
 # Active
 # Lassen at LLNL
+@register_supercomputer
 class Lassen(Supercomputer):
 
     name = 'lassen'
     requires_account = True
     batch_capable    = True
+
+    nodes            = 756
+    sockets_per_node = 2
+    cores_per_socket = 21
+    ram_per_node     = 512
+    queue_size       = 100
+    app_launcher     = "lrun"
+    sub_launcher     = "bsub"
+    queue_querier    = "bjobs"
+    job_remover      = "bkill"
 
     def post_process_job(self,job):
         # add the options only if the user has not supplied options
@@ -4957,10 +5596,21 @@ class Lassen(Supercomputer):
 
 
 # Ruby at LLNL
+@register_supercomputer
 class Ruby(Supercomputer):
     name = 'ruby'
     requires_account = True
     batch_capable    = True
+
+    nodes            = 1480
+    sockets_per_node = 2
+    cores_per_socket = 28
+    ram_per_node     = 192
+    queue_size       = 100
+    app_launcher     = "srun"
+    sub_launcher     = "sbatch"
+    queue_querier    = "squeue"
+    job_remover      = "scancel"
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -4990,65 +5640,11 @@ cd $SLURM_SUBMIT_DIR
 #end class Ruby
 
 
-
-
-
 #Known machines
 #  workstations
 for cores in range(1,128+1):
     Workstation('ws'+str(cores),cores,'mpirun'),
 #end for
-#  supercomputers and clusters
-#            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus    qdelete
-Leonardo(     3456,   1,    32,  512, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-Jaguar(      18688,   2,     8,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
-Kraken(       9408,   2,     6,   16,  100,  'aprun',     'qsub',   'qstat',    'qdel')
-Golub(          512,  2,     6,   32, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
-OIC5(           28,   2,    16,  128, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
-Cori(         9688,   1,    68,   96,  100,   'srun',   'sbatch',  'squeue', 'scancel')
-BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
-BlueWatersXE(22640,   2,    16,   64,  100,  'aprun',     'qsub',   'qstat',    'qdel')
-Titan(       18688,   1,    16,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
-EOS(           744,   2,     8,   64, 1000,  'aprun',     'qsub',   'qstat',    'qdel')
-Vesta(        2048,   1,    16,   16,   10, 'runjob',     'qsub',  'qstata',    'qdel')
-Cetus(        1024,   1,    16,   16,   10, 'runjob',     'qsub',  'qstata',    'qdel')
-Mira(        49152,   1,    16,   16,   10, 'runjob',     'qsub',  'qstata',    'qdel')
-Cooley(        126,   2,     6,  384,   10, 'mpirun',     'qsub',  'qstata',    'qdel')
-Theta(        4392,   1,    64,  192, 1000,  'aprun',     'qsub',  'qstata',    'qdel')
-Lonestar(    22656,   2,     6,   12,  128,  'ibrun',     'qsub',   'qstat',    'qdel')
-Matisse(        20,   2,     8,   64,    2, 'mpirun',   'sbatch',   'sacct', 'scancel')
-Komodo(         24,   2,     6,   48,    2, 'mpirun',   'sbatch',   'sacct', 'scancel')
-Amos(         5120,   1,    16,   16,  128,   'srun',   'sbatch',   'sacct', 'scancel')
-Eclipse(      1488,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-Attaway(      1488,   2,    18,  192, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-Manzano(      1488,   2,    24,  192, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-Ghost(         740,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-Amber(        1496,   2,    56,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-Solo(          374,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-Flight(        744,   2,    56,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-Hops(           64,   2,    56,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
-Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
-CadesMoab(     156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
-CadesSlurm(    156,   2,    18,  128,  100, 'mpirun',   'sbatch',  'squeue', 'scancel')
-Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')
-Rhea(          512,   2,     8,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-Andes(         704,   2,    16,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
-SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
-Archer2(      5860,   2,    64,  512, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-Polaris(       560,   1,    32,  512,    8,'mpiexec',     'qsub',   'qstat',    'qdel')
-Kagayaki(      240,   2,    64,  512,   20, 'mpirun',     'qsub',   'qstat',    'qdel')
-Perlmutter(   3072,   2,   128,  512, 5000,   'srun',   'sbatch',  'squeue', 'scancel')
-Improv(        825,   2,    64,  256,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
-Lassen(        756,   2,    21,  512,  100,   'lrun',     'bsub',   'bjobs',   'bkill')
-Ruby(         1480,   2,    28,  192,  100,   'srun',   'sbatch',  'squeue', 'scancel')
-Kestrel(      2144,   2,    52,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
-Inti(           13,   2,    64,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
-Baseline(      128,   2,    64,  512,  100,   'srun',   'sbatch',  'squeue', 'scancel')
-Besms(         166,   2,    96,  768, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-Frontier(     9856,   4,    14,   64, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-Aurora(      10624,   2,   102,  512, 1000,'mpiexec',     'qsub',   'qstat',    'qdel')
 
 #machine accessor functions
 get_machine_name = Machine.get_hostname
