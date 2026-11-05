@@ -13,7 +13,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     example_He_simple
     "${qmcpack_SOURCE_DIR}/examples/molecules/He"
-    He
     he_simple.xml
     1
     1
@@ -26,7 +25,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     example_He_simple_dmc
     "${qmcpack_SOURCE_DIR}/examples/molecules/He"
-    He
     he_simple_dmc.xml
     1
     1
@@ -40,7 +38,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     example_He_simple_optbatch
     "${qmcpack_SOURCE_DIR}/examples/molecules/He"
-    He
     he_simple_optbatch.xml
     1
     1
@@ -52,7 +49,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     example_He_example_wf
     "${qmcpack_SOURCE_DIR}/examples/molecules/He"
-    He
     he_example_wf.xml
     1
     1
@@ -66,7 +62,6 @@ if(NOT QMC_COMPLEX)
   qmc_run_and_check(
     example_He_from_gamess
     "${qmcpack_SOURCE_DIR}/examples/molecules/He"
-    He
     he_from_gamess.xml
     1
     1

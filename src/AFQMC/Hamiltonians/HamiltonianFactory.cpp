@@ -90,7 +90,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
   app_log() << " Initializing Hamiltonian from file: " << fileName << std::endl;
 
   // FIX FIX FIX
-  hdf_archive dump(TG.Global());
+  hdf_archive dump;
   // these cores will read from hdf file
   if (coreid < nread)
   {

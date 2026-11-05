@@ -26,7 +26,6 @@ else()
     qmc_run_and_check(
       short-NiO_a4_e48_pp-vmc_sdj
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc
       NiO-vmc-short.in.xml
       1
       16
@@ -47,7 +46,6 @@ else()
     qmc_run_and_check(
       short-NiO_a4_e48_pp-dmc_sdj
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc-dmc
       NiO-vmc-dmc-short.in.xml
       1
       16
@@ -61,7 +59,6 @@ else()
     qmc_run_and_check(
       short-NiO_a4_e48_pp-delayed_update-dmc_sdj
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc-dmc
       NiO-delayedupdate-vmc-dmc-short.in.xml
       1
       16
@@ -75,7 +72,6 @@ else()
     qmc_run_and_check(
       short-NiO_a4_e48_pp-dmc-TMv1v3_sdj
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc-dmc
       NiO-vmc-dmc-TMv1v3-short.in.xml
       1
       16
@@ -89,7 +85,6 @@ else()
     qmc_run_and_check(
       short-NiO_a4_e48_pp-delayed_update-dmc-TMv1v3_sdj
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc-dmc
       NiO-delayedupdate-vmc-dmc-TMv1v3-short.in.xml
       1
       16
@@ -115,7 +110,6 @@ else()
     qmc_run_and_check(
       short-NiO_a4_e48_pp-vmc_sdj3
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc
       NiO-j3-vmc-short.in.xml
       1
       16
@@ -129,7 +123,6 @@ else()
     qmc_run_and_check(
       short-NiO_a4_e48-batched_pp-vmc_sdj3
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc
       NiO-j3-batched-vmc-short.in.xml
       1
       16
@@ -144,7 +137,6 @@ else()
     qmc_run_and_check(
       short-NiO_a4_e48_pp-vmc_sdj_L2
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-L2-short
       NiO-L2-short.in.xml
       16
       1
@@ -156,7 +148,6 @@ else()
     qmc_run_and_check(
       short-NiO_a4_e48_pp-vmc_sdj_L2
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-L2-short
       NiO-L2-short.in.xml
       4
       4
@@ -169,7 +160,6 @@ else()
     qmc_run_and_check(
       short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc
       NiO-hybridrep-j3-vmc-short.in.xml
       1
       16
@@ -183,7 +173,6 @@ else()
     qmc_run_and_check(
       short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc
       NiO-hybridrep-j3-batched-vmc-short.in.xml
       1
       16
@@ -202,7 +191,6 @@ else()
     qmc_run_and_check(
       long-NiO_a4_e48_pp-vmc_sdj
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc
       NiO-vmc-long.in.xml
       1
       16
@@ -217,7 +205,6 @@ else()
     qmc_run_and_check(
       long-NiO_a4_e48_pp-vmc_sdj3
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc
       NiO-j3-vmc-long.in.xml
       1
       16
@@ -232,7 +219,6 @@ else()
     qmc_run_and_check(
       long-NiO_a4_e48_pp-vmc_sdj_L2
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-L2-long
       NiO-L2-long.in.xml
       16
       1
@@ -244,7 +230,6 @@ else()
     qmc_run_and_check(
       long-NiO_a4_e48_pp-vmc_sdj_L2
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-L2-long
       NiO-L2-long.in.xml
       4
       4
@@ -300,7 +285,6 @@ else()
     qmc_run_and_check(
       deterministic-NiO_a4_e48_pp-vmc_sdj
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      det_NiO-fcc-S1-vmc
       det_NiO-vmc.in.xml
       1
       1
@@ -354,7 +338,6 @@ else()
     qmc_run_and_check(
       deterministic-NiO_a4_e48_pp-vmc_sdj_batched
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      det_NiO-batched-fcc-S1-vmc
       det_NiO-batched-vmc.in.xml
       1
       1
@@ -366,7 +349,6 @@ else()
     qmc_run_and_check(
       deterministic-NiO_a4_e48_pp-vmc_sd_splitJ1_batched
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      det_NiO-batched-fcc-S1-vmc
       det_NiO-batched-vmc-splitJ1.in.xml
       1
       1
