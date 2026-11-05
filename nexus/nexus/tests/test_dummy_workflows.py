@@ -315,4 +315,4 @@ def test_qe_with_dependencies(tmp_path):
         scf_calc_structure["pos"], relax_calc_structure_relaxed["pos"]
     )
     assert(scf_calc_structure["elem"] ==  relax_calc_structure_relaxed["elem"])
-#end def test_qe_no_dependencies
+#end def test_qe_with_dependencies
