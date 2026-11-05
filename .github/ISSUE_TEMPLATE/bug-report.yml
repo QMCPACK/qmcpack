@@ -1,0 +1,96 @@
+name: Bug report
+description: Something is not working correctly with QMCPACK.
+labels: "bug"
+
+body:
+  - type: textarea
+    attributes:
+      label: Describe the Bug
+      description: >-
+        A clear and concise description of what the bug is, including the
+        expected behaviour and what has gone wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected Behavior
+      description: >-
+        A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: How to Reproduce
+      description: >-
+        Please provide steps to reproduce this bug.
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Version
+      description: Output from `qmcpack --version`
+      placeholder: >-
+        ```bash
+        $ qmcpack --version
+        QMCPACK version 4.4.9 built on Nov  5 2026
+
+        Git branch: develop
+        Last git commit: d41f221146f1e223c364ff35e4e1a329ca876033
+        Last git commit date: Wed Nov 4 21:44:00 2026 -0500
+        Last git commit subject: Merge pull request #6359 from brockdyer03/nxs-import-sort
+        ```
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Environment info
+
+  - type: textarea
+    attributes:
+      label: Environment Information
+      render: text
+      description: >-
+        Provide compiler versions, cmake versions, mpirun versions, system name, etc.
+      placeholder: >-
+        ```bash
+        $ grep -Po 'PRETTY_NAME="\K[\s\w\d\(\)]*' /etc/os-release
+        Fedora Linux 44 (KDE Plasma Desktop Edition)
+        ```
+        ```bash
+        $ cmake --version
+        cmake version 4.3.0
+        ```
+        ```bash
+        $ gcc --version
+        gcc (GCC) 16.2.1 20260819 (Red Hat 16.2.1-2)
+        ```
+        ```bash
+        $ clang --version
+        clang version 22.1.8 (Fedora 22.1.8-4.fc44)
+        Target: x86_64-redhat-linux-gnu
+        ```
+        ```bash
+        $ mpirun --version
+        mpirun (Open MPI) 4.1.8
+        ```
+        ```bash
+        $ h5dump --version                                                                       .venv (develop|?) 00:56
+        h5dump: Version 1.14.6
+        ```
+        ```bash
+        $ python --version
+        Python 3.15.1
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: >-
+        Add any other context about the problem here.
