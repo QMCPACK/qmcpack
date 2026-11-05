@@ -23,12 +23,14 @@
 #====================================================================#
 
 
-from xml.parsers import expat
 import keyword
-import re
 import os
+import re
+from xml.parsers import expat
+
 import numpy as np
-from .developer import DevBase, obj, FileFormatError
+
+from .developer import DevBase, FileFormatError, obj
 from .utilities import path_string, valid_variable_name
 
 
