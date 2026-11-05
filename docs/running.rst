@@ -64,8 +64,8 @@ Stopping a running simulation
 -----------------------------
 
 As detailed in :ref:`input-overview`, QMCPACK will cleanly stop execution at the end of the current block if it finds a file named
-``project_id.STOP``, where ``project_id`` is the name of the project given in the input XML. You can also set the ``max_seconds``
-parameter to establish an overall time limit.
+``project_id.STOP``, where ``project_id`` is the name of the project given in the input XML. The stop file is automatically deleted upon detection so subsequent runs can be started without manually removing it. You can also set the ``max_seconds``
+parameter in the ``<project>`` section to establish an overall time limit across all drivers.
 
 .. _mixed_precision:
 

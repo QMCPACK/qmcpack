@@ -48,7 +48,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManager(comm)", "[estimators]")
 
 TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)", "[estimators]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   using namespace testing;
@@ -93,7 +93,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
 
 TEST_CASE("EstimatorManagerNew_estimator_naming", "[estimators]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+  ProjectData test_project;
   Communicate& comm(*OHMMS::Controller);
 
   using namespace testing;

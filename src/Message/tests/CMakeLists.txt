@@ -17,8 +17,7 @@ add_executable(${UTEST_EXE} test_communicate.cpp test_communicate_collectives.cp
 target_link_libraries(${UTEST_EXE} PUBLIC message catch_main containers)
 
 foreach(NUM_RANKS 1 2 3 6 12)
-  set(UTEST_NAME_MPI ${UTEST_NAME}-r${NUM_RANKS})
-  add_unit_test(BASENAME ${UTEST_NAME_MPI} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
+  add_unit_test(BASENAME ${UTEST_NAME} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
 endforeach()
 
 if(HAVE_MPI)

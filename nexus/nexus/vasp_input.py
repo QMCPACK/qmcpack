@@ -17,16 +17,18 @@ from collections.abc import Mapping
 from copy import deepcopy
 from functools import partial
 from types import MappingProxyType
+
 import numpy as np
-from .periodic_table import Elements
+
+from . import numpy_extensions as npe
+from .developer import DevBase, error, obj
 from .nexus_base import nexus_config
-from .simulation import SimulationInput
-from .structure import interpolate_structures, Structure
+from .periodic_table import Elements
 from .physical_system import PhysicalSystem
 from .pseudoset import PseudoSet
-from .developer import DevBase, obj, error
+from .simulation import SimulationInput
+from .structure import Structure, interpolate_structures
 from .utilities import path_string
-from . import numpy_extensions as npe
 
 # support functions for keyword files
 

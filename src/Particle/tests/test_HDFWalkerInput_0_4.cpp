@@ -18,9 +18,12 @@
 
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
+#include "Message/UniformCommunicateError.h"
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include "Particle/WalkerConfigurations.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/HDFWalkerInput_0_4.h"
+#include "Particle/HDFWalkerInputManager.h"
 #include "hdf/hdf_archive.h"
 #include "hdf/HDFVersion.h"
 #include "Utilities/FairDivide.h"
@@ -83,9 +86,8 @@ TEST_CASE("HDFWalkerInput_0_4 16 walkers read_hdf5 and put", "[particle]")
   wc_list_out.setWalkerOffsets(walker_offsets);
 
   const std::string file_root = "test_hdfwalkerinput_16";
-  c.setName(file_root);
-  HDFWalkerOutput hout(num_ptcls, file_root, c);
-  hout.dump(wc_list_out, 0);
+  HDFWalkerOutput hout(num_ptcls, c);
+  hout.dump(wc_list_out, file_root, 0);
   c.barrier();
 
   const std::filesystem::path h5file = file_root + ".config.h5";
@@ -169,7 +171,7 @@ TEST_CASE("HDFWalkerInput_0_4 16 walkers repartition", "[particle]")
   // Master rank writes 16 walkers with a single partition [0, 16]
   if (c.rank() == 0)
   {
-    hdf_archive hout(c, false);
+    hdf_archive hout;
     hout.create(h5file);
     HDFVersion cur_version(0, 4);
     hout.write(cur_version.version, hdf::version);
@@ -275,6 +277,17 @@ TEST_CASE("HDFWalkerInput_0_4 error handling", "[particle]")
   CHECK(!success_empty_xml);
 
   c.barrier();
+}
+
+TEST_CASE("HDFWalkerInputManager outdated version throws", "[particle]")
+{
+  Communicate& c(*OHMMS::Controller);
+  WalkerConfigurations wc_list;
+  HDFWalkerInputManager win_mgr(wc_list, num_ptcls, c);
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<mcwalkerset version="0 3"/>)"));
+  CHECK_THROWS_MATCHES(win_mgr.put(doc.getRoot()), UniformCommunicateError,
+                       Catch::Matchers::Message("Outdated restart file!"));
 }
 
 } // namespace qmcplusplus

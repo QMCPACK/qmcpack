@@ -14,6 +14,7 @@ from ..pseudoset import (
     PseudoSet,
     PseudoSetCollection,
     generate_pseudoset,
+    pp_elem_label,
     ppset,
     read_potcar_z_valence,
     read_qmcpack_xml_z_valence,
@@ -129,8 +130,6 @@ def assert_pseudoset_equals(actual: PseudoSet, expected: PseudoSet) -> None:
 
 
 def test_pp_elem_label():
-    from ..pseudopotential import pp_elem_label
-
     ppfiles = [
         ('C'  , 'C'  , 'C.BFD.xml'   ),
         ('C2' , 'C'  , 'C2.ONCV.upf' ),

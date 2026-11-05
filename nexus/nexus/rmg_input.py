@@ -1,13 +1,15 @@
-import numpy as np
 from copy import deepcopy
 
-from .developer import DevBase, obj, FileFormatError, NexusError
-from .unit_converter import convert
-from .pseudoset import pp_elem_label, PseudoSet
-from .physical_system import PhysicalSystem
-from .structure import generate_structure
-from .simulation import SimulationInput
+import numpy as np
+
 from . import numpy_extensions as npe
+from .developer import DevBase, FileFormatError, NexusError, obj
+from .physical_system import PhysicalSystem
+from .pseudoset import PseudoSet, pp_elem_label
+from .simulation import SimulationInput
+from .structure import generate_structure
+from .unit_converter import convert
+
 
 class RmgInputSettings(DevBase):
     enforce_min_value = True

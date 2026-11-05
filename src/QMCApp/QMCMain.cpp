@@ -72,7 +72,8 @@ QMCMain::QMCMain(Communicate& c)
 {
   Communicate node_comm{OHMMS::Controller->createNodeComm()};
   // assign accelerators within a node
-  DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
+  if (!DeviceManager::isInitialized())
+    DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
   app_summary() << "================================================================\n"
                 << "                        QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
@@ -136,7 +137,9 @@ QMCMain::QMCMain(Communicate& c)
     app_summary() << "  Real build. QMC_COMPLEX=OFF" << std::endl;
 
   app_summary() << "  Output verbosity = "
-                << (outputManager.isDebugActive() ? "debug" : outputManager.isHighActive() ? "high" : "low")
+                << (outputManager.isDebugActive()      ? "debug"
+                        : outputManager.isHighActive() ? "high"
+                                                       : "low")
                 << " (options: --verbosity=low|high|debug)" << std::endl;
 #ifdef ENABLE_TIMERS
   app_summary() << "  Timer level = " << getGlobalTimerManager().get_timer_threshold_string()
@@ -152,6 +155,10 @@ QMCMain::QMCMain(Communicate& c)
 
 QMCMain::~QMCMain()
 {
+  for (auto& qmcactionPair : qmc_action_)
+    if (!qmcactionPair.second)
+      xmlFreeNode(qmcactionPair.first);
+
   // free last_driver before clearing P,Psi,H clones
   last_driver_.reset();
   CloneManager::clearClones();
@@ -217,7 +224,7 @@ bool QMCMain::execute()
   //validate the input file
   bool success = validateXML();
   if (!success)
-    myComm.barrier_and_abort("QMCMain::execute. Input document does not contain valid objects");
+    throw UniformCommunicateError("QMCMain::execute. Input document does not contain valid objects");
 
   //initialize all the instances of distance tables and evaluate them
   particle_set_pool_->reset();
@@ -239,14 +246,19 @@ bool QMCMain::execute()
   }
   Timer t1;
   qmc_common.qmc_counter = 0;
+  RunTimeControl<> runtime_control(run_time_manager, my_project_, "QMCMain", myComm);
   for (int qa = 0; qa < qmc_action_.size(); qa++)
   {
+    // If a previous section (or loop) already requested a stop, terminate the execution loop.
     if (run_time_manager.isStopNeeded())
       break;
     xmlNodePtr cur = qmc_action_[qa].first;
     std::string cname((const char*)cur->name);
     if (cname == "qmc" || cname == "optimize")
     {
+      // Check walltime limit and stop file before driver construction and execution.
+      if (runtime_control.checkStop("executeQMCSection"))
+        break;
       executeQMCSection(cur);
       qmc_common.qmc_counter++; // increase the counter
     }
@@ -296,9 +308,21 @@ bool QMCMain::execute()
       xmlReplaceNode(mcptr, newmcptr);
       xmlFreeNode(mcptr);
     }
-    saveXml();
+    writeContinuationInputXML();
   }
   return true;
+}
+
+void QMCMain::writeContinuationInputXML()
+{
+  if (!xml_doc_stack_.empty())
+  {
+    std::string newxml(my_project_.currentMainRoot());
+    newxml.append(".cont.xml");
+    app_log() << "\n========================================================="
+              << "\n  A new xml input file : " << newxml << std::endl;
+    xml_doc_stack_.top()->dump(newxml);
+  }
 }
 
 void QMCMain::executeLoop(xmlNodePtr cur)
@@ -311,43 +335,42 @@ void QMCMain::executeLoop(xmlNodePtr cur)
   qmc_common.qmc_counter = 0;
   app_log() << "Loop execution max-interations = " << niter << std::endl;
   LoopTimer<> loop_timer;
-  RunTimeControl<> runtime_control(run_time_manager, my_project_.getMaxCPUSeconds(), my_project_.getTitle(), false);
+  LoopRunTimeControl<> loop_runtime_control(run_time_manager, my_project_, "executeLoop", "loop iteration", myComm);
   for (int iter = 0; iter < niter; iter++)
   {
-    if (run_time_manager.isStopNeeded())
+    // Check if remaining walltime can safely accommodate the projected iteration time or if a stop was requested.
+    if (loop_runtime_control.checkStop(loop_timer, iter))
       break;
-
-    bool stop_requested = false;
-    if (!myComm.rank())
-      stop_requested = runtime_control.checkStop(loop_timer);
-    myComm.bcast(stop_requested);
-    if (stop_requested)
-    {
-      if (!myComm.rank())
-        app_log() << runtime_control.generateStopMessage("executeLoop", iter, "loop iteration");
-      run_time_manager.markStop();
-      break;
-    }
 
     // Include all QMC sections in the iteration average timings.
     ScopeGuard<LoopTimer<>> iteration_timer(loop_timer);
-    xmlNodePtr tcur = cur->children;
-    while (tcur != NULL && !run_time_manager.isStopNeeded())
-    {
-      std::string cname((const char*)tcur->name);
+    RunTimeControl<> runtime_control(run_time_manager, my_project_, "executeLoop iteration " + std::to_string(iter),
+                                     myComm);
+    bool terminated    = false;
+    int qmc_call_count = 0;
+    processChildren(cur, [&](const std::string& cname, const xmlNodePtr tcur) {
+      // Skip remaining child elements if a failure or stop was already requested.
+      if (terminated || run_time_manager.isStopNeeded())
+        return;
       if (cname == "qmc")
       {
+        // For subsequent QMC sections within the same loop iteration, check walltime and stop file.
+        if (qmc_call_count > 0 && runtime_control.checkStop("executeQMCSection in a loop"))
+          return;
+        qmc_call_count++;
         //prevent completed is set
-        bool success = executeQMCSection(tcur, true);
+        const bool success = executeQMCSection(tcur, true);
         if (!success)
         {
           app_warning() << "  Terminated loop execution. A sub section returns false." << std::endl;
+          terminated = true;
           return;
         }
         qmc_common.qmc_counter++; // increase the counter
       }
-      tcur = tcur->next;
-    }
+    });
+    if (terminated)
+      break;
   }
   // Destroy the last driver at the end of a loop with no further reuse of a driver needed.
   last_driver_.reset(nullptr);
@@ -371,22 +394,11 @@ bool QMCMain::validateXML()
 {
   xmlXPathContextPtr m_context = xml_doc_stack_.top()->getXPathContext();
   OhmmsXPathObject result("//project", m_context);
-  my_project_.setCommunicator(&myComm);
   if (result.empty())
-  {
     app_warning() << "Project is not defined" << std::endl;
-    my_project_.reset();
-  }
   else
   {
-    try
-    {
-      my_project_.put(result[0]);
-    }
-    catch (const UniformCommunicateError& ue)
-    {
-      myComm.barrier_and_abort(ue.what());
-    }
+    my_project_.put(result[0]);
   }
   app_summary() << std::endl;
   my_project_.get(app_summary());
@@ -454,10 +466,10 @@ bool QMCMain::validateXML()
           popDocument();
         }
         else
-          myComm.barrier_and_abort("Invalid XML document");
+          throw UniformCommunicateError("Invalid XML document");
       }
       else
-        myComm.barrier_and_abort(R"(tag "include" must include an "href" attribute.)");
+        throw UniformCommunicateError(R"(tag "include" must include an "href" attribute.)");
     }
     else if (cname == "qmcsystem")
     {
@@ -490,13 +502,13 @@ bool QMCMain::validateXML()
   }
 
   if (particle_set_pool_->empty())
-    myComm.barrier_and_abort("QMCMain::validateXML. Illegal input. Missing particleset.");
+    throw UniformCommunicateError("QMCMain::validateXML. Illegal input. Missing particleset.");
 
   if (psi_pool_->empty())
-    myComm.barrier_and_abort("QMCMain::validateXML. Illegal input. Missing wavefunction.");
+    throw UniformCommunicateError("QMCMain::validateXML. Illegal input. Missing wavefunction.");
 
   if (ham_pool_->empty())
-    myComm.barrier_and_abort("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");
+    throw UniformCommunicateError("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");
 
   //randomize any particleset with random="yes" && random_source="ion0"
   particle_set_pool_->randomize();
@@ -548,17 +560,10 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     else if (cname == "estimators")
     {
       inputnode = true;
-      try
-      {
-        if (estimator_manager_input_)
-          throw UniformCommunicateError(
-              "QMCMain::validateXML. Illegal Input, only one global <estimators> node is permitted");
-        estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, cur);
-      }
-      catch (const UniformCommunicateError& ue)
-      {
-        myComm.barrier_and_abort(ue.what());
-      }
+      if (estimator_manager_input_)
+        throw UniformCommunicateError(
+            "QMCMain::validateXML. Illegal Input, only one global <estimators> node is permitted");
+      estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, cur);
     }
     else
     //add to m_qmcaction
@@ -587,17 +592,10 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   else
   {
     QMCDriverFactory driver_factory(my_project_);
-    try
-    {
-      QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
-      qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmc_system_, *particle_set_pool_,
-                                                  *psi_pool_, *ham_pool_, myComm);
-      append_run = das.append_run;
-    }
-    catch (const UniformCommunicateError& ue)
-    {
-      myComm.barrier_and_abort(ue.what());
-    }
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
+    qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmc_system_, *particle_set_pool_,
+                                                *psi_pool_, *ham_pool_, myComm);
+    append_run = das.append_run;
   }
 
   if (qmc_driver)

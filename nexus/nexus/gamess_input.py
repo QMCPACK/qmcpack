@@ -34,11 +34,13 @@
 import os
 from copy import deepcopy
 from types import MappingProxyType
+
 import numpy as np
-from .periodic_table import Elements
-from .developer import DevBase, obj, warn, FileFormatError
+
+from .developer import DevBase, FileFormatError, obj, warn
 from .nexus_base import nexus_config
-from .pseudoset import pp_elem_label, PseudoSet
+from .periodic_table import Elements
+from .pseudoset import PseudoSet, pp_elem_label
 from .simulation import SimulationInput
 from .utilities import path_string
 

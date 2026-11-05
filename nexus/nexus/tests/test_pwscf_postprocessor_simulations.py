@@ -1,20 +1,26 @@
 import pytest
+
+from ..machines import job
+from ..pwscf_postprocessors import (
+    PP,
+    Bands,
+    Cppp,
+    Dos,
+    Projwfc,
+    Pwexport,
+    generate_bands,
+    generate_cppp,
+    generate_dos,
+    generate_pp,
+    generate_projwfc,
+    generate_pwexport,
+)
+from ..testing import FailedTest, clear_all_sims, failed
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_POSTPROCESSOR_SIMULATIONS)
 
-
-from ..testing import clear_all_sims
-from ..testing import failed,FailedTest
-
-
 def get_class_generators():
-    from ..pwscf_postprocessors import PP,generate_pp
-    from ..pwscf_postprocessors import Dos,generate_dos
-    from ..pwscf_postprocessors import Bands,generate_bands
-    from ..pwscf_postprocessors import Projwfc,generate_projwfc
-    from ..pwscf_postprocessors import Cppp,generate_cppp
-    from ..pwscf_postprocessors import Pwexport,generate_pwexport
-
     class_generators = [
         (PP,generate_pp),
         (Dos,generate_dos),
@@ -30,8 +36,6 @@ def get_class_generators():
 
 
 def test_minimal_init():
-    from ..machines import job
-
     for cls,gen in get_class_generators():
         sim = gen(job=job(machine='ws1',cores=1))
         assert(isinstance(sim,cls))
@@ -43,8 +47,6 @@ def test_minimal_init():
 
 
 def test_check_result():
-    from ..machines import job
-
     for cls,gen in get_class_generators():
         sim = gen(job=job(machine='ws1',cores=1))
         assert(isinstance(sim,cls))
@@ -57,8 +59,6 @@ def test_check_result():
 
 
 def test_get_result():
-    from ..machines import job
-
     for cls,gen in get_class_generators():
         sim = gen(job=job(machine='ws1',cores=1))
         assert(isinstance(sim,cls))
@@ -80,8 +80,6 @@ def test_get_result():
 
 
 def test_incorporate_result():
-    from ..machines import job
-
     for cls,gen in get_class_generators():
         sim = gen(job=job(machine='ws1',cores=1))
         assert(isinstance(sim,cls))
@@ -103,8 +101,6 @@ def test_incorporate_result():
 
 
 def test_check_sim_status():
-    from ..machines import job
-
     for cls,gen in get_class_generators():
         sim = gen(job=job(machine='ws1',cores=1))
         assert(isinstance(sim,cls))

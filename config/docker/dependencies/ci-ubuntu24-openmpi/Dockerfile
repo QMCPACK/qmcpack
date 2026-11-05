@@ -39,7 +39,6 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         vim \
         wget
 
-# Python packages for Nexus and testing
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y \
         python3-cif2cell \
@@ -55,7 +54,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         python3-scipy \
         python3-spglib
 
-# Install gcovr from pip since the Ubuntu 24.04 apt version doesn't support files >9999 lines
+# Install gcovr from pip since the Ubuntu 24.04 version doesn't support files >9999 lines
 # https://github.com/gcovr/gcovr/pull/883
 RUN export DEBIAN_FRONTEND=noninteractive \
     && sudo pip3 install --break-system-packages gcovr==8.6

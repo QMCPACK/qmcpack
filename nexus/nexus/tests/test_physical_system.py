@@ -1,20 +1,20 @@
-import pytest
 from copy import deepcopy
 
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
-
 import numpy as np
-from ..structure import generate_structure
-from ..testing import value_eq,object_eq
-from ..physical_system import generate_physical_system
-from ..pseudoset import PseudoSet
+import pytest
 
-from .test_structure import structure_same
+from ..developer import obj
+from ..physical_system import PhysicalSystem, generate_physical_system
+from ..pseudoset import PseudoSet
+from ..structure import generate_structure
+from ..testing import object_eq, value_eq
+from . import NexusTestOrder
+from .test_structure import example_structure_h4, structure_same
+
+pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
 
 
 def sub_obj(s,keys):
-    from ..developer import obj
     return obj({k:s[k] for k in keys})
 
 
@@ -39,11 +39,6 @@ def system_same(s1,s2,*,pseudized=True,tiled=False):
 
 
 def test_physical_system_initialization(tmp_path):
-    from ..developer import obj
-    from ..structure import generate_structure
-    from ..physical_system import generate_physical_system
-    from ..physical_system import PhysicalSystem
-
     d2 = generate_structure(
         structure = 'diamond',
         cell      = 'prim',
@@ -286,8 +281,6 @@ def test_physical_system_initialization(tmp_path):
 
 
 def test_change_units():
-    from ..physical_system import generate_physical_system
-
     sys = generate_physical_system(
         units = 'A',
         axes  = [[3.57, 0.00, 0.00],
@@ -315,9 +308,6 @@ def test_change_units():
 
 
 def test_rename():
-    from ..developer import obj
-    from ..physical_system import generate_physical_system
-
     sys = generate_physical_system(
         units  = 'A',
         axes   = [[1.785, 1.785, 0.   ],
@@ -362,8 +352,6 @@ def test_rename():
 
 
 def test_tile():
-    from ..physical_system import generate_physical_system
-
     d2_ref = generate_physical_system(
         units  = 'A',
         axes   = [[1.785, 1.785, 0.   ],
@@ -399,7 +387,6 @@ def test_tile():
 
 
 def test_kf_rpa():
-    from .test_structure import example_structure_h4
     s1 = example_structure_h4()
     ps = generate_physical_system(
         structure = s1,
