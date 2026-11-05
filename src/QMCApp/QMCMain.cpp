@@ -70,11 +70,6 @@ QMCMain::QMCMain(Communicate& c)
       traces_xml_(NULL)
 #endif
 {
-  Communicate node_comm{OHMMS::Controller->createNodeComm()};
-  // assign accelerators within a node
-  if (!DeviceManager::isInitialized())
-    DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
-
   app_summary() << "================================================================\n"
                 << "                        QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
                 << QMCPACK_VERSION_PATCH << "\n"
@@ -99,7 +94,7 @@ QMCMain::QMCMain(Communicate& c)
       << "\n  Number of MPI groups      = " << myComm.getNumGroups()
       << "\n  MPI group ID              = " << myComm.getGroupID()
       << "\n  Number of ranks in group  = " << myComm.size()
-      << "\n  MPI ranks per node        = " << node_comm.size()
+      << "\n  Virtual node rank count   = " << qmc_common.get_virtual_node_rank_count()
 #if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM) || defined(ENABLE_SYCL)
       << "\n  Accelerators per rank     = " << DeviceManager::getGlobal().getNumDevices()
 #endif

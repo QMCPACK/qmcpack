@@ -18,7 +18,7 @@ def test_redo(tmp_path):
 
     with pytest.raises(
         AssertionError,
-        match="no simulation directories found",
+        match="No simulation directories found",
         ):
         out,err,rc = execute(command)
 
@@ -28,7 +28,7 @@ def test_redo(tmp_path):
 
     with pytest.raises(
         AssertionError,
-        match="no simulation directories found",
+        match="No simulation directories found",
         ):
         out,err,rc = execute(command)
 
