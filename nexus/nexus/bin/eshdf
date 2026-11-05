@@ -1,10 +1,10 @@
 #! /usr/bin/env python3
-"""Script for reading and analyzing EinSpline HDF archives.
+"""Script for reading and analyzing Einspline HDF archives.
 
 There are two primary functionalities, :func:`write_nk`, which writes the
-electron density summed over k-points to an HDF5 archive, and :func:`kinetic`,
-which reports the total and optionally the per-orbital kinetic energy of the
-system.
+electron momentum distribution for each k-point to an HDF5 archive, and
+:func:`kinetic`, which reports the total and optionally the per-orbital kinetic
+energy of the system.
 """
 
 # Python standard library imports
@@ -104,7 +104,7 @@ class KpointInfo:
     g_vecs: npt.NDArray[np.floating]
     """G-vectors at the k-point."""
     nk: npt.NDArray[np.floating]
-    """Wavefunction density at the k-point, summed over all states."""
+    """Momentum distribution at the k-point, summed over all states."""
     ne: float
     """Number of electrons at the k-point, summed over all states."""
 
@@ -135,7 +135,7 @@ def read_eshdf_n_of_k_data(
     ncore: int = 0,
     nval: int = -1,
 ) -> EshdfData:
-    """Read data from an ES-HDF archive and calculate some critical information.
+    """Read data from an ESHDF archive and calculate some critical information.
 
     Notes
     -----
@@ -146,21 +146,21 @@ def read_eshdf_n_of_k_data(
         E_k = \\frac{1}{2} \\sum_{\\mathbf{G}} \\vert{}\\psi_{\\mathbf{G}}\\vert{}^2 \\vert{}\\mathbf{k} + \\mathbf{G}\\vert{}^2
     """
     h = read_hdf(filename, view=True)
-    gvecs_unit = np.asarray(h["electrons"]["kpoint_0"]["gvectors"])
-    axes = np.asarray(h["supercell"]["primitive_vectors"])
+    gvecs_unit = np.asarray(h.electrons.kpoint_0.gvectors)
+    axes = np.asarray(h.supercell.primitive_vectors)
     kaxes = 2 * np.pi * np.linalg.inv(axes).T
 
     # Translate g-vectors from reciprocal lattice units to units of 1/a0
     gvecs = gvecs_unit @ kaxes
     kmag = np.sqrt((gvecs**2).sum(1))
-    nkpts = int(h["electrons"]["number_of_kpoints"][0])
-    nspins = int(h["electrons"]["number_of_spins"][0])
+    nkpts = int(h.electrons.number_of_kpoints[0])
+    nspins = int(h.electrons.number_of_spins[0])
     data = {}
     for k in range(nkpts):
         kpt_idx  = f"kpoint_{k}"
-        kp = h["electrons"][kpt_idx]
+        kp = h.electrons[kpt_idx]
         # Convert k-point coordinate from reciprocal lattice units to units of 1/a0
-        k_pos = np.dot(np.asarray(kp["reduced_k"]), kaxes)
+        k_pos = np.dot(np.asarray(kp.reduced_k), kaxes)
         gvecs_at_k = gvecs.copy() + k_pos.T # Translate g-vectors by the current k-point
 
         # Kinetic energy at each g-vector, in Hartrees
@@ -171,9 +171,9 @@ def read_eshdf_n_of_k_data(
             eig_s = []
             nk_s = 0*kmag
             nelec_s = 0
-            spin = h["electrons"][kpt_idx][spin_idx]
-            eig = convert(np.array(spin["eigenvalues"]),'Ha','eV')
-            nst = np.asarray(spin["number_of_states"], dtype=int)[0]
+            spin = h.electrons[kpt_idx][spin_idx]
+            eig = convert(np.array(spin.eigenvalues),'Ha','eV')
+            nst = np.asarray(spin.number_of_states, dtype=int)[0]
             nlast = nst
             if nval > 0:
               nlast = ncore + nval
@@ -184,7 +184,7 @@ def read_eshdf_n_of_k_data(
 
                     # Complex expansion coefficients at each g-vector
                     psi = np.array(
-                        h["electrons"][kpt_idx][spin_idx][state_idx]["psi_g"]
+                        h.electrons[kpt_idx][spin_idx][state_idx].psi_g
                     )
                     nk_orb = (psi**2).sum(1)
                     kin_orb = (kinetic*nk_orb).sum()
@@ -194,7 +194,7 @@ def read_eshdf_n_of_k_data(
                     eig_s.append(e)
 
             data[k,s] = KpointInfo(
-                kpoint = np.array(kp["reduced_k"]),
+                kpoint = np.array(kp.reduced_k),
                 kin    = np.array(kin_s),
                 eig    = np.array(eig_s),
                 g_vecs = gvecs_at_k,
