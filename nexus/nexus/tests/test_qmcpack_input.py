@@ -1,12 +1,26 @@
+from copy import deepcopy
+
 import numpy as np
 import pytest
-from copy import deepcopy
-from . import NexusTestOrder
+
+from ..developer import dotdict, obj, to_obj
+from ..physical_system import generate_physical_system
+from ..qmcpack_input import (
+    QmcpackInput,
+    back_propagation,
+    classes,
+    generate_kspace_jastrow,
+    generate_qmcpack_input,
+    meta,
+    onerdm,
+    section,
+    simulation,
+    spindensity,
+)
+from ..testing import check_object_eq, dict_serialize, object_eq, value_eq
+from . import TEST_DIR, NexusTestOrder, isolate_nexus_core, register_pseudo_files
+
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_INPUT)
-
-
-from . import isolate_nexus_core, register_pseudo_files, TEST_DIR
-from ..testing import value_eq,object_eq,check_object_eq,dict_serialize
 
 TEST_FILES = {
     "CH4_afqmc.in.xml":    TEST_DIR / "test_qmcpack_input_files/CH4_afqmc.in.xml",
@@ -17,14 +31,9 @@ TEST_FILES = {
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"
 
-
 serial_references = dict()
 
-
 def generate_serial_references():
-    import numpy as np
-    from ..qmcpack_input import onerdm
-
     # reference for read/write
     ref = {
         '_metadata/lattice/units' : 'bohr',
@@ -484,7 +493,6 @@ def get_serial_references():
 
 
 def check_vs_serial_reference(qi,name):
-    from ..developer import obj,to_obj
     sr = get_serial_references()[name]
     assert(len(sr)>0)
     sq = dict_serialize(qi,dict_type=obj)
@@ -506,9 +514,6 @@ def check_vs_serial_reference(qi,name):
 
 
 def test_qixml_class_init():
-    from ..developer import obj
-    from ..qmcpack_input import classes
-
     attr_types = obj(
         tag            = str,
         identifier     = (str,tuple),
@@ -576,11 +581,6 @@ def test_qixml_class_init():
 
 
 def test_compose():
-    import numpy as np
-    from ..developer import obj
-    from ..qmcpack_input import QmcpackInput
-    from ..qmcpack_input import simulation,meta,section
-
     qi_comp = QmcpackInput(
         meta(
             lattice  = obj(units='bohr'),
@@ -1130,12 +1130,6 @@ def test_compose():
 @isolate_nexus_core
 def test_generate():
     register_pseudo_files(['V.opt.xml','O.opt.xml'])
-    import numpy as np
-    from ..developer import dotdict,obj
-    from ..physical_system import generate_physical_system
-    from ..qmcpack_input import generate_qmcpack_input,spindensity
-    from ..qmcpack_input import back_propagation,onerdm
-
     system = generate_physical_system(
         units    = 'A',
         axes     = '''
@@ -1439,9 +1433,6 @@ def test_generate():
 
 
 def test_read():
-    import numpy as np
-    from ..qmcpack_input import QmcpackInput
-
     qi_read = QmcpackInput(TEST_FILES['VO2_M1_afm.in.xml'])
     assert(not qi_read.is_afqmc_input())
     qi_read.pluralize()
@@ -1487,8 +1478,6 @@ def test_read():
     ('vmc','dmc','vmc_batch','dmc_batch'),
     )
 def test_qmc_estimator_input_scoping(tmp_path,qmc_method):
-    from ..qmcpack_input import QmcpackInput
-
     qmc_input = f'''\
 <simulation>
   <project id="case" series="5"/>
@@ -1539,8 +1528,6 @@ def test_qmc_estimator_input_scoping(tmp_path,qmc_method):
 
 
 def test_write(tmp_path):
-    from ..qmcpack_input import QmcpackInput
-
     # test write real space qmc input file
     ref_file   = 'VO2_M1_afm.in.xml'
     write_file = tmp_path / ('write_'+ref_file)
@@ -1635,8 +1622,6 @@ def test_write(tmp_path):
 
 
 def test_get():
-    from ..qmcpack_input import QmcpackInput
-
     qi = QmcpackInput(TEST_FILES['VO2_M1_afm.in.xml'])
 
     s    = qi.simulation
@@ -1913,9 +1898,6 @@ def test_get():
 @isolate_nexus_core
 def test_incorporate_system():
     register_pseudo_files(['V.opt.xml','O.opt.xml'])
-    from ..physical_system import generate_physical_system
-    from ..qmcpack_input import generate_qmcpack_input
-
     system = generate_physical_system(
         units    = 'A',
         axes     = '''
@@ -1983,7 +1965,6 @@ def test_incorporate_system():
 
 
 def test_generate_kspace_jastrow():
-    from ..qmcpack_input import generate_kspace_jastrow
     kjas = generate_kspace_jastrow(1.0, 2.0, 2, 4)
     expect = '''<jastrow type="kSpace" name="Jk" source="ion0">
    <correlation kc="1.0" type="One-Body" symmetry="isotropic">
@@ -2007,9 +1988,6 @@ def test_generate_kspace_jastrow():
 @isolate_nexus_core
 def test_excited_state():
     register_pseudo_files(['C.BFD.xml'])
-    from nexus import generate_physical_system
-    from nexus import generate_qmcpack_input
-
     dia = generate_physical_system(
         units     = 'A',
         axes      = [[ 1.785,  1.785,  0.   ],
@@ -2082,10 +2060,6 @@ def test_excited_state():
 
 def test_magnetization_density():
     """Test magnetization density estimator functionality"""
-    from ..qmcpack_input import QmcpackInput
-    from ..qmcpack_input import simulation, meta, section
-    from ..developer import obj
-    import numpy as np
     # Helper function to find pattern in text allowing for flexible whitespace
     def pattern_in_text(pattern, text):
         """Check if pattern exists in text, allowing for flexible whitespace"""
@@ -2247,8 +2221,6 @@ def test_magnetization_density():
 def test_symbolic_excited_state():
     _ = pytest.importorskip("spglib")
     _ = pytest.importorskip("seekpath")
-    from nexus import generate_physical_system
-    from nexus import generate_qmcpack_input
 
     dia = generate_physical_system(
         units     = 'A',

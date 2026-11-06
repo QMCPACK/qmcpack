@@ -18,11 +18,14 @@
 #                                                                    #
 #====================================================================#
 
-import numpy as np
 import keyword
 from inspect import getmembers
+
+import numpy as np
+
 from .developer import DevBase, obj
 from .utilities import path_string, valid_variable_name
+
 
 class HDFglobals(DevBase):
     view = False

@@ -1,15 +1,13 @@
 import sys
 
 import pytest
-from . import NexusTestOrder
+
+from ..testing import execute
+from . import TEST_DIR, NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.NXS_REDO)
 
-from . import TEST_DIR
-from ..testing import execute
-
-
 def test_redo(tmp_path):
-
     exe = TEST_DIR.parent / "bin/nxs-redo"
 
     command = f'{sys.executable} {exe} {tmp_path}'
@@ -20,7 +18,7 @@ def test_redo(tmp_path):
 
     with pytest.raises(
         AssertionError,
-        match="no simulation directories found",
+        match="No simulation directories found",
         ):
         out,err,rc = execute(command)
 
@@ -30,7 +28,7 @@ def test_redo(tmp_path):
 
     with pytest.raises(
         AssertionError,
-        match="no simulation directories found",
+        match="No simulation directories found",
         ):
         out,err,rc = execute(command)
 

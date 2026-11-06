@@ -1,11 +1,9 @@
 import pytest
-from . import NexusTestOrder
+
+from ..testing import check_value_eq, execute, text_eq
+from . import TEST_DIR, NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.QDENS_RADIAL)
-
-
-from . import TEST_DIR
-from ..testing import execute,text_eq,check_value_eq
-
 
 def test_radial_density():
     _ = pytest.importorskip("spglib")

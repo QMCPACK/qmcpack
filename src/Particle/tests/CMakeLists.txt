@@ -24,6 +24,7 @@ add_executable(
   test_ParticleSetAllParticleMoves.cpp
   test_VirtualParticleSet.cpp
   test_particle_pool.cpp
+  test_minimal_particle_pool.cpp
   test_sample_stack.cpp
   test_DTModes.cpp
   test_MCCoords.cpp)

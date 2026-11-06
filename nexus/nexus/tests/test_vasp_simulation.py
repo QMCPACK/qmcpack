@@ -1,22 +1,22 @@
+import shutil
+from pathlib import Path
+
 import pytest
-from . import NexusTestOrder
+from numpy import array
+
+from nexus.nexus_base import nexus_config
+
+from ..developer import obj, to_obj
+from ..machines import job
+from ..physical_system import generate_physical_system
+from ..testing import check_object_eq, clear_all_sims, object_eq
+from ..vasp import Vasp, generate_vasp
+from . import NexusTestOrder, create_pseudo_files, isolate_nexus_core
+from .test_vasp_input import TEST_FILES, c_potcar_text
+
 pytestmark = pytest.mark.order(NexusTestOrder.VASP_SIMULATION)
 
-
-from pathlib import Path
-from . import isolate_nexus_core, create_pseudo_files
-from nexus.nexus_base import nexus_config
-from ..testing import clear_all_sims
-from ..testing import object_eq,check_object_eq
-
-from .test_vasp_input import c_potcar_text, TEST_FILES
-
-
 def setup_vasp_sim(path,identifier='vasp',*,copy_files=False):
-    import shutil
-    from ..machines import job
-    from ..physical_system import generate_physical_system
-    from ..vasp import generate_vasp,Vasp
 
     nexus_config.runs = ''
 
@@ -63,9 +63,6 @@ def setup_vasp_sim(path,identifier='vasp',*,copy_files=False):
 
 
 def test_minimal_init():
-    from ..machines import job
-    from ..vasp import Vasp,generate_vasp
-
     sim = generate_vasp(
         job = job(machine='ws1',cores=1),
         )
@@ -100,10 +97,6 @@ def test_check_result(tmp_path):
 
 @isolate_nexus_core
 def test_get_result(tmp_path):
-    import shutil
-    from numpy import array
-    from ..developer import obj
-
     create_pseudo_files(
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],
@@ -185,10 +178,6 @@ def test_get_result(tmp_path):
 
 @isolate_nexus_core
 def test_incorporate_result(tmp_path):
-    import shutil
-    from numpy import array
-    from ..developer import obj,to_obj
-
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]

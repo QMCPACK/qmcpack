@@ -114,6 +114,17 @@ int Communicate::getUniformNodeRankCount() const
   return gcd_size;
 }
 
+std::pair<int, int> Communicate::getMinMaxNodeRankCount() const
+{
+  Communicate node_comm = createNodeComm();
+  const int local_node_size = node_comm.size();
+  int min_size = 0;
+  int max_size = 0;
+  MPI_Allreduce(&local_node_size, &min_size, 1, MPI_INT, MPI_MIN, myMPI);
+  MPI_Allreduce(&local_node_size, &max_size, 1, MPI_INT, MPI_MAX, myMPI);
+  return {min_size, max_size};
+}
+
 
 void Communicate::abort() const { comm.abort(1); }
 
@@ -132,6 +143,11 @@ Communicate Communicate::createNodeComm() const
 int Communicate::getUniformNodeRankCount() const
 {
   return 1;
+}
+
+std::pair<int, int> Communicate::getMinMaxNodeRankCount() const
+{
+  return {1, 1};
 }
 
 

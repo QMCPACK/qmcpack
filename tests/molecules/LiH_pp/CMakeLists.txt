@@ -398,164 +398,76 @@ if(NOT QMC_COMPLEX)
   check_python_reqs("numpy;h5py" diamond-estimator add_tests)
   if(add_tests)
     simple_run_and_check(
-      short-LiH_pp-vmc_hf_sdj_estimator_spindensity
-      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-      vmc_hf_sdj_spindens_short.in.xml
-      4
-      4
-      check_stats.py
-      -s
-      0
-      -q
-      spindensity
-      -e
-      2
-      -c
-      8
-      -p
-      vmc_hf_sdj_spindens_short
-      -r
-      qmc_ref/vmc_hf_sdj_spindens_short.s000.stat_ref_spindensity.dat)
+      BASE_NAME short-LiH_pp-vmc_hf_sdj_estimator_spindensity
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmc_hf_sdj_spindens_short.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q spindensity -e 2 -c 8 -p vmc_hf_sdj_spindens_short -r qmc_ref/vmc_hf_sdj_spindens_short.s000.stat_ref_spindensity.dat)
 
     simple_run_and_check(
-      short-LiH_pp-vmcbatch_hf_sdj_estimator_spindensity
-      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-      vmcbatch_hf_sdj_spindens_short.in.xml
-      4
-      4
-      check_stats.py
-      -s
-      0
-      -q
-      spindensity
-      -e
-      2
-      -c
-      8
-      -p
-      vmc_hf_sdj_spindens_short
-      -r
-      qmc_ref/vmc_hf_sdj_spindens_short.s000.stat_ref_spindensity.dat)
+      BASE_NAME short-LiH_pp-vmcbatch_hf_sdj_estimator_spindensity
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmcbatch_hf_sdj_spindens_short.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q spindensity -e 2 -c 8 -p vmc_hf_sdj_spindens_short -r qmc_ref/vmc_hf_sdj_spindens_short.s000.stat_ref_spindensity.dat)
 
     simple_run_and_check(
-      long-LiH_pp-vmc_hf_sdj_estimator_spindensity
-      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-      vmc_hf_sdj_spindens_long.in.xml
-      4
-      4
-      check_stats.py
-      -s
-      0
-      -q
-      spindensity
-      -e
-      20
-      -c
-      8
-      -p
-      vmc_hf_sdj_spindens_long
-      -r
-      qmc_ref/vmc_hf_sdj_spindens_long.s000.stat_ref_spindensity.dat)
+      BASE_NAME long-LiH_pp-vmc_hf_sdj_estimator_spindensity
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmc_hf_sdj_spindens_long.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q spindensity -e 20 -c 8 -p vmc_hf_sdj_spindens_long -r qmc_ref/vmc_hf_sdj_spindens_long.s000.stat_ref_spindensity.dat)
 
     simple_run_and_check(
-      long-LiH_pp-vmcbatch_hf_sdj_estimator_spindensity
-      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-      vmcbatch_hf_sdj_spindens_long.in.xml
-      4
-      4
-      check_stats.py
-      -s
-      0
-      -q
-      spindensity
-      -e
-      20
-      -c
-      8
-      -p
-      vmc_hf_sdj_spindens_long
-      -r
-      qmc_ref/vmc_hf_sdj_spindens_long.s000.stat_ref_spindensity.dat)
+      BASE_NAME long-LiH_pp-vmcbatch_hf_sdj_estimator_spindensity
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmcbatch_hf_sdj_spindens_long.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q spindensity -e 20 -c 8 -p vmc_hf_sdj_spindens_long -r qmc_ref/vmc_hf_sdj_spindens_long.s000.stat_ref_spindensity.dat)
 
     simple_run_and_check(
-      short-LiH_pp-vmc_hf_sdj_estimator_energydensity_voronoi
-      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-      vmc_hf_sdj_edens_vor_short.in.xml
-      4
-      4
-      check_stats.py
-      -s
-      0
-      -q
-      'energydensity,EDvoronoi'
-      -e
-      2
-      -c
-      2
-      -p
-      vmc_hf_sdj_edens_vor_short
-      -r
-      qmc_ref/vmc_hf_sdj_edens_vor_short.s000.stat_ref_energydensity.dat)
+      BASE_NAME short-LiH_pp-vmc_hf_sdj_estimator_energydensity_voronoi
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmc_hf_sdj_edens_vor_short.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_short -r qmc_ref/vmc_hf_sdj_edens_vor_short.s000.stat_ref_energydensity.dat)
 
     simple_run_and_check(
-      short-LiH_pp-vmcbatch_hf_sdj_estimator_energydensity_voronoi
-      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-      vmcbatch_hf_sdj_edens_vor_short.in.xml
-      4
-      4
-      check_stats.py
-      -s
-      0
-      -q
-      'energydensity,EDvoronoi'
-      -e
-      2
-      -c
-      2
-      -p
-      vmc_hf_sdj_edens_vor_short
-      -r
-      qmc_ref/vmc_hf_sdj_edens_vor_short.s000.stat_ref_energydensity.dat)
+      BASE_NAME short-LiH_pp-vmcbatch_hf_sdj_estimator_energydensity_voronoi
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmcbatch_hf_sdj_edens_vor_short.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_short -r qmc_ref/vmc_hf_sdj_edens_vor_short.s000.stat_ref_energydensity.dat)
 
     simple_run_and_check(
-      long-LiH_pp-vmc_hf_sdj_estimator_energydensity_voronoi
-      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-      vmc_hf_sdj_edens_vor_long.in.xml
-      4
-      4
-      check_stats.py
-      -s
-      0
-      -q
-      'energydensity,EDvoronoi'
-      -e
-      2
-      -c
-      2
-      -p
-      vmc_hf_sdj_edens_vor_long
-      -r
-      qmc_ref/vmc_hf_sdj_edens_vor_long.s000.stat_ref_energydensity.dat)
+      BASE_NAME long-LiH_pp-vmc_hf_sdj_estimator_energydensity_voronoi
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmc_hf_sdj_edens_vor_long.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_long -r qmc_ref/vmc_hf_sdj_edens_vor_long.s000.stat_ref_energydensity.dat)
 
     simple_run_and_check(
-      long-LiH_pp-vmcbatch_hf_sdj_estimator_energydensity_voronoi
-      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-      vmcbatch_hf_sdj_edens_vor_long.in.xml
-      4
-      4
-      check_stats.py
-      -s
-      0
-      -q
-      'energydensity,EDvoronoi'
-      -e
-      2
-      -c
-      2
-      -p
-      vmc_hf_sdj_edens_vor_long
-      -r
-      qmc_ref/vmc_hf_sdj_edens_vor_long.s000.stat_ref_energydensity.dat)
+      BASE_NAME long-LiH_pp-vmcbatch_hf_sdj_estimator_energydensity_voronoi
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmcbatch_hf_sdj_edens_vor_long.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_long -r qmc_ref/vmc_hf_sdj_edens_vor_long.s000.stat_ref_energydensity.dat)
   endif()
 
 else()
