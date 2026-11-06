@@ -48,7 +48,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-gamma-drift-vmcbatch_pw_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-gamma-drift_pw
   hf_vmcbatch_LiH-gamma-drift_pw.xml
   1
   16
@@ -60,7 +59,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-gamma-vmcbatch_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-gamma
   hf_vmcbatch_LiH-gamma.xml
   1
   16
@@ -72,7 +70,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-gamma-vmcbatch_pw_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-gamma_pw
   hf_vmcbatch_LiH-gamma_pw.xml
   1
   16
@@ -127,7 +124,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-x-drift-vmcbatch_pw_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-x-drift_pw
   hf_vmcbatch_LiH-x-drift_pw.xml
   1
   16
@@ -139,7 +135,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-x-vmcbatch_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-x
   hf_vmcbatch_LiH-x.xml
   1
   16
@@ -151,7 +146,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-x-vmcbatch_pw_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-x_pw
   hf_vmcbatch_LiH-x_pw.xml
   1
   16
@@ -225,7 +219,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-arb-drift-vmcbatch_pw_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-arb-drift_pw
   hf_vmcbatch_LiH-arb-drift_pw.xml
   1
   16
@@ -237,7 +230,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-arb-vmcbatch_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-arb
   hf_vmcbatch_LiH-arb.xml
   1
   16
@@ -249,7 +241,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-arb-vmcbatch_pw_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-arb_pw
   hf_vmcbatch_LiH-arb_pw.xml
   1
   16

@@ -35,7 +35,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-diamondC_2x1x1_pp-vmcbatch_pw_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-  qmc_short_pw
   qmc_short_vmcbatch_pw.in.xml
   1
   16

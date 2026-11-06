@@ -63,7 +63,6 @@ if(NOT MIXED_PRECISION)
   qmc_run_and_check(
     short-bccH_2x2x2_ae-vmcbatch_bf-pw
     "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
-    qmc-short-bf-pw-batch
     qmc-short-bf-pw-batch.in.xml
     1
     16
