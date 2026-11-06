@@ -13,12 +13,14 @@
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include <filesystem>
+#include <limits>
 #include <string>
 #include <vector>
 
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Message/UniformCommunicateError.h"
+#include "CPU/math.hpp"
 #include <catch2/matchers/catch_matchers_exception.hpp>
 #include "Particle/WalkerConfigurations.h"
 #include "Particle/HDFWalkerOutput.h"
@@ -31,6 +33,91 @@
 
 namespace qmcplusplus
 {
+
+TEST_CASE("HDFWalkerInput_0_4 missing malformed and invalid weights", "[particle][stochastic_comb]")
+{
+  Communicate& comm(*OHMMS::Controller);
+  constexpr int count              = 16;
+  constexpr int particles          = 2;
+  const std::string root           = "test_hdfwalkerinput_weight_validation";
+  const std::filesystem::path file = root + ".config.h5";
+  for (int mode = 0; mode < 7; ++mode)
+  {
+    CAPTURE(mode);
+    if (comm.rank() == 0)
+    {
+      hdf_archive output;
+      REQUIRE(output.create(file));
+      HDFVersion version(0, 4);
+      output.write(version.version, hdf::version);
+      output.push(hdf::main_state);
+      output.write(count, hdf::num_walkers);
+      output.write(std::vector<int>{0, count}, "walker_partition");
+      std::vector<QMCTraits::RealType> positions(count * particles * OHMMS_DIM, 0);
+      const std::array<size_t, 3> shape{count, particles, OHMMS_DIM};
+      output.writeSlabReshaped(positions, shape, hdf::walkers);
+      if (mode != 0)
+      {
+        std::vector<double> weights(mode == 1 ? count - 1 : count, 2);
+        if (mode == 3)
+          weights.back() = -1;
+        else if (mode == 4)
+        {
+          weights.back() = std::numeric_limits<double>::infinity();
+          REQUIRE(qmcplusplus::isinf(weights.back()));
+        }
+        else if (mode == 5)
+        {
+          weights.back() = std::numeric_limits<double>::quiet_NaN();
+          REQUIRE(qmcplusplus::isnan(weights.back()));
+        }
+        if (mode == 2)
+        {
+          const std::array<size_t, 2> bad_shape{4, 4};
+          output.writeSlabReshaped(weights, bad_shape, hdf::walker_weights);
+        }
+        else if (mode == 6)
+          output.write(std::string("not numeric"), hdf::walker_weights);
+        else
+          output.write(weights, hdf::walker_weights);
+      }
+    }
+    comm.barrier();
+    for (int reader = 0; reader <
+#if defined(ENABLE_PHDF5)
+         3
+#else
+         2
+#endif
+         ;
+         ++reader)
+    {
+      CAPTURE(reader);
+      WalkerConfigurations configurations;
+      HDFWalkerInput_0_4 input(configurations, particles, comm, HDFVersion(0, 4));
+      // Exercise all supported backends against the same missing/malformed/value-invalid dataset.
+      auto read = [&]() {
+        if (reader == 0)
+          return input.read_hdf5(file);
+        if (reader == 1)
+          return input.read_hdf5_scatter(file);
+        return input.read_phdf5(file);
+      };
+      if (mode == 0)
+      {
+        REQUIRE(read());
+        for (int iw = 0; iw < configurations.getActiveWalkers(); ++iw)
+          CHECK(configurations[iw]->Weight == 1);
+      }
+      else
+      {
+        CHECK_THROWS_AS(read(), UniformCommunicateError);
+        CHECK(configurations.getActiveWalkers() == 0);
+      }
+    }
+    comm.barrier();
+  }
+}
 
 namespace
 {

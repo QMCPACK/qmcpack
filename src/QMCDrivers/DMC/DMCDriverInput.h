@@ -56,7 +56,7 @@ private:
   ///input std::string to determine swap walkers among mpi processors
   std::string SwapWalkers;
   /// reconfiguration flag
-  bool reconfiguration_ = true;
+  bool reconfiguration_ = false;
   ///input to control Tmove
   TmoveKind tmove_kind_ = TmoveKind::OFF;
   ///whether to use the L2-modified DMC propagator

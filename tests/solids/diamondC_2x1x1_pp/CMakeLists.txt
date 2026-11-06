@@ -101,6 +101,17 @@ qmc_run_and_check(
   DIAMOND2_DMC_SCALARS # DMC
 )
 
+qmc_run_and_check(
+  short-diamondC_2x1x1_pp-dmcbatch_sdj
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+  qmc_short_vmc_dmc_batched.in.xml
+  1
+  16
+  TRUE
+  1
+  DIAMOND2_DMC_SCALARS)
+add_test_check_variable_population(short-diamondC_2x1x1_pp-dmcbatch_sdj-r1-t16 qmc_short_vmc_dmc_batched.s001.dmc.dat)
+
 # 1 rank 4 threads 16 walkers (4 crowds of 4 walkers)
 list(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.02")
 qmc_run_and_check(
@@ -161,6 +172,18 @@ qmc_run_and_check(
   1
   DIAMOND2_DMC_SCALARS # DMC
 )
+
+qmc_run_and_check(
+  short-diamondC_2x1x1_pp-dmcbatch-reconf_sdj
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+  qmc_short_vmc_dmc_reconf_batched.in.xml
+  1
+  16
+  TRUE
+  1
+  DIAMOND2_DMC_SCALARS)
+add_test_check_fixed_population(short-diamondC_2x1x1_pp-dmcbatch-reconf_sdj-r1-t16
+                               qmc_short_vmc_dmc_reconf_batched.s001.dmc.dat 256)
 
 # Reference DMC run as qmc-ref -21.858821 +/- 0.001207 with 2500 blocks
 list(APPEND DIAMOND2_DMC_DLA_SCALARS "totenergy" "-21.858821 0.012")
@@ -243,6 +266,17 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
+  long-diamondC_2x1x1_pp-dmcbatch_sdj
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+  qmc_long_vmc_dmc_batched.in.xml
+  1
+  16
+  TRUE
+  1
+  LONG_DIAMOND2_DMC_SCALARS)
+add_test_check_variable_population(long-diamondC_2x1x1_pp-dmcbatch_sdj-r1-t16 qmc_long_vmc_dmc_batched.s001.dmc.dat)
+
+qmc_run_and_check(
   long-diamondC_2x1x1_pp-dmc-reconf_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
   qmc_long_vmc_dmc_reconf.in.xml
@@ -252,6 +286,18 @@ qmc_run_and_check(
   1
   LONG_DIAMOND2_DMC_SCALARS # DMC
 )
+
+qmc_run_and_check(
+  long-diamondC_2x1x1_pp-dmcbatch-reconf_sdj
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+  qmc_long_vmc_dmc_reconf_batched.in.xml
+  1
+  16
+  TRUE
+  1
+  LONG_DIAMOND2_DMC_SCALARS)
+add_test_check_fixed_population(long-diamondC_2x1x1_pp-dmcbatch-reconf_sdj-r1-t16
+                               qmc_long_vmc_dmc_reconf_batched.s001.dmc.dat 256)
 
 # Reference DMC run as qmc-ref -21.858821 +/- 0.001207 with 2500 blocks
 list(APPEND LONG_DIAMOND2_DMC_DLA_SCALARS "totenergy" "-21.858821 0.0038")

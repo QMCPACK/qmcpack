@@ -9,9 +9,11 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include <cmath>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Message/Communicate.h"
+#include "Message/UniformCommunicateError.h"
 
 #include "type_traits/template_types.hpp"
 #include "Particle/Walker.h"
@@ -86,6 +88,69 @@ TEST_CASE("SFNBranch::branch(MCPopulation...)", "[drivers]")
   std::unique_ptr<SFNBranch> sfnb =
       setup_sfnb(*pools.particle_pool->getParticleSet("e"), pools.wavefunction_pool->getWaveFunction().value(),
                  pools.hamiltonian_pool->getHamiltonian().value());
+}
+
+TEST_CASE("SFNBranch fixed weight feedback and history", "[drivers][stochastic_comb]")
+{
+  testing::SetupPools pools;
+  MCPopulation population(pools.comm.size(), pools.comm.rank(), *pools.particle_pool->getParticleSet("e"),
+                          pools.wavefunction_pool->getWaveFunction().value(),
+                          pools.hamiltonian_pool->getHamiltonian().value());
+  WalkerConfigurations configs;
+  population.createWalkers(2, configs);
+  population.syncWalkersPerRank(pools.comm);
+  const int count  = population.get_num_global_walkers();
+  const int target = 3 * count / 2;
+  for (auto scheme : {DMCRefEnergyScheme::LIMITED_HISTORY, DMCRefEnergyScheme::UNLIMITED_HISTORY})
+    for (int warmup : {0, 2})
+      for (bool fixed : {false, true})
+      {
+        SFNBranch branch(0.25, 0.4, scheme);
+        Libxml2Document doc;
+        const std::string xml = "<qmc><parameter name=\"warmupsteps\">" + std::to_string(warmup) +
+            "</parameter><parameter name=\"energyUpdateInterval\">2</parameter>"
+            "<parameter name=\"target_walkers\">" +
+            std::to_string(target) + "</parameter><parameter name=\"warmupByReconfiguration\">" +
+            (fixed ? "yes" : "no") + "</parameter></qmc>";
+        REQUIRE(doc.parseFromString(xml));
+        branch.put(doc.getRoot());
+        branch.initParam(population, -1, 0.5, fixed, false);
+        double expected_trial = -1;
+        double sum_energy = 0, sum_weight = 0;
+        for (int step = 0; step < warmup + 4; ++step)
+        {
+          MCDataType<double> ensemble;
+          ensemble.Weight         = count * (step + 2.0);
+          ensemble.Energy         = -2 - 0.1 * step;
+          ensemble.Variance       = 0.5;
+          ensemble.R2Accepted     = 1;
+          ensemble.R2Proposed     = 1;
+          ensemble.LivingFraction = 1;
+          branch.updateParamAfterPopControl(ensemble, population.get_golden_electrons().getTotalNum());
+          double expected_ref;
+          if (step < warmup)
+          {
+            expected_ref   = ensemble.Energy;
+            expected_trial = ensemble.Energy + std::log(double(target) / ensemble.Weight) / 0.25;
+          }
+          else
+          {
+            const double temporal_weight = scheme == DMCRefEnergyScheme::LIMITED_HISTORY ? ensemble.Weight : 1;
+            sum_energy += temporal_weight * ensemble.Energy;
+            sum_weight += temporal_weight;
+            expected_ref = sum_energy / sum_weight;
+            if ((step - warmup + 1) % 2 == 0)
+              expected_trial = expected_ref + 0.4 * std::log(double(target) / ensemble.Weight);
+          }
+          CHECK(branch.getEref() == Approx(expected_ref));
+          CHECK(branch.getEtrial() == Approx(expected_trial));
+          CHECK(branch.getTauEff() == Approx(0.25));
+          CHECK(population.get_num_global_walkers() == count);
+        }
+        MCDataType<double> invalid;
+        invalid.Weight = 0;
+        CHECK_THROWS_AS(branch.updateParamAfterPopControl(invalid, 2), UniformCommunicateError);
+      }
 }
 
 

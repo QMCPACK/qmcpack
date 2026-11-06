@@ -74,7 +74,7 @@ public:
    *  **This has many side effects**
    *  pop passed in may return with different numbers of walkers
    *  pop walkers will have states altered:
-   *  walker weights set to 1.0
+   *  walker weights set to 1.0 (dynamic/variable population) or fix population and conserved total weight
    *  walker multiplicities set to 1.0
    */
   void branch(int iter, MCPopulation& pop, bool do_not_branch);
@@ -99,7 +99,24 @@ private:
   /** update the curData state buffer.
    *  weighted sum over walker properties then all reduce.  see discussion #curData
    */
-  void computeCurData(const UPtrVector<MCPWalker>& walkers, std::vector<FullPrecRealType>& curData);
+  void computeCurData(const UPtrVector<MCPWalker>& walkers, std::vector<FullPrecRealType>& curData, bool do_not_branch);
+
+  /** Assign comb intervals to walker weights.
+   * Rank endpoints are shared exactly, including empty/zero-weight ranks; offset is in [0,1).
+   * No walkers are copied here. num_per_rank gives source offspring counts for the existing balancer.
+   * \param[in,out] walkers Local walkers. Update their multiplicity fields only.
+   * \param[in] rank_weights Global weight sums indexed by MPI rank. Must be identical on every rank.
+   * \param[in] rank MPI rank whose local walkers are being assigned offspring.
+   * \param[in] population Input fixed global number of offspring, also the number of comb teeth.
+   * \param[in] offset Shared uniform draw in [0,1), expressed as a fraction of the tooth spacing.
+   * \param[out] num_per_rank Offspring counts by source rank before MPI load balancing; their sum is population.
+   */
+  static void assignStochasticComb(const UPtrVector<MCPWalker>& walkers,
+                                   const std::vector<FullPrecRealType>& rank_weights,
+                                   int rank,
+                                   int population,
+                                   FullPrecRealType offset,
+                                   std::vector<int>& num_per_rank);
 
   /** creates the distribution plan
    *
