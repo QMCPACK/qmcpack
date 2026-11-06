@@ -130,8 +130,8 @@ Now, we can safely re-run ``nexus_script.py`` without fear of touching the previ
         > nxs-redo -v file.txt
 
 
-Controlling Simulation Status
------------------------------
+``nxs-sim``
+-----------
 
 ``nxs-sim`` has several subcommands useful for modifying the status of a saved simulation image or creating backups of a simulation image.
 
