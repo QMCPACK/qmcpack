@@ -8,7 +8,6 @@ from . import TEST_DIR, NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.NXS_REDO)
 
 def test_redo(tmp_path):
-
     exe = TEST_DIR.parent / "bin/nxs-redo"
 
     command = f'{sys.executable} {exe} {tmp_path}'

@@ -1,15 +1,38 @@
-import pytest
 from copy import deepcopy
+
+import numpy as np
+import pytest
+
+from .. import numpy_extensions as npe
+from ..developer import obj
+from ..grid_functions import (
+    Grid,
+    GridFunction,
+    ParallelotopeGrid,
+    ParallelotopeGridFunction,
+    SpheroidGrid,
+    SpheroidGridFunction,
+    SpheroidSurfaceGrid,
+    SpheroidSurfaceGridFunction,
+    StructuredGrid,
+    StructuredGridFunction,
+    StructuredGridFunctionWithAxes,
+    StructuredGridWithAxes,
+    cartesian_to_polar,
+    cartesian_to_spherical,
+    parallelotope_grid_points,
+    polar_to_cartesian,
+    spherical_to_cartesian,
+    spheroid_grid_points,
+    spheroid_surface_grid_points,
+    unit_grid_points,
+)
+from ..testing import object_eq, value_eq
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.GRID_FUNCTIONS)
 
 def test_coord_conversion():
-
-    import numpy as np
-    from ..grid_functions import polar_to_cartesian,cartesian_to_polar
-    from ..grid_functions import spherical_to_cartesian,cartesian_to_spherical
-    from .. import numpy_extensions as npe
-
     pi = np.pi
     sqrt = np.sqrt
 
@@ -91,12 +114,6 @@ def test_coord_conversion():
 
 
 def test_unit_grid_points():
-    import numpy as np
-
-    from ..testing import value_eq
-    from .. import numpy_extensions as npe
-    from ..grid_functions import unit_grid_points
-
     lin_grid = np.array([0.00,0.25,0.50,0.75])
     lin_grid_centered = lin_grid+0.125
     lin_grid_endpoint = np.array([0.00,0.25,0.50,0.75,1.00])
@@ -179,12 +196,6 @@ def test_unit_grid_points():
 
 
 def test_parallelotope_grid_points():
-
-    import numpy as np
-    from ..testing import value_eq
-    from ..grid_functions import unit_grid_points
-    from ..grid_functions import parallelotope_grid_points
-
     axes_dim = {
         1 : [[1]],
         2 : [[1,1],
@@ -242,13 +253,6 @@ def test_parallelotope_grid_points():
 
 
 def test_spheroid_grid_points():
-    import numpy as np
-    from ..testing import value_eq
-    from ..grid_functions import cartesian_to_polar
-    from ..grid_functions import cartesian_to_spherical
-    from ..grid_functions import spheroid_grid_points
-    from ..grid_functions import spheroid_surface_grid_points
-
     n = 5
 
     def unique(vals,tol=1e-6):
@@ -321,7 +325,6 @@ grid_properties = dict()
 
 
 def properties_from_name(grid_name):
-    from ..developer import obj
     grid_types = dict(
         p = 'parallelotope',
         s = 'spheroid',
@@ -357,12 +360,6 @@ def get_grids():
     """
     Generate a variety of grids.
     """
-
-    from ..developer import obj
-    from ..grid_functions import ParallelotopeGrid
-    from ..grid_functions import SpheroidGrid
-    from ..grid_functions import SpheroidSurfaceGrid
-
     grids = grid_objects
     props = grid_properties
 
@@ -479,7 +476,6 @@ def get_grids():
 
 
 def get_props():
-    from ..developer import obj
     get_grids()
     return obj(grid_properties)
 #end def get_props
@@ -487,13 +483,6 @@ def get_props():
 
 
 def test_grid_initialization():
-    import numpy as np
-    from ..testing import value_eq
-    from ..grid_functions import Grid,StructuredGrid,StructuredGridWithAxes
-    from ..grid_functions import ParallelotopeGrid
-    from ..grid_functions import SpheroidGrid
-    from ..grid_functions import SpheroidSurfaceGrid
-
     grids = []
 
     grid_types = [
@@ -568,10 +557,6 @@ def test_grid_initialization():
 
 
 def test_parallelotope_grid_initialization():
-
-    from ..testing import object_eq
-    from ..grid_functions import ParallelotopeGrid
-
     pgrids = []
 
     p1 = ParallelotopeGrid(
@@ -623,12 +608,6 @@ def test_parallelotope_grid_initialization():
 
 
 def test_grid_reset():
-    from ..testing import object_eq
-    from ..developer import obj
-    from ..grid_functions import ParallelotopeGrid
-    from ..grid_functions import SpheroidGrid
-    from ..grid_functions import SpheroidSurfaceGrid
-
     grid_inputs = [
         ( ParallelotopeGrid   , obj(cells=(5,6),axes=[[1,0,0],[1,1,0]]) ),
         ( SpheroidGrid        , obj(cells=(5,6),axes=[[1,0,0],[1,1,0]]) ),
@@ -649,10 +628,6 @@ def test_grid_reset():
 
 
 def test_grid_set_operations():
-    import numpy as np
-    from ..testing import value_eq
-    from .. import numpy_extensions as npe
-
     grids = get_grids()
     props = get_props()
 
@@ -726,9 +701,6 @@ def test_grid_set_operations():
 
 
 def test_grid_copy():
-    from copy import deepcopy
-    from ..testing import object_eq
-
     grids = get_grids()
 
     grids_check = 'p22c s22c c23c'.split()
@@ -750,10 +722,6 @@ def test_grid_copy():
 
 
 def test_grid_translate():
-    import numpy as np
-    from ..testing import value_eq
-    from .. import numpy_extensions as npe
-
     grids = get_grids()
     props = get_props()
 
@@ -784,8 +752,6 @@ def test_grid_translate():
 
 
 def test_grid_reshape():
-    from ..testing import object_eq
-
     grids = get_grids()
     props = get_props()
 
@@ -812,10 +778,6 @@ def test_grid_reshape():
 
 
 def test_grid_unit_points():
-    import numpy as np
-    from ..testing import value_eq,object_eq
-    from .. import numpy_extensions as npe
-
     def make_1d(x):
         p = x.copy()
         npe.reshape_inplace(p, (len(p), 1))
@@ -883,13 +845,6 @@ def test_grid_unit_points():
 
 
 def test_grid_cell_indices():
-
-    import numpy as np
-    from ..testing import value_eq,object_eq
-    from ..grid_functions import ParallelotopeGrid
-    from ..grid_functions import SpheroidGrid
-    from ..grid_functions import SpheroidSurfaceGrid
-
     p = ParallelotopeGrid(
         cells = (10,10),
         axes  = [[1,0,0],[1,1,1]],
@@ -952,11 +907,6 @@ def test_grid_cell_indices():
 
 
 def test_grid_inside():
-    from ..testing import value_eq,object_eq
-    from ..grid_functions import ParallelotopeGrid
-    from ..grid_functions import SpheroidGrid
-    from ..grid_functions import SpheroidSurfaceGrid
-
     grids = get_grids()
     props = get_props()
 
@@ -1016,10 +966,6 @@ def test_grid_inside():
 
 
 def test_grid_project():
-    import numpy as np
-    from ..testing import object_eq
-    from .. import numpy_extensions as npe
-
     def make_1d(x):
         p = x.copy()
         npe.reshape_inplace(p, (len(p), 1))
@@ -1087,8 +1033,6 @@ def test_grid_project():
 
 
 def test_grid_radius():
-    from ..testing import value_eq
-    from ..grid_functions import SpheroidGrid,SpheroidSurfaceGrid
     grids = get_grids()
     for name in sorted(grids.keys()):
         g = grids[name]
@@ -1103,9 +1047,6 @@ def test_grid_radius():
 
 
 def test_grid_axes_volume():
-    import numpy as np
-    from ..testing import value_eq
-
     grids = get_grids()
     props = get_props()
 
@@ -1150,12 +1091,6 @@ def test_grid_axes_volume():
 
 
 def test_grid_volume():
-    import numpy as np
-    from ..testing import value_eq
-    from ..grid_functions import ParallelotopeGrid
-    from ..grid_functions import SpheroidGrid
-    from ..grid_functions import SpheroidSurfaceGrid
-
     grids = get_grids()
     props = get_props()
 
@@ -1211,9 +1146,6 @@ def test_grid_volume():
 
 
 def test_grid_cell_volumes():
-    from ..testing import value_eq
-    from ..grid_functions import SpheroidSurfaceGrid
-
     grids = get_grids()
 
     for name in sorted(grids.keys()):
@@ -1229,13 +1161,6 @@ def test_grid_cell_volumes():
 
 
 def test_grid_unit_metric():
-    import numpy as np
-    from ..testing import value_eq
-    from ..grid_functions import unit_grid_points
-    from ..grid_functions import ParallelotopeGrid
-    from ..grid_functions import SpheroidGrid
-    from ..grid_functions import SpheroidSurfaceGrid
-
     grids = get_grids()
 
     # test parallelotope grids
@@ -1298,16 +1223,6 @@ def test_grid_unit_metric():
 
 
 def test_grid_function_initialization():
-    import numpy as np
-    from ..testing import object_eq
-    from ..grid_functions import unit_grid_points
-    from ..grid_functions import GridFunction
-    from ..grid_functions import StructuredGridFunction
-    from ..grid_functions import StructuredGridFunctionWithAxes
-    from ..grid_functions import ParallelotopeGridFunction
-    from ..grid_functions import SpheroidGridFunction
-    from ..grid_functions import SpheroidSurfaceGridFunction
-
     abstract_gftypes = [
         GridFunction,
         StructuredGridFunction,

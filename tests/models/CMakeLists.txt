@@ -48,7 +48,6 @@ list(APPEND DET_GEP_VMCBATCH_SCALARS "latdev" "0.6031711637 0.000001")
 qmc_run_and_check(
   short-sho-vmc
   "${qmcpack_SOURCE_DIR}/tests/models/sho"
-  vmc_sho
   vmc_sho.xml
   1
   16
@@ -60,7 +59,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-sho-vmc-allp
   "${qmcpack_SOURCE_DIR}/tests/models/sho"
-  vmc_sho_allp
   vmc_sho_allp.xml
   1
   16
@@ -72,7 +70,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-sho-vmc-nodrift
   "${qmcpack_SOURCE_DIR}/tests/models/sho"
-  vmc_sho_nodrift
   vmc_sho_nodrift.xml
   1
   16
@@ -85,7 +82,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-sho-vmc
   "${qmcpack_SOURCE_DIR}/tests/models/sho"
-  det_vmc_sho
   det_vmc_sho.xml
   1
   1
@@ -97,7 +93,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-sho-vmc-allp
   "${qmcpack_SOURCE_DIR}/tests/models/sho"
-  det_vmc_sho_allp
   det_vmc_sho_allp.xml
   1
   1
@@ -110,7 +105,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-sho-vmc-nodrift
   "${qmcpack_SOURCE_DIR}/tests/models/sho"
-  det_vmc_sho_nodrift
   det_vmc_sho_nodrift.xml
   1
   1
@@ -122,7 +116,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-sho-vmcbatch
   "${qmcpack_SOURCE_DIR}/tests/models/sho"
-  vmcbatch_sho
   vmcbatch_sho.xml
   1
   16
@@ -134,7 +127,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-sho-vmcbatch-nodrift 
   "${qmcpack_SOURCE_DIR}/tests/models/sho"
-  vmcbatch_sho_nodrift
   vmcbatch_sho_nodrift.xml
   1
   16
@@ -146,7 +138,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-sho-vmcbatch
   "${qmcpack_SOURCE_DIR}/tests/models/sho"
-  det_vmcbatch_sho
   det_vmcbatch_sho.xml
   1
   1
@@ -158,7 +149,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-sho-vmcbatch-nodrift
   "${qmcpack_SOURCE_DIR}/tests/models/sho"
-  det_vmcbatch_sho_nodrift
   det_vmcbatch_sho_nodrift.xml
   1
   1
@@ -167,12 +157,15 @@ qmc_run_and_check(
   DET_SHO_NODRIFT_VMCBATCH_SCALARS
 )
 
-simple_run_and_check(deterministic-sho-grad_lap "${qmcpack_SOURCE_DIR}/tests/models/sho" grad_lap.xml 1 1 check_grad_lap.py)
+simple_run_and_check(
+  BASE_NAME deterministic-sho-grad_lap
+  BASE_DIR "${qmcpack_SOURCE_DIR}/tests/models/sho"
+  INPUT_FILE grad_lap.xml
+  CHECK_SCRIPT check_grad_lap.py)
 
 qmc_run_and_check(
   short-grid_ext_pot-vmc
   "${qmcpack_SOURCE_DIR}/tests/models/grid_external_potential"
-  vmc_grid_ext_pot
   vmc_grid_ext_pot.xml
   1
   16
@@ -184,7 +177,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-grid_ext_pot-vmc
   "${qmcpack_SOURCE_DIR}/tests/models/grid_external_potential"
-  det_vmc_grid_ext_pot
   det_vmc_grid_ext_pot.xml
   1
   1
@@ -196,7 +188,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   short-grid_ext_pot-vmcbatch
   "${qmcpack_SOURCE_DIR}/tests/models/grid_external_potential"
-  vmcbatch_grid_ext_pot
   vmcbatch_grid_ext_pot.xml
   1
   16
@@ -208,7 +199,6 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-grid_ext_pot-vmcbatch
   "${qmcpack_SOURCE_DIR}/tests/models/grid_external_potential"
-  det_vmcbatch_grid_ext_pot
   det_vmcbatch_grid_ext_pot.xml
   1
   1

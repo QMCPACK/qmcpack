@@ -135,6 +135,17 @@ public:
    */
   int getUniformNodeRankCount() const;
 
+  /** return the minimum and maximum rank counts per node across all nodes.
+   *
+   *  Each rank determines its local node size, then an MPI_Allreduce finds
+   *  the minimum and maximum node sizes across the communicator.
+   *  If min == max, all nodes have an identical number of ranks (uniform).
+   *
+   *  In non-MPI (serial) builds, this returns {1, 1}.
+   *  @return std::pair<int, int> {min_node_ranks, max_node_ranks}
+   */
+  std::pair<int, int> getMinMaxNodeRankCount() const;
+
   void barrier() const;
   void abort() const;
   void barrier_and_abort(const std::string& msg) const;

@@ -9,7 +9,10 @@
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
+#include "Message/UniformCommunicateError.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSet.h"
@@ -435,5 +438,72 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 {
   test_J1_spline(DynamicCoordinateKind::DC_POS);
   test_J1_spline(DynamicCoordinateKind::DC_POS_OFFLOAD);
+}
+
+TEST_CASE("RadialJastrowBuilder throws", "[wavefunction]")
+{
+  Communicate& c(*OHMMS::Controller);
+
+  const SimulationCell simulation_cell;
+  ParticleSet ions_(simulation_cell, DynamicCoordinateKind::DC_POS);
+  ParticleSet elec_(simulation_cell, DynamicCoordinateKind::DC_POS);
+
+  ions_.setName("ion");
+  ions_.create({1});
+  ions_.R[0]                 = {2.0, 0.0, 0.0};
+  SpeciesSet& ispecies       = ions_.getSpeciesSet();
+  int CIdx                   = ispecies.addSpecies("C");
+  int ichargeIdx             = ispecies.addAttribute("charge");
+  ispecies(ichargeIdx, CIdx) = 4;
+  ions_.resetGroups();
+  ions_.update();
+
+  elec_.setName("elec");
+  elec_.create({1, 1});
+  elec_.R[0]                   = {1.00, 0.0, 0.0};
+  elec_.R[1]                   = {0.0, 0.0, 0.0};
+  SpeciesSet& tspecies         = elec_.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx)   = -1;
+  tspecies(chargeIdx, downIdx) = -1;
+  elec_.resetGroups();
+
+  SECTION("J1 offload requires gpu particleset")
+  {
+    const char* j1_xml = R"(
+      <jastrow type="One-Body" name="J1" function="bspline" source="ion" gpu="omptarget">
+        <correlation elementType="C" rcut="10" size="8" cusp="0.0">
+          <coefficients id="eC" type="Array">
+            -0.2 -0.16 -0.14 -0.12 -0.09 -0.07 -0.04 -0.02
+          </coefficients>
+        </correlation>
+      </jastrow>
+    )";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(j1_xml));
+    RadialJastrowBuilder jastrow(c, elec_, ions_);
+    CHECK_THROWS_MATCHES(jastrow.buildComponent(doc.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message("Offload enabled Jastrow needs the gpu=\"yes\" attribute in the \"ion\" particleset\n"));
+  }
+
+  SECTION("J2 offload requires gpu particleset")
+  {
+    const char* j2_xml = R"(
+      <jastrow type="Two-Body" name="J2" function="bspline" gpu="omptarget">
+        <correlation speciesA="u" speciesB="u" size="8">
+          <coefficients id="uu" type="Array">
+            0.5 0.4 0.3 0.2 0.1 0.05 0.02 0.01
+          </coefficients>
+        </correlation>
+      </jastrow>
+    )";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(j2_xml));
+    RadialJastrowBuilder jastrow(c, elec_);
+    CHECK_THROWS_MATCHES(jastrow.buildComponent(doc.getRoot()), UniformCommunicateError,
+                         Catch::Matchers::Message("Offload enabled Jastrow needs the gpu=\"yes\" attribute in the \"elec\" particleset\n"));
+  }
 }
 } // namespace qmcplusplus

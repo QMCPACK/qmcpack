@@ -1,11 +1,18 @@
 import pytest
+
+from ..developer import obj, to_obj
+from ..qmcpack_converters import (
+    Convert4qmcInput,
+    Pw2qmcpackInput,
+    PyscfToAfqmcInput,
+    generate_convert4qmc_input,
+    generate_pw2qmcpack_input,
+    generate_pyscf_to_afqmc_input,
+)
+from ..testing import object_eq, value_eq
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_INPUT)
-
-
-from ..testing import value_eq,object_eq
-
-
 
 pw2qmcpack_in = '''&inputpp
   prefix = 'pwscf'
@@ -14,9 +21,6 @@ pw2qmcpack_in = '''&inputpp
 '''
 
 def test_pw2qmcpack_input_empty_init():
-    from ..qmcpack_converters import Pw2qmcpackInput
-    from ..qmcpack_converters import generate_pw2qmcpack_input
-
     pi = Pw2qmcpackInput()
 
     pi = generate_pw2qmcpack_input()
@@ -26,9 +30,6 @@ def test_pw2qmcpack_input_empty_init():
 
 
 def test_pw2qmcpack_input_read(tmp_path):
-    from ..developer import obj, to_obj
-    from ..qmcpack_converters import Pw2qmcpackInput
-
     infile_path = tmp_path / 'p2q.in'
     infile_path.write_text(pw2qmcpack_in)
 
@@ -47,9 +48,6 @@ def test_pw2qmcpack_input_read(tmp_path):
 
 
 def test_pw2qmcpack_input_write(tmp_path):
-    from ..developer import obj, to_obj
-    from ..qmcpack_converters import Pw2qmcpackInput
-
     infile_path = tmp_path / 'p2q.in'
     infile_path.write_text(pw2qmcpack_in)
 
@@ -73,9 +71,6 @@ def test_pw2qmcpack_input_write(tmp_path):
 
 
 def test_pw2qmcpack_input_generate():
-    from ..developer import obj, to_obj
-    from ..qmcpack_converters import generate_pw2qmcpack_input
-
     pi = generate_pw2qmcpack_input(
         prefix = 'pwscf',
         outdir = 'pwscf_output',
@@ -95,9 +90,6 @@ def test_pw2qmcpack_input_generate():
 
 
 def test_convert4qmc_input_empty_init():
-    from ..qmcpack_converters import Convert4qmcInput
-    from ..qmcpack_converters import generate_convert4qmc_input
-
     ci = Convert4qmcInput()
 
     ci = generate_convert4qmc_input()
@@ -107,9 +99,6 @@ def test_convert4qmc_input_empty_init():
 
 
 def test_convert4qmc_input_generate():
-    from ..developer import obj, to_obj
-    from ..qmcpack_converters import generate_convert4qmc_input
-
     ci = generate_convert4qmc_input(
         gamess = 'gamess.out',
         hdf5   = True,
@@ -155,8 +144,6 @@ def test_convert4qmc_input_generate():
 
 
 def test_convert4qmc_input_write():
-    from ..qmcpack_converters import generate_convert4qmc_input
-
     ci = generate_convert4qmc_input(
         gamess = 'gamess.out',
         hdf5   = True,
@@ -207,9 +194,6 @@ def test_convert4qmc_input_write():
 
 
 def test_pyscf_to_afqmc_input_init():
-    from ..qmcpack_converters import PyscfToAfqmcInput
-    from ..qmcpack_converters import generate_pyscf_to_afqmc_input
-
     # empty init
     pi = PyscfToAfqmcInput()
     assert(pi.is_valid())
@@ -249,8 +233,6 @@ def test_pyscf_to_afqmc_input_init():
 
 
 def test_pyscf_to_afqmc_input_write():
-    from ..qmcpack_converters import generate_pyscf_to_afqmc_input
-
     # example 1: neon atom
     pi = generate_pyscf_to_afqmc_input(
         i = 'scf.chk',

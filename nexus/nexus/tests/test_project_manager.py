@@ -1,15 +1,16 @@
 import pytest
-from . import NexusTestOrder
+
+from ..developer import NexusError, obj
+from ..nexus_base import ShowStatusMode, SimStage, nexus_config
+from ..project_manager import ProjectManager, color_status_result
+from ..simulation import Simulation, input_template
+from ..testing import FailedTest, failed
+from . import NexusTestOrder, isolate_nexus_core
+from .test_simulation_module import get_test_workflow, n_test_workflows
+
 pytestmark = pytest.mark.order(NexusTestOrder.PROJECT_MANAGER)
 
-from . import isolate_nexus_core
-from ..testing import failed,FailedTest
-from ..nexus_base import nexus_config, ShowStatusMode, SimStage
-
 def test_init():
-    from ..developer import obj
-    from ..project_manager import ProjectManager
-
     pm = ProjectManager()
     def check(v):
         assert isinstance(v,obj)
@@ -22,10 +23,6 @@ def test_init():
 
 
 def test_add_simulations():
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
@@ -62,11 +59,6 @@ def test_add_simulations():
 
 
 def test_traverse_cascades():
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow,n_test_workflows
-
     sims = []
     for n in range(n_test_workflows):
         wf = get_test_workflow(n)
@@ -103,12 +95,6 @@ def test_traverse_cascades():
 
 
 def test_screen_fake_sims():
-    from ..developer import NexusError
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow,n_test_workflows
-
     sims = []
     for n in range(n_test_workflows):
         wf = get_test_workflow(n)
@@ -140,11 +126,6 @@ def test_screen_fake_sims():
 
 @isolate_nexus_core
 def test_resolve_file_collisions():
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow,n_test_workflows
-
     sims = []
     for n in range(n_test_workflows):
         wf = get_test_workflow(n)
@@ -174,11 +155,6 @@ def test_resolve_file_collisions():
 
 
 def test_propagate_blockages():
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow,n_test_workflows
-
     sims = []
     for n in range(n_test_workflows):
         wf = get_test_workflow(n)
@@ -220,11 +196,6 @@ def test_propagate_blockages():
 
 
 def test_load_cascades():
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow
-
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
@@ -249,11 +220,6 @@ def test_load_cascades():
 
 
 def test_check_dependencies():
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow
-
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
@@ -269,11 +235,6 @@ def test_check_dependencies():
 
 
 def test_write_simulation_status(capsys):
-    from ..simulation import Simulation
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow
-
     sims = get_test_workflow(3)
     for id,sim in sims.items():
         sim.identifier = 'test_sim_'+id
@@ -354,8 +315,6 @@ def test_write_simulation_status(capsys):
 
 
 def test_color_status_result(monkeypatch):
-    from ..project_manager import color_status_result
-
     class TestLog:
         def __init__(self,is_tty):
             self.is_tty = is_tty
@@ -385,12 +344,6 @@ def test_color_status_result(monkeypatch):
 
 @isolate_nexus_core
 def test_run_project(tmp_path):
-    from ..nexus_base import nexus_config
-    from ..simulation import Simulation,input_template
-    from ..project_manager import ProjectManager
-
-    from .test_simulation_module import get_test_workflow,n_test_workflows
-
     # divert_nexus()
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)

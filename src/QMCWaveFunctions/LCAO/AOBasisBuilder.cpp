@@ -23,6 +23,7 @@
 #include "MultiFunctorAdapter.h"
 #include "Numerics/SoaCartesianTensor.h"
 #include "Numerics/SoaSphericalTensor.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -71,7 +72,7 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
     addsignforM = 1;
     if (sph != "spherical")
     {
-      myComm.barrier_and_abort(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
+      throw UniformCommunicateError(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
 
@@ -86,12 +87,12 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
     expandlm    = DIRAC_CARTESIAN_EXPAND;
     addsignforM = 0;
     if (sph != "cartesian")
-      myComm.barrier_and_abort(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
+      throw UniformCommunicateError(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
   }
 
   // Numerical basis is a special case
   if (basisType == "Numerical")
-    myComm.barrier_and_abort("Purely numerical atomic orbitals are not supported any longer.");
+    throw UniformCommunicateError("Purely numerical atomic orbitals are not supported any longer.");
 
   return true;
 }
@@ -134,7 +135,7 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
     addsignforM = 1;
     if (sph != "spherical")
     {
-      myComm.barrier_and_abort(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
+      throw UniformCommunicateError(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
 
@@ -149,7 +150,7 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
     expandlm    = DIRAC_CARTESIAN_EXPAND;
     addsignforM = 0;
     if (sph != "cartesian")
-      myComm.barrier_and_abort(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
+      throw UniformCommunicateError(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
   }
   app_log() << R"(<input node="atomicBasisSet" name=")" << basisName << "\" expandYlm=\"" << Morder << "\" angular=\""
             << sph << "\" elementType=\"" << CenterID << "\" normalized=\"" << Normalized << "\" type=\"" << basisType
@@ -279,7 +280,7 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
   }
 
   if (expandYlm(aos.get(), all_nl, expandlm) != num)
-    myComm.barrier_and_abort("expandYlm doesn't match the number of basis.");
+    throw UniformCommunicateError("expandYlm doesn't match the number of basis.");
   radFuncBuilder.finalize();
   aos->finalize();
   app_log() << "   Maximum Angular Momentum  = " << aos->Ylm.lmax() << std::endl
@@ -404,7 +405,7 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
   }
 
   if (expandYlm(aos.get(), all_nl, expandlm) != num)
-    myComm.barrier_and_abort("expandYlm doesn't match the number of basis.");
+    throw UniformCommunicateError("expandYlm doesn't match the number of basis.");
   radFuncBuilder.finalize();
   aos->finalize();
   app_log() << "   Maximum Angular Momentum  = " << aos->Ylm.lmax() << std::endl
@@ -801,7 +802,7 @@ int AOBasisBuilder<COT>::expandYlm(COT* aos, std::vector<int>& all_nl, int expan
         num++;
         break;
       default:
-        myComm.barrier_and_abort("Cartesian Tensor only defined up to Lmax=6. Aborting\n");
+        throw UniformCommunicateError("Cartesian Tensor only defined up to Lmax=6. Aborting\n");
         break;
       }
     }

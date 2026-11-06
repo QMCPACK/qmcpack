@@ -1,9 +1,12 @@
+import os
+
+import numpy as np
 import pytest
-from . import NexusTestOrder
+
+from ..nexus_base import NexusCore, write_splash
+from . import TEST_DIR, NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.NEXUS_BASE)
-
-from . import TEST_DIR
-
 
 TEST_FILES = {
     "old_nxs_pwscf_input.p": (TEST_DIR / "test_generic_files/old_nxs_pwscf_input.p").resolve(),
@@ -13,14 +16,11 @@ TEST_FILES = {
     }
 
 def test_empty_init():
-    from ..nexus_base import NexusCore
     nc = NexusCore()
 #end def test_empty_init
 
 
 def test_write_splash(capsys):
-    from ..nexus_base import write_splash
-
     assert(not hasattr(write_splash, "wrote_splash"))
     write_splash()
     captured = capsys.readouterr()
@@ -32,8 +32,6 @@ def test_write_splash(capsys):
 
 
 def test_enter_leave(tmp_path, capsys):
-    import os
-    from ..nexus_base import NexusCore
     cwd = os.getcwd()
 
     nc = NexusCore()
@@ -51,9 +49,6 @@ def test_enter_leave(tmp_path, capsys):
 
 
 def test_old_nexus_unpickle():
-    import numpy as np
-    from ..nexus_base import NexusCore
-
     sim_obj = NexusCore()
     if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
         sim_obj.load(TEST_FILES["old_nxs_sim.p"])

@@ -84,7 +84,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
   else
   {
-    myComm.barrier_and_abort("Only XML format ECPs are currently supported.");
+    throw UniformCommunicateError("Only XML format ECPs are currently supported.");
   }
 
   ///create LocalECPotential

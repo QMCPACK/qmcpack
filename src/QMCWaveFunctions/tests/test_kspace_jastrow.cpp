@@ -24,6 +24,8 @@
 #include "ParticleIO/LatticeIO.h"
 
 #include <stdio.h>
+#include <array>
+#include <cmath>
 #include <string>
 
 using std::string;
@@ -102,7 +104,93 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   elec_.update();
 
   double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
-  CHECK(logpsi_real == Approx(-4.4088303951)); // !!!! value not checked
+  CHECK(logpsi_real == Approx(-4.4088303951));
+
+  // Cached accepted/rejected moves must match independent full evaluations.
+#if defined(MIXED_PRECISION)
+  const double tolerance = 1e-5;
+#else
+  const double tolerance = 1e-11;
+#endif
+  ParticleSet reference(simulation_cell);
+  reference.setName("reference");
+  reference.create({2, 0});
+  reference.R = elec_.R;
+  reference.update();
+  kSpaceJastrowBuilder reference_builder(c, reference, ions_);
+  auto reference_jas = reference_builder.buildComponent(jas1);
+  // Independently expand |rho_G|^2 = 2 + 2 cos(G . (r_0 - r_1)).
+  // The cutoff includes the first two shells, with one vector from each +/- pair.
+  const std::array<std::array<int, 3>, 9> reciprocal_indices = {
+      {{0, 0, 1}, {0, 1, -1}, {0, 1, 0}, {0, 1, 1}, {1, -1, 0}, {1, 0, -1}, {1, 0, 0}, {1, 0, 1}, {1, 1, 0}}};
+  const auto check_full_evaluation = [&](double log_value) {
+    const double wave_number = 2.0 * M_PI / 6.0;
+    double expected_log = 0.0, expected_laplacian = 0.0;
+    std::array<double, 3> expected_gradient{};
+    for (const auto& index : reciprocal_indices)
+    {
+      const int shell          = index[0] * index[0] + index[1] * index[1] + index[2] * index[2];
+      const double coefficient = (shell == 1 ? -100.0 : -50.0) / 216.0;
+      double phase             = 0.0;
+      for (int dim = 0; dim < 3; ++dim)
+        phase += wave_number * index[dim] * (reference.R[0][dim] - reference.R[1][dim]);
+      expected_log += coefficient * (2.0 + 2.0 * std::cos(phase));
+      expected_laplacian -= 2.0 * coefficient * wave_number * wave_number * shell * std::cos(phase);
+      for (int dim = 0; dim < 3; ++dim)
+        expected_gradient[dim] -= 2.0 * coefficient * wave_number * index[dim] * std::sin(phase);
+    }
+    CHECK(log_value == Approx(expected_log).margin(tolerance));
+    for (int particle = 0; particle < 2; ++particle)
+    {
+      const double sign = particle == 0 ? 1.0 : -1.0;
+      for (int dim = 0; dim < 3; ++dim)
+        CHECK(std::real(reference.G[particle][dim]) == Approx(sign * expected_gradient[dim]).margin(tolerance));
+      CHECK(std::real(reference.L[particle]) == Approx(expected_laplacian).margin(tolerance));
+    }
+  };
+  CHECK(std::real(jas->get_log_value()) == Approx(logpsi_real));
+  for (int step = 0; step < 8; ++step)
+  {
+    CAPTURE(step);
+    const int iat = step % 2;
+    reference.R   = elec_.R;
+    reference.update();
+    reference.G          = 0;
+    reference.L          = 0;
+    const double old_log = std::real(reference_jas->evaluateLog(reference, reference.G, reference.L));
+    check_full_evaluation(old_log);
+    const ParticleSet::PosType displacement(0.11 + 0.02 * step, -0.09, 0.07);
+    elec_.makeMove(iat, displacement);
+    reference.R[iat] += displacement;
+    reference.update();
+    reference.G          = 0;
+    reference.L          = 0;
+    const double new_log = std::real(reference_jas->evaluateLog(reference, reference.G, reference.L));
+    check_full_evaluation(new_log);
+    const double expected_ratio = std::exp(new_log - old_log);
+    if (step % 2 == 0)
+      CHECK(std::real(jas->ratio(elec_, iat)) == Approx(expected_ratio).epsilon(tolerance));
+    else
+    {
+      WaveFunctionComponent::GradType proposed_gradient;
+      proposed_gradient = 0;
+      CHECK(std::real(jas->ratioGrad(elec_, iat, proposed_gradient)) == Approx(expected_ratio).epsilon(tolerance));
+      for (int dim = 0; dim < 3; ++dim)
+        CHECK(std::real(proposed_gradient[dim]) == Approx(std::real(reference.G[iat][dim])).margin(tolerance));
+    }
+    if (step % 3 == 2)
+    {
+      jas->restore(iat);
+      elec_.rejectMove(iat);
+      CHECK(std::real(jas->get_log_value()) == Approx(old_log).margin(tolerance));
+    }
+    else
+    {
+      jas->acceptMove(elec_, iat);
+      elec_.acceptMove(iat);
+      CHECK(std::real(jas->get_log_value()) == Approx(new_log).margin(tolerance));
+    }
+  }
 }
 
 TEST_CASE("kspace jastrow derivatives", "[wavefunction]")
