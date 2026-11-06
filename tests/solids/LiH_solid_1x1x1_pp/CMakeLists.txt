@@ -426,6 +426,7 @@ simple_run_and_check(
   BASE_DIR "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
   INPUT_FILE det_ensemble_blocks_hf_vmc_LiH-gamma.txt
   PROCS 4
+  CMD_OPTIONS --vnode-ranks 1
   CHECK_SCRIPT check_ensemble.py
   CHECK_ARGS --ranks 4 --prefix det_ensemble_blocks_hf_vmc_LiH-gamma --ionion -3.68927954)
 
@@ -442,6 +443,7 @@ simple_run_and_check(
   BASE_DIR "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
   INPUT_FILE det_ensemble_blocks_hf_vmc_LiH-gamma.txt
   PROCS 5
+  CMD_OPTIONS --vnode-ranks 1
   CHECK_SCRIPT check_ensemble.py
   CHECK_ARGS --ranks 5 --prefix det_ensemble_blocks_hf_vmc_LiH-gamma --ionion -3.68927954)
 

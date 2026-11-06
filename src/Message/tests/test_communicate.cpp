@@ -148,6 +148,11 @@ TEST_CASE("test_communicate_uniform_node_rank_count", "[message]")
   // In a homogeneous environment (such as local test machine), uniform_size matches local node_comm size
   auto node_comm = c.createNodeComm();
   REQUIRE(uniform_size == node_comm.size());
+
+  // Homogeneous test environment should report identical min and max node rank counts
+  const auto [min_size, max_size] = c.getMinMaxNodeRankCount();
+  REQUIRE(min_size == max_size);
+  REQUIRE(min_size == uniform_size);
 }
 
 #ifdef HAVE_MPI
