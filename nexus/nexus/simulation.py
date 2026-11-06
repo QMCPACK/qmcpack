@@ -79,21 +79,19 @@ from os import PathLike
 from pathlib import Path
 from string import Template
 from subprocess import Popen
-from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
+from typing import TYPE_CHECKING, ClassVar
 
-from .developer import DevBase, FileFormatError, NexusError, obj
-from .developer_tools import Unset
+from .developer import DevBase, FileFormatError, NexusError, obj, save
 from .machines import Job, Workstation, get_machine
-from .nexus_base import NexusCore, SimStage, dynamic_storage, nexus_config
+from .nexus_base import NexusCore, NexusUnpickler, SimStage, dynamic_storage, nexus_config
 from .physical_system import PhysicalSystem
 from .structure import Structure, read_structure
 from .utilities import path_string
 
 if TYPE_CHECKING:
-    from .bundle import SimulationBundle
     from .qmcpack_analyzer import QmcpackAnalysisRequest
 
-StrPath: TypeAlias = str
+type StrPath = str
 
 
 class SimulationInput(NexusCore):
@@ -185,93 +183,8 @@ class SimulationEmulator(NexusCore):
 #end class SimulationEmulator
 
 
-
-class SimulationImage(NexusCore):
-    save_only_fields = frozenset({
-            # user block (temporary) of (sim+) subcascade
-            'block',
-            'block_subcascade',
-            # local/remote/results directories
-            'locdir',
-            'remdir',
-            'resdir',
-            # image directories
-            'imlocdir',
-            'imremdir',
-            'imresdir',
-            })
-
-    load_fields = frozenset({
-            # important sim variables
-            'identifier',
-            'path',
-            'process_id',
-            # properties of the executable
-            'app_name',
-            'app_props',
-            # names of in/out/err files
-            'infile',
-            'outfile',
-            'errfile',
-            # directory and image file names for sim/input/analyzer
-            'image_dir',
-            'sim_image',
-            'input_image',
-            'analyzer_image',
-            # files copied in/out before/after run
-            'files',
-            'outputs',
-            # simulation status flags
-            'setup',
-            'sent_files',
-            'submitted',
-            'finished',
-            'failed',
-            'got_output',
-            'analyzed',
-            # event timestamps
-            'timestamps',
-            # cascade status flag
-            'subcascade_finished',
-            })
-
-    save_fields = load_fields | save_only_fields
-
-    def __init__(self):
-        pass
-    #end def __init__
-
-    def save_image(self,sim,imagefile):
-        self.clear()
-        for k in SimulationImage.save_fields:
-            if k=='timestamps':
-                self[k] = dict(sim[k])
-            else:
-                self[k] = sim[k]
-            #end if
-        self.save(imagefile)
-        self.clear()
-    #end def save_image
-
-    def load_image(self,sim,imagefile):
-        self.clear()
-        self.load(imagefile)
-        for k in SimulationImage.save_fields:
-            if k=='timestamps':
-                if k in self:
-                    sim[k] = obj(self[k])
-                else:
-                    # support images written before timestamps were added
-                    sim[k] = obj()
-                #end if
-            else:
-                sim[k] = self[k]
-            #end if
-        self.clear()
-    #end def load_image
-
-#end class SimulationImage
-
+class SimulationImage:
+    """Retain backwards compatibility with legacy pickles."""
 
 
 class Simulation(NexusCore):
@@ -299,6 +212,54 @@ class Simulation(NexusCore):
 
     sim_directories: ClassVar[dict] = dict()
     all_sims: ClassVar[list] = []
+
+    status_flags = frozenset({
+        'setup',
+        'sent_files',
+        'submitted',
+        'finished',
+        'failed',
+        'got_output',
+        'analyzed',
+    })
+
+    save_fields = frozenset({
+        # User block (temporary) of (sim+) subcascade
+        'block',
+        'block_subcascade',
+        # Local/remote/results directories
+        'locdir',
+        'remdir',
+        'resdir',
+        # Image directories
+        'imlocdir',
+        'imremdir',
+        'imresdir',
+        # Important sim variables
+        'identifier',
+        'path',
+        'process_id',
+        # Properties of the executable
+        'app_name',
+        'app_props',
+        # Names of in/out/err files
+        'infile',
+        'outfile',
+        'errfile',
+        # Directory and image file names for sim/input/analyzer
+        'image_dir',
+        'sim_image',
+        'input_image',
+        'analyzer_image',
+        # Files copied in/out before/after run
+        'files',
+        'outputs',
+        # Event timestamps
+        'timestamps',
+        # Cascade status flag
+        'subcascade_finished',
+    }) | status_flags
+
 
     @classmethod
     def clear_all_sims(cls):
@@ -1035,35 +996,34 @@ class Simulation(NexusCore):
     #end def copy_file
 
 
-    def save_image(self,*,all=False):
-        imagefile = os.path.join(self.imlocdir,self.sim_image)
-        if os.path.exists(imagefile):
-            os.system('rm '+imagefile)
-        #end if
-        if not all:
-            sim_image = SimulationImage()
-            sim_image.save_image(self,imagefile)
-        else:
-            self.warn('attempting to save full object!')
-            self.save(imagefile)
-        #end if
+    def save_image(self) -> None:
+        imagefile = os.path.join(self.imlocdir, self.sim_image)
+        sim_image = {k: self[k] for k in Simulation.save_fields}
+        sim_image["timestamps"] = dict(sim_image["timestamps"])
+        save(sim_image, imagefile)
     #end def save_image
 
 
-    def load_image(self,imagepath=None,*,all=False):
+    def load_image(self, imagepath: StrPath | None = None) -> None:
         if imagepath is None:
-            imagepath=os.path.join(self.imlocdir,self.sim_image)
-        #end if
-        if not all:
-            sim_image = SimulationImage()
-            sim_image.load_image(self,imagepath)
-        else:
-            self.load(imagepath)
-        #end if
-        # update process id for backwards compatibility
+            imagepath = os.path.join(self.imlocdir, self.sim_image)
+
+        with open(imagepath, "rb") as img:
+            sim_img = NexusUnpickler(img).load()
+
+        sim_img = vars(sim_img) if not isinstance(sim_img, dict) else sim_img
+        for key in Simulation.save_fields:
+            if key == "timestamps":
+                if key in sim_img:
+                    self[key] = obj(sim_img[key])
+                else:
+                    self[key] = obj()
+            else:
+                self[key] = sim_img[key]
+
+        # Update process id for backwards compatibility
         if 'process_id' not in self:
             self.process_id = self.job.system_id
-        #end if
     #end def load_image
 
 
