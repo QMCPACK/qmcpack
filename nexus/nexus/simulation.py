@@ -996,15 +996,11 @@ class Simulation(NexusCore):
     #end def copy_file
 
 
-    def save_image(self, *, all: bool = False) -> None:
+    def save_image(self) -> None:
         imagefile = os.path.join(self.imlocdir, self.sim_image)
-        if not all:
-            sim_image = {k: getattr(self, k) for k in Simulation.save_fields}
-            sim_image["timestamps"] = dict(sim_image["timestamps"])
-            save(sim_image, imagefile)
-        else:
-            self.logger.debug("Attempting to save full simulation object!")
-            save(vars(self), imagefile)
+        sim_image = {k: self[k] for k in Simulation.save_fields}
+        sim_image["timestamps"] = dict(sim_image["timestamps"])
+        save(sim_image, imagefile)
     #end def save_image
 
 
@@ -1013,13 +1009,17 @@ class Simulation(NexusCore):
             imagepath = os.path.join(self.imlocdir, self.sim_image)
 
         with open(imagepath, "rb") as img:
-            sim = NexusUnpickler(img).load()
+            sim_img = NexusUnpickler(img).load()
 
-        sim = vars(sim) if not isinstance(sim, dict) else sim
-        for key, value in sim.items():
-            setattr(self, key, value)
-
-        self.timestamps = obj(self.timestamps)
+        sim_img = vars(sim_img) if not isinstance(sim_img, dict) else sim_img
+        for key in Simulation.save_fields:
+            if key == "timestamps":
+                if key in sim_img:
+                    self[key] = obj(sim_img[key])
+                else:
+                    self[key] = obj()
+            else:
+                self[key] = sim_img[key]
 
         # Update process id for backwards compatibility
         if 'process_id' not in self:
