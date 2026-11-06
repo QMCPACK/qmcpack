@@ -22,12 +22,12 @@
 #include "SplineC2C.h"
 #else
 #include "SplineR2R.h"
-#include "spline2/MultiBsplineOffloadMapper.hpp"
 #include "SplineC2R.h"
 #endif
 #include "Message/CommOperators.h"
 #include "spline2/SplineUtils.h"
 #include "spline2/MultiBspline.hpp"
+#include "spline2/MultiBsplineOffloadMapper.hpp"
 #if defined(HAVE_MPI)
 #include "spline2/MultiBsplineMPIShared.hpp"
 #endif

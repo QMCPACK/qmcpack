@@ -86,6 +86,10 @@ void MultiBsplineOffloadMapperCCLShared<T>::mapToDevice()
     const int target_rank = contiguous_shared ? i * shared_ranks : i;
     void* peer_ptr        = nullptr;
     CCLCHECK(cclGetPeerDevicePointer(win_, 0, target_rank, &peer_ptr));
+    if (!peer_ptr)
+      throw std::runtime_error("cclGetPeerDevicePointer returned nullptr between rank " + std::to_string(comm_rank) +
+                               " and target rank " + std::to_string(target_rank) +
+                               ". Direct GPU peer access may not be supported across these ranks.");
     block_coefs_dev_[i] = static_cast<const T*>(peer_ptr);
   }
 
@@ -93,8 +97,11 @@ void MultiBsplineOffloadMapperCCLShared<T>::mapToDevice()
   for (int ib = 0; ib < host_bsplines_shared_.getNumBlocks(); ib++)
   {
     auto* spline_m = &host_bsplines_shared_.getBlock(ib);
-    PRAGMA_OFFLOAD("omp target enter data map(to: spline_m[:1])")
-    omptarget_mem_usage.creditUsage(sizeof(decltype(*spline_m)));
+    if (spline_m->coefs_size > 0)
+    {
+      PRAGMA_OFFLOAD("omp target enter data map(to: spline_m[:1])")
+      omptarget_mem_usage.creditUsage(sizeof(decltype(*spline_m)));
+    }
   }
   comm.barrier();
 }
@@ -102,6 +109,7 @@ void MultiBsplineOffloadMapperCCLShared<T>::mapToDevice()
 template<typename T>
 void MultiBsplineOffloadMapperCCLShared<T>::updateToDevice()
 {
+  host_bsplines_shared_.getComm().barrier();
   if (is_allocating_rank_)
   {
     const auto& spline_m = host_bsplines_shared_.getBlock(allocated_block_);
@@ -122,8 +130,11 @@ MultiBsplineOffloadMapperCCLShared<T>::~MultiBsplineOffloadMapperCCLShared()
   for (int ib = 0; ib < host_bsplines_shared_.getNumBlocks(); ib++)
   {
     auto* spline_m = &host_bsplines_shared_.getBlock(ib);
-    PRAGMA_OFFLOAD("omp target exit data map(delete: spline_m[:1])")
-    omptarget_mem_usage.debitUsage(sizeof(decltype(*spline_m)));
+    if (spline_m->coefs_size > 0)
+    {
+      PRAGMA_OFFLOAD("omp target exit data map(delete: spline_m[:1])")
+      omptarget_mem_usage.debitUsage(sizeof(decltype(*spline_m)));
+    }
   }
 
   if (win_)
