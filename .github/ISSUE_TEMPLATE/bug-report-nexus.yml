@@ -1,0 +1,88 @@
+name: Bug Report (Nexus)
+title: '[Bug] Nexus: <title>'
+description: Something is not working correctly with Nexus.
+labels: ["bug", "nexus"]
+
+body:
+  - type: textarea
+    id: bug_desc
+    attributes:
+      label: Describe the Bug
+      description: >-
+        A clear and concise description of what the bug is, including the
+        expected behaviour and what has gone wrong.
+        If you have log files from Nexus, please add them here!
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: >-
+        A clear and concise description of what you expected to happen.
+    validations:
+      required: false
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to Reproduce (Optional)
+      render: python
+      description: >-
+        Please provide a minimal Python script that can reproduce the bug.
+        This is optional, but is strongly encouraged and will help us fix
+        the bug faster!
+      placeholder: >-
+        #! /usr/bin/env python3
+
+        from nexus import settings, job, run_project
+        from nexus import generate_physical_system
+        from nexus import generate_pwscf
+
+        settings(...)
+
+        system = generate_physical_system(...)
+
+        scf = generate_pwscf(...)
+
+        run_project()
+    validations:
+      required: false
+
+  - type: textarea
+    id: sysinfo
+    attributes:
+      label: System Information (Optional)
+      render: text
+      description: >-
+        Provide system name, Python version, NumPy version, etc.
+        The splash output of Nexus has much of the Python information.
+      placeholder: >-
+        Machine Name: [Frontier, Perlmutter, Aurora, "Laptop" etc.]
+        Reproducible On: [e.g. "my laptop", "none"]
+        OS: Fedora Linux 44 (KDE Plasma Desktop Edition)
+        ```
+        Currently Available Nexus Dependencies:
+          Python     = 3.15.1
+          numpy      = 2.5.4       (required)
+          scipy      = 1.18.1      (required)
+          h5py       = 3.16.0      (required)
+          matplotlib = 3.11.2      (required)
+          spglib     = 2.8.0       (optional)
+          cif2cell   = 2.1.0       (optional)
+          pydot      = 4.0.1       (optional)
+          seekpath   = 2.2.2       (optional)
+          pytest     = 9.1.1       (required)
+        ```
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context (Optional)
+      description: >-
+        Add any other context about the problem here.
+    validations:
+      required: false

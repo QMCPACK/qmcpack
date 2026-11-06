@@ -1,0 +1,64 @@
+name: Bug Report
+title: '[Bug] <title>'
+description: Something is not working correctly with QMCPACK.
+labels: "bug"
+
+body:
+  - type: textarea
+    id: bug_desc
+    attributes:
+      label: Describe the Bug
+      description: >-
+        A clear and concise description of what the bug is, including the
+        expected behaviour and what has gone wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: >-
+        A clear and concise description of what you expected to happen.
+    validations:
+      required: false
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to Reproduce
+      description: >-
+        Please provide steps to reproduce this bug, like the CMake command used.
+        You may attach any files you deem necessary.
+    validations:
+      required: false
+
+  - type: textarea
+    id: sysinfo
+    attributes:
+      label: System Information
+      render: text
+      description: >-
+        Provide compiler versions, cmake versions, mpirun versions, system name, etc.
+      placeholder: >-
+        Machine Name: [Frontier, Perlmutter, Aurora, "Laptop" etc.]
+        Reproducible On: [e.g. "my laptop", "none"]
+        OS: Fedora Linux 44 (KDE Plasma Desktop Edition)
+        ```bash
+        $ module list
+        $ cmake --version
+        $ gcc --version
+        $ clang --version
+        $ mpirun --version
+        $ h5dump --version
+        $ python --version
+        ```
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: >-
+        Add any other context about the problem here.
