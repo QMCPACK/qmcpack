@@ -1,4 +1,4 @@
-name: Bug report (Nexus)
+name: Bug Report (Nexus)
 title: '[Bug] Nexus: <title>'
 description: Something is not working correctly with Nexus.
 labels: ["bug", "nexus"]

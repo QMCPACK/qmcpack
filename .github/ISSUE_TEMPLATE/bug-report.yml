@@ -1,4 +1,4 @@
-name: Bug report
+name: Bug Report
 title: '[Bug] <title>'
 description: Something is not working correctly with QMCPACK.
 labels: "bug"
