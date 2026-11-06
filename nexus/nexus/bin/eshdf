@@ -454,7 +454,6 @@ if __name__=='__main__':
     )
 
     args = parser.parse_args()
-    arg_dict = vars(args)
     eshdf_file = args.eshdf_file.resolve(strict=True)
     if eshdf_file.suffix != '.h5':
         msg = (
