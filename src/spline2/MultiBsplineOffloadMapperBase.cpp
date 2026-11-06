@@ -23,16 +23,6 @@ MultiBsplineOffloadMapperBase<T>::MultiBsplineOffloadMapperBase(const HostBsplin
     : host_bsplines_(host_bsplines)
 {}
 
-template<typename T>
-void MultiBsplineOffloadMapperBase<T>::updateToDevice()
-{
-  for (int ib = 0; ib < host_bsplines_.getNumBlocks(); ib++)
-  {
-    auto* spline_m = &host_bsplines_.getBlock(ib);
-    auto* coefs    = host_bsplines_.getBlock(ib).coefs;
-    PRAGMA_OFFLOAD("omp target update to(coefs[:spline_m->coefs_size])")
-  }
-}
 
 template<typename T>
 template<typename VT>
