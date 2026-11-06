@@ -22,14 +22,17 @@
 #include "SplineC2C.h"
 #else
 #include "SplineR2R.h"
-#include "spline2/MultiBsplineOffloadMapper.hpp"
 #include "SplineC2R.h"
 #endif
 #include "Message/CommOperators.h"
 #include "spline2/SplineUtils.h"
 #include "spline2/MultiBspline.hpp"
+#include "spline2/MultiBsplineOffloadMapper.hpp"
 #if defined(HAVE_MPI)
 #include "spline2/MultiBsplineMPIShared.hpp"
+#endif
+#if defined(QMC_CCL)
+#include "spline2/MultiBsplineOffloadMapperCCLShared.hpp"
 #endif
 
 
@@ -53,6 +56,7 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
 
   auto [distributed_ranks, shared_ranks] = distributed_and_shared_ranks;
 
+#if !defined(QMC_CCL)
   if (use_offload)
   {
     if (distributed_ranks > 1)
@@ -61,6 +65,7 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
                     << std::endl;
     distributed_ranks = 1;
   }
+#endif
 
   auto dist_comm_ptr =
       std::make_unique<Communicate>(myComm.split(myComm.size() / (distributed_ranks * shared_ranks)));
@@ -83,10 +88,18 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   const int N              = bandgroup.getNumDistinctOrbitals();
   const size_t num_splines = getAlignedSize<ST>(use_duplex_splines_ ? N * 2 : N);
   std::unique_ptr<MultiBsplineBase<ST>> multi_splines_ptr;
+  std::unique_ptr<MultiBsplineOffloadMapperBase<ST>> offload_mapper;
 #if defined(HAVE_MPI)
   if (distributed_ranks * shared_ranks > 1)
-    multi_splines_ptr = std::make_unique<MultiBsplineMPIShared<ST>>(xyz_grid, xyz_bc, num_splines,
-                                                                    std::move(dist_comm_ptr), distributed_ranks);
+  {
+    auto mpi_shared_splines = std::make_unique<MultiBsplineMPIShared<ST>>(xyz_grid, xyz_bc, num_splines,
+                                                                          std::move(dist_comm_ptr), distributed_ranks);
+#if defined(QMC_CCL)
+    if (use_offload && distributed_ranks > 1)
+      offload_mapper = std::make_unique<MultiBsplineOffloadMapperCCLShared<ST>>(*mpi_shared_splines);
+#endif
+    multi_splines_ptr = std::move(mpi_shared_splines);
+  }
   else
 #endif
     multi_splines_ptr = std::make_unique<MultiBspline<ST>>(xyz_grid, xyz_bc, num_splines);
@@ -95,8 +108,7 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   app_log() << "MEMORY " << multi_splines.sizeInByte() / (1 << 20) << " MB allocated "
             << "for the coefficients in 3D spline orbital representation" << std::endl;
 
-  std::unique_ptr<MultiBsplineOffloadMapperBase<ST>> offload_mapper;
-  if (use_offload)
+  if (use_offload && !offload_mapper)
     offload_mapper = std::make_unique<MultiBsplineOffloadMapper<ST>>(*multi_splines_ptr);
 
   std::unique_ptr<BsplineSet> bspline;
