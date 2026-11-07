@@ -32,6 +32,7 @@ void CommandLineOptions::parse(int argc, char** argv)
 
   bool save_wfs = false;
   bool vacuum   = false;
+  std::vector<std::string> unrecognized_options;
 
   std::vector<std::string> fgroup_names_cmd;
   std::vector<std::string> fgroup_names_txt;
@@ -44,30 +45,38 @@ void CommandLineOptions::parse(int argc, char** argv)
     {
       if (c == "-debug" || c == "--debug")
         debug_ = true;
-      else if (c.find("-enable-timers") < c.size())
+      else if (c == "-enable-timers" || c == "--enable-timers")
       {
         enable_timers_ = true;
-        const auto pos = c.find("=");
-        if (pos != std::string::npos)
-          timer_level_ = c.substr(pos + 1);
       }
-      else if (c.find("-verbosity") < c.size())
+      else if (c.rfind("-enable-timers=", 0) == 0 || c.rfind("--enable-timers=", 0) == 0)
+      {
+        enable_timers_ = true;
+        timer_level_   = c.substr(c.find('=') + 1);
+      }
+      else if (c == "-verbosity" || c == "--verbosity" || c.rfind("-verbosity=", 0) == 0 ||
+               c.rfind("--verbosity=", 0) == 0)
       {
         const auto pos = c.find("=");
+        std::string verbose_level;
         if (pos != std::string::npos)
-        {
-          std::string verbose_level = c.substr(pos + 1);
-          if (verbose_level == "low")
-            verbosity_ = Verbosity::LOW;
-          else if (verbose_level == "high")
-            verbosity_ = Verbosity::HIGH;
-          else if (verbose_level == "debug")
-            verbosity_ = Verbosity::DEBUG;
-          else
-            throw UniformCommunicateError("Unknown verbosity level: " + verbose_level);
-        }
+          verbose_level = c.substr(pos + 1);
+        else if (i + 1 < argc && argv[i + 1][0] != '-')
+          verbose_level = argv[++i];
+        else
+          throw UniformCommunicateError("Missing argument for --verbosity");
+
+        if (verbose_level == "low")
+          verbosity_ = Verbosity::LOW;
+        else if (verbose_level == "high")
+          verbosity_ = Verbosity::HIGH;
+        else if (verbose_level == "debug")
+          verbosity_ = Verbosity::DEBUG;
+        else
+          throw UniformCommunicateError("Unknown verbosity level: " + verbose_level);
       }
-      else if (c.find("vnode-ranks") < c.size())
+      else if (c == "--vnode-ranks" || c == "-vnode-ranks" || c.rfind("--vnode-ranks=", 0) == 0 ||
+               c.rfind("-vnode-ranks=", 0) == 0)
       {
         const auto pos = c.find("=");
         try
@@ -90,29 +99,33 @@ void CommandLineOptions::parse(int argc, char** argv)
         if (*vnode_ranks_ <= 0)
           throw UniformCommunicateError("--vnode-ranks must be a positive integer.");
       }
-      else if (c.find("--dryrun") < c.size())
+      else if (c == "--dryrun")
       {
         dryrun_ = true;
       }
-      else if (c.find("--noprint") < c.size())
+      else if (c == "--noprint")
       {
         noprint_ = true;
       }
-      else if (c.find("--save_wfs") < c.size())
+      else if (c == "--save_wfs" || c.rfind("--save_wfs=", 0) == 0)
       {
         save_wfs = true;
       }
-      else if (c.find("--help") < c.size() || c == "-h")
+      else if (c == "--help" || c == "-h")
       {
         help_ = true;
       }
-      else if (c.find("--version") < c.size())
+      else if (c == "--version")
       {
         version_ = true;
       }
-      else if (c.find("--vacuum") < c.size())
+      else if (c == "--vacuum" || c.rfind("--vacuum=", 0) == 0)
       {
         vacuum = true;
+      }
+      else
+      {
+        unrecognized_options.push_back(c);
       }
     }
     else
@@ -146,6 +159,8 @@ void CommandLineOptions::parse(int argc, char** argv)
   if (!should_normal_stop())
   {
     std::string error_msg;
+    for (const auto& opt : unrecognized_options)
+      error_msg += "ERROR: command line option " + opt + " is unrecognized.\n";
     if (save_wfs)
       error_msg +=
           "ERROR: command line option --save_wfs has been removed. Use save_coefs input tag as described in the manual.\n";

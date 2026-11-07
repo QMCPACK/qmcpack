@@ -170,6 +170,21 @@ TEST_CASE("CommandLineOptions verbosity option", "[qmcapp]")
     CHECK_THROWS_MATCHES(options.parse(3, const_cast<char**>(argv)), UniformCommunicateError,
                          Catch::Matchers::Message("Unknown verbosity level: super_verbose"));
   }
+
+  SECTION("--verbosity high (space-separated)")
+  {
+    const char* argv[] = {"qmcpack", "--verbosity", "high", "test.xml"};
+    options.parse(4, const_cast<char**>(argv));
+    REQUIRE(options.get_verbosity().has_value());
+    CHECK(*options.get_verbosity() == Verbosity::HIGH);
+  }
+
+  SECTION("--verbosity missing argument")
+  {
+    const char* argv[] = {"qmcpack", "--verbosity"};
+    CHECK_THROWS_MATCHES(options.parse(2, const_cast<char**>(argv)), UniformCommunicateError,
+                         Catch::Matchers::Message("Missing argument for --verbosity"));
+  }
 }
 
 TEST_CASE("CommandLineOptions vnode-ranks option", "[qmcapp]")
@@ -275,6 +290,32 @@ TEST_CASE("CommandLineOptions help, version, and removed options", "[qmcapp]")
         Catch::Matchers::ContainsSubstring("ERROR: command line option --save_wfs has been removed.") &&
             Catch::Matchers::ContainsSubstring("ERROR: command line option --vacuum has been removed.") &&
             Catch::Matchers::ContainsSubstring("No valid input file is given."));
+  }
+
+  SECTION("unrecognized option")
+  {
+    const char* argv[] = {"qmcpack", "--unknown-opt", "test.xml"};
+    CHECK_THROWS_WITH(
+        options.parse(3, const_cast<char**>(argv)),
+        Catch::Matchers::ContainsSubstring("ERROR: command line option --unknown-opt is unrecognized."));
+  }
+
+  SECTION("multiple unrecognized options and missing inputs")
+  {
+    const char* argv[] = {"qmcpack", "--verbose", "high", "--vnode-rank", "4"};
+    CHECK_THROWS_WITH(
+        options.parse(5, const_cast<char**>(argv)),
+        Catch::Matchers::ContainsSubstring("ERROR: command line option --verbose is unrecognized.") &&
+            Catch::Matchers::ContainsSubstring("ERROR: command line option --vnode-rank is unrecognized.") &&
+            Catch::Matchers::ContainsSubstring("No valid input file is given."));
+  }
+
+  SECTION("unrecognized option with --help does not output error")
+  {
+    const char* argv[] = {"qmcpack", "--help", "--bogus"};
+    options.parse(3, const_cast<char**>(argv));
+    CHECK(options.get_help());
+    CHECK(options.should_normal_stop());
   }
 
   SECTION("print_version_and_usage output")
