@@ -266,7 +266,6 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   mw_offload_scratch.resize(spline_padded_size * mw_nVP);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr    = SplineInst->getSplinePtr();
   auto* offload_scratch_ptr = mw_offload_scratch.data();
   auto* buffer_H2D_ptr      = det_ratios_buffer_H2D.data();
   auto* ratios_private_ptr  = mw_ratios_private.data();
@@ -447,7 +446,6 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   rg_private.resize(num_pos, NumTeams * 4);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr         = SplineInst->getSplinePtr();
   auto* buffer_H2D_ptr           = buffer_H2D.data();
   auto* offload_scratch_ptr      = mw_offload_scratch.data();
   auto* GGt_ptr                  = GGt_offload->data();

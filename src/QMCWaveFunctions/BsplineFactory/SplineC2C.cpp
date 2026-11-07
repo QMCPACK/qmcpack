@@ -287,7 +287,6 @@ void SplineC2C<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   results_scratch.resize(sposet_padded_size * nVP);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr         = SplineInst->getSplinePtr();
   auto* offload_scratch_ptr      = offload_scratch.data();
   auto* results_scratch_ptr      = results_scratch.data();
   const auto myKcart_padded_size = myKcart_offload->capacity();
@@ -295,7 +294,6 @@ void SplineC2C<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   auto* psiinv_ptr               = psiinv_pos_copy.data();
   auto* ratios_private_ptr       = ratios_private.data();
   const auto orb_size            = psiinv.size();
-  const auto* spline_coefs       = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -411,14 +409,12 @@ void SplineC2C<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   mw_results_scratch.resize(sposet_padded_size * mw_nVP);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr         = SplineInst->getSplinePtr();
   auto* offload_scratch_ptr      = mw_offload_scratch.data();
   auto* results_scratch_ptr      = mw_results_scratch.data();
   const auto myKcart_padded_size = myKcart_offload->capacity();
   auto* myKcart_ptr              = myKcart_offload->data();
   auto* buffer_H2D_ptr           = det_ratios_buffer_H2D.data();
   auto* ratios_private_ptr       = mw_ratios_private.data();
-  const auto* spline_coefs       = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -644,7 +640,6 @@ void SplineC2C<ST>::evaluateVGL(const ParticleSet& P,
   results_scratch.resize(sposet_padded_size * 5);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr    = SplineInst->getSplinePtr();
   auto* offload_scratch_ptr = offload_scratch.data();
   auto* results_scratch_ptr = results_scratch.data();
   const auto x = r[0], y = r[1], z = r[2];
@@ -655,7 +650,6 @@ void SplineC2C<ST>::evaluateVGL(const ParticleSet& P,
   auto* prim_lattice_G_ptr       = prim_lattice_G_offload->data();
   auto* myKcart_ptr              = myKcart_offload->data();
   const auto orb_size            = psi.size();
-  const auto* spline_coefs       = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -732,7 +726,6 @@ void SplineC2C<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<
   results_scratch.resize(sposet_padded_size * num_pos * 5);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr         = SplineInst->getSplinePtr();
   auto* pos_copy_ptr             = const_cast<ST*>(multi_pos.data());
   auto* offload_scratch_ptr      = offload_scratch.data();
   auto* results_scratch_ptr      = results_scratch.data();
@@ -741,7 +734,6 @@ void SplineC2C<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<
   auto* GGt_ptr                  = GGt_offload->data();
   auto* prim_lattice_G_ptr       = prim_lattice_G_offload->data();
   auto* myKcart_ptr              = myKcart_offload->data();
-  const auto* spline_coefs       = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -904,7 +896,6 @@ void SplineC2C<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   rg_private.resize(num_pos, NumTeams * 4);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr         = SplineInst->getSplinePtr();
   auto* buffer_H2D_ptr           = buffer_H2D.data();
   auto* offload_scratch_ptr      = mw_offload_scratch.data();
   auto* results_scratch_ptr      = mw_results_scratch.data();
@@ -917,7 +908,6 @@ void SplineC2C<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   auto* rg_private_ptr           = rg_private.data();
   const size_t buffer_H2D_stride = buffer_H2D.cols();
   const size_t phi_vgl_stride    = num_pos * orb_size;
-  const auto* spline_coefs       = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);

@@ -32,10 +32,10 @@ option is disabled:
   factors (one per Jastrow factor). These file might be useful for visual inspection
   of the Jastrow, for example.
 
-- ``--ranks-per-group-multiple=<int>`` Constrain the number of MPI ranks assigned to each calculation
-  in an ensemble run to be a multiple of this value. Defaults to 1. The total number of MPI ranks
-  must be divisible by this multiple. Available blocks of ranks are partitioned fairly in contiguous blocks
-  among the individual calculations in the ensemble.
+- ``--vnode-ranks=<int>`` Constrain the number of MPI ranks assigned to each calculation
+  in an ensemble run to be a multiple of this value. Defaults to the uniform node rank count.
+  Must be a positive integer and a factor of the uniform node rank count. Available blocks of ranks
+  are partitioned fairly in contiguous blocks among the individual calculations in the ensemble.
 
 - ``--verbosity=low|high|debug`` Control the output verbosity. The default low verbosity is concise and, for example, does not include all electron or atomic positions for large systems to reduce output size. Use "high" to see this information and more details of initialization, allocations, QMC method settings, etc.
   The initial output summary prints the current verbosity.
@@ -51,7 +51,7 @@ The input is one or more XML file(s), documented in :ref:`input-overview`. Input
 
 An ensemble of calculations can be run by specifying multiple input XML files or text files containing a list of valid XML input
 files. In the latter case, a single filename of an XML input should be specified on each line. Ensemble runs split available MPI
-tasks fairly between all the specified inputs (which can be constrained using ``--ranks-per-group-multiple``). Because QMCPACK will only exit when all calculations are completed, it is recommended
+tasks fairly between all the specified inputs (which can be constrained using ``--vnode-ranks``). Because QMCPACK will only exit when all calculations are completed, it is recommended
 for computational efficiency that either all calculations have similar costs and runtimes, or the ``max_seconds`` input parameter
 should be used to enforce similar runtimes.
 
@@ -104,6 +104,32 @@ uniform access memory domains attached to GPUs. Usually each GPU card has a sing
 users may simply place one MPI rank per GPU card. High-end GPU cards may have more than a single GPU memory domain.
 For example, AMD Instinct MI250X and Intel Data Center GPU Max 1550 cards both have two memory domains per card.
 users should place one MPI rank per GPU memory domain (AMD GCD, Intel tile).
+
+.. _parallelhierarchy:
+
+Parallel hierarchy
+------------------
+
+QMCPACK organizes computational resources across multiple hierarchical levels to maximize hardware efficiency, memory sharing, and parallel scalability:
+
+1. **MPI World and Ensemble Partitioning**:
+   At the highest level, the overall MPI communicator (``MPI_COMM_WORLD``) encompasses all allocated MPI ranks. If an ensemble calculation is specified by providing multiple input files, the total MPI ranks are partitioned among the individual calculations. Each calculation executes independently in its own MPI group communicator.
+
+2. **Physical Node**:
+   A physical node corresponds to a distinct compute machine containing its own CPU sockets, shared memory, and optionally GPU accelerators. Ranks residing on the same physical node can communicate via node-local shared memory (``MPI_COMM_TYPE_SHARED``). QMCPACK expects all compute nodes to host the same number of MPI ranks; at startup, it verifies that the minimum and maximum rank counts per node across the allocation match.
+
+3. **Uniform Node**:
+   The uniform node rank count represents the largest uniform grouping of ranks residing within a single physical node that is consistent across all nodes in the job. It is determined by the greatest common divisor (GCD) of all local node communicator sizes across the communicator. In standard homogeneous HPC allocations, the uniform node rank count is identical to the physical node rank count. Importantly, the Uniform Node is only used internally to determine the topology and valid sizes of Virtual Nodes.
+
+4. **Virtual Node**:
+   A virtual node is a logical sub-partition of a uniform node into contiguous blocks of MPI ranks, configured using the ``--vnode-ranks=<int>`` command-line option. The virtual node rank count must be a positive integer and a factor of the uniform node rank count. It defines the minimum atomic unit for assigning ranks to ensemble calculations:
+
+   - When multiple calculations share a physical node, each calculation is allocated an integer multiple of virtual nodes.
+   - For calculations utilizing intra-node shared-memory or distributed-memory features (such as 3D B-spline orbital sharing via ``shared_ranks`` and ``distributed_ranks``), setting ``--vnode-ranks`` to a multiple of ``shared_ranks * distributed_ranks`` guarantees that all ranks required for intra-node sharing reside entirely within the same physical node boundaries.
+   - By default, ``--vnode-ranks`` is set to the uniform node rank count (one virtual node per physical node).
+
+5. **OpenMP Threads and Accelerators**:
+   Within each MPI rank, work is parallelized across CPU cores using OpenMP threads (configured via ``OMP_NUM_THREADS``) and/or offloaded to GPU accelerators.
 
 .. _openmprunning:
 
