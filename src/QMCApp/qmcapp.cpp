@@ -16,22 +16,20 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include <stdexcept>
-#include <memory>
-#include <optional>
 #include <iostream>
+#include <memory>
+#include <sstream>
+#include <stdexcept>
 #include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Message/UniformCommunicateError.h"
-#include "Utilities/SimpleParser.h"
-#include "Utilities/ProgressReportEngine.h"
 #include "Platforms/Host/OutputManager.h"
-#include "OhmmsData/FileUtility.h"
-#include "Host/sysutil.h"
-#include "ProjectData.h"
 #include "DeviceManager.h"
 #include "QMCApp/CommandLineOptions.h"
+#include "QMCApp/setupQMCState.h"
 #include "QMCApp/QMCMain.h"
+#include "Utilities/ProgressReportEngine.h"
+#include "Utilities/TimerManager.h"
 #include "Utilities/qmc_common.h"
 #include "Concurrency/OpenMP.h"
 
@@ -76,10 +74,11 @@ int main(int argc, char** argv)
     if (options.get_enable_timers())
     {
 #ifndef ENABLE_TIMERS
-      std::cerr
-          << "The '-enable-timers' command line option will have no effect. This executable was built without "
-             "ENABLE_TIMER set."
-          << std::endl;
+      if (OHMMS::Controller->rank() == 0)
+        std::cerr
+            << "The '-enable-timers' command line option will have no effect. This executable was built without "
+               "ENABLE_TIMER set."
+            << std::endl;
 #endif
       if (!options.get_timer_level().empty())
         getGlobalTimerManager().set_timer_threshold(options.get_timer_level());
@@ -88,44 +87,13 @@ int main(int argc, char** argv)
     if (options.get_verbosity().has_value())
       outputManager.setVerbosity(*options.get_verbosity());
 
-    qmc_common.dryrun  = options.get_dryrun();
-    qmc_common.io_node = (OHMMS::Controller->rank() == 0 && !options.get_noprint());
+    setupQMCState(options, *OHMMS::Controller, qmc_common);
 
     Communicate node_comm{OHMMS::Controller->createNodeComm()};
     // assign accelerators within a physical node
     DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
     const auto& inputs = options.get_inputs();
-
-    // set virtual node rank count
-    if (const int max_vnode_ranks = OHMMS::Controller->getUniformNodeRankCount(); options.get_vnode_ranks().has_value())
-    {
-      const int vnode_ranks = *options.get_vnode_ranks();
-      if (max_vnode_ranks % vnode_ranks != 0)
-      {
-        std::ostringstream msg;
-        msg << "main(). --vnode-ranks (" << vnode_ranks
-            << ") can only be a factor of the uniform node rank count (" << max_vnode_ranks << ").";
-        throw UniformCommunicateError(msg.str());
-      }
-      qmc_common.set_virtual_node_rank_count(vnode_ranks);
-    }
-    else
-      qmc_common.set_virtual_node_rank_count(max_vnode_ranks);
-
-    if (inputs.size() > 1)
-    {
-      const int total_blocks = OHMMS::Controller->size() / qmc_common.get_virtual_node_rank_count();
-      if (total_blocks < inputs.size())
-      {
-        std::ostringstream msg;
-        msg << "main(). Current " << OHMMS::Controller->size() << " MPI ranks (" << total_blocks << " blocks of size "
-            << qmc_common.get_virtual_node_rank_count() << ") cannot accommodate all the " << inputs.size()
-            << " individual calculations in the ensemble. "
-            << "Increase the number of MPI ranks or reduce the number of calculations.";
-        throw UniformCommunicateError(msg.str());
-      }
-    }
 
     std::unique_ptr<Communicate> comm_job;
     if (inputs.size() > 1)
