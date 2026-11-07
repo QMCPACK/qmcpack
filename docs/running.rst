@@ -20,11 +20,11 @@ option is disabled:
   Wavefunctions and pseudopotentials will be loaded and processed. This option can be used to verify all the required
   files are available or to check memory usage.
 
-- ``--enable-timers=none|coarse|medium|fine`` Control the timer granularity when the build option ``ENABLE_TIMERS`` is enabled.
-  The initial output summary prints the current timer level.
+- ``--enable-timers[=none|coarse|medium|fine]`` Control the timer granularity when the build option ``ENABLE_TIMERS`` is enabled.
+  Defaults to ``coarse`` if the level is omitted. The initial output summary prints the current timer level.
 
-- ``--help`` Print version information as well as a list of optional
-  command-line arguments.
+- ``--help``, ``-h`` Print version information as well as a list of optional
+  command-line arguments and exit.
 
 - ``--noprint`` Do not print extra information on Jastrow or pseudopotential.
   If this flag is not present, QMCPACK will create several ``.dat`` files
@@ -32,7 +32,7 @@ option is disabled:
   factors (one per Jastrow factor). These file might be useful for visual inspection
   of the Jastrow, for example.
 
-- ``--vnode-ranks=<int>`` Constrain the number of MPI ranks assigned to each calculation
+- ``--vnode-ranks=<int>``, ``--vnode-ranks <int>`` Constrain the number of MPI ranks assigned to each calculation
   in an ensemble run to be a multiple of this value. Defaults to the uniform node rank count.
   Must be a positive integer and a factor of the uniform node rank count. Available blocks of ranks
   are partitioned fairly in contiguous blocks among the individual calculations in the ensemble.
@@ -40,7 +40,7 @@ option is disabled:
 - ``--verbosity=low|high|debug`` Control the output verbosity. The default low verbosity is concise and, for example, does not include all electron or atomic positions for large systems to reduce output size. Use "high" to see this information and more details of initialization, allocations, QMC method settings, etc.
   The initial output summary prints the current verbosity.
 
-- ``--version`` Print version information and optional arguments. Same as ``help``.
+- ``--version`` Print version information and exit.
 
 .. _inputs:
 
