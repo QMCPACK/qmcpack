@@ -86,6 +86,13 @@ public:
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) override;
 
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& grad_grad_logdet) override;
+
   /** boolean
    *
    * If true, this has to delete the BasisSet
@@ -108,6 +115,7 @@ public:
   //Matrix<ValueType> Coefs;
   /** temporary array to perform gemm operation */
   Matrix<ValueType> Temp;
+  Matrix<ValueType> TempHess;
 };
 } // namespace qmcplusplus
 #endif
