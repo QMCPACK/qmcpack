@@ -130,7 +130,245 @@ Now, we can safely re-run ``nexus_script.py`` without fear of touching the previ
         > nxs-redo -v file.txt
 
 
-Controlling Simulation Status
------------------------------
+``nxs-sim``
+-----------
 
-TODO
+``nxs-sim`` has several subcommands useful for modifying the status of a saved simulation image or creating backups of a simulation image.
+
+All examples here assume the following directory structure:
+
+.. code-block:: text
+
+    .
+    └── runs
+        ├── water_relax
+        │   └── sim_water_relax
+        │       └── sim.p
+        └── water_scf
+            └── sim_water_scf
+                └── sim.p
+
+    6 directories, 2 files
+
+Subcommands
+^^^^^^^^^^^
+
+``show``
+    Show the selected simulation status indicators.
+
+    .. dropdown:: Example
+        :color: info
+        :icon: code-square
+
+        .. code-block:: bash
+
+            > nxs-sim show -v setup failed finished runs/*/sim_*/sim.p
+            Loading sim images:
+              ./runs/water_relax/sim_water_relax/sim.p
+              ./runs/water_scf/sim_water_scf/sim.p
+            Done!
+            ./runs/water_relax/sim_water_relax/sim.p
+              setup:    True
+              failed:   True
+              finished: True
+
+            ./runs/water_scf/sim_water_scf/sim.p
+              setup:    True
+              failed:   True
+              finished: True
+
+``showall``
+    Show all simulation properties.
+
+    .. dropdown:: Example
+        :color: info
+        :icon: code-square
+
+        .. code-block:: bash
+
+            > nxs-sim showall -v runs/water_scf/sim_water_scf/sim.p
+            Loading sim images:
+              ./runs/water_scf/sim_water_scf/sim.p
+            Done!
+            ./runs/water_scf/sim_water_scf/sim.p
+              analyzed        = True
+              analyzer_image  = analyzer.p
+              app_name        = pw.x
+              app_props       = ['mpi', 'serial']
+              block           = False
+              block_subcascade = False
+              errfile         = water_scf.err
+              failed          = True
+              files           = {...}
+              finished        = True
+              got_output      = False
+              identifier      = water_scf
+              image_dir       = sim_water_scf
+              imlocdir        = ./runs/water_scf/sim_water_scf
+              imremdir        = ./runs/water_scf/sim_water_scf
+              imresdir        = ./runs/water_scf/sim_water_scf
+              infile          = water_scf.in
+              input_image     = input.p
+              locdir          = ./runs/water_scf
+              outfile         = water_scf.out
+              outputs         = None
+              path            = water_scf
+              process_id      = None
+              remdir          = ./runs/water_scf
+              resdir          = ./runs/water_scf
+              sent_files      = True
+              setup           = True
+              sim_image       = sim.p
+              subcascade_finished = False
+              submitted       = False
+              timestamps      = {...}
+
+``complete``
+    Set simulation status flags to indicate it is completed.
+
+    .. dropdown:: Example
+        :color: info
+        :icon: code-square
+
+        .. code-block:: bash
+
+            > nxs-sim complete -v runs/water_relax/sim_water_relax/sim.p
+            Loading sim images:
+              ./runs/water_relax/sim_water_relax/sim.p
+            Done!
+            ./runs/water_relax/sim_water_relax/sim.p
+              setup:      False -> True
+              sent_files: False -> True
+              analyzed:   False -> True
+              submitted:  False -> True
+              finished:   False -> True
+              got_output: False -> True
+
+``reset``
+    Reset all simulation status flags.
+
+    .. dropdown:: Example
+        :color: info
+        :icon: code-square
+
+        .. code-block:: bash
+
+            > nxs-sim reset -v runs/water_relax/sim_water_relax/sim.p
+            Loading sim images:
+              ./runs/water_relax/sim_water_relax/sim.p
+            Done!
+            ./runs/water_relax/sim_water_relax/sim.p
+              setup:      True -> False
+              sent_files: True -> False
+              submitted:  True -> False (and setting sim.process_id to None)
+              finished:   True -> False
+              failed:     True -> False
+              got_output: True -> False
+              analyzed:   True -> False
+
+``set``
+    Set the specified simulation status flags to ``True``.
+
+    .. dropdown:: Example
+        :color: info
+        :icon: code-square
+
+        .. code-block:: bash
+
+            > nxs-sim set -v setup sent_files submitted runs/water_*/sim_*/sim.p
+            Loading sim images:
+              ./runs/water_relax/sim_water_relax/sim.p
+              ./runs/water_scf/sim_water_scf/sim.p
+            Done!
+            ./runs/water_relax/sim_water_relax/sim.p
+              setup:      False -> True
+              sent_files: False -> True
+              submitted:  False -> True
+            ./runs/water_scf/sim_water_scf/sim.p
+              setup:      False -> True
+              sent_files: False -> True
+              submitted:  False -> True
+
+``unset``
+    Set the specified simulation status flags to ``False``. The opposite of ``set``
+
+    .. dropdown:: Example
+        :color: info
+        :icon: code-square
+
+        .. code-block:: bash
+
+            > nxs-sim unset -v setup sent_files submitted runs/water_*/sim_*/sim.p
+            Loading sim images:
+              ./runs/water_relax/sim_water_relax/sim.p
+              ./runs/water_scf/sim_water_scf/sim.p
+            Done!
+            ./runs/water_relax/sim_water_relax/sim.p
+              setup:      True -> False
+              sent_files: True -> False
+              submitted:  True -> False (and setting sim.process_id to None)
+            ./runs/water_scf/sim_water_scf/sim.p
+              setup:      True -> False
+              sent_files: True -> False
+              submitted:  True -> False (and setting sim.process_id to None)
+
+``backup``
+    Make a backup of the specified simulation pickle at ``sim_backup.p``.
+
+    .. dropdown:: Example
+        :color: info
+        :icon: code-square
+
+        .. code-block:: bash
+
+            > nxs-sim backup -v runs/water_*/sim_*/sim.p
+            Loading sim images:
+              ./runs/water_relax/sim_water_relax/sim.p
+              ./runs/water_scf/sim_water_scf/sim.p
+            Done!
+            Creating backup of ./runs/water_relax/sim_water_relax/sim.p
+            Creating backup of ./runs/water_scf/sim_water_scf/sim.p
+            > tree .
+            .
+            └── runs
+                ├── water_relax
+                │   └── sim_water_relax
+                │       ├── backup_sim.p
+                │       └── sim.p
+                └── water_scf
+                    └── sim_water_scf
+                        ├── backup_sim.p
+                        └── sim.p
+
+            6 directories, 4 files
+
+``restore``
+    Take a backup of the specified simulation pickle at ``sim_backup.p``
+    and copy it back to ``sim.p``.
+
+    .. dropdown:: Example
+        :color: info
+        :icon: code-square
+
+        .. code-block:: bash
+
+            > tree .
+            .
+            └── runs
+                ├── water_relax
+                │   └── sim_water_relax
+                │       ├── backup_sim.p
+                │       └── sim.p
+                └── water_scf
+                    └── sim_water_scf
+                        ├── backup_sim.p
+                        └── sim.p
+
+            6 directories, 4 files
+            > nxs-sim restore -v runs/water_*/sim_*/sim.p
+            Loading sim images:
+              ./runs/water_relax/sim_water_relax/sim.p
+              ./runs/water_scf/sim_water_scf/sim.p
+            Done!
+            Restoring backup of ./runs/water_relax/sim_water_relax/sim.p
+            Restoring backup of ./runs/water_scf/sim_water_scf/sim.p
