@@ -18,8 +18,11 @@
 
 namespace qmcplusplus
 {
-/** This should be the minimal ParticleSetPool for integration tests
+/** Minimal ParticleSetPools for integration tests.
  *
+ * Each make_* factory calls ParticleSetPool::reset() after initializing positions,
+ * updating the ParticleSets before returning the pool. Callers that subsequently
+ * change positions or add distance tables must still update the affected sets.
  */
 class MinimalParticlePool
 {

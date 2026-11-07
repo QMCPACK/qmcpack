@@ -165,7 +165,6 @@ void SplineC2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVect
     results_scratch.resize(sposet_padded_size);
 
     // Ye: need to extract sizes and pointers before entering target region
-    const auto* spline_ptr    = SplineInst->getSplinePtr();
     auto* offload_scratch_ptr = offload_scratch.data();
     auto* results_scratch_ptr = results_scratch.data();
     auto* psi_ptr             = psi.data();
@@ -176,7 +175,6 @@ void SplineC2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVect
     const size_t nComplexBands_local = nComplexBands;
     const auto requested_orb_size    = psi.size();
     const auto num_complex_splines   = kPoints.size();
-    const auto* spline_coefs         = spline_ptr->coefs;
 
     {
       ScopedTimer offload(offload_timer_);
@@ -257,7 +255,6 @@ void SplineC2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   results_scratch.resize(sposet_padded_size * nVP);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr           = SplineInst->getSplinePtr();
   auto* offload_scratch_ptr        = offload_scratch.data();
   auto* results_scratch_ptr        = results_scratch.data();
   const auto myKcart_padded_size   = myKcart_offload->capacity();
@@ -267,7 +264,6 @@ void SplineC2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psiinv.size();
   const auto num_complex_splines   = kPoints.size();
-  const auto* spline_coefs         = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -383,7 +379,6 @@ void SplineC2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   mw_results_scratch.resize(sposet_padded_size * mw_nVP);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr           = SplineInst->getSplinePtr();
   auto* offload_scratch_ptr        = mw_offload_scratch.data();
   auto* results_scratch_ptr        = mw_results_scratch.data();
   const auto myKcart_padded_size   = myKcart_offload->capacity();
@@ -392,7 +387,6 @@ void SplineC2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   auto* ratios_private_ptr         = mw_ratios_private.data();
   const size_t nComplexBands_local = nComplexBands;
   const auto num_complex_splines   = kPoints.size();
-  const auto* spline_coefs         = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -754,7 +748,6 @@ void SplineC2R<ST>::evaluateVGL(const ParticleSet& P,
   results_scratch.resize(sposet_padded_size * 5);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr    = SplineInst->getSplinePtr();
   auto* offload_scratch_ptr = offload_scratch.data();
   auto* results_scratch_ptr = results_scratch.data();
   const auto x = r[0], y = r[1], z = r[2];
@@ -767,7 +760,6 @@ void SplineC2R<ST>::evaluateVGL(const ParticleSet& P,
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psi.size();
   const auto num_complex_splines   = kPoints.size();
-  const auto* spline_coefs         = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -843,7 +835,6 @@ void SplineC2R<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<
   results_scratch.resize(sposet_padded_size * num_pos * 5);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr           = SplineInst->getSplinePtr();
   auto* pos_copy_ptr               = const_cast<ST*>(multi_pos.data());
   auto* offload_scratch_ptr        = offload_scratch.data();
   auto* results_scratch_ptr        = results_scratch.data();
@@ -855,7 +846,6 @@ void SplineC2R<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psi_v_list[0].get().size();
   const auto num_complex_splines   = kPoints.size();
-  const auto* spline_coefs         = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -1017,7 +1007,6 @@ void SplineC2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   rg_private.resize(num_pos, NumTeams * 4);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr           = SplineInst->getSplinePtr();
   auto* buffer_H2D_ptr             = buffer_H2D.data();
   auto* offload_scratch_ptr        = mw_offload_scratch.data();
   auto* results_scratch_ptr        = mw_results_scratch.data();
@@ -1033,7 +1022,6 @@ void SplineC2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   const size_t phi_vgl_stride      = num_pos * requested_orb_size;
   const size_t nComplexBands_local = nComplexBands;
   const auto num_complex_splines   = kPoints.size();
-  const auto* spline_coefs         = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
