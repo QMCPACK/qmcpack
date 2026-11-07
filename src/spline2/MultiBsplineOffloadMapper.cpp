@@ -26,16 +26,33 @@ MultiBsplineOffloadMapper<T>::MultiBsplineOffloadMapper(const HostBspline& host_
 template<typename T>
 void MultiBsplineOffloadMapper<T>::mapToDevice()
 {
-  block_coefs_dev_.resize(host_bsplines_.getNumBlocks());
+  block_coefs_dev_.resize(host_bsplines_.getNumBlocks(), nullptr);
   for (int ib = 0; ib < host_bsplines_.getNumBlocks(); ib++)
   {
     auto* spline_m = &host_bsplines_.getBlock(ib);
-    auto* coefs    = host_bsplines_.getBlock(ib).coefs;
-    PRAGMA_OFFLOAD("omp target enter data map(to: spline_m[:1]) map(alloc: coefs[:spline_m->coefs_size])")
-    omptarget_mem_usage.creditUsage(sizeof(decltype(*spline_m)) + spline_m->coefs_size * sizeof(T));
-    T* device_ptr;
-    PRAGMA_OFFLOAD("omp target data use_device_ptr(coefs)") { device_ptr = coefs; }
-    block_coefs_dev_[ib] = device_ptr;
+    if (spline_m->coefs_size > 0)
+    {
+      auto* coefs = spline_m->coefs;
+      PRAGMA_OFFLOAD("omp target enter data map(to: spline_m[:1]) map(alloc: coefs[:spline_m->coefs_size])")
+      omptarget_mem_usage.creditUsage(sizeof(decltype(*spline_m)) + spline_m->coefs_size * sizeof(T));
+      T* device_ptr = nullptr;
+      PRAGMA_OFFLOAD("omp target data use_device_ptr(coefs)") { device_ptr = coefs; }
+      block_coefs_dev_[ib] = device_ptr;
+    }
+  }
+}
+
+template<typename T>
+void MultiBsplineOffloadMapper<T>::updateToDevice()
+{
+  for (int ib = 0; ib < host_bsplines_.getNumBlocks(); ib++)
+  {
+    auto* spline_m = &host_bsplines_.getBlock(ib);
+    if (spline_m->coefs_size > 0)
+    {
+      auto* coefs = spline_m->coefs;
+      PRAGMA_OFFLOAD("omp target update to(coefs[:spline_m->coefs_size])")
+    }
   }
 }
 
@@ -45,9 +62,12 @@ MultiBsplineOffloadMapper<T>::~MultiBsplineOffloadMapper()
   for (int ib = 0; ib < host_bsplines_.getNumBlocks(); ib++)
   {
     auto* spline_m = &host_bsplines_.getBlock(ib);
-    auto* coefs    = host_bsplines_.getBlock(ib).coefs;
-    PRAGMA_OFFLOAD("omp target exit data map(delete: spline_m[:1]) map(delete: coefs[:spline_m->coefs_size])")
-    omptarget_mem_usage.debitUsage(sizeof(decltype(*spline_m)) + spline_m->coefs_size * sizeof(T));
+    if (spline_m->coefs_size > 0)
+    {
+      auto* coefs = spline_m->coefs;
+      PRAGMA_OFFLOAD("omp target exit data map(delete: spline_m[:1]) map(delete: coefs[:spline_m->coefs_size])")
+      omptarget_mem_usage.debitUsage(sizeof(decltype(*spline_m)) + spline_m->coefs_size * sizeof(T));
+    }
   }
 }
 

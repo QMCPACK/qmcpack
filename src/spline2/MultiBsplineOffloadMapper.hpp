@@ -30,7 +30,10 @@ class MultiBsplineOffloadMapper : public MultiBsplineOffloadMapperBase<T>
 public:
   MultiBsplineOffloadMapper(const HostBspline& host_bsplines);
 
-  ~MultiBsplineOffloadMapper();
+  ~MultiBsplineOffloadMapper() override;
+
+  /// update device coefficients
+  void updateToDevice() override;
 };
 
 extern template class MultiBsplineOffloadMapper<float>;
