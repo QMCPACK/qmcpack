@@ -15,6 +15,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
+#include "Message/UniformCommunicateError.h"
 #include "PlaneWave/PWBandInfo.h"
 #include "PlaneWave/PWOrbitalSetBuilder.h"
 #include "PlaneWave/PWTiling.h"
@@ -190,11 +191,32 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
   pw::TileMatrix tile_matrix(1, 0, 0, 0, 1, 0, 0, 0, 1);
   std::string attributes;
   std::string children;
+  std::string sposet_children;
   int selected_primitive = 0;
+  int orbital_count      = 1;
+  int available_bands    = 1;
   double expected_twist  = 0.0;
-  bool invalid_input     = false;
+  bool invalid_input      = false;
+  bool invalid_spo        = false;
+  bool missing_href       = false;
+  bool mismatched_lattice = false;
 
   SECTION("default Gamma") {}
+  SECTION("missing HDF reference")
+  {
+    missing_href  = true;
+    invalid_input = true;
+  }
+  SECTION("negative sort mode")
+  {
+    attributes    = "sort='-1'";
+    invalid_input = true;
+  }
+  SECTION("sort mode outside available modes")
+  {
+    attributes    = "sort='3'";
+    invalid_input = true;
+  }
   SECTION("Gamma is not the first file twist")
   {
     std::reverse(twists.begin(), twists.end());
@@ -273,6 +295,11 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
     twists        = {{0.5, 0.0, 0.0}};
     invalid_input = true;
   }
+  SECTION("missing requested twist")
+  {
+    attributes    = "twist='0.25 0 0'";
+    invalid_input = true;
+  }
   SECTION("index outside available groups")
   {
     attributes    = "twistnum='2'";
@@ -294,6 +321,54 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
     twists            = {{0.5, 0.0, 0.0}, {-0.5, 0.0, 0.0}};
     invalid_input     = true;
   }
+  SECTION("incomplete primitive twist group")
+  {
+    tile_matrix(0, 0) = 2;
+    twists            = {{0.0, 0.0, 0.0}};
+    invalid_input     = true;
+  }
+  SECTION("mismatched target lattice")
+  {
+    mismatched_lattice = true;
+    invalid_input      = true;
+  }
+  SECTION("zero SPO size")
+  {
+    orbital_count = 0;
+    invalid_spo   = true;
+  }
+  SECTION("negative SPO size")
+  {
+    orbital_count = -1;
+    invalid_spo   = true;
+  }
+  SECTION("not enough tiled bands")
+  {
+    orbital_count = 2;
+    invalid_spo   = true;
+  }
+  SECTION("not enough primitive bands")
+  {
+    available_bands = 0;
+    invalid_spo     = true;
+  }
+  SECTION("excited occupation outside available bands")
+  {
+    sposet_children = "<occupation mode='excited'>-1 2</occupation>";
+    invalid_spo     = true;
+  }
+  SECTION("multi-k-point transform")
+  {
+    tile_matrix(0, 0) = 2;
+    sposet_children   = "<transform>2 2 2</transform>";
+    invalid_spo       = true;
+  }
+  SECTION("multi-k-point excited occupation")
+  {
+    tile_matrix(0, 0) = 2;
+    sposet_children   = "<occupation mode='excited'>-1 2</occupation>";
+    invalid_spo       = true;
+  }
 
   const std::string filename = "plane_wave_twist_selection-r" + std::to_string(comm.rank()) + ".h5";
   hdf_archive file;
@@ -312,7 +387,7 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
     file.write(twists[index], "reduced_k");
     file.write(std::vector<TinyVector<int, 3>>{{0, 0, 0}}, "gvectors");
     file.push("spin_0");
-    file.write(1, "number_of_states");
+    file.write(available_bands, "number_of_states");
     file.write(std::vector<double>{static_cast<double>(index)}, "eigenvalues");
     file.push("state_0");
     file.write(std::vector<std::complex<double>>{{index + 1.0, 0.0}}, "psi_g");
@@ -324,6 +399,8 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
 
   Lattice lattice;
   lattice.R = pw::makeSuperLattice(tile_matrix, primitive_lattice);
+  if (mismatched_lattice)
+    lattice.R(0, 0) += 0.1;
   lattice.reset();
   ParticleSetPool pool(comm);
   pool.createSimulationCellByLattice(lattice);
@@ -335,14 +412,22 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
   elec.update();
 
   std::ostringstream xml;
-  xml << "<sposet_collection type='PW' href='" << filename << "' tilematrix='" << tile_matrix << "' " << attributes
-      << ">" << children << "<sposet name='spo' size='1'/></sposet_collection>";
+  xml << "<sposet_collection type='PW'";
+  if (!missing_href)
+    xml << " href='" << filename << "'";
+  xml << " tilematrix='" << tile_matrix << "' " << attributes << ">" << children << "<sposet name='spo' size='"
+      << orbital_count << "'>" << sposet_children << "</sposet></sposet_collection>";
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(xml.str()));
   if (invalid_input)
   {
-    CHECK_THROWS_AS(PWOrbitalSetBuilder(elec, comm, doc.getRoot()), std::runtime_error);
+    CHECK_THROWS_AS(PWOrbitalSetBuilder(elec, comm, doc.getRoot()), UniformCommunicateError);
     CHECK(elec.getTwist()[0] == Approx(initial_twist[0]));
+  }
+  else if (invalid_spo)
+  {
+    PWOrbitalSetBuilder builder(elec, comm, doc.getRoot());
+    CHECK_THROWS_AS(builder.createSPOSetFromXML(xmlLastElementChild(doc.getRoot())), UniformCommunicateError);
   }
   else
   {

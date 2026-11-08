@@ -71,7 +71,6 @@ private:
   hdf_archive hfile;
 
 public:
-  ///constructor
   PWOrbitalSetBuilder(ParticleSet& p, Communicate& comm, xmlNodePtr cur);
   ~PWOrbitalSetBuilder() override;
 

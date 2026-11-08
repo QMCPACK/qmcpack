@@ -25,6 +25,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -60,7 +61,7 @@ PWOrbitalSetBuilder::PWOrbitalSetBuilder(ParticleSet& p, Communicate& comm, xmlN
       app_warning() << "Using the twist attribute as an HDF group tag is deprecated; use twist_tag instead.\n";
   }
   if (sortBands < 0 || sortBands > 2)
-    throw std::runtime_error("Plane-wave sort must be 0, 1, or 2");
+    throw UniformCommunicateError("Plane-wave sort must be 0, 1, or 2");
   //check the current href
   bool success = getH5(cur, "href");
   //Move through the XML tree and read basis information
@@ -81,7 +82,7 @@ PWOrbitalSetBuilder::PWOrbitalSetBuilder(ParticleSet& p, Communicate& comm, xmlN
   });
 
   if (!success)
-    throw std::runtime_error("h5 cannot be open for creating PW basis!");
+    throw UniformCommunicateError("h5 cannot be open for creating PW basis!");
   // HDF version handling reapplies child parameters; XML attributes take precedence.
   int twist_num   = myParam->twistIndex;
   int twist_index = myParam->twistIndex;
@@ -92,7 +93,7 @@ PWOrbitalSetBuilder::PWOrbitalSetBuilder(ParticleSet& p, Communicate& comm, xmlN
   const bool has_twist_num   = !getXMLAttributeValue(cur, "twistnum").empty();
   const bool has_twist_index = !getXMLAttributeValue(cur, "twistIndex").empty();
   if (has_twist_num && has_twist_index && twist_num != twist_index)
-    throw std::runtime_error("Plane-wave twistnum and twistIndex attributes must agree");
+    throw UniformCommunicateError("Plane-wave twistnum and twistIndex attributes must agree");
   myParam->twistIndex = has_twist_num ? twist_num : twist_index;
   if (!twist_attribute.empty() && !hasRequestedTwist)
     myParam->twistTag = twist_attribute;
@@ -114,7 +115,7 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   aAttrib.add(spo_object_name, "id");
   aAttrib.put(cur);
   if (orbital_count < 1)
-    throw std::runtime_error("Plane-wave SPO size must be positive");
+    throw UniformCommunicateError("Plane-wave SPO size must be positive");
   return createPW(cur, spo_object_name, spin_group, orbital_count);
 }
 
@@ -154,31 +155,37 @@ bool PWOrbitalSetBuilder::createPWBasis()
   pw::Lattice primitive_lattice    = target_lattice;
   if (hfile.is_dataset("/supercell/primitive_vectors"))
     hfile.read(primitive_lattice, "/supercell/primitive_vectors");
-  pw::validateLattice(tileMatrix, primitive_lattice, target_lattice);
+  if (hasRequestedTwist && myParam->twistIndex >= 0)
+    app_warning() << "twist attribute exists; twistnum/twistIndex is ignored.\n";
 
   int selected_twist_index;
-  if (hasRequestedTwist)
+  try
   {
-    if (myParam->twistIndex >= 0)
-      app_warning() << "twist attribute exists; twistnum/twistIndex is ignored.\n";
-    selected_twist_index = pw::findTwistGroup(twist_groups, requestedTwist);
-  }
-  else if (myParam->twistIndex != -1)
-  {
-    if (myParam->twistIndex < 0 || myParam->twistIndex >= twist_groups.primitive_indices.size())
-      throw std::runtime_error("Requested plane-wave supercell twist index is outside the available range");
-    selected_twist_index = myParam->twistIndex;
-  }
-  else
-    selected_twist_index = pw::findTwistGroup(twist_groups, PosType(0));
+    pw::validateLattice(tileMatrix, primitive_lattice, target_lattice);
+    if (hasRequestedTwist)
+      selected_twist_index = pw::findTwistGroup(twist_groups, requestedTwist);
+    else if (myParam->twistIndex != -1)
+    {
+      if (myParam->twistIndex < 0 || myParam->twistIndex >= twist_groups.primitive_indices.size())
+        throw UniformCommunicateError("Requested plane-wave supercell twist index is outside the available range");
+      selected_twist_index = myParam->twistIndex;
+    }
+    else
+      selected_twist_index = pw::findTwistGroup(twist_groups, PosType(0));
 
-  pw::validateTwistGroup(tileMatrix, twistAngles, twist_groups, selected_twist_index);
+    pw::validateTwistGroup(tileMatrix, twistAngles, twist_groups, selected_twist_index);
+  }
+  catch (const std::runtime_error& error)
+  {
+    throw UniformCommunicateError(error.what());
+  }
+
   superTwist          = twist_groups.super_twists[selected_twist_index];
   includedKPoints     = twist_groups.primitive_indices[selected_twist_index];
   myParam->twistIndex = selected_twist_index;
 #if !defined(QMC_COMPLEX)
   if (!pw::isRealCompatible(superTwist))
-    throw std::runtime_error("Requested plane-wave supercell twist requires a complex QMCPACK build");
+    throw UniformCommunicateError("Requested plane-wave supercell twist requires a complex QMCPACK build");
 #endif
   TwistAngle = twistAngles[includedKPoints.front()];
   if (!myBasisSet)
@@ -265,7 +272,7 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur,
   }
 
   if (includedKPoints.size() > 1 && (transform2grid || excited_occupation))
-    throw std::runtime_error("Multi-k-point plane-wave SPOs do not support transform or excited occupations");
+    throw UniformCommunicateError("Multi-k-point plane-wave SPOs do not support transform or excited occupations");
 
   if (transform2grid)
   {
@@ -276,7 +283,7 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur,
   }
 
   if (includedKPoints.empty())
-    throw std::runtime_error("No primitive k-points contribute to the requested plane-wave supercell twist");
+    throw UniformCommunicateError("No primitive k-points contribute to the requested plane-wave supercell twist");
 
   std::vector<pw::BandInfo> bands;
 #if defined(QMC_COMPLEX)
@@ -313,7 +320,7 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur,
   }
 
   if (expanded_bands.size() < orbital_count)
-    throw std::runtime_error("Not enough plane-wave bands for the requested tiled SPO");
+    throw UniformCommunicateError("Not enough plane-wave bands for the requested tiled SPO");
 
   std::vector<pw::BandInfo> selected_bands;
   selected_bands.reserve(orbital_count);
@@ -322,7 +329,7 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur,
     for (const int occupied_index : occBand)
     {
       if (occupied_index < 0 || occupied_index >= expanded_bands.size())
-        throw std::runtime_error("Plane-wave excited occupation index is outside the available band range");
+        throw UniformCommunicateError("Plane-wave excited occupation index is outside the available band range");
       selected_bands.push_back(expanded_bands[occupied_index]);
     }
   }
@@ -366,7 +373,7 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur,
     if (std::find_if(component_bands.begin(), component_bands.end(), [&](const pw::BandInfo& band) {
           return band.band_index >= available_bands;
         }) != component_bands.end())
-      throw std::runtime_error("Not enough plane-wave bands for a folded primitive k-point");
+      throw UniformCommunicateError("Not enough plane-wave bands for a folded primitive k-point");
 
     const std::string component_name = band_runs.size() == 1 ? objname : objname + "_run" + std::to_string(run_index);
     auto psi                         = std::make_unique<SPOSetType>(component_name, component_bands.size());
