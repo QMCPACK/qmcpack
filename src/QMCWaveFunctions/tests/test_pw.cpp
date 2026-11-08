@@ -199,6 +199,8 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
   int selected_primitive = 0;
   int orbital_count      = 1;
   int available_bands    = 1;
+  int spin_count         = 1;
+  int spin_index         = 0;
   double expected_twist  = 0.0;
   bool invalid_input      = false;
   bool invalid_spo        = false;
@@ -206,6 +208,36 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
   bool mismatched_lattice = false;
 
   SECTION("default Gamma") {}
+  SECTION("first channel in a two-spin file") { spin_count = 2; }
+  SECTION("second channel in a two-spin file")
+  {
+    spin_count = 2;
+    spin_index = 1;
+  }
+  SECTION("invalid spin indices")
+  {
+    invalid_spo = true;
+    SECTION("negative spin index") { spin_index = -1; }
+    SECTION("second channel in a single-spin file") { spin_index = 1; }
+    SECTION("index at the spin count")
+    {
+      spin_count = 2;
+      spin_index = 2;
+    }
+    SECTION("index above the spin count")
+    {
+      spin_count = 2;
+      spin_index = 3;
+    }
+    expected_spo_error = "Plane-wave spindataset " + std::to_string(spin_index) +
+        " is outside the available spin range [0, " + std::to_string(spin_count) + ")";
+  }
+  SECTION("nonpositive HDF spin count")
+  {
+    invalid_input = true;
+    SECTION("zero spins") { spin_count = 0; }
+    SECTION("negative spins") { spin_count = -1; }
+  }
   SECTION("missing HDF reference")
   {
     missing_href  = true;
@@ -428,19 +460,22 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
   file.pop();
   file.push("electrons");
   file.write(static_cast<int>(twists.size()), "number_of_kpoints");
-  file.write(1, "number_of_spins");
+  file.write(spin_count, "number_of_spins");
   for (int index = 0; index < twists.size(); ++index)
   {
     file.push("kpoint_" + std::to_string(index));
     file.write(twists[index], "reduced_k");
     file.write(std::vector<TinyVector<int, 3>>{{0, 0, 0}}, "gvectors");
-    file.push("spin_0");
-    file.write(available_bands, "number_of_states");
-    file.write(std::vector<double>{static_cast<double>(index)}, "eigenvalues");
-    file.push("state_0");
-    file.write(std::vector<std::complex<double>>{{index + 1.0, 0.0}}, "psi_g");
-    file.pop();
-    file.pop();
+    for (int spin = 0; spin < spin_count; ++spin)
+    {
+      file.push("spin_" + std::to_string(spin));
+      file.write(available_bands, "number_of_states");
+      file.write(std::vector<double>{static_cast<double>(index)}, "eigenvalues");
+      file.push("state_0");
+      file.write(std::vector<std::complex<double>>{{(index + 1.0) * (spin + 1.0), 0.0}}, "psi_g");
+      file.pop();
+      file.pop();
+    }
     file.pop();
   }
   file.close();
@@ -464,7 +499,7 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
   if (!missing_href)
     xml << " href='" << filename << "'";
   xml << " tilematrix='" << tile_matrix << "' " << attributes << ">" << children << "<sposet name='spo' size='"
-      << orbital_count << "'>" << sposet_children << "</sposet></sposet_collection>";
+      << orbital_count << "' spindataset='" << spin_index << "'>" << sposet_children << "</sposet></sposet_collection>";
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(xml.str()));
   if (invalid_input)
@@ -492,9 +527,10 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
     SPOSet::ValueVector values(1);
     spo->evaluateValue(elec, 0, values);
     const double phase = 2 * M_PI * twists[selected_primitive][0] * elec.R[0][0];
-    CHECK(std::real(values[0]) == Approx((selected_primitive + 1.0) * std::cos(phase)));
+    const double coefficient = (selected_primitive + 1.0) * (spin_index + 1.0);
+    CHECK(std::real(values[0]) == Approx(coefficient * std::cos(phase)));
 #if defined(QMC_COMPLEX)
-    CHECK(std::imag(values[0]) == Approx((selected_primitive + 1.0) * std::sin(phase)));
+    CHECK(std::imag(values[0]) == Approx(coefficient * std::sin(phase)));
 #endif
 
     Libxml2Document estimator_doc;

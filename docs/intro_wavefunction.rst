@@ -771,7 +771,7 @@ Additional information:
 
 - ``name`` identifies the orbital set and ``size`` specifies the number of orbitals, as for :ref:`spo-spline`.
 - ``spindataset`` selects the spin channel in the HDF5 file and defaults to ``0``. Set this attribute on ``sposet`` rather than on
-  ``occupation``.
+  ``occupation``. It must satisfy ``0 <= spindataset < number_of_spins``, where ``number_of_spins`` is read from the HDF5 file.
 - ``occupation`` defaults to ``mode="ground"``, filling the first ``size`` orbitals in the selected ordering. For a single
   contributing primitive-cell k-point, ``mode="excited"`` accepts negative indices for removed orbitals and positive indices for
   added orbitals, with indices starting at one. Excited occupations are not supported when multiple primitive-cell k-points

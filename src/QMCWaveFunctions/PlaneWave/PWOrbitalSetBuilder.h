@@ -57,6 +57,8 @@ private:
   bool hasRequestedTwist{false};
   ///orbital sorting mode, matching the bspline builder
   int sortBands{1};
+  ///number of spin channels in the orbital HDF file
+  int numSpins{0};
   ///primitive-to-supercell tiling matrix
   Tensor<int, OHMMS_DIM> tileMatrix;
   ///primitive-cell k-points contributing to the selected supercell twist

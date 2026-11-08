@@ -136,7 +136,9 @@ bool PWOrbitalSetBuilder::createPWBasis()
   //start of parameters
   hfile.read(idata, "electrons/number_of_kpoints");
   int nkpts = idata;
-  hfile.read(idata, "electrons/number_of_spins");
+  hfile.read(numSpins, "electrons/number_of_spins");
+  if (numSpins < 1)
+    throw UniformCommunicateError("Plane-wave HDF number_of_spins must be positive");
   hfile.read(idata, "electrons/kpoint_0/spin_0/number_of_states");
   int nbands        = idata;
   myParam->numBands = nbands;
@@ -218,6 +220,9 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur,
                                                       int spinIndex,
                                                       int orbital_count)
 {
+  if (spinIndex < 0 || spinIndex >= numSpins)
+    throw UniformCommunicateError("Plane-wave spindataset " + std::to_string(spinIndex) +
+                                  " is outside the available spin range [0, " + std::to_string(numSpins) + ")");
   std::vector<int> occBand(orbital_count);
   for (int i = 0; i < orbital_count; i++)
     occBand[i] = i;
