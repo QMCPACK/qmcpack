@@ -22,7 +22,7 @@
 #include "hdf/hdf_multi.h"
 #include "hdf/hdf_archive.h"
 
-#include <stdio.h>
+#include <filesystem>
 #include <string>
 #include <vector>
 #include <complex>
@@ -281,7 +281,7 @@ void test_hyperslab()
   }
   world.barrier();
   if (world.root())
-    remove("dummy_walkers.h5");
+    std::filesystem::remove("dummy_walkers.h5");
 }
 
 
@@ -399,7 +399,7 @@ void test_walker_io(std::string wtype)
   }
   world.barrier();
   if (world.root())
-    remove("dummy_walkers.h5");
+    std::filesystem::remove("dummy_walkers.h5");
 }
 
 TEST_CASE("swset_test_serial", "[shared_wset]")

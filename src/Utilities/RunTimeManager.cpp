@@ -22,7 +22,7 @@
 #include <sstream>
 #include <fstream>
 #include <iomanip>
-#include <cstdio>
+#include <filesystem>
 #include <cassert>
 
 namespace qmcplusplus
@@ -92,7 +92,7 @@ bool RunTimeControl<CLOCK>::checkStop(std::string_view phase)
       const std::string stop_filename = getStopFilename();
       if (std::ifstream(stop_filename.c_str()))
       {
-        std::remove(stop_filename.c_str());
+        std::filesystem::remove(stop_filename);
         stop_status = StopStatus::STOP_FILE;
       }
     }
@@ -198,7 +198,7 @@ StopStatus LoopRunTimeControl<CLOCK>::stop_file_requested() const
   const std::string stop_filename = getStopFilename();
   if (std::ifstream(stop_filename.c_str()))
   {
-    std::remove(stop_filename.c_str());
+    std::filesystem::remove(stop_filename);
     return StopStatus::STOP_FILE;
   }
   else
