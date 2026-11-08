@@ -12,13 +12,11 @@
 
 
 /** @file BandInfo.h
- *
- * Define helper class to sort bands according to the band and twist and functions
+ * @brief Orbital-band metadata and band-group selection.
  */
 #ifndef QMCPLUSPLUS_BANDINFO_H
 #define QMCPLUSPLUS_BANDINFO_H
 #include <Configuration.h>
-#include <tuple>
 
 namespace qmcplusplus
 {
@@ -40,16 +38,6 @@ struct BandInfo
   bool MakeTwoCopies;
   ///default constructor
   BandInfo() : TwistIndex(0), BandIndex(-1), BandGroup(0), Spin(0), Energy(1e9), MakeTwoCopies(false) {}
-
-  /** operator to determine the order of any band
-   * 
-   * Exact energy ordering, followed by twist and band index.
-   * Near-degenerate grouping is handled by sortOrbitalBands.
-   */
-  inline bool operator<(const BandInfo& other) const
-  {
-    return std::tie(Energy, TwistIndex, BandIndex) < std::tie(other.Energy, other.TwistIndex, other.BandIndex);
-  }
 };
 
 /** a group of bands 
