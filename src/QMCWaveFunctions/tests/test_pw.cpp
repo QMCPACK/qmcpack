@@ -18,6 +18,7 @@
 #include "Message/UniformCommunicateError.h"
 #include "PlaneWave/PWBandInfo.h"
 #include "PlaneWave/PWOrbitalSetBuilder.h"
+#include "PlaneWave/PWParameterSet.h"
 #include "PlaneWave/PWTiling.h"
 #include "Estimators/MomentumDistribution.h"
 

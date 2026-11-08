@@ -52,7 +52,7 @@ PWParameterSet::PWParameterSet(Communicate& comm)
   m_param.add(pwTag, "planewaves");
   m_param.add(pwMultTag, "multiplers");
   m_param.add(eigTag, "eigenstates");
-  m_param.add(twistTag, "twist_tag");
+  m_param.add(twistTag, "twist");
   m_param.add(bandTag, "band");
   m_param.add(spinTag, "spin");
   m_param.add(eigvecTag, "eigenvector");

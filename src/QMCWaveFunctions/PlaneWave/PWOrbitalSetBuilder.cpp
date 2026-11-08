@@ -58,7 +58,7 @@ PWOrbitalSetBuilder::PWOrbitalSetBuilder(ParticleSet& p, Communicate& comm, xmlN
         !(twist_stream >> trailing_value))
       hasRequestedTwist = true;
     else
-      app_warning() << "Using the twist attribute as an HDF group tag is deprecated; use twist_tag instead.\n";
+      app_warning() << "Using the twist attribute as an HDF group tag is deprecated.\n";
   }
   if (sortBands < 0 || sortBands > 2)
     throw UniformCommunicateError("Plane-wave sort must be 0, 1, or 2");
