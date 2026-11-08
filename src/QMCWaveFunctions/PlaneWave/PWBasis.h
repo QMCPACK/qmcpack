@@ -310,14 +310,7 @@ public:
   }
 #endif
 
-  inline void evaluateHessian()
-  {
-    for (int ig = 0; ig < NumPlaneWaves; ++ig)
-      for (int row = 0; row < OHMMS_DIM; ++row)
-        for (int column = 0; column < OHMMS_DIM; ++column)
-          Zh(ig, row * OHMMS_DIM + column) =
-              -kplusgvecs_cart[ig][row] * kplusgvecs_cart[ig][column] * Z(ig, PW_VALUE);
-  }
+  void evaluateHessian();
 
   //    /** Fill the recursion coefficients matrix.
   //     *

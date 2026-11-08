@@ -78,6 +78,15 @@ void PWBasis::reset()
   phi.resize(NumPlaneWaves);
 }
 
+void PWBasis::evaluateHessian()
+{
+  for (int ig = 0; ig < NumPlaneWaves; ++ig)
+    for (int row = 0; row < OHMMS_DIM; ++row)
+      for (int column = 0; column < OHMMS_DIM; ++column)
+        Zh(ig, row * OHMMS_DIM + column) =
+            -kplusgvecs_cart[ig][row] * kplusgvecs_cart[ig][column] * Z(ig, PW_VALUE);
+}
+
 /** Remove basis elements if kinetic energy > ecut.
  *
  * Keep and indexmap so we know how to match coefficients on read.
