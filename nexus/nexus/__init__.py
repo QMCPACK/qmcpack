@@ -520,8 +520,6 @@ class Settings(NexusCore):
 
     gamess_vars  = frozenset({'ericfmt', 'mcppath'})
 
-    pwscf_vars   = frozenset({'vdw_table'})
-
     qm_package_vars = frozenset({'qprc'})
 
     deprecated_vars = frozenset({
@@ -534,7 +532,6 @@ class Settings(NexusCore):
         | machine_vars
         | deprecated_vars
         | gamess_vars
-        | pwscf_vars
         | qm_package_vars
         )
 
@@ -679,11 +676,17 @@ class Settings(NexusCore):
 
         self.nxs_print('Applying user settings')
 
+        if "vdw_table" in kwargs:
+            warn(
+                "Setting 'vdw_table' is deprecated due to its removal in QE 6.5!",
+                warn_type="deprecate"
+            )
+            del kwargs["vdw_table"]
+
         # extract settings based on keyword groups
         kw        = Settings.kw_set(Settings.nexus_vars | Settings.deprecated_vars, kwargs)
         mach_kw   = Settings.kw_set(Settings.machine_vars   ,kwargs)
         gamess_kw = Settings.kw_set(Settings.gamess_vars    ,kwargs)
-        pwscf_kw  = Settings.kw_set(Settings.pwscf_vars     ,kwargs)
         qm_pkg_kw = Settings.kw_set(Settings.qm_package_vars,kwargs)
         if len(kwargs)>0:
             msg = (
@@ -698,7 +701,6 @@ class Settings(NexusCore):
         # copy input settings
         self.update(**deepcopy(mach_kw))
         self.update(**deepcopy(gamess_kw))
-        self.update(**deepcopy(pwscf_kw))
 
         # process machine settings
         self.process_machine_settings(mach_kw)
@@ -710,10 +712,6 @@ class Settings(NexusCore):
         # process gamess settings
         Gamess.restore_default_settings()
         Gamess.settings(**gamess_kw)
-
-        # process pwscf settings
-        Pwscf.restore_default_settings()
-        Pwscf.settings(**pwscf_kw)
 
         # process quantum package settings
         QuantumPackage.restore_default_settings()
@@ -915,10 +913,7 @@ class Settings(NexusCore):
             "--vdw-table",
             "--vdw_table",
             default=argparse.SUPPRESS,
-            help=(
-                "Path to the vdw_table file used with Quantum ESPRESSO "
-                "(required only if running QE with van der Waals functionals)."
-                )
+            help=argparse.SUPPRESS,
             )
         parser.add_argument(
             "--qprc",

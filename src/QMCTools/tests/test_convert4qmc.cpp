@@ -14,7 +14,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/tests/ConstantSPOSet.h"
 #include <cmath>
-#include <cstdio>
+#include <filesystem>
 #include <memory>
 #include <string>
 
@@ -194,7 +194,7 @@ TEST_CASE("convert4qmc HDF5 output preserves CI payload", "[tools][converter]")
   struct Cleanup
   {
     const std::string& path;
-    ~Cleanup() { std::remove(path.c_str()); }
+    ~Cleanup() { std::filesystem::remove(path); }
   } cleanup{filename};
   for (bool polarized : {false, true})
   {
@@ -230,7 +230,7 @@ TEST_CASE("convert4qmc polarized output evaluates in SlaterDetBuilder", "[tools]
   struct Cleanup
   {
     const std::string& path;
-    ~Cleanup() { std::remove(path.c_str()); }
+    ~Cleanup() { std::filesystem::remove(path); }
   } cleanup{filename};
   for (const std::string algorithm : {"table_method", "precomputed_table_method"})
     for (const std::string format : {"DETS", "CSF", "HDF5"})
@@ -313,7 +313,7 @@ TEST_CASE("convert4qmc single determinant omits empty spin", "[tools][converter]
   struct Cleanup
   {
     const std::string& path;
-    ~Cleanup() { std::remove(path.c_str()); }
+    ~Cleanup() { std::filesystem::remove(path); }
   } cleanup{filename};
   for (bool polarized : {false, true})
     for (const std::string format : {"XML", "HDF5 input", "HDF5 output"})
@@ -352,7 +352,7 @@ TEST_CASE("convert4qmc polarized UHF retains unoccupied HDF5 orbitals", "[tools]
   struct Cleanup
   {
     const std::string& path;
-    ~Cleanup() { std::remove(path.c_str()); }
+    ~Cleanup() { std::filesystem::remove(path); }
   } cleanup{filename};
   Converter converter(true);
   converter.SpinRestricted = false;

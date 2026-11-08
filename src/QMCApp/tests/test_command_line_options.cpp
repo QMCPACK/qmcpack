@@ -12,6 +12,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -69,7 +70,7 @@ TEST_CASE("CommandLineOptions input files parsing", "[qmcapp]")
 
     const char* argv[] = {"qmcpack", list_filename.c_str(), "job_cmd.xml"};
     options.parse(3, const_cast<char**>(argv));
-    std::remove(list_filename.c_str());
+    std::filesystem::remove(list_filename);
 
     const std::vector<std::string> expected{"from_txt_1.xml", "from_txt_2.xml", "job_cmd.xml"};
     CHECK(options.get_inputs() == expected);

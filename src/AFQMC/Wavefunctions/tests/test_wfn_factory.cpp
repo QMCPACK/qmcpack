@@ -20,6 +20,7 @@
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/Timer.h"
 
+#include <filesystem>
 #include <string>
 #include <vector>
 #include <complex>
@@ -382,7 +383,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       TG.Global().barrier();
       // remove temporary file
       if (TG.Node().root())
-        remove("dummy.h5");
+        std::filesystem::remove("dummy.h5");
     }
   }
 }
@@ -761,7 +762,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     TG.Global().barrier();
     // remove temporary file
     if (TG.Node().root())
-      remove("dummy.h5");
+      std::filesystem::remove("dummy.h5");
   }
 }
 
