@@ -49,8 +49,8 @@
        </attrib>
     </particleset>
     <wavefunction name="psi0" target="e">
-    <sposet_collection type="pw" href="LiH-gamma.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="-1" meshfactor="1.0" source="i"  precision="double" twist="0  0  0">
-       <sposet type="bspline" name="spo_ud" size="2" spindataset="0"/>
+    <sposet_collection type="pw" href="LiH-gamma.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="-1" source="i" twist="0  0  0">
+       <sposet name="spo_ud" size="2" spindataset="0"/>
      </sposet_collection> 
      <determinantset>
        <slaterdeterminant>
