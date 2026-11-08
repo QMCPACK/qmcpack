@@ -9,6 +9,7 @@
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
@@ -26,6 +27,7 @@
 #include <stdio.h>
 #include <cmath>
 #include <filesystem>
+#include <limits>
 #include <numeric>
 #include <sstream>
 #include <string>
@@ -193,6 +195,7 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
   std::string attributes;
   std::string children;
   std::string sposet_children;
+  std::string expected_spo_error;
   int selected_primitive = 0;
   int orbital_count      = 1;
   int available_bands    = 1;
@@ -358,6 +361,50 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
     sposet_children = "<occupation mode='excited'>-1 2</occupation>";
     invalid_spo     = true;
   }
+  SECTION("invalid removed occupation indices")
+  {
+    invalid_spo        = true;
+    expected_spo_error = "Plane-wave removed occupation index is outside the requested SPO range";
+    SECTION("index at the SPO upper bound") { sposet_children = "<occupation mode='excited'>-2 1</occupation>"; }
+    SECTION("index below the custom offset")
+    {
+      sposet_children = "<occupation mode='excited' offset='2'>-1 2</occupation>";
+    }
+    SECTION("minimum integer index")
+    {
+      sposet_children = "<occupation mode='excited'>" + std::to_string(std::numeric_limits<int>::min()) +
+          " 1</occupation>";
+    }
+    SECTION("offset subtraction exceeds integer range")
+    {
+      sposet_children = "<occupation mode='excited' offset='" + std::to_string(std::numeric_limits<int>::min()) +
+          "'>-1 1</occupation>";
+    }
+  }
+  SECTION("added occupation below available bands")
+  {
+    sposet_children    = "<occupation mode='excited'>-1 0</occupation>";
+    invalid_spo        = true;
+    expected_spo_error = "Plane-wave excited occupation index is outside the available band range";
+  }
+  SECTION("unpaired occupation indices")
+  {
+    invalid_spo        = true;
+    expected_spo_error = "Numbers of deleted and added bands are not identical.";
+    SECTION("missing added index") { sposet_children = "<occupation mode='excited'>-1</occupation>"; }
+    SECTION("missing removed index") { sposet_children = "<occupation mode='excited'>1</occupation>"; }
+  }
+  SECTION("valid excited occupation") { sposet_children = "<occupation mode='excited'>-1 1</occupation>"; }
+  SECTION("valid excited occupation with custom offset")
+  {
+    sposet_children = "<occupation mode='excited' offset='2'>-2 2</occupation>";
+  }
+  SECTION("valid excited occupation with maximum integer offset")
+  {
+    const std::string offset = std::to_string(std::numeric_limits<int>::max());
+    sposet_children = "<occupation mode='excited' offset='" + offset + "'>-" + offset + " " + offset +
+        "</occupation>";
+  }
   SECTION("multi-k-point transform")
   {
     tile_matrix(0, 0) = 2;
@@ -428,7 +475,11 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
   else if (invalid_spo)
   {
     PWOrbitalSetBuilder builder(elec, comm, doc.getRoot());
-    CHECK_THROWS_AS(builder.createSPOSetFromXML(xmlLastElementChild(doc.getRoot())), UniformCommunicateError);
+    if (expected_spo_error.empty())
+      CHECK_THROWS_AS(builder.createSPOSetFromXML(xmlLastElementChild(doc.getRoot())), UniformCommunicateError);
+    else
+      CHECK_THROWS_MATCHES(builder.createSPOSetFromXML(xmlLastElementChild(doc.getRoot())), UniformCommunicateError,
+                          Catch::Matchers::Message(expected_spo_error));
   }
   else
   {

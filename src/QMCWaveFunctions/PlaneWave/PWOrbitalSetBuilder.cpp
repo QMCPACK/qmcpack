@@ -26,6 +26,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
 #include "Message/UniformCommunicateError.h"
+#include <limits>
 
 namespace qmcplusplus
 {
@@ -250,18 +251,26 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur,
         for (int i = 0; i < occ.size(); i++)
         {
           if (occ[i] < 0)
-            deleted.push_back(-occ[i]);
+            deleted.push_back(occ[i]);
           else
             added.push_back(occ[i]);
         }
         if (deleted.size() != added.size())
-        {
-          app_error() << "  Numbers of deleted and added bands are not identical." << std::endl;
-          OHMMS::Controller->abort();
-        }
+          throw UniformCommunicateError("Numbers of deleted and added bands are not identical.");
         for (int i = 0; i < deleted.size(); i++)
         {
-          occBand[deleted[i] - bandoffset] = added[i] - bandoffset;
+          // Normalize as -(input + offset), avoiding negation of INT_MIN.
+          if (bandoffset < 0 && deleted[i] < std::numeric_limits<int>::min() - bandoffset)
+            throw UniformCommunicateError("Plane-wave removed occupation index is outside the requested SPO range");
+          const int shifted_deleted_index = deleted[i] + bandoffset;
+          if (shifted_deleted_index > 0 || shifted_deleted_index <= -orbital_count)
+            throw UniformCommunicateError("Plane-wave removed occupation index is outside the requested SPO range");
+          const int deleted_index = -shifted_deleted_index;
+          if (added[i] < bandoffset ||
+              (bandoffset < 0 && added[i] > std::numeric_limits<int>::max() + bandoffset))
+            throw UniformCommunicateError("Plane-wave excited occupation index is outside the available band range");
+          const int added_index = added[i] - bandoffset;
+          occBand[deleted_index] = added_index;
         }
         app_log() << "  mode=\"excited\" Occupied states: " << std::endl;
         copy(occBand.begin(), occBand.end(), std::ostream_iterator<int>(app_log(), " "));
