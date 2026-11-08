@@ -5,6 +5,9 @@
 // Copyright (c) 2026 QMCPACK developers.
 //////////////////////////////////////////////////////////////////////////////////////
 
+/** @file BandSorting.h
+ * @brief Shared in-place band ordering for spline and plane-wave builders.
+ */
 #ifndef QMCPLUSPLUS_BAND_SORTING_H
 #define QMCPLUSPLUS_BAND_SORTING_H
 
@@ -21,7 +24,17 @@ namespace qmcplusplus
  * band index. Within each energy group, twist index then band index break ties.
  * Groups contain energies less than 1e-6 above their minimum, so a chain of
  * pairwise near-degenerate energies cannot join otherwise separate groups.
- * All comparisons passed to std::sort are strict lexicographic orderings.
+ * In mode 2, an energy group cannot span different band indices. All comparisons
+ * passed to std::sort are strict lexicographic orderings; equal ordering keys
+ * do not imply stable ordering of other band metadata.
+ *
+ * @param bands band records to reorder in place
+ * @param sort_mode 0 for insertion order, 1 for energy, or 2 for band index
+ * @param energy pointer to the double eigenvalue member of a band
+ * @param twist_index pointer to the primitive k-point index member
+ * @param band_index pointer to the band index member
+ * @pre Eigenvalues are not NaN.
+ * @throws std::runtime_error if sort_mode is not 0, 1, or 2.
  */
 template<class Band>
 void sortOrbitalBands(std::vector<Band>& bands,
@@ -42,7 +55,7 @@ void sortOrbitalBands(std::vector<Band>& bands,
         std::tie(right.*energy, right.*twist_index, right.*band_index);
   });
 
-  // Treat energies less than 1e-6 above a group's minimum as degenerate, ordering those bands by twist index, then band index. 
+  // Anchor each near-degenerate group at its minimum, rather than chaining tolerances.
   for (auto first = bands.begin(); first != bands.end();)
   {
     const double minimum_energy = (*first).*energy;

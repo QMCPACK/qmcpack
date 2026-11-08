@@ -5,6 +5,12 @@
 // Copyright (c) 2026 QMCPACK developers.
 //////////////////////////////////////////////////////////////////////////////////////
 
+/** @file PWTiling.h
+ * @brief Primitive-twist folding, time-reversal pairing, and lattice validation.
+ *
+ * These helpers operate on supplied metadata without a communicator. Validation
+ * failures use std::runtime_error; the builder supplies communicator-level handling.
+ */
 #ifndef QMCPLUSPLUS_PW_TILING_H
 #define QMCPLUSPLUS_PW_TILING_H
 
@@ -33,11 +39,15 @@ using Lattice = Tensor<double, OHMMS_DIM>;
  */
 struct TwistGroups
 {
+  /// Canonical supercell twists, in first-encounter order from the input file.
   std::vector<Twist> super_twists;
+  /// Primitive k-point indices for each group, preserving input-file order.
   std::vector<std::vector<int>> primitive_indices;
 };
 
-/** Representative primitive twist for constructing real-valued SPOs. */
+/** Representative primitive twist for constructing real-valued SPOs.
+ * Self-inverse twists supply one orbital per band; paired twists can supply two.
+ */
 struct DistinctTwist
 {
   /// Index of the retained member of a time-reversal pair.
@@ -61,6 +71,8 @@ inline Twist canonicalizeTwist(Twist twist)
 
 /** Return whether two reduced twists differ only by a reciprocal-lattice vector.
  *
+ * @param left first reduced-coordinate twist
+ * @param right second reduced-coordinate twist
  * @param tolerance upper bound on the squared norm of the reduced difference
  */
 inline bool equivalentTwists(const Twist& left, const Twist& right, double tolerance = 1e-6)
@@ -73,6 +85,8 @@ inline bool equivalentTwists(const Twist& left, const Twist& right, double toler
 
 /** Return whether two reduced twists form a time-reversal pair modulo integers.
  *
+ * @param left first reduced-coordinate twist
+ * @param right second reduced-coordinate twist
  * @param tolerance upper bound on the squared norm of the reduced sum
  */
 inline bool timeReversedTwists(const Twist& left, const Twist& right, double tolerance = 1e-6)
@@ -86,7 +100,12 @@ inline bool timeReversedTwists(const Twist& left, const Twist& right, double tol
 /** Select one representative from each time-reversal pair for a real build.
  *
  * Self-inverse twists are retained once. A non-self-inverse pair is represented
- * by one twist marked to produce both real and imaginary SPO projections.
+ * by its later entry in included_twists, marked to produce real and imaginary
+ * SPO projections. Retained representatives preserve their input ordering.
+ *
+ * @param included_twists primitive k-point indices contributing to one supercell twist
+ * @param primitive_twists reduced primitive k-points indexed by included_twists
+ * @pre Included indices are valid and represent distinct primitive reciprocal classes.
  */
 inline std::vector<DistinctTwist> findDistinctRealTwists(const std::vector<int>& included_twists,
                                                          const std::vector<Twist>& primitive_twists)
@@ -131,7 +150,12 @@ inline Lattice asRealMatrix(const TileMatrix& tile_matrix)
 /** Group primitive twists according to T k_primitive modulo integers.
  *
  * Each returned group contains primitive k-points that fold to the same
- * canonical supercell twist under tile_matrix T.
+ * canonical supercell twist under tile_matrix T. Group indices follow the first
+ * occurrence of each folded twist; they are not primitive k-point indices.
+ * Grouping alone does not check completeness or duplicates: use validateTwistGroup().
+ *
+ * @param tile_matrix integer primitive-to-supercell transformation
+ * @param primitive_twists reduced primitive k-points in orbital-file order
  */
 inline TwistGroups groupPrimitiveTwists(const TileMatrix& tile_matrix, const std::vector<Twist>& primitive_twists)
 {
@@ -155,6 +179,7 @@ inline TwistGroups groupPrimitiveTwists(const TileMatrix& tile_matrix, const std
 
 /** Find the group equivalent to a requested reduced supercell twist.
  *
+ * @return zero-based folded-group index, matching groups.super_twists
  * @throws std::runtime_error if the requested twist is absent.
  */
 inline int findTwistGroup(const TwistGroups& groups, const Twist& requested_twist)
@@ -169,8 +194,11 @@ inline int findTwistGroup(const TwistGroups& groups, const Twist& requested_twis
 /** Validate that a twist group is a complete, nonduplicated tiling set.
  *
  * A valid group contains abs(det(tile_matrix)) primitive twists with distinct
- * primitive reciprocal-lattice classes modulo integer translations.
+ * primitive reciprocal-lattice classes modulo integer translations. Duplicate
+ * classes are compared after folding the reduced difference into supercell
+ * coordinates, preserving distinct nearby classes in large tilings.
  *
+ * @pre groups was formed from tile_matrix and primitive_twists with valid indices.
  * @throws std::runtime_error for a singular matrix, invalid group index,
  * incomplete group, or duplicate reciprocal coset.
  */
@@ -229,10 +257,10 @@ inline void validateLattice(const TileMatrix& tile_matrix,
 }
 
 /** Return whether a supercell twist can support real-valued boundary conditions.
-   *
-   * Every reduced component must be equivalent to either 0 or one half, i.e.
-   * twice the twist must be an integer reciprocal coordinate.
-   */
+ *
+ * Each reduced component must be an integer or half-integer within the tolerance
+ * used for the bspline-compatible check.
+ */
 inline bool isRealCompatible(const Twist& super_twist)
 {
   constexpr double tolerance = 100 * 10 * std::numeric_limits<float>::epsilon();

@@ -5,6 +5,9 @@
 // Copyright (c) 2026 QMCPACK developers.
 //////////////////////////////////////////////////////////////////////////////////////
 
+/** @file PWBandInfo.h
+ * @brief Primitive-band descriptors and ordering for plane-wave SPO construction.
+ */
 #ifndef QMCPLUSPLUS_PW_BAND_INFO_H
 #define QMCPLUSPLUS_PW_BAND_INFO_H
 
@@ -14,16 +17,19 @@ namespace qmcplusplus::pw
 {
 /** Descriptor for one primitive-cell band used to construct a plane-wave SPO.
  *
- * The projection flags describe how a complex band is expanded when QMCPACK is
- * built for real-valued wave functions.
+ * Indices refer to the orbital file, within the spin channel selected by the
+ * builder. In real builds, make_two_copies marks a retained time-reversal
+ * representative that supplies real and imaginary projections;
+ * use_imaginary_part distinguishes the imaginary entry after expansion.
+ * Complex builds use one entry per complex band with both flags false.
  */
 struct BandInfo
 {
   /// Eigenvalue used by energy ordering.
   double energy;
-  /// Primitive-cell twist index in the orbital HDF file.
+  /// Zero-based primitive-cell twist index in the orbital HDF file.
   int twist_index;
-  /// Band index within the primitive-cell twist and spin channel.
+  /// Zero-based band index within the primitive-cell k-point and spin channel.
   int band_index;
   /// Select the imaginary rather than real projection of a complex band.
   bool use_imaginary_part{false};
@@ -34,8 +40,13 @@ struct BandInfo
 /** Apply the requested bspline-compatible ordering to a band list.
  *
  * sort_mode=0 preserves insertion order, sort_mode=1 orders by energy, and
- * sort_mode=2 orders primarily by band index.
+ * sort_mode=2 orders primarily by band index. Near-degenerate groups use the
+ * shared sortOrbitalBands rules; projection flags do not affect ordering.
+ * This routine neither pairs twists nor expands two-copy bands.
  *
+ * @param bands primitive-band descriptors to reorder in place
+ * @param sort_mode ordering mode, matching the spline builder
+ * @pre Eigenvalues are not NaN.
  * @throws std::runtime_error if sort_mode is not 0, 1, or 2.
  */
 inline void sortBands(std::vector<BandInfo>& bands, int sort_mode)
