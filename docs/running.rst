@@ -13,34 +13,32 @@ Command line options
 --------------------
 
 QMCPACK offers several command line options that affect how calculations
-are performed. If the flag is absent, then the corresponding
-option is disabled:
+are performed. When an option is omitted, default settings apply:
 
-- ``--dryrun`` Validate the input file without performing the simulation. All the QMC and loop sections are skipped.
-  Wavefunctions and pseudopotentials will be loaded and processed. This option can be used to verify all the required
+- ``--dryrun`` Validate the input files without performing the simulation. All QMC and loop sections are skipped.
+  Wavefunctions and pseudopotentials will be loaded and processed. This option can be used to verify all required
   files are available or to check memory usage.
 
-- ``--enable-timers=none|coarse|medium|fine`` Control the timer granularity when the build option ``ENABLE_TIMERS`` is enabled.
-  The initial output summary prints the current timer level.
+- ``--enable-timers[=none|coarse|medium|fine]`` Control the timer granularity when the build option ``ENABLE_TIMERS`` is enabled.
+  Defaults to ``coarse`` if the level is omitted. The initial output summary prints the current timer level.
 
-- ``--help`` Print version information as well as a list of optional
-  command-line arguments.
+- ``--help``, ``-h`` Print version information, usage syntax, and available command-line options, then exit.
 
 - ``--noprint`` Do not print extra information on Jastrow or pseudopotential.
   If this flag is not present, QMCPACK will create several ``.dat`` files
   that contain information about pseudopotentials (one file per PP) and Jastrow
-  factors (one per Jastrow factor). These file might be useful for visual inspection
+  factors (one per Jastrow factor). These files might be useful for visual inspection
   of the Jastrow, for example.
 
-- ``--vnode-ranks=<int>`` Constrain the number of MPI ranks assigned to each calculation
+- ``--verbosity=low|high|debug``, ``--verbosity low|high|debug`` Control the output verbosity. The default low verbosity is concise and, for example, does not include all electron or atomic positions for large systems to reduce output size. Use "high" to see this information and more details of initialization, allocations, QMC method settings, etc.
+  The initial output summary prints the current verbosity.
+
+- ``--version`` Print version information and exit.
+
+- ``--vnode-ranks=<int>``, ``--vnode-ranks <int>`` Constrain the number of MPI ranks assigned to each calculation
   in an ensemble run to be a multiple of this value. Defaults to the uniform node rank count.
   Must be a positive integer and a factor of the uniform node rank count. Available blocks of ranks
   are partitioned fairly in contiguous blocks among the individual calculations in the ensemble.
-
-- ``--verbosity=low|high|debug`` Control the output verbosity. The default low verbosity is concise and, for example, does not include all electron or atomic positions for large systems to reduce output size. Use "high" to see this information and more details of initialization, allocations, QMC method settings, etc.
-  The initial output summary prints the current verbosity.
-
-- ``--version`` Print version information and optional arguments. Same as ``help``.
 
 .. _inputs:
 
