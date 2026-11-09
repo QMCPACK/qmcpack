@@ -38,6 +38,8 @@ from pathlib import Path
 nxs_root = Path(__file__).parent.parent.resolve()
 sys.path.insert(0,str(nxs_root))
 
+sys.path.insert(0, str(Path(__file__).parent.resolve() / "bin_links"))
+
 # Not sure why, but Sphinx has problems with this import unless it's in this file
 from CifFile import CifFile  # noqa: F401
 
