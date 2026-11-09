@@ -334,8 +334,9 @@ void TWFFastDerivWrapper::computeMDDerivatives_Obs(const std::vector<ValueMatrix
 
     // s[h,v] = -Minv_B[h,o].Minv_Mv[o,v]
     ValueMatrix s_hv(nocc, nvirt);
-    BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, Minv_Mv[sid].data(), Minv_Mv[sid].cols(), Minv_B[sid].data(),
-               Minv_B[sid].cols(), 0.0, s_hv.data(), s_hv.cols());
+    if (nvirt > 0)
+      BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, Minv_Mv[sid].data(), Minv_Mv[sid].cols(), Minv_B[sid].data(),
+                 Minv_B[sid].cols(), 0.0, s_hv.data(), s_hv.cols());
 
     // s[h,v] = Minv_B[h,v] - Minv_B[h,o].Minv_Mv[o,v]
     for (size_t i = 0; i < s_hv.rows(); i++)
@@ -426,6 +427,9 @@ void TWFFastDerivWrapper::computeMDDerivatives_Obs(const std::vector<ValueMatrix
 
 void TWFFastDerivWrapper::transform_Av_AoBv(const ValueMatrix& A, const ValueMatrix& B, ValueMatrix& X) const
 {
+  // if nvirt == 0, no work to do
+  if (X.cols() == 0) return;
+
   // A [h,o+v]
   // B [o,v]
 
@@ -528,8 +532,9 @@ void TWFFastDerivWrapper::computeMDDerivatives_dmu(const std::vector<ValueMatrix
     transform_Av_AoBv(Minv_B[sid], Minv_Mv[sid], X3b_ov);
 
     // X432b[h,v] -= Minv_dM[h,o].X3b[o,v]
-    BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, X3b_ov.data(), X3b_ov.cols(), Minv_dM[sid].data(),
-               Minv_dM[sid].cols(), 1.0, X432b_hv.data(), X432b_hv.cols());
+    if (nvirt > 0)
+      BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, X3b_ov.data(), X3b_ov.cols(), Minv_dM[sid].data(),
+                 Minv_dM[sid].cols(), 1.0, X432b_hv.data(), X432b_hv.cols());
 
 
     // compute difference from ref here and add that term back later
@@ -828,8 +833,9 @@ void TWFFastDerivWrapper::buildIntermediates(const std::vector<ValueMatrix>& Min
     // n: all orbs (o+v)
 
     // Minv_Mv = Minv[o,e].M[e,v]
-    BLAS::gemm('n', 'n', nvirt, ptclnum, ptclnum, 1.0, M[id].data() + ptclnum, M[id].cols(), Minv[id].data(),
-               Minv[id].cols(), 0.0, Minv_Mv[id].data(), Minv_Mv[id].cols());
+    if (nvirt > 0) // avoid gemm call with LDC == 0
+      BLAS::gemm('n', 'n', nvirt, ptclnum, ptclnum, 1.0, M[id].data() + ptclnum, M[id].cols(), Minv[id].data(),
+                 Minv[id].cols(), 0.0, Minv_Mv[id].data(), Minv_Mv[id].cols());
 
     // Minv_B = Minv[o,e].B[e,n]
     BLAS::gemm('n', 'n', norb, ptclnum, ptclnum, 1.0, B[id].data(), B[id].cols(), Minv[id].data(), Minv[id].cols(), 0.0,
