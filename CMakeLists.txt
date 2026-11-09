@@ -867,6 +867,9 @@ if(QMC_CCL)
   else()
     message(FATAL_ERROR "QMC_CCL requires a supported GPU vendor backend (CUDA, ROCm, or SYCL).")
   endif()
+  message(STATUS "QMC_CCL is enabled")
+else()
+  message(STATUS "QMC_CCL is disabled")
 endif()
 
 #-----------------------------------------------------
