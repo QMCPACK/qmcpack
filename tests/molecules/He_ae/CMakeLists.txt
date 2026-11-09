@@ -82,6 +82,14 @@ else()
     CHECK_ARGS -s 1 -p det_He_optbatch -r reference.det_He_opt.s001.opt.xml)
 
   simple_run_and_check(
+    BASE_NAME deterministic-He_ae-optbatch-empty-crowds
+    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    INPUT_FILE det_He_optbatch_empty_crowds.xml
+    THREADS 2
+    CHECK_SCRIPT check_opt.py
+    CHECK_ARGS -s 1 -p det_He_optbatch_empty_crowds -r reference.det_He_opt.s001.opt.xml)
+
+  simple_run_and_check(
     BASE_NAME deterministic-He_ae-optbatch-mwalkers
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
     INPUT_FILE det_He_optbatch_mwalkers.xml
@@ -104,6 +112,17 @@ else()
     det_He_optbatch.xml
     1
     1
+    TRUE
+    2
+    He_batch_VMC_SCALARS # VMC
+  )
+
+  qmc_run_and_check(
+    deterministic-He_ae-optbatch-vmcbatch-empty-crowds
+    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
+    det_He_optbatch_empty_crowds.xml
+    1
+    2
     TRUE
     2
     He_batch_VMC_SCALARS # VMC
