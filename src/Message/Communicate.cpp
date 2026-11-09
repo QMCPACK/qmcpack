@@ -55,12 +55,19 @@ Communicate::Communicate(Communicate&&) = default;
 
 // Takes ownership of a communicator (e.g. from split or split_shared) via move semantics,
 // avoiding the collective overhead and extra context allocation of MPI_Comm_dup.
-Communicate::Communicate(mpi3::communicator&& in_comm) : d_groupid(0), d_ngroups(1), comm{std::move(in_comm)}
-{
-  myMPI       = comm.get();
-  d_mycontext = comm.rank();
-  d_ncontexts = comm.size();
-}
+Communicate::Communicate(mpi3::communicator&& in_comm, int vnode_ranks)
+    : comm{std::move(in_comm)},
+      myMPI(comm.get()),
+      d_mycontext(comm.rank()),
+      d_ncontexts(comm.size()),
+      d_groupid(0),
+      d_ngroups(1),
+      virtual_node_rank_count_(vnode_ranks)
+{}
+
+Communicate::Communicate(mpi3::communicator&& in_comm)
+    : Communicate(std::move(in_comm), getUniformNodeRankCount(in_comm))
+{}
 
 Communicate Communicate::splitByStride(int nparts, int stride) const
 {
@@ -69,26 +76,29 @@ Communicate Communicate::splitByStride(int nparts, int stride) const
 
   // group index
   const int gid = rank() / stride % nparts;
-  Communicate comm_split(comm.split(gid, rank()));
+  Communicate comm_split(comm.split(gid, rank()), 1);
   comm_split.d_groupid = gid;
   comm_split.d_ngroups = nparts;
 
   // create an inter group communicator
-  comm_split.inter_group_comm_ = std::make_unique<Communicate>(comm.split(comm_split.comm.rank(), rank()));
+  comm_split.inter_group_comm_ =
+      std::unique_ptr<Communicate>(new Communicate(comm.split(comm_split.comm.rank(), rank()), 1));
   return comm_split;
 }
 
 Communicate Communicate::split(int nparts, int multiple) const
 {
   assert(multiple >= 1);
-  assert(size() % multiple == 0);
+  assert(virtual_node_rank_count_ % multiple == 0);
+  assert(size() >= nparts * multiple);
   std::vector<int> nplist(nparts + 1);
   const int gid = FairDivideLow(rank() / multiple, size() / multiple, nparts, nplist);
-  Communicate comm_split(comm.split(gid, rank()));
+  Communicate comm_split(comm.split(gid, rank()), multiple);
   comm_split.d_groupid = gid;
   comm_split.d_ngroups = nparts;
 
-  comm_split.inter_group_comm_ = std::make_unique<Communicate>(comm.split(comm_split.comm.rank(), rank()));
+  comm_split.inter_group_comm_ =
+      std::unique_ptr<Communicate>(new Communicate(comm.split(comm_split.comm.rank(), rank()), 1));
   return comm_split;
 }
 
@@ -98,21 +108,24 @@ Communicate Communicate::split(int nparts, int multiple) const
  */
 Communicate Communicate::createNodeComm() const
 {
-  return Communicate{comm.split_shared()};
+  auto shared_comm = comm.split_shared();
+  const int sz     = shared_comm.size();
+  return Communicate{std::move(shared_comm), sz};
 }
 
-int Communicate::getUniformNodeRankCount() const
+int Communicate::getUniformNodeRankCount(mpi3::communicator& in_comm)
 {
-  Communicate node_comm = createNodeComm();
-  const int local_node_size = node_comm.size();
-  std::vector<int> all_node_sizes(size());
-  MPI_Allgather(&local_node_size, 1, MPI_INT, all_node_sizes.data(), 1, MPI_INT, myMPI);
+  const int local_node_size = in_comm.split_shared().size();
+  std::vector<int> all_node_sizes(in_comm.size());
+  MPI_Allgather(&local_node_size, 1, MPI_INT, all_node_sizes.data(), 1, MPI_INT, in_comm.get());
   int gcd_size = all_node_sizes.empty() ? 1 : all_node_sizes.front();
   for (int s : all_node_sizes)
     gcd_size = std::gcd(gcd_size, s);
 
   return gcd_size;
 }
+
+int Communicate::getUniformNodeRankCount() const { return getUniformNodeRankCount(comm); }
 
 std::pair<int, int> Communicate::getMinMaxNodeRankCount() const
 {
@@ -170,9 +183,10 @@ Communicate Communicate::splitByStride(int nparts, int stride) const
 Communicate Communicate::split(int nparts, int multiple) const
 {
   assert(multiple >= 1);
-  assert(size() % multiple == 0);
+  assert(virtual_node_rank_count_ % multiple == 0);
+  assert(size() >= nparts * multiple);
   Communicate comm_split;
-  comm_split.d_ngroups = nparts;
+  comm_split.d_ngroups         = nparts;
   comm_split.inter_group_comm_ = std::make_unique<Communicate>();
   return comm_split;
 }

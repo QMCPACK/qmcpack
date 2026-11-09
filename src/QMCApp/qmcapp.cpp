@@ -96,14 +96,15 @@ int main(int argc, char** argv)
     const auto& inputs = options.get_inputs();
 
     std::unique_ptr<Communicate> comm_job;
-    if (inputs.size() > 1)
+    if (inputs.size() > 1 || options.get_vnode_ranks().has_value())
     {
-      comm_job =
-          std::make_unique<Communicate>(OHMMS::Controller->split(inputs.size(), qmc_common.get_virtual_node_rank_count()));
-      qmc_common.setupFilenameInfixForEnsembleJobs(comm_job->getGroupID(), comm_job->getNumGroups());
+      const int vnode_ranks = options.get_vnode_ranks().value_or(OHMMS::Controller->getVirtualNodeRankCount());
+      comm_job              = std::make_unique<Communicate>(OHMMS::Controller->split(inputs.size(), vnode_ranks));
+      if (inputs.size() > 1)
+        qmc_common.setupFilenameInfixForEnsembleJobs(comm_job->getGroupID(), comm_job->getNumGroups());
     }
 
-    Communicate& qmcComm          = inputs.size() > 1 ? *comm_job : *OHMMS::Controller;
+    Communicate& qmcComm          = comm_job ? *comm_job : *OHMMS::Controller;
     const std::string& input_name = inputs.size() > 1 ? inputs[qmcComm.getGroupID()] : inputs[0];
 
     if (qmcComm.rank() != 0)
