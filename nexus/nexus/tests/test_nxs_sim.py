@@ -3,15 +3,15 @@ import sys
 import pytest
 
 from ..nexus_base import nexus_config
-from ..testing import clear_all_sims, execute, text_eq
+from ..testing import clear_all_sims, execute
 from . import TEST_DIR, NexusTestOrder, isolate_nexus_core
 from .test_simulation_module import get_sim
 
 pytestmark = pytest.mark.order(NexusTestOrder.NXS_SIM)
 
+
 @isolate_nexus_core
 def test_sim(tmp_path):
-
     nexus_config.local_directory  = str(tmp_path)
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
@@ -37,17 +37,17 @@ def test_sim(tmp_path):
     out,err,rc = execute(command)
 
     out_ref = f'''
-        {simp_path}
-        setup        0
-        sent_files   0
-        submitted    0
-        finished     0
-        failed       0
-        got_output   0
-        analyzed     0
-        '''
+{simp_path}
+  setup:      False
+  sent_files: False
+  submitted:  False
+  finished:   False
+  failed:     False
+  got_output: False
+  analyzed:   False
+'''
 
-    assert(text_eq(out,out_ref))
+    assert(out.strip() == out_ref.strip())
 
 
     # final simulation state
@@ -58,17 +58,17 @@ def test_sim(tmp_path):
     out,err,rc = execute(command)
 
     out_ref = f'''
-        {simp_path}
-        setup        1
-        sent_files   1
-        submitted    1
-        finished     1
-        failed       0
-        got_output   1
-        analyzed     1
-        '''
+{simp_path}
+  setup:      True
+  sent_files: True
+  submitted:  True
+  finished:   True
+  failed:     False
+  got_output: True
+  analyzed:   True
+'''
 
-    assert(text_eq(out,out_ref))
+    assert(out.strip() == out_ref.strip())
 
 
     # intermediate simulation state 1
@@ -82,16 +82,17 @@ def test_sim(tmp_path):
     out,err,rc = execute(command)
 
     out_ref = f'''
-        {simp_path}
-        setup        1
-        sent_files   1
-        submitted    1
-        finished     0
-        failed       0
-        got_output   0
-        analyzed     0
+{simp_path}
+  setup:      True
+  sent_files: True
+  submitted:  True
+  finished:   False
+  failed:     False
+  got_output: False
+  analyzed:   False
         '''
 
+    assert(out.strip() == out_ref.strip())
 
     # intermediate simulation state 2
     command = sys.executable+f' {exe} complete {simp_path}'
@@ -104,17 +105,17 @@ def test_sim(tmp_path):
     out,err,rc = execute(command)
 
     out_ref = f'''
-        {simp_path}
-        setup        1
-        sent_files   1
-        submitted    1
-        finished     1
-        failed       0
-        got_output   0
-        analyzed     0
-        '''
+{simp_path}
+  setup:      True
+  sent_files: True
+  submitted:  True
+  finished:   True
+  failed:     False
+  got_output: False
+  analyzed:   False
+'''
 
-    assert(text_eq(out,out_ref))
+    assert(out.strip() == out_ref.strip())
 
     clear_all_sims()
 #end def test_sim
