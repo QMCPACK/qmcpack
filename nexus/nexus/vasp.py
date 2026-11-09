@@ -29,7 +29,7 @@ from copy import deepcopy
 
 from .developer import obj
 from .pseudoset import PseudoSet
-from .simulation import Simulation
+from .simulation import AppResult, Simulation
 from .structure import Structure
 from .vasp_analyzer import VaspAnalyzer
 from .vasp_input import Poscar, VaspInput, generate_poscar, generate_vasp_input
@@ -41,7 +41,7 @@ class Vasp(Simulation):
     generic_identifier = 'vasp'
     application        = 'vasp'
     application_properties = frozenset({'serial','mpi'})
-    application_results    = frozenset({'structure'})
+    application_results    = AppResult.STRUCTURE
 
     allow_overlapping_files = True
 
@@ -60,7 +60,7 @@ class Vasp(Simulation):
 
     def check_result(self,result_name,sim):
         input = self.input
-        if result_name=='structure':
+        if result_name is AppResult.STRUCTURE:
             calculating_result = input.producing_structure()
         else:
             calculating_result = False
@@ -72,7 +72,7 @@ class Vasp(Simulation):
     def get_result(self,result_name,sim):
         result = obj()
         input = self.input
-        if result_name=='structure':
+        if result_name is AppResult.STRUCTURE:
             # get structure from CONTCAR
             ccfile = os.path.join(self.locdir,self.identifier+'.CONTCAR')
             if not os.path.exists(ccfile):
@@ -95,7 +95,7 @@ class Vasp(Simulation):
             #end if
             result.structure = structure
         else:
-            msg = 'ability to get result '+result_name+' has not been implemented'
+            msg = f"Ability to get result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if
         return result
@@ -104,7 +104,7 @@ class Vasp(Simulation):
 
     def incorporate_result(self,result_name,result,sim):
         input = self.input
-        if result_name=='structure':
+        if result_name is AppResult.STRUCTURE:
             if input.performing_neb():
                 if 'neb_structures' not in self:
                     self.neb_structures = []
@@ -125,7 +125,7 @@ class Vasp(Simulation):
                 input.poscar = generate_poscar(result.structure)
             #end if
         else:
-            msg = 'ability to incorporate result '+result_name+' has not been implemented'
+            msg = f"Ability to incorporate result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if
     #end def incorporate_result

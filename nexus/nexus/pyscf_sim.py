@@ -22,7 +22,7 @@ import textwrap
 from .developer import obj
 from .pyscf_analyzer import PyscfAnalyzer
 from .pyscf_input import PyscfInput, generate_pyscf_input
-from .simulation import Simulation
+from .simulation import AppResult, Simulation
 
 
 class Pyscf(Simulation):
@@ -32,16 +32,16 @@ class Pyscf(Simulation):
     infile_extension   = '.py'
     application        = 'python3'
     application_properties = frozenset({'serial','mpi'})
-    application_results    = frozenset({'orbitals','wavefunction'})
+    application_results    = AppResult.ORBITALS | AppResult.WAVEFUNCTION
 
 
     def check_result(self,result_name,sim):
         calculating_result = False
-        if result_name=='orbitals':
+        if result_name is AppResult.ORBITALS:
             conv_requested  = self.input.save_qmc
             prefix_provided = self.input.prefix is not None
             calculating_result = conv_requested and prefix_provided
-        elif result_name=='wavefunction':
+        elif result_name is AppResult.WAVEFUNCTION:
             calculating_result = self.input.checkpoint
         #end if
         return calculating_result
@@ -50,7 +50,7 @@ class Pyscf(Simulation):
 
     def get_result(self,result_name,sim):
         result = obj()
-        if result_name=='orbitals':
+        if result_name is AppResult.ORBITALS:
             inp = self.input
             if 'kpoints' not in inp or inp.kpoints is None:
                 h5_file = inp.prefix+'.h5'
@@ -66,10 +66,10 @@ class Pyscf(Simulation):
             #end if
             result.h5_file  = os.path.join(self.locdir,h5_file)
             result.location = self.locdir
-        elif result_name=='wavefunction':
+        elif result_name is AppResult.WAVEFUNCTION:
             result.chkfile = os.path.join(self.locdir,self.input.chkfile)
         else:
-            msg = 'ability to get result '+result_name+' has not been implemented'
+            msg = f"Ability to get result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if
         return result
@@ -79,7 +79,7 @@ class Pyscf(Simulation):
     def incorporate_result(self,result_name,result,sim):
         not_implemented = False
         if not_implemented:
-            msg = 'ability to incorporate result '+result_name+' has not been implemented'
+            msg = f"Ability to incorporate result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if
     #end def incorporate_result
