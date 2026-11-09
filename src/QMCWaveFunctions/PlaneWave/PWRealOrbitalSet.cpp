@@ -21,7 +21,6 @@
 #include "Message/Communicate.h"
 #include "PWRealOrbitalSet.h"
 #include "Numerics/MatrixOperators.h"
-#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
@@ -45,12 +44,14 @@ void PWRealOrbitalSet::resize(PWBasisPtr bset, bool cleanup)
   BasisSetSize = myBasisSet->NumPlaneWaves;
   CC.resize(OrbitalSetSize, BasisSetSize);
   Temp.resize(OrbitalSetSize, PW_MAXINDEX);
+  TempHess.resize(OrbitalSetSize, OHMMS_DIM * OHMMS_DIM);
   tempPsi.resize(OrbitalSetSize);
+  useImaginaryPart.assign(OrbitalSetSize, false);
   app_log() << "  PWRealOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize
             << std::endl;
 }
 
-void PWRealOrbitalSet::addVector(const std::vector<RealType>& coefs, int jorb)
+void PWRealOrbitalSet::addVector(const std::vector<RealType>& coefs, int jorb, bool use_imaginary_part)
 {
   int ng = myBasisSet->inputmap.size();
   if (ng != coefs.size())
@@ -60,6 +61,7 @@ void PWRealOrbitalSet::addVector(const std::vector<RealType>& coefs, int jorb)
   }
   //drop G points for the given TwistAngle
   const std::vector<int>& inputmap(myBasisSet->inputmap);
+  useImaginaryPart[jorb] = use_imaginary_part;
   for (int ig = 0; ig < ng; ig++)
   {
     if (inputmap[ig] > -1)
@@ -67,7 +69,7 @@ void PWRealOrbitalSet::addVector(const std::vector<RealType>& coefs, int jorb)
   }
 }
 
-void PWRealOrbitalSet::addVector(const std::vector<ComplexType>& coefs, int jorb)
+void PWRealOrbitalSet::addVector(const std::vector<ComplexType>& coefs, int jorb, bool use_imaginary_part)
 {
   int ng = myBasisSet->inputmap.size();
   if (ng != coefs.size())
@@ -77,6 +79,7 @@ void PWRealOrbitalSet::addVector(const std::vector<ComplexType>& coefs, int jorb
   }
   //drop G points for the given TwistAngle
   const std::vector<int>& inputmap(myBasisSet->inputmap);
+  useImaginaryPart[jorb] = use_imaginary_part;
   for (int ig = 0; ig < ng; ig++)
   {
     if (inputmap[ig] > -1)
@@ -89,7 +92,7 @@ void PWRealOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector&
   myBasisSet->evaluate(P.activeR(iat));
   MatrixOperators::product(CC, myBasisSet->Zv, tempPsi);
   for (int j = 0; j < OrbitalSetSize; j++)
-    psi[j] = tempPsi[j].real();
+    psi[j] = project(tempPsi[j], j);
 }
 
 void PWRealOrbitalSet::evaluateVGL(const ParticleSet& P,
@@ -103,14 +106,14 @@ void PWRealOrbitalSet::evaluateVGL(const ParticleSet& P,
   const ComplexType* restrict tptr = Temp.data();
   for (int j = 0; j < OrbitalSetSize; j++, tptr += PW_MAXINDEX)
   {
-    psi[j]   = tptr[PW_VALUE].real();
-    d2psi[j] = tptr[PW_LAP].real();
+    psi[j]   = project(tptr[PW_VALUE], j);
+    d2psi[j] = project(tptr[PW_LAP], j);
 #if OHMMS_DIM == 3
-    dpsi[j] = GradType(tptr[PW_GRADX].real(), tptr[PW_GRADY].real(), tptr[PW_GRADZ].real());
+    dpsi[j] = GradType(project(tptr[PW_GRADX], j), project(tptr[PW_GRADY], j), project(tptr[PW_GRADZ], j));
 #elif OHMMS_DIM == 2
-    dpsi[j] = GradType(tptr[PW_GRADX].real(), tptr[PW_GRADY].real());
+    dpsi[j] = GradType(project(tptr[PW_GRADX], j), project(tptr[PW_GRADY], j));
 #elif OHMMS_DIM == 1
-    dpsi[j] = GradType(tptr[PW_GRADX].real());
+    dpsi[j] = GradType(project(tptr[PW_GRADX], j));
 #else
 #error "Only physical dimensions 1/2/3 are supported."
 #endif
@@ -131,17 +134,47 @@ void PWRealOrbitalSet::evaluate_notranspose(const ParticleSet& P,
     const ComplexType* restrict tptr = Temp.data();
     for (int j = 0; j < OrbitalSetSize; j++, tptr += PW_MAXINDEX)
     {
-      convertToReal(tptr[PW_VALUE], logdet(i, j));
-      convertToReal(tptr[PW_LAP], d2logdet(i, j));
+      logdet(i, j)   = project(tptr[PW_VALUE], j);
+      d2logdet(i, j) = project(tptr[PW_LAP], j);
 #if OHMMS_DIM == 3
-      dlogdet(i, j) = GradType(tptr[PW_GRADX].real(), tptr[PW_GRADY].real(), tptr[PW_GRADZ].real());
+      dlogdet(i, j) = GradType(project(tptr[PW_GRADX], j), project(tptr[PW_GRADY], j), project(tptr[PW_GRADZ], j));
 #elif OHMMS_DIM == 2
-      dlogdet(i, j) = GradType(tptr[PW_GRADX].real(), tptr[PW_GRADY].real());
+      dlogdet(i, j) = GradType(project(tptr[PW_GRADX], j), project(tptr[PW_GRADY], j));
 #elif OHMMS_DIM == 1
-      dlogdet(i, j) = GradType(tptr[PW_GRADX].real());
+      dlogdet(i, j) = GradType(project(tptr[PW_GRADX], j));
 #else
 #error "Only physical dimensions 1/2/3 are supported."
 #endif
+    }
+  }
+}
+
+void PWRealOrbitalSet::evaluate_notranspose(const ParticleSet& P,
+                                            int first,
+                                            int last,
+                                            ValueMatrix& logdet,
+                                            GradMatrix& dlogdet,
+                                            HessMatrix& grad_grad_logdet)
+{
+  for (int iat = first, i = 0; iat < last; ++iat, ++i)
+  {
+    myBasisSet->evaluateAll(P, iat);
+    myBasisSet->evaluateHessian();
+    MatrixOperators::product(CC, myBasisSet->Z, Temp);
+    MatrixOperators::product(CC, myBasisSet->Zh, TempHess);
+    const ComplexType* restrict value_ptr   = Temp.data();
+    const ComplexType* restrict hessian_ptr = TempHess.data();
+    for (int orbital_index = 0; orbital_index < OrbitalSetSize;
+         ++orbital_index, value_ptr += PW_MAXINDEX, hessian_ptr += OHMMS_DIM * OHMMS_DIM)
+    {
+      logdet(i, orbital_index) = project(value_ptr[PW_VALUE], orbital_index);
+      dlogdet(i, orbital_index) =
+          GradType(project(value_ptr[PW_GRADX], orbital_index), project(value_ptr[PW_GRADY], orbital_index),
+                   project(value_ptr[PW_GRADZ], orbital_index));
+      for (int row = 0; row < OHMMS_DIM; ++row)
+        for (int column = 0; column < OHMMS_DIM; ++column)
+          grad_grad_logdet(i, orbital_index)(row, column) =
+              project(hessian_ptr[row * OHMMS_DIM + column], orbital_index);
     }
   }
 }

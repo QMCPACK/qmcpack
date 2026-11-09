@@ -27,21 +27,22 @@ int PWBasis::readbasis(hdf_archive& h5basisgroup,
                        const std::string& pwmultname,
                        bool resizeContainer)
 {
-  ///make a local copy
   Lattice = lat;
-  ecut    = ecutoff;
+  if (h5basisgroup.is_dataset("/supercell/primitive_vectors"))
+  {
+    h5basisgroup.read(Lattice.R, "/supercell/primitive_vectors");
+    Lattice.reset();
+  }
+  ecut = ecutoff;
   app_log() << "  PWBasis::" << pwmultname << " is found " << std::endl;
   h5basisgroup.read(gvecs, "/electrons/kpoint_0/gvectors");
-  NumPlaneWaves = std::max(gvecs.size(), kplusgvecs_cart.size());
+  NumPlaneWaves = gvecs.size();
   if (NumPlaneWaves == 0)
     throw std::runtime_error("  PWBasis::readbasis Basis is missing.");
 
-  if (kplusgvecs_cart.empty())
-  {
-    kplusgvecs_cart.resize(NumPlaneWaves);
-    for (int i = 0; i < NumPlaneWaves; i++)
-      kplusgvecs_cart[i] = Lattice.k_cart(gvecs[i]);
-  }
+  kplusgvecs_cart.resize(NumPlaneWaves);
+  for (int i = 0; i < NumPlaneWaves; i++)
+    kplusgvecs_cart[i] = Lattice.k_cart(gvecs[i]);
   //app_log() << "  Gx Gy Gz " << std::endl;
   //for(int i=0; i<kplusgvecs_cart.size(); i++)
   //{
@@ -72,8 +73,18 @@ void PWBasis::reset()
   trimforecut();
   //logC.resize(3,2*maxmaxg+1);
   Z.resize(NumPlaneWaves, 2 + DIM);
+  Zh.resize(NumPlaneWaves, DIM * DIM);
   Zv.resize(NumPlaneWaves);
   phi.resize(NumPlaneWaves);
+}
+
+void PWBasis::evaluateHessian()
+{
+  for (int ig = 0; ig < NumPlaneWaves; ++ig)
+    for (int row = 0; row < OHMMS_DIM; ++row)
+      for (int column = 0; column < OHMMS_DIM; ++column)
+        Zh(ig, row * OHMMS_DIM + column) =
+            -kplusgvecs_cart[ig][row] * kplusgvecs_cart[ig][column] * Z(ig, PW_VALUE);
 }
 
 /** Remove basis elements if kinetic energy > ecut.
@@ -92,6 +103,7 @@ void PWBasis::trimforecut()
   std::vector<PosType> gcartCopy(kplusgvecs_cart);
   gvecs.clear();
   kplusgvecs_cart.clear();
+  minusModKplusG2.clear();
   minusModKplusG2.reserve(NumPlaneWaves);
   //  RealType kcutoff2 = 2.0*ecut; //std::sqrt(2.0*ecut);
   int ngIn = NumPlaneWaves;
