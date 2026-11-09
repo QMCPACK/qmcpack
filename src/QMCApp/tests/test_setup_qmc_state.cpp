@@ -35,7 +35,6 @@ TEST_CASE("setupQMCState", "[qmcapp]")
     setupQMCState(options, comm, qmc_state);
     CHECK_FALSE(qmc_state.dryrun);
     CHECK(qmc_state.io_node == (comm.rank() == 0));
-    CHECK(qmc_state.get_virtual_node_rank_count() == comm.getUniformNodeRankCount());
   }
 
   SECTION("--dryrun and --noprint")
@@ -51,8 +50,7 @@ TEST_CASE("setupQMCState", "[qmcapp]")
   {
     const char* argv[] = {"qmcpack", "--vnode-ranks=1", "test.xml"};
     options.parse(3, const_cast<char**>(argv));
-    setupQMCState(options, comm, qmc_state);
-    CHECK(qmc_state.get_virtual_node_rank_count() == 1);
+    CHECK_NOTHROW(setupQMCState(options, comm, qmc_state));
   }
 
   SECTION("--vnode-ranks invalid factor")

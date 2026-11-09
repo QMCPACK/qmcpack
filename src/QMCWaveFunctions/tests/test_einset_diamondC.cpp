@@ -22,7 +22,6 @@
 #include "BsplineFactory/EinsplineSetBuilder.h"
 #include "BsplineFactory/EinsplineSpinorSetBuilder.h"
 #include <ResourceCollection.h>
-#include "qmc_common.h"
 
 #include <stdio.h>
 #include <string>
@@ -310,7 +309,6 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   test_einset_diamond_1x1x1(false);
 
   Communicate& c(*OHMMS::Controller);
-  qmc_common.set_virtual_node_rank_count(c.getUniformNodeRankCount());
 
   if (c.size() % 2 == 0)
   {

@@ -24,31 +24,25 @@ void setupQMCState(const CommandLineOptions& options, const Communicate& comm, Q
   qmc_state.dryrun  = options.get_dryrun();
   qmc_state.io_node = (comm.rank() == 0 && !options.get_noprint());
 
-  const int max_vnode_ranks = comm.getUniformNodeRankCount();
-  if (options.get_vnode_ranks().has_value())
+  const int max_vnode_ranks = comm.getVirtualNodeRankCount();
+  const int vnode_ranks     = options.get_vnode_ranks().value_or(max_vnode_ranks);
+  if (max_vnode_ranks % vnode_ranks != 0)
   {
-    const int vnode_ranks = *options.get_vnode_ranks();
-    if (max_vnode_ranks % vnode_ranks != 0)
-    {
-      std::ostringstream msg;
-      msg << "setupQMCState(). --vnode-ranks (" << vnode_ranks
-          << ") can only be a factor of the uniform node rank count (" << max_vnode_ranks << ").";
-      throw UniformCommunicateError(msg.str());
-    }
-    qmc_state.set_virtual_node_rank_count(vnode_ranks);
+    std::ostringstream msg;
+    msg << "setupQMCState(). --vnode-ranks (" << vnode_ranks
+        << ") can only be a factor of the uniform node rank count (" << max_vnode_ranks << ").";
+    throw UniformCommunicateError(msg.str());
   }
-  else
-    qmc_state.set_virtual_node_rank_count(max_vnode_ranks);
 
   const auto& inputs = options.get_inputs();
   if (inputs.size() > 1)
   {
-    const int total_blocks = comm.size() / qmc_state.get_virtual_node_rank_count();
+    const int total_blocks = comm.size() / vnode_ranks;
     if (total_blocks < inputs.size())
     {
       std::ostringstream msg;
       msg << "setupQMCState(). Current " << comm.size() << " MPI ranks (" << total_blocks
-          << " blocks of size " << qmc_state.get_virtual_node_rank_count() << ") cannot accommodate all the "
+          << " blocks of size " << vnode_ranks << ") cannot accommodate all the "
           << inputs.size() << " individual calculations in the ensemble. "
           << "Increase the number of MPI ranks or reduce the number of calculations.";
       throw UniformCommunicateError(msg.str());
