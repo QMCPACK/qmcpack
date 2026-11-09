@@ -21,7 +21,6 @@
 #include "PlaneWave/PWOrbitalSetBuilder.h"
 #include "PlaneWave/PWParameterSet.h"
 #include "PlaneWave/PWTiling.h"
-#include "Estimators/MomentumDistribution.h"
 
 
 #include <stdio.h>
@@ -528,25 +527,19 @@ TEST_CASE("PlaneWave twist selection and momentum grid", "[wavefunction][plane_w
     spo->evaluateValue(elec, 0, values);
     const double phase = 2 * M_PI * twists[selected_primitive][0] * elec.R[0][0];
     const double coefficient = (selected_primitive + 1.0) * (spin_index + 1.0);
-    CHECK(std::real(values[0]) == Approx(coefficient * std::cos(phase)));
-#if defined(QMC_COMPLEX)
-    CHECK(std::imag(values[0]) == Approx(coefficient * std::sin(phase)));
-#endif
+    QMCTraits::FullPrecValueType expected_value;
+    copy_with_complex_cast(std::polar(coefficient, phase), expected_value);
+    CHECK(values[0] == ValueApprox(expected_value));
 
-    Libxml2Document estimator_doc;
-    REQUIRE(estimator_doc.parseFromString("<estimator type='MomentumDistribution' name='nofk' samples='1' kmax='7'/>"));
-    MomentumDistribution md(MomentumDistributionInput(estimator_doc.getRoot()), elec.getTotalNum(), elec.getTwist(),
-                            elec.getLattice());
-    REQUIRE_FALSE(md.kPoints.empty());
-    for (const auto& point : md.kPoints)
-    {
-      const auto reduced = elec.getLattice().k_unit(point);
-      for (int dimension = 0; dimension < OHMMS_DIM; ++dimension)
-      {
-        const double offset = reduced[dimension] - (dimension == 0 ? expected_twist : 0.0);
-        CHECK(offset == Approx(std::round(offset)).margin(1e-6));
-      }
-    }
+    const auto supercell_shift = elec.getLattice().toCart(ParticleSet::SingleParticlePos{1.0, 0.0, 0.0});
+    elec.R[0] += supercell_shift;
+    elec.update();
+    SPOSet::ValueVector shifted_values(1);
+    spo->evaluateValue(elec, 0, shifted_values);
+    const double bloch_phase = dot(elec.getLattice().k_cart(elec.getTwist()), supercell_shift);
+    QMCTraits::FullPrecValueType bloch_factor;
+    copy_with_complex_cast(std::polar(1.0, bloch_phase), bloch_factor);
+    CHECK(shifted_values[0] == ValueApprox(expected_value * bloch_factor));
   }
   REQUIRE(std::filesystem::remove(filename));
 }
