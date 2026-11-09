@@ -42,26 +42,25 @@
       </correlation>
     </jastrow>
 
-       <determinantset type="MO" key="STO" transform="no" source="ion0">
+    <sposet_collection type="MolecularOrbital">
       <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
-      <basisset>
-        <atomicBasisSet type="STO" elementType="He">
+      <basisset keyword="STO" transform="no">
+        <atomicBasisSet type="STO" elementType="He" normalized="no">
           <basisGroup rid="R0" n="1" l="0" m="0" type="Slater">
              <radfunc exponent="2.0"/>
           </basisGroup>
         </atomicBasisSet>
       </basisset>
+      <sposet basisset="LCAOBSet" name="spo-ud">
+        <coefficient id="updetC" type="Array" size="1">
+          1.0
+        </coefficient>
+      </sposet>
+    </sposet_collection>
+    <determinantset>
       <slaterdeterminant>
-        <determinant id="updet" spin="1" size="1">
-          <coefficient id="updetC" type="Array" size="1">
-            1.0
-          </coefficient>
-        </determinant>
-        <determinant id="downdet" spin="-1" size="1">
-          <coefficient id="downdetC" type="Array" size="1">
-            1.0
-          </coefficient>
-        </determinant>
+        <determinant sposet="spo-ud"/>
+        <determinant sposet="spo-ud"/>
       </slaterdeterminant>
     </determinantset>
   </wavefunction>
