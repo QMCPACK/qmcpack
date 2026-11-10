@@ -39,10 +39,10 @@
           </coefficient>
       </sposet>
     </sposet_collection>
-    <determinantset key="STO" source="ion0" transform="no" type="MO">
+    <determinantset>
       <slaterdeterminant batch="no">
-        <determinant id="spo-up"/>
-        <determinant id="spo-up"/>
+        <determinant sposet="spo-up"/>
+        <determinant sposet="spo-up"/>
       </slaterdeterminant>
     </determinantset>
  </wavefunction>

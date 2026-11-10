@@ -55,18 +55,18 @@
       </group>
     </particleset>
     <wavefunction name="psi0" target="e">
-      <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" cuspCorrection="yes" href="../C30-e180-ae.h5">
-        <slaterdeterminant>
-          <determinant id="updet" size="90" cuspInfo="./CuspCorrection/updet.cuspInfo.xml">
-            <occupation mode="ground"/>
-            <coefficient size="450" spindataset="0"/>
-          </determinant>
-          <determinant id="downdet" size="90" cuspInfo="./CuspCorrection/downdet.cuspInfo.xml">
-            <occupation mode="ground"/>
-            <coefficient size="450" spindataset="0"/>
-          </determinant>
-        </slaterdeterminant>
-      </determinantset>
+      <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" cuspCorrection="yes" href="../C30-e180-ae.h5">
+      <sposet name="spo-ud" size="90" cuspInfo="./CuspCorrection/spo-ud.cuspInfo.xml">
+        <occupation mode="ground"/>
+        <coefficient size="450" spindataset="0"/>
+      </sposet>
+    </sposet_collection>
+    <determinantset>
+      <slaterdeterminant>
+        <determinant sposet="spo-ud"/>
+        <determinant sposet="spo-ud"/>
+      </slaterdeterminant>
+    </determinantset>
       <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
         <correlation rcut="10" size="10" speciesA="u" speciesB="u">
           <coefficients id="uu" type="Array"> 0.4310005154 0.2998083406 0.2164487962 0.1518026648 0.1117922777 0.07898218192 0.05663572315 0.03723584367 0.02131129135 0.01132293093</coefficients>

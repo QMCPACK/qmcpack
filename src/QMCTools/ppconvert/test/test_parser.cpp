@@ -10,7 +10,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <list>
 #include <string>
@@ -26,7 +26,7 @@ public:
     output << contents;
   }
 
-  ~TemporaryFile() { std::remove(name_.c_str()); }
+  ~TemporaryFile() { std::filesystem::remove(name_); }
 
   const std::string& name() const { return name_; }
 

@@ -16,21 +16,20 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include <stdexcept>
-#include <memory>
-#include <optional>
 #include <iostream>
+#include <memory>
+#include <sstream>
+#include <stdexcept>
 #include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Message/UniformCommunicateError.h"
-#include "Utilities/SimpleParser.h"
-#include "Utilities/ProgressReportEngine.h"
 #include "Platforms/Host/OutputManager.h"
-#include "OhmmsData/FileUtility.h"
-#include "Host/sysutil.h"
-#include "ProjectData.h"
 #include "DeviceManager.h"
+#include "QMCApp/CommandLineOptions.h"
+#include "QMCApp/setupQMCState.h"
 #include "QMCApp/QMCMain.h"
+#include "Utilities/ProgressReportEngine.h"
+#include "Utilities/TimerManager.h"
 #include "Utilities/qmc_common.h"
 #include "Concurrency/OpenMP.h"
 
@@ -58,165 +57,54 @@ int main(int argc, char** argv)
 #endif
   try
   {
+    CommandLineOptions options;
+    options.parse(argc, argv);
+    if (options.should_normal_stop())
+    {
+      if (OHMMS::Controller->rank() == 0)
+        options.print_version_and_usage(std::cout);
+      OHMMS::Controller.reset();
+      return 0;
+    }
+
+    if (options.get_debug())
+      ReportEngine::enableOutput();
+
+    // Default setting is 'timer_level_coarse'
+    if (options.get_enable_timers())
+    {
+#ifndef ENABLE_TIMERS
+      if (OHMMS::Controller->rank() == 0)
+        std::cerr
+            << "The '-enable-timers' command line option will have no effect. This executable was built without "
+               "ENABLE_TIMER set."
+            << std::endl;
+#endif
+      if (!options.get_timer_level().empty())
+        getGlobalTimerManager().set_timer_threshold(options.get_timer_level());
+    }
+
+    if (options.get_verbosity().has_value())
+      outputManager.setVerbosity(*options.get_verbosity());
+
+    setupQMCState(options, *OHMMS::Controller, qmc_common);
+
     Communicate node_comm{OHMMS::Controller->createNodeComm()};
     // assign accelerators within a physical node
     DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
-    //qmc_common  and MPI is initialized
-    qmcplusplus::qmc_common.initialize(argc, argv);
-    std::vector<std::string> fgroup_names_cmd, fgroup_names_txt;
-    std::optional<int> vnode_ranks;
-
-    int i = 1;
-    while (i < argc)
-    {
-      std::string c(argv[i]);
-      if (c[0] == '-')
-      {
-        if (c == "-debug")
-          ReportEngine::enableOutput();
-
-        // Default setting is 'timer_level_coarse'
-        if (c.find("-enable-timers") < c.size())
-        {
-#ifndef ENABLE_TIMERS
-          std::cerr
-              << "The '-enable-timers' command line option will have no effect. This executable was built without "
-                 "ENABLE_TIMER set."
-              << std::endl;
-#endif
-          int pos = c.find("=");
-          if (pos != std::string::npos)
-          {
-            std::string timer_level = c.substr(pos + 1);
-            getGlobalTimerManager().set_timer_threshold(timer_level);
-          }
-        }
-        if (c.find("-verbosity") < c.size())
-        {
-          int pos = c.find("=");
-          if (pos != std::string::npos)
-          {
-            std::string verbose_level = c.substr(pos + 1);
-            if (verbose_level == "low")
-            {
-              outputManager.setVerbosity(Verbosity::LOW);
-            }
-            else if (verbose_level == "high")
-            {
-              outputManager.setVerbosity(Verbosity::HIGH);
-            }
-            else if (verbose_level == "debug")
-            {
-              outputManager.setVerbosity(Verbosity::DEBUG);
-            }
-            else
-            {
-              throw UniformCommunicateError("Unknown verbosity level: " + verbose_level);
-            }
-          }
-        }
-        if (c.find("vnode-ranks") < c.size())
-        {
-          int pos = c.find("=");
-          try
-          {
-            if (pos != std::string::npos)
-              vnode_ranks = std::stoi(c.substr(pos + 1));
-            else if (i + 1 < argc)
-              vnode_ranks = std::stoi(argv[++i]);
-            else
-              throw UniformCommunicateError("Missing argument for --vnode-ranks");
-          }
-          catch (const std::invalid_argument&)
-          {
-            throw UniformCommunicateError("Invalid argument for --vnode-ranks");
-          }
-          catch (const std::out_of_range&)
-          {
-            throw UniformCommunicateError("Argument out of range for --vnode-ranks");
-          }
-          if (*vnode_ranks <= 0)
-            throw UniformCommunicateError("--vnode-ranks must be a positive integer.");
-        }
-      }
-      else
-      {
-        if (c.find(".xml") == c.size() - 4)
-          fgroup_names_cmd.push_back(argv[i]);
-        else
-        {
-          std::ifstream fin(argv[i], std::ifstream::in);
-          bool valid = !fin.fail();
-          while (valid)
-          {
-            std::vector<std::string> words;
-            getwords(words, fin);
-            if (words.size())
-            {
-              if (words[0].find(".xml") == words[0].size() - 4)
-                fgroup_names_txt.push_back(words[0]);
-            }
-            else
-              valid = false;
-          }
-        }
-      }
-      ++i;
-    }
-
-    std::vector<std::string> inputs(fgroup_names_cmd.size() + fgroup_names_txt.size());
-    copy(fgroup_names_txt.begin(), fgroup_names_txt.end(), inputs.begin());
-    i = fgroup_names_txt.size();
-    for (int k = 0; k < fgroup_names_cmd.size(); ++k)
-      inputs[i++] = fgroup_names_cmd[k];
-    if (inputs.empty())
-    {
-      std::string msg = "No valid input file is given.\n"
-                        "Usage: qmcpack [options] <input-files.xml>\n"
-                        "Ensemble runs may be initialized by specifying either multiple .xml files or text files "
-                        "containing lists of .xml input files.";
-      throw UniformCommunicateError(msg);
-    }
-
-    // set virtual node rank count
-    if (const int max_vnode_ranks = OHMMS::Controller->getUniformNodeRankCount(); vnode_ranks.has_value())
-    {
-      if (max_vnode_ranks % *vnode_ranks != 0)
-      {
-        std::ostringstream msg;
-        msg << "main(). --vnode-ranks (" << *vnode_ranks
-            << ") can only be a factor of the uniform node rank count (" << max_vnode_ranks << ").";
-        throw UniformCommunicateError(msg.str());
-      }
-      qmc_common.set_virtual_node_rank_count(*vnode_ranks);
-    }
-    else
-      qmc_common.set_virtual_node_rank_count(max_vnode_ranks);
-
-    if (inputs.size() > 1)
-    {
-      const int total_blocks = OHMMS::Controller->size() / qmc_common.get_virtual_node_rank_count();
-      if (total_blocks < inputs.size())
-      {
-        std::ostringstream msg;
-        msg << "main(). Current " << OHMMS::Controller->size() << " MPI ranks (" << total_blocks << " blocks of size "
-            << qmc_common.get_virtual_node_rank_count() << ") cannot accommodate all the " << inputs.size()
-            << " individual calculations in the ensemble. "
-            << "Increase the number of MPI ranks or reduce the number of calculations.";
-        throw UniformCommunicateError(msg.str());
-      }
-    }
+    const auto& inputs = options.get_inputs();
 
     std::unique_ptr<Communicate> comm_job;
-    if (inputs.size() > 1)
+    if (inputs.size() > 1 || options.get_vnode_ranks().has_value())
     {
-      comm_job =
-          std::make_unique<Communicate>(OHMMS::Controller->split(inputs.size(), qmc_common.get_virtual_node_rank_count()));
-      qmc_common.setupFilenameInfixForEnsembleJobs(comm_job->getGroupID(), comm_job->getNumGroups());
+      const int vnode_ranks = options.get_vnode_ranks().value_or(OHMMS::Controller->getVirtualNodeRankCount());
+      comm_job              = std::make_unique<Communicate>(OHMMS::Controller->split(inputs.size(), vnode_ranks));
+      if (inputs.size() > 1)
+        qmc_common.setupFilenameInfixForEnsembleJobs(comm_job->getGroupID(), comm_job->getNumGroups());
     }
 
-    Communicate& qmcComm          = inputs.size() > 1 ? *comm_job : *OHMMS::Controller;
+    Communicate& qmcComm          = comm_job ? *comm_job : *OHMMS::Controller;
     const std::string& input_name = inputs.size() > 1 ? inputs[qmcComm.getGroupID()] : inputs[0];
 
     if (qmcComm.rank() != 0)
