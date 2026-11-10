@@ -699,40 +699,6 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
 
   inline real_type evaluate(const real_type r, const real_type rinv) { return 0.0; }
 
-
-  inline bool evaluateDerivativesFD(const real_type r_12,
-                                    const real_type r_1I,
-                                    const real_type r_2I,
-                                    std::vector<double>& d_vals,
-                                    std::vector<TinyVector<real_type, 3>>& d_grads,
-                                    std::vector<Tensor<real_type, 3>>& d_hess)
-  {
-    const real_type eps = 1.0e-6;
-    assert(d_vals.size() == Parameters.size());
-    assert(d_grads.size() == Parameters.size());
-    assert(d_hess.size() == Parameters.size());
-    for (int ip = 0; ip < Parameters.size(); ip++)
-    {
-      real_type v_plus, v_minus;
-      TinyVector<real_type, 3> g_plus, g_minus;
-      Tensor<real_type, 3> h_plus, h_minus;
-      real_type save_p = Parameters[ip];
-      Parameters[ip]   = save_p + eps;
-      reset_gamma();
-      v_plus         = evaluate(r_12, r_1I, r_2I, g_plus, h_plus);
-      Parameters[ip] = save_p - eps;
-      reset_gamma();
-      v_minus        = evaluate(r_12, r_1I, r_2I, g_minus, h_minus);
-      Parameters[ip] = save_p;
-      reset_gamma();
-      real_type dp_inv = 0.5 / eps;
-      d_vals[ip]       = dp_inv * (v_plus - v_minus);
-      d_grads[ip]      = dp_inv * (g_plus - g_minus);
-      d_hess[ip]       = dp_inv * (h_plus - h_minus);
-    }
-    return true;
-  }
-
   ///calculate derivatives with respect to polynomial parameters
   inline bool evaluateDerivatives(const real_type r_12,
                                   const real_type r_1I,
@@ -947,22 +913,6 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
       }
     }
     return true;
-#ifdef DEBUG_DERIVS
-    evaluateDerivativesFD(r_12, r_1I, r_2I, d_valsFD, d_gradsFD, d_hessFD);
-    fprintf(stderr, "Param   Analytic   Finite diffference\n");
-    for (int ip = 0; ip < Parameters.size(); ip++)
-      fprintf(stderr, "  %3d  %12.6e  %12.6e\n", ip, d_vals[ip], d_valsFD[ip]);
-    fprintf(stderr, "Param   Analytic   Finite diffference\n");
-    for (int ip = 0; ip < Parameters.size(); ip++)
-      fprintf(stderr, "  %3d  %12.6e %12.6e   %12.6e %12.6e   %12.6e %12.6e\n", ip, d_grads[ip][0], d_gradsFD[ip][0],
-              d_grads[ip][1], d_gradsFD[ip][1], d_grads[ip][2], d_gradsFD[ip][2]);
-    fprintf(stderr, "Param   Analytic   Finite diffference\n");
-    for (int ip = 0; ip < Parameters.size(); ip++)
-      for (int dim = 0; dim < 3; dim++)
-        fprintf(stderr, "  %3d  %12.6e %12.6e   %12.6e %12.6e   %12.6e %12.6e\n", ip, d_hess[ip](0, dim),
-                d_hessFD[ip](0, dim), d_hess[ip](1, dim), d_hessFD[ip](1, dim), d_hess[ip](2, dim),
-                d_hessFD[ip](2, dim));
-#endif
   }
 
   inline real_type f(real_type r) override { return 0.0; }
