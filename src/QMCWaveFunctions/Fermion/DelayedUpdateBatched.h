@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2026 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
@@ -22,6 +22,8 @@
 #include "QueueAliases.hpp"
 #include "AccelBLAS.hpp"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
+#include "Resource.h"
+#include "RefVectorWithResource.h"
 
 namespace qmcplusplus
 {
@@ -56,7 +58,7 @@ public:
   template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
-  struct MultiWalkerResource
+  struct MultiWalkerResource : public Resource
   {
     // CUDA stream, cublas handle object
     compute::Queue<PL> queue;
@@ -87,7 +89,10 @@ public:
     // scratch space for keeping one row of Ainv
     UnpinnedDualVector<Value> mw_rcopy;
 
-    MultiWalkerResource() : blas_handle(queue) {}
+    MultiWalkerResource() : Resource("DelayedUpdateBatchedMultiWalkerResource"), blas_handle(queue) {}
+    MultiWalkerResource(const MultiWalkerResource&) : MultiWalkerResource() {}
+
+    std::unique_ptr<Resource> makeClone() const override { return std::make_unique<MultiWalkerResource>(*this); }
 
     void resize_fill_constant_arrays(size_t nw)
     {
@@ -119,7 +124,7 @@ private:
    *  ratioGrad checks if invRow_id is consistent. If not, invRow needs to be recomputed.
    *  acceptMove and completeUpdates mark invRow invalid by setting invRow_id to -1
    */
-  int invRow_id;
+  mutable int invRow_id;
   // scratch space for keeping one row of Ainv
   UnpinnedDualVector<Value> rcopy;
 
@@ -140,7 +145,7 @@ private:
   /// list of delayed electrons
   DeviceVector<int> delay_list_gpu;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
-  int delay_count;
+  mutable int delay_count;
   /// if true, updates are not delayed.
   const bool no_delayed_update_;
 
@@ -172,27 +177,25 @@ private:
    * @param Ainv inverse matrix
    * @param rowchanged the row id corresponding to the proposed electron
    */
-  static void mw_prepareInvRow(const RefVectorWithLeader<This_t>& engines,
-                               MultiWalkerResource& mw_rsc,
-                               const RefVector<DualMatrix<Value>>& psiMinv_refs,
-                               const int rowchanged)
+  void mw_prepareInvRow(const RefVectorWithResource<This_t>& engines,
+                        const RefVector<DualMatrix<Value>>& psiMinv_refs,
+                        const int rowchanged) const
   {
-    auto& engine_leader              = engines.getLeader();
+    auto& mw_rsc                     = engines.template getCastedResource<MultiWalkerResource>();
     auto& blas_handle                = mw_rsc.blas_handle;
     auto& queue                      = mw_rsc.queue;
     auto& cminusone_vec              = mw_rsc.cminusone_vec;
     auto& cone_vec                   = mw_rsc.cone_vec;
     auto& czero_vec                  = mw_rsc.czero_vec;
     auto& prepare_inv_row_buffer_H2D = mw_rsc.prepare_inv_row_buffer_H2D;
-    const int norb                   = engine_leader.invRow.size();
+    const int norb                   = invRow.size();
     const int nw                     = engines.size();
-    int& delay_count                 = engine_leader.delay_count;
 
     constexpr size_t num_ptrs_packed = 7; // it must match packing and unpacking
     prepare_inv_row_buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
     mw_rsc.resize_fill_constant_arrays(nw);
 
-    const int lda_Binv = engine_leader.Binv_gpu.cols();
+    const int lda_Binv = Binv_gpu.cols();
     Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
@@ -232,7 +235,7 @@ private:
     compute::BLAS::gemv_batched(blas_handle, 'N', norb, delay_count, cone_vec.device_data(), V_mw_ptr, norb,
                                 BinvRow_mw_ptr, 1, cone_vec.device_data(), invRow_mw_ptr, 1, nw);
     // mark row prepared
-    engine_leader.invRow_id = rowchanged;
+    invRow_id = rowchanged;
   }
 
   /** Do complete row updates
@@ -250,18 +253,16 @@ private:
    *  \param[in] phi_vgl_v          multiple walker orbital VGL
    *  \param[inout] ratios
    */
-  static void mw_updateRow(const RefVectorWithLeader<This_t>& engines,
-                           MultiWalkerResource& mw_rsc,
-                           const RefVector<DualMatrix<Value>>& psiMinv_refs,
-                           const int rowchanged,
-                           const std::vector<Value*>& psiM_g_list,
-                           const std::vector<Value*>& psiM_l_list,
-                           const std::vector<bool>& isAccepted,
-                           const OffloadMWVGLArray<Value>& phi_vgl_v,
-                           const std::vector<Value>& ratios)
+  void mw_updateRow(const RefVectorWithResource<This_t>& engines,
+                    const RefVector<DualMatrix<Value>>& psiMinv_refs,
+                    const int rowchanged,
+                    const std::vector<Value*>& psiM_g_list,
+                    const std::vector<Value*>& psiM_l_list,
+                    const std::vector<bool>& isAccepted,
+                    const OffloadMWVGLArray<Value>& phi_vgl_v,
+                    const std::vector<Value>& ratios) const
   {
-    auto& engine_leader = engines.getLeader();
-    engine_leader.guard_no_delay();
+    guard_no_delay();
 
     const size_t n_accepted = psiM_g_list.size();
 #ifndef NDEBUG
@@ -271,6 +272,7 @@ private:
     if (n_accepted == 0)
       return;
 
+    auto& mw_rsc                = engines.template getCastedResource<MultiWalkerResource>();
     auto& queue                 = mw_rsc.queue;
     auto& blas_handle           = mw_rsc.blas_handle;
     auto& updateRow_buffer_H2D  = mw_rsc.updateRow_buffer_H2D;
@@ -278,7 +280,7 @@ private:
     auto& mw_rcopy              = mw_rsc.mw_rcopy;
     auto& cone_vec              = mw_rsc.cone_vec;
     auto& czero_vec             = mw_rsc.czero_vec;
-    const int norb              = engine_leader.invRow.size();
+    const int norb              = invRow.size();
     const int lda               = psiMinv_refs[0].get().cols();
     const int nw                = engines.size();
     const size_t phi_vgl_stride = nw * norb;
@@ -350,17 +352,16 @@ public:
 
   // prepare invRow and compute the old gradients.
   template<typename GT>
-  static void mw_evalGrad(const RefVectorWithLeader<This_t>& engines,
-                          MultiWalkerResource& mw_rsc,
-                          const RefVector<DualMatrix<Value>>& psiMinv_refs,
-                          const std::vector<const Value*>& dpsiM_row_list,
-                          const int rowchanged,
-                          std::vector<GT>& grad_now)
+  void mw_evalGrad(const RefVectorWithResource<This_t>& engines,
+                   const RefVector<DualMatrix<Value>>& psiMinv_refs,
+                   const std::vector<const Value*>& dpsiM_row_list,
+                   const int rowchanged,
+                   std::vector<GT>& grad_now) const
   {
-    auto& engine_leader = engines.getLeader();
-    if (!engine_leader.no_delayed_update_)
-      mw_prepareInvRow(engines, mw_rsc, psiMinv_refs, rowchanged);
+    if (!no_delayed_update_)
+      mw_prepareInvRow(engines, psiMinv_refs, rowchanged);
 
+    auto& mw_rsc              = engines.template getCastedResource<MultiWalkerResource>();
     auto& queue               = mw_rsc.queue;
     auto& evalGrad_buffer_H2D = mw_rsc.evalGrad_buffer_H2D;
     auto& grads_value_v       = mw_rsc.grads_value_v;
@@ -371,7 +372,7 @@ public:
     Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(evalGrad_buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
-      if (engine_leader.no_delayed_update_)
+      if (no_delayed_update_)
       {
         DualMatrix<Value>& psiMinv = psiMinv_refs[iw];
         ptr_buffer[0][iw]          = psiMinv.device_data() + rowchanged * psiMinv.cols();
@@ -389,7 +390,7 @@ public:
     const Value** invRow_ptr    = reinterpret_cast<const Value**>(evalGrad_buffer_H2D.device_data());
     const Value** dpsiM_row_ptr = reinterpret_cast<const Value**>(evalGrad_buffer_H2D.device_data()) + nw;
 
-    compute::calcGradients_batched(queue, engine_leader.invRow.size(), invRow_ptr, dpsiM_row_ptr,
+    compute::calcGradients_batched(queue, invRow.size(), invRow_ptr, dpsiM_row_ptr,
                                    grads_value_v.device_data(), nw);
     queue.enqueueD2H(grads_value_v);
     queue.sync();
@@ -399,16 +400,15 @@ public:
   }
 
   template<typename GT>
-  static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines,
-                                  MultiWalkerResource& mw_rsc,
-                                  const RefVector<DualMatrix<Value>>& psiMinv_refs,
-                                  const std::vector<const Value*>& dpsiM_row_list,
-                                  OffloadMatrix<Complex>& mw_dspin,
-                                  const int rowchanged,
-                                  std::vector<GT>& grad_now,
-                                  std::vector<Complex>& spingrad_now)
+  void mw_evalGradWithSpin(const RefVectorWithResource<This_t>& engines,
+                           const RefVector<DualMatrix<Value>>& psiMinv_refs,
+                           const std::vector<const Value*>& dpsiM_row_list,
+                           OffloadMatrix<Complex>& mw_dspin,
+                           const int rowchanged,
+                           std::vector<GT>& grad_now,
+                           std::vector<Complex>& spingrad_now) const
   {
-    auto& engine_leader     = engines.getLeader();
+    auto& mw_rsc            = engines.template getCastedResource<MultiWalkerResource>();
     auto& buffer_H2D        = mw_rsc.evalGrad_buffer_H2D;
     auto& grads_value_v     = mw_rsc.grads_value_v;
     auto& spingrads_value_v = mw_rsc.spingrads_value_v;
@@ -538,35 +538,33 @@ public:
    *  \param[in] phi_vgl_v          multiple walker orbital VGL
    *  \param[inout] ratios
    */
-  static void mw_accept_rejectRow(const RefVectorWithLeader<This_t>& engines,
-                                  MultiWalkerResource& mw_rsc,
-                                  const RefVector<DualMatrix<Value>>& psiMinv_refs,
-                                  const int rowchanged,
-                                  const std::vector<Value*>& psiM_g_list,
-                                  const std::vector<Value*>& psiM_l_list,
-                                  const std::vector<bool>& isAccepted,
-                                  const OffloadMWVGLArray<Value>& phi_vgl_v,
-                                  const std::vector<Value>& ratios)
+  void mw_accept_rejectRow(const RefVectorWithResource<This_t>& engines,
+                           const RefVector<DualMatrix<Value>>& psiMinv_refs,
+                           const int rowchanged,
+                           const std::vector<Value*>& psiM_g_list,
+                           const std::vector<Value*>& psiM_l_list,
+                           const std::vector<bool>& isAccepted,
+                           const OffloadMWVGLArray<Value>& phi_vgl_v,
+                           const std::vector<Value>& ratios) const
   {
-    auto& engine_leader = engines.getLeader();
     // invRow consumed, mark invRow_id unset
-    engine_leader.invRow_id = -1;
+    invRow_id = -1;
 
-    if (engine_leader.no_delayed_update_)
+    if (no_delayed_update_)
     {
-      mw_updateRow(engines, mw_rsc, psiMinv_refs, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v, ratios);
+      mw_updateRow(engines, psiMinv_refs, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v, ratios);
       return;
     }
 
+    auto& mw_rsc                      = engines.template getCastedResource<MultiWalkerResource>();
     auto& queue                       = mw_rsc.queue;
     auto& blas_handle                 = mw_rsc.blas_handle;
     auto& cminusone_vec               = mw_rsc.cminusone_vec;
     auto& cone_vec                    = mw_rsc.cone_vec;
     auto& czero_vec                   = mw_rsc.czero_vec;
     auto& accept_rejectRow_buffer_H2D = mw_rsc.accept_rejectRow_buffer_H2D;
-    int& delay_count                  = engine_leader.delay_count;
-    const int lda_Binv                = engine_leader.Binv_gpu.cols();
-    const int norb                    = engine_leader.invRow.size();
+    const int lda_Binv                = Binv_gpu.cols();
+    const int norb                    = invRow.size();
     const int nw                      = engines.size();
     const int n_accepted              = psiM_g_list.size();
     const size_t phi_vgl_stride       = nw * norb;
@@ -665,25 +663,23 @@ public:
     delay_count++;
     // update Ainv when maximal delay is reached
     if (delay_count == lda_Binv)
-      mw_updateInvMat(engines, mw_rsc, psiMinv_refs);
+      mw_updateInvMat(engines, psiMinv_refs);
   }
 
   /** update the full Ainv and reset delay_count
    * @param Ainv inverse matrix
    */
-  static void mw_updateInvMat(const RefVectorWithLeader<This_t>& engines,
-                              MultiWalkerResource& mw_rsc,
-                              const RefVector<DualMatrix<Value>>& psiMinv_refs)
+  void mw_updateInvMat(const RefVectorWithResource<This_t>& engines,
+                       const RefVector<DualMatrix<Value>>& psiMinv_refs) const
   {
-    auto& engine_leader = engines.getLeader();
-    int& delay_count    = engine_leader.delay_count;
     if (delay_count == 0)
       return;
     // update the inverse matrix
+    auto& mw_rsc               = engines.template getCastedResource<MultiWalkerResource>();
     auto& queue                = mw_rsc.queue;
     auto& blas_handle          = mw_rsc.blas_handle;
     auto& updateInv_buffer_H2D = mw_rsc.updateInv_buffer_H2D;
-    const int norb             = engine_leader.invRow.size();
+    const int norb             = invRow.size();
     const int lda              = psiMinv_refs[0].get().cols();
     const int nw               = engines.size();
 
@@ -724,7 +720,7 @@ public:
     else
 */
     {
-      const int lda_Binv = engine_leader.Binv_gpu.cols();
+      const int lda_Binv = Binv_gpu.cols();
       compute::BLAS::gemm_batched(blas_handle, 'T', 'N', delay_count, norb, norb, Value(1), U_mw_ptr, norb, Ainv_mw_ptr,
                                   lda, Value(0), tempMat_mw_ptr, lda_Binv, nw);
       compute::applyW_batched(queue, delay_list_mw_ptr, delay_count, tempMat_mw_ptr, lda_Binv, nw);
@@ -759,20 +755,19 @@ public:
   /** return invRow host or device pointers based on on_host request
    * prepare invRow if not already.
    */
-  static std::vector<const Value*> mw_getInvRow(const RefVectorWithLeader<This_t>& engines,
-                                                MultiWalkerResource& mw_rsc,
-                                                const RefVector<DualMatrix<Value>>& psiMinv_refs,
-                                                const int row_id,
-                                                bool on_host)
+  std::vector<const Value*> mw_getInvRow(const RefVectorWithResource<This_t>& engines,
+                                         const RefVector<DualMatrix<Value>>& psiMinv_refs,
+                                         const int row_id,
+                                         bool on_host) const
   {
-    auto& engine_leader = engines.getLeader();
-    auto& queue         = mw_rsc.queue;
-    if (engine_leader.no_delayed_update_)
+    auto& mw_rsc = engines.template getCastedResource<MultiWalkerResource>();
+    auto& queue  = mw_rsc.queue;
+    if (no_delayed_update_)
       queue.sync();
-    else if (engine_leader.invRow_id != row_id)
+    else if (invRow_id != row_id)
     {
       // this can be skipped if mw_evalGrad gets called already.
-      mw_prepareInvRow(engines, mw_rsc, psiMinv_refs, row_id);
+      mw_prepareInvRow(engines, psiMinv_refs, row_id);
       queue.sync();
     }
 
@@ -781,7 +776,7 @@ public:
     if (on_host)
     {
       // copy values to host and return host pointer
-      if (engine_leader.no_delayed_update_)
+      if (no_delayed_update_)
         for (DualMatrix<Value>& psiMinv : psiMinv_refs)
         {
           const size_t ncols = psiMinv.cols();
@@ -798,7 +793,7 @@ public:
     else
     {
       // return device pointer
-      if (engine_leader.no_delayed_update_)
+      if (no_delayed_update_)
         for (DualMatrix<Value>& psiMinv : psiMinv_refs)
           row_ptr_list.push_back(psiMinv.device_data() + row_id * psiMinv.cols());
       else
@@ -809,13 +804,12 @@ public:
   }
 
   /// transfer Ainv to the host
-  static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines,
-                                  MultiWalkerResource& mw_rsc,
-                                  const RefVector<DualMatrix<Value>>& psiMinv_refs)
+  void mw_transferAinv_D2H(const RefVectorWithResource<This_t>& engines,
+                           const RefVector<DualMatrix<Value>>& psiMinv_refs) const
   {
-    auto& engine_leader = engines.getLeader();
-    auto& queue         = mw_rsc.queue;
-    engine_leader.guard_no_delay();
+    auto& mw_rsc = engines.template getCastedResource<MultiWalkerResource>();
+    auto& queue  = mw_rsc.queue;
+    guard_no_delay();
 
     for (DualMatrix<Value>& psiMinv : psiMinv_refs)
       queue.enqueueD2H(psiMinv);
