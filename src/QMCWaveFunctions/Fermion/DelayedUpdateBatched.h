@@ -112,6 +112,22 @@ public:
         czero_vec.updateTo();
       }
     }
+
+    int getInvRowId() const { return invRow_id; }
+    void setInvRowId(int id) { invRow_id = id; }
+
+    int getDelayCount() const { return delay_count; }
+    void setDelayCount(int count) { delay_count = count; }
+
+  private:
+    /** row id correspond to the up-to-date invRow. [0 norb), invRow is ready; -1, invRow is not valid.
+     *  This id is set after calling getInvRow indicating invRow has been prepared for the invRow_id row
+     *  ratioGrad checks if invRow_id is consistent. If not, invRow needs to be recomputed.
+     *  acceptMove and completeUpdates mark invRow invalid by setting invRow_id to -1
+     */
+    int invRow_id = -1;
+    /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
+    int delay_count = 0;
   };
 
 private:
@@ -119,12 +135,6 @@ private:
   UnpinnedDualVector<Value> temp;
   /// row of up-to-date Ainv
   UnpinnedDualVector<Value> invRow;
-  /** row id correspond to the up-to-date invRow. [0 norb), invRow is ready; -1, invRow is not valid.
-   *  This id is set after calling getInvRow indicating invRow has been prepared for the invRow_id row
-   *  ratioGrad checks if invRow_id is consistent. If not, invRow needs to be recomputed.
-   *  acceptMove and completeUpdates mark invRow invalid by setting invRow_id to -1
-   */
-  mutable int invRow_id;
   // scratch space for keeping one row of Ainv
   UnpinnedDualVector<Value> rcopy;
 
@@ -144,8 +154,6 @@ private:
   DeviceVector<Value> p_gpu;
   /// list of delayed electrons
   DeviceVector<int> delay_list_gpu;
-  /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
-  mutable int delay_count;
   /// if true, updates are not delayed.
   const bool no_delayed_update_;
 
@@ -162,15 +170,6 @@ private:
     Binv_gpu.resize(delay, delay);
     delay_list_gpu.resize(delay);
     invRow.resize(norb);
-  }
-
-  /** ensure no previous delay left.
-   *  This looks like it should be an assert
-   */
-  inline void guard_no_delay() const
-  {
-    if (delay_count != 0)
-      throw std::runtime_error("BUG: unexpected call sequence delay_count is not 0");
   }
 
   /** compute the row of up-to-date Ainv
@@ -190,6 +189,7 @@ private:
     auto& prepare_inv_row_buffer_H2D = mw_rsc.prepare_inv_row_buffer_H2D;
     const int norb                   = invRow.size();
     const int nw                     = engines.size();
+    const int delay_count            = mw_rsc.getDelayCount();
 
     constexpr size_t num_ptrs_packed = 7; // it must match packing and unpacking
     prepare_inv_row_buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
@@ -235,7 +235,7 @@ private:
     compute::BLAS::gemv_batched(blas_handle, 'N', norb, delay_count, cone_vec.device_data(), V_mw_ptr, norb,
                                 BinvRow_mw_ptr, 1, cone_vec.device_data(), invRow_mw_ptr, 1, nw);
     // mark row prepared
-    invRow_id = rowchanged;
+    mw_rsc.setInvRowId(rowchanged);
   }
 
   /** Do complete row updates
@@ -262,7 +262,8 @@ private:
                     const OffloadMWVGLArray<Value>& phi_vgl_v,
                     const std::vector<Value>& ratios) const
   {
-    guard_no_delay();
+    auto& mw_rsc = engines.template getCastedResource<MultiWalkerResource>();
+    assert(mw_rsc.getDelayCount() == 0 && "BUG: unexpected call sequence delay_count is not 0");
 
     const size_t n_accepted = psiM_g_list.size();
 #ifndef NDEBUG
@@ -272,7 +273,6 @@ private:
     if (n_accepted == 0)
       return;
 
-    auto& mw_rsc                = engines.template getCastedResource<MultiWalkerResource>();
     auto& queue                 = mw_rsc.queue;
     auto& blas_handle           = mw_rsc.blas_handle;
     auto& updateRow_buffer_H2D  = mw_rsc.updateRow_buffer_H2D;
@@ -345,7 +345,7 @@ private:
 public:
   /// default constructor
   DelayedUpdateBatched(size_t norb, size_t max_delay)
-      : invRow_id(-1), delay_count(0), no_delayed_update_(max_delay == 1)
+      : no_delayed_update_(max_delay == 1)
   { resize(norb, max_delay); }
 
   DelayedUpdateBatched(const DelayedUpdateBatched&) = delete;
@@ -491,7 +491,6 @@ public:
   template<typename VVT, typename FPVT>
   void updateRow(DualMatrix<Value>& Ainv, int rowchanged, const VVT& phiV, FPVT c_ratio_in)
   {
-    guard_no_delay();
     // update the inverse matrix
     constexpr Value cone(1), czero(0);
     const int norb = Ainv.rows();
@@ -547,8 +546,9 @@ public:
                            const OffloadMWVGLArray<Value>& phi_vgl_v,
                            const std::vector<Value>& ratios) const
   {
+    auto& mw_rsc = engines.template getCastedResource<MultiWalkerResource>();
     // invRow consumed, mark invRow_id unset
-    invRow_id = -1;
+    mw_rsc.setInvRowId(-1);
 
     if (no_delayed_update_)
     {
@@ -556,7 +556,6 @@ public:
       return;
     }
 
-    auto& mw_rsc                      = engines.template getCastedResource<MultiWalkerResource>();
     auto& queue                       = mw_rsc.queue;
     auto& blas_handle                 = mw_rsc.blas_handle;
     auto& cminusone_vec               = mw_rsc.cminusone_vec;
@@ -568,6 +567,7 @@ public:
     const int nw                      = engines.size();
     const int n_accepted              = psiM_g_list.size();
     const size_t phi_vgl_stride       = nw * norb;
+    const int delay_count             = mw_rsc.getDelayCount();
 
     constexpr size_t num_ptrs_packed = 12; // it must match packing and unpacking
     accept_rejectRow_buffer_H2D.resize((sizeof(Value*) * num_ptrs_packed + sizeof(Value)) * nw);
@@ -660,9 +660,9 @@ public:
     compute::add_delay_list_save_sigma_VGL_batched(queue, delay_list_mw_ptr, rowchanged, delay_count, Binv_mw_ptr,
                                                    lda_Binv, ratio_inv_mw_ptr, phiVGL_mw_ptr, phi_vgl_stride,
                                                    U_row_mw_ptr, dpsiM_mw_out, d2psiM_mw_out, norb, n_accepted, nw);
-    delay_count++;
+    mw_rsc.setDelayCount(delay_count + 1);
     // update Ainv when maximal delay is reached
-    if (delay_count == lda_Binv)
+    if (mw_rsc.getDelayCount() == lda_Binv)
       mw_updateInvMat(engines, psiMinv_refs);
   }
 
@@ -672,10 +672,11 @@ public:
   void mw_updateInvMat(const RefVectorWithResource<This_t>& engines,
                        const RefVector<DualMatrix<Value>>& psiMinv_refs) const
   {
-    if (delay_count == 0)
+    auto& mw_rsc = engines.template getCastedResource<MultiWalkerResource>();
+    if (mw_rsc.getDelayCount() == 0)
       return;
+    const int delay_count = mw_rsc.getDelayCount();
     // update the inverse matrix
-    auto& mw_rsc               = engines.template getCastedResource<MultiWalkerResource>();
     auto& queue                = mw_rsc.queue;
     auto& blas_handle          = mw_rsc.blas_handle;
     auto& updateInv_buffer_H2D = mw_rsc.updateInv_buffer_H2D;
@@ -729,7 +730,7 @@ public:
       compute::BLAS::gemm_batched(blas_handle, 'N', 'N', norb, norb, delay_count, Value(-1), U_mw_ptr, norb,
                                   tempMat_mw_ptr, lda_Binv, Value(1), Ainv_mw_ptr, lda, nw);
     }
-    delay_count = 0;
+    mw_rsc.setDelayCount(0);
   }
 
   /*
@@ -764,7 +765,7 @@ public:
     auto& queue  = mw_rsc.queue;
     if (no_delayed_update_)
       queue.sync();
-    else if (invRow_id != row_id)
+    else if (mw_rsc.getInvRowId() != row_id)
     {
       // this can be skipped if mw_evalGrad gets called already.
       mw_prepareInvRow(engines, psiMinv_refs, row_id);
@@ -809,7 +810,7 @@ public:
   {
     auto& mw_rsc = engines.template getCastedResource<MultiWalkerResource>();
     auto& queue  = mw_rsc.queue;
-    guard_no_delay();
+    assert(mw_rsc.getDelayCount() == 0 && "BUG: unexpected call sequence delay_count is not 0");
 
     for (DualMatrix<Value>& psiMinv : psiMinv_refs)
       queue.enqueueD2H(psiMinv);
