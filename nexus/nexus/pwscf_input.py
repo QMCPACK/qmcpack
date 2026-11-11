@@ -47,9 +47,10 @@
 import inspect
 import os
 import sys
+from collections.abc import Mapping
 from copy import deepcopy
 from types import MappingProxyType
-from typing import ClassVar, TypeAlias
+from typing import ClassVar, Literal, TypeAlias
 
 import numpy as np
 from numpy import pi
@@ -1883,88 +1884,32 @@ class PwscfInput(SimulationInput):
 
 
 
-def generate_pwscf_input(selector,**kwargs):
-    if selector=='generic':
-        return generate_any_pwscf_input(**kwargs)
-    if selector=='scf':
-        return generate_scf_input(**kwargs)
-    elif selector=='nscf':
-        return generate_nscf_input(**kwargs)
-    elif selector=='relax':
-        return generate_relax_input(**kwargs)
-    elif selector=='vc-relax':
-        return generate_vcrelax_input(**kwargs)
-    else:
-        msg = 'selection '+str(selector)+' has not been implemented for pwscf input generation'
-        raise NotImplementedError(msg)
-    #end if
+def generate_pwscf_input(selector=None,**kwargs):
+    if selector == "generic":
+        warn(
+            "Passing `input_type`/`selector` is deprecated, please remove from your script!",
+            warn_type="deprecate",
+        )
+    elif selector is not None:
+        old_selectors = {
+            "scf": "oldscf",
+            "relax": "oldrelax",
+            "nscf": "oldscf",
+            "vc-relax": "oldscf",
+        }
+        msg = "Passing `input_type`/`selector` is deprecated!\n"
+        msg += _legacy_default_help(
+            old_selectors.get(selector),
+            kwargs=kwargs,
+            is_nscf=selector == "nscf",
+            is_vc_relax=selector == "vc-relax",
+        )
+        msg += "\nPlease double check your input files to ensure nothing has changed!"
+        raise ValueError(msg)
+    return generate_any_pwscf_input(**kwargs)
 #end def generate_pwscf_input
 
 
-generate_any_defaults = obj(
-    standard = obj(
-        prefix     = 'pwscf',
-        outdir     = 'pwscf_output',
-        pseudo_dir = './',
-        kgrid      = None,
-        kshift     = (0,0,0),
-        use_folded = True,
-        ),
-    oldscf   = obj(
-        calculation      = 'scf',
-        prefix           = 'pwscf',
-        outdir           = 'pwscf_output',
-        pseudo_dir       = './',
-        ecutwfc          = 200.,
-        occupations      = 'smearing',
-        smearing         = 'fermi-dirac',
-        degauss          = 0.0001,
-        nosym            = False,
-        wf_collect       = True,
-        restart_mode     = 'from_scratch',
-        tstress          = True,
-        tprnfor          = True,
-        disk_io          = 'low',
-        verbosity        = 'high',
-        ibrav            = 0,
-        conv_thr         = 1e-10,
-        electron_maxstep = 1000,
-        mixing_mode      = 'plain',
-        mixing_beta      = .7,
-        diagonalization  = 'david',
-        kgrid            = None,
-        kshift           = None,
-        use_folded       = True,
-        ),
-    oldrelax = obj(
-        calculation       = 'relax',
-        prefix            = 'pwscf',
-        outdir            = 'pwscf_output',
-        pseudo_dir        = './',
-        ecutwfc           = 50.,
-        occupations       = 'smearing',
-        smearing          = 'fermi-dirac',
-        degauss           = 0.0001,
-        nosym             = True,
-        wf_collect        = False,
-        restart_mode      = 'from_scratch',
-        disk_io           = 'low',
-        verbosity         = 'high',
-        ibrav             = 0,
-        conv_thr          = 1e-6,
-        electron_maxstep  = 1000,
-        mixing_mode       = 'plain',
-        mixing_beta       = .7,
-        diagonalization   = 'david',
-        ion_dynamics      = 'bfgs',
-        upscale           = 100,
-        pot_extrapolation = 'second_order',
-        wfc_extrapolation = 'second_order',
-        kgrid             = None,
-        kshift            = None,
-        use_folded        = False,
-        ),
-    )
 
 def generate_any_pwscf_input(**kwargs):
     #move values into a more convenient representation
@@ -1988,21 +1933,23 @@ def generate_any_pwscf_input(**kwargs):
 
     #assign default values
     if 'defaults' in kwargs:
-        defaults = kwargs.defaults
-        del kwargs.defaults
-        if isinstance(defaults,str):
-            if defaults in generate_any_defaults:
-                defaults = generate_any_defaults[defaults]
-            else:
-                msg = (
-                    f'invalid default set requested: {defaults}\n'
-                    f'  valid options are {sorted(generate_any_defaults.keys())}'
-                    )
-                raise ValueError(msg)
-            #end if
-        #end if
+        defaults = kwargs.pop("defaults")
+        if defaults in {"oldscf", "oldrelax"}:
+            msg = f"Passing `{defaults=}` is deprecated!\n"
+            msg += _legacy_default_help(
+                defaults,
+                kwargs=kwargs,
+            )
+            raise ValueError(msg)
     else:
-        defaults = generate_any_defaults.standard
+        defaults = {
+            "prefix":     'pwscf',
+            "outdir":     'pwscf_output',
+            "pseudo_dir": './',
+            "kgrid":      None,
+            "kshift":     (0,0,0),
+            "use_folded": True,
+        }
     #end if
     for name,default in defaults.items():
         if name not in kwargs:
@@ -2014,6 +1961,17 @@ def generate_any_pwscf_input(**kwargs):
             #end if
         #end if
     #end for
+
+    if (ecut := kwargs.pop("ecut", None)) is not None:
+        warn(
+            (
+                "Passing `ecut` as an alias for `ecutwfc` is deprecated and will "
+                "result in an error in the future!"
+            ),
+            warn_type="deprecate"
+        )
+        kwargs["ecutwfc"] = ecut
+
 
     if ksymm_run and 'calculation' in kwargs and kwargs.calculation!='scf':
         msg = 'input parameter "calculation" must be set to "scf" when ksymm_run is requested'
@@ -2354,567 +2312,95 @@ def generate_any_pwscf_input(**kwargs):
 #end def generate_any_pwscf_input
 
 
+def _legacy_default_help(
+    default_set: Literal["oldscf", "oldrelax"],
+    kwargs: Mapping,
+    *,
+    is_nscf: bool = False,
+    is_vc_relax: bool = False
+) -> str:
+    legacy_defaults = _LEGACY_GENERATE_DEFAULTS[default_set]
+    missing = set(legacy_defaults.keys()) - set(kwargs.keys())
+    if len(missing) == 0:
+        return ""
 
-def generate_scf_input(*,
-                       prefix       = 'pwscf',
-                       outdir       = 'pwscf_output',
-                       input_dft    = None,
-                       exx_fraction = None,
-                       exxdiv_treatment = None,
-                       ecut         = 200.,
-                       ecutrho      = None,
-                       ecutfock     = None,
-                       occupations  = 'smearing',
-                       smearing     = 'fermi-dirac',
-                       degauss      = 0.0001,
-                       nosym        = False,
-                       spin_polarized = None,
-                       assume_isolated = None,
-                       wf_collect   = True,
-                       hubbard_u    = None,
-                       start_mag    = None,
-                       restart_mode = 'from_scratch',
-                       tstress      = True,
-                       tprnfor      = True,
-                       disk_io      = 'low',
-                       verbosity    = 'high',
-                       ibrav        = 0,
-                       conv_thr     = 1e-10,
-                       electron_maxstep = 1000,
-                       mixing_mode  = 'plain',
-                       mixing_beta  = .7,
-                       diagonalization = 'david',
-                       kgrid        = None,
-                       kshift       = None,
-                       pseudos      = None,
-                       system       = None,
-                       use_folded   = True,
-                       group_atoms  = False,
-                       la2F         = None,
-                       nbnd         = None,
-                       lspinorb     = False,
-                       noncolin     = False,
-                       ):
-    if pseudos is None:
-        pseudos = []
-    #end if
-    if system is not None:
-        pseudos = PseudoSet.get_pseudos(
-            pseudos = pseudos,
-            system = system,
-            code = 'pwscf',
-            )
-    #end if
-    pseudopotentials = obj()
-    atoms = []
-    for ppname in pseudos:
-        element = ppname[0:2].strip('.')
-        atoms.append(element)
-        pseudopotentials[element] = ppname
-    #end for
-
-    if ecutrho is None:
-        ecutrho = 4*ecut
-    #end if
-
-    pw = PwscfInput()
-    pw.control.update(
-        calculation  = 'scf',
-        prefix       = prefix,
-        restart_mode = restart_mode,
-        tstress      = tstress,
-        tprnfor      = tprnfor,
-        pseudo_dir   = './',
-        outdir       = outdir,
-        disk_io      = disk_io,
-        verbosity    = verbosity,
-        wf_collect   = wf_collect
-        )
-    pw.system.update(
-        ibrav       = ibrav,
-        ecutwfc     = ecut,
-        ecutrho     = ecutrho,
-        nosym       = nosym,
-        )
-    if la2F is not None:
-        pw.system.la2F = la2F
-    #end if
-    if nbnd is not None:
-        pw.system.nbnd = nbnd
-    # end if
-    if assume_isolated is not None:
-        pw.system.assume_isolated = assume_isolated
-    #end if
-    if occupations is not None:
-        if occupations=='smearing':
-            pw.system.update(
-                occupations = occupations,
-                smearing    = smearing,
-                degauss     = degauss,
-                )
-        else:
-            pw.system.occupations = occupations
-        #end if
-    #end if
-    pw.electrons.update(
-        electron_maxstep = electron_maxstep,
-        conv_thr    = conv_thr,
-        mixing_mode = mixing_mode,
-        mixing_beta = mixing_beta,
-        diagonalization = diagonalization,
-        )
-    pw.atomic_species.update(
-        atoms            = atoms,
-        pseudopotentials = pseudopotentials
-        )
-
-    if noncolin or lspinorb:
-        pw.system.update(
-            noncolin = noncolin or lspinorb,
-            lspinorb = lspinorb
-            )
-    #end if
-    if input_dft is not None:
-        pw.system.input_dft = input_dft
-    #end if
-    if exx_fraction is not None:
-        pw.system.exx_fraction = exx_fraction
-    #end if
-    if exxdiv_treatment is not None:
-        pw.system.exxdiv_treatment = exxdiv_treatment
-    #end if
-    if ecutfock is not None:
-        pw.system.ecutfock = ecutfock
-    #end if
-
-    system.check_folded_system()
-    system.change_units('B')
-    s = system.structure
-    #setting the 'lattice' (cell axes) requires some delicate care
-    #  qmcpack will fail if this is even 1e-10 off of what is in
-    #  the wavefunction hdf5 file from pwscf
-    if s.folded_structure is not None:
-        fs = s.folded_structure
-        axes = np.array(array_to_string(fs.axes).split(),dtype=float)
-        npe.reshape_inplace(axes, fs.axes.shape)
-        axes = np.dot(s.tmatrix,axes)
-        if abs(axes-s.axes).sum()>1e-5:
-            msg = (
-                'supercell axes do not match tiled version of folded cell axes\n'
-                '  you may have changed one set of axes (super/folded) and not the other\n'
-                '  folded cell axes:\n'
-                +str(fs.axes)+'\n'
-                '  supercell axes:\n'
-                +str(s.axes)+'\n'
-                '  folded axes tiled:\n'
-                +str(axes)
-                )
-            raise ValueError(msg)
-        #end if
-    else:
-        axes = np.array(array_to_string(s.axes).split(),dtype=float)
-        npe.reshape_inplace(axes, s.axes.shape)
-    #end if
-    s.adjust_axes(axes)
-
-    if use_folded:
-        system = system.get_smallest()
-    #end if
-
-    if start_mag is not None:
-        spin_polarized=True
-    #end if
-
-    if system is not None:
-        pw.incorporate_system_old(system,spin_polarized=spin_polarized)
-    #end if
-
-    if hubbard_u is not None:
-        if not isinstance(hubbard_u,(dict,obj)):
-            msg = 'input hubbard_u must be of type dict or obj'
-            raise TypeError(msg)
-        #end if
-        pw.system.hubbard_u = deepcopy(hubbard_u)
-        pw.system.lda_plus_u = True
-    #end if
-    if start_mag is not None:
-        if not isinstance(start_mag,(dict,obj)):
-            msg = 'input start_mag must be of type dict or obj'
-            raise TypeError(msg)
-        #end if
-        pw.system.starting_magnetization = deepcopy(start_mag)
-        #if 'tot_magnetization' in pw.system:
-        #    del pw.system.tot_magnetization
-        ##end if
-        if 'multiplicity' in pw.system:
-            del pw.system.multiplicity
-        #end if
-    #end if
-
-    if kshift is None:
-        kshift = (1,1,1)
-    #end if
-
-    if system is not None:
-        structure = system.structure
-        if group_atoms:
-            warn('requested grouping by atomic species, but pwscf does not group atoms anymore!')
-        #end if
-        #if group_atoms:  # disabled, hopefully not needed for qmcpack
-        #    structure.group_atoms()
-        ##end if
-        if structure.at_Gpoint():
-            pw.k_points.clear()
-            pw.k_points.update(
-                specifier = 'automatic',
-                grid  = (1,1,1),
-                shift = (0,0,0)
-                )
-        elif structure.at_Lpoint():
-            pw.k_points.clear()
-            pw.k_points.update(
-                specifier = 'automatic',
-                grid  = (1,1,1),
-                shift = (1,1,1)
-                )
-        #end if
-    #end if
-
-    if kgrid is not None:
-        pw.k_points.clear()
-        pw.k_points.update(
-            specifier = 'automatic',
-            grid     = kgrid,
-            shift    = kshift
-            )
-    elif system is None:
-        pw.k_points.clear()
-        pw.k_points.update(
-            specifier = 'automatic',
-            grid     = (1,1,1),
-            shift    = kshift
-            )
-    #end if
+    msg = (
+        "The values you must supply to restore the legacy behavior are given here.\n"
+        "Additional processing behavior of the deprecated generator is not guaranteed\n"
+        "to be restored, so please check your input files before and after updating!\n"
+    )
+    fmt = max(map(len, missing))
+    for key, value in legacy_defaults.items():
+        if key not in missing:
+            continue
+        if key == "calculation":
+            if is_nscf:
+                value = "nscf"
+            elif is_vc_relax:
+                value = "vc-relax"
+        msg += f"    {key:<{fmt}} = {value!r},\n"
+    return msg
 
 
-    return pw
-#end def generate_scf_input
+_LEGACY_GENERATE_DEFAULTS = {
+    "oldscf": {
+        "calculation":      'scf',
+        "ecutwfc":          200.,
+        "occupations":      'smearing',
+        "smearing":         'fermi-dirac',
+        "degauss":          0.0001,
+        "nosym":            False,
+        "restart_mode":     'from_scratch',
+        "tstress":          True,
+        "tprnfor":          True,
+        "disk_io":          'low',
+        "verbosity":        'high',
+        "ibrav":            0,
+        "conv_thr":         1e-10,
+        "electron_maxstep": 1000,
+        "mixing_mode":      'plain',
+        "mixing_beta":      .7,
+        "diagonalization":  'david',
+        "kgrid":            None,
+        "kshift":           None,
+        "use_folded":       True,
+    },
+    "oldrelax": {
+        "calculation":       'relax',
+        "ecutwfc":           50.,
+        "occupations":       'smearing',
+        "smearing":          'fermi-dirac',
+        "degauss":           0.0001,
+        "nosym":             True,
+        "restart_mode":      'from_scratch',
+        "disk_io":           'low',
+        "verbosity":         'high',
+        "ibrav":             0,
+        "conv_thr":          1e-6,
+        "electron_maxstep":  1000,
+        "mixing_mode":       'plain',
+        "mixing_beta":       .7,
+        "diagonalization":   'david',
+        "ion_dynamics":      'bfgs',
+        "upscale":           100,
+        "pot_extrapolation": 'second_order',
+        "wfc_extrapolation": 'second_order',
+        "kgrid":             None,
+        "kshift":            None,
+        "use_folded":        False,
+    },
+}
 
+_DEPRECATED_FUNCTIONS = {
+    "generate_scf_input",
+    "generate_nscf_input",
+    "generate_relax_input",
+    "generate_vcrelax_input",
+}
 
-
-
-def generate_nscf_input(**kwargs):
-    pw = generate_scf_input(**kwargs)
-    pw.control.update(
-        calculation = 'nscf'
-        )
-    return pw
-#end def generate_nscf_input
-
-
-
-
-def generate_relax_input(*,
-                         prefix       = 'pwscf',
-                         outdir       = 'pwscf_output',
-                         input_dft    = None,
-                         exx_fraction = None,
-                         ecut         = 50.,
-                         ecutrho      = None,
-                         ecutfock     = None,
-                         conv_thr     = 1e-6,
-                         mixing_mode  = 'plain',
-                         mixing_beta  = .7,
-                         diagonalization = 'david',
-                         occupations  = 'smearing',
-                         smearing     = 'fermi-dirac',
-                         degauss      = 0.0001,
-                         nosym        = True,
-                         spin_polarized = None,
-                         assume_isolated = None,
-                         upscale      = 100,
-                         pot_extrapolation = 'second_order',
-                         wfc_extrapolation = 'second_order',
-                         hubbard_u    = None,
-                         start_mag    = None,
-                         restart_mode = 'from_scratch',
-                         kgrid        = None,
-                         kshift       = None,
-                         pseudos      = None,
-                         system       = None,
-                         use_folded   = False,
-                         group_atoms  = False,
-                         forc_conv_thr= None,
-                         disk_io      = 'low',
-                         wf_collect   = False,
-                         verbosity    = 'high',
-                         ):
-    if pseudos is None:
-        pseudos = []
-    #end if
-    if system is not None:
-        pseudos = PseudoSet.get_pseudos(
-            pseudos = pseudos,
-            system = system,
-            code = 'pwscf',
-            )
-    #end if
-
-    pseudopotentials = obj()
-    atoms = []
-    for ppname in pseudos:
-        element = ppname[0:2].strip('.')
-        atoms.append(element)
-        pseudopotentials[element] = ppname
-    #end for
-
-    if ecutrho is None:
-        ecutrho = 4*ecut
-    #end if
-
-    pw = PwscfInput('ions')
-    pw.control.update(
-        calculation  = 'relax',
-        prefix       = prefix,
-        restart_mode = 'from_scratch',
-        #tstress      = True,
-        #tprnfor      = True,
-        pseudo_dir   = './',
-        outdir       = outdir,
-        disk_io      = disk_io,
-        verbosity    = verbosity,
-        wf_collect   = wf_collect
-        )
-    pw.system.update(
-        ibrav       = 0,
-        ecutwfc     = ecut,
-        ecutrho     = ecutrho,
-        nosym       = nosym
-        )
-    if assume_isolated is not None:
-        pw.system.assume_isolated = assume_isolated
-    #end if
-    if occupations is not None:
-        if occupations=='smearing':
-            pw.system.update(
-                occupations = occupations,
-                smearing    = smearing,
-                degauss     = degauss,
-                )
-        #end if
-    #end if
-    pw.electrons.update(
-        electron_maxstep = 1000,
-        conv_thr         = conv_thr,
-        mixing_beta      = mixing_beta,
-        mixing_mode      = mixing_mode,
-        diagonalization  = diagonalization
-        )
-    pw.atomic_species.update(
-        atoms            = atoms,
-        pseudopotentials = pseudopotentials
-        )
-    pw.ions.update(
-        ion_dynamics      = 'bfgs',
-        upscale           = upscale,
-        pot_extrapolation = pot_extrapolation,
-        wfc_extrapolation = wfc_extrapolation
-        )
-
-    if input_dft is not None:
-        pw.system.input_dft = input_dft
-    #end if
-    if exx_fraction is not None:
-        pw.system.exx_fraction = exx_fraction
-    #end if
-    if ecutfock is not None:
-        pw.system.ecutfock = ecutfock
-    #end if
-    if system is not None:
-        if use_folded:
-            system = system.get_smallest()
-        #end if
-        pw.incorporate_system_old(system,spin_polarized=spin_polarized)
-    #end if
-
-    if hubbard_u is not None:
-        if not isinstance(hubbard_u,(dict,obj)):
-            msg = 'input hubbard_u must be of type dict or obj'
-            raise TypeError(msg)
-        #end if
-        pw.system.hubbard_u = deepcopy(hubbard_u)
-        pw.system.lda_plus_u = True
-    #end if
-    if start_mag is not None:
-        if not isinstance(start_mag,(dict,obj)):
-            msg = 'input start_mag must be of type dict or obj'
-            raise TypeError(msg)
-        #end if
-        pw.system.starting_magnetization = deepcopy(start_mag)
-        #if 'tot_magnetization' in pw.system:
-        #    del pw.system.tot_magnetization
-        ##end if
-        if 'multiplicity' in pw.system:
-            del pw.system.multiplicity
-        #end if
-    #end if
-
-    if kshift is None:
-        kshift = (1,1,1)
-    #end if
-
-
-    if system is not None:
-        structure = system.structure
-        if group_atoms:
-            warn('requested grouping by atomic species, but pwscf does not group atoms anymore!','generate_relax_input')
-        #end if
-        #if group_atoms: #don't group atoms for pwscf, any downstream consequences?
-        #    structure.group_atoms()
-        ##end if
-        if structure.at_Gpoint():
-            pw.k_points.clear()
-            pw.k_points.update(
-                specifier = 'automatic',
-                grid  = (1,1,1),
-                shift = (0,0,0)
-                )
-        elif structure.at_Lpoint():
-            pw.k_points.clear()
-            pw.k_points.update(
-                specifier = 'automatic',
-                grid  = (1,1,1),
-                shift = (1,1,1)
-                )
-        #end if
-    #end if
-
-    if kgrid is not None:
-        pw.k_points.clear()
-        pw.k_points.update(
-            specifier = 'automatic',
-            grid     = kgrid,
-            shift    = kshift
-            )
-    elif system is None:
-        pw.k_points.clear()
-        pw.k_points.update(
-            specifier = 'automatic',
-            grid     = (1,1,1),
-            shift    = kshift
-            )
-    #end if
-
-    if forc_conv_thr is not None:
-        pw.control.forc_conv_thr = forc_conv_thr
-    # end if
-
-    return pw
-#end def generate_relax_input
-
-
-def generate_vcrelax_input(
-    press          = None, # None = use pw.x default
-    cell_factor    = None,
-    cell_dofree    = None,
-    forc_conv_thr  = None,
-    ion_dynamics   = None,
-    press_conv_thr = None,
-    **kwargs):
-
-    pw = generate_scf_input(**kwargs)
-    pw.control.update(
-        calculation = 'vc-relax'
-        )
-    pw['ions'] = pw.element_types['ions']()
-    pw['cell'] = pw.element_types['cell'](
-        press       = press,
-        )
-
-    # expand this section if you need more control over the input
-    if forc_conv_thr is not None:
-        pw.control.forc_conv_thr = forc_conv_thr
-    # end if
-    if cell_factor is not None:
-        pw.cell.update(cell_factor=cell_factor)
-    # end if
-    if ion_dynamics is not None:
-        pw.ions.update(ion_dynamics=ion_dynamics)
-    # end if
-    if press_conv_thr is not None:
-        pw.cell.update(press_conv_thr=press_conv_thr)
-    # end if
-    if cell_dofree is not None:
-        pw.cell.update(cell_dofree=cell_dofree)
-    # end if
-
-    return pw
-# end def
-
-
-#def generate_nscf_input(prefix='pwscf',outdir='pwscf_output',ecut=200.,kpoints=None,weights=None,pseudos=None,system=None):
-#    if pseudos is None:
-#        pseudos = []
-#    #end if
-#
-#    pseudopotentials = obj()
-#    atoms = []
-#    for ppname in pseudos:
-#        element = ppname[0:2]
-#        atoms.append(element)
-#        pseudopotentials[element] = ppname
-#    #end for
-#
-#    pw = PwscfInput()
-#    pw.control.update(
-#        calculation  = 'nscf',
-#        prefix       = prefix,
-#        restart_mode = 'from_scratch',
-#        tstress      = True,
-#        tprnfor      = True,
-#        pseudo_dir   = './',
-#        outdir       = outdir,
-#        disk_io      = 'low',
-#        wf_collect   = True
-#        )
-#    pw.system.update(
-#        ibrav       = 0,
-#        degauss     = 0.001,
-#        smearing    = 'mp',
-#        occupations = 'smearing',
-#        ecutwfc     = ecut,
-#        ecutrho     = 4*ecut
-#        )
-#    pw.electrons.update(
-#        conv_thr    = 1.e-10,
-#        mixing_beta = 0.7
-#        )
-#    pw.atomic_species.update(
-#        atoms            = atoms,
-#        pseudopotentials = pseudopotentials
-#        )
-#
-#    if system is not None:
-#        pw.incorporate_system(system)
-#    #end if
-#
-#    overwrite_kpoints = kpoints is not None or system==None
-#    if kpoints==None:
-#        kpoints = np.array([[0.,0,0]])
-#    else:
-#        kpoints = np.array(kpoints)
-#    #end if
-#    if weights==None:
-#        weights = np.ones((len(kpoints),),dtype=float)
-#    #end if
-#    if overwrite_kpoints:
-#        pw.k_points.clear()
-#        pw.k_points.update(
-#            specifier = 'tpiba',
-#            kpoints   = kpoints,
-#            weights   = weights
-#            )
-#    #end if
-#
-#    return pw
-##end def generate_nscf_input
+def __getattr__(name: str):
+    if name in _DEPRECATED_FUNCTIONS:
+        msg = "This function has been removed! Use `generate_pwscf_input` instead!"
+        raise AttributeError(msg)
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)

@@ -18,6 +18,7 @@
    input_dft       = 'pbe'
    nat             = 17
    nosym           = .true.
+   nspin           = 1
    ntyp            = 1
    occupations     = 'smearing'
    smearing        = 'fermi-dirac'

@@ -176,7 +176,7 @@ def check_generated_files(
             dgen = obj(dgen)
             dref = obj(dref)
             msg  = 'reference and generated input files differ\n'
-            msg += 'reference file: '+os.path.realpath(filepath)+'\n'
+            msg += f'reference file: {ref_filepath}\n'
             msg += 'reference file difference\n'
             msg += 40*'='+'\n'
             msg += str(dref)

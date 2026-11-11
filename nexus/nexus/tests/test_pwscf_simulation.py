@@ -42,7 +42,6 @@ def get_pwscf_sim(type='scf'):
             identifier   = 'scf',
             path         = 'scf',
             job          = job(machine='ws1',cores=1),
-            input_type   = 'generic',
             calculation  = 'scf',
             input_dft    = 'lda',
             ecutwfc      = 200,
