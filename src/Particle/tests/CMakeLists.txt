@@ -53,6 +53,9 @@ set(UTEST_EXE test_walker_io)
 set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 
 add_executable(${UTEST_EXE} test_walker.cpp test_HDFWalkerInput_0_4.cpp)
+# These tests deliberately construct Inf/NaN inputs, which finite-only math can optimize away.
+set_property(SOURCE test_HDFWalkerInput_0_4.cpp APPEND PROPERTY COMPILE_OPTIONS
+             "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang,IntelLLVM>:-fno-finite-math-only>")
 target_link_libraries(${UTEST_EXE} catch_main qmcparticle minimal_particle_pool)
 if(USE_OBJECT_TARGET)
   target_link_libraries(${UTEST_EXE} qmcutil qmcparticle_omptarget)
@@ -60,6 +63,14 @@ endif()
 
 foreach(NUM_RANKS 1 2 3)
   add_unit_test(BASENAME ${UTEST_NAME} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>)
+endforeach()
+
+foreach(NUM_RANKS 1 2 3)
+  add_unit_test(
+    BASENAME deterministic-unit_stochastic_comb_walker_io
+    PROCS ${NUM_RANKS}
+    TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>
+    ARGS "[stochastic_comb]")
 endforeach()
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
