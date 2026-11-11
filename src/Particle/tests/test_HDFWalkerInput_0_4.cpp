@@ -105,8 +105,11 @@ TEST_CASE("HDFWalkerInput_0_4 missing malformed and invalid weights", "[particle
       };
       if (mode == 0)
       {
+        configurations.createWalkers(1, particles);
+        configurations[0]->Weight = 2.5;
         REQUIRE(read());
-        for (int iw = 0; iw < configurations.getActiveWalkers(); ++iw)
+        CHECK(configurations[0]->Weight == 2.5);
+        for (int iw = 1; iw < configurations.getActiveWalkers(); ++iw)
           CHECK(configurations[iw]->Weight == 1);
       }
       else

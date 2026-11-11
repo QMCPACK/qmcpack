@@ -232,12 +232,9 @@ bool HDFWalkerInput_0_4::read_hdf5(const std::filesystem::path& h5name)
     auto it = posin.begin() + woffsets[myComm.rank()] * nitems;
     for (int i = 0; i < nw_in; ++i, it += nitems)
       copy(it, it + nitems, get_first_address(wc_list_[i + curWalker]->R));
-    if (has_weights)
-    {
-      const auto woffset = woffsets[myComm.rank()];
-      for (int i = 0; i < nw_in; ++i)
-        wc_list_[i + curWalker]->Weight = weights_in[i + woffset];
-    }
+    const auto woffset = woffsets[myComm.rank()];
+    for (int i = 0; i < nw_in; ++i)
+      wc_list_[i + curWalker]->Weight = weights_in[i + woffset];
   }
 
   return true;
@@ -333,7 +330,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
   validateWalkerWeights(myComm, weights_ok, weights_in); // coordinate errors and abort if needed
 
   Buffer_t posout(counts[myComm.rank()]);
-  std::vector<QMCTraits::FullPrecRealType> weights_out(counts_weights[myComm.rank()]);
+  std::vector<QMCTraits::FullPrecRealType> weights_out(counts_weights[myComm.rank()], 1.0);
   myComm.scatterv(posin, posout, counts, woffsets);
 
   myComm.bcast(has_weights);
@@ -347,9 +344,8 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
   auto it = posout.begin();
   for (int i = 0; i < nw_loc; ++i, it += nitems)
     std::copy(it, it + nitems, get_first_address(wc_list_[i + curWalker]->R));
-  if (has_weights)
-    for (int i = 0; i < nw_loc; ++i)
-      wc_list_[i + curWalker]->Weight = weights_out[i];
+  for (int i = 0; i < nw_loc; ++i)
+    wc_list_[i + curWalker]->Weight = weights_out[i];
   return true;
 }
 
@@ -462,9 +458,8 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
     auto it = posin.begin();
     for (int i = 0; i < nw_in; ++i, it += nitems)
       copy(it, it + nitems, get_first_address(wc_list_[i + curWalker]->R));
-    if (has_weights)
-      for (int i = 0; i < nw_in; ++i)
-        wc_list_[i + curWalker]->Weight = weights_in[i];
+    for (int i = 0; i < nw_in; ++i)
+      wc_list_[i + curWalker]->Weight = weights_in[i];
   }
   return true;
 }
