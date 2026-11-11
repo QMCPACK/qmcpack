@@ -10,11 +10,14 @@
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "OhmmsPETE/OhmmsArray.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/tests/FakeSPO.h"
 #include "QMCWaveFunctions/ElectronGas/FreeOrbital.h"
@@ -661,5 +664,87 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
 #endif
 }
 #endif
+
+class DummyDiracDeterminantBase : public DiracDeterminantBase
+{
+public:
+  DummyDiracDeterminantBase(SPOSet& spos) : DiracDeterminantBase("DummyDiracDeterminantBase", spos, 0, 1) {}
+
+  std::string getClassName() const override { return "DummyDiracDeterminantBase"; }
+  LogValue evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) override
+  {
+    return 0.0;
+  }
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override {}
+  void restore(int iat) override {}
+  PsiValue ratio(ParticleSet& P, int iat) override { return 1.0; }
+  GradType evalGrad(ParticleSet& P, int iat) override { return GradType(); }
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override { return 1.0; }
+  void registerData(ParticleSet& P, WFBufferType& buf) override {}
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override { return 0.0; }
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
+  using DiracDeterminantBase::evaluateDerivatives;
+  void evaluateDerivatives(ParticleSet& P,
+                           const OptVariables& optvars,
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
+  {}
+  std::unique_ptr<DiracDeterminantBase> makeCopy(SPOSet& spo) const override { return nullptr; }
+};
+
+TEST_CASE("DiracDeterminantBase runtime_error traps", "[wavefunction][fermion]")
+{
+  const SimulationCell simulation_cell;
+  ParticleSet elec(simulation_cell);
+  elec.create({1});
+
+  auto spo = std::make_unique<FakeSPO<Value>>(1);
+  DummyDiracDeterminantBase det(*spo);
+
+  SECTION("mw_prepareGroup")
+  {
+    RefVectorWithLeader<WaveFunctionComponent> wfc_list(det);
+    wfc_list.push_back(det);
+    RefVectorWithLeader<ParticleSet> p_list(elec);
+    p_list.push_back(elec);
+    CHECK_THROWS_AS(det.mw_prepareGroup(wfc_list, p_list, 0), std::runtime_error);
+    CHECK_THROWS_WITH(det.mw_prepareGroup(wfc_list, p_list, 0),
+                      " Illegal action. Cannot use DiracDeterminantBase::mw_prepareGroup with p_list and ig.");
+  }
+
+  SECTION("evaluateDerivatives")
+  {
+    OptVariables active;
+    Matrix<DiracDeterminantBase::RealType> dlogpsi;
+    Array<DiracDeterminantBase::GradType, 3> dG;
+    Matrix<DiracDeterminantBase::RealType> dL;
+    CHECK_THROWS_AS(det.evaluateDerivatives(elec, active, 0, dlogpsi, dG, dL), std::runtime_error);
+    CHECK_THROWS_WITH(det.evaluateDerivatives(elec, active, 0, dlogpsi, dG, dL),
+                      " Illegal action. Cannot use DiracDeterminantBase::evaluateDerivatives");
+  }
+
+  SECTION("makeClone")
+  {
+    CHECK_THROWS_AS(det.makeClone(elec), std::runtime_error);
+    CHECK_THROWS_WITH(det.makeClone(elec), " Illegal action. Cannot use DiracDeterminantBase::makeClone");
+  }
+
+  SECTION("ratioGradWithSpin")
+  {
+    DiracDeterminantBase::GradType grad;
+    DiracDeterminantBase::ComplexType spingrad;
+    CHECK_THROWS_AS(det.ratioGradWithSpin(elec, 0, grad, spingrad), std::runtime_error);
+    CHECK_THROWS_WITH(det.ratioGradWithSpin(elec, 0, grad, spingrad),
+                      "  DiracDeterminantBase::ratioGradWithSpin():  Implementation required\n");
+  }
+
+  SECTION("evalGradWithSpin")
+  {
+    DiracDeterminantBase::ComplexType spingrad;
+    CHECK_THROWS_AS(det.evalGradWithSpin(elec, 0, spingrad), std::runtime_error);
+    CHECK_THROWS_WITH(det.evalGradWithSpin(elec, 0, spingrad),
+                      "  DiracDeterminantBase::evalGradWithSpin():  Implementation required\n");
+  }
+}
 
 } // namespace qmcplusplus
