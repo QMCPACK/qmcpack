@@ -75,14 +75,14 @@ from collections.abc import Collection, Mapping
 from copy import deepcopy
 from datetime import datetime
 from inspect import signature
+from logging.handlers import MemoryHandler
 from os import PathLike
 from pathlib import Path
 from string import Template
 from subprocess import Popen
-from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
+from typing import TYPE_CHECKING, ClassVar
 
 from .developer import DevBase, FileFormatError, NexusError, obj
-from .developer_tools import Unset
 from .machines import Job, Workstation, get_machine
 from .nexus_base import NexusCore, SimStage, dynamic_storage, nexus_config
 from .physical_system import PhysicalSystem
@@ -90,10 +90,9 @@ from .structure import Structure, read_structure
 from .utilities import path_string
 
 if TYPE_CHECKING:
-    from .bundle import SimulationBundle
     from .qmcpack_analyzer import QmcpackAnalysisRequest
 
-StrPath: TypeAlias = str
+type StrPath = str
 
 
 class SimulationInput(NexusCore):
@@ -222,6 +221,8 @@ class SimulationImage(NexusCore):
             'files',
             'outputs',
             # simulation status flags
+            'created_directories',
+            'got_dependencies',
             'setup',
             'sent_files',
             'submitted',
@@ -229,6 +230,8 @@ class SimulationImage(NexusCore):
             'failed',
             'got_output',
             'analyzed',
+            'exited_queue',
+            'timed_out',
             # event timestamps
             'timestamps',
             # cascade status flag
@@ -264,6 +267,16 @@ class SimulationImage(NexusCore):
                     # support images written before timestamps were added
                     sim[k] = obj()
                 #end if
+            elif (
+                k in {
+                    'created_directories',
+                    'got_dependencies',
+                    'exited_queue',
+                    'timed_out',
+                }
+                and k not in self
+            ):
+                sim[k] = False
             else:
                 sim[k] = self[k]
             #end if
@@ -463,6 +476,8 @@ class Simulation(NexusCore):
         self.failed     = False
         self.got_output = False
         self.analyzed   = False
+        self.exited_queue = False
+        self.timed_out = False
         self.timestamps = obj()
         self.timeout_started = False
         self.subcascade_finished = False
@@ -564,6 +579,23 @@ class Simulation(NexusCore):
         self.job.initialize(self)
         self.post_init()
         self.logger = logging.getLogger(f"{self.identifier}{self.simid}")
+        if not nexus_config.disable_logging:
+            self.file_handler = None
+            self.logfile = None
+            self.logger_initialized = False
+            self.logger.setLevel(
+                logging.DEBUG if nexus_config.debug else logging.INFO
+            )
+            # Memory handler will buffer all records until the simulation directories have been created
+            # This means we can store logs and then flush them once we have a spot to flush to
+            memory_handler = MemoryHandler(capacity=1e12)
+            memory_handler.setLevel(
+                logging.DEBUG if nexus_config.debug else logging.INFO
+            )
+            memory_handler.shouldFlush = lambda _: False # Override to always be false
+            self.logger.addHandler(memory_handler)
+        else:
+            self.logger.addHandler(logging.NullHandler())
 
         Simulation.all_sims.append(self)
 
@@ -583,6 +615,28 @@ class Simulation(NexusCore):
             if self.finished:
                 self.fill_products()
     #end def __init__
+
+
+    def __setattr__(self, name, value):
+        if (
+            name in {
+                "created_directories",
+                "got_dependencies",
+                "setup",
+                "sent_files",
+                "submitted",
+                "finished",
+                "failed",
+                "got_output",
+                "analyzed",
+                "exited_queue",
+                "timed_out",
+            }
+            and value
+            and value is not getattr(self, name)
+        ):
+            self.record_timestamp(name)
+        return super().__setattr__(name, value)
 
 
     def fake(self):
@@ -659,15 +713,17 @@ class Simulation(NexusCore):
         if event not in self.timestamps:
             self.timestamps[event] = datetime.now().astimezone().isoformat()
             log_msgs = {
-                "setup":        ("Simulation Setup Completed",  logging.INFO),
-                "sent_files":   ("Simulation Sent Files",       logging.INFO),
-                "submitted":    ("Simulation Submitted",        logging.INFO),
-                "exited_queue": ("Simulation Exited Queue",     logging.INFO),
-                "timed_out":    ("Simulation Reached Timeout!", logging.WARNING),
-                "failed":       ("Simulation Failed!",          logging.ERROR),
-                "finished":     ("Simulation Finished",         logging.INFO),
-                "got_output":   ("Got Simulation Output",       logging.INFO),
-                "analyzed":     ("Exited Queue",                logging.INFO),
+                "setup":               ("Simulation Setup Completed",     logging.INFO),
+                "sent_files":          ("Simulation Sent Files",          logging.INFO),
+                "submitted":           ("Simulation Submitted",           logging.INFO),
+                "exited_queue":        ("Simulation Exited Queue",        logging.INFO),
+                "timed_out":           ("Simulation Reached Timeout!",    logging.WARNING),
+                "failed":              ("Simulation Failed!",             logging.ERROR),
+                "finished":            ("Simulation Finished",            logging.INFO),
+                "got_output":          ("Got Simulation Output",          logging.INFO),
+                "analyzed":            ("Simulation Analyzed",            logging.INFO),
+                "created_directories": ("Simulation Directories Created", logging.INFO),
+                "got_dependencies":    ("Simulation Got Dependencies",    logging.INFO),
             }
             msg, level = log_msgs.get(event, (event, logging.INFO))
             self.logger.log(level, msg)
@@ -1133,7 +1189,6 @@ class Simulation(NexusCore):
         #end if
         self.job.write(file=True)
         self.setup = True
-        self.record_timestamp('setup')
         if save_image:
             self.save_image()
             self.input.save(os.path.join(self.imlocdir,self.input_image))
@@ -1198,7 +1253,6 @@ class Simulation(NexusCore):
             #end if
         #end for
         self.sent_files = True
-        self.record_timestamp('sent_files')
         self.save_image()
         send_imfiles=[self.sim_image,self.input_image]
         remote = self.imremdir
@@ -1229,7 +1283,6 @@ class Simulation(NexusCore):
                 #end if
             #end if
             self.submitted = True
-            self.record_timestamp('submitted')
             if (self.job.batch_mode or not nexus_config.monitor) and not nexus_config.generate_only:
                 self.save_image()
             #end if
@@ -1252,8 +1305,8 @@ class Simulation(NexusCore):
         self.pre_check_status()
         newly_exited_queue = False
         if self.job.finished:
-            newly_exited_queue = 'exited_queue' not in self.timestamps
-            self.record_timestamp('exited_queue')
+            newly_exited_queue = not self.exited_queue
+            self.exited_queue = True
         #end if
         if nexus_config.generate_only:
             self.finished = self.job.finished
@@ -1278,7 +1331,7 @@ class Simulation(NexusCore):
                     exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
                     elapsed = datetime.now().astimezone() - exited_queue
                     if elapsed.total_seconds()>nexus_config.timeout:
-                        self.record_timestamp('timed_out')
+                        self.timed_out = True
                         self.failed = True
                         self.timeout_started = False
 
@@ -1286,11 +1339,7 @@ class Simulation(NexusCore):
                 self.finished = True
             #end if
         #end if
-        if self.failed:
-            self.record_timestamp('failed')
-        #end if
         if self.finished:
-            self.record_timestamp('finished')
             self.save_image()
             if self.timeout_started:
                 self.timeout_started = False
@@ -1353,7 +1402,6 @@ class Simulation(NexusCore):
                 #end if
             #end if
             self.got_output = True
-            self.record_timestamp('got_output')
             self.save_image()
         #end if
     #end def get_output
@@ -1374,7 +1422,6 @@ class Simulation(NexusCore):
                 del analyzer
             #end if
             self.analyzed = True
-            self.record_timestamp('analyzed')
             self.save_image()
 
             # support dynamic workflows
@@ -1587,7 +1634,6 @@ class Simulation(NexusCore):
         #end if
         self.leave()
         self.submitted = True
-        self.record_timestamp('submitted')
         if self.job is not None:
             job.status = job.states.finished
             self.job.finished = True
@@ -2509,74 +2555,81 @@ class sim_err_handler:
 class sim_log_handler:
     """Context manager for simulation-specific logging."""
 
+    stream_handler: ClassVar = logging.StreamHandler(sys.stdout)
+    log_fmt: ClassVar = (
+        "{asctime}  {filename:>16}:{lineno:<5} - {levelname:<8} {name}: {message}"
+    )
+    stream_handler.setFormatter(
+        logging.Formatter("    " + log_fmt, style="{")
+    )
+
     def __init__(self, sim: Simulation):
+        if nexus_config.disable_logging:
+            return
+
         self.sim = sim
-        self.logger = sim.logger
-        self.null_handler = logging.NullHandler()
 
-        if not hasattr(self, "initialized"):
-            self.initialized = False
+        if sim.created_directories and not self.sim.logger_initialized:
+            self.sim.logfile = Path(sim.remdir).resolve() / sim.nexus_logfile
+            if not self.sim.logfile.exists():
+                self.sim.logfile.touch()
 
-        if sim.created_directories and not self.initialized:
-            self.logfile = Path(sim.remdir).resolve() / sim.nexus_logfile
-            if not self.logfile.exists():
-                self.logfile.touch()
-
-            self.stream_handler = logging.StreamHandler(sys.stdout)
-            self.file_handler = logging.FileHandler(filename=self.logfile)
-
-            log_fmt = "{asctime}  {filename:>16}:{lineno:<5} - {levelname:<8} {name}: {message}"
-            self.stream_handler.setFormatter(
-                logging.Formatter("    " + log_fmt, style="{")
-            )
-            self.file_handler.setFormatter(
-                logging.Formatter(log_fmt, style="{")
+            self.sim.file_handler = logging.FileHandler(filename=self.sim.logfile)
+            self.sim.file_handler.setFormatter(
+                logging.Formatter(sim_log_handler.log_fmt, style="{")
             )
 
-            self.initialized = True
+            self.sim.logger_initialized = True
         else:
-            self.initialized = False
+            self.sim.logger_initialized = False
 
     def __enter__(self):
-        if not self.initialized:
+        if nexus_config.disable_logging or not self.sim.logger_initialized:
             return
 
-        self.original_log_level = self.logger.getEffectiveLevel()
-        self.original_log_handlers = self.logger.handlers
-        for handler in self.original_log_handlers:
-            self.logger.removeHandler(handler)
+        self.original_log_level = self.sim.logger.getEffectiveLevel()
 
-        if nexus_config.disable_logging:
-            self.logger.addHandler(self.null_handler)
-            return
+        self.memory_handler = self.sim.logger.handlers[0]
+        if not isinstance(self.memory_handler, MemoryHandler):
+            msg = (
+                "Expected only a MemoryHandler in the logger!\n"
+                "This is a developer error, please report it!"
+            )
+            raise NexusError(msg)
+        else:
+            self.sim.logger.removeHandler(self.memory_handler)
 
         if nexus_config.debug:
-            self.logger.setLevel(logging.DEBUG)
-            self.stream_handler.setLevel(logging.DEBUG)
-            self.file_handler.setLevel(logging.DEBUG)
+            self.sim.logger.setLevel(logging.DEBUG)
+            sim_log_handler.stream_handler.setLevel(logging.DEBUG)
+            self.sim.file_handler.setLevel(logging.DEBUG)
         # Disabled since currently Nexus does not have a proper verbose setting
         # elif nexus_config.verbose:
-        #     self.logger.setLevel(logging.INFO)
-        #     self.stream_handler.setLevel(logging.INFO)
-        #     self.file_handler.setLevel(logging.INFO)
+        #     self.sim.logger.setLevel(logging.INFO)
+        #     sim_log_handler.stream_handler.setLevel(logging.INFO)
+        #     self.sim.file_handler.setLevel(logging.INFO)
         else:
-            self.logger.setLevel(logging.INFO)
-            self.stream_handler.setLevel(logging.WARNING)
-            self.file_handler.setLevel(logging.INFO)
+            self.sim.logger.setLevel(logging.INFO)
+            sim_log_handler.stream_handler.setLevel(logging.WARNING)
+            self.sim.file_handler.setLevel(logging.INFO)
 
-        self.logger.addHandler(self.stream_handler)
-        self.logger.addHandler(self.file_handler)
-        self.logger.addHandler(nexus_config.main_log_handler)
+        self.sim.logger.addHandler(sim_log_handler.stream_handler)
+        self.sim.logger.addHandler(self.sim.file_handler)
+        self.sim.logger.addHandler(nexus_config.main_log_handler)
+
+        # Handle anything that predates the existence of the logger
+        if len(self.memory_handler.buffer) > 0:
+            for record in self.memory_handler.buffer:
+                self.sim.logger.handle(record)
+            self.memory_handler.buffer.clear()
 
     def __exit__(self, *exc_details):
-        if not self.initialized:
+        if nexus_config.disable_logging or not self.sim.logger_initialized:
             return
 
-        for handler in self.logger.handlers:
-            self.logger.removeHandler(handler)
+        for handler in self.sim.logger.handlers:
+            self.sim.logger.removeHandler(handler)
 
-        for handler in self.original_log_handlers:
-            self.logger.addHandler(handler)
-
-        self.logger.setLevel(self.original_log_level)
+        self.sim.logger.setLevel(self.original_log_level)
+        self.sim.logger.addHandler(self.memory_handler)
 #end class sim_log_handler
