@@ -13,7 +13,7 @@
 
 
 /** @file PWOrbitalSet.h
- * @brief Definition of member functions of Plane-wave basis set
+ * @brief Complex plane-wave SPOs with values, VGL, and Cartesian Hessians.
  */
 #ifndef QMCPLUSPLUS_PLANEWAVE_ORBITALSET_BLAS_H
 #define QMCPLUSPLUS_PLANEWAVE_ORBITALSET_BLAS_H
@@ -24,6 +24,13 @@
 
 namespace qmcplusplus
 {
+/** Contract complex orbital coefficients with a single primitive-cell PWBasis.
+ *
+ * Used by complex builds; tiled SPOs combine these components in a CompositeSPOSet.
+ * Call resize() and load coefficients before evaluation. Output vectors hold all
+ * orbitals, and matrix outputs use (particle-first, orbital) indexing; the legacy
+ * logdet parameter names denote orbital values, not logarithms or determinants.
+ */
 class PWOrbitalSet : public SPOSet
 {
 public:
@@ -41,8 +48,7 @@ public:
     PW_MAXINDEX = BasisSet_t::PW_MAXINDEX
   };
 
-  /** default constructor
-  */
+  /// Create an SPO of the requested size without attaching a basis or coefficients.
   PWOrbitalSet(const std::string& my_name, size_t size)
       : SPOSet(my_name, size), OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0), C(nullptr), IsCloned(false)
   {}
@@ -50,35 +56,43 @@ public:
   std::string getClassName() const override { return "PWOrbitalSet"; }
 
 
-  /** delete BasisSet only it owns this
-   *
-   * Builder takes care of who owns what
-   */
+  /// Release an owned basis and, for a non-clone, the coefficient matrix.
   ~PWOrbitalSet() override;
 
+  /** Copy the basis evaluation state while sharing orbital coefficients.
+   * The source coefficient storage must outlive the clone.
+   */
   std::unique_ptr<SPOSet> makeClone() const override;
-  /** resize  the orbital base
-   * @param bset PWBasis
-   * @param cleaup if true, owns PWBasis. Will clean up.
+  /** Attach an initialized basis and allocate coefficient and derivative buffers.
+   * @param bset basis with loaded G vectors and prepared evaluation arrays
+   * @param cleanup whether this SPO should delete bset on destruction
    */
   void resize(PWBasisPtr bset, bool cleanup = false);
 
-  /** Builder class takes care of the assertion
-  */
+  /** Load one orbital in input G-vector order, applying the basis inputmap.
+   * @pre jorb is a valid orbital index and coefs.size() equals inputmap.size().
+   */
   void addVector(const std::vector<ComplexType>& coefs, int jorb);
+  /// Load real coefficients using the same input ordering as the complex overload.
   void addVector(const std::vector<RealType>& coefs, int jorb);
 
 
+  /// Evaluate orbital ib at a Cartesian position, updating the basis value buffer.
   inline ValueType evaluate(int ib, const PosType& pos)
   {
     myBasisSet->evaluate(pos);
     return BLAS::dot(BasisSetSize, (*C)[ib], myBasisSet->Zv.data());
   }
 
+  /// Evaluate all orbital values at P.activeR(iat).
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
+  /// Evaluate all orbital values, Cartesian gradients, and Laplacians.
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
+  /** Evaluate VGL for particles in [first, last).
+   * Output matrices require last-first rows and OrbitalSetSize columns.
+   */
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
@@ -86,28 +100,34 @@ public:
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) override;
 
-  /** boolean
-   *
-   * If true, this has to delete the BasisSet
+  /** Evaluate values, Cartesian gradients, and full Hessians for [first, last).
+   * Output matrices use the same particle/ orbital layout as the VGL overload.
    */
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& grad_grad_logdet) override;
+
+  /// Whether the destructor deletes myBasisSet.
   bool OwnBasisSet;
-  ///TwistAngle of this PWOrbitalSet
+  /// Legacy twist metadata; evaluation uses the twist stored in myBasisSet.
   PosType TwistAngle;
-  ///My basis set
+  /// Basis supplying primitive-cell phases and Cartesian derivatives.
   PWBasisPtr myBasisSet;
-  ///number of basis
+  /// Number of retained plane waves per orbital.
   IndexType BasisSetSize;
-  /** pointer to matrix containing the coefficients
-   *
-   * makeClone makes a shallow copy and flag IsCloned
-   */
+  /// Coefficients indexed by (orbital, G-vector); makeClone() shares this matrix.
   ValueMatrix* C;
-  ///if true, do not clean up
+  /// Whether C is shared with a source SPO and must not be deleted here.
   bool IsCloned;
   /////Plane-wave coefficients: (iband,g-vector)
   //Matrix<ValueType> Coefs;
-  /** temporary array to perform gemm operation */
+  /// Contracted VGL data indexed by (orbital, PW_* column).
   Matrix<ValueType> Temp;
+  /// Contracted Hessians indexed by (orbital, row*OHMMS_DIM+column).
+  Matrix<ValueType> TempHess;
 };
 } // namespace qmcplusplus
 #endif

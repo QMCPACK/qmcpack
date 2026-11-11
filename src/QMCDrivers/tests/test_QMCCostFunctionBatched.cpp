@@ -9,8 +9,17 @@
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
+#include "MinimalParticlePool.h"
+#include "MinimalWaveFunctionPool.h"
+#include "MinimalHamiltonianPool.h"
+#include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
+#include "Particle/MCSample.h"
+#include "ProjectData.h"
+#include "StdRandom.h"
 #include "FillData.h"
 // Input data and gold data for fillFromText test
 #include "diamond_fill_data.h"
@@ -70,6 +79,7 @@ public:
   Matrix<QMCCostFunctionBase::Return_rt>& getRecordsOnNode() { return costFn.RecordsOnNode_; }
   Matrix<QMCCostFunctionBase::Return_t>& getDerivRecords() { return costFn.DerivRecords_; }
   Matrix<QMCCostFunctionBase::Return_rt>& getHDerivRecords() { return costFn.HDerivRecords_; }
+  const std::vector<int>& getWalkersPerCrowd() const { return costFn.walkers_per_crowd_; }
 
   void set_samples_and_param(int nsamples, int nparam)
   {
@@ -90,7 +100,128 @@ public:
   }
 };
 
+class OptimizationCrowdTestCost : public QMCCostFunctionBatched
+{
+public:
+  using QMCCostFunctionBatched::correlatedSampling;
+  using QMCCostFunctionBatched::QMCCostFunctionBatched;
+
+  const auto& getSums() const { return SumValue; }
+  const auto& getRecords() const { return RecordsOnNode_; }
+  const auto& getDerivatives() const { return DerivRecords_; }
+  const auto& getEnergyDerivatives() const { return HDerivRecords_; }
+};
+
 } // namespace testing
+
+TEST_CASE("QMCCostFunctionBatched active crowds", "[drivers][optimization_crowds]")
+{
+  Communicate& comm(*OHMMS::Controller);
+  for (const std::vector<int>& capacities : {std::vector<int>{1, 0}, {0, 1}, {0, 2, 0, 1, 0}, {2, 1}})
+  {
+    CAPTURE(capacities);
+    testing::LinearMethodTestSupport test(capacities, comm);
+    std::vector<int> expected;
+    for (int capacity : capacities)
+      if (capacity > 0)
+        expected.push_back(capacity);
+    CHECK(test.getWalkersPerCrowd() == expected);
+  }
+
+  for (const std::vector<int>& capacities : {std::vector<int>{}, {0}, {0, 0}})
+  {
+    CAPTURE(capacities);
+    CHECK_THROWS_MATCHES(testing::LinearMethodTestSupport(capacities, comm), std::runtime_error,
+                         Catch::Matchers::Message("QMCCostFunctionBatched requires at least one active crowd."));
+  }
+  CHECK_THROWS_MATCHES(testing::LinearMethodTestSupport({1, -1}, comm), std::runtime_error,
+                       Catch::Matchers::Message("QMCCostFunctionBatched crowd capacities must not be negative."));
+}
+
+TEST_CASE("QMCCostFunctionBatched empty crowds do not discard samples", "[drivers][optimization_crowds]")
+{
+  Communicate& comm(*OHMMS::Controller);
+  const bool use_sr = GENERATE(false, true);
+  for (const std::vector<int>& capacities : {std::vector<int>{1, 0}, {0, 1}, {0, 2, 0, 1, 0}, {2, 1}})
+  {
+    CAPTURE(use_sr, capacities);
+    ProjectData project;
+    auto particles     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+    auto wavefunctions = MinimalWaveFunctionPool::make_diamondC_1x1x1(project.getRuntimeOptions(), comm, particles);
+    auto hamiltonians  = MinimalHamiltonianPool::make_hamWithEE(comm, particles, wavefunctions);
+    auto& pset         = *particles.getParticleSet("e");
+    auto& psi          = wavefunctions.getWaveFunction().value().get();
+    auto& ham          = hamiltonians.getHamiltonian().value().get();
+    Libxml2Document jastrow_doc;
+    REQUIRE(jastrow_doc.parseFromString(R"(
+      <jastrow name="J2" type="Two-Body" function="Bspline">
+        <correlation rcut="1.5" size="4" speciesA="u" speciesB="d">
+          <coefficients id="ud" type="Array">0.1 0.08 0.04 0.01</coefficients>
+        </correlation>
+      </jastrow>)"));
+    RadialJastrowBuilder builder(comm, pset);
+    psi.addComponent(builder.buildComponent(jastrow_doc.getRoot()));
+
+    SampleStack samples;
+    constexpr int num_samples = 10;
+    samples.setMaxSamples(num_samples);
+    for (int i = 0; i < num_samples; ++i)
+    {
+      pset.R[0][0] += 0.01;
+      samples.appendSample(MCSample(pset));
+    }
+    StdRandom<QMCTraits::FullPrecRealType> rng(1234);
+    RefVector<RandomBase<QMCTraits::FullPrecRealType>> rngs{rng};
+    testing::OptimizationCrowdTestCost reference(pset, psi, ham, samples, {1}, comm);
+    testing::OptimizationCrowdTestCost cost(pset, psi, ham, samples, capacities, comm);
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString("<qmc/>"));
+    auto initialize = [&](auto& target) {
+      REQUIRE(target.put(doc.getRoot()));
+      REQUIRE(target.getNumParams() > 0);
+      target.setRng(rngs);
+      target.getConfigurations("");
+      NullEngineHandle handle;
+      if (use_sr)
+        target.checkConfigurationsSR(handle);
+      else
+        target.checkConfigurations(handle);
+      REQUIRE(target.getNumSamples() == num_samples * comm.size());
+    };
+    initialize(reference);
+    initialize(cost);
+
+    auto check_results = [&]() {
+      for (int i = 0; i < reference.getSums().size(); ++i)
+        CHECK(cost.getSums()[i] == Approx(reference.getSums()[i]));
+      for (int sample = 0; sample < num_samples; ++sample)
+      {
+        CAPTURE(sample);
+        for (int field = QMCCostFunctionBase::LOGPSI_FIXED; field <= QMCCostFunctionBase::REWEIGHT; ++field)
+          CHECK(cost.getRecords()(sample, field) == Approx(reference.getRecords()(sample, field)));
+        for (int param = 0; param < reference.getNumParams(); ++param)
+        {
+          CHECK(std::abs(cost.getDerivatives()(sample, param) - reference.getDerivatives()(sample, param)) ==
+                Approx(0.0).margin(1e-10));
+          if (!use_sr)
+            CHECK(cost.getEnergyDerivatives()(sample, param) ==
+                  Approx(reference.getEnergyDerivatives()(sample, param)));
+        }
+      }
+    };
+    check_results();
+
+    if (!use_sr)
+      for (bool need_grad : {false, true})
+      {
+        reference.Params(0) += 0.01;
+        cost.Params(0) += 0.01;
+        const auto reference_weight = reference.correlatedSampling(need_grad);
+        CHECK(cost.correlatedSampling(need_grad) == Approx(reference_weight));
+        check_results();
+      }
+  }
+}
 
 TEST_CASE("fillOverlapAndHamiltonianMatrices", "[drivers]")
 {

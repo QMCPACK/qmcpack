@@ -15,6 +15,7 @@
 #define QMCPLUSPLUS_AFQMC_TEST_UTILS_HPP
 
 #include <complex>
+#include <filesystem>
 #include "hdf/hdf_archive.h"
 #include "Utils.hpp"
 #include "Message/AppAbort.h"
@@ -129,19 +130,9 @@ inline std::string create_test_hdf(const std::string& wfn_file, const std::strin
 
 inline bool remove_file(const std::string& file_name)
 {
-  bool success=false;
-  std::ifstream ifile;
-  ifile.open(file_name);
-  if (ifile)
-  {
-    if (std::remove(file_name.c_str()) == 0)
-    {
-      success = true;
-    }
-  } else { // no file to remove
-    success = true;
-  }
-  return success;
+  std::error_code ec;
+  std::filesystem::remove(file_name, ec);
+  return !ec;
 }
 
 inline bool check_hamil_wfn_for_utest(const std::string& test_name, std::string& wfn_file, std::string& hamil_file)

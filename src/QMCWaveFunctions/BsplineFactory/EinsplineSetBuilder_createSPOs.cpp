@@ -124,13 +124,13 @@ std::pair<int, int> EinsplineSetBuilder::obtainMemoryAttributes(const xmlNodePtr
   if (shared_ranks < 1)
     shared_ranks = 1;
 
-  if (const int uniform_size = myComm.getUniformNodeRankCount(); uniform_size % (distributed_ranks * shared_ranks) > 0)
-    throw std::runtime_error("The uniform node rank count (" + std::to_string(uniform_size) +
+  if (const int vnode_ranks = myComm.getVirtualNodeRankCount(); vnode_ranks % (distributed_ranks * shared_ranks) > 0)
+    throw std::runtime_error("The virtual node rank count (" + std::to_string(vnode_ranks) +
                              ") is not divisible by the product of distributed_ranks (" +
                              std::to_string(distributed_ranks) + ") and shared_ranks (" + std::to_string(shared_ranks) +
                              ") = " + std::to_string(distributed_ranks * shared_ranks) + ".");
   else if (distributed_ranks * shared_ranks > 1)
-    app_log() << "  Uniform node rank count: " << uniform_size << std::endl;
+    app_log() << "  Virtual node rank count: " << vnode_ranks << std::endl;
 
   return {distributed_ranks, shared_ranks};
 }

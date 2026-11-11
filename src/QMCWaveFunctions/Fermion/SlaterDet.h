@@ -17,23 +17,24 @@
 
 #ifndef QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
+#include "QMCWaveFunctions/SPOSet.h"
 
 namespace qmcplusplus
 {
+class DiracDeterminantBase;
 class TWFFastDerivWrapper;
 
 class SlaterDet : public WaveFunctionComponent
 {
 public:
-  using Determinant_t = DiracDeterminantBase;
-
   /**  constructor
    * @param targetPtcl target Particleset
    */
   SlaterDet(ParticleSet& targetPtcl,
             std::vector<std::unique_ptr<SPOSet>>&& sposets,
-            std::vector<std::unique_ptr<Determinant_t>>&& dets,
+            std::vector<std::unique_ptr<DiracDeterminantBase>>&& dets,
             const std::string& class_name = "SlaterDet");
 
   ///destructor
@@ -92,13 +93,11 @@ public:
   void releaseResource(ResourceCollection& collection,
                        const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
-  inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
-  { return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP, ratios); }
+  void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
-  inline void evaluateSpinorRatios(const VirtualParticleSet& VP,
-                                   const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                   std::vector<ValueType>& ratios) override
-  { return Dets[getDetID(VP.refPtcl)]->evaluateSpinorRatios(VP, spinor_multiplier, ratios); }
+  void evaluateSpinorRatios(const VirtualParticleSet& VP,
+                            const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                            std::vector<ValueType>& ratios) override;
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const OptVariables& optvars,
@@ -111,31 +110,14 @@ public:
                                  std::vector<ValueType>& ratios,
                                  Matrix<ValueType>& dratios) override;
 
-  inline void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                std::vector<std::vector<ValueType>>& ratios) const override
-  {
-    if (wfc_list.size())
-    {
-      // assuming all the VP.refPtcl are identical
-      const int det_id = getDetID(vp_list[0].refPtcl);
-      Dets[det_id]->mw_evaluateRatios(extract_DetRef_list(wfc_list, det_id), vp_list, ratios);
-    }
-  }
+  void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                         const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                         std::vector<std::vector<ValueType>>& ratios) const override;
 
-  inline void mw_evaluateSpinorRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                      const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                      const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
-                                      std::vector<std::vector<ValueType>>& ratios) const final
-  {
-    if (wfc_list.size())
-    {
-      // assuming all the VP.refPtcl are identical
-      const int det_id = getDetID(vp_list[0].refPtcl);
-      Dets[det_id]->mw_evaluateSpinorRatios(extract_DetRef_list(wfc_list, det_id), vp_list, spinor_multiplier_list,
-                                            ratios);
-    }
-  }
+  void mw_evaluateSpinorRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                               const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                               const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                               std::vector<std::vector<ValueType>>& ratios) const final;
 
   PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
@@ -154,19 +136,14 @@ public:
                             std::vector<GradType>& grad_now,
                             std::vector<ComplexType>& spingrad_now) const override;
 
-  GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
+  GradType evalGrad(ParticleSet& P, int iat) override;
 
-  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
-  { return Dets[getDetID(iat)]->evalGradWithSpin(P, iat, spingrad); }
+  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override;
 
   void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                    const RefVectorWithLeader<ParticleSet>& p_list,
                    int iat,
-                   std::vector<GradType>& grad_now) const override
-  {
-    const int det_id = getDetID(iat);
-    Dets[det_id]->mw_evalGrad(extract_DetRef_list(wfc_list, det_id), p_list, iat, grad_now);
-  }
+                   std::vector<GradType>& grad_now) const override;
 
   void mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                            const RefVectorWithLeader<ParticleSet>& p_list,
@@ -174,87 +151,34 @@ public:
                            std::vector<GradType>& grad_now,
                            std::vector<ComplexType>& spingrad_now) const override;
 
-  GradType evalGradSource(ParticleSet& P, ParticleSet& src, int iat) override
-  {
-    GradType G = GradType();
-    for (int iz = 0; iz < Dets.size(); iz++)
-      G += Dets[iz]->evalGradSource(P, src, iat);
-    return G;
-  }
+  GradType evalGradSource(ParticleSet& P, ParticleSet& src, int iat) override;
 
   GradType evalGradSource(ParticleSet& P,
                           ParticleSet& src,
                           int iat,
                           TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
-                          TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override
-  {
-    GradType G = GradType();
-    for (int iz = 0; iz < Dets.size(); iz++)
-      G += Dets[iz]->evalGradSource(P, src, iat, grad_grad, lapl_grad);
-    return G;
-  }
+                          TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override;
 
-  inline void restore(int iat) override { return Dets[getDetID(iat)]->restore(iat); }
+  void restore(int iat) override;
 
-  inline void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override
-  {
-    Dets[getDetID(iat)]->acceptMove(P, iat, safe_to_delay);
-
-    log_value_ = 0.0;
-    for (int i = 0; i < Dets.size(); ++i)
-      log_value_ += Dets[i]->get_log_value();
-  }
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
   void mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                             const RefVectorWithLeader<ParticleSet>& p_list,
                             int iat,
                             const std::vector<bool>& isAccepted,
-                            bool safe_to_delay = false) const override
-  {
-    constexpr LogValue czero(0);
+                            bool safe_to_delay = false) const override;
 
-    // This log_value_ is in the slater determinant, it's still around but not consistent anymore with the
-    // sum of the log_values in its determinants.  Caching the state seems like a bad call, but the wfc base class
-    // having log_value_ as a data member asks for this sort of consistency issue when wfc can contain wfc.
-    for (int iw = 0; iw < wfc_list.size(); iw++)
-      if (isAccepted[iw])
-        wfc_list.getCastedElement<SlaterDet>(iw).log_value_ = czero;
+  void completeUpdates() override;
 
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      const auto Det_list(extract_DetRef_list(wfc_list, i));
+  void mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
-      if (i == getDetID(iat))
-        Dets[i]->mw_accept_rejectMove(Det_list, p_list, iat, isAccepted, safe_to_delay);
-
-      for (int iw = 0; iw < wfc_list.size(); iw++)
-        if (isAccepted[iw])
-          wfc_list.getCastedElement<SlaterDet>(iw).log_value_ += Det_list[iw].get_log_value();
-    }
-  }
-
-  void completeUpdates() override
-  {
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->completeUpdates();
-  }
-
-  void mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override
-  {
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->mw_completeUpdates(extract_DetRef_list(wfc_list, i));
-  }
-
-  inline PsiValue ratio(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->ratio(P, iat); }
+  PsiValue ratio(ParticleSet& P, int iat) override;
 
   void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     int iat,
-                    std::vector<PsiValue>& ratios) const override
-  {
-    const int det_id = getDetID(iat);
-    Dets[det_id]->mw_calcRatio(extract_DetRef_list(wfc_list, det_id), p_list, iat, ratios);
-  }
+                    std::vector<PsiValue>& ratios) const override;
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
@@ -263,26 +187,17 @@ public:
   void evaluateDerivatives(ParticleSet& P,
                            const OptVariables& active,
                            Vector<ValueType>& dlogpsi,
-                           Vector<ValueType>& dhpsioverpsi) override
-  {
-    // Now add on contribution from each determinant to the derivatives
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
-  }
+                           Vector<ValueType>& dhpsioverpsi) override;
 
-  void evaluateDerivativesWF(ParticleSet& P, const OptVariables& active, Vector<ValueType>& dlogpsi) override
-  {
-    // Now add on contribution from each determinant to the derivatives
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->evaluateDerivativesWF(P, active, dlogpsi);
-  }
+  void evaluateDerivativesWF(ParticleSet& P, const OptVariables& active, Vector<ValueType>& dlogpsi) override;
 
   ///return the total number of Dirac determinants
   inline int getNumDets() const { return Dets.size(); }
   ///return the i-th determinant
-  inline auto& getDet(const int i) { return *Dets[i]; }
+  DiracDeterminantBase& getDet(int i);
+  const DiracDeterminantBase& getDet(int i) const;
   ///return the sposet of the i-th determinant
-  SPOSet& getPhi(int i = 0) { return Dets[i]->getPhi(); }
+  SPOSet& getPhi(int i = 0);
 
 private:
   //get Det ID
@@ -297,14 +212,7 @@ private:
   // helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
   RefVectorWithLeader<WaveFunctionComponent> extract_DetRef_list(
       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-      int det_id) const
-  {
-    RefVectorWithLeader<WaveFunctionComponent> Det_list(*wfc_list.getCastedLeader<SlaterDet>().Dets[det_id]);
-    Det_list.reserve(wfc_list.size());
-    for (WaveFunctionComponent& wfc : wfc_list)
-      Det_list.push_back(*static_cast<SlaterDet&>(wfc).Dets[det_id]);
-    return Det_list;
-  }
+      int det_id) const;
 
   ///the last particle of each group
   std::vector<int> Last;
@@ -313,7 +221,7 @@ private:
   const std::vector<std::unique_ptr<SPOSet>> sposets_;
 
   ///container for the DiracDeterminants
-  const std::vector<std::unique_ptr<Determinant_t>> Dets;
+  const std::vector<std::unique_ptr<DiracDeterminantBase>> Dets;
 };
 } // namespace qmcplusplus
 #endif

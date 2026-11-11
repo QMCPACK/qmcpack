@@ -76,7 +76,7 @@ protected:
   // Number of samples local to each MPI rank
   int rank_local_num_samples_;
 
-  // Number of walkers per crowd. Size of vector is number of crowds.
+  // Positive batch capacities of active optimization crowds; empty sampling crowds are omitted.
   std::vector<int> walkers_per_crowd_;
 
   NewTimer& check_config_timer_;

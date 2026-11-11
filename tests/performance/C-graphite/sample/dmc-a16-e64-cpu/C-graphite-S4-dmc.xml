@@ -55,17 +55,13 @@
     </group>
   </particleset>
   <wavefunction name="psi0" target="e">
-    <determinantset type="einspline" href="../lda.pwscf.h5" source="i" tilematrix="2 0 0 0 2 0 0 0 1" twistnum="0" gpu="yes" meshfactor="1.0" precision="single">
-      <basisset/>
+    <sposet_collection type="bspline" href="../lda.pwscf.h5" source="i" tilematrix="2 0 0 0 2 0 0 0 1" twistnum="0" gpu="yes" meshfactor="1.0" precision="single">
+      <sposet type="bspline" name="spo-ud" size="32" spindataset="0"/>
+    </sposet_collection>
+    <determinantset>
       <slaterdeterminant>
-        <determinant id="updet" size="32" ref="updet">
-          <occupation mode="ground" spindataset="0">
-          </occupation>
-        </determinant>
-        <determinant id="downdet" size="32" ref="downdet">
-          <occupation mode="ground" spindataset="0">
-          </occupation>
-        </determinant>
+        <determinant sposet="spo-ud"/>
+        <determinant sposet="spo-ud"/>
       </slaterdeterminant>
     </determinantset>
     <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">

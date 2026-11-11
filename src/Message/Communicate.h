@@ -70,6 +70,7 @@ public:
    *  @param in_comm Communicator to move from (e.g., returned by env.world(), split(), or split_shared()).
    *  Transfers ownership via move semantics directly without the collective overhead of `MPI_Comm_dup`.
    *  `in_comm` is left in an empty/null state.
+   *  Initializes virtual_node_rank_count_ via getUniformNodeRankCount().
    */
   Communicate(mpi3::communicator&& in_comm);
 #endif
@@ -91,8 +92,10 @@ public:
    *  resulting sub-communicator is guaranteed to be a multiple of `multiple`.
    *
    *  @param nparts   The number of sub-communicator groups to divide into.
-   *  @param multiple The granularity of each sub-communicator size. `size()` must be divisible
-   *                  by `multiple`, and `multiple` must be >= 1. Defaults to 1.
+   *  @param multiple The granularity of each sub-communicator size and the virtual node rank count
+   *                  of the resulting sub-communicator. `getVirtualNodeRankCount()` must be divisible
+   *                  by `multiple`, `multiple` must be >= 1, and `size() >= nparts * multiple`.
+   *                  Defaults to 1.
    *  @return The sub-communicator corresponding to the calling rank's subgroup.
    *
    *  Example 1: size() == 12, nparts = 2, multiple = 1
@@ -134,6 +137,20 @@ public:
    *  In non-MPI (serial) builds, this returns 1.
    */
   int getUniformNodeRankCount() const;
+
+  /** return the minimum and maximum rank counts per node across all nodes.
+   *
+   *  Each rank determines its local node size, then an MPI_Allreduce finds
+   *  the minimum and maximum node sizes across the communicator.
+   *  If min == max, all nodes have an identical number of ranks (uniform).
+   *
+   *  In non-MPI (serial) builds, this returns {1, 1}.
+   *  @return std::pair<int, int> {min_node_ranks, max_node_ranks}
+   */
+  std::pair<int, int> getMinMaxNodeRankCount() const;
+
+  /// Return the rank count of uniform virtual node
+  int getVirtualNodeRankCount() const noexcept { return virtual_node_rank_count_; }
 
   void barrier() const;
   void abort() const;
@@ -226,6 +243,19 @@ public:
 
 
 private:
+#ifdef HAVE_MPI
+  /** Constructor that takes ownership of a communicator with an explicit virtual node rank count.
+   *  @param in_comm Communicator to move from.
+   *  @param vnode_ranks Virtual node rank count for this communicator.
+   */
+  Communicate(mpi3::communicator&& in_comm, int vnode_ranks);
+
+  static int getUniformNodeRankCount(mpi3::communicator& in_comm);
+
+  /// mpi3 communicator wrapper
+  mutable mpi3::communicator comm;
+#endif
+
   /** Raw communicator
    *
    *  Currently it is only owned by Communicate which manages its creation and destruction
@@ -242,11 +272,8 @@ private:
   int d_ngroups;
   /// inter group communicator
   std::unique_ptr<Communicate> inter_group_comm_;
-
-#ifdef HAVE_MPI
-  /// mpi3 communicator wrapper
-  mutable mpi3::communicator comm;
-#endif
+  /// Rank count of uniform virtual node
+  const int virtual_node_rank_count_{1};
 };
 
 

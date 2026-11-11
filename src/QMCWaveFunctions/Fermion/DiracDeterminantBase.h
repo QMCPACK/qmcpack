@@ -16,6 +16,7 @@
 #ifndef QMCPLUSPLUS_DIRACDETERMINANT_BASE_H
 #define QMCPLUSPLUS_DIRACDETERMINANT_BASE_H
 
+#include <stdexcept>
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/TimerManager.h"
@@ -104,6 +105,7 @@ public:
   using WaveFunctionComponent::mw_calcRatio;
   using WaveFunctionComponent::mw_completeUpdates;
   using WaveFunctionComponent::mw_evalGrad;
+  using WaveFunctionComponent::mw_prepareGroup;
   using WaveFunctionComponent::mw_ratioGrad;
   using WaveFunctionComponent::ratio;
   using WaveFunctionComponent::ratioGrad;
@@ -123,31 +125,37 @@ public:
       std::vector<std::vector<ValueType>>& ratios) const override
   { mw_evaluateSpinorRatios_serialized(wfc_list, vp_list, spinor_multiplier_list, ratios); }
 
+  [[noreturn]] void mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
+                                    int ig) const override
+  {
+    throw std::runtime_error(" Illegal action. Cannot use DiracDeterminantBase::mw_prepareGroup with p_list and ig.");
+  }
+
   // used by DiracDeterminantWithBackflow
-  virtual void evaluateDerivatives(ParticleSet& P,
-                                   const OptVariables& active,
-                                   int offset,
-                                   Matrix<RealType>& dlogpsi,
-                                   Array<GradType, 3>& dG,
-                                   Matrix<RealType>& dL)
-  { APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::evaluateDerivatives"); }
+  [[noreturn]] virtual void evaluateDerivatives(ParticleSet& P,
+                                                const OptVariables& active,
+                                                int offset,
+                                                Matrix<RealType>& dlogpsi,
+                                                Array<GradType, 3>& dG,
+                                                Matrix<RealType>& dL)
+  {
+    throw std::runtime_error(" Illegal action. Cannot use DiracDeterminantBase::evaluateDerivatives");
+  }
 
   // final keyword is intended to disable makeClone being further inherited.
-  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final
+  [[noreturn]] std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final
   {
-    APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
-    return std::unique_ptr<DiracDeterminantBase>();
+    throw std::runtime_error(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
   }
 
-  PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
+  [[noreturn]] PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
   {
-    APP_ABORT("  DiracDeterminantBase::ratioGradWithSpin():  Implementation required\n");
-    return 0.0;
+    throw std::runtime_error("  DiracDeterminantBase::ratioGradWithSpin():  Implementation required\n");
   }
-  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
+  [[noreturn]] GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
   {
-    APP_ABORT("  DiracDeterminantBase::evalGradWithSpin():  Implementation required\n");
-    return GradType();
+    throw std::runtime_error("  DiracDeterminantBase::evalGradWithSpin():  Implementation required\n");
   }
   /** cloning function
    * @param tqp target particleset
