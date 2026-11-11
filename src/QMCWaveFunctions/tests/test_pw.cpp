@@ -21,6 +21,7 @@
 #include "PlaneWave/PWOrbitalSetBuilder.h"
 #include "PlaneWave/PWParameterSet.h"
 #include "PlaneWave/PWTiling.h"
+#include "CPU/math.hpp"
 
 
 #include <stdio.h>
@@ -709,16 +710,16 @@ TEST_CASE("PlaneWave tiled SPO from HDF for diamond C", "[wavefunction]")
 #endif
   for (int orbital_index = 0; orbital_index < 8; ++orbital_index)
   {
-    CHECK(std::isfinite(std::abs(values[orbital_index])));
-    CHECK(std::isfinite(std::abs(laplacians[orbital_index])));
-    CHECK(std::isfinite(std::abs(gradients[orbital_index][0])));
+    CHECK(qmcplusplus::isfinite(std::abs(values[orbital_index])));
+    CHECK(qmcplusplus::isfinite(std::abs(laplacians[orbital_index])));
+    CHECK(qmcplusplus::isfinite(std::abs(gradients[orbital_index][0])));
     CHECK(std::abs(value_matrix(0, orbital_index) - values[orbital_index]) == Approx(0.0).margin(1e-12));
     SPOSet::ValueType hessian_trace = 0;
     for (int row = 0; row < OHMMS_DIM; ++row)
     {
       hessian_trace += hessian_matrix(0, orbital_index)(row, row);
       for (int column = 0; column < OHMMS_DIM; ++column)
-        CHECK(std::isfinite(std::abs(hessian_matrix(0, orbital_index)(row, column))));
+        CHECK(qmcplusplus::isfinite(std::abs(hessian_matrix(0, orbital_index)(row, column))));
     }
     CHECK(std::abs(hessian_trace - laplacians[orbital_index]) == Approx(0.0).margin(hessian_tolerance));
   }
