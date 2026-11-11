@@ -87,21 +87,23 @@ TEST_CASE("test_communicate_split_four", "[message]")
 TEST_CASE("test_communicate_split_multiple", "[message]")
 {
   Communicate& c(*OHMMS::Controller);
-  // Test with multiple = 2 when number of processes is divisible by 2
-  if (c.size() % 2 == 0)
+  // Test with multiple = 2 when virtual node rank count is divisible by 2 and size >= nparts * multiple
+  if (c.getVirtualNodeRankCount() % 2 == 0 && c.size() >= 4)
   {
     const int multiple = 2;
     const int nparts   = 2;
     Communicate c_sub  = c.split(nparts, multiple);
     REQUIRE(c_sub.size() % multiple == 0);
+    REQUIRE(c_sub.getVirtualNodeRankCount() == multiple);
   }
-  // Test with multiple = 3 when number of processes is divisible by 3
-  if (c.size() % 3 == 0)
+  // Test with multiple = 3 when virtual node rank count is divisible by 3 and size >= nparts * multiple
+  if (c.getVirtualNodeRankCount() % 3 == 0 && c.size() >= 6)
   {
     const int multiple = 3;
     const int nparts   = 2;
     Communicate c_sub  = c.split(nparts, multiple);
     REQUIRE(c_sub.size() % multiple == 0);
+    REQUIRE(c_sub.getVirtualNodeRankCount() == multiple);
   }
 }
 
@@ -144,6 +146,7 @@ TEST_CASE("test_communicate_uniform_node_rank_count", "[message]")
   const int uniform_size = c.getUniformNodeRankCount();
   REQUIRE(uniform_size >= 1);
   REQUIRE(c.size() % uniform_size == 0);
+  REQUIRE(c.getVirtualNodeRankCount() == uniform_size);
 
   // In a homogeneous environment (such as local test machine), uniform_size matches local node_comm size
   auto node_comm = c.createNodeComm();

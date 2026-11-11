@@ -12,8 +12,7 @@
 
 
 /** @file BandInfo.h
- *
- * Define helper class to sort bands according to the band and twist and functions
+ * @brief Orbital-band metadata and band-group selection.
  */
 #ifndef QMCPLUSPLUS_BANDINFO_H
 #define QMCPLUSPLUS_BANDINFO_H
@@ -23,67 +22,61 @@ namespace qmcplusplus
 {
 class SPOSetInfo;
 
+/** Metadata for one primitive-cell band used by the spline builders.
+ *
+ * Ordering is supplied explicitly by sortOrbitalBands, rather than by a
+ * comparison operator on this record. MakeTwoCopies describes expansion into
+ * real orbitals, not a second entry in the primitive-band list.
+ */
 struct BandInfo
 {
-  ///twist index
+  /// Zero-based primitive k-point index in the orbital file.
   int TwistIndex;
-  ///band index
+  /// Zero-based band index within a primitive k-point and spin channel.
   int BandIndex;
-  /// band group index
+  /// Band-group metadata.
   int BandGroup;
-  ///spin index
+  /// Spin-channel metadata.
   int Spin;
-  ///energy associated with this band
+  /// Single-particle eigenvalue used for band ordering.
   double Energy;
-  ///  This is true if we should make distinct copies represeninting a +k, -k pair
+  /// Whether this complex band can supply two real SPOs from a time-reversal pair.
   bool MakeTwoCopies;
-  ///default constructor
+  /// Initialize an unselected band with BandIndex=-1 and a large energy sentinel.
   BandInfo() : TwistIndex(0), BandIndex(-1), BandGroup(0), Spin(0), Energy(1e9), MakeTwoCopies(false) {}
-
-  /** operator to determine the order of any band
-   * 
-   * - energy
-   * - twist index if the energies are similar
-   */
-  inline bool operator<(BandInfo other) const
-  {
-    if ((Energy < other.Energy + 1e-6) && (Energy > other.Energy - 1e-6))
-    {
-      if (TwistIndex == other.TwistIndex)
-        return BandIndex < other.BandIndex;
-      else
-        return TwistIndex < other.TwistIndex;
-    }
-    else
-      return Energy < other.Energy;
-  }
 };
 
-/** a group of bands 
+/** Consecutive entries selected from an already ordered primitive-band list.
+ *
+ * A band marked MakeTwoCopies can supply two SPOs, so the number of selected
+ * band entries need not equal NumSPOs.
  */
 struct BandInfoGroup
 {
-  ///index of the group
+  /// Identifier assigned by the band-group consumer.
   int GroupID;
-  ///number of SPOs handled by this object
+  /// Number of SPOs represented by the selected entries.
   int NumSPOs;
-  ///starting band
+  /// Starting entry in the ordered primitive-band list.
   int FirstBand;
-  ///Bands that belong to this group
+  /// Selected primitive-band entries, retaining the input order.
   std::vector<BandInfo> myBands;
-  ///name of this band
+  /// Name assigned to this group.
   std::string myName;
-  ///constructor
+  /// Initialize an empty selection; the consumer assigns GroupID.
   BandInfoGroup();
-  ///return the size of this band
+  /// Return the number of selected primitive-band entries before SPO expansion.
   inline int getNumDistinctOrbitals() const { return myBands.size(); }
-  ///return the number of SPOs
+  /// Return the number of SPOs after accounting for two-copy bands.
   inline int getNumSPOs() const { return NumSPOs; }
 
-  /** get the bands within [first_orb,first_orb+num_spos)
-   * @param bigspace a set of sorted bands
-   * @param first_orb index of the first uniquie orbitals
-   * @param num_spos number of SPOs to be created
+  /** Replace the selection with consecutive bands supplying num_spos SPOs.
+   * @param bigspace already ordered primitive-band list
+   * @param first_orb starting entry in bigspace, not an expanded SPO index
+   * @param num_spos number of SPOs to supply, including real-orbital copies
+   * @pre first_orb is nonnegative and num_spos is positive.
+   * @throws UniformCommunicateError if the starting entry is past the list or
+   * the remaining bands cannot supply the requested SPO count.
    */
   void selectBands(const std::vector<BandInfo>& bigspace, int first_orb, int num_spos);
 };

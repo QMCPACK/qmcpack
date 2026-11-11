@@ -6,6 +6,9 @@ on:
       - 'config/docker/dependencies/**'
     branches:
       - develop
+  schedule:
+    - cron: '45 3 * * *'
+      timezone: 'America/New_York'
 
 env:
   REGISTRY: ghcr.io
@@ -26,7 +29,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Discover changed images
+      - name: Discover images
         id: discover
         shell: bash
         env:
@@ -38,8 +41,9 @@ jobs:
           dependencies_dir=config/docker/dependencies
           images=()
 
-          # Map changed paths to their top-level image directories
-          if [[ -n "$BEFORE" &&
+          # For pushes with a usable base commit, discover only changed images.
+          if [[ "$GITHUB_EVENT_NAME" != schedule &&
+                -n "$BEFORE" &&
                 ! "$BEFORE" =~ ^0+$ ]] &&
              git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
             while IFS= read -r path; do
@@ -51,7 +55,7 @@ jobs:
               fi
             done < <(git diff --name-only "$BEFORE" "$AFTER" -- "$dependencies_dir")
           else
-            # Without a usable base commit, rebuild every image
+            # Scheduled runs and pushes without a usable base rebuild every image.
             while IFS= read -r dockerfile; do
               images+=("$(basename "$(dirname "$dockerfile")")")
             done < <(

@@ -15,17 +15,79 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
+#include "QMCWaveFunctions/BsplineFactory/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
 #include <limits>
+#include <filesystem>
+#include <utility>
+#include <vector>
 
 using std::string;
 
 namespace qmcplusplus
 {
+TEST_CASE("Spline band sort modes", "[wavefunction][spline]")
+{
+  Communicate& c(*OHMMS::Controller);
+  ParticleSetPool ptcl(c);
+  ParticleSet elec(ptcl.getSimulationCell());
+  elec.create({4});
+  EinsplineSetBuilder spline_builder(elec, ptcl.getPool(), c, nullptr);
+  spline_builder.NumBands       = 2;
+  spline_builder.NumSpins       = 1;
+  spline_builder.DistinctTwists = {0, 1};
+  spline_builder.MakeTwoCopies  = {false, false};
+  spline_builder.FullBands[0]   = std::make_unique<std::vector<BandInfo>>();
+  spline_builder.occ_format     = "energy";
+
+  const std::vector<std::vector<double>> input{{2.0, 1.0}, {2.0 + 0.5e-6, 1.0 + 0.5e-6}};
+  const std::string filename = "spline_band_sort_modes-r" + std::to_string(c.rank()) + ".h5";
+  REQUIRE(spline_builder.H5File.create(filename));
+  spline_builder.H5File.push("electrons");
+  for (int twist_index = 0; twist_index < input.size(); ++twist_index)
+  {
+    spline_builder.H5File.push("kpoint_" + std::to_string(twist_index));
+    spline_builder.H5File.push("spin_0");
+    spline_builder.H5File.write(input[twist_index], "eigenvalues");
+    spline_builder.H5File.pop();
+    spline_builder.H5File.pop();
+  }
+  spline_builder.H5File.pop();
+
+  auto band_indices = [](const std::vector<BandInfo>& bands) {
+    std::vector<std::pair<int, int>> indices;
+    for (const BandInfo& band : bands)
+      indices.emplace_back(band.TwistIndex, band.BandIndex);
+    return indices;
+  };
+
+  SECTION("insertion order")
+  {
+    spline_builder.OccupyBands(0, 0, 4);
+    const auto& bands = *spline_builder.FullBands[0];
+    CHECK(band_indices(bands) == std::vector<std::pair<int, int>>{{0, 0}, {0, 1}, {1, 0}, {1, 1}});
+  }
+  SECTION("energy order")
+  {
+    spline_builder.OccupyBands(0, 1, 4);
+    const auto& bands = *spline_builder.FullBands[0];
+    CHECK(band_indices(bands) == std::vector<std::pair<int, int>>{{0, 1}, {1, 1}, {0, 0}, {1, 0}});
+  }
+  SECTION("band index order")
+  {
+    spline_builder.OccupyBands(0, 2, 4);
+    const auto& bands = *spline_builder.FullBands[0];
+    CHECK(band_indices(bands) == std::vector<std::pair<int, int>>{{0, 0}, {1, 0}, {0, 1}, {1, 1}});
+  }
+
+  spline_builder.H5File.close();
+  REQUIRE(std::filesystem::remove(filename));
+}
+
 void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
 {
   Communicate& c(*OHMMS::Controller);

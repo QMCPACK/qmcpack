@@ -1073,7 +1073,7 @@ class QIxml(Names):
                     #end for
                 #end if
             #end for
-            if self.text is not None:
+            if self.text is not None and self.text in self:
                 c = c.rstrip('\n')
                 c+=param.write(self[self.text],mode='elem',pad=ip,tag=None,normal_elem=True)
             #end if
@@ -2249,6 +2249,11 @@ class group(QIxml):
 
 
 
+class coefs_mem(QIxml):
+    attributes = ('shared_ranks','distributed_ranks')
+#end class coefs_mem
+
+
 class sposet(QIxml):
     attributes = ('basisset','type','name','group','size',
                   'index_min','index_max','energy_min','energy_max',
@@ -2256,7 +2261,7 @@ class sposet(QIxml):
                   'gs_sposet','basis_sposet','same_k','frequency','mass',
                   'source','version','precision','tilematrix',
                   'meshfactor')
-    elements   = ('occupation','coefficient','coefficients')
+    elements   = ('occupation','coefficient','coefficients','coefs_mem')
     text       = None
     identifier = 'name'
 #end class sposet
@@ -3164,7 +3169,7 @@ classes = [   #standard classes
     atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,array_traces,
     reference_points,nearestneighbors,neighbor_trace,dm1b,
     coefficient,radfunc,spindensity,structurefactor,magnetizationdensity,
-    sposet,bspline_builder,composite_builder,heg_builder,include,
+    sposet,coefs_mem,bspline_builder,composite_builder,heg_builder,include,
     multideterminant,detlist,ci,mcwalkerset,csf,det,
     optimize,cg_optimizer,flex_optimizer,optimize_qmc,wftest,kspace_jastrow,
     header,local,force,forwardwalking,observable,record,rmc,pressure,dmccorrection,
@@ -6099,19 +6104,21 @@ def generate_particlesets(*,
 #end def generate_particlesets
 
 
-def generate_sposets(type           = None,
+def generate_sposets(type              = None,
                      *,
-                     occupation     = None,
-                     spin_polarized = False,
-                     nup            = None,
-                     ndown          = None,
-                     spo_up         = 'spo_u',
-                     spo_down       = 'spo_d',
-                     system         = None,
-                     sposets        = None,
-                     spindatasets   = False,
-                     spinor         = None,
-                     rotate         = False,
+                     occupation        = None,
+                     spin_polarized    = False,
+                     nup               = None,
+                     ndown             = None,
+                     spo_up            = 'spo_u',
+                     spo_down          = 'spo_d',
+                     system            = None,
+                     sposets           = None,
+                     spindatasets      = False,
+                     spinor            = None,
+                     rotate            = False,
+                     shared_ranks      = None,
+                     distributed_ranks = None,
                      ):
     ndn = ndown
     if type is None:
@@ -6174,6 +6181,17 @@ def generate_sposets(type           = None,
             )
         raise ValueError(msg)
     #end if
+    if distributed_ranks is not None or shared_ranks is not None:
+        if type in {"bspline", "einspline"}:
+            cm = coefs_mem()
+            if distributed_ranks is not None:
+                cm.distributed_ranks = distributed_ranks
+            if shared_ranks is not None:
+                cm.shared_ranks = shared_ranks
+            for spo in sposets:
+                spo.coefs_mem = cm
+        #end if
+    #end if
     if rotate:
         rotated_sposets = []
         for spo in sposets:
@@ -6201,28 +6219,30 @@ def generate_sposet_builder(type,*args,**kwargs):
 #end def generate_sposet_builder
 
 
-def generate_bspline_builder(type           = 'bspline',
+def generate_bspline_builder(type              = 'bspline',
                              *,
-                             meshfactor     = 1.0,
-                             precision      = 'float',
-                             twistnum       = None,
-                             twist          = None,
-                             sort           = None,
-                             version        = '0.10',
-                             truncate       = False,
-                             buffer         = None,
-                             spin_polarized = False,
-                             hybridrep      = None,
-                             href           = 'MISSING.h5',
-                             rotate         = False,
-                             ions           = 'ion0',
-                             spo_up         = 'spo_u',
-                             spo_down       = 'spo_d',
-                             sposets        = None,
-                             system         = None,
-                             orbitals_cpu   = None,
-                             gpusharing     = None,
-                             spinor         = None,
+                             meshfactor        = 1.0,
+                             precision         = 'float',
+                             shared_ranks      = None,
+                             distributed_ranks = None,
+                             twistnum          = None,
+                             twist             = None,
+                             sort              = None,
+                             version           = '0.10',
+                             truncate          = False,
+                             buffer            = None,
+                             spin_polarized    = False,
+                             hybridrep         = None,
+                             href              = 'MISSING.h5',
+                             rotate            = False,
+                             ions              = 'ion0',
+                             spo_up            = 'spo_u',
+                             spo_down          = 'spo_d',
+                             sposets           = None,
+                             system            = None,
+                             orbitals_cpu      = None,
+                             gpusharing        = None,
+                             spinor            = None,
                              ):
     tilematrix = np.identity(3,dtype=int)
     if system is not None:
@@ -6239,14 +6259,16 @@ def generate_bspline_builder(type           = 'bspline',
         source     = ions,
         )
     sposets    = generate_sposets(
-        type           = type,
-        occupation     = 'slater_ground',
-        spin_polarized = spin_polarized,
-        system         = system,
-        sposets        = sposets,
-        spindatasets   = True,
-        spinor         = spinor,
-        rotate         = rotate,
+        type              = type,
+        occupation        = 'slater_ground',
+        spin_polarized    = spin_polarized,
+        system            = system,
+        sposets           = sposets,
+        spindatasets      = True,
+        spinor            = spinor,
+        rotate            = rotate,
+        shared_ranks      = shared_ranks,
+        distributed_ranks = distributed_ranks,
         )
     if not rotate:
         bsb.sposets = sposets
@@ -6555,21 +6577,23 @@ def check_excitation_type(excitation):
 #end def check_excitation_type
 
 
-def generate_determinantset_old(type           = 'bspline',
-                                *,
-                                meshfactor     = 1.0,
-                                precision      = 'float',
-                                twistnum       = None,
-                                twist          = None,
-                                spin_polarized = False,
-                                hybridrep      = None,
-                                source         = 'ion0',
-                                href           = 'MISSING.h5',
-                                excitation     = None,
-                                delay_rank     = None,
-                                gpusharing     = None,
-                                system         = None,
-                                spinor         = None,
+def generate_determinantset_old(type              = 'bspline',
+                                *,   
+                                meshfactor        = 1.0,
+                                precision         = 'float',
+                                shared_ranks      = None,
+                                distributed_ranks = None,
+                                twistnum          = None,
+                                twist             = None,
+                                spin_polarized    = False,
+                                hybridrep         = None,
+                                source            = 'ion0',
+                                href              = 'MISSING.h5',
+                                excitation        = None,
+                                delay_rank        = None,
+                                gpusharing        = None,
+                                system            = None,
+                                spinor            = None,
                                 ):
     if system is None:
         msg = 'generate_determinantset argument system must not be None'
@@ -6777,7 +6801,17 @@ def generate_determinantset_old(type           = 'bspline',
                 msg = f'{exc1} excitation is not yet available for band type'
                 raise NotImplementedError(msg)
             #end if
-
+            if distributed_ranks is not None or shared_ranks is not None:
+                if type in {"bspline", "einspline"}:
+                    cm = coefs_mem()
+                    if distributed_ranks is not None:
+                        cm.distributed_ranks = distributed_ranks
+                    if shared_ranks is not None:
+                        cm.shared_ranks = shared_ranks
+                    for spo in dset.sposets:
+                        spo.coefs_mem = cm
+                #end if
+            #end if
             return dset
 
         #end if
@@ -9330,88 +9364,90 @@ def read_jastrows(filepath):
 
 
 gen_basic_input_defaults = obj(
-    id               = 'qmc',
-    series           = 0,
-    purpose          = '',
-    maxcpusecs       = None,
-    max_seconds      = None,
-    seed             = None,
-    bconds           = None,
-    truncate         = False,
-    buffer           = None,
-    lr_dim_cutoff    = 15,
-    lr_tol           = None,
-    lr_handler       = None,
-    remove_cell      = False,
-    randomsrc        = True,
-    meshfactor       = 1.0,
-    orbspline        = None,
-    precision        = 'float',
-    twistnum         = None,
-    twist            = None,
-    gcta             = None,
-    spin_polarized   = None,
-    partition        = None,
-    partition_mf     = None,
-    hybridrep        = None,
-    hybrid_rcut      = None,
-    hybrid_lmax      = None,
-    orbitals_h5      = 'MISSING.h5',
-    rotated_orbitals = False,
-    run_path         = None,
-    check_paths      = True,
-    excitation       = None,
-    system           = 'missing',
-    pseudos          = None,
-    nrule            = None,
-    pseudo_algorithm = None,
-    spinor           = None,
-    dla              = None,
-    delay_rank       = None,
-    det_batch        = None,
-    jastrows         = 'generateJ12',
-    opt_params       = None,
-    interactions     = 'all',
-    corrections      = 'default',
-    observables      = None,
-    estimators       = None,
-    estimator_period = None,
-    traces           = None,
-    calculations     = None,
-    det_format       = 'new',
-    J1               = False,
-    J2               = False,
-    J3               = False,
-    J1_size          = None,
-    J1_rcut          = None,
-    J1_dr            = 0.5,
-    J1_opt           = None,
-    J2_size          = None,
-    J2_rcut          = None,
-    J2_dr            = 0.5,
-    J2_init          = 'zero',
-    J2_opt           = None,
-    J3_isize         = 3,
-    J3_esize         = 3,
-    J3_rcut          = 5.0,
-    J3_opt           = None,
-    J1_rcut_open     = 5.0,
-    J2_rcut_open     = 10.0,
-    J1k              = False,
-    J1k_kcut         = 5.0,
-    J1k_symm         = 'crystal',
-    J1k_opt          = None,
-    J2k              = False,
-    J2k_kcut         = 5.0,
-    J2k_symm         = 'crystal',
-    J2k_opt          = None,
-    driver           = 'batched', # legacy,batched
+    id                = 'qmc',
+    series            = 0,
+    purpose           = '',
+    maxcpusecs        = None,
+    max_seconds       = None,
+    seed              = None,
+    bconds            = None,
+    truncate          = False,
+    buffer            = None,
+    lr_dim_cutoff     = 15,
+    lr_tol            = None,
+    lr_handler        = None,
+    remove_cell       = False,
+    randomsrc         = True,
+    meshfactor        = 1.0,
+    orbspline         = None,
+    precision         = 'float',
+    shared_ranks      = None,
+    distributed_ranks = None,
+    twistnum          = None,
+    twist             = None,
+    gcta              = None,
+    spin_polarized    = None,
+    partition         = None,
+    partition_mf      = None,
+    hybridrep         = None,
+    hybrid_rcut       = None,
+    hybrid_lmax       = None,
+    orbitals_h5       = 'MISSING.h5',
+    rotated_orbitals  = False,
+    run_path          = None,
+    check_paths       = True,
+    excitation        = None,
+    system            = 'missing',
+    pseudos           = None,
+    nrule             = None,
+    pseudo_algorithm  = None,
+    spinor            = None,
+    dla               = None,
+    delay_rank        = None,
+    det_batch         = None,
+    jastrows          = 'generateJ12',
+    opt_params        = None,
+    interactions      = 'all',
+    corrections       = 'default',
+    observables       = None,
+    estimators        = None,
+    estimator_period  = None,
+    traces            = None,
+    calculations      = None,
+    det_format        = 'new',
+    J1                = False,
+    J2                = False,
+    J3                = False,
+    J1_size           = None,
+    J1_rcut           = None,
+    J1_dr             = 0.5,
+    J1_opt            = None,
+    J2_size           = None,
+    J2_rcut           = None,
+    J2_dr             = 0.5,
+    J2_init           = 'zero',
+    J2_opt            = None,
+    J3_isize          = 3,
+    J3_esize          = 3,
+    J3_rcut           = 5.0,
+    J3_opt            = None,
+    J1_rcut_open      = 5.0,
+    J2_rcut_open      = 10.0,
+    J1k               = False,
+    J1k_kcut          = 5.0,
+    J1k_symm          = 'crystal',
+    J1k_opt           = None,
+    J2k               = False,
+    J2k_kcut          = 5.0,
+    J2k_symm          = 'crystal',
+    J2k_opt           = None,
+    driver            = 'batched', # legacy,batched
     # batched driver inputs
-    orbitals_cpu     = None,     # place/evaluate orbitals on cpu if on gpu
-    matrix_inv_cpu   = None,     # evaluate matrix inverse on cpu if on gpu
+    orbitals_cpu      = None,     # place/evaluate orbitals on cpu if on gpu
+    matrix_inv_cpu    = None,     # evaluate matrix inverse on cpu if on gpu
     # legacy cuda inputs
-    gpusharing       = None,
-    qmc              = None,     # opt,vmc,vmc_test,dmc,dmc_test
+    gpusharing        = None,
+    qmc               = None,     # opt,vmc,vmc_test,dmc,dmc_test
     )
 
 def generate_basic_input(**kwargs):
@@ -9594,21 +9630,23 @@ def generate_basic_input(**kwargs):
                 #end if
             #end if
             ssb = generate_sposet_builder(
-                type           = kw.orbspline,
-                twist          = kw.twist,
-                twistnum       = kw.twistnum,
-                meshfactor     = kw.meshfactor,
-                precision      = kw.precision,
-                truncate       = kw.truncate,
-                buffer         = kw.buffer,
-                hybridrep      = kw.hybridrep,
-                href           = kw.orbitals_h5,
-                rotate         = kw.rotated_orbitals,
-                spin_polarized = kw.spin_polarized,
-                system         = kw.system,
-                orbitals_cpu   = kw.orbitals_cpu,
-                gpusharing     = kw.gpusharing,
-                spinor         = kw.spinor,
+                type              = kw.orbspline,
+                twist             = kw.twist,
+                twistnum          = kw.twistnum,
+                meshfactor        = kw.meshfactor,
+                precision         = kw.precision,
+                shared_ranks      = kw.shared_ranks,
+                distributed_ranks = kw.distributed_ranks,
+                truncate          = kw.truncate,
+                buffer            = kw.buffer,
+                hybridrep         = kw.hybridrep,
+                href              = kw.orbitals_h5,
+                rotate            = kw.rotated_orbitals,
+                spin_polarized    = kw.spin_polarized,
+                system            = kw.system,
+                orbitals_cpu      = kw.orbitals_cpu,
+                gpusharing        = kw.gpusharing,
+                spinor            = kw.spinor,
                 )
         #end if
         if kw.partition is None:
@@ -9636,18 +9674,20 @@ def generate_basic_input(**kwargs):
             kw.orbspline = 'einspline'
         #end if
         dset = generate_determinantset_old(
-            type           = kw.orbspline,
-            twistnum       = kw.twistnum,
-            meshfactor     = kw.meshfactor,
-            precision      = kw.precision,
-            hybridrep      = kw.hybridrep,
-            href           = kw.orbitals_h5,
-            spin_polarized = kw.spin_polarized,
-            excitation     = kw.excitation,
-            delay_rank     = kw.delay_rank,
-            gpusharing     = kw.gpusharing,
-            system         = kw.system,
-            spinor         = kw.spinor,
+            type              = kw.orbspline,
+            twistnum          = kw.twistnum,
+            meshfactor        = kw.meshfactor,
+            precision         = kw.precision,
+            shared_ranks      = kw.shared_ranks,
+            distributed_ranks = kw.distributed_ranks,
+            hybridrep         = kw.hybridrep,
+            href              = kw.orbitals_h5,
+            spin_polarized    = kw.spin_polarized,
+            excitation        = kw.excitation,
+            delay_rank        = kw.delay_rank,
+            gpusharing        = kw.gpusharing,
+            system            = kw.system,
+            spinor            = kw.spinor,
             )
     else:
         msg = (
@@ -9798,7 +9838,7 @@ def generate_basic_input(**kwargs):
     hmltn = generate_hamiltonian(
         system       = kw.system,
         pseudos      = kw.pseudos,
-        nrule         = kw.nrule,
+        nrule        = kw.nrule,
         algorithm    = kw.pseudo_algorithm,
         dla          = kw.dla,
         interactions = kw.interactions,
