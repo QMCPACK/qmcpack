@@ -29,7 +29,17 @@ namespace qmcplusplus
 {
 namespace
 {
-/** Distinguish an old checkpoint without weights from a present but malformed weights dataset. */
+/** Distinguish an old checkpoint without weights from a present but malformed weights dataset.
+ *
+ * Checks whether the `walker_weights` dataset exists in the current HDF5 group and matches
+ * the expected 1D shape with length equal to `count`.
+ *
+ * @param archive HDF5 archive whose current group contains the walker state.
+ * @param count Expected number of walkers (1D dataset size).
+ * @return  0 if the dataset does not exist (legacy checkpoint without weights).
+ *          1 if the dataset exists and matches the expected 1D shape with `count` elements.
+ *         -1 if the dataset exists but is malformed (wrong dimensionality, count mismatch, or read error).
+ */
 int walkerWeightStatus(hdf_archive& archive, size_t count)
 {
   const auto exists = H5Lexists(archive.top(), hdf::walker_weights, H5P_DEFAULT);
@@ -42,7 +52,17 @@ int walkerWeightStatus(hdf_archive& archive, size_t count)
       : -1;
 }
 
-/** Coordinate problems with weights. */
+/** Validate walker weights and coordinate error handling across all MPI ranks.
+ *
+ * Checks that the dataset read succeeded on the local rank and that all walker weights
+ * are finite and non-negative. If any rank reports a failure or invalid weight, the failure
+ * is coordinated across all ranks using an MPI allreduce to uniformly throw UniformCommunicateError.
+ *
+ * @param comm Communicator used to coordinate error state across all MPI ranks.
+ * @param read_ok Boolean flag indicating if reading the weights dataset succeeded on this rank.
+ * @param weights Vector of walker weights to inspect for finite, non-negative values.
+ * @throws UniformCommunicateError if `read_ok` is false or if any weight is non-finite or negative on any rank.
+ */
 void validateWalkerWeights(Communicate& comm, bool read_ok, const std::vector<QMCTraits::FullPrecRealType>& weights)
 {
   int invalid = !read_ok || std::any_of(weights.begin(), weights.end(), [](auto weight) {
