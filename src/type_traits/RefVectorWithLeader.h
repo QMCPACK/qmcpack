@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers
+// Copyright (c) 2026 QMCPACK developers
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -27,11 +27,7 @@ public:
 
   RefVectorWithLeader(T& leader) : leader_(leader) {}
 
-  RefVectorWithLeader(T& leader, const BaseVec& vec) : leader_(leader)
-  {
-    for (T& element : vec)
-      this->push_back(element);
-  }
+  RefVectorWithLeader(T& leader, const BaseVec& vec) : BaseVec(vec), leader_(leader) {}
 
   RefVectorWithLeader(T& leader, BaseVec&& vec) : BaseVec(std::move(vec)), leader_(leader) {}
 

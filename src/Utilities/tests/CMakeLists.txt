@@ -23,6 +23,7 @@ add_executable(
   test_prime_set.cpp
   test_partition.cpp
   test_ResourceCollection.cpp
+  test_RefVectorWithResource.cpp
   test_infostream.cpp
   test_project_data.cpp
   test_qmc_common.cpp
