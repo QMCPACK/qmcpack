@@ -11,7 +11,7 @@ body:
       description: >-
         A clear and concise description of what the bug is, including the
         expected behaviour and what has gone wrong.
-        If you have log files from Nexus, please add them here!
+        If you have log files from Nexus, please add them here.
     validations:
       required: true
 
@@ -32,7 +32,7 @@ body:
       description: >-
         Please provide a minimal Python script that can reproduce the bug.
         This is optional, but is strongly encouraged and will help us fix
-        the bug faster!
+        the bug. Reports without a reproducer may not be actionable.
       placeholder: >-
         #! /usr/bin/env python3
 

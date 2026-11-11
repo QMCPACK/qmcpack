@@ -28,8 +28,8 @@ body:
     attributes:
       label: How to Reproduce
       description: >-
-        Please provide steps to reproduce this bug, like the CMake command used.
-        You may attach any files you deem necessary.
+        Please provide steps to reproduce this bug. Include details of the specific QMCPACK release or git commit used, how QMCPACK was built, and the inputs used.
+        Attach any files you deem necessary. Reports without a reproducer may not be actionable.
     validations:
       required: false
 
@@ -39,9 +39,9 @@ body:
       label: System Information
       render: text
       description: >-
-        Provide compiler versions, cmake versions, mpirun versions, system name, etc.
+        Provide compiler and library versions, loaded modules, pertinent system information, etc.
       placeholder: >-
-        Machine Name: [Frontier, Perlmutter, Aurora, "Laptop" etc.]
+        Machine Name: [Laptop, Frontier, Perlmutter, Aurora etc.]
         Reproducible On: [e.g. "my laptop", "none"]
         OS: Fedora Linux 44 (KDE Plasma Desktop Edition)
         ```bash
