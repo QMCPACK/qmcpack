@@ -34,7 +34,7 @@
 namespace qmcplusplus
 {
 
-TEST_CASE("HDFWalkerInput_0_4 missing malformed and invalid weights", "[particle][stochastic_comb]")
+TEST_CASE("HDFWalkerInput_0_4 missing malformed and invalid weights", "[particle]")
 {
   Communicate& comm(*OHMMS::Controller);
   constexpr int count              = 16;
@@ -117,6 +117,9 @@ TEST_CASE("HDFWalkerInput_0_4 missing malformed and invalid weights", "[particle
     }
     comm.barrier();
   }
+  if (comm.rank() == 0)
+    std::filesystem::remove(file);
+  comm.barrier();
 }
 
 namespace
