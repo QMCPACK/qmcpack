@@ -20,7 +20,8 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "WaveFunctionTypes.hpp"
 #include "type_traits/complex_help.hpp"
-#include "QMCWaveFunctions/Fermion/DelayedUpdateBatched.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
+#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "DiracMatrixInverter.hpp"
 
 namespace qmcplusplus
@@ -29,36 +30,10 @@ namespace qmcplusplus
 //forward declaration
 class TWFFastDerivWrapper;
 
-template<PlatformKind PL, typename VT>
-struct UpdateEngineSelector;
-
-template<typename VT>
-struct UpdateEngineSelector<PlatformKind::OMPTARGET, VT>
-{
-  using Engine = DelayedUpdateBatched<PlatformKind::OMPTARGET, VT>;
-};
-
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-template<typename VT>
-struct UpdateEngineSelector<PlatformKind::CUDA, VT>
-{
-  using Engine = DelayedUpdateBatched<PlatformKind::CUDA, VT>;
-};
-#endif
-
-#if defined(ENABLE_SYCL) && defined(ENABLE_OFFLOAD)
-template<typename VT>
-struct UpdateEngineSelector<PlatformKind::SYCL, VT>
-{
-  using Engine = DelayedUpdateBatched<PlatformKind::SYCL, VT>;
-};
-#endif
-
 template<PlatformKind PL, typename VT, typename FPVT>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
 public:
-  using UpdateEngine  = typename UpdateEngineSelector<PL, VT>::Engine;
   using WFT           = WaveFunctionTypes<VT, FPVT>;
   using Value         = typename WFT::Value;
   using FullPrecValue = typename WFT::FullPrecValue;

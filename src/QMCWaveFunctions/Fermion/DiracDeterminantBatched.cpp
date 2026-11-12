@@ -13,6 +13,7 @@
 
 #include "DiracDeterminantBatched.h"
 #include <cassert>
+#include "QMCWaveFunctions/Fermion/DelayedUpdateBatched.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -29,6 +30,31 @@
 
 namespace qmcplusplus
 {
+
+template<PlatformKind PL, typename VT>
+struct UpdateEngineSelector;
+
+template<typename VT>
+struct UpdateEngineSelector<PlatformKind::OMPTARGET, VT>
+{
+  using Engine = DelayedUpdateBatched<PlatformKind::OMPTARGET, VT>;
+};
+
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+template<typename VT>
+struct UpdateEngineSelector<PlatformKind::CUDA, VT>
+{
+  using Engine = DelayedUpdateBatched<PlatformKind::CUDA, VT>;
+};
+#endif
+
+#if defined(ENABLE_SYCL) && defined(ENABLE_OFFLOAD)
+template<typename VT>
+struct UpdateEngineSelector<PlatformKind::SYCL, VT>
+{
+  using Engine = DelayedUpdateBatched<PlatformKind::SYCL, VT>;
+};
+#endif
 
 template<PlatformKind UEPL, typename FPVT, typename VT>
 struct DetInverterSelector
@@ -68,7 +94,7 @@ struct DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatchedMultiWalker
   /// reference to per DDB psiMinvs in a crowd
   RefVector<DualMatrix<Value>> psiMinv_refs;
   /// delayed update engine, crowd scope, holds the data of all the walkers.
-  UpdateEngine det_engine;
+  typename UpdateEngineSelector<PL, VT>::Engine det_engine;
 };
 
 /** constructor
@@ -87,7 +113,7 @@ DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatched(SPOSet& phi,
       D2HTimer(createGlobalTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
       H2DTimer(createGlobalTimer("DiracDeterminantBatched::H2D", timer_level_fine))
 {
-  static_assert(std::is_same<SPOSet::ValueType, typename UpdateEngine::Value>::value);
+  static_assert(std::is_same<SPOSet::ValueType, typename UpdateEngineSelector<PL, VT>::Engine::Value>::value);
   resize(NumPtcls, NumPtcls);
 
 #ifndef QMC_COMPLEX
