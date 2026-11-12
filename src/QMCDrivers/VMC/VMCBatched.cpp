@@ -122,17 +122,25 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         {
           bool walker_valid = true;
           for (int iat = 0; iat < num_particles; ++iat)
-            walker_valid = walker_valid && are_valid[iat * num_walkers + iw];
+            // This is a rare occurence limited to particles that fell outside of a cell vector
+            // specified as an open boundary.
+            if (!are_valid[iat * num_walkers + iw])
+            {
+              is_accepted[iw] = false;
+              walker_valid    = false;
+              break;
+            }
 
-          const RealType probability = std::exp(2.0 * (walker_twfs[iw].getLogPsi() - old_logpsi[iw]));
-          is_accepted[iw]            = step_context.get_random_gen()() < probability && walker_valid;
-
+          if (walker_valid)
+          {
+            const RealType probability = std::exp(2.0 * (walker_twfs[iw].getLogPsi() - old_logpsi[iw]));
+            is_accepted[iw]            = walker_valid && step_context.get_random_gen()() < probability;
+          }
           // All particles in a walker share the all-particle transaction decision.
-          for (int iat = 0; iat < num_particles; ++iat)
-            if (is_accepted[iw])
-              crowd.incAccept();
-            else
-              crowd.incReject();
+          if (is_accepted[iw])
+            crowd.addAccept(num_particles);
+          else
+            crowd.addReject(num_particles);
         }
 
         ps_dispatcher.flex_accept_rejectMoveAllParticles(walker_elecs, is_accepted);
