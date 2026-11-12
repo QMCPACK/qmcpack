@@ -22,6 +22,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "FakeRandom.h"
 #include "Configuration.h"
+#include "Utilities/ProjectData.h"
 
 namespace qmcplusplus
 {
@@ -34,6 +35,10 @@ namespace testing
 {
 class SetupPools
 {
+  // The pools and their wavefunctions retain references to this project's runtime options.
+  // Declare it first so it outlives the pools.
+  ProjectData project_data_;
+
 public:
   SetupPools();
   ~SetupPools();
