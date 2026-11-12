@@ -9,6 +9,7 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include "VMCBatchedTest.h"
+#include "SetupPools.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -32,9 +33,9 @@
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/StdRandom.h"
 #include "Utilities/for_testing/Catch2Approx.h"
-#include <MinimalHamiltonianPool.h>
-#include <MinimalParticlePool.h>
-#include <MinimalWaveFunctionPool.h>
+#include "HamiltonianPool.h"
+#include "ParticleSetPool.h"
+#include "WaveFunctionPool.h"
 
 #include <cmath>
 #include <limits>
@@ -73,13 +74,10 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
   vmcdriver_input.readXML(node);
   // The pool randomizes initial electron positions with the global RNG, before any crowd tasks run.
   Random.init(7919 + comm.rank());
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool =
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(project_data.getRuntimeOptions(), comm, particle_pool);
-  wavefunction_pool.getWaveFunction().value().get().addComponent(std::make_unique<CountingWaveFunctionComponent>());
-  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  SetupPools pools;
+  pools.wavefunction_pool->getWaveFunction().value().get().addComponent(std::make_unique<CountingWaveFunctionComponent>());
   // Match QMCMain setup: initialize distance tables and structure factors before cloning walkers.
-  particle_pool.reset();
+  pools.particle_pool->reset();
 
   using RNG = RandomBase<QMCTraits::FullPrecRealType>;
   std::vector<std::unique_ptr<StdRandom<QMCTraits::FullPrecRealType>>> rngs;
@@ -94,9 +92,9 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
   WalkerConfigurations walker_confs;
   SampleStack samples;
   VMCBatched driver(project_data, std::move(qmcdriver_input), nullptr, std::move(vmcdriver_input), walker_confs,
-                    MCPopulation(comm.size(), comm.rank(), *particle_pool.getParticleSet("e"),
-                                 wavefunction_pool.getWaveFunction().value(),
-                                 hamiltonian_pool.getHamiltonian().value()),
+                    MCPopulation(comm.size(), comm.rank(), *pools.particle_pool->getParticleSet("e"),
+                                 pools.wavefunction_pool->getWaveFunction().value(),
+                                 pools.hamiltonian_pool->getHamiltonian().value()),
                     rng_refs, samples, comm);
   driver.setStatus("vmcbatched_allp", "", false);
   driver.process(node);
