@@ -18,6 +18,7 @@
 #include "QMCDrivers/tests/WalkerConsumer.h"
 #include "QMCDrivers/tests/SetupPools.h"
 #include "Message/UniformCommunicateError.h"
+#include "CPU/math.hpp"
 #include <MinimalParticlePool.h>
 #include <MinimalWaveFunctionPool.h>
 #include <MinimalHamiltonianPool.h>
@@ -34,7 +35,8 @@ TEST_CASE("MCPopulation validates restored fixed DMC weights before normalizatio
                           pools.hamiltonian_pool->getHamiltonian().value());
   WalkerConfigurations configs;
   population.createWalkers(1, configs);
-  for (double invalid : {0., -1., std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()})
+  for (double invalid :
+       {0., -1., qmcplusplus::numeric_limits<double>::infinity(), qmcplusplus::numeric_limits<double>::quiet_NaN()})
   {
     population.get_walkers()[0]->Weight = invalid == 0 || pools.comm.rank() == pools.comm.size() - 1 ? invalid : 1;
     double energy, variance;
