@@ -79,6 +79,12 @@ struct HDFWalkerInput_0_4
   /** check options from xml */
   void checkOptions(xmlNodePtr cur);
 
+  /** Walker weights: the three read_* functions below share the same semantics.
+   *  - `walker_weights` missing (legacy checkpoint): every loaded walker is assigned weight 1.0.
+   *  - `walker_weights` malformed (shape/count/type) or containing NaN, Inf or negative values:
+   *    UniformCommunicateError is thrown on all ranks and no walkers are added.
+   */
+
   /** read walkers for small number of MPI tasks */
   bool read_hdf5(const std::filesystem::path& h5name);
   /** read walkers. Master reads and scatter the walkers */
