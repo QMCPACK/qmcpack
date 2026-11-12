@@ -63,12 +63,12 @@ TEST_CASE("HDFWalkerInput_0_4 missing malformed and invalid weights", "[particle
           weights.back() = -1;
         else if (mode == 4)
         {
-          weights.back() = std::numeric_limits<double>::infinity();
+          weights.back() = qmcplusplus::numeric_limits<double>::infinity();
           REQUIRE(qmcplusplus::isinf(weights.back()));
         }
         else if (mode == 5)
         {
-          weights.back() = std::numeric_limits<double>::quiet_NaN();
+          weights.back() = qmcplusplus::numeric_limits<double>::quiet_NaN();
           REQUIRE(qmcplusplus::isnan(weights.back()));
         }
         if (mode == 2)
