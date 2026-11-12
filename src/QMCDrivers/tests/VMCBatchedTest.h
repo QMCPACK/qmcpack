@@ -37,6 +37,7 @@ public:
   static constexpr int moves_per_walker = steps * substeps;
 
   static VMCBatchedSummary runAllParticleNoDrift(int walkers_per_crowd = 1);
+  static void checkAllParticleBoundaryRejection(int invalid_particle);
 };
 } // namespace qmcplusplus::testing
 

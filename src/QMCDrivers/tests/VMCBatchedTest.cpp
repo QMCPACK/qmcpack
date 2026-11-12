@@ -16,23 +16,30 @@
 #include "Concurrency/Info.hpp"
 #include "CountingWaveFunctionComponent.h"
 #include "EstimatorInputDelegates.h"
+#include "Estimators/EstimatorManagerNew.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
+#include "Particle/DistanceTable.h"
+#include "Particle/ParticleBase/RandomSeqGenerator.h"
 #include "Particle/SampleStack.h"
 #include "QMCDrivers/Crowd.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
+#include "QMCHamiltonians/BareKineticEnergy.h"
+#include "Utilities/FakeRandom.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/StdRandom.h"
+#include "Utilities/for_testing/Catch2Approx.h"
 #include <MinimalHamiltonianPool.h>
 #include <MinimalParticlePool.h>
 #include <MinimalWaveFunctionPool.h>
 
 #include <cmath>
 #include <limits>
-#include <sstream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -192,6 +199,125 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
   if (summary.accepted + summary.rejected != summary.resolutions)
     fail("resolution accounting mismatch", -1);
   return summary;
+}
+
+void VMCBatchedTest::checkAllParticleBoundaryRejection(int invalid_particle)
+{
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<qmc method="vmc_batch" move="allp">
+    <parameter name="substeps">1</parameter>
+    <parameter name="timestep">0.01</parameter>
+    <parameter name="usedrift">no</parameter></qmc>)"));
+  QMCDriverInput qmc_input;
+  qmc_input.readXML(doc.getRoot());
+  VMCDriverInput vmc_input;
+  vmc_input.readXML(doc.getRoot());
+
+  Lattice lattice;
+  lattice.BoxBConds          = false;
+  lattice.R                  = ParticleSet::Tensor_t(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+  lattice.explicitly_defined = true;
+  lattice.reset();
+  const SimulationCell cell(lattice);
+  ParticleSet elecs(cell);
+  elecs.setName("e");
+  elecs.create({2});
+  elecs.R[0]              = {0.5, 0.5, 0.5};
+  elecs.R[1]              = {0.7, 0.5, 0.5};
+  auto& species           = elecs.getSpeciesSet();
+  const int electron      = species.addSpecies("u");
+  const int mass          = species.addAttribute("mass");
+  species(mass, electron) = 1.0;
+  elecs.resetGroups();
+  const int aa_table = elecs.addTable(elecs);
+  elecs.update();
+
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+  psi.addComponent(std::make_unique<CountingWaveFunctionComponent>());
+  QMCHamiltonian ham;
+  ham.addOperator(std::make_unique<BareKineticEnergy>(elecs), "Kinetic");
+  ham.addObservables(elecs);
+  Communicate& comm = *OHMMS::Controller;
+  MCPopulation population(comm.size(), comm.rank(), elecs, psi, ham);
+  WalkerConfigurations configs;
+  population.createWalkers(2, configs);
+
+  DriverWalkerResourceCollection resources;
+  elecs.createResource(resources.pset_res);
+  psi.createResource(resources.twf_res);
+  ham.createResource(resources.ham_res);
+  EstimatorManagerNew estimators(ham, comm);
+  Crowd crowd(estimators, resources, elecs, psi, ham);
+
+  // With FakeRandom(0.5), the particle-major displacements in walker 1
+  // are (0, -sqrt(2*log(2)*tau), 0) for both particles. Only one crosses y=0.
+  population.get_elec_particle_sets()[1]->R[invalid_particle][1] = 0.05;
+  std::vector<ParticleSet::ParticlePos> initial_positions;
+  for (int iw = 0; iw < 2; ++iw)
+  {
+    auto& particles = *population.get_elec_particle_sets()[iw];
+    auto& twf       = *population.get_twfs()[iw];
+    auto& walker    = *population.get_walkers()[iw];
+    particles.update();
+    twf.evaluateLog(particles);
+    particles.saveWalker(walker);
+    initial_positions.push_back(particles.R);
+    crowd.addWalker(walker, particles, twf, *population.get_hamiltonians()[iw]);
+  }
+
+  FakeRandom<QMCTraits::FullPrecRealType> preview_rng;
+  MCCoords<CoordsType::POS> deltas(4);
+  makeGaussRandomWithEngine(deltas, preview_rng);
+  for (int ip = 0; ip < 2; ++ip)
+    for (int iw = 0; iw < 2; ++iw)
+    {
+      const int index = ip * 2 + iw;
+      deltas.positions[index] *= std::sqrt(qmc_input.get_tau());
+      const bool valid = lattice.isValid(lattice.toUnit(initial_positions[iw][ip] + deltas.positions[index]));
+      REQUIRE(valid == !(iw == 1 && ip == invalid_particle));
+    }
+
+  DriftModifierUNR drift;
+  VMCBatched::StateForThread state(qmc_input, vmc_input, drift, population, 1, false);
+  QMCDriverNew::DriverTimers timers("VMCBatchedBoundaryTest::");
+  FakeRandom<QMCTraits::FullPrecRealType> rng;
+  QMCDriverNew::ContextForSteps context(rng);
+  // The constant wavefunction gives probability one, so only boundary validity can reject.
+  VMCBatched::advanceWalkers<CoordsType::POS>(state, crowd, timers, context, false, false);
+
+  CHECK(crowd.get_accept() == 2);
+  CHECK(crowd.get_reject() == 2);
+  for (int iw = 0; iw < 2; ++iw)
+  {
+    CAPTURE(iw, invalid_particle);
+    const auto& particles = *population.get_elec_particle_sets()[iw];
+    const auto& walker    = *population.get_walkers()[iw];
+    auto& twf             = *population.get_twfs()[iw];
+    const auto& counter   = dynamic_cast<const CountingWaveFunctionComponent&>(*twf.getOrbitals().front());
+    REQUIRE(counter.getProposals().size() == 1);
+    CHECK(counter.getProposals()[0].evaluate);
+    CHECK(counter.getProposals()[0].evaluations == 1);
+    REQUIRE(counter.getResolutions().size() == 1);
+    CHECK(counter.getResolutions()[0].accepted == (iw == 0));
+    CHECK(counter.getResolutions()[0].evaluations == (iw == 1 ? 1 : 0));
+    CHECK(counter.getResolutions()[0].mixed);
+    CHECK(twf.getLogPsi() == Approx(0.0));
+    auto expected = initial_positions[iw];
+    for (int ip = 0; ip < 2; ++ip)
+    {
+      if (iw == 0)
+        expected[ip] += deltas.positions[ip * 2 + iw];
+      for (int d = 0; d < OHMMS_DIM; ++d)
+      {
+        CHECK(particles.R[ip][d] == Approx(expected[ip][d]));
+        CHECK(particles.getCoordinates().getAllParticlePos()[ip][d] == Approx(expected[ip][d]));
+        CHECK(walker.R[ip][d] == Approx(expected[ip][d]));
+      }
+    }
+    const ParticleSet::PosType separation = expected[1] - expected[0];
+    CHECK(particles.getDistTableAA(aa_table).getDistances()[1][0] == Approx(std::sqrt(dot(separation, separation))));
+  }
 }
 
 } // namespace qmcplusplus::testing

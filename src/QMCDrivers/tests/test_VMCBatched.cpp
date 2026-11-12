@@ -40,4 +40,13 @@ TEST_CASE("VMCBatched all-particle moves without drift", "[drivers]")
   CHECK(total_mixed > 0);
 }
 
+TEST_CASE("VMCBatched all-particle boundary rejection restores the whole walker", "[drivers][vmc]")
+{
+  for (int invalid_particle : {0, 1})
+  {
+    CAPTURE(invalid_particle);
+    testing::VMCBatchedTest::checkAllParticleBoundaryRejection(invalid_particle);
+  }
+}
+
 } // namespace qmcplusplus

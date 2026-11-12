@@ -120,12 +120,16 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
         for (int iw = 0; iw < num_walkers; ++iw)
         {
-          const RealType probability = std::exp(2.0 * (walker_twfs[iw].getLogPsi() - old_logpsi[iw]));
-          is_accepted[iw]            = step_context.get_random_gen()() < probability;
-
-          // Account at particle granularity. Invalid particles remain in place and do not reject their walker.
+          bool walker_valid = true;
           for (int iat = 0; iat < num_particles; ++iat)
-            if (is_accepted[iw] && are_valid[iat * num_walkers + iw])
+            walker_valid = walker_valid && are_valid[iat * num_walkers + iw];
+
+          const RealType probability = std::exp(2.0 * (walker_twfs[iw].getLogPsi() - old_logpsi[iw]));
+          is_accepted[iw]            = step_context.get_random_gen()() < probability && walker_valid;
+
+          // All particles in a walker share the all-particle transaction decision.
+          for (int iat = 0; iat < num_particles; ++iat)
+            if (is_accepted[iw])
               crowd.incAccept();
             else
               crowd.incReject();
