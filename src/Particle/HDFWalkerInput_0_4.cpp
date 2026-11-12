@@ -23,7 +23,6 @@
 
 #include <array>
 #include <algorithm>
-#include <cmath>
 
 namespace qmcplusplus
 {
@@ -208,8 +207,8 @@ bool HDFWalkerInput_0_4::read_hdf5(const std::filesystem::path& h5name)
   hin.readSlabReshaped(posin, dims, hdf::walkers);
   std::vector<QMCTraits::FullPrecRealType> weights_in(nw_in, 1.0);
   const int weight_status = walkerWeightStatus(hin, nw_in);
-  const bool has_weights  = weight_status == 1;
-  const bool weights_ok   = weight_status >= 0 && (!has_weights || hin.readEntry(weights_in, hdf::walker_weights));
+  // Legacy checkpoints without walker_weights: every loaded walker gets weight 1.0 (weights_in default).
+  const bool weights_ok = weight_status >= 0 && (weight_status == 0 || hin.readEntry(weights_in, hdf::walker_weights));
   validateWalkerWeights(myComm, weights_ok, weights_in); // coordinate errors and abort if needed
 
   std::vector<int> woffsets;
@@ -404,7 +403,7 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
       return false;
     myComm.bcast(weight_status);
     if (weight_status < 0)
-      throw UniformCommunicateError("HDFWalkerInput_0_4: malformed walker_weights dataset.");
+      throw UniformCommunicateError("HDFWalkerInput_0_4: found malformed or invalid walker_weights in dataset.");
 
     myComm.bcast(woffsets_size);
     woffsets.resize(woffsets_size);
