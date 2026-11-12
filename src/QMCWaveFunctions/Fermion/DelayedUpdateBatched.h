@@ -49,6 +49,8 @@ public:
   template<typename DT>
   using UnpinnedDualVector = Vector<DT, OffloadAllocator<DT>>;
   template<typename DT>
+  using UnpinnedDualMatrix = Matrix<DT, OffloadAllocator<DT>>;
+  template<typename DT>
   using DualVector = Vector<DT, OffloadPinnedAllocator<DT>>;
   template<typename DT>
   using DualMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
@@ -90,7 +92,7 @@ private:
   UnpinnedDualVector<Value> mw_rcopy;
 
   /// rows of up-to-date Ainv of all the walkers, [nw][norb]
-  UnpinnedDualVector<Value> invRow;
+  UnpinnedDualMatrix<Value> invRow;
   /** row id correspond to the up-to-date invRow. [0 norb), invRow is ready; -1, invRow is not valid.
    *  This id is set after calling getInvRow indicating invRow has been prepared for the invRow_id row
    *  ratioGrad checks if invRow_id is consistent. If not, invRow needs to be recomputed.
@@ -99,29 +101,33 @@ private:
   int invRow_id = -1;
 
   template<typename DT>
-  using DeviceVector = Vector<DT, OffloadDeviceAllocator<DT>>;
-  /// orbital values of delayed electrons, [nw][max_delay][norb]
-  DeviceVector<Value> U_gpu;
-  /// rows of Ainv corresponding to delayed electrons, [nw][max_delay][norb]
-  DeviceVector<Value> V_gpu;
-  /// Matrix inverse of B, at maximum KxK, [nw][max_delay][max_delay]
-  DeviceVector<Value> Binv_gpu;
-  /// scratch space, used during inverse update, [nw][norb][max_delay]
-  DeviceVector<Value> tempMat_gpu;
+  using DeviceMatrix = Matrix<DT, OffloadDeviceAllocator<DT>>;
+  /// orbital values of delayed electrons, [nw][max_delay * norb]
+  DeviceMatrix<Value> U_gpu;
+  /// rows of Ainv corresponding to delayed electrons, [nw][max_delay * norb]
+  DeviceMatrix<Value> V_gpu;
+  /// Matrix inverse of B, at maximum KxK, [nw][max_delay * max_delay]
+  DeviceMatrix<Value> Binv_gpu;
+  /// scratch space, used during inverse update, [nw][norb * max_delay]
+  DeviceMatrix<Value> tempMat_gpu;
   /// new column of B, [nw][max_delay]
-  DeviceVector<Value> p_gpu;
+  DeviceMatrix<Value> p_gpu;
   /// list of delayed electrons, [nw][max_delay]
-  DeviceVector<int> delay_list_gpu;
+  DeviceMatrix<int> delay_list_gpu;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count = 0;
   /// if true, updates are not delayed.
   bool no_delayed_update_ = true;
-  /// number of walkers in the crowd
-  size_t nw_ = 0;
-  /// number of electrons/orbitals
-  size_t norb_ = 0;
   /// maximum delay
   size_t max_delay_ = 0;
+
+  /// the slot-th array of n packed pointers (or values) in the device copy of a packed H2D buffer
+  template<typename T>
+  static T* devPtr(Vector<char, OffloadPinnedAllocator<char>>& buf, size_t slot, size_t n)
+  { return reinterpret_cast<T*>(buf.device_data() + sizeof(Value*) * n * slot); }
+
+  /// device pointer to the iw-th walker's invRow
+  Value* invRow_at(size_t iw) { return invRow.device_data() + invRow.cols() * iw; }
 
   void resize_fill_constant_arrays(size_t nw)
   {
@@ -157,9 +163,9 @@ private:
    */
   void mw_prepareInvRow(const RefVector<DualMatrix<Value>>& psiMinv_refs, const int rowchanged)
   {
-    const int norb = norb_;
-    const int nw   = nw_;
-    assert(nw_ == psiMinv_refs.size());
+    const int nw   = invRow.rows();
+    const int norb = invRow.cols();
+    assert(nw == psiMinv_refs.size());
 
     constexpr size_t num_ptrs_packed = 7; // it must match packing and unpacking
     prepare_inv_row_buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
@@ -171,24 +177,23 @@ private:
     {
       DualMatrix<Value>& psiMinv = psiMinv_refs[iw];
       ptr_buffer[0][iw]          = psiMinv.device_data() + rowchanged * psiMinv.cols();
-      ptr_buffer[1][iw]          = invRow.device_data() + norb * iw;
-      ptr_buffer[2][iw]          = U_gpu.data() + max_delay_ * norb * iw;
-      ptr_buffer[3][iw]          = p_gpu.data() + max_delay_ * iw;
-      ptr_buffer[4][iw]          = Binv_gpu.data() + max_delay_ * max_delay_ * iw;
-      ptr_buffer[5][iw]          = Binv_gpu.data() + max_delay_ * max_delay_ * iw + delay_count * lda_Binv;
-      ptr_buffer[6][iw]          = V_gpu.data() + max_delay_ * norb * iw;
+      ptr_buffer[1][iw]          = invRow_at(iw);
+      ptr_buffer[2][iw]          = U_gpu[iw];
+      ptr_buffer[3][iw]          = p_gpu[iw];
+      ptr_buffer[4][iw]          = Binv_gpu[iw];
+      ptr_buffer[5][iw]          = Binv_gpu[iw] + delay_count * lda_Binv;
+      ptr_buffer[6][iw]          = V_gpu[iw];
     }
 
     queue.enqueueH2D(prepare_inv_row_buffer_H2D);
 
-    Value** oldRow_mw_ptr = reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.device_data());
-    Value** invRow_mw_ptr = reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.device_data() + sizeof(Value*) * nw);
-    Value** U_mw_ptr    = reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.device_data() + sizeof(Value*) * nw * 2);
-    Value** p_mw_ptr    = reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.device_data() + sizeof(Value*) * nw * 3);
-    Value** Binv_mw_ptr = reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.device_data() + sizeof(Value*) * nw * 4);
-    Value** BinvRow_mw_ptr =
-        reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.device_data() + sizeof(Value*) * nw * 5);
-    Value** V_mw_ptr = reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.device_data() + sizeof(Value*) * nw * 6);
+    Value** oldRow_mw_ptr  = devPtr<Value*>(prepare_inv_row_buffer_H2D, 0, nw);
+    Value** invRow_mw_ptr  = devPtr<Value*>(prepare_inv_row_buffer_H2D, 1, nw);
+    Value** U_mw_ptr       = devPtr<Value*>(prepare_inv_row_buffer_H2D, 2, nw);
+    Value** p_mw_ptr       = devPtr<Value*>(prepare_inv_row_buffer_H2D, 3, nw);
+    Value** Binv_mw_ptr    = devPtr<Value*>(prepare_inv_row_buffer_H2D, 4, nw);
+    Value** BinvRow_mw_ptr = devPtr<Value*>(prepare_inv_row_buffer_H2D, 5, nw);
+    Value** V_mw_ptr       = devPtr<Value*>(prepare_inv_row_buffer_H2D, 6, nw);
 
     // save Ainv[rowchanged] to invRow
     //std::copy_n(Ainv[rowchanged], norb, invRow.data());
@@ -230,10 +235,12 @@ private:
                     const OffloadMWVGLArray<Value>& phi_vgl_v,
                     const std::vector<Value>& ratios)
   {
-    assert(nw_ == psiMinv_refs.size());
-    assert(nw_ == isAccepted.size());
-    assert(nw_ == ratios.size());
-    assert(nw_ == phi_vgl_v.size(1));
+    const int nw   = invRow.rows();
+    const int norb = invRow.cols();
+    assert(nw == psiMinv_refs.size());
+    assert(nw == isAccepted.size());
+    assert(nw == ratios.size());
+    assert(nw == phi_vgl_v.size(1));
     guard_no_delay();
 
     const size_t n_accepted = psiM_g_list.size();
@@ -244,9 +251,7 @@ private:
     if (n_accepted == 0)
       return;
 
-    const int norb              = norb_;
     const int lda               = psiMinv_refs[0].get().cols();
-    const int nw                = nw_;
     const size_t phi_vgl_stride = nw * norb;
     mw_temp.resize(norb * n_accepted);
     mw_rcopy.resize(norb * n_accepted);
@@ -278,19 +283,13 @@ private:
     queue.enqueueH2D(updateRow_buffer_H2D);
 
     {
-      Value** Ainv_mw_ptr = reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data());
-      Value** phiVGL_mw_ptr =
-          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted);
-      Value** temp_mw_ptr =
-          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 2);
-      Value** rcopy_mw_ptr =
-          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 3);
-      Value** dpsiM_mw_out =
-          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 4);
-      Value** d2psiM_mw_out =
-          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 5);
-      Value* ratio_inv_mw =
-          reinterpret_cast<Value*>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 6);
+      Value** Ainv_mw_ptr   = devPtr<Value*>(updateRow_buffer_H2D, 0, n_accepted);
+      Value** phiVGL_mw_ptr = devPtr<Value*>(updateRow_buffer_H2D, 1, n_accepted);
+      Value** temp_mw_ptr   = devPtr<Value*>(updateRow_buffer_H2D, 2, n_accepted);
+      Value** rcopy_mw_ptr  = devPtr<Value*>(updateRow_buffer_H2D, 3, n_accepted);
+      Value** dpsiM_mw_out  = devPtr<Value*>(updateRow_buffer_H2D, 4, n_accepted);
+      Value** d2psiM_mw_out = devPtr<Value*>(updateRow_buffer_H2D, 5, n_accepted);
+      Value* ratio_inv_mw   = devPtr<Value>(updateRow_buffer_H2D, 6, n_accepted);
 
 
       // invoke the Fahy's variant of Sherman-Morrison update.
@@ -318,19 +317,17 @@ public:
    */
   void resize(size_t nw, size_t norb, size_t delay)
   {
-    nw_                 = nw;
-    norb_               = norb;
-    max_delay_          = delay;
-    no_delayed_update_  = (delay == 1);
-    delay_count         = 0;
-    invRow_id           = -1;
-    V_gpu.resize(nw * delay * norb);
-    U_gpu.resize(nw * delay * norb);
-    p_gpu.resize(nw * delay);
-    tempMat_gpu.resize(nw * norb * delay);
-    Binv_gpu.resize(nw * delay * delay);
-    delay_list_gpu.resize(nw * delay);
-    invRow.resize(nw * norb);
+    max_delay_         = delay;
+    no_delayed_update_ = (delay == 1);
+    delay_count        = 0;
+    invRow_id          = -1;
+    V_gpu.resize(nw, delay * norb);
+    U_gpu.resize(nw, delay * norb);
+    p_gpu.resize(nw, delay);
+    tempMat_gpu.resize(nw, norb * delay);
+    Binv_gpu.resize(nw, delay * delay);
+    delay_list_gpu.resize(nw, delay);
+    invRow.resize(nw, norb);
   }
 
   // prepare invRow and compute the old gradients.
@@ -340,13 +337,14 @@ public:
                    const int rowchanged,
                    std::vector<GT>& grad_now)
   {
-    assert(nw_ == psiMinv_refs.size());
-    assert(nw_ == dpsiM_row_list.size());
-    assert(nw_ == grad_now.size());
+    const int nw   = invRow.rows();
+    const int norb = invRow.cols();
+    assert(nw == psiMinv_refs.size());
+    assert(nw == dpsiM_row_list.size());
+    assert(nw == grad_now.size());
     if (!no_delayed_update_)
       mw_prepareInvRow(psiMinv_refs, rowchanged);
 
-    const int nw                     = nw_;
     constexpr size_t num_ptrs_packed = 2; // it must match packing and unpacking
     evalGrad_buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
     Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(evalGrad_buffer_H2D.data()), num_ptrs_packed, nw);
@@ -358,7 +356,7 @@ public:
         ptr_buffer[0][iw]          = psiMinv.device_data() + rowchanged * psiMinv.cols();
       }
       else
-        ptr_buffer[0][iw] = invRow.device_data() + norb_ * iw;
+        ptr_buffer[0][iw] = invRow_at(iw);
       ptr_buffer[1][iw] = dpsiM_row_list[iw];
     }
 
@@ -367,10 +365,10 @@ public:
     if (grads_value_v.rows() != nw || grads_value_v.cols() != GT::Size)
       grads_value_v.resize(nw, GT::Size);
 
-    const Value** invRow_ptr    = reinterpret_cast<const Value**>(evalGrad_buffer_H2D.device_data());
-    const Value** dpsiM_row_ptr = reinterpret_cast<const Value**>(evalGrad_buffer_H2D.device_data()) + nw;
+    const Value** invRow_ptr    = devPtr<const Value*>(evalGrad_buffer_H2D, 0, nw);
+    const Value** dpsiM_row_ptr = devPtr<const Value*>(evalGrad_buffer_H2D, 1, nw);
 
-    compute::calcGradients_batched(queue, norb_, invRow_ptr, dpsiM_row_ptr, grads_value_v.device_data(), nw);
+    compute::calcGradients_batched(queue, norb, invRow_ptr, dpsiM_row_ptr, grads_value_v.device_data(), nw);
     queue.enqueueD2H(grads_value_v);
     queue.sync();
 
@@ -386,19 +384,19 @@ public:
                            std::vector<GT>& grad_now,
                            std::vector<Complex>& spingrad_now)
   {
-    assert(nw_ == psiMinv_refs.size());
-    assert(nw_ == dpsiM_row_list.size());
-    assert(nw_ == mw_dspin.rows());
-    assert(nw_ == grad_now.size());
-    assert(nw_ == spingrad_now.size());
+    const int nw     = invRow.rows();
+    const int norb   = invRow.cols();
+    assert(nw == psiMinv_refs.size());
+    assert(nw == dpsiM_row_list.size());
+    assert(nw == mw_dspin.rows());
+    assert(nw == grad_now.size());
+    assert(nw == spingrad_now.size());
     auto& buffer_H2D = evalGrad_buffer_H2D;
 
     //Need to pack these into a transfer buffer since psiMinv and dpsiM_row_list are not multiwalker data
     //i.e. each engine has its own psiMinv which is an OffloadMatrix instead of the leader having the data for all the walkers in the crowd.
     //Wouldn't have to do this if dpsiM and psiMinv were part of the mw_rsc_handle_ with data across all walkers in the crowd and could just use use_device_ptr for the offload.
     //That is how mw_dspin is handled below
-    const int norb                   = psiMinv_refs[0].get().rows();
-    const int nw                     = nw_;
     constexpr size_t num_ptrs_packed = 2; // it must match packing and unpacking
     buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
     Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(buffer_H2D.data()), num_ptrs_packed, nw);
@@ -478,10 +476,12 @@ public:
                            const OffloadMWVGLArray<Value>& phi_vgl_v,
                            const std::vector<Value>& ratios)
   {
-    assert(nw_ == psiMinv_refs.size());
-    assert(nw_ == isAccepted.size());
-    assert(nw_ == ratios.size());
-    assert(nw_ == phi_vgl_v.size(1));
+    const int nw   = invRow.rows();
+    const int norb = invRow.cols();
+    assert(nw == psiMinv_refs.size());
+    assert(nw == isAccepted.size());
+    assert(nw == ratios.size());
+    assert(nw == phi_vgl_v.size(1));
     // invRow consumed, mark invRow_id unset
     invRow_id = -1;
 
@@ -492,12 +492,8 @@ public:
     }
 
     const int lda_Binv          = max_delay_;
-    const int norb              = norb_;
-    const int nw                = nw_;
     const int n_accepted        = psiM_g_list.size();
     const size_t phi_vgl_stride = nw * norb;
-    const size_t delay_stride   = max_delay_ * norb;
-    const size_t Binv_stride    = max_delay_ * max_delay_;
 
     constexpr size_t num_ptrs_packed = 12; // it must match packing and unpacking
     accept_rejectRow_buffer_H2D.resize((sizeof(Value*) * num_ptrs_packed + sizeof(Value)) * nw);
@@ -510,11 +506,11 @@ public:
     {
       DualMatrix<Value>& psiMinv = psiMinv_refs[iw];
       const int lda              = psiMinv.cols();
-      Value* const V_iw          = V_gpu.data() + delay_stride * iw;
-      Value* const U_iw          = U_gpu.data() + delay_stride * iw;
-      Value* const p_iw          = p_gpu.data() + max_delay_ * iw;
-      Value* const Binv_iw       = Binv_gpu.data() + Binv_stride * iw;
-      int* const delay_list_iw   = delay_list_gpu.data() + max_delay_ * iw;
+      Value* const V_iw          = V_gpu[iw];
+      Value* const U_iw          = U_gpu[iw];
+      Value* const p_iw          = p_gpu[iw];
+      Value* const Binv_iw       = Binv_gpu[iw];
+      int* const delay_list_iw   = delay_list_gpu[iw];
       if (isAccepted[iw])
       {
         ptr_buffer[0][count_accepted]  = psiMinv.device_data() + lda * rowchanged;
@@ -549,29 +545,19 @@ public:
 
     queue.enqueueH2D(accept_rejectRow_buffer_H2D);
 
-    Value** invRow_mw_ptr = reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data());
-    Value** V_mw_ptr      = reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw);
-    Value** U_row_mw_ptr =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 2);
-    Value** p_mw_ptr = reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 3);
-    Value** Binv_mw_ptr =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 4);
-    Value** BinvRow_mw_ptr =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 5);
-    Value** BinvCol_mw_ptr =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 6);
-    int** delay_list_mw_ptr =
-        reinterpret_cast<int**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 7);
-    Value** V_row_mw_ptr =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 8);
-    Value** phiVGL_mw_ptr =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 9);
-    Value** dpsiM_mw_out =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 10);
-    Value** d2psiM_mw_out =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 11);
-    Value* ratio_inv_mw_ptr =
-        reinterpret_cast<Value*>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 12);
+    Value** invRow_mw_ptr   = devPtr<Value*>(accept_rejectRow_buffer_H2D, 0, nw);
+    Value** V_mw_ptr        = devPtr<Value*>(accept_rejectRow_buffer_H2D, 1, nw);
+    Value** U_row_mw_ptr    = devPtr<Value*>(accept_rejectRow_buffer_H2D, 2, nw);
+    Value** p_mw_ptr        = devPtr<Value*>(accept_rejectRow_buffer_H2D, 3, nw);
+    Value** Binv_mw_ptr     = devPtr<Value*>(accept_rejectRow_buffer_H2D, 4, nw);
+    Value** BinvRow_mw_ptr  = devPtr<Value*>(accept_rejectRow_buffer_H2D, 5, nw);
+    Value** BinvCol_mw_ptr  = devPtr<Value*>(accept_rejectRow_buffer_H2D, 6, nw);
+    int** delay_list_mw_ptr = devPtr<int*>(accept_rejectRow_buffer_H2D, 7, nw);
+    Value** V_row_mw_ptr    = devPtr<Value*>(accept_rejectRow_buffer_H2D, 8, nw);
+    Value** phiVGL_mw_ptr   = devPtr<Value*>(accept_rejectRow_buffer_H2D, 9, nw);
+    Value** dpsiM_mw_out    = devPtr<Value*>(accept_rejectRow_buffer_H2D, 10, nw);
+    Value** d2psiM_mw_out   = devPtr<Value*>(accept_rejectRow_buffer_H2D, 11, nw);
+    Value* ratio_inv_mw_ptr = devPtr<Value>(accept_rejectRow_buffer_H2D, 12, nw);
 
     //std::copy_n(Ainv[rowchanged], norb, V[delay_count]);
     compute::BLAS::copy_batched(blas_handle, norb, invRow_mw_ptr, 1, V_row_mw_ptr, 1, nw);
@@ -605,13 +591,13 @@ public:
    */
   void mw_updateInvMat(const RefVector<DualMatrix<Value>>& psiMinv_refs)
   {
-    assert(nw_ == psiMinv_refs.size());
+    const int nw   = invRow.rows();
+    const int norb = invRow.cols();
+    assert(nw == psiMinv_refs.size());
     if (delay_count == 0)
       return;
     // update the inverse matrix
-    const int norb = norb_;
-    const int lda  = psiMinv_refs[0].get().cols();
-    const int nw   = nw_;
+    const int lda = psiMinv_refs[0].get().cols();
 
     constexpr size_t num_ptrs_packed = 6; // it must match packing and unpacking
     updateInv_buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
@@ -620,22 +606,22 @@ public:
     Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(updateInv_buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
-      ptr_buffer[0][iw] = U_gpu.data() + max_delay_ * norb * iw;
+      ptr_buffer[0][iw] = U_gpu[iw];
       ptr_buffer[1][iw] = psiMinv_refs[iw].get().device_data();
-      ptr_buffer[2][iw] = tempMat_gpu.data() + norb * max_delay_ * iw;
-      ptr_buffer[3][iw] = reinterpret_cast<Value*>(delay_list_gpu.data() + max_delay_ * iw);
-      ptr_buffer[4][iw] = V_gpu.data() + max_delay_ * norb * iw;
-      ptr_buffer[5][iw] = Binv_gpu.data() + max_delay_ * max_delay_ * iw;
+      ptr_buffer[2][iw] = tempMat_gpu[iw];
+      ptr_buffer[3][iw] = reinterpret_cast<Value*>(delay_list_gpu[iw]);
+      ptr_buffer[4][iw] = V_gpu[iw];
+      ptr_buffer[5][iw] = Binv_gpu[iw];
     }
 
     queue.enqueueH2D(updateInv_buffer_H2D);
 
-    Value** U_mw_ptr        = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data());
-    Value** Ainv_mw_ptr     = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw);
-    Value** tempMat_mw_ptr  = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 2);
-    int** delay_list_mw_ptr = reinterpret_cast<int**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 3);
-    Value** V_mw_ptr        = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 4);
-    Value** Binv_mw_ptr     = reinterpret_cast<Value**>(updateInv_buffer_H2D.device_data() + sizeof(Value*) * nw * 5);
+    Value** U_mw_ptr        = devPtr<Value*>(updateInv_buffer_H2D, 0, nw);
+    Value** Ainv_mw_ptr     = devPtr<Value*>(updateInv_buffer_H2D, 1, nw);
+    Value** tempMat_mw_ptr  = devPtr<Value*>(updateInv_buffer_H2D, 2, nw);
+    int** delay_list_mw_ptr = devPtr<int*>(updateInv_buffer_H2D, 3, nw);
+    Value** V_mw_ptr        = devPtr<Value*>(updateInv_buffer_H2D, 4, nw);
+    Value** Binv_mw_ptr     = devPtr<Value*>(updateInv_buffer_H2D, 5, nw);
 
     /*
     if (delay_count == 1)
@@ -668,7 +654,8 @@ public:
                                          const int row_id,
                                          bool on_host)
   {
-    assert(nw_ == psiMinv_refs.size());
+    const size_t nw = invRow.rows();
+    assert(nw == psiMinv_refs.size());
     if (no_delayed_update_)
       queue.sync();
     else if (invRow_id != row_id)
@@ -693,8 +680,8 @@ public:
       else
       {
         invRow.updateFrom();
-        for (size_t iw = 0; iw < nw_; iw++)
-          row_ptr_list.push_back(invRow.data() + norb_ * iw);
+        for (size_t iw = 0; iw < nw; iw++)
+          row_ptr_list.push_back(invRow[iw]);
       }
     }
     else
@@ -704,8 +691,8 @@ public:
         for (DualMatrix<Value>& psiMinv : psiMinv_refs)
           row_ptr_list.push_back(psiMinv.device_data() + row_id * psiMinv.cols());
       else
-        for (size_t iw = 0; iw < nw_; iw++)
-          row_ptr_list.push_back(invRow.device_data() + norb_ * iw);
+        for (size_t iw = 0; iw < nw; iw++)
+          row_ptr_list.push_back(invRow_at(iw));
     }
     return row_ptr_list;
   }
@@ -713,7 +700,7 @@ public:
   /// transfer Ainv to the host
   void mw_transferAinv_D2H(const RefVector<DualMatrix<Value>>& psiMinv_refs)
   {
-    assert(nw_ == psiMinv_refs.size());
+    assert(invRow.rows() == psiMinv_refs.size());
     guard_no_delay();
 
     for (DualMatrix<Value>& psiMinv : psiMinv_refs)
