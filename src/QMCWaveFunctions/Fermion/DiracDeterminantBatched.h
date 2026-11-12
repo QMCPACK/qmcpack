@@ -332,8 +332,16 @@ private:
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nel, int morb);
 
-  /// Delayed update engine 1 per walker.
-  UpdateEngine det_engine_;
+  /// scratch space for the single walker rank-1 update of psiMinv_
+  Vector<Value, OffloadAllocator<Value>> temp_;
+  /// scratch space for keeping one row of psiMinv_ in the single walker rank-1 update
+  Vector<Value, OffloadAllocator<Value>> rcopy_;
+
+  /** single walker rank-1 (Sherman-Morrison) update of psiMinv_ on the device and host.
+   *  Forced to use OpenMP target since resources are banned for single walker functions APIs
+   *  and the acquireRelease pattern for a single DDB was removed by #3324
+   */
+  void updateRow(int rowchanged);
 
   /// slow but doesn't consume device memory
   DiracMatrix<FullPrecValue> host_inverter_;
@@ -351,10 +359,10 @@ private:
   /** Inverts and finds log det for a batch of matrices
    *
    *  Right now this takes filtered lists and the full recompute mask. It passes
-   *  all these elements down to the det_engine_.
+   *  all these elements down to the det_engine.
    *  This allows minimal change for implementation code while establishing the API
    *  I'd prefer for direct inversion.
-   *  I think the det_engine_ mw method  should receive the complete
+   *  I think the det_engine mw method  should receive the complete
    *  list of walker elements and the implementation should decide what to do re
    *  the compute mask. See future PR for those changes, or drop of compute_mask argument.
    */
