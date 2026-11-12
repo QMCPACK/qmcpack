@@ -22,6 +22,8 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"
 #include "Concurrency/ParallelExecutor.hpp"
+#include <algorithm>
+#include <stdexcept>
 //#define QMCCOSTFUNCTION_DEBUG
 
 namespace qmcplusplus
@@ -39,7 +41,19 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(ParticleSet& w,
       corr_sampling_timer_(createGlobalTimer("QMCCostFunctionBatched::correlatedSampling", timer_level_medium)),
       fill_timer_(createGlobalTimer("QMCCostFunctionBatched::fillOverlapHamiltonianMatrices", timer_level_medium))
 
-{ app_log() << " Using QMCCostFunctionBatched::QMCCostFunctionBatched" << std::endl; }
+{
+  if (std::any_of(walkers_per_crowd_.begin(), walkers_per_crowd_.end(), [](int count) { return count < 0; }))
+    throw std::runtime_error("QMCCostFunctionBatched crowd capacities must not be negative.");
+
+  // Exclude empty sampling crowds so optimization samples are assigned only to crowds
+  // that can evaluate them; otherwise samples are skipped but still counted in normalization.
+  walkers_per_crowd_.erase(std::remove(walkers_per_crowd_.begin(), walkers_per_crowd_.end(), 0),
+                           walkers_per_crowd_.end());
+  if (walkers_per_crowd_.empty())
+    throw std::runtime_error("QMCCostFunctionBatched requires at least one active crowd.");
+
+  app_log() << " Using QMCCostFunctionBatched::QMCCostFunctionBatched" << std::endl;
+}
 
 
 /** Clean up the vector */

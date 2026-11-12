@@ -13,7 +13,7 @@ set(SRC_DIR qmc_app)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-add_executable(${UTEST_EXE} test_qmc_main.cpp)
+add_executable(${UTEST_EXE} test_qmc_main.cpp test_command_line_options.cpp test_setup_qmc_state.cpp)
 target_link_libraries(${UTEST_EXE} catch_main qmc qmcdriver minimal_test_pools)
 if(USE_OBJECT_TARGET)
   target_link_libraries(

@@ -66,6 +66,10 @@ function(ADD_PWCONVERTER_TEST test_name)
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/${test_name}"
                           "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
   set(EXE_NAME $<TARGET_FILE:convertpw4qmc>)
+  if(HAVE_MPI)
+    set(EXE_NAME ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:convertpw4qmc>)
+    string(REPLACE ";" " " EXE_NAME "${EXE_NAME}")
+  endif()
   add_test(NAME converter_${test_name}
            COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/pwconverter_test.py"
                    "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe "${EXE_NAME}" --h5diff "${HDF5_DIFF_EXECUTABLE}")

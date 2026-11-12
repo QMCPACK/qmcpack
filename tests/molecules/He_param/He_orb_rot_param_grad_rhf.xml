@@ -50,7 +50,7 @@
         </sposet>
       </rotated_sposet>
     </sposet_collection>
-    <determinantset type="MO" key="STO" transform="no" source="ion0">
+    <determinantset>
       <slaterdeterminant>
         <determinant sposet="rot-spo-up"/>
         <determinant sposet="rot-spo-up"/>

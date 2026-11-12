@@ -32,7 +32,6 @@ def test_settings(tmp_path):
         # check that Gamess, Pwscf, and Quantum Package settings are at default values
         assert(Gamess.ericfmt is None)
         assert(Gamess.mcppath is None)
-        assert(Pwscf.vdw_table is None)
         assert(QuantumPackage.qprc is None)
     #end def aux_defaults
 

@@ -37,7 +37,7 @@ public:
   virtual ~MultiBsplineOffloadMapperBase() = default;
 
   /// update device coeficients
-  void updateToDevice();
+  virtual void updateToDevice() = 0;
 
   /** evaluate spline values (single precision)
    * @param num_pos, number of electron positions

@@ -307,7 +307,9 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   test_einset_diamond_1x1x1(true);
   test_einset_diamond_1x1x1(false);
+
   Communicate& c(*OHMMS::Controller);
+
   if (c.size() % 2 == 0)
   {
     test_einset_diamond_1x1x1(true, 2, 1);

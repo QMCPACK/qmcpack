@@ -38,8 +38,6 @@ struct QMCState
 
   ///constructor
   QMCState();
-  ///initialize options from the command-line
-  void initialize(int argc, char** argv);
   ///print command-line options
   void print_options(std::ostream& os);
   /** print memory increase

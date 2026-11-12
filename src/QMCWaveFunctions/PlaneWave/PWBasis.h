@@ -13,7 +13,7 @@
 
 
 /** @file PWBasis.h
- * @brief Declaration of Plane-wave basis set
+ * @brief Plane-wave basis values and Cartesian derivative work buffers.
  */
 #ifndef QMCPLUSPLUS_PLANEWAVEBASIS_BLAS_H
 #define QMCPLUSPLUS_PLANEWAVEBASIS_BLAS_H
@@ -32,10 +32,12 @@
 
 namespace qmcplusplus
 {
-/** Plane-wave basis set
+/** Evaluate primitive-cell plane waves exp(i (k+G).r) at Cartesian positions.
  *
- * Rewrite of PlaneWaveBasis to utilize blas II or III
- * Support more general input tags
+ * The reduced twist and integer G vectors are converted using the primitive
+ * lattice, even when the target ParticleSet is a tiled supercell. Evaluation
+ * updates reusable buffers for contraction with orbital coefficients; concurrent
+ * evaluations require separate basis instances.
  */
 class PWBasis : public QMCTraits
 {
@@ -44,36 +46,34 @@ public:
   using GIndex_t       = TinyVector<IndexType, 3>;
 
 private:
-  ///max of maxg[i]
+  /// Initialization marker; stores the largest recursion extent in recursive mode.
   int maxmaxg;
-  //Need to store the maximum translation in each dimension to use recursive PW generation.
+  /// Largest absolute G index in each dimension for recursive phase generation.
   GIndex_t maxg;
-  //The PlaneWave data - keep all of these strictly private to prevent inconsistencies.
+  /// Legacy cutoff value; the current implementation retains every input G vector.
   RealType ecut;
-  ///twist angle in reduced
+  /// Primitive-cell twist in reduced reciprocal coordinates.
   PosType twist;
-  ///twist angle in cartesian
-  PosType twist_cart; //Twist angle in reduced and Cartesian.
+  /// Primitive-cell twist converted to a Cartesian wave vector.
+  PosType twist_cart;
 
-  ///gvecs in reduced coordiates
+  /// Integer reciprocal-lattice coefficients of the input G vectors.
   std::vector<GIndex_t> gvecs;
-  ///Reduced coordinates with offset gvecs_shifted[][idim]=gvecs[][idim]+maxg[idim]
+  /// Nonnegative recursion indices, gvecs[ig][idim]+maxg[idim].
   std::vector<GIndex_t> gvecs_shifted;
 
+  /// Negative squared Cartesian lengths of k+G, used for Laplacians.
   std::vector<RealType> minusModKplusG2;
-  std::vector<PosType> kplusgvecs_cart; //Cartesian.
+  /// Cartesian k+G vectors used for phases and derivatives.
+  std::vector<PosType> kplusgvecs_cart;
 
+  /// Per-dimension phase factors for the optional recursive evaluation path.
   Matrix<ComplexType> C;
-  //Real wavefunctions here. Now the basis states are cos(Gr) or sin(Gr), not exp(iGr)
-  //We need a way of switching between them for G -> -G, otherwise the
-  //determinant will have multiple rows that are equal (to within a constant factor)
-  //of others, giving a zero determinant. For this, we build a vector (negative) which
-  //stores whether a vector is "+" or "-" (with some criterion, to be defined). We
-  //the switch from cos() to sin() based on the value of this input.
+  /// Legacy real-basis sign flags; current real projections belong to PWRealOrbitalSet.
   std::vector<int> negative;
 
 public:
-  //enumeration for the value, laplacian, gradients and size
+  /// Column layout of Z: value, Laplacian, and Cartesian gradient components.
   enum
   {
     PW_VALUE,
@@ -84,55 +84,58 @@ public:
     PW_MAXINDEX
   };
 
+  /// Basis VGL data indexed by (G-vector, PW_* column), filled by evaluateAll().
   Matrix<ComplexType> Z;
 
+  /// Basis values indexed by G-vector, filled by evaluate().
   Vector<ComplexType> Zv;
-  /* inputmap is used for a memory efficient way of
-   *
-   * importing the basis-set and coefficients when the desired energy cutoff may be
-   * lower than that represented by all data in the wavefunction input file.
-   * The steps taken are:
-   *  - Read all basis data.
-   *  - Create map. inputmap[i] = j; j is correct PW index, i is input coef index.
-   *    For basis elements outside cutoff, inputmap[i] = gvecs.size();
-   *  - Coefficients are in same order as PWs in inputfile => simply file into
-   *    storage matrix using the map as the input. All excess coefficients are
-   *    put into [gvecs.size()] and not used. i.e. coefs need to be allocated 1 higher.
-   * Such an approach is not needed for Gamma-point only calculations because the
-   * basis is spherically ordered. However, when a twist-angle is used, the "sphere"
-   * of allowed planewaves is shifted.
-   */
 
+  /// Hessians indexed by (G-vector, row*OHMMS_DIM+column), filled by evaluateHessian().
+  Matrix<ComplexType> Zh;
+
+  /// Cartesian phases (k+G).r used by the direct exponential evaluator.
   Vector<RealType> phi;
 
+  /** Map an input coefficient index to its retained basis row.
+   *
+   * Orbital coefficient loaders honor negative entries as excluded G vectors.
+   * The current trimforecut() retains all vectors, so this map is an identity.
+   */
   std::vector<int> inputmap;
 
   ///total number of basis functions
   int NumPlaneWaves;
 
-  ///local copy of Lattice
+  /// Primitive lattice used to convert reduced reciprocal coordinates.
   ParticleLayout Lattice;
 
   ///default constructor
   PWBasis() : maxmaxg(0), NumPlaneWaves(0) {}
 
-  ///constructor
+  /// Select an initial reduced twist; readbasis() supplies the lattice and G vectors.
   PWBasis(const PosType& twistangle) : maxmaxg(0), twist(twistangle), NumPlaneWaves(0) {}
 
   ~PWBasis() {}
 
-  ///set the twist angle
+  /// Set the reduced primitive twist and rebuild the basis work arrays if it changes.
   void setTwistAngle(const PosType& tang);
 
-  ///reset
+  /// Prepare shifted reciprocal vectors and resize the evaluation work arrays.
   void reset();
 
-  /** Read basisset from hdf5 file. Apply ecut.
-   * @param h5basisgroup h5 node where basis is located
-   * @param ecutoff cutoff energy
-   * @param lat CrystalLattice
-   * @param resizeContainer if true, resize internal storage.
-   * @return the number of plane waves
+  /** Load G vectors from /electrons/kpoint_0/gvectors in an orbital archive.
+   *
+   * The file's /supercell/primitive_vectors overrides lat when present. All input
+   * G vectors are retained; ecutoff does not currently truncate this list.
+   *
+   * @param h5basisgroup open orbital HDF archive
+   * @param ecutoff legacy cutoff value to store
+   * @param lat fallback lattice if primitive vectors are absent from the file
+   * @param pwname legacy group-name argument; the ESHDF G-vector path is fixed
+   * @param pwmultname legacy multiplier tag used in diagnostic output
+   * @param resizeContainer whether to call reset() after loading the vectors
+   * @return number of input plane waves
+   * @throws std::runtime_error on an HDF read failure or an empty G-vector list
    */
   int readbasis(hdf_archive& h5basisgroup,
                 RealType ecutoff,
@@ -141,9 +144,10 @@ public:
                 const std::string& pwmultname = "multipliers",
                 bool resizeContainer          = true);
 
-  /** Remove basis elements if kinetic energy > ecut.
+  /** Prepare Cartesian k+G vectors, Laplacian factors, and the coefficient map.
    *
-   * Keep and indexmap so we know how to match coefficients on read.
+   * Despite its legacy name, this routine currently retains every G vector;
+   * the kinetic-energy cutoff branch is disabled.
    */
   void trimforecut();
 
@@ -229,6 +233,7 @@ public:
     //      }
   }
 
+  /// Fill Zv at a Cartesian position using recursive phase generation.
   inline void evaluate(const PosType& pos)
   {
     BuildRecursionCoefs(pos);
@@ -247,12 +252,8 @@ public:
       Zv[ig] = pw;
     }
   }
-  /** Evaluate all planewaves and derivatives for the iat-th particle
-   *
-   * The basis functions are evaluated for particles iat: first <= iat < last
-   * Evaluate the plane-waves at current particle coordinates using a fast
-   * recursion algorithm. Order of Y,dY and d2Y is kept correct.
-   * These can be "dotted" with coefficients later to complete orbital evaluations.
+  /** Fill Z with basis values, gradients, and Laplacians at P.activeR(iat).
+   * This recursive path does not populate Zv or the Hessian buffer.
    */
   inline void evaluateAll(const ParticleSet& P, int iat)
   {
@@ -281,6 +282,7 @@ public:
     }
   }
 #else
+  /// Fill Zv at a Cartesian position using direct complex exponentials.
   inline void evaluate(const PosType& pos)
   {
     //Evaluate the planewaves for particle iat.
@@ -288,6 +290,7 @@ public:
       phi[ig] = dot(kplusgvecs_cart[ig], pos);
     eval_e2iphi(NumPlaneWaves, phi.data(), Zv.data());
   }
+  /// Fill Zv and Z with values and VGL data at P.activeR(iat); Hessian Zh is unchanged.
   inline void evaluateAll(const ParticleSet& P, int iat)
   {
     const PosType& r(P.activeR(iat));
@@ -306,6 +309,14 @@ public:
     }
   }
 #endif
+
+  /** Fill Zh with Cartesian Hessians -K_row*K_column*Z(ig, PW_VALUE), K=k+G.
+   *
+   * @pre evaluateAll() has populated Z for the desired particle position.
+   * This routine reuses those values and does not update Zv or Z.
+   */
+  void evaluateHessian();
+
   //    /** Fill the recursion coefficients matrix.
   //     *
   //     * @todo Generalize to non-orthorohmbic cells

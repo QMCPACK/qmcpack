@@ -202,6 +202,7 @@ if(NOT QMC_COMPLEX)
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     INPUT_FILE det_ensemble_blocks_vmc_msdj.txt
     PROCS 4
+    CMD_OPTIONS --vnode-ranks 1
     CHECK_SCRIPT check_ensemble.py
     CHECK_ARGS --ranks 4 --prefix det_ensemble_blocks_vmc_msdj --ionion 0.995380119260)
 
@@ -210,6 +211,7 @@ if(NOT QMC_COMPLEX)
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     INPUT_FILE det_ensemble_blocks_vmcbatch_msdj.txt
     PROCS 4
+    CMD_OPTIONS --vnode-ranks 1
     CHECK_SCRIPT check_ensemble.py
     CHECK_ARGS --ranks 4 --prefix det_ensemble_blocks_vmc_msdj --ionion 0.995380119260)
 
@@ -226,6 +228,7 @@ if(NOT QMC_COMPLEX)
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     INPUT_FILE det_ensemble_blocks_vmc_msdj.txt
     PROCS 5
+    CMD_OPTIONS --vnode-ranks 1
     CHECK_SCRIPT check_ensemble.py
     CHECK_ARGS --ranks 5 --prefix det_ensemble_blocks_vmc_msdj --ionion 0.995380119260)
 
@@ -234,6 +237,7 @@ if(NOT QMC_COMPLEX)
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     INPUT_FILE det_ensemble_blocks_vmcbatch_msdj.txt
     PROCS 5
+    CMD_OPTIONS --vnode-ranks 1
     CHECK_SCRIPT check_ensemble.py
     CHECK_ARGS --ranks 5 --prefix det_ensemble_blocks_vmc_msdj --ionion 0.995380119260)
 

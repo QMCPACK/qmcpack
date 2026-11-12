@@ -29,63 +29,6 @@ namespace qmcplusplus
 {
 QMCState::QMCState() = default;
 
-void QMCState::initialize(int argc, char** argv)
-{
-  io_node     = (OHMMS::Controller->rank() == 0);
-  bool stopit = false;
-  //going to use better option library
-  int i = 1;
-  while (i < argc)
-  {
-    std::string c(argv[i]);
-    if (c.find("--dryrun") < c.size())
-    {
-      dryrun = true;
-    }
-    else if (c.find("--save_wfs") < c.size())
-    {
-      if (io_node)
-        std::cerr << std::endl
-                  << "ERROR: command line option --save_wfs has been removed."
-                  << "Use save_coefs input tag as described in the manual." << std::endl;
-      stopit = true;
-    }
-    else if (c.find("--help") < c.size())
-    {
-      stopit = true;
-    }
-    else if (c.find("--version") < c.size())
-    {
-      stopit = true;
-    }
-    else if (c.find("--vacuum") < c.size())
-    {
-      if (io_node)
-        std::cerr << std::endl
-                  << "ERROR: command line option --vacuum has been removed. "
-                  << "Use vacuum input tag as described in the manual." << std::endl;
-      stopit = true;
-    }
-    else if (c.find("--noprint") < c.size())
-    { //do not print Jastrow or PP
-      io_node = false;
-    }
-    ++i;
-  }
-  if (stopit && io_node)
-  {
-    std::cerr << std::endl
-              << "QMCPACK version " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
-              << QMCPACK_VERSION_PATCH << " built on " << __DATE__ << std::endl;
-    print_git_info_if_present(std::cerr);
-    std::cerr << std::endl << "Usage: qmcpack input [--dryrun --gpu]" << std::endl << std::endl;
-  }
-  if (stopit)
-  {
-    exit(1);
-  }
-}
-
 void QMCState::print_options(std::ostream& os)
 {
   os << "  Global options " << std::endl;

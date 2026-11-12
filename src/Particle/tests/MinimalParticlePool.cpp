@@ -179,6 +179,7 @@ ParticleSetPool MinimalParticlePool::make_diamondC_1x1x1(Communicate& c)
 {
   ParticleSetPool pp(c);
   parseParticleSetXML(particles_xml, pp);
+  pp.reset();
   return pp;
 }
 
@@ -186,6 +187,7 @@ ParticleSetPool MinimalParticlePool::make_O2_spinor(Communicate& c)
 {
   ParticleSetPool pp(c);
   parseParticleSetXML(particles_xml_spinor, pp);
+  pp.reset();
   return pp;
 }
 
@@ -193,6 +195,7 @@ ParticleSetPool MinimalParticlePool::make_NiO_a4(Communicate& c)
 {
   ParticleSetPool pp(c);
   parseParticleSetXML(particles_xml_NiO_a4, pp);
+  pp.reset();
   return pp;
 }
 
@@ -213,6 +216,7 @@ ParticleSetPool MinimalParticlePool::make_H2(Communicate& c)
   xmlNodePtr part_elec = xmlNextElementSibling(part_ion);
   pp.put(part_elec);
   pp.randomize();
+  pp.reset();
 
   return pp;
 }
