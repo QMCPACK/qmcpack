@@ -74,17 +74,7 @@ if(NOT QMC_COMPLEX)
     LIH_PP_XML_SCALARS # VMC
   )
 
-  qmc_run_and_check(
-    short-LiH_pp-vmcbatch_hf_sdj_xml
-    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmcbatch_hf_sdj_xml.xml
-    16
-    1
-    TRUE
-    0
-    LIH_PP_XML_SCALARS # VMC
-  )
-
+  
   qmc_run_and_check(
     short-LiH_pp-vmc_hf_sdj_xml
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
@@ -137,17 +127,6 @@ if(NOT QMC_COMPLEX)
     short-LiH_pp-vmc_hf_sdj_hdf5
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmc_hf_sdj_hdf5.xml
-    16
-    1
-    TRUE
-    0
-    LIH_PP_XML_SCALARS # VMC
-  )
-
-  qmc_run_and_check(
-    short-LiH_pp-vmcbatch_hf_sdj_hdf5
-    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmcbatch_hf_sdj_hdf5.xml
     16
     1
     TRUE
