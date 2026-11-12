@@ -147,6 +147,11 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         twf_dispatcher.flex_accept_rejectMoveAllParticles(walker_twfs, walker_elecs, is_accepted);
       }
     }
+    else
+    {
+      // Reject unsupported coordinates if input/factory validation is bypassed.
+      throw std::runtime_error("VMCBatched only supports CoordsType::POS for allp moves!");
+    }
   }
   else
   {
