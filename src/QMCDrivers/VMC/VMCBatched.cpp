@@ -81,6 +81,79 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_LOAD)
     checkLogAndGL(crowd, "checkGL_after_load", sft.serializing_crowd_walkers);
 
+  if (sft.qmcdrv_input.get_update_mode() == "allp")
+  {
+    // All-particle moves are batched POS moves: the dispatcher has no serialized fallback.
+    if constexpr (CT == CoordsType::POS)
+    {
+      ScopedTimer allp_local_timer(timers.movepbyp_timer);
+      const int num_walkers   = crowd.size();
+      auto& walker_leader     = walker_elecs.getLeader();
+      const int num_particles = walker_leader.getTotalNum();
+
+      std::vector<bool> are_valid(num_walkers * num_particles);
+      std::vector<bool> is_accepted(num_walkers);
+      const std::vector<bool> evaluate_all(num_walkers, true);
+      std::vector<RealType> old_logpsi(num_walkers);
+      MCCoords<CT> walker_deltas(num_walkers * num_particles);
+
+      for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); ++sub_step)
+      {
+        // The all-particle dispatcher consumes particle-major displacements: ip * nw + iw.
+        makeGaussRandomWithEngine(walker_deltas, step_context.get_random_gen());
+        for (int ig = 0; ig < walker_leader.groups(); ++ig)
+        {
+          TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), 1.0 / walker_leader.get_mass_by_group()[ig],
+                                       sft.qmcdrv_input.get_spin_mass());
+          for (int iat = walker_leader.first(ig); iat < walker_leader.last(ig); ++iat)
+            for (int iw = 0; iw < num_walkers; ++iw)
+              walker_deltas.positions[iat * num_walkers + iw] *= taus.sqrttau;
+        }
+
+        // Save the log amplitude for this substep before evaluating the proposed configuration.
+        for (int iw = 0; iw < num_walkers; ++iw)
+          old_logpsi[iw] = walker_twfs[iw].getLogPsi();
+
+        ps_dispatcher.flex_makeMoveAllParticles(walker_elecs, walker_deltas, are_valid);
+        // Evaluate proposals for every walker, then resolve only rejected wavefunction transactions.
+        twf_dispatcher.flex_evaluateLogAllParticles(walker_twfs, walker_elecs, evaluate_all);
+
+        for (int iw = 0; iw < num_walkers; ++iw)
+        {
+          bool walker_valid = true;
+          for (int iat = 0; iat < num_particles; ++iat)
+            // This is a rare occurence limited to particles that fell outside of a cell vector
+            // specified as an open boundary.
+            if (!are_valid[iat * num_walkers + iw])
+            {
+              is_accepted[iw] = false;
+              walker_valid    = false;
+              break;
+            }
+
+          if (walker_valid)
+          {
+            const RealType probability = std::exp(2.0 * (walker_twfs[iw].getLogPsi() - old_logpsi[iw]));
+            is_accepted[iw]            = walker_valid && step_context.get_random_gen()() < probability;
+          }
+          // All particles in a walker share the all-particle transaction decision.
+          if (is_accepted[iw])
+            crowd.addAccept(num_particles);
+          else
+            crowd.addReject(num_particles);
+        }
+
+        ps_dispatcher.flex_accept_rejectMoveAllParticles(walker_elecs, is_accepted);
+        twf_dispatcher.flex_accept_rejectMoveAllParticles(walker_twfs, walker_elecs, is_accepted);
+      }
+    }
+    else
+    {
+      // Reject unsupported coordinates if input/factory validation is bypassed.
+      throw std::runtime_error("VMCBatched only supports CoordsType::POS for allp moves!");
+    }
+  }
+  else
   {
     ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
     const int num_walkers   = crowd.size();
@@ -289,7 +362,9 @@ void VMCBatched::process(xmlNodePtr node)
 size_t VMCBatched::compute_samples_per_rank(const size_t num_blocks,
                                             const size_t samples_per_block,
                                             const size_t local_walkers)
-{ return num_blocks * samples_per_block * local_walkers; }
+{
+  return num_blocks * samples_per_block * local_walkers;
+}
 
 
 /** Runs the actual VMC section

@@ -25,11 +25,11 @@ class EstimatorManagerNew;
 class WalkerLogCollector;
 
 /** Driver synchronized step context
- * 
+ *
  *  assumed to live inside the drivers scope
  *  Represents the walker contexts exlusively operated on by
  *  one concurrent "worker" context from a total population
- *  owned by a MCPopulation 
+ *  owned by a MCPopulation
  *
  *  TODO: Maybe construct and initialize in thread execution space
  *        @ye doubts this is important if rank is confined to one NUMA
@@ -110,6 +110,8 @@ public:
 
   void incReject() { ++n_reject_; }
   void incAccept() { ++n_accept_; }
+  void addReject(int ptcl_count) { n_reject_ += ptcl_count; }
+  void addAccept(int ptcl_count) { n_accept_ += ptcl_count; }
   void incNonlocalAccept(int n = 1) { n_nonlocal_accept_ += n; }
   unsigned long get_nonlocal_accept() { return n_nonlocal_accept_; }
   unsigned long get_accept() { return n_accept_; }
@@ -121,7 +123,7 @@ public:
 private:
   /** @name Walker Vectors
    *
-   *  A single index into these ordered lists constitutes a complete 
+   *  A single index into these ordered lists constitutes a complete
    *  walker context.
    * @{
    */
@@ -139,8 +141,8 @@ private:
   std::unique_ptr<WalkerLogCollector> wlog_collector_;
 
   /** @name Step State
-   * 
-   *  Should be per walker? 
+   *
+   *  Should be per walker?
    *  @{
    */
   unsigned long n_reject_          = 0;

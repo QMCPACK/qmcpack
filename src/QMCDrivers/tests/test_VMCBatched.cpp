@@ -9,59 +9,44 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
-#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "Message/Communicate.h"
-#include "QMCDrivers/VMC/VMCDriverInput.h"
-#include "QMCDrivers/VMC/VMCBatched.h"
-#include "QMCDrivers/tests/ValidQMCInputSections.h"
-#include "EstimatorInputDelegates.h"
-#include <MinimalParticlePool.h>
-#include <MinimalWaveFunctionPool.h>
-#include <MinimalHamiltonianPool.h>
 #include "Concurrency/Info.hpp"
-#include "Concurrency/UtilityFunctions.hpp"
-#include "Particle/SampleStack.h"
+#include "VMCBatchedTest.h"
 
 namespace qmcplusplus
 {
-namespace testing
+TEST_CASE("VMCBatched all-particle moves without drift", "[drivers]")
 {
-class VMCBatchedTest
-{
-public:
-  VMCBatchedTest(const ProjectData& project_data) : comm_(*OHMMS::Controller), project_data_(project_data)
-  { Concurrency::OverrideMaxCapacity<> override(8); }
-
-  void testCalcDefaultLocalWalkers()
+  int total_accepted = 0;
+  int total_rejected = 0;
+  int total_mixed    = 0;
+  for (int walkers_per_crowd : {1, 2, 3})
   {
-    using namespace testing;
-    Concurrency::OverrideMaxCapacity<> override(8);
-
-    Libxml2Document doc;
-    doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
-    xmlNodePtr node = doc.getRoot();
-    QMCDriverInput qmcdriver_input;
-    qmcdriver_input.readXML(node);
-
-    auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm_);
-    auto wavefunction_pool =
-        MinimalWaveFunctionPool::make_diamondC_1x1x1(project_data_.getRuntimeOptions(), comm_, particle_pool);
-    auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm_, particle_pool, wavefunction_pool);
+    const auto summary         = testing::VMCBatchedTest::runAllParticleNoDrift(walkers_per_crowd);
+    const int expected_walkers = Concurrency::maxCapacity<>() * walkers_per_crowd;
+    CHECK(summary.walkers == expected_walkers);
+    CAPTURE(walkers_per_crowd, summary.failures);
+    CHECK(summary.failures.empty());
+    CHECK(summary.proposals == testing::VMCBatchedTest::moves_per_walker * expected_walkers);
+    CHECK(summary.resolutions == testing::VMCBatchedTest::moves_per_walker * expected_walkers);
+    CHECK(summary.accepted + summary.rejected == summary.resolutions);
+    CHECK(summary.particle_moves == summary.expected_particle_moves);
+    total_accepted += summary.accepted;
+    total_rejected += summary.rejected;
+    total_mixed += summary.mixed_resolutions;
   }
+  CHECK(total_accepted > 0);
+  CHECK(total_rejected > 0);
+  CHECK(total_mixed > 0);
+}
 
-private:
-  Communicate& comm_;
-  const ProjectData& project_data_;
-};
-} // namespace testing
-
-TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
+TEST_CASE("VMCBatched all-particle boundary rejection restores the whole walker", "[drivers][vmc]")
 {
-  using namespace testing;
-  ProjectData test_project;
-  VMCBatchedTest vbt(test_project);
-  vbt.testCalcDefaultLocalWalkers();
+  for (int invalid_particle : {0, 1})
+  {
+    CAPTURE(invalid_particle);
+    testing::VMCBatchedTest::checkAllParticleBoundaryRejection(invalid_particle);
+  }
 }
 
 } // namespace qmcplusplus
