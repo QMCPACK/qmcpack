@@ -66,7 +66,7 @@ omit = ["nexus/tests/*"]
 omit = ["nexus/tests/*"]
 
 [tool.pytest.ini_options]
-#addopts = ["--cov=nexus", "--cov-report=xml"]
+addopts = ["-m not real_run"]
 filterwarnings = [
     "ignore::UserWarning",
     "ignore::DeprecationWarning:spglib.*",
@@ -74,3 +74,4 @@ filterwarnings = [
 ]
 testpaths = ["nexus/tests"]
 xfail_strict = true
+markers = ["real_run: Mark a test as running an actual simulation code"]
