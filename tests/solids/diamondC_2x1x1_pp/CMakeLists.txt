@@ -68,7 +68,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  short-diamondC_2x1x1_pp-vmcbatch-4b_sdbatch_jas
+  short-diamondC_2x1x1_pp-sdbatch_jas-vmcbatch-4b
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
   qmc_short_sdbatch_vmcbatch_4b.in.xml
   1
@@ -140,7 +140,7 @@ qmc_run_and_check(
 
 #4 batches of 16 walkers in one rank, batched slater det
 qmc_run_and_check(
-  short-diamondC_2x1x1_pp-vmcbatch_dmcbatch-4b_sdbatch_jas
+  short-diamondC_2x1x1_pp-sdbatch_jas-vmcbatch_dmcbatch-4b
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
   qmc_short_sdbatch_vmcbatch_dmcbatch.in.xml
   1
@@ -798,7 +798,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  deterministic-diamondC_2x1x1_pp-vmcbatch-mwalkers_sdbatch_jas
+  deterministic-diamondC_2x1x1_pp-sdbatch_jas-vmcbatch-mwalkers
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
   det_qmc_sdbatch_vmcbatch_mwalkers.in.xml
   1
@@ -1093,7 +1093,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
+  deterministic-diamondC_2x1x1_pp-sdbatch_jas-vmcbatch-dmcbatch-mwalkers
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
   det_qmc_sdbatch_vmcbatch_dmcbatch_mwalkers.in.xml
   1
@@ -1108,7 +1108,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers-checks_sdbatch_sdj
+  deterministic-diamondC_2x1x1_pp-sdbatch_jas-vmcbatch-dmcbatch-mwalkers-checks
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
   det_qmc_sdbatch_vmcbatch_dmcbatch_mwalkers_with_checks.in.xml
   1
@@ -1264,7 +1264,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
+  deterministic-diamondC_2x1x1_pp-sdbatch_jas-vmcbatch-dmcbatch-mwalkers
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
   det_qmc_sdbatch_vmcbatch_dmcbatch_mwalkers.in.xml
   1
@@ -1420,7 +1420,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
+  deterministic-diamondC_2x1x1_pp-sdbatch_jas-vmcbatch-dmcbatch-mwalkers
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
   det_qmc_sdbatch_vmcbatch_dmcbatch_mwalkers.in.xml
   2
@@ -1591,7 +1591,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
+  deterministic-diamondC_2x1x1_pp-sdbatch_jas-vmcbatch-dmcbatch-mwalkers
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
   det_qmc_sdbatch_vmcbatch_dmcbatch_mwalkers.in.xml
   2
@@ -1606,7 +1606,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_inverter-host_sdj
+  deterministic-diamondC_2x1x1_pp-sdbatch_inverter_host_jas-vmcbatch-dmcbatch-mwalkers
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
   det_qmc_sdbatch_vmcbatch_dmcbatch_mwalkers_inverter_host.in.xml
   2
