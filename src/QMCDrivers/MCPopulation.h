@@ -163,7 +163,11 @@ public:
   void fissionHighMultiplicityWalkers();
 
   void syncWalkersPerRank(Communicate& comm);
-  void measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const;
+  /** Compute weighted global energy and variance across all walkers. Optionally checks weights. Abort if invalid.*/
+  void measureGlobalEnergyVariance(Communicate& comm,
+                                   FullPrecRealType& ener,
+                                   FullPrecRealType& variance,
+                                   bool validate_weights = false) const;
 
   /**@name accessors
    * @{

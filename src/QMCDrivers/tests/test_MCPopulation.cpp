@@ -11,10 +11,13 @@
 #include <catch2/catch_test_macros.hpp>
 #include <vector>
 #include <algorithm>
+#include <limits>
 
 #include "OhmmsPETE/TinyVector.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/tests/WalkerConsumer.h"
+#include "QMCDrivers/tests/SetupPools.h"
+#include "Message/UniformCommunicateError.h"
 #include <MinimalParticlePool.h>
 #include <MinimalWaveFunctionPool.h>
 #include <MinimalHamiltonianPool.h>
@@ -22,6 +25,24 @@
 
 namespace qmcplusplus
 {
+// Paranoid edge case handling checks  
+TEST_CASE("MCPopulation validates restored fixed DMC weights before normalization", "[population][stochastic_comb]")
+{
+  testing::SetupPools pools;
+  MCPopulation population(pools.comm.size(), pools.comm.rank(), *pools.particle_pool->getParticleSet("e"),
+                          pools.wavefunction_pool->getWaveFunction().value(),
+                          pools.hamiltonian_pool->getHamiltonian().value());
+  WalkerConfigurations configs;
+  population.createWalkers(1, configs);
+  for (double invalid : {0., -1., std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()})
+  {
+    population.get_walkers()[0]->Weight = invalid == 0 || pools.comm.rank() == pools.comm.size() - 1 ? invalid : 1;
+    double energy, variance;
+    CHECK_THROWS_AS(population.measureGlobalEnergyVariance(pools.comm, energy, variance, true),
+                    UniformCommunicateError);
+  }
+}
+
 TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
 {
   using namespace testing;
@@ -46,8 +67,12 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   CHECK(population.get_walkers().size() == 8);
   CHECK(population.get_dead_walkers().size() == 8);
   CHECK(population.get_num_local_walkers() == 8);
+  for (int iw = 0; iw < 8; ++iw)
+    population.get_walkers()[iw]->Weight = 0.25 + 0.125 * iw;
   population.saveWalkerConfigurations(walker_confs);
   CHECK(walker_confs.getActiveWalkers() == 8);
+  for (int iw = 0; iw < 8; ++iw)
+    CHECK(walker_confs[iw]->Weight == 0.25 + 0.125 * iw);
 
   MCPopulation population2(1, comm.rank(), *particle_pool.getParticleSet("e"), twf,
                            hamiltonian_pool.getHamiltonian().value());
@@ -64,6 +89,8 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   // modify the first configuration
   auto new_R00 = walker_confs2[1]->R[0][0] = 0.3;
   population2.createWalkers(8, walker_confs2, 1.0);
+  for (int iw = 0; iw < 8; ++iw)
+    CHECK(population2.get_walkers()[iw]->Weight == walker_confs2[iw % 3]->Weight);
   CHECK(population2.get_walkers()[0]->R[0][0] == old_R00);
   CHECK(population2.get_walkers()[1]->R[0][0] == new_R00);
   CHECK(population2.get_walkers()[2]->R[0][0] == old_R00);

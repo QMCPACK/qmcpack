@@ -175,6 +175,37 @@ run_restart_and_check(
   1
   4)
 
+find_program(HDF5_DIFF_EXECUTABLE NAMES h5diff)
+foreach(PROCS 1 2)
+  math(EXPR THREADS "4 / ${PROCS}")
+  set(RECONFIG_TEST deterministic-restart_dmc_reconfig-r${PROCS}-t${THREADS})
+  run_restart_and_check(
+    deterministic-restart_dmc_reconfig
+    "${qmcpack_SOURCE_DIR}/tests/io/restart_dmc"
+    2
+    det_qmc_dmcbatch_reconfig
+    ${PROCS}
+    ${THREADS})
+  add_test_check_fixed_population(${RECONFIG_TEST} det_qmc_dmcbatch_reconfig.s001.dmc.dat 16)
+  add_test_check_fixed_population(${RECONFIG_TEST}-restart det_qmc_dmcbatch_reconfig.s003.dmc.dat 16)
+  if(TEST ${RECONFIG_TEST} AND HDF5_DIFF_EXECUTABLE)
+    foreach(DATASET walkers walker_weights)
+      add_test(
+        NAME ${RECONFIG_TEST}-hdf-${DATASET}
+        COMMAND ${HDF5_DIFF_EXECUTABLE} -d 0.000001 det_qmc_dmcbatch_reconfig.s002.config.h5
+                det_qmc_dmcbatch_reconfig.s003.config.h5 /state_0/${DATASET})
+      set_tests_properties(
+        ${RECONFIG_TEST}-hdf-${DATASET}
+        PROPERTIES DEPENDS ${RECONFIG_TEST}-restart
+                   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${RECONFIG_TEST}"
+                   LABELS "QMCPACK-checking-results")
+    endforeach()
+  endif()
+endforeach()
+if(NOT HDF5_DIFF_EXECUTABLE)
+  message(STATUS "h5diff not found: DMC restart dataset comparisons are skipped")
+endif()
+
 run_restart_and_check(
   deterministic-save_spline_coefs-batched
   "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs"

@@ -246,10 +246,13 @@ public:
    */
   void process(xmlNodePtr cur) override = 0;
 
+  /** Evaluate initial walker properties; preserve_weights selects whether to carry-over weights otherwise reset to one
+   */
   static void initialLogEvaluation(int crowd_id,
                                    UPtrVector<Crowd>& crowds,
                                    const RefVector<ContextForSteps>& step_context,
-                                   const bool serializing_crowd_walkers);
+                                   const bool serializing_crowd_walkers,
+                                   const bool preserve_weights);
 
 
   /** should be set in input don't see a reason to set individually

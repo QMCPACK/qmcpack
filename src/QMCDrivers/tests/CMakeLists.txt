@@ -14,6 +14,10 @@ set(SRC_DIR drivers)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
+# These tests deliberately construct Inf/NaN inputs, which finite-only math can optimize away.
+set_property(SOURCE test_MCPopulation.cpp test_WalkerControl.cpp APPEND PROPERTY COMPILE_OPTIONS
+             "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang,IntelLLVM>:-fno-finite-math-only>")
+
 # test_drivers shouldn't be dependent on wavefunctions
 set(ALIASED_FILES)
 make_file_alias(${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5 diamondC_1x1x1.pwscf.h5)
@@ -108,6 +112,13 @@ endif()
 add_unit_test(BASENAME ${UTEST_NAME} THREADS 8 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
 add_unit_test(BASENAME ${UTEST_NAME} PROCS 2 THREADS 3 TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
 
+add_unit_test(
+  BASENAME deterministic-unit_stochastic_comb_lifecycle
+  THREADS 4
+  TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>
+  ARGS "[stochastic_comb]"
+  INPUT_FILES ${UTEST_INPUT_FILES})
+
 if(HAVE_MPI)
   set(UTEST_EXE test_new_${SRC_DIR}_mpi)
   #this is dependent on the directory creation and sym linking of earlier driver tests
@@ -131,6 +142,15 @@ if(HAVE_MPI)
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   foreach(NUM_RANKS 1 2 3 4 16)
     add_unit_test(BASENAME ${UTEST_NAME} PROCS ${NUM_RANKS} TEST_BINARY $<TARGET_FILE:${UTEST_EXE}> INPUT_FILES ${UTEST_INPUT_FILES})
+  endforeach()
+
+  foreach(NUM_RANKS 1 2 3 4 16)
+    add_unit_test(
+      BASENAME deterministic-unit_stochastic_comb
+      PROCS ${NUM_RANKS}
+      TEST_BINARY $<TARGET_FILE:${UTEST_EXE}>
+      ARGS "[stochastic_comb]"
+      INPUT_FILES ${UTEST_INPUT_FILES})
   endforeach()
 endif(HAVE_MPI)
 
