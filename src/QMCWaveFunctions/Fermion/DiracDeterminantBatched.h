@@ -22,7 +22,6 @@
 #include "type_traits/complex_help.hpp"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "DiracMatrixInverter.hpp"
 
 namespace qmcplusplus
 {
@@ -320,9 +319,6 @@ private:
 
   /// slow but doesn't consume device memory
   DiracMatrix<FullPrecValue> host_inverter_;
-
-  /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
-  ResourceHandle<DiracMatrixInverter<FPVT, VT>> accel_inverter_;
 
   /// compute G and L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const;

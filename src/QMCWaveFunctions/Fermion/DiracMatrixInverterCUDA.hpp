@@ -224,23 +224,16 @@ class DiracMatrixInverterCUDA
   }
 
 public:
-  DiracMatrixInverterCUDA()
-#if defined(ENABLE_OFFLOAD)
-      : DiracMatrixInverter<VALUE_FP, VALUE>("DiracMatrixInverterCUDA")
-#endif
-  { cublasErrorCheck(cublasCreate(&h_cublas_), "cublasCreate failed!"); }
+  DiracMatrixInverterCUDA() { cublasErrorCheck(cublasCreate(&h_cublas_), "cublasCreate failed!"); }
 
   DiracMatrixInverterCUDA(const DiracMatrixInverterCUDA& other)
-#if defined(ENABLE_OFFLOAD)
-      : DiracMatrixInverter<VALUE_FP, VALUE>(other.getName())
-#endif
   { cublasErrorCheck(cublasCreate(&h_cublas_), "cublasCreate failed!"); }
 
-  ~DiracMatrixInverterCUDA() { cublasErrorCheck(cublasDestroy(h_cublas_), "cublasDestroy failed!"); }
-
+  ~DiracMatrixInverterCUDA()
 #if defined(ENABLE_OFFLOAD)
-  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DiracMatrixInverterCUDA>(*this); }
+      override
 #endif
+  { cublasErrorCheck(cublasDestroy(h_cublas_), "cublasDestroy failed!"); }
 
   /** Given a_mat returns inverted amit and log determinant of a_matches.
    *  \param [in] a_mat a matrix input

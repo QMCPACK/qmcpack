@@ -70,16 +70,38 @@ struct DetInverterSelector<PlatformKind::CUDA, FPVT, VT>
 };
 #endif
 
+/** Crowd-level multi-walker resource for DiracDeterminantBatched.
+ *  Holds shared scratch buffers, crowd-wide delayed update engine, and the batched matrix inverter
+ *  lent to the leader DiracDeterminantBatched for the duration of a crowd's multi-walker operations.
+ */
 template<PlatformKind PL, typename VT, typename FPVT>
 struct DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatchedMultiWalkerResource : public Resource
 {
-  DiracDeterminantBatchedMultiWalkerResource() : Resource("DiracDeterminantBatched") {}
-  DiracDeterminantBatchedMultiWalkerResource(const DiracDeterminantBatchedMultiWalkerResource&)
-      : DiracDeterminantBatchedMultiWalkerResource()
+  /** Construct the resource with the requested matrix inverter backend.
+   * @param matrix_inverter_kind selects the accelerator or OMPTarget matrix inverter implementation.
+   */
+  DiracDeterminantBatchedMultiWalkerResource(DetMatInvertor matrix_inverter_kind)
+      : Resource("DiracDeterminantBatched"), matrix_inverter_kind_(matrix_inverter_kind)
+  {
+    if (matrix_inverter_kind_ == DetMatInvertor::ACCEL)
+      accel_inverter_ = std::make_unique<typename DetInverterSelector<PL, FPVT, VT>::Inverter>();
+    else
+      accel_inverter_ = std::make_unique<DiracMatrixInverterOMPTarget<FPVT, VT>>();
+  }
+
+  /// Copy constructor used when cloning the resource for another crowd.
+  DiracDeterminantBatchedMultiWalkerResource(const DiracDeterminantBatchedMultiWalkerResource& other)
+      : DiracDeterminantBatchedMultiWalkerResource(other.matrix_inverter_kind_)
   {}
 
+  /// Create an independent clone of this resource for another crowd.
   std::unique_ptr<Resource> makeClone() const override
   { return std::make_unique<DiracDeterminantBatchedMultiWalkerResource>(*this); }
+
+  /// Accessor to the crowd-owned batched matrix inverter.
+  DiracMatrixInverter<FPVT, VT>& get_accel_inverter() { return *accel_inverter_; }
+
+  /// log determinant values per walker [nw]
   DualVector<LogValue> log_values;
   /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw][norb]
   OffloadMWVGLArray phi_vgl_v;
@@ -95,6 +117,12 @@ struct DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatchedMultiWalker
   RefVector<DualMatrix<Value>> psiMinv_refs;
   /// delayed update engine, crowd scope, holds the data of all the walkers.
   typename UpdateEngineSelector<PL, VT>::Engine det_engine;
+
+private:
+  /// selected scheme for batched matrix inversion
+  const DetMatInvertor matrix_inverter_kind_;
+  /// matrix inversion engine, crowd scope
+  std::unique_ptr<DiracMatrixInverter<FPVT, VT>> accel_inverter_;
 };
 
 /** constructor
@@ -149,8 +177,8 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_invertPsiM(const RefVectorWithLea
 
   mw_res.log_values.resize(nw);
 
-  wfc_leader.accel_inverter_.getResource().mw_invert_transpose(mw_res.det_engine.queue, logdetT_list, a_inv_list,
-                                                               mw_res.log_values);
+  mw_res.get_accel_inverter().mw_invert_transpose(mw_res.det_engine.queue, logdetT_list, a_inv_list,
+                                                   mw_res.log_values);
 
   for (int iw = 0; iw < nw; ++iw)
   {
@@ -1257,13 +1285,7 @@ std::unique_ptr<DiracDeterminantBase> DiracDeterminantBatched<PL, VT, FPVT>::mak
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::createResource(ResourceCollection& collection) const
-{
-  collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource>());
-  if (matrix_inverter_kind_ == DetMatInvertor::ACCEL)
-    collection.addResource(std::make_unique<typename DetInverterSelector<PL, FPVT, VT>::Inverter>());
-  else
-    collection.addResource(std::make_unique<DiracMatrixInverterOMPTarget<FPVT, VT>>());
-}
+{ collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource>(matrix_inverter_kind_)); }
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::acquireResource(
@@ -1280,7 +1302,6 @@ void DiracDeterminantBatched<PL, VT, FPVT>::acquireResource(
     auto& det = static_cast<DiracDeterminantBatched<PL, VT, FPVT>&>(wfc);
     mw_res.psiMinv_refs.push_back(det.psiMinv_);
   }
-  wfc_leader.accel_inverter_ = collection.lendResource<DiracMatrixInverter<FPVT, VT>>();
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
@@ -1291,7 +1312,6 @@ void DiracDeterminantBatched<PL, VT, FPVT>::releaseResource(
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<PL, VT, FPVT>>();
   wfc_leader.mw_res_handle_.getResource().psiMinv_refs.clear();
   collection.takebackResource(wfc_leader.mw_res_handle_);
-  collection.takebackResource(wfc_leader.accel_inverter_);
 }
 
 template class DiracDeterminantBatched<PlatformKind::OMPTARGET, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
