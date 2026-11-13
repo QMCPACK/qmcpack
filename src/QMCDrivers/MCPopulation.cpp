@@ -10,9 +10,12 @@
 // File refactored from: MCWalkerConfiguration.cpp, QMCUpdate.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <cmath>
 #include <numeric>
 
 #include "MCPopulation.h"
+#include "Message/UniformCommunicateError.h"
+#include "CPU/math.hpp"
 #include "Configuration.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Message/CommOperators.h"
@@ -279,19 +282,33 @@ void MCPopulation::syncWalkersPerRank(Communicate& comm)
 
 void MCPopulation::measureGlobalEnergyVariance(Communicate& comm,
                                                FullPrecRealType& ener,
-                                               FullPrecRealType& variance) const
+                                               FullPrecRealType& variance,
+                                               bool validate_weights) const
 {
-  std::vector<FullPrecRealType> weight_energy_variance(3, 0.0);
+  std::vector<FullPrecRealType> weight_energy_variance(validate_weights ? 4 : 3, 0.0);
   for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
   {
     auto w = walkers_[iw]->Weight;
     auto e = walker_hamiltonians_[iw]->getLocalEnergy();
+    // Reject non-finite or negative local walker weights and flag the failure for allreduce.
+    if (validate_weights && (!qmcplusplus::isfinite(w) || w < 0))
+    {
+      weight_energy_variance[3] = 1;
+      continue;
+    }
     weight_energy_variance[0] += w;
     weight_energy_variance[1] += w * e;
     weight_energy_variance[2] += w * e * e;
   }
 
   comm.allreduce(weight_energy_variance);
+  if (validate_weights &&
+      (weight_energy_variance[3] != 0 ||                  // any rank saw an invalid local weight
+       !qmcplusplus::isfinite(weight_energy_variance[0]) || // global weight sum is non-finite
+       weight_energy_variance[0] <= 0 ||                    // global weight sum is non-positive
+       !qmcplusplus::isfinite(weight_energy_variance[1]) || // global weighted energy sum is non-finite
+       !qmcplusplus::isfinite(weight_energy_variance[2])))  // global weighted squared-energy sum is non-finite
+    throw UniformCommunicateError("MCPopulation: invalid fixed-population DMC weights or energy moments.");
   ener     = weight_energy_variance[1] / weight_energy_variance[0];
   variance = weight_energy_variance[2] / weight_energy_variance[0] - ener * ener;
 }
