@@ -59,6 +59,7 @@ extensions = [
     "sphinxcontrib.bibtex",
     "sphinx.ext.coverage",
     "sphinx.ext.mathjax",
+    "sphinxcontrib.mermaid",
     "pydata_sphinx_theme",
     "sphinx_design",
     "sphinx_copybutton",
@@ -66,7 +67,9 @@ extensions = [
 ]
 
 autodoc_inherit_docstrings = False
-
+mermaid_d3_zoom = True
+mermaid_dark_theme = "forest"
+mermaid_light_theme = "forest"
 
 def _add_nexus_config_defaults(app, what, name, obj, options, lines):
     """Add defaults from ``NexusConfig.restore_defaults`` to attribute docs."""

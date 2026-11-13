@@ -29,7 +29,7 @@ minimal dependencies.
    user_guide/index
    api_docs/index
    extra_reading/index
-   code-style
+   development/index
 
 
 .. grid:: 2
@@ -103,13 +103,13 @@ minimal dependencies.
 
         +++
 
-        .. button-ref:: code-style
+        .. button-ref:: development/index
             :ref-type: doc
             :expand:
             :color: secondary
             :click-parent:
 
-            To the Contributor Guide
+            To the Development Guide
 
 
 Supported Code APIs
