@@ -9,7 +9,7 @@ list(APPEND DIAMOND_SCALARS "nonlocalecp" "0.65437 0.024")
 list(APPEND DIAMOND_SCALARS "samples" "16000 0.0")
 
 qmc_run_and_check(
-  short-diamondC_1x1x1_pp-vmc_gaussian_sdj
+  short-diamondC_1x1x1_pp-sd_lcao_jas-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
   qmc_short.in.xml
   1
@@ -20,7 +20,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  short-diamondC_1x1x1_pp-vmcbatch_gaussian_sdj
+  short-diamondC_1x1x1_pp-sd_lcao_jas-vmcbatch
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
   qmc_short_vmcbatch.in.xml
   1
@@ -37,7 +37,7 @@ qmc_run_and_check(
 list(APPEND LONG_DIAMOND_SCALARS "totenergy" "-10.495941 0.0017")
 list(APPEND LONG_DIAMOND_SCALARS "samples" "160000 0.0")
 qmc_run_and_check(
-  long-diamondC_1x1x1_pp-vmc_gaussian_sdj
+  long-diamondC_1x1x1_pp-sd_lcao_jas-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
   qmc_long.in.xml
   1
@@ -48,7 +48,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  long-diamondC_1x1x1_pp-vmcbatch_gaussian_sdj
+  long-diamondC_1x1x1_pp-sd_lcao_jas-vmcbatch
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
   qmc_long_vmcbatch.in.xml
   1
@@ -62,7 +62,7 @@ qmc_run_and_check(
 list(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-10.532497 0.006127")
 
 qmc_run_and_check(
-  long-diamondC_1x1x1_pp-dmc_gaussian_sdj
+  long-diamondC_1x1x1_pp-sd_lcao_jas-dmc
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
   qmc_long_vmc_dmc.in.xml
   1
@@ -73,7 +73,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  long-diamondC_1x1x1_pp-dmcbatch_gaussian_sdj
+  long-diamondC_1x1x1_pp-sd_lcao_jas-dmcbatch
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
   qmc_long_vmcbatch_dmcbatch.in.xml
   1
@@ -105,7 +105,7 @@ else()
 endif()
 
 qmc_run_and_check(
-  deterministic-diamondC_1x1x1_pp-vmc_gaussian_sdj
+  deterministic-diamondC_1x1x1_pp-sd_lcao_jas-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
   det_qmc.in.xml
   1
@@ -136,7 +136,7 @@ else()
 endif()
 
 qmc_run_and_check(
-  deterministic-diamondC_1x1x1_pp-vmcbatch_gaussian_sdj
+  deterministic-diamondC_1x1x1_pp-sd_lcao_jas-vmcbatch
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
   det_qmc_vmcbatch.in.xml
   1

@@ -7,7 +7,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND H4_MSD_OPT_ORB_SCALARS "totenergy" "-2.160310 0.001") # total energy
 
   qmc_run_and_check(
-    short-H4-msd-opt_orb
+    short-H4-msd_lcao-opt_orb
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_msd_ae"
     H4_msd_opt_orb.xml
     16
@@ -17,7 +17,7 @@ if(NOT QMC_COMPLEX)
     H4_MSD_OPT_ORB_SCALARS # OPT step 4
   )
   qmc_run_and_check(
-    short-H4-msd-optbatch_orb
+    short-H4-msd_lcao-optbatch_orb
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_msd_ae"
     H4_msd_optbatch_orb.xml
     16

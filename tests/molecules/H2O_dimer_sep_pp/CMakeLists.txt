@@ -6,7 +6,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND H2OS2_DMCLA_SCALARS "nonlocalecp" "3.7922 0.012") # non local ecp
 
   qmc_run_and_check(
-    short-H2O_dimer_sep_pp-j3_dmc_la
+    short-H2O_dimer_sep_pp-sd_lcao_j3-dmc_la
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     short-H2O-LA.xml
     1
@@ -16,7 +16,7 @@ if(NOT QMC_COMPLEX)
     H2OS2_DMCLA_SCALARS)
 
   qmc_run_and_check(
-    short-H2O_dimer_sep_pp-j3_dmcbatch_la
+    short-H2O_dimer_sep_pp-sd_lcao_j3-dmcbatch_la
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     short-H2O-LA-batch.xml
     1
@@ -29,7 +29,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND H2OS2_DMCTM0_SCALARS "nonlocalecp" "3.339723 0.012") # non local ecp
 
   qmc_run_and_check(
-    short-H2O_dimer_sep_pp-j3_dmc_tm0
+    short-H2O_dimer_sep_pp-sd_lcao_j3-dmc_tm0
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     short-H2O-TM0.xml
     1
@@ -39,7 +39,7 @@ if(NOT QMC_COMPLEX)
     H2OS2_DMCTM0_SCALARS)
 
   qmc_run_and_check(
-    short-H2O_dimer_sep_pp-j3_dmcbatch_tm0
+    short-H2O_dimer_sep_pp-sd_lcao_j3-dmcbatch_tm0
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     short-H2O-TM0-batch.xml
     1
@@ -52,7 +52,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND H2OS2_DMCTM1_SCALARS "nonlocalecp" "3.177908 0.012") # non local ecp
 
   qmc_run_and_check(
-    short-H2O_dimer_sep_pp-j3_dmc_tm1
+    short-H2O_dimer_sep_pp-sd_lcao_j3-dmc_tm1
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     short-H2O-TM1.xml
     1
@@ -62,7 +62,7 @@ if(NOT QMC_COMPLEX)
     H2OS2_DMCTM1_SCALARS)
 
   qmc_run_and_check(
-    short-H2O_dimer_sep_pp-j3_dmcbatch_tm1
+    short-H2O_dimer_sep_pp-sd_lcao_j3-dmcbatch_tm1
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     short-H2O-TM1-batch.xml
     1
@@ -75,7 +75,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND H2OS2_DMCTM3_SCALARS "nonlocalecp" "3.174425 0.018") # non local ecp
 
   qmc_run_and_check(
-    short-H2O_dimer_sep_pp-j3_dmc_tm3
+    short-H2O_dimer_sep_pp-sd_lcao_j3-dmc_tm3
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     short-H2O-TM3.xml
     1
@@ -85,7 +85,7 @@ if(NOT QMC_COMPLEX)
     H2OS2_DMCTM3_SCALARS)
 
   qmc_run_and_check(
-    short-H2O_dimer_sep_pp-j3_dmcbatch_tm3
+    short-H2O_dimer_sep_pp-sd_lcao_j3-dmcbatch_tm3
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     short-H2O-TM3-batch.xml
     1
@@ -99,7 +99,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LONG_H2OS2_DMCLA_SCALARS "nonlocalecp" "3.7922 0.0045") # non local ecp
 
   qmc_run_and_check(
-    long-H2O_dimer_sep_pp-j3_dmc_la
+    long-H2O_dimer_sep_pp-sd_lcao_j3-dmc_la
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     long-H2O-LA.xml
     1
@@ -109,7 +109,7 @@ if(NOT QMC_COMPLEX)
     LONG_H2OS2_DMCLA_SCALARS)
 
   qmc_run_and_check(
-    long-H2O_dimer_sep_pp-j3_dmcbatch_la
+    long-H2O_dimer_sep_pp-sd_lcao_j3-dmcbatch_la
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     long-H2O-LA-batch.xml
     1
@@ -122,7 +122,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LONG_H2OS2_DMCTM0_SCALARS "nonlocalecp" "3.339723 0.0045") # non local ecp
 
   qmc_run_and_check(
-    long-H2O_dimer_sep_pp-j3_dmc_tm0
+    long-H2O_dimer_sep_pp-sd_lcao_j3-dmc_tm0
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     long-H2O-TM0.xml
     1
@@ -132,7 +132,7 @@ if(NOT QMC_COMPLEX)
     LONG_H2OS2_DMCTM0_SCALARS)
 
   qmc_run_and_check(
-    long-H2O_dimer_sep_pp-j3_dmcbatch_tm0
+    long-H2O_dimer_sep_pp-sd_lcao_j3-dmcbatch_tm0
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     long-H2O-TM0-batch.xml
     1
@@ -145,7 +145,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LONG_H2OS2_DMCTM1_SCALARS "nonlocalecp" "3.177908 0.0045") # non local ecp
 
   qmc_run_and_check(
-    long-H2O_dimer_sep_pp-j3_dmc_tm1
+    long-H2O_dimer_sep_pp-sd_lcao_j3-dmc_tm1
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     long-H2O-TM1.xml
     1
@@ -155,7 +155,7 @@ if(NOT QMC_COMPLEX)
     LONG_H2OS2_DMCTM1_SCALARS)
 
   qmc_run_and_check(
-    long-H2O_dimer_sep_pp-j3_dmcbatch_tm1
+    long-H2O_dimer_sep_pp-sd_lcao_j3-dmcbatch_tm1
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     long-H2O-TM1-batch.xml
     1
@@ -168,7 +168,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LONG_H2OS2_DMCTM3_SCALARS "nonlocalecp" "3.174425 0.0045") # non local ecp
 
   qmc_run_and_check(
-    long-H2O_dimer_sep_pp-j3_dmc_tm3
+    long-H2O_dimer_sep_pp-sd_lcao_j3-dmc_tm3
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     long-H2O-TM3.xml
     1
@@ -178,7 +178,7 @@ if(NOT QMC_COMPLEX)
     LONG_H2OS2_DMCTM3_SCALARS)
 
   qmc_run_and_check(
-    long-H2O_dimer_sep_pp-j3_dmcbatch_tm3
+    long-H2O_dimer_sep_pp-sd_lcao_j3-dmcbatch_tm3
     "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
     long-H2O-TM3-batch.xml
     1

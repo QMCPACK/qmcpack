@@ -14,7 +14,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LIH_UHF_SHORT "eeenergy" "3.488827 0.00089") # e-e energy
   list(APPEND LIH_UHF_SHORT "samples" "9600000 0.0") # samples
   qmc_run_and_check(
-    short-LiH_ae_uhf_pyscf-vmc_hf_noj
+    short-LiH_ae-sd_lcao_uhf_pyscf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_pyscf_uhf"
     vmc_short_noj.in.xml
     1
@@ -29,7 +29,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LIH_UHF_LONG "eeenergy" "3.488827 0.00033") # e-e energy
   list(APPEND LIH_UHF_LONG "samples" "96000000 0.0") # samples
   qmc_run_and_check(
-    long-LiH_ae_uhf_pyscf-vmc_hf_noj
+    long-LiH_ae-sd_lcao_uhf_pyscf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_pyscf_uhf"
     vmc_long_noj.in.xml
     1

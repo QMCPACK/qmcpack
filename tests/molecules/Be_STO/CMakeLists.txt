@@ -8,7 +8,7 @@ if(NOT QMC_COMPLEX)
 
   qmc_run_and_check_custom_scalar(
     BASE_NAME
-    short-Be_STO-vmc
+    short-Be_STO-sd_lcao_hf_noj-vmc
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/Be_STO"
     INPUT_FILE
@@ -24,7 +24,7 @@ if(NOT QMC_COMPLEX)
 
   qmc_run_and_check_custom_scalar(
     BASE_NAME
-    short-Be_STO-vmc-nodrift
+    short-Be_STO-sd_lcao_hf_noj-vmc_nodrift
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/Be_STO"
     INPUT_FILE
@@ -40,7 +40,7 @@ if(NOT QMC_COMPLEX)
 
   qmc_run_and_check_custom_scalar(
     BASE_NAME
-    short-Be_STO-vmc-legacy
+    short-Be_STO-sd_lcao_hf_noj-vmc_legacy
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/Be_STO"
     INPUT_FILE
@@ -62,7 +62,7 @@ if(NOT QMC_COMPLEX)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-Be_STO-optbatch_orb
+      short-Be_STO-sd_lcao_jas-optbatch_orb
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/Be_STO"
       INPUT_FILE

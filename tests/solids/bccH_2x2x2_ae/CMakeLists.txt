@@ -7,25 +7,25 @@ if(NOT MIXED_PRECISION)
   endif()
 
   simple_run_and_check(
-    BASE_NAME short-bccH_2x2x2_ae-grad_lap
+    BASE_NAME short-bccH_2x2x2_ae-sd_jas-grad_lap
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
     INPUT_FILE grad_lap.xml
     CHECK_SCRIPT check_grad_lap.py)
 
   simple_run_and_check(
-    BASE_NAME short-bccH_2x2x2_ae-deriv
+    BASE_NAME short-bccH_2x2x2_ae-sd_jas-deriv
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
     INPUT_FILE deriv.xml
     CHECK_SCRIPT check_deriv.py)
 
   simple_run_and_check(
-    BASE_NAME short-bccH_2x2x2_ae-gamma-deriv
+    BASE_NAME short-bccH_2x2x2_ae_gamma-sd_jas-deriv
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
     INPUT_FILE gamma_deriv.xml
     CHECK_SCRIPT check_deriv.py)
 
   simple_run_and_check(
-    BASE_NAME deterministic-bccH_2x2x2_ae_bf-opt
+    BASE_NAME deterministic-bccH_2x2x2_ae-sd_bf_jas-opt
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
     INPUT_FILE det_qmc-bf-opt.in.xml
     CHECK_SCRIPT check_opt.py
@@ -39,7 +39,7 @@ if(NOT MIXED_PRECISION)
   list(APPEND SHORT_BCCH_SCALARS "samples" "64000 0.000000")
 
   qmc_run_and_check(
-    short-bccH_2x2x2_ae-vmc_bf
+    short-bccH_2x2x2_ae-sd_bf_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
     qmc-short-bf.in.xml
     1
@@ -50,7 +50,7 @@ if(NOT MIXED_PRECISION)
   )
 
   qmc_run_and_check(
-    short-bccH_2x2x2_ae-vmcbatch_bf
+    short-bccH_2x2x2_ae-sd_bf_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
     qmc-short-bf-batch.in.xml
     1
@@ -61,7 +61,7 @@ if(NOT MIXED_PRECISION)
   )
 
   qmc_run_and_check(
-    short-bccH_2x2x2_ae-vmcbatch_bf-pw
+    short-bccH_2x2x2_ae-sd_pw_bf_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
     qmc-short-bf-pw-batch.in.xml
     1
@@ -88,7 +88,7 @@ if(NOT MIXED_PRECISION)
   endif()
 
   qmc_run_and_check(
-    deterministic-bccH_2x2x2_ae-vmc_bf
+    deterministic-bccH_2x2x2_ae-sd_bf_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
     det_qmc-bf-opt.in.xml
     1
@@ -100,7 +100,7 @@ if(NOT MIXED_PRECISION)
 
   # Batched backflow is supported by the batched optimization and VMC drivers.
   qmc_run_and_check(
-    deterministic-bccH_2x2x2_ae-vmc_bf-batched
+    deterministic-bccH_2x2x2_ae-sd_bf_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
     det_qmc-bf-optbatch.in.xml
     1

@@ -321,10 +321,10 @@ else()
     atomO
     QE_TEST_NAME)
 
-  softlink_h5(${QE_TEST_NAME} atomO_pp-vmc_sdj-r1-t16 atomO atomO.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} atomO_pp-sdj-vmc-r1-t16 atomO atomO.pwscf.h5 LAST_TEST_NAME)
 
   qmc_run_and_check(
-    ${QE_TEST_NAME}-atomO_pp-vmc_sdj
+    ${QE_TEST_NAME}-atomO_pp-sdj-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/atomO_pp"
     qmc_short.in.xml
     1
@@ -334,7 +334,7 @@ else()
     O_ATOM_SCALARS # VMC
   )
 
-  set_tests_properties(${QE_TEST_NAME}-atomO_pp-vmc_sdj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  set_tests_properties(${QE_TEST_NAME}-atomO_pp-sdj-vmc-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
   # pw2casino Kinetic 11.64963538
   # measured   Kinetic 11.64798 +/- 0.00017

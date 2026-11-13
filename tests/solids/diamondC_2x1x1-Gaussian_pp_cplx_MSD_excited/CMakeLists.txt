@@ -69,7 +69,7 @@ if(QMC_COMPLEX)
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "ionion" "-25.55132719 0.000002")
 
   qmc_run_and_check(
-    short-diamondC_2x1x1-Gaussian_pp_cplx_ground_MSD
+    short-diamondC_2x1x1_ground_pp-msd_lcao_hf_noj_cplx-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"
     vmc_short_ground_noj.in.xml
     1
@@ -90,7 +90,7 @@ if(QMC_COMPLEX)
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_LONG_SCALARS "ionion" "-25.55132719 0.000002")
 
   qmc_run_and_check(
-    long-diamondC_2x1x1-Gaussian_pp_cplx_ground_MSD
+    long-diamondC_2x1x1_ground_pp-msd_lcao_hf_noj_cplx-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"
     vmc_long_ground_noj.in.xml
     1
@@ -111,7 +111,7 @@ if(QMC_COMPLEX)
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_LONG_SCALARS "ionion" "-25.55132719 0.000002")
 
   qmc_run_and_check(
-    long-diamondC_2x1x1-Gaussian_pp_cplx_excited_MSD
+    long-diamondC_2x1x1_excited_pp-msd_lcao_hf_noj_cplx-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"
     vmc_long_excited_noj.in.xml
     1
@@ -132,7 +132,7 @@ if(QMC_COMPLEX)
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "ionion" "-25.55132719 0.000002")
 
   qmc_run_and_check(
-    short-diamondC_2x1x1-Gaussian_pp_cplx_excited_MSD
+    short-diamondC_2x1x1_excited_pp-msd_lcao_hf_noj_cplx-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"
     vmc_short_excited_noj.in.xml
     1

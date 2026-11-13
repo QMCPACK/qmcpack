@@ -14,7 +14,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND CHN_SHORT "eeenergy" "55.2876 0.06") # e-e energy
   list(APPEND CHN_SHORT "samples" "160000 0.0") # samples
   qmc_run_and_check(
-    short-chn_ae_cuspCorrection-vmc
+    short-chn_ae-sd_lcao_cuspCorrection_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/CHN_ae"
     vmc_short.in.xml
     1
@@ -25,7 +25,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-chn_ae_cuspCorrection-vmcbatch
+    short-chn_ae-sd_lcao_cuspCorrection_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/CHN_ae"
     vmcbatch_short.in.xml
     1

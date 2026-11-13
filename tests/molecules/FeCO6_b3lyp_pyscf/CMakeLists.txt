@@ -13,7 +13,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND FeCO6_PYSCF_SHORT "totenergy" "-250.43499 0.035") # total energy
   list(APPEND FeCO6_PYSCF_SHORT "samples" "48000 0.0") # samples
   qmc_run_and_check(
-    short-FeCO6_pyscf-vmc_noj
+    short-FeCO6-sd_lcao_hf_pyscf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
     vmc_short_noj.in.xml
     1
@@ -24,7 +24,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-FeCO6_pyscf-vmcbatch_noj
+    short-FeCO6-sd_lcao_hf_pyscf_noj-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
     vmcbatch_short_noj.in.xml
     1
@@ -39,7 +39,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND FeCO6_PYSCF_LONG "totenergy" "-250.43499 0.011") # total energy
   list(APPEND FeCO6_PYSCF_LONG "samples" "480000 0.0") # samples
   qmc_run_and_check(
-    long-FeCO6_pyscf-vmc_noj
+    long-FeCO6-sd_lcao_hf_pyscf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
     vmc_long_noj.in.xml
     1
@@ -50,7 +50,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    long-FeCO6_pyscf-vmcbatch_noj
+    long-FeCO6-sd_lcao_hf_pyscf_noj-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
     vmcbatch_long_noj.in.xml
     1
@@ -81,7 +81,7 @@ if(NOT QMC_COMPLEX)
   endif()
 
   qmc_run_and_check(
-    deterministic-FeCO6_pyscf-vmc_noj
+    deterministic-FeCO6-sd_lcao_hf_pyscf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
     det_vmc_noj.in.xml
     1
@@ -112,7 +112,7 @@ if(NOT QMC_COMPLEX)
   endif()
 
   qmc_run_and_check(
-    deterministic-FeCO6_pyscf-vmcbatch_noj
+    deterministic-FeCO6-sd_lcao_hf_pyscf_noj-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
     det_vmcbatch_noj.in.xml
     1
