@@ -339,7 +339,7 @@ MPC::Return_t MPC::evalLR(ParticleSet& P) const
   double val;
   for (int i = 0; i < NParticles; i++)
   {
-    PosType u = P.getLattice().toUnit_floor(P.R[i]);
+    const auto u = P.getLattice().toUnit_floor(P.R[i]);
     eval_UBspline_3d_d(VlongSpline.get(), u[0], u[1], u[2], &val);
     LR += val;
   }
