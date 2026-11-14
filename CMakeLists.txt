@@ -19,7 +19,7 @@ endif()
 project(
   qmcpack
   VERSION 4.4.9
-  LANGUAGES C CXX)
+  LANGUAGES CXX)
 
 #--------------------------------------------------------------------
 # Directory where customize cmake files reside
@@ -253,11 +253,6 @@ else(CMAKE_TOOLCHAIN_FILE)
   TestCXXMainCompiles("After_Customization")
 endif(CMAKE_TOOLCHAIN_FILE)
 
-if(NOT CMAKE_CXX_COMPILER_ID STREQUAL CMAKE_C_COMPILER_ID)
-  message(FATAL_ERROR "Mixing C and C++ compilers from different vendors is not permitted. Current "
-                      "C compiler is ${CMAKE_C_COMPILER_ID} but C++ compiler is ${CMAKE_CXX_COMPILER_ID}.")
-endif()
-
 #-----------------------------------------------------------------------
 # SETUP SANITIZERS FLAGS
 #-----------------------------------------------------------------------
@@ -451,7 +446,7 @@ if(QMC_MPI)
     set(MPI_WARNING_LIST
         "Building MPI version without using MPI compiler wrappers.\n"
         "This may not build qmcpack correctly. To ensure the correct version, specify the compiler wrappers to cmake.\n"
-        "For example: cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpic++\n"
+        "For example: cmake -DCMAKE_CXX_COMPILER=mpic++\n"
         "To build without MPI, pass '-DQMC_MPI=OFF' to cmake")
     message(WARNING ${MPI_WARNING_LIST})
   endif()
@@ -474,8 +469,8 @@ endif(QMC_MPI)
 #-------------------------------------------------------------------
 # check OS related libraries
 #-------------------------------------------------------------------
-include(CheckFunctionExists)
-check_function_exists(posix_memalign HAVE_POSIX_MEMALIGN)
+include(CheckCXXSymbolExists)
+check_cxx_symbol_exists(posix_memalign "cstdlib" HAVE_POSIX_MEMALIGN)
 
 #-------------------------------------------------------------------
 # Check LAPACK/BLAS
@@ -946,12 +941,12 @@ install(FILES ${qmcpack_BINARY_DIR}/bin/qmcpack.settings DESTINATION bin)
 #this might be redundant but maybe not in all CMake versions.
 string(TOUPPER "${CMAKE_BUILD_TYPE}" THIS_CONFIG)
 
-foreach(lang IN ITEMS C CXX)
+foreach(lang IN ITEMS CXX)
   set(PROJECT_CMAKE_${lang}_FLAGS ${CMAKE_${lang}_FLAGS})
   #pre 3.0 cmake does not have string CONCAT
   set(TMP_PROJECT_CMAKE_${lang}_FLAGS "${PROJECT_CMAKE_${lang}_FLAGS} ${CMAKE_${lang}_FLAGS_${THIS_CONFIG}}")
   message("Project ${lang}_FLAGS: ${TMP_PROJECT_CMAKE_${lang}_FLAGS}")
-endforeach(lang IN ITEMS C CXX)
+endforeach(lang IN ITEMS CXX)
 
 get_directory_property(TMP_PROJECT_INCLUDE_DIRECTORIES INCLUDE_DIRECTORIES)
 message("Project INCLUDE_DIRECTORIES: ${TMP_PROJECT_INCLUDE_DIRECTORIES}")
