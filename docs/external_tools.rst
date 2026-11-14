@@ -110,7 +110,7 @@ from CMake, which the Understand project importer can read directly:
 
    ::
 
-      cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+      cmake -DCMAKE_CXX_COMPILER=clang++
       -DQMC_MPI=0 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../qmcpack/
 
 #. Run Understand and create a new C++ project. At the import files
