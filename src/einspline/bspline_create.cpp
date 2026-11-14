@@ -5,17 +5,9 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include "bspline_create.h"
-#ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 600
-#endif
-#ifndef __USE_XOPEN2K
-  #define __USE_XOPEN2K
-#endif
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-
-int posix_memalign(void **memptr, size_t alignment, size_t size);
+#include <cstdlib>
+#include <cstdio>
+#include <cstdint>
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
@@ -205,8 +197,8 @@ find_coefs_1d_d (Ugrid grid, BCtype_d bc,
   double basis[4] = {1.0/6.0, 2.0/3.0, 1.0/6.0, 0.0};
   if (bc.lCode == PERIODIC || bc.lCode == ANTIPERIODIC)
   {
-    double *bands = (double*)malloc (4*M*sizeof(double));
-    double* lastCol = (double*) malloc(M*sizeof(double));
+    double *bands = static_cast<double*>(std::malloc (4*M*sizeof(double)));
+    double* lastCol = static_cast<double*>(std::malloc(M*sizeof(double)));
 
     for (int i=0; i<M; i++) {
       bands[4*i+0] = basis[0];
@@ -220,12 +212,12 @@ find_coefs_1d_d (Ugrid grid, BCtype_d bc,
     else
       solve_periodic_interp_1d_d (bands, coefs, lastCol, M, cstride);
 
-    free (bands);
-    free (lastCol);
+    std::free (bands);
+    std::free (lastCol);
   }
   else {
     // Setup boundary conditions
-    double abcd_left[4], abcd_right[4];
+    double abcd_left[4]{}, abcd_right[4]{};
     // Left boundary
     if (bc.lCode == FLAT || bc.lCode == NATURAL)
       bc.lVal = 0.0;
@@ -258,7 +250,7 @@ find_coefs_1d_d (Ugrid grid, BCtype_d bc,
       abcd_right[3] = bc.rVal;
     }
 
-    double *bands = malloc ((M+2)*4*sizeof(double));
+    double *bands = static_cast<double*>(std::malloc ((M+2)*4*sizeof(double)));
 
     for (int i=0; i<4; i++) {
       bands[4*( 0 )+i] = abcd_left[i];
@@ -272,7 +264,7 @@ find_coefs_1d_d (Ugrid grid, BCtype_d bc,
     // Now, solve for coefficients
     solve_deriv_interp_1d_d (bands, coefs, M, cstride);
 
-    free (bands);
+    std::free (bands);
   }
 }
 
@@ -282,7 +274,7 @@ UBspline_1d_d*
 create_UBspline_1d_d (Ugrid x_grid, BCtype_d xBC, double *data)
 {
   // Create new spline
-  UBspline_1d_d* restrict spline = malloc (sizeof(UBspline_1d_d));
+  UBspline_1d_d* restrict spline = static_cast<UBspline_1d_d*>(std::malloc (sizeof(UBspline_1d_d)));
   spline->spcode = U1D;
   spline->tcode  = DOUBLE_REAL;
   spline->xBC = xBC; 
@@ -304,11 +296,14 @@ create_UBspline_1d_d (Ugrid x_grid, BCtype_d xBC, double *data)
   spline->x_grid   = x_grid;
 
 #ifndef HAVE_SSE2
-  spline->coefs = malloc (sizeof(double)*N);
+  spline->coefs = static_cast<double*>(std::malloc (sizeof(double)*N));
 #else
-  posix_memalign ((void**)&spline->coefs, 16, sizeof(double)*N);
+  void* coefs_ptr = nullptr;
+  if (posix_memalign (&coefs_ptr, 16, sizeof(double)*N) != 0)
+    coefs_ptr = nullptr;
+  spline->coefs = static_cast<double*>(coefs_ptr);
 #endif
-  if(data != NULL) // only data is provided
+  if(data != nullptr) // only data is provided
     find_coefs_1d_d (spline->x_grid, xBC, data, 1, spline->coefs, 1);
     
   init_sse_data();
@@ -323,7 +318,7 @@ create_UBspline_3d_d (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
 		      double *data)
 {
   // Create new spline
-  UBspline_3d_d* restrict spline = malloc (sizeof(UBspline_3d_d));
+  UBspline_3d_d* restrict spline = static_cast<UBspline_3d_d*>(std::malloc (sizeof(UBspline_3d_d)));
   spline->spcode = U3D;
   spline->tcode  = DOUBLE_REAL;
   spline->xBC = xBC; 
@@ -358,12 +353,15 @@ create_UBspline_3d_d (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
   spline->coefs_size=(size_t)Nx*(size_t)Ny*(size_t)Nz;
 
 #ifndef HAVE_SSE2
-  spline->coefs      = malloc (sizeof(double)*spline->coefs_size);
+  spline->coefs      = static_cast<double*>(std::malloc (sizeof(double)*spline->coefs_size));
 #else
-  posix_memalign ((void**)&spline->coefs, 16, (sizeof(double)*spline->coefs_size)); 
+  void* coefs_ptr = nullptr;
+  if (posix_memalign (&coefs_ptr, 16, (sizeof(double)*spline->coefs_size)) != 0)
+    coefs_ptr = nullptr;
+  spline->coefs = static_cast<double*>(coefs_ptr);
 #endif
 
-  if(data != NULL) // only data is provided
+  if(data != nullptr) // only data is provided
   {
   // First, solve in the X-direction 
 #pragma omp parallel for
@@ -455,8 +453,8 @@ recompute_UBspline_3d_d (UBspline_3d_d* spline, double *data)
 void
 destroy_UBspline (Bspline *spline)
 {
-  free (spline->coefs);
-  free (spline);
+  std::free (spline->coefs);
+  std::free (spline);
 }
 
 void
@@ -465,15 +463,15 @@ destroy_multi_UBspline (Bspline *spline);
 void
 destroy_Bspline (void *spline)
 {
-  Bspline *sp = (Bspline *)spline;
+  Bspline *sp = static_cast<Bspline *>(spline);
   if (sp->sp_code <= U3D) 
     destroy_UBspline (sp);
   else if (sp->sp_code <= MULTI_U3D)
     destroy_multi_UBspline (sp);
   else
   {
-    fprintf (stderr, "Error in destroy_Bspline:  invalide spline code %d.\n",
+    std::fprintf (stderr, "Error in destroy_Bspline:  invalide spline code %d.\n",
 	     sp->sp_code);
-    abort();
+    std::abort();
   }
 }
