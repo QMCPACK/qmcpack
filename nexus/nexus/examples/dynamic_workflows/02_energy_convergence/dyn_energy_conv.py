@@ -73,7 +73,6 @@ def gen_qe(run_type   = 'scf',
         job        = job(cores=4),
         system     = system,
         pseudos    = ['C.BFD.upf'],
-        input_type = 'generic',
         ecutwfc    = ecutwfc,
         dynamic_id = dynamic_id,
         **extra

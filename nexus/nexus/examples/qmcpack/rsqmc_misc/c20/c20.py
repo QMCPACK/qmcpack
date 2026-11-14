@@ -48,15 +48,31 @@ scf = generate_pwscf(
     job          = job(cores=16),   # run on 16 cores
     pseudos      = ['C.BFD.upf'],   # pwscf PP file
     system       = c20,             # run c20
-    # input format selector
-    input_type   = 'scf',           # scf, nscf, relax, or generic
     # pwscf input parameters
     input_dft    = 'lda',           # dft functional
-    ecut         =  150 ,           # planewave energy cutoff (Ry)
+    ecutwfc      =  150 ,           # planewave energy cutoff (Ry)
+    ecutrho      =  600,
     conv_thr     =  1e-6,           # scf convergence threshold (Ry)
     mixing_beta  =    .7,           # charge mixing factor
     nosym        = True,            # don't use symmetry
     wf_collect   = True,            # write out orbitals
+    calculation      = 'scf',
+    occupations      = 'smearing',
+    smearing         = 'fermi-dirac',
+    degauss          = 0.0001,
+    restart_mode     = 'from_scratch',
+    tstress          = True,
+    tprnfor          = True,
+    disk_io          = 'low',
+    verbosity        = 'high',
+    ibrav            = 0,
+    electron_maxstep = 1000,
+    mixing_mode      = 'plain',
+    diagonalization  = 'david',
+    kgrid            = None,
+    kshift           = None,
+    nogamma          = True,
+    use_folded       = True,
     )
 
 # orbital conversion job for opt and dmc

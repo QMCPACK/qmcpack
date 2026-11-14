@@ -43,7 +43,6 @@ for step in range(num_steps):
         identifier   = 'scf',
         path         = f'diamond/scf_step_{step}',
         job          = job(cores=16,app='pw.x'),
-        input_type   = 'generic',
         calculation  = 'scf',
         input_dft    = 'lda',
         ecutwfc      = 200,

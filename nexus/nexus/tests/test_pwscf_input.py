@@ -384,7 +384,6 @@ def test_input(tmp_path):
         )
 
     pw = generate_pwscf_input(
-        selector         = 'generic',
         calculation      = 'scf',
         disk_io          = 'low',
         verbosity        = 'high',
@@ -426,7 +425,6 @@ def test_input(tmp_path):
     write_path = tmp_path / infile
 
     pw = generate_pwscf_input(
-        selector        = 'generic',
         calculation     = 'scf',
         restart_mode    = 'from_scratch',
         wf_collect      = True,
@@ -486,7 +484,6 @@ def test_input(tmp_path):
     # based on sample_inputs/Fe_start_ns_eig.in
     #  variant that uses direct pwscf array input
     pw = generate_pwscf_input(
-        selector        = 'generic',
         calculation     = 'scf',
         restart_mode    = 'from_scratch',
         wf_collect      = True,
@@ -549,7 +546,6 @@ def test_input(tmp_path):
     infile     = 'nexus_argon_scf.in'
     write_path = tmp_path / infile
     pw = generate_pwscf_input(
-        selector        = 'generic',
         calculation     = 'scf',
         prefix          = 'nexus_argon',
         outdir          = './nexus_test_tmp',
@@ -580,7 +576,6 @@ def test_input(tmp_path):
     infile     = 'nexus_h2_relax.in'
     write_path = tmp_path / infile
     pw = generate_pwscf_input(
-        selector        = 'generic',
         calculation     = 'relax',
         prefix          = 'nexus_h2',
         outdir          = './nexus_test_tmp',
@@ -621,7 +616,6 @@ def test_input(tmp_path):
     infile     = 'nexus_argon_bands.in'
     write_path = tmp_path / infile
     pw = generate_pwscf_input(
-        selector        = 'generic',
         calculation     = 'bands',
         prefix          = 'nexus_argon',
         outdir          = './nexus_test_tmp',
@@ -664,7 +658,6 @@ def test_input(tmp_path):
     infile     = 'nexus_hubbard_e2_e3.in'
     write_path = tmp_path / infile
     pw = generate_pwscf_input(
-        selector        = 'generic',
         calculation     = 'scf',
         prefix          = 'nexus_hubbard',
         outdir          = './nexus_test_tmp',
@@ -715,7 +708,6 @@ def test_supplemental_input_generation(tmp_path):
     #end def check_round_trip
 
     carbon = dict(
-        selector      = 'generic',
         prefix        = 'carbon',
         outdir        = './tmp',
         pseudo_dir    = './pseudo',
@@ -793,7 +785,6 @@ def test_supplemental_input_generation(tmp_path):
     check_round_trip('crystal_kpoints',crystal_kpoints)
 
     cbn = dict(
-        selector      = 'generic',
         calculation   = 'scf',
         prefix        = 'cbn',
         outdir        = './tmp',
