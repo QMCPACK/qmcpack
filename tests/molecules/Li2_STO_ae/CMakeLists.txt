@@ -11,7 +11,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LI2STOSJS_DMC_SCALARS "variance" "  0.151118  0.000312") # energy variance
 
   qmc_run_and_check(
-    short-li2_sto-sj_dmc
+    short-Li2_STO_ae-sd_lcao_jas-dmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
     Li2.STO.short.in.xml
     1
@@ -24,7 +24,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-li2_sto-sj_dmcbatch
+    short-Li2_STO_ae-sd_lcao_jas-dmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
     Li2.STO.short-batch.in.xml
     1
@@ -37,7 +37,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-li2_sto-sj_dmc
+    short-Li2_STO_ae-sd_lcao_jas-dmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
     Li2.STO.short.in.xml
     4
@@ -50,7 +50,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-li2_sto-sj_dmcbatch
+    short-Li2_STO_ae-sd_lcao_jas-dmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
     Li2.STO.short-batch.in.xml
     4
@@ -69,7 +69,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LI2STOSJL_DMC_SCALARS "variance" "  0.151118  0.000103") # energy variance
 
   qmc_run_and_check(
-    long-li2_sto-sj_dmc
+    long-Li2_STO_ae-sd_lcao_jas-dmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
     Li2.STO.long.in.xml
     1
@@ -82,7 +82,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    long-li2_sto-sj_dmcbatch
+    long-Li2_STO_ae-sd_lcao_jas-dmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
     Li2.STO.long-batch.in.xml
     1

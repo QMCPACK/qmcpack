@@ -21,7 +21,7 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_CO_L2_STD_DMC_1_1_SCALARS "samples" "1127.00000000 0.000001")
 
     qmc_run_and_check(
-      deterministic-Co_L2_std-vmc_dmc
+      deterministic-Co_L2_std-sd_lcao_jas-vmc_dmc
       "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
       det_dmc_std_diff.in.xml
       1
@@ -46,7 +46,7 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_CO_L2_STD_BATCHED_DMC_1_1_SCALARS "samples" "1139.51884547 0.000001")
 
     qmc_run_and_check(
-      deterministic-Co_L2_std-vmc_dmc-batched
+      deterministic-Co_L2_std-sd_lcao_jas-vmc_dmc_batched
       "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
       det_dmc_std_diff_batched.in.xml
       1
@@ -70,7 +70,7 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_CO_L2_L2_BATCHED_DMC_1_4_SCALARS "samples" "1257.91866872 0.000001")
 
     qmc_run_and_check(
-      deterministic-Co_L2_L2-vmc_dmc-batched
+      deterministic-Co_L2_L2-sd_lcao_jas-vmc_dmc_batched
       "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
       det_dmc_L2_diff_batched.in.xml
       1
@@ -94,7 +94,7 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_CO_L2_L2_DMC_1_1_SCALARS "samples" "1144.00000000 0.000001")
 
     qmc_run_and_check(
-      deterministic-Co_L2_L2-vmc_dmc
+      deterministic-Co_L2_L2-sd_lcao_jas-vmc_dmc
       "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
       det_dmc_L2_diff.in.xml
       1
@@ -113,7 +113,7 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_CO_L2_L2_BATCHED_DMC_1_1_SCALARS "samples" "1114.00846151 0.000001")
 
     qmc_run_and_check(
-      deterministic-Co_L2_L2-vmcbatch_dmcbatch
+      deterministic-Co_L2_L2-sd_lcao_jas-vmcbatch_dmcbatch
       "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
       det_dmcbatch_L2_diff.in.xml
       1

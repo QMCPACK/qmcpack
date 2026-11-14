@@ -10,7 +10,7 @@ if(QMC_COMPLEX)
   list(APPEND BCC_MO_VMC_SCALARS "samples" "40000 0.0")
 
   qmc_run_and_check(
-    short-bccMo_2x1x1_SOREP-vmc_sdj
+    short-bccMo_2x1x1_SOREP-sd_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
     Mo-vmc-short.in.xml
     1
@@ -28,7 +28,7 @@ if(QMC_COMPLEX)
   list(APPEND LONG_BCC_MO_VMC_SCALARS "soecp" "-0.02524410 0.000157")
   list(APPEND LONG_BCC_MO_VMC_SCALARS "samples" "1600000 0.0")
   qmc_run_and_check(
-    long-bccMo_2x1x1_SOREP-vmc_sdj
+    long-bccMo_2x1x1_SOREP-sd_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
     Mo-vmc-long.in.xml
     1
@@ -48,7 +48,7 @@ if(QMC_COMPLEX)
   list(APPEND BCC_MO_DMC_SCALARS "soecp" "-0.02551113 0.003011")
 
   qmc_run_and_check(
-    short-bccMo_2x1x1_SOREP-dmc_sdj
+    short-bccMo_2x1x1_SOREP-sd_jas-dmc
     "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
     Mo-vmc-dmc-short.in.xml
     1
@@ -61,7 +61,7 @@ if(QMC_COMPLEX)
   list(APPEND LONG_BCC_MO_DMC_SCALARS "totenergy" "-136.77956168 0.009961")
   list(APPEND LONG_BCC_MO_DMC_SCALARS "soecp" "-0.02551113 0.000476")
   qmc_run_and_check(
-    long-bccMo_2x1x1_SOREP-dmc_sdj
+    long-bccMo_2x1x1_SOREP-sd_jas-dmc
     "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
     Mo-vmc-dmc-long.in.xml
     1
@@ -85,7 +85,7 @@ if(QMC_COMPLEX)
     list(APPEND DET_BCC_MO_VMC_SCALARS "samples" "144 0.0")
 
     qmc_run_and_check(
-      deterministic-bccMo_2x1x1_SOREP-vmc_sdj
+      deterministic-bccMo_2x1x1_SOREP-sd_jas-vmc
       "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
       det_Mo-vmc.in.xml
       1
@@ -106,7 +106,7 @@ if(QMC_COMPLEX)
     list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "samples" "144 0.0")
 
     qmc_run_and_check(
-      deterministic-bccMo_2x1x1_SOREP-vmcbatch_sdj
+      deterministic-bccMo_2x1x1_SOREP-sd_jas-vmcbatch
       "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
       det_Mo-vmcbatch.in.xml
       1
@@ -126,7 +126,7 @@ if(QMC_COMPLEX)
     list(APPEND DET_BCC_MO_DMC_SCALARS "soecp" "-0.01110304 0.000001")
 
     qmc_run_and_check(
-      deterministic-bccMo_2x1x1_SOREP-dmc_sdj
+      deterministic-bccMo_2x1x1_SOREP-sd_jas-dmc
       "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
       det_Mo-vmc-dmc.in.xml
       1
@@ -146,7 +146,7 @@ if(QMC_COMPLEX)
     list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "soecp" "-0.02767779 0.000001")
 
     qmc_run_and_check(
-      deterministic-bccMo_2x1x1_SOREP-dmcbatch_sdj
+      deterministic-bccMo_2x1x1_SOREP-sd_jas-dmcbatch
       "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
       det_Mo-vmcbatch-dmcbatch.in.xml
       1

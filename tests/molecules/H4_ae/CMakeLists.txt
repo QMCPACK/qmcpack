@@ -6,7 +6,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND H4_OPT_SCALARS "totenergy" "-2.140786 0.0009") # total energy
 
   qmc_run_and_check(
-    short-H4-opt-linear
+    short-H4_ae-msd_lcao_jas-opt_linear
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-linear.xml
     16
@@ -16,7 +16,7 @@ if(NOT QMC_COMPLEX)
     H4_OPT_SCALARS # OPT step 5
   )
   qmc_run_and_check(
-    short-H4-optbatch-linear
+    short-H4_ae-msd_lcao_jas-optbatch_linear
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-batch-linear.xml
     16
@@ -28,7 +28,7 @@ if(NOT QMC_COMPLEX)
 
 
   qmc_run_and_check(
-    short-H4-opt-linear-rescale
+    short-H4_ae-msd_lcao_jas-opt_linear_rescale
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-linear-rescale.xml
     4
@@ -38,7 +38,7 @@ if(NOT QMC_COMPLEX)
     H4_OPT_SCALARS # OPT step 5
   )
   qmc_run_and_check(
-    short-H4-optbatch-linear-rescale
+    short-H4_ae-msd_lcao_jas-optbatch_linear_rescale
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-batch-linear-rescale.xml
     4
@@ -50,7 +50,7 @@ if(NOT QMC_COMPLEX)
 
 
   qmc_run_and_check(
-    short-H4-opt-linear-linemin
+    short-H4_ae-msd_lcao_jas-opt_linear_linemin
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-linear-linemin.xml
     16
@@ -60,7 +60,7 @@ if(NOT QMC_COMPLEX)
     H4_OPT_SCALARS # OPT step 5
   )
   qmc_run_and_check(
-    short-H4-optbatch-linear-linemin
+    short-H4_ae-msd_lcao_jas-optbatch_linear_linemin
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-batch-linear-linemin.xml
     16
@@ -74,7 +74,7 @@ if(NOT QMC_COMPLEX)
   if(NOT MIXED_PRECISION)
     check_python_reqs(h5py deterministic-H4-descent-vp ADD_DESCENT_VP_TESTS)
 
-    set(H4_DETERMINISTIC_BATCHED_DESCENT_TEST deterministic-H4-batched-descent-r1-t4)
+    set(H4_DETERMINISTIC_BATCHED_DESCENT_TEST deterministic-H4_ae-msd_lcao_jas-optbatch_descent_r1_t4)
     set(H4_DETERMINISTIC_BATCHED_DESCENT_TEST_ADDED FALSE)
     run_qmc_app(
       ${H4_DETERMINISTIC_BATCHED_DESCENT_TEST}
@@ -120,7 +120,7 @@ if(NOT QMC_COMPLEX)
   endif()
 
   qmc_run_and_check(
-    short-H4-opt-OneShiftOnly
+    short-H4_ae-msd_lcao_jas-opt_OneShiftOnly
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-OneShiftOnly.xml
     16
@@ -131,7 +131,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-H4-opt-OneShiftOnly
+    short-H4_ae-msd_lcao_jas-opt_OneShiftOnly
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-OneShiftOnly.xml
     1
@@ -142,7 +142,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-H4-optbatch-OneShiftOnly
+    short-H4_ae-msd_lcao_jas-optbatch_OneShiftOnly
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-batch-OneShiftOnly.xml
     1
@@ -153,7 +153,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-H4-optbatch-OneShiftOnly
+    short-H4_ae-msd_lcao_jas-optbatch_OneShiftOnly
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-batch-OneShiftOnly.xml
     2
@@ -164,7 +164,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-H4-optbatch-OneShiftOnly
+    short-H4_ae-msd_lcao_jas-optbatch_OneShiftOnly
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-batch-OneShiftOnly.xml
     3
@@ -175,7 +175,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-H4-optbatch-OneShiftOnly-general
+    short-H4_ae-msd_lcao_jas-optbatch_OneShiftOnly_general
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-batch-OneShiftOnly-general.xml
     1
@@ -187,7 +187,7 @@ if(NOT QMC_COMPLEX)
 
   list(APPEND H4_OPT_SCALARS_ONLY_JAS "totenergy" "-2.066504 0.0009") # total energy
   qmc_run_and_check(
-    short-H4-opt-OneShiftOnly-onlyjas
+    short-H4_ae-msd_lcao_jas-opt_OneShiftOnly_onlyjas
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-OneShiftOnly-onlyjas.xml
     1
@@ -197,7 +197,7 @@ if(NOT QMC_COMPLEX)
     H4_OPT_SCALARS_ONLY_JAS # OPT step 5
   )
   qmc_run_and_check(
-    short-H4-optbatch-OneShiftOnly-onlyjas
+    short-H4_ae-msd_lcao_jas-optbatch_OneShiftOnly_onlyjas
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-batch-OneShiftOnly-onlyjas.xml
     1
@@ -210,7 +210,7 @@ if(NOT QMC_COMPLEX)
 
   list(APPEND H4_OPT_SCALARS_ONLY_MSD "totenergy" "-2.138635 0.0009") # total energy
   qmc_run_and_check(
-    short-H4-opt-OneShiftOnly-onlymsd
+    short-H4_ae-msd_lcao_jas-opt_OneShiftOnly_onlymsd
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-OneShiftOnly-onlymsd.xml
     1
@@ -220,7 +220,7 @@ if(NOT QMC_COMPLEX)
     H4_OPT_SCALARS_ONLY_MSD # OPT step 5
   )
   qmc_run_and_check(
-    short-H4-optbatch-OneShiftOnly-onlymsd
+    short-H4_ae-msd_lcao_jas-optbatch_OneShiftOnly_onlymsd
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-batch-OneShiftOnly-onlymsd.xml
     1
@@ -232,7 +232,7 @@ if(NOT QMC_COMPLEX)
 
 
   qmc_run_and_check(
-    short-H4-optbatch-OneShiftOnly-multistep
+    short-H4_ae-msd_lcao_jas-optbatch_OneShiftOnly_multistep
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     optm-OneShiftOnly-multistep.xml
     1
@@ -251,7 +251,7 @@ if(NOT QMC_COMPLEX)
     FALSE)
 
   run_qmc_app(
-    deterministic-check-eigenvalue-choice
+    deterministic-H4_ae-msd_lcao_jas-opt_eigenvalue_choice
     "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
     1
     1
@@ -259,9 +259,9 @@ if(NOT QMC_COMPLEX)
     det-check-eigenvalue-choice.xml
     )
   # Check that the general eigenvalue solver was chosen. Overwrite the usual passing regular expression.
-  set_property(TEST deterministic-check-eigenvalue-choice PROPERTY PASS_REGULAR_EXPRESSION "Using generalized eigenvalue solver")
+  set_property(TEST deterministic-H4_ae-msd_lcao_jas-opt_eigenvalue_choice PROPERTY PASS_REGULAR_EXPRESSION "Using generalized eigenvalue solver")
   if (NOT ${SUCCESS_STATUS_MP})
-    set_property(TEST deterministic-check-eigenvalue-choice PROPERTY WILL_FAIL TRUE)
+    set_property(TEST deterministic-H4_ae-msd_lcao_jas-opt_eigenvalue_choice PROPERTY WILL_FAIL TRUE)
   endif()
 
 else()

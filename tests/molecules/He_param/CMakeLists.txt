@@ -7,7 +7,7 @@ if(NOT QMC_MIXED_PRECISION)
 
   qmc_run_and_check_custom_scalar(
     BASE_NAME
-    short-He_param_grad
+    short-He_ae-sd_lcao_jas-param_grad
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
     INPUT_FILE
@@ -24,7 +24,7 @@ if(NOT QMC_MIXED_PRECISION)
   # Check the parameter gradient code for the legacy driver
   qmc_run_and_check_custom_scalar(
     BASE_NAME
-    short-He_param_grad_legacy_driver
+    short-He_ae-sd_lcao_jas-param_grad_legacy_driver
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
     INPUT_FILE
@@ -83,7 +83,7 @@ if(NOT QMC_MIXED_PRECISION)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-He_orb_rot_param_grad_legacy
+      short-He_ae-sd_lcao_jas-param_grad_orb_rot_legacy
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
       INPUT_FILE
@@ -99,7 +99,7 @@ if(NOT QMC_MIXED_PRECISION)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-He_orb_rot_param_grad_legacy
+      short-He_ae-sd_lcao_jas-param_grad_orb_rot_legacy
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
       INPUT_FILE
@@ -115,7 +115,7 @@ if(NOT QMC_MIXED_PRECISION)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-He_orb_rot_param_grad_batch
+      short-He_ae-sd_lcao_jas-param_grad_orb_rot_batch
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
       INPUT_FILE
@@ -131,7 +131,7 @@ if(NOT QMC_MIXED_PRECISION)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-He_orb_rot_param_grad_batch
+      short-He_ae-sd_lcao_jas-param_grad_orb_rot_batch
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
       INPUT_FILE
@@ -148,7 +148,7 @@ if(NOT QMC_MIXED_PRECISION)
     list(APPEND HE_ORB_ROT_RHF_PARAM rot-spo-up_orb_rot_0000_0001_r -0.766 0.01) # scalar name, value, error
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-He_orb_rot_param_grad_rhf
+      short-He_ae-sd_lcao_rhf_jas-param_grad_orb_rot
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
       INPUT_FILE
@@ -170,7 +170,7 @@ if(NOT QMC_MIXED_PRECISION)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-He_orb_rot_jastrow_param_grad_legacy
+      short-He_ae-sd_lcao_jas-param_grad_orb_rot_jastrow_legacy
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
       INPUT_FILE
@@ -186,7 +186,7 @@ if(NOT QMC_MIXED_PRECISION)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-He_orb_rot_jastrow_param_grad_batch
+      short-He_ae-sd_lcao_jas-param_grad_orb_rot_jastrow_batch
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
       INPUT_FILE

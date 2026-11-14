@@ -16,7 +16,7 @@ else()
     list(APPEND NIO_AFM_SCALARS "Eloc" "-379.2037 0.0282")
 
     qmc_run_and_check(
-      long-NiO_afm-afqmc
+      long-NiO_afm-nomsd-afqmc
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_afqmc"
       qmc_long_afm.in.xml
       16
@@ -31,7 +31,7 @@ else()
     list(APPEND NIO_NM_SCALARS "Eloc" "-379.2024 0.0192")
 
     qmc_run_and_check(
-      long-NiO_nm-afqmc
+      long-NiO_nm-nomsd-afqmc
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_afqmc"
       qmc_long_nm.in.xml
       16

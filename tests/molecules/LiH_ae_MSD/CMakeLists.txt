@@ -10,7 +10,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "eeenergy" "3.379729221478 0.003550933783")
   list(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "ionion" "0.995380119260 0.001000000000")
   qmc_run_and_check(
-    short-LiH_ae-vmc_msdj_noj
+    short-LiH_ae-msd_lcao_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     vmc_short_noj.in.xml
     1
@@ -21,7 +21,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_ae-vmcbatch_msdj_noj
+    short-LiH_ae-msd_lcao_hf_noj-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     vmcbatch_short_noj.in.xml
     1
@@ -43,7 +43,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LiH_ae_MSD_SHORT_SCALARS "eeenergy" "3.262235428602 0.002235254233")
   list(APPEND LiH_ae_MSD_SHORT_SCALARS "ionion" "0.995380119260 0.001000000000")
   qmc_run_and_check(
-    short-LiH_ae-vmc_msdj
+    short-LiH_ae-msd_lcao_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     vmc_short.in.xml
     1
@@ -54,7 +54,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_ae-vmcbatch_msdj
+    short-LiH_ae-msd_lcao_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     vmcbatch_short.in.xml
     1
@@ -75,7 +75,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LiH_ae_MSD_OPT_CI_SHORT_SCALARS "eeenergy" "3.346222009202 0.002397327879")
   list(APPEND LiH_ae_MSD_OPT_CI_SHORT_SCALARS "ionion" "0.995380119260 0.001000000000")
   qmc_run_and_check(
-    short-LiH_ae-msdj_optCI-vmc
+    short-LiH_ae-msd_lcao_optCI_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     vmc_short_opt_CI.in.xml
     1
@@ -86,7 +86,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_ae-msdj_optCI-vmcbatch
+    short-LiH_ae-msd_lcao_optCI_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     vmcbatch_short_opt_CI.in.xml
     1
@@ -108,7 +108,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LiH_ae_MSD_SCALARS "eeenergy" "3.262235428602 0.000802865851")
   list(APPEND LiH_ae_MSD_SCALARS "ionion" "0.995380119260 0.001000000000")
   qmc_run_and_check(
-    long-LiH_ae-vmc_msdj
+    long-LiH_ae-msd_lcao_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     vmc_long.in.xml
     1
@@ -119,7 +119,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    long-LiH_ae-vmcbatch_msdj
+    long-LiH_ae-msd_lcao_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     vmcbatch_long.in.xml
     1
@@ -141,7 +141,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LiH_ae_MSD_NOJ_SCALARS "eeenergy" "3.379729221478 0.000841913994")
   list(APPEND LiH_ae_MSD_NOJ_SCALARS "ionion" "0.995380119260 0.001000000000")
   qmc_run_and_check(
-    long-LiH_ae-vmc_msdj_noj
+    long-LiH_ae-msd_lcao_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     vmc_long_noj.in.xml
     1
@@ -152,7 +152,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    long-LiH_ae-vmcbatch_msdj_noj
+    long-LiH_ae-msd_lcao_hf_noj-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     vmcbatch_long_noj.in.xml
     1
@@ -172,7 +172,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND LiH_ae_MSD_OPT_CI_SCALARS "eeenergy" "3.346222009202 0.000692976585")
   list(APPEND LiH_ae_MSD_OPT_CI_SCALARS "ionion" "0.995380119260 0.001000000000")
   qmc_run_and_check(
-    long-LiH_ae-msdj_optCI-vmc
+    long-LiH_ae-msd_lcao_optCI_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     vmc_long_opt_CI.in.xml
     1
@@ -183,7 +183,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    long-LiH_ae-msdj_optCI-vmcbatch
+    long-LiH_ae-msd_lcao_optCI_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     vmcbatch_long_opt_CI.in.xml
     1
@@ -198,7 +198,7 @@ if(NOT QMC_COMPLEX)
   # Arrange for "imbalanced" ensemble and assume will crash or hang/timeout on major error
   # Should abort if number of MPI tasks is smaller than ensemble
   simple_run_and_check(
-    BASE_NAME deterministic-ensemble_blocks_LiH_ae-vmc_msdj
+    BASE_NAME deterministic-LiH_ae-msd_lcao_jas-vmc_ensemble_blocks
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     INPUT_FILE det_ensemble_blocks_vmc_msdj.txt
     PROCS 4
@@ -207,7 +207,7 @@ if(NOT QMC_COMPLEX)
     CHECK_ARGS --ranks 4 --prefix det_ensemble_blocks_vmc_msdj --ionion 0.995380119260)
 
   simple_run_and_check(
-    BASE_NAME deterministic-ensemble_blocks_LiH_ae-vmcbatch_msdj
+    BASE_NAME deterministic-LiH_ae-msd_lcao_jas-vmcbatch_ensemble_blocks
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     INPUT_FILE det_ensemble_blocks_vmcbatch_msdj.txt
     PROCS 4
@@ -216,7 +216,7 @@ if(NOT QMC_COMPLEX)
     CHECK_ARGS --ranks 4 --prefix det_ensemble_blocks_vmc_msdj --ionion 0.995380119260)
 
   qmc_run_and_check(
-    deterministic-ensemble_blocks_LiH_ae-vmc_msdj
+    deterministic-LiH_ae-msd_lcao_jas-vmc_ensemble_blocks
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     det_ensemble_blocks_vmc_msdj.txt
     3
@@ -224,7 +224,7 @@ if(NOT QMC_COMPLEX)
     FALSE)
 
   simple_run_and_check(
-    BASE_NAME deterministic-ensemble_blocks_LiH_ae-vmc_msdj
+    BASE_NAME deterministic-LiH_ae-msd_lcao_jas-vmc_ensemble_blocks
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     INPUT_FILE det_ensemble_blocks_vmc_msdj.txt
     PROCS 5
@@ -233,7 +233,7 @@ if(NOT QMC_COMPLEX)
     CHECK_ARGS --ranks 5 --prefix det_ensemble_blocks_vmc_msdj --ionion 0.995380119260)
 
   simple_run_and_check(
-    BASE_NAME deterministic-ensemble_blocks_LiH_ae-vmcbatch_msdj
+    BASE_NAME deterministic-LiH_ae-msd_lcao_jas-vmcbatch_ensemble_blocks
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
     INPUT_FILE det_ensemble_blocks_vmcbatch_msdj.txt
     PROCS 5
@@ -247,7 +247,7 @@ if(NOT QMC_COMPLEX)
   if(add_tests)
     if(QMC_MIXED_PRECISION)
       simple_run_and_check(
-        BASE_NAME deterministic-LiH_ae_msdj_legacy-vmc-estimator-sh_coeff
+        BASE_NAME deterministic-LiH_ae-msd_lcao_jas-vmc_legacy-sh_coeff
         BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
         INPUT_FILE det_vmc_sh_legacy.in.xml
         PROCS 4
@@ -256,7 +256,7 @@ if(NOT QMC_COMPLEX)
         CHECK_ARGS -s 0 -q sh_coeff -a 2e-6 -e 0 -c 5 -p det_vmc_sh_legacy -r qmc-ref/det_vmc_sh.s000.stat_ref_sh_coeff.dat)
 
       simple_run_and_check(
-        BASE_NAME deterministic-LiH_ae_msdj_batched-vmc-estimator-sh_coeff
+        BASE_NAME deterministic-LiH_ae-msd_lcao_jas-vmc_batched-sh_coeff
         BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
         INPUT_FILE det_vmc_sh_batched.in.xml
         PROCS 4
@@ -265,7 +265,7 @@ if(NOT QMC_COMPLEX)
         CHECK_ARGS -s 0 -q sh_coeff -a 2e-6 -e 0 -c 5 -p det_vmc_sh_batched -r qmc-ref/det_vmc_sh.s000.stat_ref_sh_coeff.dat)
     else()
       simple_run_and_check(
-        BASE_NAME deterministic-LiH_ae_msdj_legacy-vmc-estimator-sh_coeff
+        BASE_NAME deterministic-LiH_ae-msd_lcao_jas-vmc_legacy-sh_coeff
         BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
         INPUT_FILE det_vmc_sh_legacy.in.xml
         PROCS 4
@@ -274,7 +274,7 @@ if(NOT QMC_COMPLEX)
         CHECK_ARGS -s 0 -q sh_coeff -a 1e-8 -e 0 -c 5 -p det_vmc_sh_legacy -r qmc-ref/det_vmc_sh.s000.stat_ref_sh_coeff.dat)
 
       simple_run_and_check(
-        BASE_NAME deterministic-LiH_ae_msdj_batched-vmc-estimator-sh_coeff
+        BASE_NAME deterministic-LiH_ae-msd_lcao_jas-vmc_batched-sh_coeff
         BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
         INPUT_FILE det_vmc_sh_batched.in.xml
         PROCS 4

@@ -44,7 +44,7 @@ if(QMC_COMPLEX)
     list(APPEND DET_HEG54J2RPA_BATCHED_SCALARS "eeenergy" "-7.32758304 0.000001")
   endif()
   qmc_run_and_check(
-    deterministic-heg_54_J2rpa
+    deterministic-heg_54-sd_jas_j2rpa-vmc
     "${qmcpack_SOURCE_DIR}/tests/heg/heg_54_J2rpa"
     det_heg.rpa.rs5.xml
     1
@@ -54,7 +54,7 @@ if(QMC_COMPLEX)
     DET_HEG54J2RPA_SCALARS)
 
   qmc_run_and_check(
-    deterministic-heg_54_J2rpa-batched
+    deterministic-heg_54-sd_jas_j2rpa-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/heg/heg_54_J2rpa"
     det_heg.rpa.rs5_batched.xml
     1

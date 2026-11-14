@@ -14,7 +14,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND O_UHF_SHORT "eeenergy" "28.483604 0.011") # e-e energy
   list(APPEND O_UHF_SHORT "samples" "9600000 0.0") # samples
   qmc_run_and_check(
-    short-O_ae_uhf_pyscf-vmc_hf_noj
+    short-O_ae-sd_lcao_uhf_pyscf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/O_ae_pyscf_UHF"
     vmc_short_noj.in.xml
     1
@@ -25,7 +25,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-O_ae_uhf_pyscf-vmcbatch_hf_noj
+    short-O_ae-sd_lcao_uhf_pyscf_noj-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/O_ae_pyscf_UHF"
     vmcbatch_short_noj.in.xml
     1
@@ -40,7 +40,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND O_UHF_LONG "eeenergy" "28.483604 0.0018") # e-e energy
   list(APPEND O_UHF_LONG "samples" "96000000 0.0") # samples
   qmc_run_and_check(
-    long-O_ae_uhf_pyscf-vmc_hf_noj
+    long-O_ae-sd_lcao_uhf_pyscf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/O_ae_pyscf_UHF"
     vmc_long_noj.in.xml
     1
@@ -51,7 +51,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    long-O_ae_uhf_pyscf-vmcbatch_hf_noj
+    long-O_ae-sd_lcao_uhf_pyscf_noj-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/O_ae_pyscf_UHF"
     vmcbatch_long_noj.in.xml
     1

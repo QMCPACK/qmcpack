@@ -10,7 +10,7 @@ list(APPEND BCC_H_SCALARS "samples" "960000 0.0")
 #  LIST(APPEND BCC_H_SCALARS "flux" "0.0 0.03")
 
 qmc_run_and_check(
-  short-bccH_1x1x1_ae-vmc_sdj
+  short-bccH_1x1x1_ae-sd_jas-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_short.in.xml
   1
@@ -27,7 +27,7 @@ list(APPEND BCC_H_DMC_SCALARS "potential" "-2.0187  0.004")
 list(APPEND BCC_H_DMC_SCALARS "kinetic" "0.1767  0.004")
 list(APPEND BCC_H_DMC_SCALARS "eeenergy" "-0.77985 0.00069")
 qmc_run_and_check(
-  short-bccH_1x1x1_ae-dmc_sdj
+  short-bccH_1x1x1_ae-sd_jas-dmc
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_short_vmc_dmc.in.xml
   1
@@ -39,7 +39,7 @@ qmc_run_and_check(
 
 # Check VMCUpdateAll driver using all-particle updates
 qmc_run_and_check(
-  short-bccH_1x1x1_ae-vmc-all-nodrift_sdj
+  short-bccH_1x1x1_ae-sd_jas-vmc_all_nodrift
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_short_vmc_all_nodrift.in.xml
   1
@@ -51,7 +51,7 @@ qmc_run_and_check(
 
 # Check VMCUpdateAllWithDrift driver using all-particle updates
 qmc_run_and_check(
-  short-bccH_1x1x1_ae-vmc-all_sdj
+  short-bccH_1x1x1_ae-sd_jas-vmc_all
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_short_vmc_all.in.xml
   1
@@ -63,7 +63,7 @@ qmc_run_and_check(
 
 # Check DMCUpdateAllWithRejection driver using all-particle updates
 qmc_run_and_check(
-  short-bccH_1x1x1_ae-dmc-all_sdj
+  short-bccH_1x1x1_ae-sd_jas-dmc_all
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_short_vmc_dmc_all.in.xml
   1
@@ -82,7 +82,7 @@ list(APPEND DET_BCC_H_CSVMC_SCALARS "ionion_B" "-0.9581655983 0.0000001")
 list(APPEND DET_BCC_H_CSVMC_SCALARS "dionion_AB" "-0.0047340219 0.0000001")
 
 qmc_run_and_check(
-  deterministic-bccH_1x1x1_ae-csvmc-all_sdj
+  deterministic-bccH_1x1x1_ae-sd_jas-csvmc_all
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   det_qmc_csvmc_all.in.xml
   1
@@ -105,7 +105,7 @@ list(APPEND BCC_H_CSVMC_SCALARS "deeenergy_AB" "-0.000603 0.00005")
 
 # Check CSVMCUpdatePbyP driver using particle-by-particle updates
 qmc_run_and_check(
-  short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj
+  short-bccH_1x1x1_ae-sd_jas-csvmc_pbyp_nodrift
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_short_csvmc_pbyp_nodrift.in.xml
   16
@@ -127,7 +127,7 @@ qmc_run_and_check(
 
 # Check CSVMCUpdateAll driver using all-particle updates
 qmc_run_and_check(
-  short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj
+  short-bccH_1x1x1_ae-sd_jas-csvmc_all_nodrift
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_short_csvmc_all_nodrift.in.xml
   16
@@ -139,7 +139,7 @@ qmc_run_and_check(
 
 # Check CSVMCUpdateAllWithDrift driver using all-particle updates
 qmc_run_and_check(
-  short-bccH_1x1x1_ae-csvmc-all_sdj
+  short-bccH_1x1x1_ae-sd_jas-csvmc_all
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_short_csvmc_all.in.xml
   16
@@ -152,7 +152,7 @@ qmc_run_and_check(
 list(APPEND BCC_H_RMC_SCALARS "totenergy" "-1.8420 0.0011")
 #check RMC on 16 cores.  1 MPI
 qmc_run_and_check(
-  short-bccH_1x1x1_ae-rmc_sdj
+  short-bccH_1x1x1_ae-sd_jas-rmc
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_short_vmc_rmc.in.xml
   1
@@ -163,7 +163,7 @@ qmc_run_and_check(
 )
 #check RMC on 4 cores, 4 mpi
 qmc_run_and_check(
-  short-bccH_1x1x1_ae-rmc_sdj
+  short-bccH_1x1x1_ae-sd_jas-rmc
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_short_vmc_rmc.in.xml
   4
@@ -183,7 +183,7 @@ list(APPEND BCC_H_PW_SCALARS "samples" "96000 0.0")
 #  LIST(APPEND BCC_H_PW_SCALARS "flux" "0.0 0.1")
 # No GPU implementation. Would be fast if implemented
 qmc_run_and_check(
-  short-bccH_1x1x1_ae-vmc_sdj-pw
+  short-bccH_1x1x1_ae-sd_pw_jas-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_short_pw.in.xml
   1
@@ -194,7 +194,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  short-bccH_1x1x1_ae-vmcbatch_sdj-pw
+  short-bccH_1x1x1_ae-sd_pw_jas-vmcbatch
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_short_batch_pw.in.xml
   1
@@ -205,7 +205,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  short-bccH_1x1x1_ae-vmcbatch_sdj-pw
+  short-bccH_1x1x1_ae-sd_pw_jas-vmcbatch
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_short_batch_pw.in.xml
   16
@@ -216,7 +216,7 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  short-bccH_1x1x1_ae-vmcbatch_sdj-pw
+  short-bccH_1x1x1_ae-sd_pw_jas-vmcbatch
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_short_batch_pw.in.xml
   4
@@ -234,7 +234,7 @@ list(APPEND LONG_BCC_H_SCALARS "totenergy" "-1.834032 0.00001")
 list(APPEND LONG_BCC_H_SCALARS "samples" "921600000 0.0")
 
 qmc_run_and_check(
-  long-bccH_1x1x1_ae-vmc_sdj
+  long-bccH_1x1x1_ae-sd_jas-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_long.in.xml
   1
@@ -248,7 +248,7 @@ qmc_run_and_check(
 # qmc_long_vmc_dmc  series 1   -1.841204 +/- 0.000285
 list(APPEND LONG_BCC_H_DMC_SCALARS "totenergy" "-1.841204 0.000285")
 qmc_run_and_check(
-  long-bccH_1x1x1_ae-dmc_sdj
+  long-bccH_1x1x1_ae-sd_jas-dmc
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_long_vmc_dmc.in.xml
   1
@@ -266,7 +266,7 @@ list(APPEND LONG_BCC_H_RMC_SCALARS "kinetic_pure" "0.17063 0.00086")
 list(APPEND LONG_BCC_H_RMC_SCALARS "eeenergy_mixed" "-0.77991 0.00016")
 list(APPEND LONG_BCC_H_RMC_SCALARS "eeenergy_pure" "-0.78335 0.00019")
 qmc_run_and_check(
-  long-bccH_1x1x1_ae-rmc_sdj
+  long-bccH_1x1x1_ae-sd_jas-rmc
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   qmc_long_vmc_rmc.in.xml
   1
