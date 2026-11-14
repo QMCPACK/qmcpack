@@ -12,8 +12,8 @@ void copy_UBspline_1d_d(multi_UBspline_1d_d* multi, int i, const UBspline_1d_d* 
 {
   for (int ix = 0; ix < N; ++ix)
   {
-    intptr_t out       = ix * multi->x_stride + i;
-    intptr_t in        = ix + offset;
+    intptr_t out      = ix * multi->x_stride + i;
+    intptr_t in       = ix + offset;
     multi->coefs[out] = single->coefs[in];
   }
 }
@@ -22,8 +22,8 @@ void copy_UBspline_1d_d_s(multi_UBspline_1d_s* multi, int i, const UBspline_1d_d
 {
   for (int ix = 0; ix < N; ++ix)
   {
-    intptr_t out       = ix * multi->x_stride + i;
-    intptr_t in        = ix + offset;
+    intptr_t out      = ix * multi->x_stride + i;
+    intptr_t in       = ix + offset;
     multi->coefs[out] = static_cast<float>(single->coefs[in]);
   }
 }
