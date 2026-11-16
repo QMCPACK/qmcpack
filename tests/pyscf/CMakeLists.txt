@@ -6,7 +6,7 @@ include("${qmcpack_SOURCE_DIR}/CMake/run_pyscf.cmake")
 set(LAST_TEST_NAME "NONE")
 set(PYSCF_TEST_NAME "NONE")
 
-run_pyscf_test(pyscf-diamond_1x1x1_pp_LCAO ${qmcpack_SOURCE_DIR}/examples/solids/pyscf-inputs diamondC_1x1x1_pp_LCAO
+run_pyscf_test(pyscf-diamond_1x1x1_pp_lcao ${qmcpack_SOURCE_DIR}/examples/solids/pyscf-inputs diamondC_1x1x1_pp_LCAO
                PYSCF_TEST_NAME)
 
 set_tests_properties(${PYSCF_TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION "successfully saved to QMCPACK HDF5")
@@ -43,15 +43,15 @@ if(${THIS_TEST_NAME})
     PROPERTY LABELS "converter")
 endif()
 
-run_pyscf_test(pyscf-diamond_1x1x1_pp_Bspline ${qmcpack_SOURCE_DIR}/examples/solids/pyscf-inputs
+run_pyscf_test(pyscf-diamond_1x1x1_pp_bspline ${qmcpack_SOURCE_DIR}/examples/solids/pyscf-inputs
                diamondC_1x1x1_pp_Bspline PYSCF_TEST_NAME)
 
 set_tests_properties(${PYSCF_TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION "successfully saved to QMCPACK HDF5")
 
-softlink_h5(${PYSCF_TEST_NAME} diamondC_1x1x1_pp-sd_spline_jas-vmc-r1-t16 C_Diamond C_Diamond-Bspline.h5
+softlink_h5(${PYSCF_TEST_NAME} diamondC_1x1x1_pp-sd_bspline_jas-vmc-r1-t16 C_Diamond C_Diamond-Bspline.h5
             LAST_TEST_NAME)
 
-set(THIS_TEST_NAME "${PYSCF_TEST_NAME}-diamondC_1x1x1_pp-sd_spline_jas-vmc")
+set(THIS_TEST_NAME "${PYSCF_TEST_NAME}-diamondC_1x1x1_pp-sd_bspline_jas-vmc")
 qmc_run_and_check(
   ${THIS_TEST_NAME}
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"

@@ -100,7 +100,7 @@ Use the regular Linux environment build instructions for QMCPACK:
 
 		  cmake -GNinja \
 		   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-		   -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
+		   -DCMAKE_CXX_COMPILER=mpicxx \
 		   -DQMC_COMPLEX=0 \
 		   ..
 
