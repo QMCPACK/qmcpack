@@ -203,11 +203,8 @@ Intel compiler
 The Intel compiler version must be 19 or newer due to use of C++17 and bugs and limitations in earlier versions.
 
 If a newer GCC is needed, the ``-cxxlib`` option can be used to point to a different
-GCC installation. (Alternately, the ``-gcc-name`` or ``-gxx-name`` options can be used.) Be sure to
-pass this flag to the C compiler in addition to the C++ compiler. This
-is necessary because CMake extracts some library paths from the C
-compiler, and those paths usually also contain to the C++ library. The
-symptom of this problem is C++ 17 standard library functions not found
+GCC installation. (Alternately, the ``-gcc-name`` or ``-gxx-name`` options can be used.) Pass this flag to the C++ compiler. This
+is necessary if the C++ 17 standard library functions are not found
 at link time.
 
 .. _cmake:
@@ -251,17 +248,17 @@ Move to the build directory, run CMake, and make
 ::
 
   cd build
-  cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc ..
+  cmake -DCMAKE_CXX_COMPILER=mpiicpc ..
   make -j 8
 
 You can increase the "8" to the number of cores on your system for
-faster builds. Substitute mpicc and mpicxx or other wrapped compiler names to suit
+faster builds. Substitute mpicxx or other wrapped compiler names to suit
 your system. For example, with OpenMPI use
 
 ::
 
   cd build
-  cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx ..
+  cmake -DCMAKE_CXX_COMPILER=mpicxx ..
   make -j 8
 
 If you are feeling particularly lucky, you can skip the compiler specification:
@@ -291,7 +288,6 @@ which in turn set environment variables. The list of supported environment varia
 ::
 
   CXX                  C++ compiler
-  CC                   C Compiler
   VendorPerfLibs_ROOT  Path for vendor optimized libraries
   HDF5_ROOT            Path for HDF5
   BOOST_ROOT           Path for Boost
@@ -339,17 +335,12 @@ the path to the source directory.
     CMAKE_BUILD_TYPE     A variable which controls the type of build
                          (defaults to Release). Possible values are:
                          None (Do not set debug/optimize flags, use
-                         CMAKE_C_FLAGS or CMAKE_CXX_FLAGS)
+                         CMAKE_CXX_FLAGS)
                          Debug (create a debug build)
                          Release (create a release/optimized build)
                          RelWithDebInfo (create a release/optimized build with debug info)
                          MinSizeRel (create an executable optimized for size)
-    CMAKE_C_COMPILER     Set the C compiler
     CMAKE_CXX_COMPILER   Set the C++ compiler
-    CMAKE_C_FLAGS        Set the C flags.  Note: to prevent default
-                         debug/release flags from being used, set the CMAKE_BUILD_TYPE=None
-                         Also supported: CMAKE_C_FLAGS_DEBUG,
-                         CMAKE_C_FLAGS_RELEASE, and CMAKE_C_FLAGS_RELWITHDEBINFO
     CMAKE_CXX_FLAGS      Set the C++ flags.  Note: to prevent default
                          debug/release flags from being used, set the CMAKE_BUILD_TYPE=None
                          Also supported: CMAKE_CXX_FLAGS_DEBUG,
@@ -539,7 +530,6 @@ Example configure and build
   ::
 
     export CXX=icpc
-    export CC=icc
     export VendorPerfLibs_ROOT=/usr/local/intel/mkl/10.0.3.020
     export HDF5_ROOT=/usr/local
     export BOOST_ROOT=/usr/local/boost
@@ -577,7 +567,6 @@ than usually needed for comprehensiveness:
 ::
 
   export CXX=mpic++
-  export CC=mpicc
   export HDF5_ROOT=/opt/hdf5
   export BOOST_ROOT=/opt/boost
 
@@ -612,7 +601,7 @@ To use Intel MKL with, e.g. an MPICH wrapped gcc:
 ::
 
   cmake \
-    -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
+    -DCMAKE_CXX_COMPILER=mpicxx \
     -DVendorPerfLibs_ROOT=YOUR_INTEL_MKL_ROOT_DIRECTORY \
     ..
 
@@ -693,7 +682,7 @@ convenience we use a generic BLAS. A vendor-optimized BLAS is usually faster.
   # For qmca and other python-based analysis tools tools:
   sudo apt-get install python3-numpy python3-scipy python3-h5py python3-matplotlib
   cd build
-  cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC ..
+  cmake -DCMAKE_CXX_COMPILER=mpiCC ..
   make -j 8 # Adjust to available core count
   ls -l bin/qmcpack
 
@@ -735,7 +724,7 @@ To build QMCPACK:
   module load mpi/openmpi-x86_64
   which mpirun # Sanity check; should print something like /usr/lib64/openmpi/bin/mpirun
   cd build
-  cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC ..
+  cmake -DCMAKE_CXX_COMPILER=mpiCC ..
   make -j 8 # Adjust to available core count
   ls -l bin/qmcpack
 
@@ -797,7 +786,7 @@ QMCPACK build:
 ::
 
   cd build
-  cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCXX \
+  cmake -DCMAKE_CXX_COMPILER=mpiCXX \
         -DPython3_EXECUTABLE=/opt/local/bin/python ..
   make -j 8 # Adjust for available core count
   ls -l bin/qmcpack
@@ -843,15 +832,13 @@ package. This was successfully tested under OS X 10.15.7 "Catalina" on October 2
     brew install fftw
     brew install boost
     brew install hdf5
-    export OMPI_CC=gcc-10
     export OMPI_CXX=g++-10
 
 3.  Configure and build QMCPACK:
 
   ::
 
-    cmake -DCMAKE_C_COMPILER=/usr/local/bin/mpicc \
-          -DCMAKE_CXX_COMPILER=/usr/local/bin/mpicxx ..
+    cmake -DCMAKE_CXX_COMPILER=/usr/local/bin/mpicxx ..
     make -j 6 # Adjust for available core count
     ls -l bin/qmcpack
 
@@ -971,7 +958,7 @@ Then using the following command:
 
   mkdir build_armclang
   cd build_armclang
-  cmake -DCMAKE_C_COMPILER=armclang -DCMAKE_CXX_COMPILER=armclang++ -DQMC_MPI=0 \
+  cmake -DCMAKE_CXX_COMPILER=armclang++ -DQMC_MPI=0 \
       -DLAPACK_LIBRARIES="-L$ARMPL_DIR/lib -larmpl_mp" \
       -DFFTW_INCLUDE_DIR="$ARMPL_DIR/include" \
       -DFFTW_LIBRARIES="$ARMPL_DIR/lib/libarmpl_mp.a" \
@@ -982,7 +969,7 @@ Note that armclang is recognized as an 'unknown' compiler by CMake v3.13* and be
 
 ::
 
-  -DCMAKE_C_COMPILER_ID=Clang -DCMAKE_CXX_COMPILER_ID=Clang \
+  -DCMAKE_CXX_COMPILER_ID=Clang \
   -DCMAKE_CXX_COMPILER_VERSION=5.0 -DCMAKE_CXX_STANDARD_COMPUTED_DEFAULT=98 \
 
 Installing on Windows
@@ -1853,7 +1840,7 @@ Some tips to help troubleshoot installations of QMCPACK:
 
   ::
 
-      cmake -DCMAKE_C_COMPILER=/full/path/to/mpicc -DCMAKE_CXX_COMPILER=/full/path/to/mpicxx ..
+      cmake -DCMAKE_CXX_COMPILER=/full/path/to/mpicxx ..
 
 - To monitor the compiler and linker settings, use a verbose build, ``make
   VERBOSE=1``. If an individual source file fails to compile you

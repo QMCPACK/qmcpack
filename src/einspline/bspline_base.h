@@ -23,7 +23,7 @@
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-typedef enum
+enum bc_code
 {
   PERIODIC,
   DERIV1,
@@ -31,52 +31,49 @@ typedef enum
   FLAT,
   NATURAL,
   ANTIPERIODIC
-} bc_code;
-typedef enum
+};
+enum spline_code
 {
   U1D,
   U3D,
   MULTI_U1D,
   MULTI_U3D
-} spline_code;
-typedef enum
+};
+enum type_code
 {
   SINGLE_REAL,
   DOUBLE_REAL
-} type_code;
+};
 
-typedef struct
+struct BCtype_s
 {
   bc_code lCode, rCode;
   float lVal, rVal;
-} BCtype_s;
+};
 
-typedef struct
+struct BCtype_d
 {
   bc_code lCode, rCode;
   double lVal, rVal;
-} BCtype_d;
+};
 
 
-typedef struct
+struct Ugrid
 {
   double start, end;
   int num;
 
   // private
   double delta, delta_inv;
-} Ugrid;
+};
 
-typedef struct
+struct Bspline
 {
   spline_code sp_code;
   type_code t_code;
   void* restrict coefs;
-} Bspline;
+};
 
-#ifdef __cplusplus
-extern "C"
-#endif
-    void destroy_Bspline(void* spline);
+void destroy_Bspline(void* spline);
 
 #endif

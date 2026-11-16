@@ -10,22 +10,13 @@
  *   SSE Data    *
 *****************/
 
-#ifdef _XOPEN_SOURCE
-#undef _XOPEN_SOURCE
-#endif 
-
-#define _XOPEN_SOURCE 600
-
-#ifndef __USE_XOPEN2K
-  #define __USE_XOPEN2K
-#endif
-#include <stdlib.h>
+#include <cstdlib>
 
 #ifdef HAVE_SSE
 #include <xmmintrin.h>
 
 // Single-precision version of matrices
-__m128 *restrict A_s = (__m128 *)0;
+__m128* restrict A_s = nullptr;
 // There is a problem with alignment of global variables in shared
 // libraries on 32-bit machines.
 // __m128  A0, A1, A2, A3, dA0, dA1, dA2, dA3, d2A0, d2A1, d2A2, d2A3;
@@ -34,7 +25,7 @@ __m128 *restrict A_s = (__m128 *)0;
 #ifdef HAVE_SSE2
 // Double-precision version of matrices
 #include <emmintrin.h>
-__m128d *restrict A_d = (__m128d *)0;
+__m128d* restrict A_d = nullptr;
 
 // There is a problem with alignment of global variables in shared
 // libraries on 32-bit machines.
@@ -46,8 +37,10 @@ __m128d *restrict A_d = (__m128d *)0;
 void init_sse_data()
 {
 #ifdef HAVE_SSE
-  if (A_s == 0) {
-    posix_memalign ((void**)&A_s, 16, (sizeof(__m128)*16));
+  if (A_s == nullptr) {
+    void* ptr = nullptr;
+    posix_memalign (&ptr, 16, sizeof(__m128)*16);
+    A_s = static_cast<__m128*>(ptr);
     A_s[0]  = _mm_setr_ps ( 1.0/6.0, -3.0/6.0,  3.0/6.0, -1.0/6.0 );	  
     A_s[1]  = _mm_setr_ps ( 4.0/6.0,  0.0/6.0, -6.0/6.0,  3.0/6.0 );	  
     A_s[2]  = _mm_setr_ps ( 1.0/6.0,  3.0/6.0,  3.0/6.0, -3.0/6.0 );	  
@@ -69,8 +62,10 @@ void init_sse_data()
                  
 #endif
 #ifdef HAVE_SSE2
-  if (A_d == 0) {
-    posix_memalign ((void**)&A_d, 16, (sizeof(__m128d)*32));
+  if (A_d == nullptr) {
+    void* ptr = nullptr;
+    posix_memalign (&ptr, 16, sizeof(__m128d)*32);
+    A_d = static_cast<__m128d*>(ptr);
     A_d[ 0] = _mm_setr_pd (  3.0/6.0, -1.0/6.0 );	   
     A_d[ 1] = _mm_setr_pd (  1.0/6.0, -3.0/6.0 );	   
     A_d[ 2] = _mm_setr_pd ( -6.0/6.0,  3.0/6.0 );	   
