@@ -13,7 +13,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND C2_PP_MSDJ_SHORT "eeenergy" "12.14369 0.0052") # e-e energy
   list(APPEND C2_PP_MSDJ_SHORT "samples" "160000 0.0") # samples
   qmc_run_and_check(
-    short-C2_pp_msdj-H5-vmc
+    short-C2_pp-msd_lcao_H5_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
     vmc_short_pp_msdj-H5.xml
     1
@@ -24,7 +24,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-C2_pp_msdj-H5-vmcbatch
+    short-C2_pp-msd_lcao_H5_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
     vmcbatch_short_pp_msdj-H5.xml
     1
@@ -35,7 +35,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-C2_pp_msdj-H5-msd_no_precompute-vmc
+    short-C2_pp-msd_lcao_H5_no_precompute_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
     vmc_short_pp_msd_no_precompute_jas-H5.xml
     1
@@ -46,7 +46,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-C2_pp_msdj-H5-msd_no_precompute-vmcbatch
+    short-C2_pp-msd_lcao_H5_no_precompute_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
     vmcbatch_short_pp_msd_no_precompute_jas-H5.xml
     1
@@ -57,7 +57,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-C2_pp_msdj-XML-vmc
+    short-C2_pp-msd_lcao_XML_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
     vmc_short_pp_msdj-XML.xml
     1
@@ -68,7 +68,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-C2_pp_msdj-XML-vmcbatch
+    short-C2_pp-msd_lcao_XML_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
     vmcbatch_short_pp_msdj-XML.xml
     1
@@ -83,7 +83,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND C2_PP_MSDJ_LONG "eeenergy" "12.14369 0.0020") # e-e energy
   list(APPEND C2_PP_MSDJ_LONG "samples" "1280000 0.0") # samples
   qmc_run_and_check(
-    long-C2_pp_msdj-H5-vmc
+    long-C2_pp-msd_lcao_H5_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
     vmc_long_pp_msdj-H5.xml
     1
@@ -94,7 +94,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    long-C2_pp_msdj-H5-vmcbatch
+    long-C2_pp-msd_lcao_H5_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
     vmcbatch_long_pp_msdj-H5.xml
     1
@@ -105,7 +105,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    long-C2_pp_msdj-XML-vmc
+    long-C2_pp-msd_lcao_XML_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
     vmc_long_pp_msdj-XML.xml
     1
@@ -116,7 +116,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    long-C2_pp_msdj-XML-vmcbatch
+    long-C2_pp-msd_lcao_XML_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
     vmcbatch_long_pp_msdj-XML.xml
     1
@@ -133,7 +133,7 @@ if(NOT QMC_COMPLEX)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      deterministic-C2_pp_msdj-H5-param-grad
+      deterministic-C2_pp-msd_lcao_H5_jas-param_grad
       BASE_DIR
       ${CMAKE_CURRENT_SOURCE_DIR}
       INPUT_FILE
