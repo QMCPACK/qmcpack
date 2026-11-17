@@ -90,6 +90,13 @@ public:
   /// Evaluate all orbital values, Cartesian gradients, and Laplacians.
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
+  /// Evaluate all orbital values, Cartesian gradients, and full Hessians at P.activeR(iat).
+  void evaluateVGH(const ParticleSet& P,
+                   int iat,
+                   ValueVector& psi,
+                   GradVector& dpsi,
+                   HessVector& grad_grad_psi) override;
+
   /** Evaluate VGL for particles in [first, last).
    * Output matrices require last-first rows and OrbitalSetSize columns.
    */

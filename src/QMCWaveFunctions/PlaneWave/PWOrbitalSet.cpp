@@ -104,6 +104,30 @@ void PWOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, 
   }
 }
 
+void PWOrbitalSet::evaluateVGH(const ParticleSet& P,
+                               int iat,
+                               ValueVector& psi,
+                               GradVector& dpsi,
+                               HessVector& grad_grad_psi)
+{
+  myBasisSet->evaluateAll(P, iat);
+  myBasisSet->evaluateHessian();
+  MatrixOperators::product(*C, myBasisSet->Z, Temp);
+  MatrixOperators::product(*C, myBasisSet->Zh, TempHess);
+
+  const ValueType* restrict value_ptr   = Temp.data();
+  const ValueType* restrict hessian_ptr = TempHess.data();
+  for (int j = 0; j < OrbitalSetSize; j++, value_ptr += PW_MAXINDEX, hessian_ptr += OHMMS_DIM * OHMMS_DIM)
+  {
+    psi[j]  = value_ptr[PW_VALUE];
+    dpsi[j] = GradType(value_ptr[PW_GRADX], value_ptr[PW_GRADY], value_ptr[PW_GRADZ]);
+
+    for (int row = 0; row < OHMMS_DIM; ++row)
+      for (int column = 0; column < OHMMS_DIM; ++column)
+        grad_grad_psi[j](row, column) = hessian_ptr[row * OHMMS_DIM + column];
+  }
+}
+
 void PWOrbitalSet::evaluate_notranspose(const ParticleSet& P,
                                         int first,
                                         int last,
