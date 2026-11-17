@@ -25,6 +25,7 @@
 
 
 #include <stdio.h>
+#include <array>
 #include <cmath>
 #include <filesystem>
 #include <limits>
@@ -974,6 +975,99 @@ TEST_CASE("PlaneWave Hessian by finite differences", "[wavefunction][plane_wave]
 
     for (int jorb = 0; jorb < norb; ++jorb)
       checkClose(hess[jorb](i, j), (dpsi_p[jorb][i] - dpsi_m[jorb][i]) / SPOSet::RealType(2 * fd_step));
+  }
+}
+
+TEST_CASE("PlaneWave third derivatives by finite differences", "[wavefunction][plane_wave]")
+{
+  LiHPlaneWaveFixture fixture(*OHMMS::Controller);
+  ParticleSet& elec = *fixture.elec;
+  SPOSet& spo       = *fixture.spo;
+  const int norb    = spo.getOrbitalSetSize();
+
+  SPOSet::ValueVector psi(norb), psi_h(norb);
+  SPOSet::GradVector dpsi(norb), dpsi_h(norb);
+  SPOSet::HessVector hess(norb), hess_h(norb);
+  SPOSet::GGGVector ggg(norb);
+  spo.evaluateVGH(elec, 0, psi_h, dpsi_h, hess_h);
+  spo.evaluateVGHGH(elec, 0, psi, dpsi, hess, ggg);
+
+  for (int jorb = 0; jorb < norb; ++jorb)
+  {
+    // VGHGH reproduces everything VGH returns.
+    checkClose(psi[jorb], psi_h[jorb]);
+    for (int d = 0; d < OHMMS_DIM; ++d)
+      checkClose(dpsi[jorb][d], dpsi_h[jorb][d]);
+    for (int row = 0; row < OHMMS_DIM; ++row)
+      for (int column = 0; column < OHMMS_DIM; ++column)
+        checkClose(hess[jorb](row, column), hess_h[jorb](row, column));
+  }
+
+  // ggg[orb][i](row, column) = d(H(row, column))/dx_i. Check pure-axis, mixed and all-different index patterns, and
+  // both placements of a repeated index so that a mis-ordered (i, row, column) layout would be caught.
+  const std::vector<std::array<int, 3>> components{{0, 0, 0}, {2, 2, 2}, {0, 0, 1}, {1, 0, 0}, {0, 1, 2}};
+  for (const auto& [i, row, column] : components)
+  {
+    const auto r0 = elec.R[0];
+    SPOSet::ValueVector psi_p(norb), psi_m(norb);
+    SPOSet::GradVector dpsi_p(norb), dpsi_m(norb);
+    SPOSet::HessVector hess_p(norb), hess_m(norb);
+
+    elec.R[0][i] = r0[i] + fd_step;
+    elec.update();
+    spo.evaluateVGH(elec, 0, psi_p, dpsi_p, hess_p);
+    elec.R[0][i] = r0[i] - fd_step;
+    elec.update();
+    spo.evaluateVGH(elec, 0, psi_m, dpsi_m, hess_m);
+    elec.R[0] = r0;
+    elec.update();
+
+    for (int jorb = 0; jorb < norb; ++jorb)
+      checkClose(ggg[jorb][i](row, column),
+                 (hess_p[jorb](row, column) - hess_m[jorb](row, column)) / SPOSet::RealType(2 * fd_step));
+  }
+
+  // The third derivative tensor is fully symmetric in its three indices.
+  for (int jorb = 0; jorb < norb; ++jorb)
+  {
+    checkClose(ggg[jorb][0](1, 2), ggg[jorb][2](1, 0));
+    checkClose(ggg[jorb][1](0, 0), ggg[jorb][0](0, 1));
+  }
+}
+
+TEST_CASE("PlaneWave batched third derivatives", "[wavefunction][plane_wave]")
+{
+  LiHPlaneWaveFixture fixture(*OHMMS::Controller);
+  ParticleSet& elec = *fixture.elec;
+  SPOSet& spo       = *fixture.spo;
+  const int norb    = spo.getOrbitalSetSize();
+  const int nptcl   = 2;
+
+  SPOSet::ValueMatrix psi_m(nptcl, norb);
+  SPOSet::GradMatrix dpsi_m(nptcl, norb);
+  SPOSet::HessMatrix hess_m(nptcl, norb);
+  SPOSet::GGGMatrix ggg_m(nptcl, norb);
+  spo.evaluate_notranspose(elec, 0, nptcl, psi_m, dpsi_m, hess_m, ggg_m);
+
+  for (int iat = 0; iat < nptcl; ++iat)
+  {
+    SPOSet::ValueVector psi(norb);
+    SPOSet::GradVector dpsi(norb);
+    SPOSet::HessVector hess(norb);
+    SPOSet::GGGVector ggg(norb);
+    spo.evaluateVGHGH(elec, iat, psi, dpsi, hess, ggg);
+
+    for (int jorb = 0; jorb < norb; ++jorb)
+    {
+      checkClose(psi_m(iat, jorb), psi[jorb]);
+      for (int i = 0; i < OHMMS_DIM; ++i)
+      {
+        checkClose(dpsi_m(iat, jorb)[i], dpsi[jorb][i]);
+        for (int row = 0; row < OHMMS_DIM; ++row)
+          for (int column = 0; column < OHMMS_DIM; ++column)
+            checkClose(ggg_m(iat, jorb)[i](row, column), ggg[jorb][i](row, column));
+      }
+    }
   }
 }
 #endif
