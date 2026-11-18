@@ -4317,6 +4317,22 @@ def generate_any_rmg_input(**kwargs):
             if 'kpoint_is_shift' in ri:
                 del ri.kpoint_is_shift
             #end if
+            # RMG reads the kpoints list only if an entry of kpoint_mesh is
+            # below 1 (with its default mesh, 1 1 1, it runs at Gamma only)
+            # and symmetry is off
+            if len(kpu)>1 or not np.allclose(kpu[0],0.0):
+                ri.assign(kpoint_mesh=(-1,-1,-1))
+                if 'use_symmetry' not in ri:
+                    ri.assign(use_symmetry=0)
+                elif ri.use_symmetry!=0:
+                    msg = (
+                        'RMG reads a list of k-points only with use_symmetry=0.\n'
+                        f'Received use_symmetry={ri.use_symmetry} with the k-points of the system.\n'
+                        'Remove use_symmetry, or set kpoint_mesh to use an RMG k-point mesh.'
+                        )
+                    raise ValueError(msg)
+                #end if
+            #end if
         #end if
 
         # set wavefunction grid
