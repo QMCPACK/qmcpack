@@ -17,12 +17,62 @@
 #include "hdf/hdf_archive.h"
 #include "Message/mpi_datatype.h"
 #include "Message/CommOperators.h"
+#include "Message/UniformCommunicateError.h"
+#include "CPU/math.hpp"
 #include "Utilities/FairDivide.h"
 
 #include <array>
+#include <algorithm>
 
 namespace qmcplusplus
 {
+namespace
+{
+/** Distinguish an old checkpoint without weights from a present but malformed weights dataset.
+ *
+ * Checks whether the `walker_weights` dataset exists in the current HDF5 group and matches
+ * the expected 1D shape with length equal to `count`.
+ *
+ * @param archive HDF5 archive whose current group contains the walker state.
+ * @param count Expected number of walkers (1D dataset size).
+ * @return  0 if the dataset does not exist (legacy checkpoint without weights).
+ *          1 if the dataset exists and matches the expected 1D shape with `count` elements.
+ *         -1 if the dataset exists but is malformed (wrong dimensionality, count mismatch, or read error).
+ */
+int walkerWeightStatus(hdf_archive& archive, size_t count)
+{
+  const auto exists = H5Lexists(archive.top(), hdf::walker_weights, H5P_DEFAULT);
+  if (exists == 0)
+    return 0;
+  std::vector<int> shape;
+  return exists > 0 && archive.getShape<QMCTraits::FullPrecRealType>(hdf::walker_weights, shape) && shape.size() == 1 &&
+          shape[0] == count
+      ? 1
+      : -1;
+}
+
+/** Validate walker weights and coordinate error handling across all MPI ranks.
+ *
+ * Checks that the dataset read succeeded on the local rank and that all walker weights
+ * are finite and non-negative. If any rank reports a failure or invalid weight, the failure
+ * is coordinated across all ranks using an MPI allreduce to uniformly throw UniformCommunicateError.
+ *
+ * @param comm Communicator used to coordinate error state across all MPI ranks.
+ * @param read_ok Boolean flag indicating if reading the weights dataset succeeded on this rank.
+ * @param weights Vector of walker weights to inspect for finite, non-negative values.
+ * @throws UniformCommunicateError if `read_ok` is false or if any weight is non-finite or negative on any rank.
+ */
+void validateWalkerWeights(Communicate& comm, bool read_ok, const std::vector<QMCTraits::FullPrecRealType>& weights)
+{
+  int invalid = !read_ok || std::any_of(weights.begin(), weights.end(), [](auto weight) {
+    return !qmcplusplus::isfinite(weight) || weight < 0;
+  });
+  comm.allreduce(invalid);
+  if (invalid)
+    throw UniformCommunicateError("HDFWalkerInput_0_4: found malformed or invalid walker_weights in dataset.");
+}
+} // namespace
+
 HDFWalkerInput_0_4::HDFWalkerInput_0_4(WalkerConfigurations& wc_list,
                                        size_t num_ptcls,
                                        Communicate& c,
@@ -155,8 +205,11 @@ bool HDFWalkerInput_0_4::read_hdf5(const std::filesystem::path& h5name)
   std::array<size_t, 3> dims{nw_in, num_ptcls_, OHMMS_DIM};
   Buffer_t posin(dims[0] * dims[1] * dims[2]);
   hin.readSlabReshaped(posin, dims, hdf::walkers);
-  std::vector<QMCTraits::FullPrecRealType> weights_in(nw_in);
-  const bool has_weights = hin.readEntry(weights_in, hdf::walker_weights);
+  std::vector<QMCTraits::FullPrecRealType> weights_in(nw_in, 1.0);
+  const int weight_status = walkerWeightStatus(hin, nw_in);
+  // Legacy checkpoints without walker_weights: every loaded walker gets weight 1.0 (weights_in default).
+  const bool weights_ok = weight_status >= 0 && (weight_status == 0 || hin.readEntry(weights_in, hdf::walker_weights));
+  validateWalkerWeights(myComm, weights_ok, weights_in); // coordinate errors and abort if needed
 
   std::vector<int> woffsets;
   hin.read(woffsets, "walker_partition");
@@ -178,12 +231,9 @@ bool HDFWalkerInput_0_4::read_hdf5(const std::filesystem::path& h5name)
     auto it = posin.begin() + woffsets[myComm.rank()] * nitems;
     for (int i = 0; i < nw_in; ++i, it += nitems)
       copy(it, it + nitems, get_first_address(wc_list_[i + curWalker]->R));
-    if (has_weights)
-    {
-      const auto woffset = woffsets[myComm.rank()];
-      for (int i = 0; i < nw_in; ++i)
-        wc_list_[i + curWalker]->Weight = weights_in[i + woffset];
-    }
+    const auto woffset = woffsets[myComm.rank()];
+    for (int i = 0; i < nw_in; ++i)
+      wc_list_[i + curWalker]->Weight = weights_in[i + woffset];
   }
 
   return true;
@@ -256,8 +306,9 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
 
   std::array<size_t, 3> dims{nw_in, num_ptcls_, OHMMS_DIM};
   Buffer_t posin(nw_in * nitems);
-  std::vector<QMCTraits::FullPrecRealType> weights_in(nw_in);
+  std::vector<QMCTraits::FullPrecRealType> weights_in(nw_in, 1.0);
   bool has_weights{false};
+  bool weights_ok = true;
   bool success2 = false;
   if (myComm.rank() == 0)
   {
@@ -267,15 +318,18 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
     {
       hin.push(hdf::main_state);
       hin.readSlabReshaped(posin, dims, hdf::walkers);
-      has_weights = hin.readEntry(weights_in, hdf::walker_weights);
+      const int weight_status = walkerWeightStatus(hin, nw_in);
+      has_weights             = weight_status == 1;
+      weights_ok              = weight_status >= 0 && (!has_weights || hin.readEntry(weights_in, hdf::walker_weights));
     }
   }
   myComm.bcast(success2);
   if (!success2)
     return false;
+  validateWalkerWeights(myComm, weights_ok, weights_in); // coordinate errors and abort if needed
 
   Buffer_t posout(counts[myComm.rank()]);
-  std::vector<QMCTraits::FullPrecRealType> weights_out(counts_weights[myComm.rank()]);
+  std::vector<QMCTraits::FullPrecRealType> weights_out(counts_weights[myComm.rank()], 1.0);
   myComm.scatterv(posin, posout, counts, woffsets);
 
   myComm.bcast(has_weights);
@@ -289,9 +343,8 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
   auto it = posout.begin();
   for (int i = 0; i < nw_loc; ++i, it += nitems)
     std::copy(it, it + nitems, get_first_address(wc_list_[i + curWalker]->R));
-  if (has_weights)
-    for (int i = 0; i < nw_loc; ++i)
-      wc_list_[i + curWalker]->Weight = weights_out[i];
+  for (int i = 0; i < nw_loc; ++i)
+    wc_list_[i + curWalker]->Weight = weights_out[i];
   return true;
 }
 
@@ -301,6 +354,7 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
   std::vector<int> woffsets;
   int woffsets_size = 0;
   bool success      = false;
+  int weight_status = 0;
 
   { // handle small dataset with master rank
     if (myComm.rank() == 0)
@@ -334,6 +388,7 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
             hin.read(woffsets, "walker_partition");
             woffsets_size = woffsets.size();
             assert(woffsets[woffsets_size - 1] == nw_in);
+            weight_status = walkerWeightStatus(hin, nw_in);
           }
         }
       }
@@ -346,6 +401,9 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
     myComm.bcast(success);
     if (!success)
       return false;
+    myComm.bcast(weight_status);
+    if (weight_status < 0)
+      throw UniformCommunicateError("HDFWalkerInput_0_4: found malformed or invalid walker_weights in dataset.");
 
     myComm.bcast(woffsets_size);
     woffsets.resize(woffsets_size);
@@ -380,13 +438,15 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
   std::array<size_t, 3> offsets{static_cast<size_t>(woffsets[myComm.rank()]), 0, 0};
   std::array<size_t, 1> offsets_w{static_cast<size_t>(woffsets[myComm.rank()])};
   Buffer_t posin(nw_loc * dims[1] * dims[2]);
-  std::vector<QMCTraits::FullPrecRealType> weights_in(nw_loc);
+  std::vector<QMCTraits::FullPrecRealType> weights_in(nw_loc, 1.0);
 
   hyperslab_proxy<Buffer_t, 3> slab(posin, dims, counts, offsets);
   hin.read(slab, hdf::walkers);
 
   hyperslab_proxy<std::vector<QMCTraits::FullPrecRealType>, 1> slab_w(weights_in, dims_w, counts_w, offsets_w);
-  const bool has_weights = hin.readEntry(slab_w, hdf::walker_weights);
+  const bool has_weights = weight_status == 1;
+  const bool weights_ok  = !has_weights || hin.readEntry(slab_w, hdf::walker_weights);
+  validateWalkerWeights(myComm, weights_ok, weights_in); // coordinate errors and abort if needed
 
   app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << std::endl;
   nw_in = woffsets[myComm.rank() + 1] - woffsets[myComm.rank()];
@@ -397,9 +457,8 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
     auto it = posin.begin();
     for (int i = 0; i < nw_in; ++i, it += nitems)
       copy(it, it + nitems, get_first_address(wc_list_[i + curWalker]->R));
-    if (has_weights)
-      for (int i = 0; i < nw_in; ++i)
-        wc_list_[i + curWalker]->Weight = weights_in[i];
+    for (int i = 0; i < nw_in; ++i)
+      wc_list_[i + curWalker]->Weight = weights_in[i];
   }
   return true;
 }

@@ -12,13 +12,16 @@
 #include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
+#include <array>
 #include <filesystem>
+#include <limits>
 #include <string>
 #include <vector>
 
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Message/UniformCommunicateError.h"
+#include "CPU/math.hpp"
 #include <catch2/matchers/catch_matchers_exception.hpp>
 #include "Particle/WalkerConfigurations.h"
 #include "Particle/HDFWalkerOutput.h"
@@ -31,6 +34,166 @@
 
 namespace qmcplusplus
 {
+
+namespace
+{
+enum class WeightCase
+{
+  Missing,
+  ShortCount,
+  Wrong2D,
+  Negative,
+  Inf,
+  NaN,
+  WrongType
+};
+
+enum class Reader
+{
+  Serial,
+  Scatter,
+  Parallel
+};
+
+constexpr std::array all_weight_cases{WeightCase::Missing,  WeightCase::ShortCount, WeightCase::Wrong2D,
+                                      WeightCase::Negative, WeightCase::Inf,        WeightCase::NaN,
+                                      WeightCase::WrongType};
+#if defined(ENABLE_PHDF5)
+constexpr std::array all_readers{Reader::Serial, Reader::Scatter, Reader::Parallel};
+#else
+constexpr std::array all_readers{Reader::Serial, Reader::Scatter};
+#endif
+
+std::string to_string(WeightCase c)
+{
+  switch (c)
+  {
+  case WeightCase::Missing:
+    return "Missing";
+  case WeightCase::ShortCount:
+    return "ShortCount";
+  case WeightCase::Wrong2D:
+    return "Wrong2D";
+  case WeightCase::Negative:
+    return "Negative";
+  case WeightCase::Inf:
+    return "Inf";
+  case WeightCase::NaN:
+    return "NaN";
+  case WeightCase::WrongType:
+    return "WrongType";
+  }
+  return "Unknown";
+}
+
+std::string to_string(Reader r)
+{
+  switch (r)
+  {
+  case Reader::Serial:
+    return "Serial";
+  case Reader::Scatter:
+    return "Scatter";
+  case Reader::Parallel:
+    return "Parallel";
+  }
+  return "Unknown";
+}
+
+/// write a minimal 0.4 checkpoint whose walker_weights dataset is determined by \p c
+void writeWeightTestFile(const std::filesystem::path& file, WeightCase c, int count, int particles)
+{
+  hdf_archive output;
+  REQUIRE(output.create(file));
+  HDFVersion version(0, 4);
+  output.write(version.version, hdf::version);
+  output.push(hdf::main_state);
+  output.write(count, hdf::num_walkers);
+  output.write(std::vector<int>{0, count}, "walker_partition");
+  std::vector<QMCTraits::RealType> positions(count * particles * OHMMS_DIM, 0);
+  const std::array<size_t, 3> shape{static_cast<size_t>(count), static_cast<size_t>(particles), OHMMS_DIM};
+  output.writeSlabReshaped(positions, shape, hdf::walkers);
+  if (c == WeightCase::Missing)
+    return;
+
+  std::vector<double> weights(c == WeightCase::ShortCount ? count - 1 : count, 2);
+  if (c == WeightCase::Negative)
+    weights.back() = -1;
+  else if (c == WeightCase::Inf)
+  {
+    weights.back() = qmcplusplus::numeric_limits<double>::infinity();
+    REQUIRE(qmcplusplus::isinf(weights.back()));
+  }
+  else if (c == WeightCase::NaN)
+  {
+    weights.back() = qmcplusplus::numeric_limits<double>::quiet_NaN();
+    REQUIRE(qmcplusplus::isnan(weights.back()));
+  }
+
+  if (c == WeightCase::Wrong2D)
+  {
+    const std::array<size_t, 2> bad_shape{4, 4};
+    output.writeSlabReshaped(weights, bad_shape, hdf::walker_weights);
+  }
+  else if (c == WeightCase::WrongType)
+    output.write(std::string("not numeric"), hdf::walker_weights);
+  else
+    output.write(weights, hdf::walker_weights);
+}
+} // namespace
+
+TEST_CASE("HDFWalkerInput_0_4 missing malformed and invalid weights", "[particle]")
+{
+  Communicate& comm(*OHMMS::Controller);
+  constexpr int count              = 16;
+  constexpr int particles          = 2;
+  const std::string root           = "test_hdfwalkerinput_weight_validation";
+  const std::filesystem::path file = root + ".config.h5";
+  for (auto weight_case : all_weight_cases)
+  {
+    CAPTURE(to_string(weight_case));
+    if (comm.rank() == 0)
+      writeWeightTestFile(file, weight_case, count, particles);
+    comm.barrier();
+    for (auto reader : all_readers)
+    {
+      CAPTURE(to_string(reader));
+      WalkerConfigurations configurations;
+      HDFWalkerInput_0_4 input(configurations, particles, comm, HDFVersion(0, 4));
+      // Exercise all supported backends against the same missing/malformed/value-invalid dataset.
+      auto read = [&]() {
+        switch (reader)
+        {
+        case Reader::Serial:
+          return input.read_hdf5(file);
+        case Reader::Scatter:
+          return input.read_hdf5_scatter(file);
+        case Reader::Parallel:
+          return input.read_phdf5(file);
+        }
+        return false;
+      };
+      if (weight_case == WeightCase::Missing)
+      {
+        configurations.createWalkers(1, particles);
+        configurations[0]->Weight = 2.5;
+        REQUIRE(read());
+        CHECK(configurations[0]->Weight == 2.5);
+        for (int iw = 1; iw < configurations.getActiveWalkers(); ++iw)
+          CHECK(configurations[iw]->Weight == 1);
+      }
+      else
+      {
+        CHECK_THROWS_AS(read(), UniformCommunicateError);
+        CHECK(configurations.getActiveWalkers() == 0);
+      }
+    }
+    comm.barrier();
+  }
+  if (comm.rank() == 0)
+    std::filesystem::remove(file);
+  comm.barrier();
+}
 
 namespace
 {

@@ -1,7 +1,7 @@
 set(TEST_ADDED FALSE)
 
 run_qmc_app(
-  deterministic-InSe_a4_slab
+  deterministic-InSe_a4_slab-nowf-ewald
   "${qmcpack_SOURCE_DIR}/tests/solids/InSe_a4"
   1
   1

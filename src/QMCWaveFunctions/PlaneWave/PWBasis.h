@@ -93,6 +93,9 @@ public:
   /// Hessians indexed by (G-vector, row*OHMMS_DIM+column), filled by evaluateHessian().
   Matrix<ComplexType> Zh;
 
+  /// Third derivatives indexed by (G-vector, (i*OHMMS_DIM+j)*OHMMS_DIM+k), filled by evaluateGradHessian().
+  Matrix<ComplexType> Zgh;
+
   /// Cartesian phases (k+G).r used by the direct exponential evaluator.
   Vector<RealType> phi;
 
@@ -316,6 +319,13 @@ public:
    * This routine reuses those values and does not update Zv or Z.
    */
   void evaluateHessian();
+
+  /** Fill Zgh with Cartesian third derivatives i*K_i*K_j*K_k*Z(ig, PW_VALUE), K=k+G.
+   *
+   * @pre evaluateAll() has populated Z for the desired particle position.
+   * This routine reuses those values and does not update Zv, Z, or Zh.
+   */
+  void evaluateGradHessian();
 
   //    /** Fill the recursion coefficients matrix.
   //     *

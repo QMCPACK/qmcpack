@@ -4,7 +4,7 @@
 list(APPEND DET_GRAPHENE_Z10_SCALARS "ionion" "14.00211652 0.000002")
 
 qmc_run_and_check(
-  deterministic-grapheneC_1x1_pp-vmcbatch_sdj_z10
+  deterministic-grapheneC_1x1_z10_pp-sd_jas-vmcbatch
   "${qmcpack_SOURCE_DIR}/tests/solids/grapheneC_1x1_pp"
   det_qmc_z10.in.xml
   1
@@ -20,7 +20,7 @@ qmc_run_and_check(
 list(APPEND DET_GRAPHENE_Z30_SCALARS "ionion" "81.60576396 0.000006")
 
 qmc_run_and_check(
-  deterministic-grapheneC_1x1_pp-vmcbatch_sdj_z30
+  deterministic-grapheneC_1x1_z30_pp-sd_jas-vmcbatch
   "${qmcpack_SOURCE_DIR}/tests/solids/grapheneC_1x1_pp"
   det_qmc_z30.in.xml
   1

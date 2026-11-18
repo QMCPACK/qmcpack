@@ -94,22 +94,22 @@ def create_label_sets():
     abort |= set(
         [
             # https://github.com/QMCPACK/qmcpack/issues/998
-            "long-LiH_dimer_pp-vmc_hf_sdj_estimator_spindensity",
-            "short-LiH_dimer_pp-vmc_hf_sdj_estimator_spindensity",
+            "long-LiH_pp-sd_lcao_hf_jas-vmc-spindensity",
+            "short-LiH_pp-sd_lcao_hf_jas-vmc-spindensity",
             # https://github.com/QMCPACK/qmcpack/issues/1040
-            "short-diamondC-afqmc_hyb_nn2",
-            "short-diamondC-afqmc_incmf_nn2",
-            "short-diamondC-afqmc_nn2",
+            "short-diamondC_pp-nomsd-afqmc_hyb_nn2",
+            "short-diamondC_pp-nomsd-afqmc_incmf_nn2",
+            "short-diamondC_pp-nomsd-afqmc_nn2",
         ]
     )
 
     check_fail |= set(
         [
             # https://github.com/QMCPACK/qmcpack/issues/934
-            "short-diamondC_1x1x1_pp-dmc-estimator-density",
-            "short-diamondC_1x1x1_pp-dmc-estimator-spindensity",
-            "long-diamondC_1x1x1_pp-dmc-estimator-density",
-            "long-diamondC_1x1x1_pp-dmc-estimator-spindensity",
+            "short-diamondC_1x1x1_pp-sd_jas-dmc-density",
+            "short-diamondC_1x1x1_pp-sd_jas-dmc-spindensity",
+            "long-diamondC_1x1x1_pp-sd_jas-dmc-density",
+            "long-diamondC_1x1x1_pp-sd_jas-dmc-spindensity",
         ]
     )
 
@@ -117,19 +117,19 @@ def create_label_sets():
         [
             # https://github.com/QMCPACK/qmcpack/issues/995
             # https://github.com/QMCPACK/qmcpack/issues/1052
-            "short-diamondC_1x1x1_pp-vmc-J2-estimator-1rdm-4-4",
-            "short-diamondC_1x1x1_pp-vmc-noJ-estimator-1rdm-4-4",
-            "long-diamondC_1x1x1_pp-vmc-J2-estimator-1rdm-4-4",
-            "long-diamondC_1x1x1_pp-vmc-noJ-estimator-1rdm-4-4",
+            "short-diamondC_1x1x1_pp-sd_j2-vmc-1rdm-r4-t4",
+            "short-diamondC_1x1x1_pp-sd_hf_noj-vmc-1rdm-r4-t4",
+            "long-diamondC_1x1x1_pp-sd_j2-vmc-1rdm-r4-t4",
+            "long-diamondC_1x1x1_pp-sd_hf_noj-vmc-1rdm-r4-t4",
             # https://github.com/QMCPACK/qmcpack/issues/982
-            "long-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi",
-            "long-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell",
-            "long-diamondC_1x1x1_pp-dmc-estimator-energydensity-cell",
+            "long-diamondC_1x1x1_pp-sd_jas-vmc-energydensity_voronoi",
+            "long-diamondC_1x1x1_pp-sd_jas-vmc-energydensity_cell",
+            "long-diamondC_1x1x1_pp-sd_jas-dmc-energydensity_cell",
             "long-LiH_dimer_ae-vmc_hf_noj_estimator_energydensity_voronoi",
             "long-LiH_dimer_ae-vmc_hf_sdj_estimator_energydensity_voronoi",
-            "short-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi",
-            "short-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell",
-            "short-diamondC_1x1x1_pp-dmc-estimator-energydensity-cell",
+            "short-diamondC_1x1x1_pp-sd_jas-vmc-energydensity_voronoi",
+            "short-diamondC_1x1x1_pp-sd_jas-vmc-energydensity_cell",
+            "short-diamondC_1x1x1_pp-sd_jas-dmc-energydensity_cell",
             "short-LiH_dimer_ae-vmc_hf_noj_estimator_energydensity_voronoi",
             "short-LiH_dimer_ae-vmc_hf_sdj_estimator_energydensity_voronoi",
         ]
@@ -137,49 +137,49 @@ def create_label_sets():
 
     intermittent_stat_fail |= set(
         [
-            "long-diamondC_1x1x1_pp-vmc-dmc-allp_sdj",
-            "long-diamondC_2x1x1_pp-dmc-reconf_sdj",
-            "long-diamondC_2x1x1_pp-vmc_sdj",
-            "long-H2O_dimer_sep_pp-j3_dmc_la",
-            "short-bccH_1x1x1_ae-csvmc-all_sdj",
-            "short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj",
-            "short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj",
-            "short-bccH_1x1x1_ae-dmc-all_sdj",
-            "short-bccH_1x1x1_ae-vmc-all-nodrift_sdj",
-            "short-C2_pp-msdj_vmc",
-            "short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj",
-            "short-diamondC_2x1x1_pp-dmc-reconf_sdj",
+            "long-diamondC_1x1x1_pp-sd_jas-vmc_dmc_allp",
+            "long-diamondC_2x1x1_pp-sd_jas-dmc_reconf",
+            "long-diamondC_2x1x1_pp-sd_jas-vmc",
+            "long-H2O_dimer_sep_pp-sd_lcao_j3-dmc_la",
+            "short-bccH_1x1x1_ae-sd_jas-csvmc_all",
+            "short-bccH_1x1x1_ae-sd_jas-csvmc_all_nodrift",
+            "short-bccH_1x1x1_ae-sd_jas-csvmc_pbyp_nodrift",
+            "short-bccH_1x1x1_ae-sd_jas-dmc_all",
+            "short-bccH_1x1x1_ae-sd_jas-vmc_all_nodrift",
+            "short-C2_pp-msd_lcao_XML_jas-vmc",
+            "short-diamondC_1x1x1_pp-sd_jas-vmc_dmc_allp",
+            "short-diamondC_2x1x1_pp-sd_jas-dmc_reconf",
             "short-H4-opt-adaptive",
-            "long-LiH_dimer_ae_qp-vmc_hf_noj",
-            "short-LiH_dimer_pp-vmc_hf_sdj_hdf5",
-            "short-LiH_dimer_pp-vmc_hf_sdj_xml",
-            "short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj",
-            "short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj",
-            "short-diamondC_1x1x1_pp-vmc_sdj_kspace-1-16",
-            "short-diamondC_2x1x1_pp-dmc_sdj-1-16",
-            "short-diamondC_2x1x1_hybridrep_pp-vmc_sdj",
-            "short-bccH_1x1x1_ae-dmc_sdj",
-            "short-NiO_a4_e48_pp-dmc-TMv1v3_sdj",
-            "long-heg_14_gamma-sj-1-16",
-            "short-chn_ae_cuspCorrection-vmc",
-            "short-li2_sto-sj_dmc",
-            "short-LiH_dimer_ae_qp-vmc_hf_noj",
-            "short-LiH_dimer_ae_pyscf-vmc_hf_noj",
-            "short-LiH_ae-vmc_msdj-1-16",
-            "short-LiH_ae-vmc_msdj_noj-1-16",
-            "vmc_short_C2_pp_msdj-H5",
+            "long-LiH_ae-sd_lcao_hf_qp_noj-vmc",
+            "short-LiH_pp-sd_lcao_hf_H5_jas-vmc",
+            "short-LiH_pp-sd_lcao_hf_XML_jas-vmc",
+            "short-LiH_solid_1x1x1_pp_x-sd_hf_noj-dmcnl",
+            "short-LiH_solid_1x1x1_hybridrep_pp_x-sd_hf_noj-vmc",
+            "short-diamondC_1x1x1_pp-sd_jas-vmc_kspace-r1-t16",
+            "short-diamondC_2x1x1_pp-sd_jas-dmc-r1-t16",
+            "short-diamondC_2x1x1_hybridrep_pp-sd_jas-vmc",
+            "short-bccH_1x1x1_ae-sd_jas-dmc",
+            "short-NiO_a4_e48_pp-sd_jas-dmc_TMv1v3",
+            "long-heg_14_gamma-sd_jas-vmc-r1-t16",
+            "short-chn_ae-sd_lcao_cuspCorrection_jas-vmc",
+            "short-Li2_STO_ae-sd_lcao_jas-dmc",
+            "short-LiH_ae-sd_lcao_hf_qp_noj-vmc",
+            "short-LiH_ae-sd_lcao_hf_pyscf_noj-vmc",
+            "short-LiH_ae-msd_lcao_jas-vmc-r1-t16",
+            "short-LiH_ae-msd_lcao_hf_noj-vmc-r1-t16",
+            "short-C2_pp-msd_lcao_H5_jas-vmc",
         ]
     )
 
     poor_test |= set(
         [
-            "short-bccH_2x2x2_ae-deriv",
-            "short-bccH_2x2x2_ae-gamma-deriv",
-            "short-bccH_2x2x2_ae-grad_lap",
-            "short-bccH_3x3x3_ae-deriv",
-            "short-bccH_3x3x3_ae-gamma-deriv",
-            "short-bccH_3x3x3_ae-grad_lap",
-            "short-bccH_3x3x3_ae-not_orth-deriv",
+            "short-bccH_2x2x2_ae-sd_jas-deriv",
+            "short-bccH_2x2x2_ae_gamma-sd_jas-deriv",
+            "short-bccH_2x2x2_ae-sd_jas-grad_lap",
+            "short-bccH_3x3x3_ae-sd_jas-deriv",
+            "short-bccH_3x3x3_ae_gamma-sd_jas-deriv",
+            "short-bccH_3x3x3_ae-sd_jas-grad_lap",
+            "short-bccH_3x3x3_not_orth_ae-sd_jas-deriv",
         ]
     )
 
@@ -192,13 +192,13 @@ def create_label_sets():
         )
         check_fail |= set(
             [
-                "short-bccH_2x2x2_ae-deriv",
-                "short-bccH_2x2x2_ae-gamma-deriv",
-                "short-bccH_2x2x2_ae-grad_lap",
-                "short-bccH_3x3x3_ae-deriv",
-                "short-bccH_3x3x3_ae-gamma-deriv",
-                "short-bccH_3x3x3_ae-grad_lap",
-                "short-bccH_3x3x3_ae-not_orth-deriv",
+                "short-bccH_2x2x2_ae-sd_jas-deriv",
+                "short-bccH_2x2x2_ae_gamma-sd_jas-deriv",
+                "short-bccH_2x2x2_ae-sd_jas-grad_lap",
+                "short-bccH_3x3x3_ae-sd_jas-deriv",
+                "short-bccH_3x3x3_ae_gamma-sd_jas-deriv",
+                "short-bccH_3x3x3_ae-sd_jas-grad_lap",
+                "short-bccH_3x3x3_not_orth_ae-sd_jas-deriv",
             ]
         )
     # end if
@@ -207,35 +207,35 @@ def create_label_sets():
     if soa:
         hard_fail |= set(
             [
-                "long-heg_14_gamma-sjb",
-                "short-heg_14_gamma-sjb",
+                "long-heg_14_gamma-sd_bf_jas-vmc",
+                "short-heg_14_gamma-sd_bf_jas-vmc",
             ]
         )
         abort |= set(
             [
                 "long-c_no-hf_vmc",
                 "long-c_no-sj_dmc",
-                "short-bccH_2x2x2_ae-deriv",
-                "short-bccH_3x3x3_ae-deriv",
-                "short-bccH_3x3x3_ae-grad_lap",
+                "short-bccH_2x2x2_ae-sd_jas-deriv",
+                "short-bccH_3x3x3_ae-sd_jas-deriv",
+                "short-bccH_3x3x3_ae-sd_jas-grad_lap",
                 "short-c_no-hf_vmc",
                 "short-c_no-sj_dmc",
                 "short-H2-FDLR",
                 "short-H2-opt_orb",
                 "short-H4-FDLR",
-                "short-H4-opt_orb",
+                "short-H4-msd_lcao-opt_orb",
                 "short-H4-opt_orb-dmc",
-                "short-bccH_2x2x2_ae-gamma-deriv",
-                "short-bccH_2x2x2_ae-grad_lap",
-                "short-bccH_3x3x3_ae-gamma-deriv",
-                "short-bccH_3x3x3_ae-not_orth-deriv",
+                "short-bccH_2x2x2_ae_gamma-sd_jas-deriv",
+                "short-bccH_2x2x2_ae-sd_jas-grad_lap",
+                "short-bccH_3x3x3_ae_gamma-sd_jas-deriv",
+                "short-bccH_3x3x3_not_orth_ae-sd_jas-deriv",
             ]
         )
         check_fail |= set(
             [
-                "short-bccH_2x2x2_ae-deriv",
-                "short-bccH_3x3x3_ae-deriv",
-                "short-bccH_3x3x3_ae-grad_lap",
+                "short-bccH_2x2x2_ae-sd_jas-deriv",
+                "short-bccH_3x3x3_ae-sd_jas-deriv",
+                "short-bccH_3x3x3_ae-sd_jas-grad_lap",
             ]
         )
         intermittent_stat_fail |= set(
@@ -250,8 +250,8 @@ def create_label_sets():
         check_fail |= set(
             [
                 "restart-1-16",
-                "short-diamondC_1x1x1_pp-dmc-estimator-density",
-                "short-diamondC_1x1x1_pp-dmc-estimator-spindensity",
+                "short-diamondC_1x1x1_pp-sd_jas-dmc-density",
+                "short-diamondC_1x1x1_pp-sd_jas-dmc-spindensity",
             ]
         )
         poor_test |= set(
@@ -261,23 +261,23 @@ def create_label_sets():
         )
         unsupported |= set(
             [
-                "estimator-skinetic",
+                "deterministic-estimator-skinetic",
                 "short-afqmc-N2_vdz",
-                "short-diamondC-afqmc",
-                "short-diamondC-afqmc_hyb",
-                "short-diamondC-afqmc_hyb_nn2",
-                "short-diamondC-afqmc_incmf",
-                "short-diamondC-afqmc_incmf_nn2",
-                "short-diamondC-afqmc_nn2",
-                "short-diamondC_1x1x1_hybridrep_pp-vmc_sdj",
-                "short-diamondC_1x1x1_pp-vmc_sdj_kspace",
-                "short-diamondC_2x1x1_hybridrep_pp-vmc_sdj",
-                "short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj",
-                "short-monoO_1x1x1_pp-vmc_sdj3",
-                "short-NiO_a4_e48-batched_pp-vmc_sdj3",
-                "short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3",
-                "short-NiO_a4_e48-hybridrep-pp-vmc_sdj3",
-                "short-NiO_a4_e48_pp-vmc_sdj3",
+                "short-diamondC_pp-nomsd-afqmc",
+                "short-diamondC_pp-nomsd-afqmc_hyb",
+                "short-diamondC_pp-nomsd-afqmc_hyb_nn2",
+                "short-diamondC_pp-nomsd-afqmc_incmf",
+                "short-diamondC_pp-nomsd-afqmc_incmf_nn2",
+                "short-diamondC_pp-nomsd-afqmc_nn2",
+                "short-diamondC_1x1x1_hybridrep_pp-sd_jas-vmc",
+                "short-diamondC_1x1x1_pp-sd_jas-vmc_kspace",
+                "short-diamondC_2x1x1_hybridrep_pp-sd_jas-vmc",
+                "short-LiH_solid_1x1x1_hybridrep_pp_x-sd_hf_noj-vmc",
+                "short-monoO_1x1x1_pp-sd_j3-vmc",
+                "short-NiO_a4_e48_pp-sd_j3-vmcbatch",
+                "short-NiO_a4_e48_hybridrep_pp-sd_j3-vmcbatch",
+                "short-NiO_a4_e48_hybridrep_pp-sd_j3-vmc",
+                "short-NiO_a4_e48_pp-sd_j3-vmc",
             ]
         )
     # end if
@@ -296,10 +296,10 @@ def create_label_sets():
     if mixed:
         abort |= set(
             [
-                "short-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell",
-                "short-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi",
+                "short-diamondC_1x1x1_pp-sd_jas-vmc-energydensity_cell",
+                "short-diamondC_1x1x1_pp-sd_jas-vmc-energydensity_voronoi",
                 "short-LiH_dimer_ae-vmc_hf_noj_estimator_energydensity_voronoi",
-                "short-LiH_dimer_pp-vmc_hf_sdj_estimator_spindensity",
+                "short-LiH_pp-sd_lcao_hf_jas-vmc-spindensity",
             ]
         )
     # end if
@@ -310,15 +310,15 @@ def create_label_sets():
     if aos and cpu and real and full:
         abort |= set(
             [
-                "long-NiO_afm-afqmc",
+                "long-NiO_afm-nomsd-afqmc",
                 "short-c_no-hf_vmc-4-4",
             ]
         )
         definite_stat_fail |= set(
             [
-                "long-monoO_1x1x1_pp-vmc_sdj3",  # flux fails
+                "long-monoO_1x1x1_pp-sd_j3-vmc",  # flux fails
                 "short-H4-opt-cslinear-rescale",  # energy fails
-                "short-LiH_dimer_ae_qp-vmc_hf_noj",  # energy fails
+                "short-LiH_ae-sd_lcao_hf_qp_noj-vmc",  # energy fails
             ]
         )
     elif aos and cpu and real and mixed:
@@ -335,33 +335,33 @@ def create_label_sets():
     if soa and comp and cpu:
         abort |= set(
             [
-                "short-diamondC_1x1x1_pp-vmc_gaussian_sdj",
-                "short-diamondC_2x1x1_pp-vmc_gaussian_sdj",
-                "long-diamondC_2x1x1_pp-dmc_gaussian_sdj",
+                "short-diamondC_1x1x1_pp-sd_lcao_jas-vmc",
+                "short-diamondC_2x1x1_pp-sd_lcao_jas-vmc",
+                "long-diamondC_2x1x1_pp-sd_lcao_jas-dmc",
             ]
         )
     # end if
     if soa and cpu and real and full:
         abort |= set(
             [
-                "long-NiO_afm-afqmc",
+                "long-NiO_afm-nomsd-afqmc",
             ]
         )
         check_fail |= set(
             [
-                "short-diamondC_2x1x1_pp-vmc_gaussian_sdj",  # ionion fails
+                "short-diamondC_2x1x1_pp-sd_lcao_jas-vmc",  # ionion fails
             ]
         )
         definite_stat_fail |= set(
             [
-                "long-C2_pp-msdj_vmc",
-                "long-diamondC_1x1x1_pp-vmc-dmc-allp_sdj",
+                "long-C2_pp-msd_lcao_XML_jas-vmc",
+                "long-diamondC_1x1x1_pp-sd_jas-vmc_dmc_allp",
             ]
         )
     elif soa and cpu and real and mixed:
         check_fail |= set(
             [
-                "short-diamondC_2x1x1_pp-vmc_gaussian_sdj",  # ionion fails
+                "short-diamondC_2x1x1_pp-sd_lcao_jas-vmc",  # ionion fails
             ]
         )
     elif soa and cpu and comp and full or soa and cpu and comp and mixed or soa and gpu and real and full or soa and gpu and real and mixed or soa and gpu and comp and full or soa and gpu and comp and mixed:
@@ -548,7 +548,12 @@ for full_test in full_tests:
         if len(tokens) > 1:
             mpi = tokens[-2]
             omp = tokens[-1]
-            if mpi.isdigit() and omp.isdigit():
+            if (mpi.isdigit() and omp.isdigit()) or (
+                mpi.startswith("r")
+                and mpi[1:].isdigit()
+                and omp.startswith("t")
+                and omp[1:].isdigit()
+            ):
                 test = full_test.rsplit("-", 2)[0]
             # end if
         # end if

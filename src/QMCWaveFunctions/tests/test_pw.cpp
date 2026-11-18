@@ -25,6 +25,7 @@
 
 
 #include <stdio.h>
+#include <array>
 #include <cmath>
 #include <filesystem>
 #include <limits>
@@ -846,4 +847,228 @@ TEST_CASE("PlaneWave SPO from HDF for LiH X", "[wavefunction]")
   fclose(fspo);
 #endif
 }
+
+#if defined(QMC_COMPLEX)
+namespace
+{
+/** Twisted LiH plane-wave orbitals (2 complex bands) and one electron at a generic position.
+ *
+ * The fcc-like cell is non-orthogonal and the orbitals are genuinely complex, so off-diagonal and non-symmetric
+ * derivative components are all non-trivial.
+ */
+struct LiHPlaneWaveFixture
+{
+  ParticleSetPool pool;
+  ParticleSet* elec = nullptr;
+  std::unique_ptr<SPOSet> spo;
+
+  explicit LiHPlaneWaveFixture(Communicate& comm) : pool(comm)
+  {
+    Lattice lattice;
+    lattice.R = {-3.55, 0.0, 3.55, 0.0, 3.55, 3.55, -3.55, 3.55, 0.0};
+    lattice.reset();
+    pool.createSimulationCellByLattice(lattice);
+
+    auto ions_uptr = std::make_unique<ParticleSet>(pool.getSimulationCell());
+    auto elec_uptr = std::make_unique<ParticleSet>(pool.getSimulationCell());
+    ParticleSet& ions(*ions_uptr);
+    elec = elec_uptr.get();
+
+    ions.setName("ion");
+    pool.addParticleSet(std::move(ions_uptr));
+    ions.create({1, 1});
+    ions.R[0] = {0.0, 0.0, 0.0};
+    ions.R[1] = {3.55, 3.55, 3.55};
+
+    elec->create({2, 2});
+    elec->setName("elec");
+    pool.addParticleSet(std::move(elec_uptr));
+    elec->R[0] = {0.31, 0.77, 1.13};
+    elec->R[1] = {1.2, -0.4, 0.9};
+
+    SpeciesSet& tspecies         = elec->getSpeciesSet();
+    const int upIdx              = tspecies.addSpecies("u");
+    const int downIdx            = tspecies.addSpecies("d");
+    const int chargeIdx          = tspecies.addAttribute("charge");
+    tspecies(chargeIdx, upIdx)   = -1;
+    tspecies(chargeIdx, downIdx) = -1;
+
+    elec->addTable(ions);
+    elec->resetGroups();
+    elec->update();
+
+    const char* particles = R"(
+<sposet_collection type="PW" href="LiH-x.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="-1" twist="0.5 0 0" source="ion">
+  <sposet name="updet" size="2" spindataset="0">
+    <occupation mode="ground"/>
+  </sposet>
+</sposet_collection>
+)";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(particles));
+    xmlNodePtr root = doc.getRoot();
+    PWOrbitalSetBuilder pw_builder(*elec, comm, root);
+    spo = pw_builder.createSPOSet(xmlFirstElementChild(root));
+    REQUIRE(spo);
+    REQUIRE(spo->getOrbitalSetSize() == 2);
+  }
+};
+
+/** Central finite-difference step and agreement tolerance used by the derivative tests below.
+ * Single-precision orbitals need a much larger step, otherwise roundoff of order eps*|f|/h dominates.
+ */
+#if defined(MIXED_PRECISION)
+constexpr double fd_step      = 1e-2;
+constexpr double fd_tolerance = 5e-3;
+#else
+constexpr double fd_step      = 1e-4;
+constexpr double fd_tolerance = 1e-6;
+#endif
+
+/// Compare a complex value with a reference using a tolerance relative to the reference magnitude.
+void checkClose(const SPOSet::ValueType& value, const SPOSet::ValueType& reference)
+{ CHECK(std::abs(value - reference) == Approx(0.0).margin(fd_tolerance * (1.0 + std::abs(reference)))); }
+} // namespace
+
+TEST_CASE("PlaneWave Hessian by finite differences", "[wavefunction][plane_wave]")
+{
+  LiHPlaneWaveFixture fixture(*OHMMS::Controller);
+  ParticleSet& elec = *fixture.elec;
+  SPOSet& spo       = *fixture.spo;
+  const int norb    = spo.getOrbitalSetSize();
+
+  SPOSet::ValueVector psi(norb), lapl(norb), psi_h(norb);
+  SPOSet::GradVector dpsi(norb), dpsi_h(norb);
+  SPOSet::HessVector hess(norb);
+  spo.evaluateVGL(elec, 0, psi, dpsi, lapl);
+  spo.evaluateVGH(elec, 0, psi_h, dpsi_h, hess);
+
+  for (int jorb = 0; jorb < norb; ++jorb)
+  {
+    // VGH reproduces the value and gradient of VGL, and its trace is the Laplacian.
+    checkClose(psi_h[jorb], psi[jorb]);
+    SPOSet::ValueType trace = 0;
+    for (int d = 0; d < OHMMS_DIM; ++d)
+    {
+      checkClose(dpsi_h[jorb][d], dpsi[jorb][d]);
+      trace += hess[jorb](d, d);
+    }
+    checkClose(trace, lapl[jorb]);
+  }
+
+  // H(i,j) = d(grad_i)/dx_j: diagonal entries, an off-diagonal pair in both orders, and one more off-diagonal.
+  const std::vector<std::pair<int, int>> components{{0, 0}, {2, 2}, {0, 1}, {1, 0}, {1, 2}};
+  for (const auto& [i, j] : components)
+  {
+    const auto r0 = elec.R[0];
+    SPOSet::ValueVector psi_p(norb), psi_m(norb);
+    SPOSet::GradVector dpsi_p(norb), dpsi_m(norb);
+
+    elec.R[0][j] = r0[j] + fd_step;
+    elec.update();
+    spo.evaluateVGL(elec, 0, psi_p, dpsi_p, lapl);
+    elec.R[0][j] = r0[j] - fd_step;
+    elec.update();
+    spo.evaluateVGL(elec, 0, psi_m, dpsi_m, lapl);
+    elec.R[0] = r0;
+    elec.update();
+
+    for (int jorb = 0; jorb < norb; ++jorb)
+      checkClose(hess[jorb](i, j), (dpsi_p[jorb][i] - dpsi_m[jorb][i]) / SPOSet::RealType(2 * fd_step));
+  }
+}
+
+TEST_CASE("PlaneWave third derivatives by finite differences", "[wavefunction][plane_wave]")
+{
+  LiHPlaneWaveFixture fixture(*OHMMS::Controller);
+  ParticleSet& elec = *fixture.elec;
+  SPOSet& spo       = *fixture.spo;
+  const int norb    = spo.getOrbitalSetSize();
+
+  SPOSet::ValueVector psi(norb), psi_h(norb);
+  SPOSet::GradVector dpsi(norb), dpsi_h(norb);
+  SPOSet::HessVector hess(norb), hess_h(norb);
+  SPOSet::GGGVector ggg(norb);
+  spo.evaluateVGH(elec, 0, psi_h, dpsi_h, hess_h);
+  spo.evaluateVGHGH(elec, 0, psi, dpsi, hess, ggg);
+
+  for (int jorb = 0; jorb < norb; ++jorb)
+  {
+    // VGHGH reproduces everything VGH returns.
+    checkClose(psi[jorb], psi_h[jorb]);
+    for (int d = 0; d < OHMMS_DIM; ++d)
+      checkClose(dpsi[jorb][d], dpsi_h[jorb][d]);
+    for (int row = 0; row < OHMMS_DIM; ++row)
+      for (int column = 0; column < OHMMS_DIM; ++column)
+        checkClose(hess[jorb](row, column), hess_h[jorb](row, column));
+  }
+
+  // ggg[orb][i](row, column) = d(H(row, column))/dx_i. Check pure-axis, mixed and all-different index patterns, and
+  // both placements of a repeated index so that a mis-ordered (i, row, column) layout would be caught.
+  const std::vector<std::array<int, 3>> components{{0, 0, 0}, {2, 2, 2}, {0, 0, 1}, {1, 0, 0}, {0, 1, 2}};
+  for (const auto& [i, row, column] : components)
+  {
+    const auto r0 = elec.R[0];
+    SPOSet::ValueVector psi_p(norb), psi_m(norb);
+    SPOSet::GradVector dpsi_p(norb), dpsi_m(norb);
+    SPOSet::HessVector hess_p(norb), hess_m(norb);
+
+    elec.R[0][i] = r0[i] + fd_step;
+    elec.update();
+    spo.evaluateVGH(elec, 0, psi_p, dpsi_p, hess_p);
+    elec.R[0][i] = r0[i] - fd_step;
+    elec.update();
+    spo.evaluateVGH(elec, 0, psi_m, dpsi_m, hess_m);
+    elec.R[0] = r0;
+    elec.update();
+
+    for (int jorb = 0; jorb < norb; ++jorb)
+      checkClose(ggg[jorb][i](row, column),
+                 (hess_p[jorb](row, column) - hess_m[jorb](row, column)) / SPOSet::RealType(2 * fd_step));
+  }
+
+  // The third derivative tensor is fully symmetric in its three indices.
+  for (int jorb = 0; jorb < norb; ++jorb)
+  {
+    checkClose(ggg[jorb][0](1, 2), ggg[jorb][2](1, 0));
+    checkClose(ggg[jorb][1](0, 0), ggg[jorb][0](0, 1));
+  }
+}
+
+TEST_CASE("PlaneWave batched third derivatives", "[wavefunction][plane_wave]")
+{
+  LiHPlaneWaveFixture fixture(*OHMMS::Controller);
+  ParticleSet& elec = *fixture.elec;
+  SPOSet& spo       = *fixture.spo;
+  const int norb    = spo.getOrbitalSetSize();
+  const int nptcl   = 2;
+
+  SPOSet::ValueMatrix psi_m(nptcl, norb);
+  SPOSet::GradMatrix dpsi_m(nptcl, norb);
+  SPOSet::HessMatrix hess_m(nptcl, norb);
+  SPOSet::GGGMatrix ggg_m(nptcl, norb);
+  spo.evaluate_notranspose(elec, 0, nptcl, psi_m, dpsi_m, hess_m, ggg_m);
+
+  for (int iat = 0; iat < nptcl; ++iat)
+  {
+    SPOSet::ValueVector psi(norb);
+    SPOSet::GradVector dpsi(norb);
+    SPOSet::HessVector hess(norb);
+    SPOSet::GGGVector ggg(norb);
+    spo.evaluateVGHGH(elec, iat, psi, dpsi, hess, ggg);
+
+    for (int jorb = 0; jorb < norb; ++jorb)
+    {
+      checkClose(psi_m(iat, jorb), psi[jorb]);
+      for (int i = 0; i < OHMMS_DIM; ++i)
+      {
+        checkClose(dpsi_m(iat, jorb)[i], dpsi[jorb][i]);
+        for (int row = 0; row < OHMMS_DIM; ++row)
+          for (int column = 0; column < OHMMS_DIM; ++column)
+            checkClose(ggg_m(iat, jorb)[i](row, column), ggg[jorb][i](row, column));
+      }
+    }
+  }
+}
+#endif
 } // namespace qmcplusplus

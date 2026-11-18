@@ -74,7 +74,6 @@ To build locally enabling `clang-tidy`` static checks defined in `qmcpack/src/.c
 .. code-block:: bash
 
     cmake -GNinja \
-          -DCMAKE_C_COMPILER=clang \
           -DCMAKE_CXX_COMPILER=clang++ \
           -DCMAKE_BUILD_TYPE=Debug \
           -DCMAKE_CXX_CLANG_TIDY='clang-tidy' \

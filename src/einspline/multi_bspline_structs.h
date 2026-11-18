@@ -7,13 +7,13 @@
 #ifndef MULTI_BSPLINE_STRUCTS_STD_H
 #define MULTI_BSPLINE_STRUCTS_STD_H
 
-#include <stdlib.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 //////////////////////
 // Single precision //
 //////////////////////
-typedef struct
+struct multi_UBspline_1d_s
 {
   spline_code spcode;
   type_code tcode;
@@ -23,10 +23,10 @@ typedef struct
   BCtype_s xBC;
   int num_splines;
   size_t coefs_size;
-} multi_UBspline_1d_s;
+};
 
 
-typedef struct
+struct multi_UBspline_3d_s
 {
   spline_code spcode;
   type_code tcode;
@@ -36,13 +36,13 @@ typedef struct
   BCtype_s xBC, yBC, zBC;
   int num_splines;
   size_t coefs_size;
-} multi_UBspline_3d_s;
+};
 
 
 //////////////////////
 // Double precision //
 //////////////////////
-typedef struct
+struct multi_UBspline_1d_d
 {
   spline_code spcode;
   type_code tcode;
@@ -52,10 +52,10 @@ typedef struct
   BCtype_d xBC;
   int num_splines;
   size_t coefs_size;
-} multi_UBspline_1d_d;
+};
 
 
-typedef struct
+struct multi_UBspline_3d_d
 {
   spline_code spcode;
   type_code tcode;
@@ -65,6 +65,6 @@ typedef struct
   BCtype_d xBC, yBC, zBC;
   int num_splines;
   size_t coefs_size;
-} multi_UBspline_3d_d;
+};
 
 #endif

@@ -163,7 +163,20 @@ public:
   void fissionHighMultiplicityWalkers();
 
   void syncWalkersPerRank(Communicate& comm);
-  void measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const;
+  /** Compute weighted global energy and variance across all walkers.
+   *
+   * When @p validate_weights is true, validates that:
+   * - every local walker weight is finite and non-negative (w >= 0),
+   * - the global sum of weights is finite and strictly positive (> 0), and
+   * - the global weighted first and second energy moments (sum w*e, sum w*e^2) are finite.
+   *
+   * Local weight failures are propagated via the MPI allreduce so all ranks agree,
+   * throwing UniformCommunicateError uniformly if any check fails.
+   */
+  void measureGlobalEnergyVariance(Communicate& comm,
+                                   FullPrecRealType& ener,
+                                   FullPrecRealType& variance,
+                                   bool validate_weights = false) const;
 
   /**@name accessors
    * @{
