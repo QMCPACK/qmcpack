@@ -34,6 +34,7 @@ User's Guide and Developer's Manual
    sCI
    spin_orbit
    afqmc
+   deepqmc
    examples
    lab_qmc_statistics
    lab_qmc_basics

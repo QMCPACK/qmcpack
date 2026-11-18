@@ -10,6 +10,9 @@ Introduction
 
 This section describes the input blocks associated with the specification of the trial wavefunction in a QMCPACK calculation. These sections are contained within the ``<wavefunction>`` :math:`...`  ``</wavefunction>`` XML blocks. **Users are expected to rely on converters to generate the input blocks described in this section.** The converters and the workflows are designed such that input blocks require minimum modifications from users. Unless the workflow requires modification of wavefunction blocks (e.g., setting the cutoff in a multideterminant calculation), only expert users should directly alter them.
 
+For an experimental pretrained neural-wavefunction inference workflow, see
+:ref:`DeepQMC wavefunction inference <deepqmc-inference>`.
+
 The trial wavefunction in QMCPACK has a general product form:
 
 .. math::
