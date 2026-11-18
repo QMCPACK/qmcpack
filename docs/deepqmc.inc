@@ -10,10 +10,10 @@ or QMCPACK SPOs. The bridge evaluates batches of walkers and uses the DeepQMC
 ansatz log amplitude. It does not currently provide the sign/phase, so this
 guide does not establish general nodal, complex-wavefunction, or DMC correctness.
 The end-to-end recipe below was exercised for a small all-electron helium VMC
-run on Linux Ubuntu 24.04 (aarch64), using GCC 14.2, Python 3.13.17, DeepQMC
-1.2.0, and JAX/jaxlib 0.8.3. It is a smoke test, not a convergence or accuracy
-guarantee. A complete reference package snapshot is supplied; other Python
-versions and platforms require their own validation.
+run on Linux Ubuntu 24.04 (aarch64), using Open MPI 5.0.10 with Clang 21.1.4,
+Python 3.13.17, DeepQMC 1.2.0, and JAX/jaxlib 0.8.3. It is a smoke test, not a
+convergence or accuracy guarantee. A complete reference package snapshot is
+supplied; other Python versions and platforms require their own validation.
 
 Python environment
 ~~~~~~~~~~~~~~~~~~
@@ -51,19 +51,22 @@ there is no need to allow prereleases globally or upgrade the dependency stack.
 Building QMCPACK
 ~~~~~~~~~~~~~~~~
 
-Use a fresh build directory and your normal compiler/library flags for the
-native build. For an MPI+parallel-HDF5 environment, enable MPI as usual. For
-example:
+Activate the intended native build environment and use a fresh build directory.
+The following MPI+parallel-HDF5 example explicitly selects the Open MPI compiler
+wrappers, backed by Clang in the validated environment. ``QMC_MPI=ON`` enables
+MPI support but does not select the compiler wrappers.
 
 .. code-block:: console
 
-   $ cmake -S . -B build/deepqmc-cpu \
+   $ cmake -S . -B build/deepqmc-llvm \
+       -DCMAKE_C_COMPILER="$(command -v mpicc)" \
+       -DCMAKE_CXX_COMPILER="$(command -v mpicxx)" \
        -DCMAKE_BUILD_TYPE=Release \
        -DENABLE_DEEPQMC_INFERENCE=ON \
        -DPython3_EXECUTABLE="$DEEPQMC_PYTHON" \
        -DQMC_MPI=ON -DBUILD_AFQMC=OFF \
        -DBUILD_UNIT_TESTS=ON -DBUILD_MICRO_BENCHMARKS=OFF
-   $ cmake --build build/deepqmc-cpu \
+   $ cmake --build build/deepqmc-llvm \
        --target qmcpack test_wavefunction_trialwf -j 4
 
 The option enables the embedded Python bridge; CMake must find both the
@@ -98,7 +101,7 @@ configuration override at the matching configuration file:
    $ export DEEPQMC_PYTHON_SITE_PACKAGES="$("$DEEPQMC_PYTHON" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')"
    $ export PYTHONPATH="$DEEPQMC_PYTHON_SITE_PACKAGES${PYTHONPATH:+:$PYTHONPATH}"
    $ export JAX_PLATFORMS=cpu OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
-   $ "$QMCPACK_SOURCE/build/deepqmc-cpu/bin/qmcpack" he_deepqmc.xml
+   $ "$QMCPACK_SOURCE/build/deepqmc-llvm/bin/qmcpack" he_deepqmc.xml
 
 Successful completion produces ``He.deepqmc.s000.scalar.dat`` with finite
 energies and a ``QMCPACK execution completed successfully`` message. Two blocks
@@ -149,7 +152,7 @@ checkpoint and environment, run the focused test against the built executable:
 
    $ DEEPQMC_HE_CHECKPOINT=/trusted/path/chkpt-30000.pt \
      DEEPQMC_PYTHON_SITE_PACKAGES="$DEEPQMC_PYTHON_SITE_PACKAGES" \
-     "$QMCPACK_SOURCE/build/deepqmc-cpu/src/QMCWaveFunctions/tests/test_wavefunction_trialwf" \
+     "$QMCPACK_SOURCE/build/deepqmc-llvm/src/QMCWaveFunctions/tests/test_wavefunction_trialwf" \
        'PythonDeepQMCBridge can load a real DeepQMC He checkpoint' -s
 
 Keep ``DEEPQMC_HYDRA_CONFIG`` set to the matching configuration for this test.
