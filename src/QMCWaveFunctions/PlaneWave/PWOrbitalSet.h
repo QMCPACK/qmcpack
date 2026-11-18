@@ -90,6 +90,23 @@ public:
   /// Evaluate all orbital values, Cartesian gradients, and Laplacians.
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
+  /// Evaluate all orbital values, Cartesian gradients, and full Hessians at P.activeR(iat).
+  void evaluateVGH(const ParticleSet& P,
+                   int iat,
+                   ValueVector& psi,
+                   GradVector& dpsi,
+                   HessVector& grad_grad_psi) override;
+
+  /** Evaluate all orbital values, gradients, Hessians, and third derivatives at P.activeR(iat).
+   * grad_grad_grad_psi[j][i](row, column) is d^3 psi_j / dx_i dx_row dx_column.
+   */
+  void evaluateVGHGH(const ParticleSet& P,
+                     int iat,
+                     ValueVector& psi,
+                     GradVector& dpsi,
+                     HessVector& grad_grad_psi,
+                     GGGVector& grad_grad_grad_psi) override;
+
   /** Evaluate VGL for particles in [first, last).
    * Output matrices require last-first rows and OrbitalSetSize columns.
    */
@@ -110,6 +127,15 @@ public:
                             GradMatrix& dlogdet,
                             HessMatrix& grad_grad_logdet) override;
 
+  /// Evaluate values, gradients, full Hessians, and third derivatives for [first, last).
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& grad_grad_logdet,
+                            GGGMatrix& grad_grad_grad_logdet) override;
+
   /// Whether the destructor deletes myBasisSet.
   bool OwnBasisSet;
   /// Legacy twist metadata; evaluation uses the twist stored in myBasisSet.
@@ -128,6 +154,8 @@ public:
   Matrix<ValueType> Temp;
   /// Contracted Hessians indexed by (orbital, row*OHMMS_DIM+column).
   Matrix<ValueType> TempHess;
+  /// Contracted third derivatives indexed by (orbital, (i*OHMMS_DIM+row)*OHMMS_DIM+column).
+  Matrix<ValueType> TempGradHess;
 };
 } // namespace qmcplusplus
 #endif
