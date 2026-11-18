@@ -86,7 +86,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
     // All-particle moves are batched POS moves: the dispatcher has no serialized fallback.
     if constexpr (CT == CoordsType::POS)
     {
-      ScopedTimer allp_local_timer(timers.movepbyp_timer);
+      ScopedTimer allp_local_timer(timers.moveallp_timer);
       const int num_walkers   = crowd.size();
       auto& walker_leader     = walker_elecs.getLeader();
       const int num_particles = walker_leader.getTotalNum();
@@ -362,9 +362,7 @@ void VMCBatched::process(xmlNodePtr node)
 size_t VMCBatched::compute_samples_per_rank(const size_t num_blocks,
                                             const size_t samples_per_block,
                                             const size_t local_walkers)
-{
-  return num_blocks * samples_per_block * local_walkers;
-}
+{ return num_blocks * samples_per_block * local_walkers; }
 
 
 /** Runs the actual VMC section
