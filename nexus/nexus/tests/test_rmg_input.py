@@ -851,7 +851,24 @@ def test_input_spec():
     documented_sections = input_spec.section_order[:15]
     documented_count = sum(len(input_spec.section_contents[s]) for s in documented_sections)
     assert(documented_count==271)
-    assert(len(input_spec.keywords)==284)
+    assert(len(input_spec.keywords)==291)
+
+    # read by RMG develop, not yet in its keyword documentation
+    undocumented = obj(
+        batch_density                    = 'boolean',
+        batch_preconditioner             = 'boolean',
+        exx_energy_convergence_criterion = 'double',
+        exx_qpoint_mesh                  = 'integer array',
+        exx_vexx_mixing                  = 'double',
+        max_run_seconds                  = 'double',
+        tot_magnetization                = 'double',
+        )
+    for k,key_type in undocumented.items():
+        assert(k in input_spec.section_contents.undocumented)
+        assert(input_spec.keywords[k].key_type==key_type)
+    #end for
+    assert(input_spec.keywords.exx_vexx_mixing.min_value==0.01)
+    assert(input_spec.keywords.tot_magnetization.default==-10000.0)
 
     added_keywords = {
         'AFM',
