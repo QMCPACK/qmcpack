@@ -1,7 +1,14 @@
 //////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
+//
+// Copyright (c) 2026 QMCPACK developers.
+//
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef QMCPLUSPLUS_COUNTINGWAVEFUNCTIONCOMPONENT_H
 #define QMCPLUSPLUS_COUNTINGWAVEFUNCTIONCOMPONENT_H
 
@@ -84,9 +91,7 @@ public:
   void copyFromBuffer(ParticleSet&, WFBufferType&) override {}
   void evaluateDerivatives(ParticleSet&, const OptVariables&, Vector<ValueType>&, Vector<ValueType>&) override {}
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet&) const override
-  {
-    return std::make_unique<CountingWaveFunctionComponent>();
-  }
+  { return std::make_unique<CountingWaveFunctionComponent>(); }
 
   int getEvaluationCount() const { return evaluation_count_; }
   const std::vector<ProposalRecord>& getProposals() const { return proposals_; }

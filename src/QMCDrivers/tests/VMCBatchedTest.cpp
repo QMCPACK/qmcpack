@@ -8,6 +8,7 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+
 #include "VMCBatchedTest.h"
 #include "SetupPools.h"
 
@@ -58,8 +59,7 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
       std::to_string(walkers_per_rank) +
       "</parameter>"
       "<parameter name=\"warmupsteps\">0</parameter><parameter name=\"substeps\">" +
-      std::to_string(VMCBatchedTest::substeps) +
-      "</parameter><parameter name=\"steps\">" +
+      std::to_string(VMCBatchedTest::substeps) + "</parameter><parameter name=\"steps\">" +
       std::to_string(VMCBatchedTest::steps) +
       "</parameter><parameter name=\"blocks\">1</parameter>"
       "<parameter name=\"timestep\">0.01</parameter><parameter name=\"usedrift\">no</parameter></qmc>";
@@ -75,7 +75,8 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
   // The pool randomizes initial electron positions with the global RNG, before any crowd tasks run.
   Random.init(7919 + comm.rank());
   SetupPools pools;
-  pools.wavefunction_pool->getWaveFunction().value().get().addComponent(std::make_unique<CountingWaveFunctionComponent>());
+  pools.wavefunction_pool->getWaveFunction().value().get().addComponent(
+      std::make_unique<CountingWaveFunctionComponent>());
   // Match QMCMain setup: initialize distance tables and structure factors before cloning walkers.
   pools.particle_pool->reset();
 

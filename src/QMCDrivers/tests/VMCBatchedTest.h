@@ -8,6 +8,7 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef QMCPLUSPLUS_VMCBATCHEDTEST_H
 #define QMCPLUSPLUS_VMCBATCHEDTEST_H
 
