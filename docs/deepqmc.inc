@@ -30,7 +30,7 @@ validated configuration used MPI because its HDF5 installation was parallel.
 
 Set ``BASE_PYTHON`` to the absolute path of the Python 3.13 executable that has
 those development files. The matching exact package versions are listed in
-``examples/molecules/He/deepqmc-requirements.txt``. Create an isolated
+``src/QMCWaveFunctions/DeepQMC/requirements.txt``. Create an isolated
 environment and install the packages as follows, starting from the QMCPACK
 source directory (``uv`` must be available):
 
@@ -42,7 +42,7 @@ source directory (``uv`` must be available):
    $ export DEEPQMC_PYTHON="$PWD/.venv-deepqmc/bin/python"
    $ uv pip install --python "$DEEPQMC_PYTHON" \
        --only-binary :all: --no-binary antlr4-python3-runtime \
-       --prerelease explicit -r examples/molecules/He/deepqmc-requirements.txt
+       --prerelease explicit -r src/QMCWaveFunctions/DeepQMC/requirements.txt
    $ uv pip check --python "$DEEPQMC_PYTHON"
    $ "$DEEPQMC_PYTHON" -c 'import deepqmc, jax; from importlib.metadata import version; print(version("deepqmc"), jax.__version__, jax.devices())'
 
@@ -80,6 +80,46 @@ include directory, and library belong to the same Python installation as
 ``BASE_PYTHON``. Use that Python ABI at runtime. Keep the QMCPACK source tree
 available: the bridge is imported from the source tree at runtime, and this
 guide does not provide an installation/relocation mechanism for it.
+
+Reference helium test data
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The reference checkpoint and its matching Hydra configuration are distributed
+separately from the source repository. CMake does not download them. Unpack the
+reference archive into a local directory with this layout:
+
+.. code-block:: text
+
+   HeECP/
+     chkpt-30000.pt
+     config.yaml
+
+The archive may also contain ``hydra.yaml`` and ``overrides.yaml`` for training
+provenance. The inference bridge uses ``config.yaml``, not ``hydra.yaml``.
+Once the Python environment and build above are configured, enable the
+reference tests with:
+
+.. code-block:: console
+
+   $ export DEEPQMC_TEST_DATA_DIR=/absolute/path/to/HeECP
+   $ cmake -S "$QMCPACK_SOURCE" -B "$QMCPACK_SOURCE/build/deepqmc-llvm" \
+       -DQMC_DEEPQMC_TEST_DATA_DIR="$DEEPQMC_TEST_DATA_DIR"
+   $ cmake --build "$QMCPACK_SOURCE/build/deepqmc-llvm" \
+       --target qmcpack test_wavefunction_trialwf -j 4
+   $ ctest --test-dir "$QMCPACK_SOURCE/build/deepqmc-llvm" \
+       -R '^deepqmc-he-' --output-on-failure
+
+CMake checks both required files against the pinned SHA256 values in
+``tests/molecules/He_deepqmc/SHA256SUMS`` before enabling the tests. A missing
+file or mismatched checksum is a configuration error. This option identifies
+one specific reference fixture; it is not a mechanism for selecting arbitrary
+trained models. Leave it unset to build without reference-data tests.
+
+The tests run actual checkpoint inference and the short helium VMC example,
+then check that its scalar output is finite. They set the Python package path
+and configuration explicitly; venv activation is not required. These checks
+establish that inference executed, not scientific accuracy or convergence.
+With ``BUILD_UNIT_TESTS=OFF``, only the application tests are available.
 
 Run the helium example
 ~~~~~~~~~~~~~~~~~~~~~~

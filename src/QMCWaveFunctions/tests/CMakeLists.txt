@@ -198,6 +198,17 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
 
 endforeach()
 
+if(QMC_DEEPQMC_TEST_DATA_DIR AND BUILD_UNIT_TESTS)
+  set(_deepqmc_test_name deepqmc-he-inference)
+  add_unit_test(BASENAME ${_deepqmc_test_name} TEST_BINARY $<TARGET_FILE:test_wavefunction_trialwf>
+    ARGS "PythonDeepQMCBridge can load a real DeepQMC He checkpoint" -s THREADS 1 PROCS 1)
+  if(ADDED_UNIT_TEST_NAME)
+    deepqmc_set_test_environment(${ADDED_UNIT_TEST_NAME})
+    set_property(TEST ${ADDED_UNIT_TEST_NAME} APPEND PROPERTY LABELS "deepqmc;integration")
+    set_tests_properties(${ADDED_UNIT_TEST_NAME} PROPERTIES TIMEOUT 120)
+  endif()
+endif()
+
 if(ENABLE_DEEPQMC_INFERENCE AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_deepqmc_wfc)
   add_executable(${UTEST_EXE} benchmark_deepqmc_wfc.cpp)

@@ -1,0 +1,4 @@
+# Trusted local reference helium fixture (original HeECP directory): checkpoint and config.
+# Checkpoint loading unpickles data; only use a trusted fixture matching these hashes.
+39be3d9aceaf9dfe66b09c02a285ba82b9a7de8f8399a5bdb8ffc2536c5f64d8  chkpt-30000.pt
+0378eee53ff143d1eb93bbea96109d301b983b177a636711fab01995e03de176  config.yaml
