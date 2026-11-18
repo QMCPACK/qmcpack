@@ -5,10 +5,14 @@ DeepQMC wavefunction inference
 
 QMCPACK can evaluate a pretrained DeepQMC wavefunction through an embedded
 Python/JAX bridge. This is an experimental, inference-only integration: it does
-not train the model, optimize its parameters, or require a separate determinant
-or QMCPACK SPOs. The bridge evaluates batches of walkers and uses the DeepQMC
-ansatz log amplitude. It does not currently provide the sign/phase, so this
-guide does not establish general nodal, complex-wavefunction, or DMC correctness.
+not train the model, optimize its parameters, it does not require or support
+a separate determinant or combination with other QMCPACK WFC. An ebedded Python intepreter
+combined with Python bridge code evaluates
+batches of walkers using a trained checkpoint and a hydra defined DeepQMC ansatz log amplitude.
+It does not currently propagate the sign/phase from deepQMC, so it does not yet
+have general nodal, complex-wavefunction, or DMC correctness. At this time it is
+intended only for batched VMC use with diagonal observables.
+
 The end-to-end recipe below was exercised for a small all-electron helium VMC
 run on Linux Ubuntu 24.04 (aarch64), using Open MPI 5.0.10 with Clang 21.1.4,
 Python 3.13.17, DeepQMC 1.2.0, and JAX/jaxlib 0.8.3. It is a smoke test, not a
