@@ -51,61 +51,7 @@ from the repo base directory:
 .. code-block:: console
 
    $ export QMCPACK_SOURCE="$PWD"
-   $ export BASE_PYTHON=/absolute/path/to/python3.13
-
-Spack's environment view is a collection of links, not necessarily a complete
-copy of each installation. Headers can be present under the Python installation
-prefix even if they are absent from the view. Ask the selected interpreter for
-its paths rather than looking only in the view's ``include`` directory:
-
-.. code-block:: console
-
-   $ "$BASE_PYTHON" - <<'PY'
-   from pathlib import Path
-   import sys
-   import sysconfig
-
-   print("version:", sys.version.split()[0])
-   print("base prefix:", sys.base_prefix)
-   header = Path(sysconfig.get_path("include")) / "Python.h"
-   library = Path(sysconfig.get_config_var("LIBDIR")) / sysconfig.get_config_var("LDLIBRARY")
-   for path in (header, library):
-       print(path, "exists:", path.is_file())
-   print("Py_ENABLE_SHARED:", sysconfig.get_config_var("Py_ENABLE_SHARED"))
-   PY
-
-Both files should exist, and ``Py_ENABLE_SHARED`` should be ``1`` for this
-recipe. Ways to supply the development files are:
-
-* **Spack Python:** if the files exist in its installation prefix, use them
-  directly; there is no need to reinstall Python or repair the view. If they
-  are genuinely missing, complete or rebuild that Spack installation before
-  creating the venv. Installing packages with ``uv`` cannot supply these files.
-* **Distribution Python:** Debian/Ubuntu ``python3-dev`` or Fedora
-  ``python3-devel`` supplies development files for the distribution's Python;
-  use a versioned package if the distribution provides the required version.
-  These are not development files for a separate Spack Python. Do not combine,
-  for example, system Python 3.12 headers with a Spack Python 3.13 interpreter.
-* **Site-managed Python:** a complete CPython installation built with
-  ``--enable-shared`` can also supply the interpreter, headers, and library.
-
-If the files exist but CMake does not find them, obtain the base prefix with:
-
-.. code-block:: console
-
-   $ export PYTHON_ROOT="$("$BASE_PYTHON" -c 'import sys; print(sys.base_prefix)')"
-
-Then add ``-DPython3_ROOT_DIR="$PYTHON_ROOT"`` to the configure command below,
-alongside its explicit venv ``Python3_EXECUTABLE``. Use the base installation,
-not the venv directory, for this hint. If setting ``Python3_INCLUDE_DIR`` and
-``Python3_LIBRARY`` directly, both must belong to that same Python installation.
-
-Once the development files are available, create the isolated environment and
-install the packages:
-
-.. code-block:: console
-
-   $ uv venv --python "$BASE_PYTHON" .venv-deepqmc
+   $ uv venv --python python3.13 .venv-deepqmc
    $ export DEEPQMC_PYTHON="$PWD/.venv-deepqmc/bin/python"
    $ uv pip install --python "$DEEPQMC_PYTHON" \
        --only-binary :all: --no-binary antlr4-python3-runtime \
@@ -113,7 +59,7 @@ install the packages:
    $ uv pip check --python "$DEEPQMC_PYTHON"
 
 
-Set ``BASE_PYTHON`` to the absolute path of the Python 3.13 executable in the CPython install.
+The ``python3.13`` command must select the intended CPython installation.
 The exact package versions tested with are listed in
 ``src/QMCWaveFunctions/DeepQMC/requirements.txt``. This creates an isolated
 python environment and installs the appropriate packages.
@@ -190,8 +136,8 @@ MPI support but does not select the compiler wrappers.
 The option enables the embedded Python bridge; CMake must find both the
 interpreter and development components and link ``Python3::Python``. Inspect the
 CMake configure output/cache and confirm that the selected executable,
-include directory, and library belong to the same Python installation as
-``BASE_PYTHON``. Use that Python ABI at runtime. Keep the QMCPACK source tree
+include directory, and library belong to the base Python installation used to
+create the venv. Use that Python ABI at runtime. Keep the QMCPACK source tree
 available: the bridge is imported from the source tree at runtime, and this
 guide does not provide an installation/relocation mechanism for it.
 
@@ -335,3 +281,32 @@ It does not compare against reference energies.
 This bridge has been exercised only for helium VMC. Its ansatz/log-amplitude
 interface and current Hessian evaluation should not be taken as validation for
 other molecules, complex states, DMC, or production performance.
+
+Troubleshooting Python discovery
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If CMake cannot find Python's development files, ask the selected Python for
+its base installation, header directory, and library directory:
+
+.. code-block:: console
+
+   $ python3.13 -c 'import sys; print(sys.base_prefix)'
+   $ python3.13 -c 'import sysconfig; print(sysconfig.get_path("include"))'
+   $ python3.13 -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))'
+
+Look for ``Python.h`` and ``pyconfig.h`` in the header directory and
+``libpython3.13.so`` in the library directory. Spack's view need not expose
+these files if they are present in the underlying installation. In that case,
+no reinstall or view repair is needed. Give CMake the base prefix as a hint:
+
+.. code-block:: console
+
+   $ cmake -S "$QMCPACK_SOURCE" -B "$QMCPACK_SOURCE/build/deepqmc-llvm" \
+       -DPython3_ROOT_DIR="$(python3.13 -c 'import sys; print(sys.base_prefix)')"
+
+If the files are genuinely missing, complete the Python installation before
+creating the venv; installing packages with ``uv`` cannot supply them. A complete
+Spack Python or site-managed CPython built with ``--enable-shared`` is suitable.
+Distribution development packages, such as Debian/Ubuntu ``python3-dev`` or
+Fedora ``python3-devel``, apply only to the corresponding distribution Python.
+Do not combine those headers or libraries with a separate Spack interpreter.
