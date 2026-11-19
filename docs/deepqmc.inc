@@ -44,6 +44,59 @@ source directory (``uv`` must be available):
 
    $ export QMCPACK_SOURCE="$PWD"
    $ export BASE_PYTHON=/absolute/path/to/python3.13
+
+Spack's environment view is a collection of links, not necessarily a complete
+copy of each installation. Headers can be present under the Python installation
+prefix even if they are absent from the view. Ask the selected interpreter for
+its paths rather than looking only in the view's ``include`` directory:
+
+.. code-block:: console
+
+   $ "$BASE_PYTHON" - <<'PY'
+   from pathlib import Path
+   import sys
+   import sysconfig
+
+   print("version:", sys.version.split()[0])
+   print("base prefix:", sys.base_prefix)
+   header = Path(sysconfig.get_path("include")) / "Python.h"
+   library = Path(sysconfig.get_config_var("LIBDIR")) / sysconfig.get_config_var("LDLIBRARY")
+   for path in (header, library):
+       print(path, "exists:", path.is_file())
+   print("Py_ENABLE_SHARED:", sysconfig.get_config_var("Py_ENABLE_SHARED"))
+   PY
+
+Both files should exist, and ``Py_ENABLE_SHARED`` should be ``1`` for this
+recipe. Ways to supply the development files are:
+
+* **Spack Python:** if the files exist in its installation prefix, use them
+  directly; there is no need to reinstall Python or repair the view. If they
+  are genuinely missing, complete or rebuild that Spack installation before
+  creating the venv. Installing packages with ``uv`` cannot supply these files.
+* **Distribution Python:** Debian/Ubuntu ``python3-dev`` or Fedora
+  ``python3-devel`` supplies development files for the distribution's Python;
+  use a versioned package if the distribution provides the required version.
+  These are not development files for a separate Spack Python. Do not combine,
+  for example, system Python 3.12 headers with a Spack Python 3.13 interpreter.
+* **Site-managed Python:** a complete CPython installation built with
+  ``--enable-shared`` can also supply the interpreter, headers, and library.
+
+If the files exist but CMake does not find them, obtain the base prefix with:
+
+.. code-block:: console
+
+   $ export PYTHON_ROOT="$("$BASE_PYTHON" -c 'import sys; print(sys.base_prefix)')"
+
+Then add ``-DPython3_ROOT_DIR="$PYTHON_ROOT"`` to the configure command below,
+alongside its explicit venv ``Python3_EXECUTABLE``. Use the base installation,
+not the venv directory, for this hint. If setting ``Python3_INCLUDE_DIR`` and
+``Python3_LIBRARY`` directly, both must belong to that same Python installation.
+
+Once the development files are available, create the isolated environment and
+install the packages:
+
+.. code-block:: console
+
    $ uv venv --python "$BASE_PYTHON" .venv-deepqmc
    $ export DEEPQMC_PYTHON="$PWD/.venv-deepqmc/bin/python"
    $ uv pip install --python "$DEEPQMC_PYTHON" \
