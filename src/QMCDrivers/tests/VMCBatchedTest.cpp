@@ -16,6 +16,7 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "Concurrency/Info.hpp"
+#include "CPU/math.hpp"
 #include "CountingWaveFunctionComponent.h"
 #include "EstimatorInputDelegates.h"
 #include "Estimators/EstimatorManagerNew.h"
@@ -148,7 +149,7 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
       const auto& orbitals = wf.get().getOrbitals();
       const auto* counter =
           orbitals.empty() ? nullptr : dynamic_cast<const CountingWaveFunctionComponent*>(orbitals.back().get());
-      if (!counter || !std::isfinite(wf.get().getLogPsi()))
+      if (!counter || !qmcplusplus::isfinite(wf.get().getLogPsi()))
       {
         fail("missing component or nonfinite log", crowd_index, walker);
         continue;
