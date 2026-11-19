@@ -28,17 +28,25 @@ supplied; other Python versions and platforms require their own validation.
 Python environment
 ~~~~~~~~~~~~~~~~~~
 
-Use a native QMCPACK build environment with Python 3.13 development headers and
-a shared embeddable Python library, in addition to the native dependencies
-required by the standard :ref:`installation guide <obtaininginstalling>`. A
-virtual environment does not supply missing Python development files. The
-validated configuration used MPI because its HDF5 installation was parallel.
+In addtion to a native QMCPACK build environment for your platform, as described in :ref:`installation guide
+<obtaininginstalling>`. using the DeepQMC wavefunction inference requires a complete
+CPython 3.13 installation providing the Python executable, development headers, the Python standard
+library (usually found in <prefix>/lib/python3.13/), and the shared libpython library (libpython3.13.so). A
+virtual environment does not supply missing Python development files. Additionally
+these instructions require the `uv` (https://github.com/astral-sh/uv) python package manager.
+One way to fufill these requirements is by adding spack spec defs of:
 
-Set ``BASE_PYTHON`` to the absolute path of the Python 3.13 executable that has
-those development files. The matching exact package versions are listed in
-``src/QMCWaveFunctions/DeepQMC/requirements.txt``. Create an isolated
-environment and install the packages as follows, starting from the QMCPACK
-source directory (``uv`` must be available):
+.. code-block:: console
+
+   - python@3.13
+   - py-pip ^python@3.13
+   - py-uv ^python@3.13
+
+to your spack environment.
+
+Once you have fulfilled these requirements an `uv` venv for deepQMC that will work with
+the QMCPACK build can be created and checked with the following shell commands, they assume you are working
+from the repo base directory:
 
 .. code-block:: console
 
@@ -51,6 +59,12 @@ source directory (``uv`` must be available):
        --prerelease explicit -r src/QMCWaveFunctions/DeepQMC/requirements.txt
    $ uv pip check --python "$DEEPQMC_PYTHON"
    $ "$DEEPQMC_PYTHON" -c 'import deepqmc, jax; from importlib.metadata import version; print(version("deepqmc"), jax.__version__, jax.devices())'
+
+
+Set ``BASE_PYTHON`` to the absolute path of the Python 3.13 executable in the CPython install.
+The exact package versions tested with are listed in
+``src/QMCWaveFunctions/DeepQMC/requirements.txt``. This creates an isolated
+python environment and installs the appropriate packages.
 
 The sole source-build exception is ``antlr4-python3-runtime`` (version 4.9.3),
 a pure-Python package; the other dependencies are installed from wheels. These
