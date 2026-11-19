@@ -111,7 +111,6 @@ install the packages:
        --only-binary :all: --no-binary antlr4-python3-runtime \
        --prerelease explicit -r src/QMCWaveFunctions/DeepQMC/requirements.txt
    $ uv pip check --python "$DEEPQMC_PYTHON"
-   $ "$DEEPQMC_PYTHON" -c 'import deepqmc, jax; from importlib.metadata import version; print(version("deepqmc"), jax.__version__, jax.devices())'
 
 
 Set ``BASE_PYTHON`` to the absolute path of the Python 3.13 executable in the CPython install.
@@ -124,6 +123,48 @@ a pure-Python package; the other dependencies are installed from wheels. These
 commands are scoped to the virtual environment and do not change system Python.
 The exact ``tfp-nightly`` development release in the snapshot is intentional;
 there is no need to allow prereleases globally or upgrade the dependency stack.
+
+JAX backend: CPU or NVIDIA GPU
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The common install above provides the CPU JAX/jaxlib 0.8.3 packages. Choose
+one backend in this same virtual environment before building or running. The
+CPU route needs no extra packages:
+
+.. code-block:: console
+
+   $ export JAX_PLATFORMS=cpu
+
+For the NVIDIA GPU route, install the CUDA 12 JAX extra in the same environment
+(the constraint keeps the core requirement versions aligned), then explicitly
+select CUDA:
+
+.. code-block:: console
+
+   $ uv pip install --python "$DEEPQMC_PYTHON" --only-binary :all: \
+       -c "$QMCPACK_SOURCE/src/QMCWaveFunctions/DeepQMC/requirements.txt" 'jax[cuda12]==0.8.3'
+   $ export JAX_PLATFORMS=cuda
+
+The extra adds CUDA plugins and runtime packages; those additional packages
+are not pinned by the CPU requirements snapshot. A compatible NVIDIA driver is
+required, and the container must expose the GPUs. The CUDA runtime selected by
+JAX is not necessarily the same version reported by the host driver; consult
+the official `JAX installation instructions <https://docs.jax.dev/en/latest/installation.html>`_
+for current compatibility guidance. After choosing either route, verify the
+backend before proceeding. Import DeepQMC first so its package setup is included;
+explicit ``JAX_PLATFORMS`` selection makes an unavailable requested backend an
+error rather than silently falling back to CPU:
+
+.. code-block:: console
+
+   $ "$DEEPQMC_PYTHON" -c 'import deepqmc, jax; from importlib.metadata import version; print("deepqmc", version("deepqmc"), "jax", jax.__version__, "devices", jax.devices())'
+
+The common CPU install may emit warnings about unavailable GPU plugins; that is
+expected for CPU use. GPU execution requires the CUDA extra and a working
+NVIDIA driver. QMCPACK's native ``QMC_GPU`` build options are independent and do
+not install or select the JAX backend. The reference CTest workflow explicitly
+requests CPU, even in an environment with GPU packages; validate GPU execution
+with the backend/device check above and the manual helium run below.
 
 Building QMCPACK
 ~~~~~~~~~~~~~~~~
@@ -232,7 +273,7 @@ configuration override at the matching configuration file:
    $ export DEEPQMC_HYDRA_CONFIG=/trusted/path/config.yaml
    $ export DEEPQMC_PYTHON_SITE_PACKAGES="$("$DEEPQMC_PYTHON" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')"
    $ export PYTHONPATH="$DEEPQMC_PYTHON_SITE_PACKAGES${PYTHONPATH:+:$PYTHONPATH}"
-   $ export JAX_PLATFORMS=cpu OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
+   $ export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
    $ "$QMCPACK_SOURCE/build/deepqmc-llvm/bin/qmcpack" he_deepqmc.xml
 
 Successful completion produces ``He.deepqmc.s000.scalar.dat`` with finite
@@ -262,14 +303,13 @@ are in bohr; the configured molecule, ion/electron species, checkpoint, and
 ansatz configuration must agree. This example uses the pretrained model as-is;
 it performs no training or variational parameter optimization.
 
-CPU is the validated backend here. JAX controls its own device selection,
-independently of whether QMCPACK itself was built with GPU support. For GPU
-experiments, install the appropriate JAX CUDA extra in a separate environment
-using the official `JAX installation instructions <https://docs.jax.dev/en/latest/installation.html>`_,
-then set ``JAX_PLATFORMS=cuda`` and verify ``jax.devices()`` reports the intended
-GPU before running. GPU operation is not validated by this recipe; do not infer
-that a QMCPACK GPU build is required merely to use JAX on a GPU. JAX computes a
-full Hessian in this bridge, and first-use JIT compilation adds warm-up cost;
+The CPU workflow was reproduced on the validation platform listed above.
+The original DeepQMC integration also used ``jax[cuda12]==0.8.3`` for GPU
+inference, but the GPU instructions have not been execution-tested on that
+CPU validation platform. Verify that ``jax.devices()`` reports the intended
+GPU and complete the manual helium run on the target machine; passing the
+CPU reference tests does not validate GPU execution. JAX computes a full
+Hessian in this bridge, and first-use JIT compilation adds warm-up cost;
 no general performance claim is implied.
 
 Focused validation and limitations
