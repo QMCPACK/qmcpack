@@ -85,8 +85,24 @@ Reference helium test data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The reference checkpoint and its matching Hydra configuration are distributed
-separately from the source repository. CMake does not download them. Unpack the
-reference archive into a local directory with this layout:
+separately from the source repository. Download the
+`reference archive <https://app.box.com/s/26h4l97drt94xar8y01ix5jebars1j8v>`_
+using Box's Download button. The matching
+`SHA256 checksum file <https://app.box.com/s/d80v5j4e76g5d5z7r81uer15vdylrykc>`_
+is also available on Box. These are sharing pages, not direct-download URLs;
+CMake does not download the files.
+
+Place the archive in the directory where you want to keep the test data.
+Verify it against the checksum pinned in this repository before extracting:
+
+.. code-block:: console
+
+   $ sha256sum -c "$QMCPACK_SOURCE/tests/molecules/He_deepqmc/deepqmc-he-v1.tar.gz.sha256"
+   $ mkdir -p HeECP
+   $ tar -xzf deepqmc-he-v1.tar.gz -C HeECP
+   $ export DEEPQMC_TEST_DATA_DIR="$PWD/HeECP"
+
+The extracted directory has this layout:
 
 .. code-block:: text
 
@@ -101,7 +117,6 @@ reference tests with:
 
 .. code-block:: console
 
-   $ export DEEPQMC_TEST_DATA_DIR=/absolute/path/to/HeECP
    $ cmake -S "$QMCPACK_SOURCE" -B "$QMCPACK_SOURCE/build/deepqmc-llvm" \
        -DQMC_DEEPQMC_TEST_DATA_DIR="$DEEPQMC_TEST_DATA_DIR"
    $ cmake --build "$QMCPACK_SOURCE/build/deepqmc-llvm" \
