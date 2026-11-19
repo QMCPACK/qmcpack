@@ -546,6 +546,39 @@ def test_rmg_diamond(tmp_path):
 #end def test_rmg_diamond
 
 
+def test_rmg_diamond_dmc_twistavg(tmp_path):
+    test_data = dict(
+        path = 'rmg/02_diamond_dmc_twistavg',
+        scripts = [
+            'diamond_rmg_dmc_twistavg.py',
+            ],
+        files = [
+            ('rmg',     'input', 'runs/diamond/scf/scf.in'),
+            ('rmg',     'input', 'runs/diamond/nscf_twist/nscf.in'),
+            ('qmcpack', 'input', 'runs/diamond/optJ12/opt.in.xml'),
+            ('qmcpack', 'input', 'runs/diamond/dmc_twist/dmc.g000.twistnum_0.in.xml'),
+            ],
+        )
+
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("qmcpack", tmp_path)
+
+    for script in test_data["scripts"]:
+        script_path = example_root / test_data["path"] / script
+        success, message = run_example_script(script_path, test_path)
+        assert(success), message
+
+    for code, _filetype, filepath in test_data["files"]:
+        success, message = check_generated_files(
+            code,
+            tmp_path,
+            test_data["path"],
+            filepath,
+            )
+        assert(success), message
+#end def test_rmg_diamond_dmc_twistavg
+
+
 def test_pyscf_h2o_ae_hf(tmp_path):
     test_data = dict(
         path = 'pyscf/01_h2o_hf',

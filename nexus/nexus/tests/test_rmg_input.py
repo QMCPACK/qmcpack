@@ -851,7 +851,24 @@ def test_input_spec():
     documented_sections = input_spec.section_order[:15]
     documented_count = sum(len(input_spec.section_contents[s]) for s in documented_sections)
     assert(documented_count==271)
-    assert(len(input_spec.keywords)==284)
+    assert(len(input_spec.keywords)==291)
+
+    # read by RMG develop, not yet in its keyword documentation
+    undocumented = obj(
+        batch_density                    = 'boolean',
+        batch_preconditioner             = 'boolean',
+        exx_energy_convergence_criterion = 'double',
+        exx_qpoint_mesh                  = 'integer array',
+        exx_vexx_mixing                  = 'double',
+        max_run_seconds                  = 'double',
+        tot_magnetization                = 'double',
+        )
+    for k,key_type in undocumented.items():
+        assert(k in input_spec.section_contents.undocumented)
+        assert(input_spec.keywords[k].key_type==key_type)
+    #end for
+    assert(input_spec.keywords.exx_vexx_mixing.min_value==0.01)
+    assert(input_spec.keywords.tot_magnetization.default==-10000.0)
 
     added_keywords = {
         'AFM',
@@ -1485,6 +1502,41 @@ def test_generate():
         **shared_inputs
         )
 
+
+    # RMG reads a kpoints list only if an entry of kpoint_mesh is below 1
+    # and symmetry is off
+    assert(value_eq(gi.kpoint_mesh,np.array([-1,-1,-1],dtype=int)))
+    assert(gi.use_symmetry==0)
+    del gi.kpoint_mesh
+    del gi.use_symmetry
+    with pytest.raises(ValueError,match='use_symmetry=0'):
+        generate_rmg_input(
+            system          = system,
+            virtual_frac    = 1.0,
+            wf_grid_spacing = 0.15,
+            use_symmetry    = 1,
+            **shared_inputs
+            )
+    #end with
+
+    # a Gamma-only system keeps RMG's default kpoint_mesh
+    gamma_system = generate_physical_system(
+        structure = 'diamond',
+        cell      = 'prim',
+        C         = 4,
+        units     = 'A',
+        kgrid     = (1,1,1),
+        kshift    = (0,0,0),
+        )
+    gamma_input = generate_rmg_input(
+        system          = gamma_system,
+        virtual_frac    = 1.0,
+        wf_grid_spacing = 0.15,
+        **shared_inputs
+        )
+    assert('kpoints' in gamma_input)
+    assert('kpoint_mesh' not in gamma_input)
+    assert('use_symmetry' not in gamma_input)
 
     # check shared keys match
     mkeys = set(mi.keys())
