@@ -19,6 +19,7 @@
 #include "CountingWaveFunctionComponent.h"
 #include "EstimatorInputDelegates.h"
 #include "Estimators/EstimatorManagerNew.h"
+#include "Estimators/tests/EstimatorManagerNewTest.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/DistanceTable.h"
@@ -103,7 +104,10 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
 
   VMCBatchedSummary summary;
   summary.walkers = driver.get_num_living_walkers();
-  const auto fail = [&summary](const std::string& category, int crowd, int walker = -1) {
+  EstimatorManagerNewTestAccess estimator_access(*driver.estimator_manager_);
+  summary.driver_acceptance_ratio = estimator_access.getAcceptanceRatio();
+  summary.driver_block_weight     = estimator_access.getBlockWeight();
+  const auto fail                 = [&summary](const std::string& category, int crowd, int walker = -1) {
     std::ostringstream message;
     message << category;
     if (crowd >= 0)
@@ -122,7 +126,11 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
     const auto& crowd = driver.crowds_[crowd_index];
     if (crowd->size() != static_cast<std::size_t>(walkers_per_crowd))
       fail("distribution mismatch", crowd_index);
-    summary.particle_moves += crowd->get_accept() + crowd->get_reject();
+    const int crowd_accept = crowd->get_accept();
+    const int crowd_reject = crowd->get_reject();
+    int observed_accept    = 0;
+    int observed_reject    = 0;
+    summary.particle_moves += crowd_accept + crowd_reject;
     const auto& walker_twfs  = crowd->get_walker_twfs();
     const auto& walker_elecs = crowd->get_walker_elecs();
     for (const auto& particles : walker_elecs)
@@ -158,10 +166,19 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
           fail("proposal mask/evaluation mismatch", crowd_index, walker);
       for (const auto& resolution : resolutions)
       {
+        const int particle_count = walker_elecs[walker].get().getTotalNum();
         if (resolution.accepted)
+        {
           ++summary.accepted;
+          summary.accepted_particle_moves += particle_count;
+          observed_accept += particle_count;
+        }
         else
+        {
           ++summary.rejected;
+          summary.rejected_particle_moves += particle_count;
+          observed_reject += particle_count;
+        }
         if (resolution.mixed)
           ++summary.mixed_resolutions;
         if (resolution.evaluations != static_cast<int>(!resolution.accepted))
@@ -192,6 +209,10 @@ VMCBatchedSummary VMCBatchedTest::runAllParticleNoDrift(int walkers_per_crowd)
             fail("L numeric mismatch", crowd_index, walker);
       }
     }
+    if (observed_accept != crowd_accept)
+      fail("crowd acceptance accounting mismatch", crowd_index);
+    if (observed_reject != crowd_reject)
+      fail("crowd rejection accounting mismatch", crowd_index);
   }
   if (summary.particle_moves != summary.expected_particle_moves)
     fail("particle move count mismatch", -1);

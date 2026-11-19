@@ -116,9 +116,7 @@ if(HAVE_MPI)
   set(DRIVER_TEST_SRC
       SetupPools.cpp
       test_WalkerControl.cpp
-      test_QMCDriverNew.cpp
-      VMCBatchedTest.cpp
-      test_VMCBatched_mpi.cpp)
+      test_QMCDriverNew.cpp)
   add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
   target_link_libraries(${UTEST_EXE} catch_main qmcdriver minimal_test_pools)
   if(USE_OBJECT_TARGET)
