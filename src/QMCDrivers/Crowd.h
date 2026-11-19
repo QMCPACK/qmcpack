@@ -140,9 +140,7 @@ private:
   // collector for walker logs
   std::unique_ptr<WalkerLogCollector> wlog_collector_;
 
-  /** @name Step State
-   *
-   *  Should be per walker?
+  /** @name Crowd-wide block move counters
    *  @{
    */
   unsigned long n_reject_          = 0;
