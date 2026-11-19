@@ -49,37 +49,34 @@ int main(){
 	
 	multi::array<complex, 1, cuda::managed::allocator<complex>> overlap(set_size);
 
-#if 0 // using iterators	
-	auto phi1_p = begin(phi1);
-	auto phi2_p = begin(phi2);
+	// auto phi1_p = begin(phi1);
+	// auto phi2_p = begin(phi2);
 	
-	auto overlap_p = begin(overlap);
+	// auto overlap_p = begin(overlap);
 
-	run(set_size, 
-		[phi1_p, phi2_p, overlap_p, basis_size] __device__ (int ist){
-			complex a = 0.;
-			for(int ip = 0; ip < basis_size; ip++){
-				auto p1 = phi1_p[ist][ip];
-				auto p2 = phi2_p[ist][ip];
-				a += conj(p1)*p2;
-			}
-			overlap_p[ist] = a;
-		}
-	);
-#endif
-#if 0
-	run(set_size, 
-		[phi1_p = begin(phi1), phi2_p = begin(phi2), overlap_p = begin(overlap), basis_size] __device__ (int ist){
-			complex a = 0.;
-			for(int ip = 0; ip < basis_size; ip++){
-				auto p1 = phi1_p[ist][ip];
-				auto p2 = phi2_p[ist][ip];
-				a += conj(p1)*p2;
-			}
-			overlap_p[ist] = a;
-		}
-	);
-#endif
+	// run(set_size, 
+	// 	[phi1_p, phi2_p, overlap_p, basis_size] __device__ (int ist){
+	// 		complex a = 0.;
+	// 		for(int ip = 0; ip < basis_size; ip++){
+	// 			auto p1 = phi1_p[ist][ip];
+	// 			auto p2 = phi2_p[ist][ip];
+	// 			a += conj(p1)*p2;
+	// 		}
+	// 		overlap_p[ist] = a;
+	// 	}
+	// );
+
+	// run(set_size, 
+	// 	[phi1_p = begin(phi1), phi2_p = begin(phi2), overlap_p = begin(overlap), basis_size] __device__ (int ist){
+	// 		complex a = 0.;
+	// 		for(int ip = 0; ip < basis_size; ip++){
+	// 			auto p1 = phi1_p[ist][ip];
+	// 			auto p2 = phi2_p[ist][ip];
+	// 			a += conj(p1)*p2;
+	// 		}
+	// 		overlap_p[ist] = a;
+	// 	}
+	// );
 
 	run(set_size, 
 		[phi1_p = &phi1(), phi2_p = &phi2(), overlap_p = &overlap()] __device__ (int ist){
@@ -91,30 +88,29 @@ int main(){
 
 	assert( overlap[21] == double(basis_size) );
 	
-#if 0	
-	{
-		auto npoints = phi1.basis().part().local_size();
-		auto vol_element = phi1.basis().volume_element();
-		auto phi1p = begin(phi1.matrix());
-		auto phi2p = begin(phi2.matrix());
-		auto overlap = begin(overlap_vector);
+	// {
+	// 	auto npoints = phi1.basis().part().local_size();
+	// 	auto vol_element = phi1.basis().volume_element();
+	// 	auto phi1p = begin(phi1.matrix());
+	// 	auto phi2p = begin(phi2.matrix());
+	// 	auto overlap = begin(overlap_vector);
 			
-		//OPTIMIZATION: here we should parallelize over points as well 
-		gpu::run(phi1.set_size(),
-						 [phi1p, phi2p, overlap, npoints,vol_element] __host__ __device__ (int ist){
-							 type aa = 0.0;
-							 for(int ip = 0; ip < npoints; ip++){
-								phi1p[ip];
-							//	 auto p1 = phi1p[ip][ist];
-							//	 auto p2 = phi2p[ip][ist];
-							//	 aa += conj(p1)*p2;
+	// 	//OPTIMIZATION: here we should parallelize over points as well 
+	// 	gpu::run(phi1.set_size(),
+	// 					 [phi1p, phi2p, overlap, npoints,vol_element] __host__ __device__ (int ist){
+	// 						 type aa = 0.0;
+	// 						 for(int ip = 0; ip < npoints; ip++){
+	// 							phi1p[ip];
+	// 						//	 auto p1 = phi1p[ip][ist];
+	// 						//	 auto p2 = phi2p[ip][ist];
+	// 						//	 aa += conj(p1)*p2;
 									 
-							 }
+	// 						 }
 								 
-							 overlap[ist] = vol_element*aa;
-						 });
-	}
-#endif
+	// 						 overlap[ist] = vol_element*aa;
+	// 					 });
+	// }
+
 	return 0;
 }
 

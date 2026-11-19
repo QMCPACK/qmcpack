@@ -18,9 +18,7 @@
 #ifndef AFQMC_SPARSE_CPU_HPP
 #define AFQMC_SPARSE_CPU_HPP
 
-#if defined(HAVE_MKL)
-#include "AFQMC/Numerics/detail/CPU/mkl_spblas.h"
-#endif
+
 #include <cassert>
 #include <complex>
 
@@ -335,11 +333,7 @@ inline static void csrmv(const char transa,
                          const float beta,
                          float* y)
 {
-#if defined(HAVE_MKL)
-  mkl_scsrmv(transa, M, K, alpha, matdescra, A, indx, pntrb, pntre, x, beta, y);
-#else
   backup_impl::csrmv(transa, M, K, alpha, matdescra, A, indx, pntrb, pntre, x, beta, y);
-#endif
 }
 
 inline static void csrmv(const char transa,
@@ -355,11 +349,7 @@ inline static void csrmv(const char transa,
                          const double beta,
                          double* y)
 {
-#if defined(HAVE_MKL)
-  mkl_dcsrmv(transa, M, K, alpha, matdescra, A, indx, pntrb, pntre, x, beta, y);
-#else
   backup_impl::csrmv(transa, M, K, alpha, matdescra, A, indx, pntrb, pntre, x, beta, y);
-#endif
 }
 
 inline static void csrmv(const char transa,
@@ -375,11 +365,7 @@ inline static void csrmv(const char transa,
                          const std::complex<float> beta,
                          std::complex<float>* y)
 {
-#if defined(HAVE_MKL)
-  mkl_ccsrmv(transa, M, K, alpha, matdescra, A, indx, pntrb, pntre, x, beta, y);
-#else
   backup_impl::csrmv(transa, M, K, alpha, matdescra, A, indx, pntrb, pntre, x, beta, y);
-#endif
 }
 
 inline static void csrmv(const char transa,
@@ -395,11 +381,7 @@ inline static void csrmv(const char transa,
                          const std::complex<double> beta,
                          std::complex<double>* y)
 {
-#if defined(HAVE_MKL)
-  mkl_zcsrmv(transa, M, K, alpha, matdescra, A, indx, pntrb, pntre, x, beta, y);
-#else
   backup_impl::csrmv(transa, M, K, alpha, matdescra, A, indx, pntrb, pntre, x, beta, y);
-#endif
 }
 
 inline static void csrmm(const char transa,
@@ -418,11 +400,7 @@ inline static void csrmm(const char transa,
                          float* C,
                          const int ldc)
 {
-#if defined(HAVE_MKL)
-  mkl_scsrmm(transa, M, N, K, alpha, matdescra, A, indx, pntrb, pntre, B, ldb, beta, C, ldc);
-#else
   backup_impl::csrmm(transa, M, N, K, alpha, matdescra, A, indx, pntrb, pntre, B, ldb, beta, C, ldc);
-#endif
 }
 
 inline static void csrmm(const char transa,
@@ -441,11 +419,7 @@ inline static void csrmm(const char transa,
                          std::complex<float>* C,
                          const int ldc)
 {
-#if defined(HAVE_MKL)
-  mkl_ccsrmm(transa, M, N, K, alpha, matdescra, A, indx, pntrb, pntre, B, ldb, beta, C, ldc);
-#else
   backup_impl::csrmm(transa, M, N, K, alpha, matdescra, A, indx, pntrb, pntre, B, ldb, beta, C, ldc);
-#endif
 }
 
 inline static void csrmm(const char transa,
@@ -464,11 +438,7 @@ inline static void csrmm(const char transa,
                          double* C,
                          const int ldc)
 {
-#if defined(HAVE_MKL)
-  mkl_dcsrmm(transa, M, N, K, alpha, matdescra, A, indx, pntrb, pntre, B, ldb, beta, C, ldc);
-#else
   backup_impl::csrmm(transa, M, N, K, alpha, matdescra, A, indx, pntrb, pntre, B, ldb, beta, C, ldc);
-#endif
 }
 
 inline static void csrmm(const char transa,
@@ -487,11 +457,7 @@ inline static void csrmm(const char transa,
                          std::complex<double>* C,
                          const int ldc)
 {
-#if defined(HAVE_MKL)
-  mkl_zcsrmm(transa, M, N, K, alpha, matdescra, A, indx, pntrb, pntre, B, ldb, beta, C, ldc);
-#else
   backup_impl::csrmm(transa, M, N, K, alpha, matdescra, A, indx, pntrb, pntre, B, ldb, beta, C, ldc);
-#endif
 }
 
 inline static void csrmv(const char transa,

@@ -1,16 +1,16 @@
 <?xml version="1.0"?>
 <qmcsystem>
   <wavefunction name="psi0" target="e">
-    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" twist="0.09055394187  0.1893400603  -0.2798940021" href="Al-DZ.h5" PBCimages="8 8 8">
+    <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" twist="0.09055394187  0.1893400603  -0.2798940021" href="Al-DZ.h5" PBCimages="8 8 8">
+      <sposet name="spo-ud" size="6">
+        <occupation mode="ground"/>
+        <coefficient size="52" spindataset="0"/>
+      </sposet>
+    </sposet_collection>
+    <determinantset>
       <slaterdeterminant>
-        <determinant id="updet" size="6">
-          <occupation mode="ground"/>
-          <coefficient size="52" spindataset="0"/>
-        </determinant>
-        <determinant id="downdet" size="6">
-          <occupation mode="ground"/>
-          <coefficient size="52" spindataset="0"/>
-        </determinant>
+        <determinant sposet="spo-ud"/>
+        <determinant sposet="spo-ud"/>
       </slaterdeterminant>
     </determinantset>
   </wavefunction>

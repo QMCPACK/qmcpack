@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -32,7 +31,7 @@ namespace qmcplusplus
 
 TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   lattice.R = {3.94055, 3.94055, 7.8811, 3.94055, 3.94055, -7.8811, -7.8811, 7.8811, 0};

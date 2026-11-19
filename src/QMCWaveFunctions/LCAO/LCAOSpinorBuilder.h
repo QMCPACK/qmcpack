@@ -32,7 +32,7 @@ public:
      *
      * Derives from LCAOrbitalBuilder, but will require an h5_path to be set
      */
-  LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur);
+  LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Communicate& comm, xmlNodePtr cur);
 
   /** creates and returns SpinorSet
    *

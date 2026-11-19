@@ -8,9 +8,8 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include <cstdio>
 #include <vector>
 #include <string>

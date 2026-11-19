@@ -11,12 +11,11 @@ if(QMC_COMPLEX)
   list(APPEND DIAMOND_SCALARS "eeenergy" "-4.465700045066 0.036509787281")
   list(APPEND DIAMOND_SCALARS "localecp" "-13.135076417429 0.178033617003")
   list(APPEND DIAMOND_SCALARS "nonlocalecp" "2.030854168240 0.050570571341")
-  list(APPEND DIAMOND_SCALARS "ionion" "-25.551326757000 0.001000000000")
+  list(APPEND DIAMOND_SCALARS "ionion" "-25.55132719 0.000002")
 
   qmc_run_and_check(
-    short-diamondC_2x1x1_pp_kpts-vmc_gaussian_sdj
+    short-diamondC_2x1x1_pp_kpts-sd_lcao_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_kpts"
-    qmc_short
     qmc_short.in.xml
     1
     16
@@ -39,11 +38,10 @@ if(QMC_COMPLEX)
   list(APPEND LONG_DIAMOND_SCALARS "eeenergy" "-4.465700045066 0.018685263294")
   list(APPEND LONG_DIAMOND_SCALARS "localecp" "-13.135076417429 0.057750691393")
   list(APPEND LONG_DIAMOND_SCALARS "nonlocalecp" "2.030854168240 0.034268032958")
-  list(APPEND LONG_DIAMOND_SCALARS "ionion" "-25.551326757000 0.001000000000")
+  list(APPEND LONG_DIAMOND_SCALARS "ionion" "-25.55132719 0.000002")
   qmc_run_and_check(
-    long-diamondC_2x1x1_pp_kpts-vmc_gaussian_sdj
+    long-diamondC_2x1x1_pp_kpts-sd_lcao_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_kpts"
-    qmc_long
     qmc_long.in.xml
     1
     16
@@ -61,11 +59,10 @@ if(QMC_COMPLEX)
   list(APPEND LONG_DIAMOND_DMC_SCALARS "eeenergy" "-5.450656130373 0.023207167719")
   list(APPEND LONG_DIAMOND_DMC_SCALARS "localecp" "-13.228959467675 0.114648569345")
   list(APPEND LONG_DIAMOND_DMC_SCALARS "nonlocalecp" "1.990917122865 0.045023816102")
-  list(APPEND LONG_DIAMOND_DMC_SCALARS "ionion" "-25.551326757000 0.001000000000")
+  list(APPEND LONG_DIAMOND_DMC_SCALARS "ionion" "-25.55132719 0.000002")
   qmc_run_and_check(
-    long-diamondC_2x1x1_pp_kpts-dmc_gaussian_sdj
+    long-diamondC_2x1x1_pp_kpts-sd_lcao_jas-dmc
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_kpts"
-    qmc_long_vmc_dmc
     qmc_long_vmc_dmc.in.xml
     1
     16
@@ -77,3 +74,6 @@ if(QMC_COMPLEX)
 else()
   message(VERBOSE "Skipping Complex Periodic LCAO  if Complex code not build (QMC_COMPLEX=0)")
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

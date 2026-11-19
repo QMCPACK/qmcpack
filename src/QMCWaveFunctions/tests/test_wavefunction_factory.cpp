@@ -8,11 +8,8 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
 
-
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
@@ -22,7 +19,7 @@ namespace qmcplusplus
 {
 TEST_CASE("WaveFunctionFactory", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto qp = std::make_unique<ParticleSet>(simulation_cell);

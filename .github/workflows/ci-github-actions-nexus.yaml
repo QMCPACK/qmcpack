@@ -15,30 +15,39 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.14"]
+        python-version: ["3.12", "3.14", "3.15"]
 
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout Action
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
-    - name: Setup Graphviz
-      run: sudo apt-get install graphviz
+    - name: Install System Dependencies
+      env:
+        PYTHON_VERSION: ${{ matrix.python-version }}
+      run: |
+        packages=(graphviz)
+        # Python 3.15 needs HDF5 development files to build h5py without a wheel.
+        if [[ "$PYTHON_VERSION" == '3.15' ]]; then
+          packages+=(libhdf5-dev)
+        fi
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends "${packages[@]}"
 
     - name: Install uv and Setup Python ${{ matrix.python-version }}
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@v10.3.0
       with:
-        version: "0.11.11"
+        version: "0.13.1"
         python-version: ${{ matrix.python-version }}
 
     - name: Install Project and All Dependencies
       run: uv sync --locked --all-extras --dev
       working-directory: ./nexus
 
-    - name: Downgrade to Minimum Versions (Python 3.10 only)
-      if: contains(matrix.python-version, '3.10')
-      run: uv pip install numpy==1.22.0 scipy==1.8.0 h5py==3.6.0 matplotlib==3.3.0 spglib==1.16.0 cif2cell==2.1.0 pydot==2.0.0 seekpath==2.0.0
+    - name: Downgrade to Minimum Versions (Python 3.12 only)
+      if: contains(matrix.python-version, '3.12')
+      run: uv pip install numpy==1.26.0 scipy==1.11.2 h5py==3.10.0 matplotlib==3.7.3 spglib==2.4.0 cif2cell==2.1.0 pydot==2.0.0 seekpath==2.1.0
       working-directory: ./nexus
 
     - name: Run Nexus Tests
@@ -51,29 +60,31 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.14"]
+        python-version: ["3.12", "3.14"]
     runs-on: macos-latest
 
     steps:
     - name: Checkout Action
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: Setup Graphviz
+      env:
+        HOMEBREW_NO_INSTALL_CLEANUP: "1"
       run: brew install graphviz
 
     - name: Install uv and Setup Python ${{ matrix.python-version }}
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@v10.3.0
       with:
-        version: "0.11.11"
+        version: "0.13.1"
         python-version: ${{ matrix.python-version }}
 
     - name: Install Project and All Dependencies
       run: uv sync --locked --all-extras --dev
       working-directory: ./nexus
 
-    - name: Downgrade to Minimum Versions (Python 3.10 only)
-      if: contains(matrix.python-version, '3.10')
-      run: uv pip install numpy==1.22.0 scipy==1.8.0 spglib==1.16.0 cif2cell==2.1.0 pydot==2.0.0 seekpath==2.0.0
+    - name: Downgrade to Minimum Versions (Python 3.12 only)
+      if: contains(matrix.python-version, '3.12')
+      run: uv pip install numpy==1.26.0 scipy==1.11.2 spglib==2.4.0 cif2cell==2.1.0 pydot==2.0.0 seekpath==2.1.0 matplotlib==3.8.4
       working-directory: ./nexus
 
     - name: Run Nexus Tests

@@ -18,7 +18,7 @@ gms_job = job(cores=16,app='gamess.x')
 
 h2o = generate_physical_system(
     # full atomic/electronic structure
-    elem        = ['O','H','H'], 
+    elem        = ['O','H','H'],
     pos         = [[0.000000, 0.000000, 0.000000],
                    [0.000000,-0.757160, 0.586260],
                    [0.000000, 0.757160, 0.586260]],
@@ -27,7 +27,7 @@ h2o = generate_physical_system(
     O           = 6,   # Zeff=6 for BFD ECP
     H           = 1,   # Zeff=1 for BFD ECP
     # C2v symmetry structure
-    folded_elem = ['O','H'],     
+    folded_elem = ['O','H'],
     folded_pos  = [[0.000000, 0.000000, 0.000000],
                    [0.000000, 0.757160, 0.586260]],
     )

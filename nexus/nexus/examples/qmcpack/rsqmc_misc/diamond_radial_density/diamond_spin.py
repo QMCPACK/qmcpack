@@ -5,12 +5,9 @@ from nexus import job
 from nexus import run_project
 from nexus import generate_physical_system
 from nexus import generate_pwscf
-from nexus import generate_projwfc
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack
 from nexus import vmc
-
-from nexus.structure import *
 
 from nexus.qmcpack_input import spindensity
 
@@ -36,7 +33,7 @@ dia16 = generate_physical_system(
     tiling = (1,1,1),
     C      = 4
     )
-              
+
 # k-mesh used for density
 scf_kg = dia16.structure.kgrid_from_kspacing(0.5) # Get SCF kmesh from k-spacing
 

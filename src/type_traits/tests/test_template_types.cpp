@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include <complex>
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include "type_traits/template_types.hpp"
 
 
@@ -34,11 +34,10 @@ TEST_CASE("makeRefVector", "[type_traits]")
   for (int i = 0; i < 3; ++i)
     ddvec.push_back(DerivedDummy());
 
-  auto bdum  = makeRefVector<Dummy>(ddvec);
   auto bdum2 = makeRefVector<Dummy>(ddvec);
   CHECK(std::is_same<RefVector<Dummy>, decltype(bdum2)>::value);
 
-  auto bdum3 = makeRefVector<decltype(ddvec)::value_type>(ddvec);
+  makeRefVector<decltype(ddvec)::value_type>(ddvec);
 }
 
 TEST_CASE("convertUPtrToRefvector", "[type_traits]")

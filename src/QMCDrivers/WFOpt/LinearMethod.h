@@ -33,7 +33,7 @@ class LinearMethod
   using Real = QMCTraits::RealType;
 
   // obtain the range of non-linear parameters
-  void getNonLinearRange(int& first, int& last, const QMCCostFunctionBase& optTarget) const;
+  static void getNonLinearRange(int& first, int& last, const QMCCostFunctionBase& optTarget);
 
 public:
   /** Select eigenvalue and return corresponding scaled eigenvector
@@ -69,9 +69,9 @@ public:
   static Real getLowestEigenvector_Gen(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev);
 
   //asymmetric EV
-  Real getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev) const;
+  static Real getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev);
   // compute a rescale factor. Ye: Where is the method from?
-  Real getNonLinearRescale(std::vector<Real>& dP, Matrix<Real>& S, const QMCCostFunctionBase& optTarget) const;
+  static Real getNonLinearRescale(std::vector<Real>& dP, Matrix<Real>& S, const QMCCostFunctionBase& optTarget);
 };
 } // namespace qmcplusplus
 #endif

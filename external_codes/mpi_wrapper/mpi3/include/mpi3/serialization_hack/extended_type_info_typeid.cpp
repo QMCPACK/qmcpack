@@ -26,6 +26,11 @@
 #include <boost/serialization/extended_type_info_typeid.hpp>
 #include <boost/serialization/singleton.hpp>
 
+#ifdef BOOST_MSVC
+#undef BOOST_SERIALIZATION_DECL
+#define BOOST_SERIALIZATION_DECL /*comment*/  // for MSVC
+#endif
+
 namespace boost { 
 namespace serialization { 
 namespace typeid_system {

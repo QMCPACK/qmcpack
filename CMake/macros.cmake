@@ -16,6 +16,17 @@
 
 include(test_labels)
 
+# Reserve one GPU for a test. CTest obtains the available GPU IDs from the
+# resource specification generated in the top-level CMakeLists.txt.
+function(SET_TEST_GPU_RESOURCES TESTNAME)
+  if(ENABLE_CUDA
+     OR ENABLE_ROCM
+     OR ENABLE_SYCL
+     OR ENABLE_OFFLOAD)
+    set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_GROUPS "gpus:1")
+  endif()
+endfunction()
+
 # Function to copy a directory
 function(COPY_DIRECTORY SRC_DIR DST_DIR)
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${DST_DIR}")
@@ -124,7 +135,6 @@ function(
   PROCS
   THREADS
   TEST_ADDED
-  TEST_LABELS
   ${ARGN})
   math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
   set(QMC_APP $<TARGET_FILE:qmcpack>)
@@ -142,8 +152,8 @@ function(
     if(${TOT_PROCS} GREATER ${TEST_MAX_PROCS})
       message(VERBOSE "Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
     else()
-      add_test(NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS}
-                                        ${QMC_APP} ${ARGN})
+      add_test(NAME ${TESTNAME} COMMAND ${QMC_GPU_TEST_LAUNCHER} ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS}
+                                        ${MPIEXEC_PREFLAGS} ${QMC_APP} ${ARGN})
       set_tests_properties(
         ${TESTNAME}
         PROPERTIES FAIL_REGULAR_EXPRESSION
@@ -168,7 +178,7 @@ function(
     endif()
   else()
     if((${PROCS} STREQUAL "1"))
-      add_test(NAME ${TESTNAME} COMMAND ${QMC_APP} ${ARGN})
+      add_test(NAME ${TESTNAME} COMMAND ${QMC_GPU_TEST_LAUNCHER} ${QMC_APP} ${ARGN})
       set_tests_properties(
         ${TESTNAME}
         PROPERTIES FAIL_REGULAR_EXPRESSION
@@ -190,20 +200,13 @@ function(
   endif()
 
   # set additional test properties when the test gets added
-  set(TEST_LABELS_TEMP "")
   if(TEST_ADDED_TEMP)
-    add_test_labels(${TESTNAME} TEST_LABELS_TEMP)
     set_property(
       TEST ${TESTNAME}
       APPEND
       PROPERTY LABELS "QMCPACK")
 
-    if(ENABLE_CUDA
-       OR ENABLE_ROCM
-       OR ENABLE_SYCL
-       OR ENABLE_OFFLOAD)
-      set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
-    endif()
+    set_test_gpu_resources(${TESTNAME})
 
     if(ENABLE_OFFLOAD)
       set_property(TEST ${TESTNAME} APPEND PROPERTY ENVIRONMENT "OMP_TARGET_OFFLOAD=mandatory")
@@ -211,9 +214,6 @@ function(
   endif()
   set(${TEST_ADDED}
       ${TEST_ADDED_TEMP}
-      PARENT_SCOPE)
-  set(${TEST_LABELS}
-      ${TEST_LABELS_TEMP}
       PARENT_SCOPE)
 endfunction()
 
@@ -226,30 +226,21 @@ function(
   PROCS
   THREADS
   TEST_ADDED
-  TEST_LABELS
+  INPUT_FILE
   ${ARGN})
-  # restrict ARGN to only one file or empty
-  list(LENGTH ARGN INPUT_FILE_LENGTH)
-  if(INPUT_FILE_LENGTH GREATER 1)
-    message(FATAL_ERROR "Incorrect invocation of RUN_QMC_APP by ${TESTNAME}. ARGN value is \"${ARGN}\"")
-  endif()
-
-  copy_directory_maybe_using_symlink("${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" "${ARGN}")
+  copy_directory_maybe_using_symlink("${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" "${INPUT_FILE}")
   set(TEST_ADDED_TEMP FALSE)
-  set(TEST_LABELS_TEMP "")
+  # ARGN holds the optional qmcpack command-line options following INPUT_FILE
   run_qmc_app_no_copy(
     ${TESTNAME}
     ${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}
     ${PROCS}
     ${THREADS}
     TEST_ADDED_TEMP
-    TEST_LABELS_TEMP
+    ${INPUT_FILE}
     ${ARGN})
   set(${TEST_ADDED}
       ${TEST_ADDED_TEMP}
-      PARENT_SCOPE)
-  set(${TEST_LABELS}
-      ${TEST_LABELS_TEMP}
       PARENT_SCOPE)
 endfunction()
 
@@ -265,12 +256,39 @@ if(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
   endfunction()
 else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
+  # Extract the output prefix from a QMCPACK XML input.  Keeping this value
+  # coupled to the input prevents scalar checks from reading another run's
+  # output when an input is renamed or copied.
+  function(GET_QMC_PROJECT_ID INPUT_FILE PROJECT_ID)
+    if(NOT EXISTS "${INPUT_FILE}")
+      message(FATAL_ERROR "QMCPACK input file not found: ${INPUT_FILE}")
+    endif()
+
+    file(READ "${INPUT_FILE}" INPUT_XML)
+    string(REGEX MATCH "<project[ \t\r\n]+[^>]*>" PROJECT_TAG "${INPUT_XML}")
+    if(NOT PROJECT_TAG)
+      message(FATAL_ERROR "No project element found in QMCPACK input: ${INPUT_FILE}")
+    endif()
+
+    string(REGEX MATCH "(^|[ \t\r\n])id[ \t\r\n]*=[ \t\r\n]*\"[^\"]+\"" PROJECT_ID_ATTRIBUTE "${PROJECT_TAG}")
+    if(NOT PROJECT_ID_ATTRIBUTE)
+      string(REGEX MATCH "(^|[ \t\r\n])id[ \t\r\n]*=[ \t\r\n]*'[^']+'" PROJECT_ID_ATTRIBUTE "${PROJECT_TAG}")
+    endif()
+    if(NOT PROJECT_ID_ATTRIBUTE)
+      message(FATAL_ERROR "No project id found in QMCPACK input: ${INPUT_FILE}")
+    endif()
+
+    string(REGEX REPLACE "^[^=]*=[ \t\r\n]*['\"]([^'\"]+)['\"]$" "\\1" PROJECT_ID_VALUE "${PROJECT_ID_ATTRIBUTE}")
+    set(${PROJECT_ID}
+        "${PROJECT_ID_VALUE}"
+        PARENT_SCOPE)
+  endfunction()
+
   # Add a test run and associated scalar checks
   # ---required inputs---
   # BASE_NAME - name of test (number of MPI processes, number of threads, and value to check (if applicable)
   #             will be appended to get the full test name)
   # BASE_DIR - source location of test input files
-  # PREFIX - prefix for output files
   # INPUT_FILE - XML input file to QMCPACK
   # PROCS - number of MPI processes
   # THREADS - number of OpenMP threads
@@ -289,7 +307,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     QMC_RUN_AND_CHECK
     BASE_NAME
     BASE_DIR
-    PREFIX
     INPUT_FILE
     PROCS
     THREADS
@@ -365,7 +382,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       "--sopp")
 
     set(TEST_ADDED FALSE)
-    set(TEST_LABELS "")
     set(FULL_NAME "${BASE_NAME}-r${PROCS}-t${THREADS}")
     message(VERBOSE "Adding test ${FULL_NAME}")
     run_qmc_app(
@@ -374,7 +390,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       ${PROCS}
       ${THREADS}
       TEST_ADDED
-      TEST_LABELS
       ${INPUT_FILE})
 
     if(TEST_ADDED AND NOT SHOULD_SUCCEED)
@@ -383,6 +398,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     endif()
 
     if(TEST_ADDED AND SHOULD_SUCCEED)
+      get_qmc_project_id("${BASE_DIR}/${INPUT_FILE}" PREFIX)
       set(IDX0 0)
       foreach(V ${ARGN})
         math(EXPR MOD_IDX0 "${IDX0}%2")
@@ -432,7 +448,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
                 WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}")
               set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME})
               set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results")
-              set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS ${TEST_LABELS})
             endif()
           endforeach(SCALAR_CHECK)
           if(NOT SCALAR_VALUE_FOUND)
@@ -449,7 +464,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
   # BASE_NAME - name of test (number of MPI processes, number of threads, and value to check (if applicable)
   #             will be appended to get the full test name)
   # BASE_DIR - source location of test input files
-  # PREFIX - prefix for output files
   # INPUT_FILE - XML input file to QMCPACK
   # PROCS - number of MPI processes (default: 1)
   # THREADS - number of OpenMP threads (default: 1)
@@ -464,7 +478,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     set(ONE_VALUE_ARGS
         BASE_NAME
         BASE_DIR
-        PREFIX
         INPUT_FILE
         PROCS
         THREADS
@@ -488,7 +501,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
     set(BASE_NAME ${QRC_BASE_NAME})
     set(BASE_DIR ${QRC_BASE_DIR})
-    set(PREFIX ${QRC_PREFIX})
     set(INPUT_FILE ${QRC_INPUT_FILE})
 
     set(EQUIL 2)
@@ -497,7 +509,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     endif()
 
     set(TEST_ADDED FALSE)
-    set(TEST_LABELS "")
     set(FULL_NAME "${BASE_NAME}-r${PROCS}-t${THREADS}")
     message(VERBOSE "Adding test ${FULL_NAME}")
     run_qmc_app(
@@ -506,7 +517,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       ${PROCS}
       ${THREADS}
       TEST_ADDED
-      TEST_LABELS
       ${INPUT_FILE})
     if(TEST_ADDED)
       set_property(TEST ${FULL_NAME} APPEND PROPERTY LABELS "QMCPACK")
@@ -517,6 +527,15 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     endif()
 
     if(TEST_ADDED AND NOT SHOULD_FAIL)
+      get_qmc_project_id("${BASE_DIR}/${INPUT_FILE}" PREFIX)
+      file(READ "${BASE_DIR}/${INPUT_FILE}" INPUT_XML)
+      string(REGEX MATCH
+                   "<parameter[ \t\r\n]+[^>]*name[ \t\r\n]*=[ \t\r\n]*['\"]output_param_file['\"][^>]*>[ \t\r\n]*yes[ \t\r\n]*</parameter>"
+                   WRITES_PARAMETER_OUTPUT
+                   "${INPUT_XML}")
+      if(WRITES_PARAMETER_OUTPUT)
+        set(PREFIX "${PREFIX}.param")
+      endif()
       # Derefence the list of scalar values by variable name
       set(SCALAR_VALUES "${${QRC_SCALAR_VALUES}}")
 
@@ -560,51 +579,85 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
           WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}")
         set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME})
         set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results")
-        set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS ${TEST_LABELS})
       endforeach()
     endif()
   endfunction()
 
-  function(
-    SIMPLE_RUN_AND_CHECK
-    base_name
-    base_dir
-    input_file
-    procs
-    threads
-    check_script)
+  # "simple run and check" function does 2 things:
+  #  1. run qmcpack executable on INPUT_FILE located in BASE_DIR
+  #  2. run CHECK_SCRIPT located in the same folder (BASE_DIR) or tests/scripts with optional CHECK_ARGS
+  # Arguments
+  # BASE_NAME - name of test (number of MPI processes and threads will be appended to get the full test name)
+  # BASE_DIR - source location of test input files
+  # INPUT_FILE - XML or txt input file to QMCPACK
+  # PROCS - number of MPI processes (default: 1)
+  # THREADS - number of OpenMP threads (default: 1)
+  # CHECK_SCRIPT - script to verify results
+  # CHECK_ARGS - additional arguments passed to CHECK_SCRIPT
+  # CMD_OPTIONS - command-line options passed to qmcpack
 
-    # "simple run and check" function does 2 things:
-    #  1. run qmcpack executable on $input_file located in $base_dir
-    #  2. run $check_script located in the same folder ($base_dir)
-    # note: NAME, COMMAND, and WORKING_DIRECTORY must be upper case in add_test!
+  function(SIMPLE_RUN_AND_CHECK)
+    set(options "")
+    set(one_value_args
+        BASE_NAME
+        BASE_DIR
+        INPUT_FILE
+        PROCS
+        THREADS
+        CHECK_SCRIPT)
+    set(multi_value_args CHECK_ARGS CMD_OPTIONS)
+
+    cmake_parse_arguments(SRC "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+
+    if(SRC_UNPARSED_ARGUMENTS)
+      message(FATAL_ERROR "SIMPLE_RUN_AND_CHECK called with unknown or unparsed arguments: ${SRC_UNPARSED_ARGUMENTS}")
+    endif()
+
+    if(NOT SRC_BASE_NAME OR NOT SRC_BASE_DIR OR NOT SRC_INPUT_FILE OR NOT SRC_CHECK_SCRIPT)
+      message(FATAL_ERROR "SIMPLE_RUN_AND_CHECK requires BASE_NAME, BASE_DIR, INPUT_FILE, and CHECK_SCRIPT")
+    endif()
+
+    set(BASE_NAME ${SRC_BASE_NAME})
+    set(BASE_DIR ${SRC_BASE_DIR})
+    set(INPUT_FILE ${SRC_INPUT_FILE})
+    set(CHECK_SCRIPT ${SRC_CHECK_SCRIPT})
+    set(CHECK_ARGS ${SRC_CHECK_ARGS})
+    set(CMD_OPTIONS ${SRC_CMD_OPTIONS})
+
+    set(PROCS 1)
+    if(SRC_PROCS)
+      set(PROCS ${SRC_PROCS})
+    endif()
+    set(THREADS 1)
+    if(SRC_THREADS)
+      set(THREADS ${SRC_THREADS})
+    endif()
 
     # build test name
-    set(full_name "${base_name}-${procs}-${threads}")
+    set(full_name "${BASE_NAME}-r${PROCS}-t${THREADS}")
     message(VERBOSE "Adding test ${full_name}")
 
     # add run (task 1)
     set(test_added false)
-    set(test_labels "")
     run_qmc_app(
       ${full_name}
-      ${base_dir}
-      ${procs}
-      ${threads}
+      ${BASE_DIR}
+      ${PROCS}
+      ${THREADS}
       test_added
-      test_labels
-      ${input_file})
+      ${INPUT_FILE}
+      ${CMD_OPTIONS})
     if(NOT test_added)
       return()
     endif()
 
     # set up command to run check, assume check_script is in the same folder as input
-    if(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
-      set(check_cmd "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
-    elseif(EXISTS "${qmcpack_SOURCE_DIR}/tests/scripts/${check_script}")
-      set(check_cmd "${qmcpack_SOURCE_DIR}/tests/scripts/${check_script}")
+    if(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${CHECK_SCRIPT}")
+      set(check_cmd "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${CHECK_SCRIPT}")
+    elseif(EXISTS "${qmcpack_SOURCE_DIR}/tests/scripts/${CHECK_SCRIPT}")
+      set(check_cmd "${qmcpack_SOURCE_DIR}/tests/scripts/${CHECK_SCRIPT}")
     else()
-      message(FATAL_ERROR "Check script not found: ${check_script}")
+      message(FATAL_ERROR "Check script not found: ${CHECK_SCRIPT}")
     endif()
     #message(${check_cmd})
 
@@ -615,33 +668,15 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
     add_test(
       NAME "${test_name}"
-      COMMAND ${Python3_EXECUTABLE} ${check_cmd} ${ARGN}
+      COMMAND ${Python3_EXECUTABLE} ${check_cmd} ${CHECK_ARGS}
       WORKING_DIRECTORY "${work_dir}")
 
     # make test depend on the run
     set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name})
-    set_property(TEST ${test_name} APPEND PROPERTY LABELS ${test_labels})
 
   endfunction()
 
 endif(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
-
-function(COVERAGE_RUN TESTNAME SRC_DIR PROCS THREADS ${ARGN})
-  set(FULLNAME "coverage-${TESTNAME}")
-  set(TEST_ADDED FALSE)
-  set(TEST_LABELS "")
-  run_qmc_app(
-    ${FULLNAME}
-    ${SRC_DIR}
-    ${PROCS}
-    ${THREADS}
-    TEST_ADDED
-    TEST_LABELS
-    ${ARGN})
-  if(TEST_ADDED)
-    set_property(TEST ${FULLNAME} APPEND PROPERTY LABELS "coverage")
-  endif()
-endfunction()
 
 function(
   CPU_LIMIT_RUN
@@ -653,14 +688,12 @@ function(
   ${ARGN})
   set(FULLNAME "cpu_limit-${TESTNAME}")
   set(TEST_ADDED FALSE)
-  set(TEST_LABELS "")
   run_qmc_app(
     ${FULLNAME}
     ${SRC_DIR}
     ${PROCS}
     ${THREADS}
     TEST_ADDED
-    TEST_LABELS
     ${ARGN})
   if(TEST_ADDED)
     set_property(TEST ${FULLNAME} APPEND PROPERTY TIMEOUT ${TIME})

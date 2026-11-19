@@ -16,9 +16,6 @@
 
 #ifndef QMCPLUSPLUS_CHECKMATRIX_HPP
 #define QMCPLUSPLUS_CHECKMATRIX_HPP
-
-#include "catch.hpp"
-
 #include <string>
 #include <complex>
 #include <type_traits>

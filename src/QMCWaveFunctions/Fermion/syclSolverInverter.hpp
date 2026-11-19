@@ -69,12 +69,10 @@ public:
     resize(norb, m_queue);
 
     m_queue.memcpy(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT));
-    syclBLAS::transpose(m_queue, Mat1_gpu.data(), norb, Mat1_gpu.cols(), Ainv_gpu.data(), norb,
-                                       Ainv_gpu.cols());
+    syclBLAS::transpose(m_queue, Mat1_gpu.data(), norb, Mat1_gpu.cols(), Ainv_gpu.data(), norb, Ainv_gpu.cols());
     try
     {
-      syclSolver::getrf(m_queue, norb, norb, Ainv_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws)
-          .wait();
+      syclSolver::getrf(m_queue, norb, norb, Ainv_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws).wait();
     }
     catch (sycl::exception const& ex)
     {
@@ -108,14 +106,12 @@ public:
     //use Ainv_gpu for transpose
     m_queue.memcpy(Ainv_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT));
     //transpose
-    syclBLAS::transpose(m_queue, Ainv_gpu.data(), norb, Ainv_gpu.cols(), Mat1_gpu.data(), norb,
-                                       Mat1_gpu.cols());
+    syclBLAS::transpose(m_queue, Ainv_gpu.data(), norb, Ainv_gpu.cols(), Mat1_gpu.data(), norb, Mat1_gpu.cols());
 
     //getrf (LU) -> getri (inverse)
     try
     {
-      syclSolver::getrf(m_queue, norb, norb, Mat1_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws)
-          .wait();
+      syclSolver::getrf(m_queue, norb, norb, Mat1_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws).wait();
     }
     catch (sycl::exception const& ex)
     {
@@ -134,7 +130,7 @@ public:
 
     m_queue.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT)).wait();
 
-    for(int i = 0; i < norb; i++)
+    for (int i = 0; i < norb; i++)
       if (qmcplusplus::isnan(std::norm(Ainv[i][i])))
         throw std::runtime_error("Ainv[i][i] is NaN. i = " + std::to_string(i));
   }

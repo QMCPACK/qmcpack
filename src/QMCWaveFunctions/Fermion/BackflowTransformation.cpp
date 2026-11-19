@@ -26,10 +26,23 @@ BackflowTransformation::BackflowTransformation(ParticleSet& els)
   NumTargets = els.getTotalNum();
   Bmat.resize(NumTargets);
   Bmat_full.resize(NumTargets, NumTargets);
+  Bmat_temp.resize(NumTargets, NumTargets);
   Amat.resize(NumTargets, NumTargets);
+  Amat_temp.resize(NumTargets, NumTargets);
   newQP.resize(NumTargets);
   oldQP.resize(NumTargets);
+  storeQP.resize(NumTargets);
   indexQP.resize(NumTargets);
+  FirstOfP      = &(storeQP[0][0]);
+  LastOfP       = FirstOfP + OHMMS_DIM * NumTargets;
+  FirstOfA      = &(Amat(0, 0)[0]);
+  LastOfA       = FirstOfA + OHMMS_DIM * OHMMS_DIM * NumTargets * NumTargets;
+  FirstOfB      = &(Bmat_full(0, 0)[0]);
+  LastOfB       = FirstOfB + OHMMS_DIM * NumTargets * NumTargets;
+  FirstOfA_temp = &(Amat_temp(0, 0)[0]);
+  LastOfA_temp  = FirstOfA_temp + OHMMS_DIM * OHMMS_DIM * NumTargets * NumTargets;
+  FirstOfB_temp = &(Bmat_temp(0, 0)[0]);
+  LastOfB_temp  = FirstOfB_temp + OHMMS_DIM * NumTargets * NumTargets;
   HESS_ID.diagonal(1.0);
   DummyHess    = 0.0;
   numVarBefore = 0;
@@ -133,23 +146,7 @@ void BackflowTransformation::resetParameters(const OptVariables& active)
 
 void BackflowTransformation::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  if (storeQP.size() == 0)
-  {
-    Bmat_temp.resize(NumTargets, NumTargets);
-    Amat_temp.resize(NumTargets, NumTargets);
-    storeQP.resize(NumTargets);
-  }
   evaluate(P);
-  FirstOfP      = &(storeQP[0][0]);
-  LastOfP       = FirstOfP + OHMMS_DIM * NumTargets;
-  FirstOfA      = &(Amat(0, 0)[0]);
-  LastOfA       = FirstOfA + OHMMS_DIM * OHMMS_DIM * NumTargets * NumTargets;
-  FirstOfB      = &(Bmat_full(0, 0)[0]);
-  LastOfB       = FirstOfB + OHMMS_DIM * NumTargets * NumTargets;
-  FirstOfA_temp = &(Amat_temp(0, 0)[0]);
-  LastOfA_temp  = FirstOfA_temp + OHMMS_DIM * OHMMS_DIM * NumTargets * NumTargets;
-  FirstOfB_temp = &(Bmat_temp(0, 0)[0]);
-  LastOfB_temp  = FirstOfB_temp + OHMMS_DIM * NumTargets * NumTargets;
   for (int i = 0; i < NumTargets; i++)
     storeQP[i] = QP.R[i];
   buf.add(FirstOfP, LastOfP);

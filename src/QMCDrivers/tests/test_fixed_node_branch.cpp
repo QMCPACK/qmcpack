@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 
 #include "Utilities/RandomGenerator.h"
@@ -33,9 +32,9 @@ namespace qmcplusplus
 {
 TEST_CASE("Fixed node branch", "[drivers][walker_control]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  auto emb_uptr = std::make_unique<EstimatorManagerBase>(c);
+  auto emb_uptr = std::make_unique<EstimatorManagerBase>(&c);
   auto emb      = emb_uptr.get();
 
   double tau = 0.5;

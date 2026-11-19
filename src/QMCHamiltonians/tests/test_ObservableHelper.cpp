@@ -8,12 +8,12 @@
 //
 // File created by: William F Godoy, godoywf@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "QMCHamiltonians/ObservableHelper.h"
 #include "io/hdf/hdf_archive.h"
+#include "Message/Communicate.h"
 
 #include <filesystem>
 
@@ -43,9 +43,9 @@ TEST_CASE("ObservableHelper::set_dimensions", "[hamiltonian]")
 
 TEST_CASE("ObservableHelper::ObservableHelper()", "[hamiltonian]")
 {
-  std::filesystem::path filename("tmp_ObservableHelper2.h5");
+  const std::filesystem::path filename("tmp_ObservableHelper2_" + std::to_string(OHMMS::Controller->rank()) + ".h5");
   hdf_archive hFile;
-  hFile.create(filename);
+  REQUIRE(hFile.create(filename));
 
   ObservableHelper oh{hdf_path{"u"}};
   std::vector<int> dims = {10, 10};
@@ -59,7 +59,7 @@ TEST_CASE("ObservableHelper::ObservableHelper()", "[hamiltonian]")
   oh.addProperty(propertyMatrix, "propertyMatrix", hFile);
 
   TinyVector<float, OHMMS_DIM> propertyTinyVector;
-  oh.addProperty(propertyTensor, "propertyTinyVector", hFile);
+  oh.addProperty(propertyTinyVector, "propertyTinyVector", hFile);
 
   std::vector<float> propertyVector;
   oh.addProperty(propertyVector, "propertyVector", hFile);

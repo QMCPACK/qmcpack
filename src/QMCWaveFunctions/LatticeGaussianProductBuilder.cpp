@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-LatticeGaussianProductBuilder::LatticeGaussianProductBuilder(Communicate* comm, ParticleSet& p, const PSetMap& psets)
+LatticeGaussianProductBuilder::LatticeGaussianProductBuilder(Communicate& comm, ParticleSet& p, const PSetMap& psets)
     : WaveFunctionComponentBuilder(comm, p), ptclPool(psets)
 {}
 

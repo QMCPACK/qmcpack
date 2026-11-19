@@ -19,6 +19,6 @@ from .simulation import NullSimulationAnalyzer
 
 
 class PyscfAnalyzer(NullSimulationAnalyzer):
-    None
+    pass
 #end class PyscfAnalyzer
 

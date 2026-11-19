@@ -7,11 +7,9 @@ if(NOT QMC_MIXED_PRECISION)
 
   qmc_run_and_check_custom_scalar(
     BASE_NAME
-    short-He_param_grad
+    short-He_ae-sd_lcao_jas-param_grad
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-    PREFIX
-    He_param_grad.param
     INPUT_FILE
     He_param_grad.xml
     PROCS
@@ -26,11 +24,9 @@ if(NOT QMC_MIXED_PRECISION)
   # Check the parameter gradient code for the legacy driver
   qmc_run_and_check_custom_scalar(
     BASE_NAME
-    short-He_param_grad_legacy_driver
+    short-He_ae-sd_lcao_jas-param_grad_legacy_driver
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-    PREFIX
-    He_param_grad_legacy_driver.param
     INPUT_FILE
     He_param_grad_legacy_driver.xml
     PROCS
@@ -63,8 +59,6 @@ if(NOT QMC_MIXED_PRECISION)
       He_param_grad_load
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_param_grad_load.param
       INPUT_FILE
       He_param_grad_load.xml
       PROCS
@@ -89,11 +83,9 @@ if(NOT QMC_MIXED_PRECISION)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-He_orb_rot_param_grad_legacy
+      short-He_ae-sd_lcao_jas-param_grad_orb_rot_legacy
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_orb_rot_param_grad_legacy.param
       INPUT_FILE
       He_orb_rot_param_grad_legacy.xml
       PROCS
@@ -107,11 +99,9 @@ if(NOT QMC_MIXED_PRECISION)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-He_orb_rot_param_grad_legacy
+      short-He_ae-sd_lcao_jas-param_grad_orb_rot_legacy
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_orb_rot_param_grad_legacy.param
       INPUT_FILE
       He_orb_rot_param_grad_legacy.xml
       PROCS
@@ -125,11 +115,9 @@ if(NOT QMC_MIXED_PRECISION)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-He_orb_rot_param_grad_batch
+      short-He_ae-sd_lcao_jas-param_grad_orb_rot_batch
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_orb_rot_param_grad_batch.param
       INPUT_FILE
       He_orb_rot_param_grad_batch.xml
       PROCS
@@ -143,11 +131,9 @@ if(NOT QMC_MIXED_PRECISION)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-He_orb_rot_param_grad_batch
+      short-He_ae-sd_lcao_jas-param_grad_orb_rot_batch
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_orb_rot_param_grad_batch.param
       INPUT_FILE
       He_orb_rot_param_grad_batch.xml
       PROCS
@@ -162,11 +148,9 @@ if(NOT QMC_MIXED_PRECISION)
     list(APPEND HE_ORB_ROT_RHF_PARAM rot-spo-up_orb_rot_0000_0001_r -0.766 0.01) # scalar name, value, error
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-He_orb_rot_param_grad_rhf
+      short-He_ae-sd_lcao_rhf_jas-param_grad_orb_rot
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_orb_rot_param_grad_rhf.param
       INPUT_FILE
       He_orb_rot_param_grad_rhf.xml
       PROCS
@@ -186,11 +170,9 @@ if(NOT QMC_MIXED_PRECISION)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-He_orb_rot_jastrow_param_grad_legacy
+      short-He_ae-sd_lcao_jas-param_grad_orb_rot_jastrow_legacy
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_orb_rot_jastrow_param_grad_legacy.param
       INPUT_FILE
       He_orb_rot_jastrow_param_grad_legacy.xml
       PROCS
@@ -204,11 +186,9 @@ if(NOT QMC_MIXED_PRECISION)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
-      short-He_orb_rot_jastrow_param_grad_batch
+      short-He_ae-sd_lcao_jas-param_grad_orb_rot_jastrow_batch
       BASE_DIR
       "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
-      PREFIX
-      He_orb_rot_jastrow_param_grad_batch.param
       INPUT_FILE
       He_orb_rot_jastrow_param_grad_batch.xml
       PROCS
@@ -232,3 +212,6 @@ else()
     VERBOSE
     "Skipping He_param tests because parameter output is not supported by mixed precison build (QMC_MIXED_PRECISION=1)")
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

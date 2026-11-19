@@ -53,8 +53,8 @@ struct ostream : public std::ostream {  // NOLINT(fuchsia-multiple-inheritance) 
 					messages.insert(std::make_pair(i, msg_));
 				}
 				if(
-					std::all_of(messages.begin(), messages.end(), [](auto const& e) { return e.second.empty(); }) or
-					std::all_of(messages.begin(), messages.end(), [](auto const& e) { return e.second.empty() or e.second.back() == '\n'; })
+					   std::all_of(messages.begin(), messages.end(), [](auto const& e) { return e.second.empty(); })  // NOLINT(boost-use-ranges) for C++20, use std::ranges::all_of
+					|| std::all_of(messages.begin(), messages.end(), [](auto const& e) { return e.second.empty() || e.second.back() == '\n'; })  // NOLINT(boost-use-ranges) for C++20, use std::ranges::all_of
 				) {
 					if(not doing_formatting) {
 						doing_formatting = true;
@@ -65,7 +65,7 @@ struct ostream : public std::ostream {  // NOLINT(fuchsia-multiple-inheritance) 
 						output << '\n';
 					}
 					collapse_lines(messages);
-				} else if(std::all_of(messages.begin(), messages.end(), [](auto const& e) { return e.second.empty() or e.second.back() == '\t'; })) {
+				} else if(std::all_of(messages.begin(), messages.end(), [](auto const& e) { return e.second.empty() || e.second.back() == '\t'; })) {  // NOLINT(boost-use-ranges) for C++20, use std::ranges::all_of
 					if(not doing_formatting) {
 						doing_formatting = true;
 						output << '\n';
@@ -86,7 +86,8 @@ struct ostream : public std::ostream {  // NOLINT(fuchsia-multiple-inheritance) 
 					unformatted_one_or_all(messages);
 				}
 			} else {
-				comm_.send_n(str().begin(), str().size(), 0);
+				auto const msg = str();
+				comm_.send_n(msg.data(), msg.size(), 0);
 			}
 			str("");
 			output.flush();
@@ -98,7 +99,7 @@ struct ostream : public std::ostream {  // NOLINT(fuchsia-multiple-inheritance) 
 		void collapse_lines(boost::icl::interval_map<int, std::string> const& messages) const {
 			for(auto const& m : messages) {  // NOLINT(altera-unroll-loops) use algorithm
 				std::string range = comm_.name();
-				if(static_cast<int>(size(m.first)) < static_cast<int>(comm_.size())) {
+				if(static_cast<int>(size(m.first)) < comm_.size()) {
 					if(size(m.first) == 1) {
 						range += ("[" + std::to_string(lower(m.first)) + "]");
 					} else {
@@ -116,7 +117,7 @@ struct ostream : public std::ostream {  // NOLINT(fuchsia-multiple-inheritance) 
 			std::size_t last_idx2 = 0;
 			std::size_t last_idx  = 0;
 			while(  // NOLINT(altera-unroll-loops) use algorithm
-				std::all_of(messages.begin(), messages.end(), [last_idx2, &messages](auto const& e) { return last_idx2 != e.second.size() and e.second[last_idx2] == messages.begin()->second[last_idx2]; })
+				std::all_of(messages.begin(), messages.end(), [last_idx2, &messages](auto const& e) { return last_idx2 != e.second.size() && e.second[last_idx2] == messages.begin()->second[last_idx2]; })  // NOLINT(boost-use-ranges) for C++20, use std::ranges::all_of
 			) {
 				if(messages.begin()->second[last_idx2] == ' ') {
 					last_idx = last_idx2 + 1;

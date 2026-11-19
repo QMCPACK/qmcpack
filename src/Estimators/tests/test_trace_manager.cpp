@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 
 #include "Message/Communicate.h"
@@ -31,9 +30,9 @@ namespace qmcplusplus
 
 TEST_CASE("TraceManager", "[estimators]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  TraceManager tm(c);
+  TraceManager tm(&c);
 
   tm.put(NULL, true, "test");
 

@@ -1,22 +1,31 @@
+import shutil
+from copy import deepcopy
+from pathlib import Path
+from xml.etree import ElementTree as ET
+
 import pytest
-from . import NexusTestOrder
+from numpy import array
+
+from ..developer import obj
+from ..machines import job
+from ..nexus_base import nexus_config
+from ..physical_system import generate_physical_system
+from ..qmcpack import Qmcpack, generate_qmcpack
+from ..qmcpack_analyzer import QmcpackAnalyzer
+from ..qmcpack_input import QmcpackInput, TracedQmcpackInput, dmc, mcwalkerset
+from ..rmg import generate_rmg
+from ..testing import clear_all_sims, failed, text_eq, value_eq
+from . import TEST_DIR, NexusTestOrder, create_pseudo_files, isolate_nexus_core
+from .test_qmcpack_converter_simulations import (
+    get_convert4qmc_sim,
+    get_pw2qmcpack_sim,
+    get_pyscf_to_afqmc_sim,
+)
+from .test_vasp_simulation import setup_vasp_sim as get_vasp_sim
+
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_SIMULATION)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
-from pathlib import Path
-
-from . import isolate_nexus_core, create_pseudo_files, TEST_DIR
-
-from ..testing import clear_all_sims
-from ..testing import failed,FailedTest
-from ..testing import value_eq,text_eq
-
-
-
-def get_system(tiling=(1,1,1)):
-    from ..physical_system import generate_physical_system
+def get_system(tiling=(1,1,1),kgrid=(1,1,1)):
 
     system = generate_physical_system(
         units  = 'A',
@@ -27,7 +36,7 @@ def get_system(tiling=(1,1,1)):
         pos    = [[ 0.    ,  0.    ,  0.    ],
                   [ 0.8925,  0.8925,  0.8925]],
         tiling = tiling,
-        kgrid  = (1,1,1),
+        kgrid  = kgrid,
         kshift = (0,0,0),
         #C      = 4
         )
@@ -38,15 +47,13 @@ def get_system(tiling=(1,1,1)):
 
 
 def get_qmcpack_sim(type='rsqmc',**kwargs):
-    from ..machines import job
-    from ..qmcpack import Qmcpack,generate_qmcpack
-
     if type=='rsqmc':
         tiling = kwargs.pop('tiling',(1,1,1))
+        kgrid = kwargs.pop('kgrid',(1,1,1))
 
         sim = generate_qmcpack(
             job    = job(machine='ws1',cores=1),
-            system = get_system(tiling=tiling),
+            system = get_system(tiling=tiling,kgrid=kgrid),
             **kwargs
             )
     elif type=='afqmc':
@@ -67,9 +74,6 @@ def get_qmcpack_sim(type='rsqmc',**kwargs):
 
 
 def test_minimal_init():
-    from ..machines import job
-    from ..qmcpack import Qmcpack,generate_qmcpack
-
     sim = generate_qmcpack(
         job    = job(machine='ws1',cores=1),
         system = get_system(),
@@ -97,6 +101,7 @@ def test_check_result():
     assert(not sim.check_result('jastrow',None))
     assert(not sim.check_result('wavefunction',None))
     assert(not sim.check_result('cuspcorr',None))
+    assert(not sim.check_result('restart',None))
 
     ds = sim.input.get('determinantset')
     ds.cuspcorrection = True
@@ -111,36 +116,37 @@ def test_check_result():
     assert(opt.check_result('wavefunction',None))
     assert(not opt.check_result('cuspcorr',None))
 
+    restart_default = get_qmcpack_sim(identifier='restart_default',calculations=[dmc()])
+    restart_zero = get_qmcpack_sim(identifier='restart_zero',calculations=[dmc(checkpoint=0)])
+    restart_periodic = get_qmcpack_sim(identifier='restart_periodic',calculations=[dmc(checkpoint=5)])
+    restart_disabled = get_qmcpack_sim(identifier='restart_disabled',calculations=[dmc(checkpoint=-1)])
+
+    assert(restart_default.check_result('restart',None))
+    assert(restart_zero.check_result('restart',None))
+    assert(restart_periodic.check_result('restart',None))
+    assert(not restart_disabled.check_result('restart',None))
+
     clear_all_sims()
 #end def test_check_result
 
 
 @isolate_nexus_core
 def test_get_result(tmp_path):
-    from ..developer import NexusError, obj
-    from ..nexus_base import nexus_core
-    from ..qmcpack_analyzer import QmcpackAnalyzer
-
-    nexus_core.runs    = ''
-    nexus_core.results = ''
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.runs    = ''
+    nexus_config.results = ''
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     sim = get_qmcpack_sim()
 
     assert(Path(sim.locdir).resolve() == tmp_path)
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     result = sim.get_result('cuspcorr',None)
 
@@ -155,6 +161,51 @@ def test_get_result(tmp_path):
     for k,v in result.items():
         assert(Path(v).relative_to(tmp_path)==Path(result_ref[k]))
     #end for
+
+    restart_sim = get_qmcpack_sim(
+        identifier   = 'restart_source',
+        path         = 'restart1',
+        calculations = [dmc(checkpoint=0)],
+        )
+    restart_sim.create_directories()
+    restart_root = Path(restart_sim.locdir) / 'restart_source.s000'
+    restart_input = deepcopy(restart_sim.input)
+    restart_input.simulation.project.series = 1
+    restart_input.simulation.mcwalkerset = mcwalkerset(
+        fileroot = 'restart_source.s000',
+        version  = (4,3),
+        collected = True,
+        node      = -1,
+        nprocs    = 4,
+        )
+    cont_file = Path(str(restart_root)+'.cont.xml')
+    config_file = Path(str(restart_root)+'.config.h5')
+    random_file = Path(str(restart_root)+'.random.h5')
+    restart_input.write(cont_file)
+    config_file.touch()
+    random_file.touch()
+
+    result = restart_sim.get_result('restart',None)
+
+    assert(len(result.restarts)==1)
+    restart = result.restarts[0]
+    assert(Path(restart.fileroot)==restart_root)
+    assert(Path(restart.cont_file)==cont_file)
+    assert(Path(restart.config_file)==config_file)
+    assert(Path(restart.random_file)==random_file)
+    assert(restart.mcwalkerset.fileroot=='restart_source.s000')
+    assert(tuple(restart.mcwalkerset.version)==(4,3))
+    assert(restart.project_id=='restart_source')
+    assert(restart.project_series==1)
+
+    random_file.unlink()
+    with pytest.raises(
+        FileNotFoundError,
+        match='restart files do not exist'
+        ):
+        restart_sim.get_result('restart',None)
+    #end with
+    random_file.touch()
 
     opt_infile = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/opt/opt.in.xml"
     assert(opt_infile.exists())
@@ -183,21 +234,72 @@ def test_get_result(tmp_path):
 
 
 @isolate_nexus_core
-def test_incorporate_result(tmp_path):
-    import shutil
-    from numpy import array
-    from ..developer import obj
-    from ..nexus_base import nexus_core
-    from .test_vasp_simulation import setup_vasp_sim as get_vasp_sim
-    from .test_qmcpack_converter_simulations import get_pw2qmcpack_sim
-    from .test_qmcpack_converter_simulations import get_convert4qmc_sim
-    from .test_qmcpack_converter_simulations import get_pyscf_to_afqmc_sim
+def test_restart_twist_average(tmp_path):
+    nexus_config.runs    = ''
+    nexus_config.results = ''
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
-    nexus_core.runs    = ''
-    nexus_core.results = ''
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    source = get_qmcpack_sim(
+        identifier   = 'restart_source',
+        path         = 'restart1',
+        kgrid        = (2,1,1),
+        calculations = [dmc(checkpoint=0)],
+        )
+    source.create_directories()
+    source.twist_average([0,1])
+    source.input = source.input.trace('twistnum',[0,1])
+
+    for group,inp in source.input.inputs.items():
+        fileroot = f'restart_source.g{str(group).zfill(3)}.s000'
+        restart_input = deepcopy(inp)
+        restart_input.simulation.mcwalkerset = mcwalkerset(
+            fileroot  = fileroot,
+            version   = (4,3),
+            collected = True,
+            )
+        root = Path(source.locdir) / fileroot
+        restart_input.write(Path(str(root)+'.cont.xml'))
+        Path(str(root)+'.config.h5').touch()
+        Path(str(root)+'.random.h5').touch()
+    #end for
+
+    result = source.get_result('restart',None)
+
+    assert([r.twistnum for r in result.restarts]==[0,1])
+
+    target = get_qmcpack_sim(
+        identifier   = 'restart_target',
+        path         = 'restart2',
+        kgrid        = (2,1,1),
+        calculations = [dmc()],
+        )
+    target.create_directories()
+    target.twist_average([0,1])
+    target.incorporate_result('restart',result,source)
+    target.got_dependencies = True
+    target.write_prep()
+
+    assert(isinstance(target.input,TracedQmcpackInput))
+    for group,inp in target.input.inputs.items():
+        walkers = inp.simulation.mcwalkerset
+        expected = f'../restart1/restart_source.g{str(group).zfill(3)}.s000'
+        assert(walkers.fileroot==expected)
+        assert(target.input.variables[group].value==result.restarts[group].twistnum)
+    #end for
+
+    clear_all_sims()
+#end def test_restart_twist_average
+
+
+@isolate_nexus_core
+def test_incorporate_result(tmp_path):
+    nexus_config.runs    = ''
+    nexus_config.results = ''
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     create_pseudo_files(
         tmp_dir=tmp_path,
@@ -207,7 +309,7 @@ def test_incorporate_result(tmp_path):
             "\n"
             "End of Dataset\n"
             )]
-    )
+        )
 
     # incorporate vasp structure
     sim = get_qmcpack_sim(identifier='qmc_vasp_structure',tiling=(2,2,2))
@@ -228,7 +330,7 @@ def test_incorporate_result(tmp_path):
     ion0 = sim.input.get('ion0')
     c = ion0.groups.C
     cp0 = c.position[0].copy()
-    s = result.structure.copy()
+    s = deepcopy(result.structure)
     s.change_units('B')
     rp0 = s.pos[0]
     zero = array([0,0,0],dtype=float)
@@ -246,7 +348,7 @@ def test_incorporate_result(tmp_path):
 
     # incorporate pw2qmcpack orbitals
     sim = get_qmcpack_sim(identifier='qmc_p2q_orbitals')
-    
+
     p2q_orb = get_pw2qmcpack_sim(identifier='p2q_orbitals')
 
     result = p2q_orb.get_result('orbitals',None)
@@ -268,14 +370,14 @@ def test_incorporate_result(tmp_path):
 
     # incorporate convert4qmc orbitals
     sim = get_qmcpack_sim(identifier='qmc_c4q_orbitals')
-    
+
     c4q_orb = get_convert4qmc_sim(identifier='c4q_orbitals')
 
     result = c4q_orb.get_result('orbitals',None)
 
     wfn_file  = tmp_path / 'c4q_orbitals.wfj.xml'
     wfn_file2 = tmp_path / 'c4q_orbitals.orbs.h5'
-    input = sim.input.copy()
+    input = deepcopy(sim.input)
     dset = input.get('determinantset')
     dset.href = 'orbs.h5'
     qs = input.simulation.qmcsystem
@@ -286,7 +388,6 @@ def test_incorporate_result(tmp_path):
     wfn_file2.write_text('fake')
     assert(wfn_file2.exists())
 
-    from ..qmcpack_input import QmcpackInput
     inp = QmcpackInput(wfn_file)
 
     dset = sim.input.get('determinantset')
@@ -318,25 +419,83 @@ def test_incorporate_result(tmp_path):
     j_text_ref = '''
         <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
            <correlation speciesA="u" speciesB="u" size="8" rcut="2.3851851232">
-              <coefficients id="uu" type="Array">         
-        0.2576630369 0.1796686015 0.1326653657 0.09407180823 0.06267013118 0.03899100023 
+              <coefficients id="uu" type="Array">
+        0.2576630369 0.1796686015 0.1326653657 0.09407180823 0.06267013118 0.03899100023
         0.02070235604 0.009229775746
               </coefficients>
            </correlation>
            <correlation speciesA="u" speciesB="d" size="8" rcut="2.3851851232">
-              <coefficients id="ud" type="Array">         
-        0.4385891515 0.3212399072 0.2275448261 0.1558506324 0.1009589176 0.06108433554 
+              <coefficients id="ud" type="Array">
+        0.4385891515 0.3212399072 0.2275448261 0.1558506324 0.1009589176 0.06108433554
         0.03154274436 0.01389485975
               </coefficients>
            </correlation>
         </jastrow>
         '''.replace('"',' " ')
-    
+
     assert(text_eq(j_text,j_text_ref))
+
+
+    # incorporate qmcpack restart
+    sim = get_qmcpack_sim(
+        identifier   = 'restart_target',
+        path         = 'restart2',
+        calculations = [dmc()],
+        )
+
+    restart_root = tmp_path / 'restart1/restart_source.s001'
+    result = obj(restarts=[obj(
+        fileroot       = str(restart_root),
+        project_id     = 'restart_source',
+        project_series = 2,
+        mcwalkerset = mcwalkerset(
+            fileroot  = 'restart_source.s001',
+            version   = (4,3),
+            collected = True,
+            node      = -1,
+            nprocs    = 4,
+            ),
+        )])
+
+    assert('mcwalkerset' not in sim.input.simulation)
+
+    restart_source = obj(locdir=str(tmp_path/'restart1'))
+    sim.incorporate_result('restart',result,restart_source)
+
+    walkers = sim.input.simulation.mcwalkerset
+    assert(walkers.fileroot=='../restart1/restart_source.s001')
+    assert(tuple(walkers.version)==(4,3))
+    assert(walkers.collected)
+    assert(walkers.node==-1)
+    assert(walkers.nprocs==4)
+    assert(sim.input.simulation.project.id=='restart_target')
+    assert(sim.input.simulation.project.series==0)
+    restart_text = sim.input.write_text()
+    assert(restart_text.index('<mcwalkerset')<restart_text.index('<qmc method'))
+
+    sim = get_qmcpack_sim(
+        identifier   = 'restart_same_dir',
+        path         = 'restart1',
+        calculations = [dmc()],
+        )
+
+    sim.incorporate_result('restart',result,restart_source)
+
+    project = sim.input.simulation.project
+    walkers = sim.input.simulation.mcwalkerset
+    assert(project.id=='restart_source')
+    assert(project.series==2)
+    assert(walkers.fileroot=='restart_source.s001')
+    outfiles = sim.input.get_output_info('outfiles')
+    assert('restart_source.s002.scalar.dat' in outfiles)
+    assert('restart_source.s002.stat.h5' in outfiles)
+    assert('restart_source.s002.dmc.dat' in outfiles)
 
 
     # incorporate qmcpack wavefunction
     sim = get_qmcpack_sim(identifier='qmc_wavefunction')
+
+    result = obj(opt_file=opt_file)
 
     sim.incorporate_result('wavefunction',result,sim)
 
@@ -366,19 +525,81 @@ def test_incorporate_result(tmp_path):
 
     assert(wfn.filename=='p2a_wavefunction.afqmc.h5')
     assert(ham.filename=='p2a_wavefunction.afqmc.h5')
-    
+
     clear_all_sims()
 #end def test_incorporate_result()
+
+@isolate_nexus_core
+def test_incorporate_rmg_result(tmp_path):
+    # incorporate rmg orbitals
+    h5py = pytest.importorskip("h5py")
+
+    nexus_config.runs    = ''
+    nexus_config.results = ''
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
+
+    sim = get_qmcpack_sim(identifier='qmc_rmg_orbitals')
+
+    rmg_orb = generate_rmg(
+        identifier            = 'rmg_orbitals',
+        job                   = job(machine='ws1',cores=1),
+        calculation_mode      = 'NSCF',
+        write_qmcpack_restart = True,
+        )
+    assert(rmg_orb.check_result('orbitals',None))
+
+    result = rmg_orb.get_result('orbitals',None)
+
+    rmg_h5file = tmp_path / 'Waves' / 'wave.out.h5'
+    rmg_h5file.parent.mkdir()
+    with h5py.File(rmg_h5file,'w') as f:
+        f['electrons/number_of_kpoints'] = array([2])
+    #end with
+
+    spo = sim.input.get('bspline')
+    assert(spo.href=='MISSING.h5')
+
+    with pytest.raises(ValueError,match='does not match the k-points of the system'):
+        sim.incorporate_result('orbitals',result,rmg_orb)
+    #end with
+
+    with h5py.File(rmg_h5file,'w') as f:
+        f['electrons/number_of_kpoints'] = array([1])
+    #end with
+
+    sim.incorporate_result('orbitals',result,rmg_orb)
+
+    assert(spo.href=='Waves/wave.out.h5')
+    assert(spo.twistnum==0)
+
+    # tiled cell: RMG holds the folded k-points (or the twists with use_folded=False)
+    sim = get_qmcpack_sim(identifier='qmc_rmg_orbitals_tiled',tiling=(2,1,1),kgrid=(2,2,2))
+    nfolded = len(sim.system.structure.folded_structure.kpoints)
+    ntwists = len(sim.system.structure.kpoints)
+    assert(nfolded==2*ntwists)
+    for nk in (nfolded,ntwists):
+        with h5py.File(rmg_h5file,'w') as f:
+            f['electrons/number_of_kpoints'] = array([nk])
+        #end with
+        sim.incorporate_result('orbitals',result,rmg_orb)
+    #end for
+    with h5py.File(rmg_h5file,'w') as f:
+        f['electrons/number_of_kpoints'] = array([nfolded-1])
+    #end with
+    with pytest.raises(ValueError,match='does not match the k-points of the system'):
+        sim.incorporate_result('orbitals',result,rmg_orb)
+    #end with
+
 
 
 @isolate_nexus_core
 def test_check_sim_status(tmp_path):
-    from ..nexus_base import nexus_core
-
-    nexus_core.runs = ''
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_config.runs = ''
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     sim = get_qmcpack_sim(identifier='qmc')
 
@@ -390,7 +611,7 @@ def test_check_sim_status(tmp_path):
     try:
         sim.check_sim_status()
     except IOError:
-        None
+        pass
     #end try
 
     assert(not sim.finished)
@@ -413,3 +634,37 @@ def test_check_sim_status(tmp_path):
     clear_all_sims()
 #end def test_check_sim_status()
 
+
+@pytest.mark.parametrize('shared_ranks', [None, 0, 1, 4])
+@pytest.mark.parametrize('distributed_ranks', [None, -1, 1, 2])
+def test_coefs_mem_ranks(tmp_path, shared_ranks, distributed_ranks):
+    # Use separate spin SPOs to check that both receive the memory settings.
+    sim = get_qmcpack_sim(
+        shared_ranks=shared_ranks,
+        distributed_ranks=distributed_ranks,
+        spin_polarized=True,
+    )
+    root = ET.fromstring(sim.input.write_text())
+    sposets = root.findall('.//sposet_builder/sposet')
+    assert len(sposets) == 2
+    # Only explicitly provided options should appear as XML attributes.
+    expected = {
+        name: str(value) for name, value in (
+            ('shared_ranks', shared_ranks), ('distributed_ranks', distributed_ranks)
+        ) if value is not None
+    }
+    for spo in sposets:
+        # Omit coefs_mem when neither option is set; otherwise emit it once.
+        if not expected:
+            assert spo.find('coefs_mem') is None
+        else:
+            assert len(spo.findall('coefs_mem')) == 1
+            assert spo.find('coefs_mem').attrib == expected
+    # Reading and rewriting the XML must preserve the coefs_mem attributes.
+    path = tmp_path / 'coefs_mem.xml'
+    sim.input.write(path)
+    reread = QmcpackInput(path)
+    assert [node.attrib for node in ET.fromstring(reread.write_text()).findall('.//coefs_mem')] == [
+        node.attrib for node in root.findall('.//coefs_mem')
+    ]
+    clear_all_sims()

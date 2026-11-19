@@ -1,10 +1,9 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2022 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #ifndef MPI3_DETAIL_COMMUNICATION_MODE
 #define MPI3_DETAIL_COMMUNICATION_MODE
 
-#include <mpi.h>  // if you get an error here probably you need to compile with and MPI compiler wrapper
+#include <mpi3/detail/mpi_impl.h>
 
 #include <utility>  // forward
 

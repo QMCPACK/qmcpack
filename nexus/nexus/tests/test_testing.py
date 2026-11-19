@@ -1,18 +1,24 @@
+import numpy as np
 import pytest
+
+from ..testing import (
+    object_diff,
+    object_eq,
+    object_neq,
+    text_diff,
+    text_eq,
+    text_neq,
+    value_diff,
+    value_eq,
+    value_neq,
+)
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.TESTING)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
-
-
 def test_value_checks():
-    import numpy as np
-    from ..testing import value_diff,value_eq,value_neq
 
     assert(id(value_diff)==id(value_neq))
-
 
     shift = 1e-8
 
@@ -27,7 +33,7 @@ def test_value_checks():
     #end class Special
 
 
-    def deep_dict(use_shift=False,int_as_float=False,overshift=False):
+    def deep_dict(*,use_shift=False,int_as_float=False,overshift=False):
         vals = np.array([1.23,3.14])
         if use_shift:
             vals += shift
@@ -60,14 +66,14 @@ def test_value_checks():
                   3:(1,2,3),
                   4:np.array([1,2,3],dtype=float),
                   },
-            s1 = set([3,True,'abc',3.14])
+            s1 = {3,True,'abc',3.14}
             )
         return dd
     #end def deep_dict
 
 
-    def deep_list(*args,**kwargs):
-        return list(deep_dict(*args,**kwargs).values())
+    def deep_list(**kwargs):
+        return list(deep_dict(**kwargs).values())
     #end def deep_list
 
 
@@ -89,7 +95,7 @@ def test_value_checks():
         ( (3,True,'abc',3.14)        , (3,True,'abc',3.14)       ),
         ( (3,True,'abc',3.14)        , (3,True,'abc',3.14+shift) ),
         ( (3,True,'abc',3.14)        , (3,True,'abc',3.14-shift) ),
-        # lists of simple types      
+        # lists of simple types
         ( []                         , []                        ),
         ( [3,True,'abc',3.14]        , [3,True,'abc',3.14]       ),
         ( [3,True,'abc',3.14]        , [3,True,'abc',3.14+shift] ),
@@ -99,7 +105,7 @@ def test_value_checks():
         ( [1,0,0,1,1,0,1,1,1]        , [[[1],[0],[0]],[[1],[1],[0]],[[1],[1],[1]]] ),
         ( [1,0,0,1,1,0,1,1,1.]       , [[1,0,0],[1,1,0],[1,1,1.+shift]] ),
         ( [1,0,0,1,1,0,1,1,1]        , [(1,0,0),(1,1,0),(1,1,1)] ),
-        # arrays of simple types     
+        # arrays of simple types
         ( np.array([])               , np.array([])                    ),
         ( np.arange(10,dtype=int)    , np.arange(10,dtype=int)         ),
         ( np.arange(10,dtype=float)  , np.arange(10,dtype=float)       ),
@@ -110,13 +116,13 @@ def test_value_checks():
         ( np.array([1,2,3.])         , np.array([1,2.,3])              ),
         ( np.array([1,2,3.])         , np.array([1,2,3],dtype=float)   ),
         ( np.array(tuple('abc'))     , np.array(tuple('abc'))          ),
-        # sets of simple types       
+        # sets of simple types
         ( set()                      , set()                     ),
-        ( set([1,2,3])               , set([1,2,3])              ),
-        ( set([3,True,'abc',3.14])   , set([3,True,'abc',3.14])  ),
+        ( {1,2,3}               , {1,2,3}              ),
+        ( {3,True,'abc',3.14}   , {3,True,'abc',3.14}  ),
         # nested sets of simple types
-        ( set(['abc',(1,2,3)])       , set(['abc',(1,2,3)])      ),
-        # dicts of simple types      
+        ( {'abc',(1,2,3)}       , {'abc',(1,2,3)}      ),
+        # dicts of simple types
         ( dict()                     , dict()                    ),
         ( dict(a=3,b=True,c='abc',d=3.14) , dict(a=3,b=True,c='abc',d=3.14) ),
         ( dict(a=3,b=True,c='abc',d=3.14) , dict(a=3,b=True,c='abc',d=3.14+shift) ),
@@ -137,7 +143,7 @@ def test_value_checks():
         assert(not value_neq(v2,v1))
     #end for
 
-    
+
     # checks using integer as float
     should_agree += [
         ( 3         , 3         ),
@@ -151,7 +157,7 @@ def test_value_checks():
         ( deep_list() , deep_list(int_as_float=True,) ),
         ( deep_list() , deep_list(int_as_float=True,use_shift=True) ),
         ( deep_dict() , deep_dict(int_as_float=True,) ),
-        ( deep_dict() , deep_dict(int_as_float=True,use_shift=True) ),        
+        ( deep_dict() , deep_dict(int_as_float=True,use_shift=True) ),
         ]
 
     for v1,v2 in should_agree:
@@ -171,7 +177,7 @@ def test_value_checks():
         (1,2,3),
         [1,2,3],
         np.array([1,2,3]),
-        set([1,2,3]),
+        {1,2,3},
         {1:1,2:2,3:3},
         Special(),
         ]
@@ -209,8 +215,8 @@ def test_value_checks():
          np.array([1,2.,3]),np.array([1,2,3.,4]),
          ],
         # sets
-        [set(),set([1]),set([1,2]),set([1,3]),set([1,'a']),
-         set([1,2.0+shift]),set([1,2,3]),set([1,2,3,4])],
+        [set(),{1},{1,2},{1,3},{1,'a'},
+         {1,2.0+shift},{1,2,3},{1,2,3,4}],
         # dicts
         [dict(),dict(a=1),dict(a=(1,2)),dict(a=1,b=2),dict(a=1,b=2.0)],
         # unknown types with differing lengths
@@ -229,14 +235,12 @@ def test_value_checks():
             #end for
         #end for
     #end for
-    
+
 #end def test_value_checks
 
 
 
 def test_object_checks():
-    from ..testing import object_diff,object_eq,object_neq
-
     assert(id(object_diff)==id(object_neq))
 
 
@@ -309,8 +313,6 @@ def test_object_checks():
 
 
 def test_text_checks():
-    from ..testing import text_diff,text_eq,text_neq,value_diff
-
     assert(id(text_diff)==id(text_neq))
 
     should_agree    = []
@@ -322,8 +324,8 @@ def test_text_checks():
     aphorism = 'Genius is {} percent inspiration and {} percent perspiration.'
 
     stretched_aphorism = '''
-        Genius   is 
-    {}   percent inspiration    and 
+        Genius   is
+    {}   percent inspiration    and
        {}      percent              perspiration.
         '''
 
@@ -473,5 +475,5 @@ def test_text_checks():
         assert(not text_eq(t1,t2))
         assert(text_neq(t1,t2))
     #end for
-    
+
 #end def test_text_checks

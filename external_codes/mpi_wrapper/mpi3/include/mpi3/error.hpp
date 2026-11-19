@@ -1,9 +1,9 @@
-// Copyright 2017-2023 Alfredo A. Correa
+// Copyright 2017-2025 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_ERROR_HPP
 #define BOOST_MPI3_ERROR_HPP
 
-#include<mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
 #include <array>
 #include <system_error>
@@ -14,7 +14,7 @@ namespace mpi3 {
 
 static_assert(sizeof(MPI_SUCCESS) <= sizeof(int));
 
-enum class error : int {  // decltype(MPI_SUCCESS) {
+enum class error : int {  // decltype(MPI_SUCCESS) {  // NOLINT(performance-enum-size)
 	success                = MPI_SUCCESS,
 	invalid_buffer_pointer = MPI_ERR_BUFFER,
 	invalid_count          = MPI_ERR_COUNT,
@@ -83,21 +83,21 @@ namespace std {
 
 //int mpi3::main(int, char*[], mpi3::communicator world){
 
-//	std::error_code ec = mpi3::error::invalid_buffer_pointer;
-//	assert( ec == mpi3::error::invalid_buffer_pointer);
-//	assert( ec != std::io_errc::stream );
+//  std::error_code ec = mpi3::error::invalid_buffer_pointer;
+//  assert( ec == mpi3::error::invalid_buffer_pointer);
+//  assert( ec != std::io_errc::stream );
 
-//	try {
-//		world.broadcast_n((int*)nullptr, 0, -1);
-//	} catch(std::system_error const& e) {
-//		cout
-//			<<"code: "   << e.code()           <<'\n'
-//			<<"message: "<< e.code().message() <<'\n'
-//			<<"what: "   << e.what()           <<'\n'
-//		;
-//	}
+//  try {
+//      world.broadcast_n((int*)nullptr, 0, -1);
+//  } catch(std::system_error const& e) {
+//      cout
+//          <<"code: "   << e.code()           <<'\n'
+//          <<"message: "<< e.code().message() <<'\n'
+//          <<"what: "   << e.what()           <<'\n'
+//      ;
+//  }
 
-//	return 0;
+//  return 0;
 
 //}
 

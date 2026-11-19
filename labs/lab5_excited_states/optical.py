@@ -77,11 +77,11 @@ run_project()
 try:
     p = nscf.load_analyzer_image()
     print('band information')
-    print(p.bands.up)
-    print('twist 0 k-point:',p.bands.up[0].kpoint_rel)
-    print('twist 4 k-point:',p.bands.up[4].kpoint_rel)
-    print('twist 0 band 3 eigenvalue:',p.bands.up[0].eigs[3])
-    print('twist 4 band 4 eigenvalue:',p.bands.up[4].eigs[4])
+    print(p.results_out.bands.up)
+    print('twist 0 k-point:',p.results_out.bands.up[0].kpoint_rel)
+    print('twist 4 k-point:',p.results_out.bands.up[4].kpoint_rel)
+    print('twist 0 band 3 eigenvalue:',p.results_out.bands.up[0].eigs[3])
+    print('twist 4 band 4 eigenvalue:',p.results_out.bands.up[4].eigs[4])
 except:
     print('band information not found')
 

@@ -14,6 +14,7 @@
 
 
 #include "EinsplineSetBuilder.h"
+#include "QMCWaveFunctions/BandSorting.h"
 #include "DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/Timer.h"
@@ -29,19 +30,6 @@
 
 namespace qmcplusplus
 {
-bool sortByIndex(BandInfo leftB, BandInfo rightB)
-{
-  if (leftB.BandIndex == rightB.BandIndex)
-  {
-    if ((leftB.Energy < rightB.Energy + 1e-6) && (leftB.Energy > rightB.Energy - 1e-6))
-      return leftB.TwistIndex < rightB.TwistIndex;
-    else
-      return leftB.Energy < rightB.Energy;
-  }
-  else
-    return (leftB.BandIndex < rightB.BandIndex);
-};
-
 void EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
 {
   if (!H5File.open(H5FileName, H5F_ACC_RDONLY))
@@ -361,7 +349,7 @@ void EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
 
 bool EinsplineSetBuilder::ReadGvectors_ESHDF()
 {
-  bool root = myComm->rank() == 0;
+  bool root = myComm.rank() == 0;
   //this is always ugly
   MeshSize    = 0;
   int hasPsig = 1;
@@ -370,7 +358,7 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
     H5File.readEntry(MeshSize, "/electrons/psi_r_mesh");
     H5File.readEntry(MeshSize, "/electrons/mesh");
   }
-  myComm->bcast(MeshSize);
+  myComm.bcast(MeshSize);
   hasPsig = (MeshSize[0] == 0);
   if (hasPsig)
   {
@@ -408,10 +396,10 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
         H5File.read(Gvecs[0], Gpath.str());
         numg = Gvecs[0].size();
       }
-      myComm->bcast(numg);
+      myComm.bcast(numg);
       if (!root)
         Gvecs[0].resize(numg);
-      myComm->bcast(Gvecs[0]);
+      myComm.bcast(Gvecs[0]);
       MaxNumGvecs = Gvecs[0].size();
       for (int ig = 0; ig < Gvecs[0].size(); ig++)
       {
@@ -452,7 +440,7 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
           H5File.read(Gvecs[ik], Gpath.str());
           numg = Gvecs[ik].size();
         }
-        myComm->bcast(numg);
+        myComm.bcast(numg);
         if (numg == 0)
         {
           //copy kpoint_0, default
@@ -469,7 +457,7 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
           }
           if (!root)
             Gvecs[ik].resize(numg);
-          myComm->bcast(Gvecs[ik]);
+          myComm.bcast(Gvecs[ik]);
         }
       }
     }
@@ -524,14 +512,13 @@ int EinsplineSetBuilder::OccupyBands_ESHDF(hdf_archive& h5,
   // Now sort the bands by energy
   if (sortBands == 2)
   {
-    app_log() << "Sorting the bands by index now:\n";
-    sort(SortBands.begin(), SortBands.end(), sortByIndex);
+    app_log() << "Sorting the bands by index:\n";
   }
   else if (sortBands == 1)
   {
-    app_log() << "Sorting the bands now:\n";
-    sort(SortBands.begin(), SortBands.end());
+    app_log() << "Sorting the bands by energy:\n";
   }
+  sortOrbitalBands(SortBands, sortBands, &BandInfo::Energy, &BandInfo::TwistIndex, &BandInfo::BandIndex);
 
   std::vector<int> gsOcc(maxOrbs);
   int N_gs_orbs = numOrbs;

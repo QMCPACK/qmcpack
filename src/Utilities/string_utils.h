@@ -115,22 +115,6 @@ inline std::string int2string(const int& i)
   return ss.str();
 }
 
-inline std::string real2string(const double& r)
-{
-  std::stringstream ss;
-  ss << r;
-  return ss.str();
-}
-
-inline bool string2bool(const std::string& s)
-{
-  if (s == "true" || s == "yes" || s == "1")
-    return true;
-  else if (s == "false" || s == "no" || s == "0")
-    return false;
-
-  throw std::runtime_error("string2bool received non-boolean string: " + s);
-}
 
 /// extract the contents of a string to a vector of something. separator is white spaces.
 template<class T>

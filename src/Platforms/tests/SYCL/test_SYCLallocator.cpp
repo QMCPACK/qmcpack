@@ -8,9 +8,7 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include <memory>
 #include <iostream>
@@ -55,7 +53,7 @@ TEST_CASE("SYCL_shared_allocator", "[SYCL]")
   sycl::queue m_queue = getSYCLDefaultDeviceDefaultQueue();
   Vector<double, SYCLSharedAllocator<double>> vec(1024);
 
-  std::cout << "Size " << vec.size() << std::endl;
+  app_log() << "Size " << vec.size() << std::endl;
   {
     double* V = vec.data();
     m_queue.parallel_for(sycl::range<1>{1024}, [=](sycl::id<1> item) { V[item] = item + 1; }).wait();

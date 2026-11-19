@@ -24,9 +24,8 @@ else()
     list(APPEND NIO_A4_E48_SCALARS "samples" "32000 0.0")
 
     qmc_run_and_check(
-      short-NiO_a4_e48_pp-vmc_sdj
+      short-NiO_a4_e48_pp-sd_jas-vmc
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc
       NiO-vmc-short.in.xml
       1
       16
@@ -45,9 +44,8 @@ else()
     list(APPEND NIO_A4_E48_DMC_V3_SCALARS "totenergy" "-371.283912 0.025")
 
     qmc_run_and_check(
-      short-NiO_a4_e48_pp-dmc_sdj
+      short-NiO_a4_e48_pp-sd_jas-dmc
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc-dmc
       NiO-vmc-dmc-short.in.xml
       1
       16
@@ -59,9 +57,8 @@ else()
     )
 
     qmc_run_and_check(
-      short-NiO_a4_e48_pp-delayed_update-dmc_sdj
+      short-NiO_a4_e48_pp-sd_delayed_update_jas-dmc
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc-dmc
       NiO-delayedupdate-vmc-dmc-short.in.xml
       1
       16
@@ -73,9 +70,8 @@ else()
     )
 
     qmc_run_and_check(
-      short-NiO_a4_e48_pp-dmc-TMv1v3_sdj
+      short-NiO_a4_e48_pp-sd_jas-dmc_TMv1v3
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc-dmc
       NiO-vmc-dmc-TMv1v3-short.in.xml
       1
       16
@@ -87,9 +83,8 @@ else()
     )
 
     qmc_run_and_check(
-      short-NiO_a4_e48_pp-delayed_update-dmc-TMv1v3_sdj
+      short-NiO_a4_e48_pp-sd_delayed_update_jas-dmc_TMv1v3
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc-dmc
       NiO-delayedupdate-vmc-dmc-TMv1v3-short.in.xml
       1
       16
@@ -113,9 +108,8 @@ else()
     list(APPEND NIO_A4_E48_J3_SCALARS "samples" "32000 0.0")
 
     qmc_run_and_check(
-      short-NiO_a4_e48_pp-vmc_sdj3
+      short-NiO_a4_e48_pp-sd_j3-vmc
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc
       NiO-j3-vmc-short.in.xml
       1
       16
@@ -127,9 +121,8 @@ else()
     # Testing batched algorithm in NLPP.
     # Hitting all the routines using VirtualParticleSet.
     qmc_run_and_check(
-      short-NiO_a4_e48-batched_pp-vmc_sdj3
+      short-NiO_a4_e48_pp-sd_j3-vmcbatch
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc
       NiO-j3-batched-vmc-short.in.xml
       1
       16
@@ -142,9 +135,8 @@ else()
     list(APPEND NIO_A4_E48_L2_SCALARS "samples" "128000 0.0")
 
     qmc_run_and_check(
-      short-NiO_a4_e48_pp-vmc_sdj_L2
+      short-NiO_a4_e48_pp-sd_jas-vmc_L2
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-L2-short
       NiO-L2-short.in.xml
       16
       1
@@ -154,9 +146,8 @@ else()
     )
 
     qmc_run_and_check(
-      short-NiO_a4_e48_pp-vmc_sdj_L2
+      short-NiO_a4_e48_pp-sd_jas-vmc_L2
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-L2-short
       NiO-L2-short.in.xml
       4
       4
@@ -167,9 +158,8 @@ else()
 
     # Testing hybridrep with J3
     qmc_run_and_check(
-      short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
+      short-NiO_a4_e48_hybridrep_pp-sd_j3-vmc
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc
       NiO-hybridrep-j3-vmc-short.in.xml
       1
       16
@@ -181,9 +171,8 @@ else()
     # Testing batched algorithm in NLPP.
     # Hitting all the routines using VirtualParticleSet.
     qmc_run_and_check(
-      short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3
+      short-NiO_a4_e48_hybridrep_pp-sd_j3-vmcbatch
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc
       NiO-hybridrep-j3-batched-vmc-short.in.xml
       1
       16
@@ -200,9 +189,8 @@ else()
     list(APPEND LONG_NIO_A4_E48_SCALARS "samples" "320000 0.0")
 
     qmc_run_and_check(
-      long-NiO_a4_e48_pp-vmc_sdj
+      long-NiO_a4_e48_pp-sd_jas-vmc
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc
       NiO-vmc-long.in.xml
       1
       16
@@ -215,9 +203,8 @@ else()
     list(APPEND LONG_NIO_A4_E48_J3_SCALARS "samples" "320000 0.0")
 
     qmc_run_and_check(
-      long-NiO_a4_e48_pp-vmc_sdj3
+      long-NiO_a4_e48_pp-sd_j3-vmc
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-fcc-S1-vmc
       NiO-j3-vmc-long.in.xml
       1
       16
@@ -230,9 +217,8 @@ else()
     list(APPEND LONG_NIO_A4_E48_L2_SCALARS "samples" "1280000 0.0")
 
     qmc_run_and_check(
-      long-NiO_a4_e48_pp-vmc_sdj_L2
+      long-NiO_a4_e48_pp-sd_jas-vmc_L2
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-L2-long
       NiO-L2-long.in.xml
       16
       1
@@ -242,9 +228,8 @@ else()
     )
 
     qmc_run_and_check(
-      long-NiO_a4_e48_pp-vmc_sdj_L2
+      long-NiO_a4_e48_pp-sd_jas-vmc_L2
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      NiO-L2-long
       NiO-L2-long.in.xml
       4
       4
@@ -298,9 +283,8 @@ else()
     endif()
 
     qmc_run_and_check(
-      deterministic-NiO_a4_e48_pp-vmc_sdj
+      deterministic-NiO_a4_e48_pp-sd_jas-vmc
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      det_NiO-fcc-S1-vmc
       det_NiO-vmc.in.xml
       1
       1
@@ -352,9 +336,8 @@ else()
     endif()
 
     qmc_run_and_check(
-      deterministic-NiO_a4_e48_pp-vmc_sdj_batched
+      deterministic-NiO_a4_e48_pp-sd_jas-vmc_batched
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      det_NiO-batched-fcc-S1-vmc
       det_NiO-batched-vmc.in.xml
       1
       1
@@ -364,9 +347,8 @@ else()
     )
 
     qmc_run_and_check(
-      deterministic-NiO_a4_e48_pp-vmc_sd_splitJ1_batched
+      deterministic-NiO_a4_e48_pp-sd_splitJ1_jas-vmcbatch
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-      det_NiO-batched-fcc-S1-vmc
       det_NiO-batched-vmc-splitJ1.in.xml
       1
       1
@@ -380,3 +362,6 @@ else()
   endif()
 
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

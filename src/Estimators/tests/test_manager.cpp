@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -28,9 +27,9 @@ namespace qmcplusplus
 {
 TEST_CASE("EstimatorManagerBase", "[estimators]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
-  EstimatorManagerBase em(c);
+  EstimatorManagerBase em(&c);
 
   REQUIRE(em.size() == 0);
 
@@ -49,12 +48,9 @@ TEST_CASE("EstimatorManagerBase", "[estimators]")
   EstimatorManagerBase em2(em);
   REQUIRE(em.size() == 1);
 
-  em.start(2, true);
+  em.start(2, "test", true);
 
   em.stop();
-  // compute averages over threads
-  //em.stop();
-  em.reset();
 }
 
 TEST_CASE("Estimator adhoc addVector operator", "[estimators]")

@@ -1,11 +1,9 @@
 import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.PERIODIC_TABLE)
 
 from ..periodic_table import Elements
-from ..generic import generic_settings
-generic_settings.raise_error = True
+from . import NexusTestOrder
 
+pytestmark = pytest.mark.order(NexusTestOrder.PERIODIC_TABLE)
 
 def test_periodic_table():
     ref_element_symbols = (
@@ -21,7 +19,7 @@ def test_periodic_table():
         "Th", "Pa", "U",  "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es",
         "Fm", "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt",
         "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og",
-    )
+        )
 
     ref_atomic_numbers = tuple(range(0,len(ref_element_symbols)))
 
@@ -36,7 +34,7 @@ def test_periodic_table():
 
     for number in atomic_numbers:
         assert(number in ref_atomic_numbers)
-    
+
     ref_carbon_name     = "Carbon"
     ref_carbon_symbol   = "C"
     ref_carbon_number   = 6
@@ -111,7 +109,7 @@ def test_is_element():
         "Th", "Pa", "U",  "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es",
         "Fm", "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt",
         "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og",
-    )
+        )
 
     ref_elements = (
         Elements.Xx,
@@ -139,7 +137,7 @@ def test_is_element():
         Elements.Sg, Elements.Bh, Elements.Hs, Elements.Mt, Elements.Ds,
         Elements.Rg, Elements.Cn, Elements.Nh, Elements.Fl, Elements.Mc,
         Elements.Lv, Elements.Ts, Elements.Og,
-    )
+        )
 
     for symbol, element in zip(ref_symbols, ref_elements):
         assert(Elements.is_element(symbol)) # True for symbols
@@ -154,7 +152,7 @@ def test_is_element():
         assert(elem.symbol is symbol)
         assert(elem is element)
     #end for
-    
+
     carbon_strs = (
         "C",
         "C1",
@@ -190,7 +188,7 @@ def test_is_element():
         "c-123",
         "c-a",
         "c-abc",
-    )
+        )
 
     for string in carbon_strs:
         assert(Elements.is_element(string))
@@ -237,7 +235,7 @@ def test_is_element():
         "co-123",
         "co-a",
         "co-abc",
-    ]
+        ]
     for string in cobalt_strs:
         assert(Elements.is_element(string))
 
@@ -251,21 +249,21 @@ def test_is_element():
 
 
 def test_element_set():
-    ref_set = set([
+    ref_set = {
         Elements.Xx,
         Elements.H,
         Elements.Dy,
         Elements.U,
         Elements.Nh,
-    ])
+        }
 
-    element_set = set([
+    element_set = {
         Elements.Xx,
         Elements.H,  Elements.H,  Elements.H,
         Elements.Dy,
         Elements.U,  Elements.U,  Elements.U,  Elements.U,  Elements.U,
         Elements.Nh, Elements.Nh, Elements.Nh, Elements.Nh,
-    ])
+        }
 
     assert(ref_set == element_set)
 

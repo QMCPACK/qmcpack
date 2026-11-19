@@ -1,18 +1,13 @@
+import numpy as np
 import pytest
+
+from ..testing import value_eq
+from ..unit_converter import UnitConverter, convert
 from . import NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.UNIT_CONVERTER)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
-
-
 def test_convert():
-    import numpy as np
-    from ..testing import value_eq
-    from ..unit_converter import convert
-
-
     # distance
     meters_per_angstrom = convert(1.0,'A','m')
     meters_per_bohr     = convert(1.0,'B','m')
@@ -32,7 +27,7 @@ def test_convert():
     assert(value_eq(vc,v*B_per_A))
 
     v  = 2.34*np.arange(5)
-    vc = convert(v,'A','B') 
+    vc = convert(v,'A','B')
     assert(value_eq(vc,v/B_per_A))
 
     vc = convert(v,'B','A')
@@ -86,19 +81,16 @@ def test_convert():
 
 
 def test_convert_scalar_to_all():
-    from ..testing import value_eq
-    from ..unit_converter import UnitConverter
-
     eV_to = {
-        'J'       : 1.60217646e-19, 
-        'Ha'      : 0.03674932439858279, 
-        'Ry'      : 0.07349864879716558, 
+        'J'       : 1.60217646e-19,
+        'Ha'      : 0.03674932439858279,
+        'Ry'      : 0.07349864879716558,
         'eV'      : 1.0,
-        'kcal_mol': 23.0605419446755, 
-        'kJ_mol'  : 96.48533350089092, 
-        'K'       : 11604.505934630948, 
-        'degC'    : 11331.355934630948, 
-        'degF'    : 20428.440682335706, 
+        'kcal_mol': 23.0605419446755,
+        'kJ_mol'  : 96.48533350089092,
+        'K'       : 11604.505934630948,
+        'degC'    : 11331.355934630948,
+        'degF'    : 20428.440682335706,
         }
 
     v = UnitConverter.convert_scalar_to_all('eV',1.0)

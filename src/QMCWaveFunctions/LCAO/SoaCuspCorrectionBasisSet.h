@@ -55,9 +55,7 @@ public:
 
   template<class T1>
   inline void addSpline(int mo_idx, OneDimQuinticSpline<T1>& radial_spline)
-  {
-    AOs.add_spline(mo_idx, radial_spline);
-  }
+  { AOs.add_spline(mo_idx, radial_spline); }
 
   inline void evaluate(const T r, T* restrict vals) const
   {

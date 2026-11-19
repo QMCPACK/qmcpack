@@ -21,11 +21,12 @@
 #include "QMCDrivers/DMC/WalkerControlMPI.h"
 #include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
 #endif
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
 
-WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodePtr cur, bool reconfig)
+WalkerControlBase* createWalkerController(int nwtot, Communicate& comm, xmlNodePtr cur, bool reconfig)
 {
   app_log() << "  Creating WalkerController: target  number of walkers = " << nwtot << std::endl;
   ///set of parameters
@@ -40,7 +41,7 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   //if(nmax<0) nmax=2*nideal;
   //if(nmin<0) nmin=nideal/2;
   WalkerControlBase* wc = 0;
-  int ncontexts         = comm->size();
+  int ncontexts         = comm.size();
   if (reconfigopt != "no" && reconfigopt != "runwhileincorrect")
     throw std::runtime_error("Reconfiguration is currently broken and gives incorrect results. Use dynamic "
                              "population control by setting reconfiguration=\"no\" or removing the reconfiguration "

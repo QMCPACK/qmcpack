@@ -5,10 +5,19 @@
 #ifndef BOOST_MULTI_ADAPTORS_BLAS_GEMM_HPP
 #define BOOST_MULTI_ADAPTORS_BLAS_GEMM_HPP
 
-#include "../blas/core.hpp"
-#include "../blas/gemv.hpp"
-#include "../blas/numeric.hpp"
-#include "../blas/operations.hpp"
+#include "boost/multi/adaptors/blas/core.hpp"
+#include "boost/multi/adaptors/blas/numeric.hpp"
+
+#include "boost/multi/array_ref.hpp"              // for base, size, begin
+
+#include <cassert>                               // for assert
+#include <cstddef>                                // for nullptr_t
+#include <exception>                              // for exception
+#include <iterator>                               // for iterator_traits
+#include <stdexcept>                              // for logic_error
+#include <string>                                 // for to_string, operator""s
+#include <type_traits>                            // for enable_if_t, integr...
+#include <utility>                                // for forward, declval
 
 namespace boost::multi::blas {
 
@@ -32,106 +41,102 @@ auto xbase(It const& it)
 #define CTXT std::forward<Context>(ctxt)
 
 template<class Context, class It2DA, class Size, class It2DB, class It2DC,
-	std::enable_if_t<(!is_conjugated<It2DA>{} && !is_conjugated<It2DB>{}), int> = 0
->
+	std::enable_if_t<(!is_conjugated<It2DA>{} && !is_conjugated<It2DB>{}), int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto gemm_n(Context&& ctxt, typename It2DA::element alpha, It2DA a_first, Size a_count, It2DB b_first, typename It2DA::element beta, It2DC c_first) // NOLINT(readability-function-cognitive-complexity) : 125
 {
-	assert( b_first->size() == c_first->size() );          // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( a_first.stride()==1 || a_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( b_first.stride()==1 || b_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( c_first.stride()==1 || c_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	assert( b_first->size() == c_first->size() );
+	assert( a_first.stride()==1 || a_first->stride()==1 );
+	assert( b_first.stride()==1 || b_first->stride()==1 );
+	assert( c_first.stride()==1 || c_first->stride()==1 );
 
 	if(a_count == 0) { return c_first; }
 
 	if      (a_first->stride()==1 && b_first->stride()==1 && c_first->stride()==1) {
-		if     ( a_count==1 && b_first->size()==1 ) {CTXT->gemm('N', 'N', b_first->size(), a_count, a_first->size(), &alpha, base(b_first), b_first->size()  , base(a_first), a_first->size()  , &beta, base(c_first), c_first->size()  );}
-		else if( a_count==1                       ) {CTXT->gemm('N', 'N', b_first->size(), a_count, a_first->size(), &alpha, base(b_first), b_first. stride(), base(a_first), a_first->size()  , &beta, base(c_first), c_first->size()  );}
-		else                                        {CTXT->gemm('N', 'N', b_first->size(), a_count, a_first->size(), &alpha, base(b_first), b_first. stride(), base(a_first), a_first. stride(), &beta, base(c_first), c_first. stride());}
+		if     ( a_count==1 && b_first->size()==1 ) {CTXT->gemm('N', 'N', b_first->size(), a_count, a_first->size(), &alpha, b_first.base(), b_first->size(), a_first.base(), a_first->size(), &beta, c_first.base(), c_first->size()  );}
+		else if( a_count==1                        ) {CTXT->gemm('N', 'N', b_first->size(), a_count, a_first->size(), &alpha, b_first.base(), b_first. stride(), a_first.base(), a_first->size(), &beta, c_first.base(), c_first->size()  );}
+		else                                         {CTXT->gemm('N', 'N', b_first->size(), a_count, a_first->size(), &alpha, b_first.base(), b_first. stride(), a_first.base(), a_first. stride(), &beta, c_first.base(), c_first. stride());}
 	}else if(a_first->stride()==1 && b_first->stride()==1 && c_first. stride()==1) {
-		if  (a_count==1)                            {CTXT->gemm('T', 'T', a_count, b_first->size(), a_first->size(), &alpha, base(a_first), a_first. stride(), base(b_first), b_first->size()  , &beta, base(c_first), a_first->size()  );}
-		else                                        {CTXT->gemm('T', 'T', a_count, b_first->size(), a_first->size(), &alpha, base(a_first), a_first. stride(), base(b_first), b_first. stride(), &beta, base(c_first), c_first->stride());}
+		if  (a_count==1)                            {CTXT->gemm('T', 'T', a_count, b_first->size(), a_first->size(), &alpha, a_first.base(), a_first. stride(), b_first.base(), b_first->size()  , &beta, c_first.base(), a_first->size()  );}
+		else                                        {CTXT->gemm('T', 'T', a_count, b_first->size(), a_first->size(), &alpha, a_first.base(), a_first. stride(), b_first.base(), b_first. stride(), &beta, c_first.base(), c_first->stride());}
 	}else if(a_first. stride()==1 && b_first->stride()==1 && c_first->stride()==1) { 
-		if  (a_count==1)                            {CTXT->gemm('N', 'T', c_first->size(), a_count, a_first->size(), &alpha, base(b_first), b_first. stride(), base(a_first), a_first->stride(), &beta, base(c_first), a_count         );}
-		else                                        {CTXT->gemm('N', 'T', c_first->size(), a_count, a_first->size(), &alpha, base(b_first), b_first. stride(), base(a_first), a_first->stride(), &beta, base(c_first), c_first.stride());}
+		if  (a_count==1)                            {CTXT->gemm('N', 'T', c_first->size(), a_count, a_first->size(), &alpha, b_first.base(), b_first. stride(), a_first.base(), a_first->stride(), &beta, c_first.base(), c_first->size() );}
+		else                                        {CTXT->gemm('N', 'T', c_first->size(), a_count, a_first->size(), &alpha, b_first.base(), b_first. stride(), a_first.base(), a_first->stride(), &beta, c_first.base(), c_first.stride());}
 	}else if(a_first. stride()==1 && b_first->stride()==1 && c_first. stride()==1) {
-		if  (a_count==1)                            {CTXT->gemm('N', 'T', a_count, b_first->size(), a_first->size(), &alpha, base(a_first), a_first->stride(), base(b_first), a_first->size()  , &beta, base(c_first), b_first->size()  );}
-		else                                        {CTXT->gemm('N', 'T', a_count, b_first->size(), a_first->size(), &alpha, base(a_first), a_first->stride(), base(b_first), b_first. stride(), &beta, base(c_first), c_first->stride());}
+		if  (a_count==1)                            {CTXT->gemm('N', 'T', a_count, b_first->size(), a_first->size(), &alpha, a_first.base(), a_first->stride(), b_first.base(), a_first->size()  , &beta, c_first.base(), b_first->size()  );}
+		else                                        {CTXT->gemm('N', 'T', a_count, b_first->size(), a_first->size(), &alpha, a_first.base(), a_first->stride(), b_first.base(), b_first. stride(), &beta, c_first.base(), c_first->stride());}
 	}else if(a_first->stride()==1 && b_first.stride()==1 && c_first. stride()==1) {
-		if     (a_count==1 && b_first->size()==1  ) {CTXT->gemm('N', 'N', c_first->size(), a_count, a_first->size(), &alpha, base(b_first), b_first->size()  , base(a_first), a_first->size()  , &beta, base(c_first), c_first->stride());}
-		else if(a_count==1)                         {CTXT->gemm('N', 'T', c_first->size(), a_count, a_first->size(), &alpha, base(b_first), b_first->stride(), base(a_first), a_first->size()  , &beta, base(c_first), c_first->stride());}
+		if     (a_count==1 && b_first->size()==1)  {CTXT->gemm('N', 'N', c_first->size(), a_count, a_first->size(), &alpha, b_first.base(), b_first->size()  , a_first.base(), a_first->size()  , &beta, c_first.base(), c_first->stride());}
+		else if(a_count==1)                         {CTXT->gemm('N', 'T', c_first->size(), a_count, a_first->size(), &alpha, b_first.base(), b_first->stride(), a_first.base(), a_first->size()  , &beta, c_first.base(), c_first->stride());}
 		else if(a_first->size() == 1 && b_first->size() == 1)
-		                                            {CTXT->gemm('N', 'N', c_first->size(), a_count, a_first->size(), &alpha, base(b_first), b_first->stride(), base(a_first), a_first. stride(), &beta, base(c_first), c_first->stride());}
-		else                                        {CTXT->gemm('N', 'T', c_first->size(), a_count, a_first->size(), &alpha, base(b_first), b_first->stride(), base(a_first), a_first. stride(), &beta, base(c_first), c_first->stride());}
+		                                            {CTXT->gemm('N', 'N', c_first->size(), a_count, a_first->size(), &alpha, b_first.base(), b_first->stride(), a_first.base(), a_first. stride(), &beta, c_first.base(), c_first->stride());}
+		else                                        {CTXT->gemm('N', 'T', c_first->size(), a_count, a_first->size(), &alpha, b_first.base(), b_first->stride(), a_first.base(), a_first. stride(), &beta, c_first.base(), c_first->stride());}
 	}else if(a_first->stride()==1 && b_first. stride()==1 && c_first->stride()==1) {
-		if  (a_count==1)                            {CTXT->gemm('T', 'N', a_count, c_first->size(), a_first->size(), &alpha, base(b_first), b_first->stride(), base(a_first), a_first->size()  , &beta, base(c_first), c_first. stride());}
-		else                                        {CTXT->gemm('T', 'N', c_first->size(), a_count, a_first->size(), &alpha, base(b_first), b_first->stride(), base(a_first), a_first. stride(), &beta, base(c_first), c_first. stride());}
+		if  (a_count==1)                            {CTXT->gemm('T', 'N', a_count, c_first->size(), a_first->size(), &alpha, b_first.base(), b_first->stride(), a_first.base(), a_first->size(), &beta, c_first.base(), c_first. stride());}
+		else                                        {CTXT->gemm('T', 'N', c_first->size(), a_count, a_first->size(), &alpha, b_first.base(), b_first->stride(), a_first.base(), a_first. stride(), &beta, c_first.base(), c_first. stride());}
 	}else if(a_first. stride()==1 && b_first.stride( )==1 && c_first. stride()==1) {
-		if  (b_first->size()==1)                    {CTXT->gemm('N', 'N', a_count, b_first->size(), a_first->size(), &alpha, base(a_first), a_first->stride(), base(b_first), b_first->stride(), &beta, base(c_first), a_count          );}
-		else                                        {CTXT->gemm('N', 'N', a_count, b_first->size(), a_first->size(), &alpha, base(a_first), a_first->stride(), base(b_first), b_first->stride(), &beta, base(c_first), c_first->stride());}
+		if  (b_first->size()==1)                   {CTXT->gemm('N', 'N', a_count, b_first->size(), a_first->size(), &alpha, a_first.base(), a_first->stride(), b_first.base(), b_first->stride(), &beta, c_first.base(), a_count          );}
+		else                                        {CTXT->gemm('N', 'N', a_count, b_first->size(), a_first->size(), &alpha, a_first.base(), a_first->stride(), b_first.base(), b_first->stride(), &beta, c_first.base(), c_first->stride());}
 	}else if(a_first. stride()==1 && b_first.stride( )==1 && c_first->stride()==1) {          
-	                                                {CTXT->gemm('T', 'T', b_first->size(), a_count, a_first->size(), &alpha, base(b_first), b_first->stride(), base(a_first), a_first->stride(), &beta, base(c_first), c_first. stride());}
-	} else {assert(0);}  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	                                                {CTXT->gemm('T', 'T', b_first->size(), a_count, a_first->size(), &alpha, b_first.base(), b_first->stride(), a_first.base(), a_first->stride(), &beta, c_first.base(), c_first. stride());}
+	} else {assert(0);}
 
 	return c_first + a_count;
 }
 
 template<class Context, class It2DA, class Size, class It2DB, class It2DC,
-	std::enable_if_t<(!is_conjugated<It2DA>{} && is_conjugated<It2DB>{}), int> =0
->
+	std::enable_if_t<(!is_conjugated<It2DA>{} && is_conjugated<It2DB>{}), int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto gemm_n(Context&& ctxt, typename It2DA::element alpha, It2DA a_first, Size a_count, It2DB b_first, typename It2DA::element beta, It2DC c_first) // NOLINT(readability-function-cognitive-complexity) : 125
 {
-	assert( b_first->size() == c_first->size() );          // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( a_first.stride()==1 || a_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( b_first.stride()==1 || b_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( c_first.stride()==1 || c_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	assert( b_first->size() == c_first->size() );
+	assert( a_first.stride()==1 || a_first->stride()==1 );
+	assert( b_first.stride()==1 || b_first->stride()==1 );
+	assert( c_first.stride()==1 || c_first->stride()==1 );
 
 	if(a_count == 0) { return c_first; }
 
-	if      (a_first->stride()==1 && b_first->stride()==1 && c_first->stride()==1){
-	                            {CTXT->gemm('C', 'N', c_first->size(), a_count, a_first->size(), &alpha, underlying(base(b_first)), b_first->stride(), base(a_first), a_first->size()  , &beta, base(c_first), c_first.stride());}
+	if      (a_first->stride()==1 && b_first->stride()==1 && c_first->stride()==1) {
+	                            {CTXT->gemm('C', 'N', c_first->size(), a_count, a_first->size(), &alpha, underlying(b_first.base()), b_first->stride(), a_first.base(), a_first->size()  , &beta, c_first.base(), c_first.stride());}
 	}else if(a_first->stride()==1 && b_first. stride()==1 && c_first->stride()==1){
-		if  (a_count==1)        {CTXT->gemm('C', 'N', a_count, c_first->size(), a_first->size(), &alpha, underlying(base(b_first)), b_first->stride(), base(a_first), a_first->size()  , &beta, base(c_first), c_first.stride());}
-		else                    {CTXT->gemm('C', 'N', c_first->size(), a_count, a_first->size(), &alpha, underlying(base(b_first)), b_first->stride(), base(a_first), a_first.stride(), &beta, base(c_first), c_first.stride());}
+		if  (a_count==1)        {CTXT->gemm('C', 'N', a_count, c_first->size(), a_first->size(), &alpha, underlying(b_first.base()), b_first->stride(), a_first.base(), a_first->size()  , &beta, c_first.base(), c_first.stride());}
+		else                    {CTXT->gemm('C', 'N', c_first->size(), a_count, a_first->size(), &alpha, underlying(b_first.base()), b_first->stride(), a_first.base(), a_first.stride(), &beta, c_first.base(), c_first.stride());}
 	}else if(a_first->stride()==1 && b_first. stride()==1 && c_first. stride()==1){
-								{CTXT->gemm('C', 'N', c_first->size(), a_count, a_first->size(), &alpha, underlying(base(b_first)), b_first->stride(), base(a_first), a_first. stride(), &beta, base(c_first), c_first->stride());}
+								{CTXT->gemm('C', 'N', c_first->size(), a_count, a_first->size(), &alpha, underlying(b_first.base()), b_first->stride(), a_first.base(), a_first. stride(), &beta, c_first.base(), c_first->stride());}
 	}else if(a_first. stride()==1 && b_first. stride()==1 && c_first. stride()==1){
-								{CTXT->gemm('C', 'T', c_first->size(), a_count, a_first->size(), &alpha, underlying(base(b_first)), b_first->stride(), base(a_first), a_first->stride(), &beta, base(c_first), c_first->stride());}
+								{CTXT->gemm('C', 'T', c_first->size(), a_count, a_first->size(), &alpha, underlying(b_first.base()), b_first->stride(), a_first.base(), a_first->stride(), &beta, c_first.base(), c_first->stride());}
 	}else if(a_first. stride()==1 && b_first. stride()==1 && c_first->stride()==1){
-								{CTXT->gemm('C', 'T', a_count, c_first->size(), a_first->size(), &alpha, underlying(base(b_first)), b_first->stride(), base(a_first), a_first->stride(), &beta, base(c_first), c_first. stride());}
-	}else{assert(0);}  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+								{CTXT->gemm('C', 'T', a_count, c_first->size(), a_first->size(), &alpha, underlying(b_first.base()), b_first->stride(), a_first.base(), a_first->stride(), &beta, c_first.base(), c_first. stride());}
+	}else{assert(0);}
 
 	return c_first + a_count;
 }
 
 template<class Context, class It2DA, class Size, class It2DB, class It2DC,
-	std::enable_if_t<(is_conjugated<It2DA>{} && !is_conjugated<It2DB>{}), int> =0
->
+	std::enable_if_t<(is_conjugated<It2DA>{} && !is_conjugated<It2DB>{}), int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto gemm_n(Context&& ctxt, typename It2DA::element alpha, It2DA a_first, Size a_count, It2DB b_first, typename It2DA::element beta, It2DC c_first) // NOLINT(readability-function-cognitive-complexity) : 125
 {
-	assert( b_first->size() == c_first->size() );          // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( a_first.stride()==1 || a_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( b_first.stride()==1 || b_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( c_first.stride()==1 || c_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	assert( b_first->size() == c_first->size() );
+	assert( a_first.stride()==1 || a_first->stride()==1 );
+	assert( b_first.stride()==1 || b_first->stride()==1 );
+	assert( c_first.stride()==1 || c_first->stride()==1 );
 
 	if(a_count == 0) { return c_first; }
 
 	if      (a_first. stride()==1 && b_first->stride()==1 && c_first->stride()==1){
-		if  (a_count==1)        {CTXT->gemm('N', 'C', c_first->size(), a_count, a_first->size(), &alpha, base(b_first), b_first. stride(), underlying(base(a_first)), a_first->stride(), &beta, base(c_first), a_first->size()  );}
-		else                    {CTXT->gemm('N', 'C', c_first->size(), a_count, a_first->size(), &alpha, base(b_first), b_first. stride(), underlying(base(a_first)), a_first->stride(), &beta, base(c_first), c_first.stride());}
+		if  (a_count==1)        {CTXT->gemm('N', 'C', c_first->size(), a_count, a_first->size(), &alpha, b_first.base(), b_first. stride(), underlying(a_first.base()), a_first->stride(), &beta, base(c_first), a_first->size()); }
+		else                    {CTXT->gemm('N', 'C', c_first->size(), a_count, a_first->size(), &alpha, b_first.base(), b_first. stride(), underlying(a_first.base()), a_first->stride(), &beta, base(c_first), c_first.stride() ); }
 	} else                      {throw std::logic_error{"not BLAS-implemented"};}
 
 	return c_first + a_count;
 }
 
 template<class Context, class It2DA, class Size, class It2DB, class It2DC,
-	std::enable_if_t<(is_conjugated<It2DA>{} && is_conjugated<It2DB>{}), int> =0
->
+	std::enable_if_t<(is_conjugated<It2DA>{} && is_conjugated<It2DB>{}), int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto gemm_n(Context&& ctxt, typename It2DA::element alpha, It2DA a_first, Size a_count, It2DB b_first, typename It2DA::element beta, It2DC c_first) // NOLINT(readability-function-cognitive-complexity) : 125
 {
-	assert( b_first->size() == c_first->size() );          // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( a_first.stride()==1 || a_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( b_first.stride()==1 || b_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( c_first.stride()==1 || c_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	assert( b_first->size() == c_first->size() );
+	assert( a_first.stride()==1 || a_first->stride()==1 );
+	assert( b_first.stride()==1 || b_first->stride()==1 );
+	assert( c_first.stride()==1 || c_first->stride()==1 );
 
 	if(a_count == 0) { return c_first; }
 	if      (a_first. stride()==1 && b_first. stride()==1 && c_first->stride()==1){
@@ -149,6 +154,7 @@ auto gemm_n(typename It2DA::element alpha, It2DA a_first, Size a_count, It2DB b_
 
 template<class Context, class A, class B, class C>
 auto gemm(Context&& ctx, typename A::element alpha, A const& a, B const& b, typename A::element beta, C&& c) -> C&& {  // NOLINT(readability-identifier-length) BLAS naming
+	using std::size;
 	assert( size( a) == size( c) );
 	if(! a.is_empty()) {assert( size(~a) == size( b) );}
 	if constexpr(is_conjugated<C>{}) {blas::gemm  (std::forward<Context>(ctx), conj(alpha), conj(a),           conj(b) , conj(beta), conj(c) );}
@@ -167,8 +173,7 @@ auto gemm(typename A::element alpha, A const& a, B const& b, typename A::element
 	}
 }
 
-template<class ContextPtr, class Scalar, class ItA, class ItB, class DecayType>
-class gemm_range;
+// template<class ContextPtr, class Scalar, class ItA, class ItB, class DecayType> class gemm_range;
 
 template<class Ext>
 class gemm_reference {  // TODO(correaa) implement this in terms of gemv_range?
@@ -176,8 +181,10 @@ class gemm_reference {  // TODO(correaa) implement this in terms of gemv_range?
 
  public:
 	explicit gemm_reference(Ext exts) : exts_{std::move(exts)} {}
-	auto extensions() const {return exts_;}
-	friend auto extensions(gemm_reference const& self) {return self.extensions();}
+	auto extensions() const { return exts_; }
+	[[nodiscard]] constexpr auto extents() const { return exts_; }
+
+	// friend auto extensions(gemm_reference const& self) {return self.extensions();}
 };
 
 template<class ContextPtr, class Scalar, class ItA, class ItB>
@@ -191,31 +198,34 @@ class gemm_iterator {
 	friend class gemm_range;
 
  public:
+	gemm_iterator() = default;
 	gemm_iterator(gemm_iterator const&) = default;
 	gemm_iterator(gemm_iterator&&) noexcept = default;
 	~gemm_iterator() = default;
 
-	auto operator=(gemm_iterator&&) -> gemm_iterator& = delete;
-	auto operator=(gemm_iterator const&) -> gemm_iterator& = delete;
+	// auto operator=(gemm_iterator&&) noexcept -> gemm_iterator&;  // = delete;
+	auto operator=(gemm_iterator const&) -> gemm_iterator&;  // = delete;
+	auto operator=(gemm_iterator&&) noexcept -> gemm_iterator&;
 
 	using difference_type = typename std::iterator_traits<ItA>::difference_type;
 	using value_type = typename std::iterator_traits<ItA>::value_type;
 	using pointer = std::nullptr_t;
-	using reference = gemm_reference<decltype(b_begin_->extensions())>;
+	using reference = gemm_reference<decltype(std::declval<typename std::iterator_traits<ItB>::reference>().extents())>;
 	using iterator_category = std::random_access_iterator_tag;
 
-	static_assert( std::is_base_of<std::random_access_iterator_tag, typename std::iterator_traits<gemm_iterator>::iterator_category>{} );
+	auto operator+=(difference_type n) -> gemm_iterator& { a_it_ += n; return *this; }
+	auto operator-=(difference_type n) -> gemm_iterator& { a_it_ -= n; return *this; }
 
-	auto operator+=(difference_type n) -> gemm_iterator& {a_it_ += n; return *this;}
-	auto operator-=(difference_type n) -> gemm_iterator& {a_it_ -= n; return *this;}
+	auto operator++() -> gemm_iterator& { return operator+=(1); }  // required by random access concept requires even if not used explicitly
+	auto operator--() -> gemm_iterator& { return operator-=(1); }
 
-	auto operator++() -> gemm_iterator& {return operator+=(1);}  // required by random access concept requires even if not used explicitly
-	auto operator--() -> gemm_iterator& {return operator-=(1);}
+	auto operator++(int) -> gemm_iterator { gemm_iterator ret{*this}; ++(*this); return ret; }  // required by random access concept requires even if not used explicitly
+	auto operator--(int) -> gemm_iterator { gemm_iterator ret{*this}; --(*this); return ret; }
 
-	auto operator+(difference_type n) const {gemm_iterator ret{*this}; ret+=n; return ret;}
+	friend auto operator+(gemm_iterator ret, difference_type n) { return ret += n; }
 
 	friend auto operator-(gemm_iterator const& a, gemm_iterator const& b) -> difference_type {  // NOLINT(readability-identifier-length) BLAS naming
-		assert(a.b_begin_ == b.b_begin_);  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+		assert(a.b_begin_ == b.b_begin_);
 		return a.a_it_ - b.a_it_;
 	}
 	friend auto operator==(gemm_iterator const& self, gemm_iterator const& other) -> bool {return self.a_it_ == other.a_it_;}
@@ -223,13 +233,12 @@ class gemm_iterator {
 
 	template<class ItOut>
 	friend auto copy_n(gemm_iterator const& first, difference_type count, ItOut d_first)
-	->decltype(blas::gemm_n(std::declval<ContextPtr>(), std::declval<typename ItA::element>()       , std::declval<ItA>(), count, std::declval<ItB>(), 0.0, d_first)) try {  // std::complex NOLINT(fuchsia-default-arguments-calls)
-		return blas::gemm_n(first.ctxtp_              , static_cast<typename ItA::element>(first.s_), first.a_it_        , count, first.b_begin_     , 0.0, d_first);  // NOLINT(fuchsia-default-arguments-calls)
+	->decltype(blas::gemm_n(std::declval<ContextPtr>(), std::declval<typename ItA::element>()       , std::declval<ItA>(), count, std::declval<ItB>(), 0.0, d_first)) try {  // std::complex NOLINT(readability-redundant-typename) for C++20
+		return blas::gemm_n(first.ctxtp_              , static_cast<typename ItA::element>(first.s_), first.a_it_        , count, first.b_begin_     , 0.0, d_first);
 	} catch(std::exception const& e) {
-		using namespace std::string_literals;
 		throw std::logic_error(
-			"in "s + __PRETTY_FUNCTION__ +"\nCouldn't decay product of arrays of size "+ std::to_string(count) +"x"+ std::to_string(first.a_it_->size()) + " and " + // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-			std::to_string(first.a_it_->size())+ "x" +std::to_string(first.b_begin_->size()) + " into " + std::to_string(count) +"x" + std::to_string(first.b_begin_->size()) +
+			"in `copy_n`\nCouldn't decay product of arrays of size "+ std::to_string(count) +"x"+ std::to_string((*first.a_it_).size()) + " and " + // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+			std::to_string((*first.a_it_).size())+ "x" +std::to_string((*first.b_begin_).size()) + " into " + std::to_string(count) +"x" + std::to_string((*first.b_begin_).size()) +
 			"\nbecause\n" + e.what()
 		);
 	}
@@ -246,11 +255,11 @@ class gemm_iterator {
 
 	template<class ItOut>
 	friend auto uninitialized_copy(gemm_iterator const& first, gemm_iterator const& last, ItOut d_first) {
-		assert( first.s_ == last.s_ ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+		// assert( first.s_ == last.s_ );
 		return uninitialized_copy_n(first, last - first, d_first);
 	}
 
-	auto operator*() const {return reference{b_begin_->extensions()};}
+	auto operator*() const {return reference{(*b_begin_).extents()};}
 };
 
 template<class ContextPtr, class Scalar, class ItA, class ItB, class DecayType>
@@ -276,7 +285,7 @@ class gemm_range {
 
 	using iterator = gemm_iterator<ContextPtr, Scalar, ItA, ItB>;
 	using decay_type = DecayType;
-	using size_type = typename decay_type::size_type;
+	using size_type = typename std::iterator_traits<ItA>::difference_type;  // typename decay_type::size_type;
 
 	       auto begin()          const& -> iterator {return {ctxtp_, s_, a_begin_, b_begin_};}
 	       auto end()            const& -> iterator {return {ctxtp_, s_, a_end_  , b_begin_};}
@@ -285,8 +294,10 @@ class gemm_range {
 
 	auto size() const -> size_type {return a_end_ - a_begin_;}
 
-	auto extensions() const -> typename decay_type::extensions_type {return size()*b_begin_->extensions();}
-	friend auto extensions(gemm_range const& self) {return self.extensions();}
+	auto extensions() const -> typename decay_type::extents_type {return size()*(*b_begin_).extents();}
+	[[nodiscard]] constexpr auto extents() const -> typename decay_type::extents_type {return size()*(*b_begin_).extents();}
+
+	// friend auto extensions(gemm_range const& self) {return self.extensions();}
 
 	auto operator+() const -> decay_type {return *this;} // TODO(correaa) : investigate why return decay_type{*this} doesn't work
 	template<class Arr>
@@ -299,26 +310,37 @@ class gemm_range {
 	}
 };
 
-template<class ContextPtr, class Scalar, class A2D, class B2D, class=std::enable_if_t<is_context<decltype(*std::declval<ContextPtr>())>{}> >
+template<class ContextPtr, class Scalar, class A2D, class B2D,
+	class = std::enable_if_t<is_context<decltype(*std::declval<ContextPtr>())>{}> >  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto gemm(ContextPtr ctxtp, Scalar s, A2D const& a, B2D const& b)  // NOLINT(readability-identifier-length) BLAS naming
 ->gemm_range<ContextPtr, Scalar, typename A2D::const_iterator, typename B2D::const_iterator, typename A2D::decay_type/*B2D*/>
 {
-	return {ctxtp, s, begin(a), end(a), begin(b)};
+	return
+		gemm_range<ContextPtr, Scalar, typename A2D::const_iterator, typename B2D::const_iterator, typename A2D::decay_type/*B2D*/>
+			(ctxtp, s, a.begin(), a.end(), b.begin())
+		;
 }
 
-#if defined __NVCC__
-	#ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
-		#pragma nv_diagnostic push
-		#pragma nv_diag_suppress = implicit_return_from_non_void_function
-	#else
-		#pragma    diagnostic push
-		#pragma    diag_suppress = implicit_return_from_non_void_function
-	#endif
-#elif defined __NVCOMPILER
-	#pragma    diagnostic push
-	#pragma    diag_suppress = implicit_return_from_non_void_function
+#ifdef __NVCC__  // in place of global -Xcudafe \"--diag_suppress=implicit_return_from_non_void_function\"
+#pragma nv_diagnostic push
+#pragma nv_diag_suppress = implicit_return_from_non_void_function
 #endif
-template<class A2D, class B2D, class Scalar = typename A2D::element_type, class = decltype(Scalar{0.0})>
+
+#ifdef __NVCOMPILER
+#pragma diagnostic push
+#pragma diag_suppress = implicit_return_from_non_void_function
+#endif
+#ifndef _MSC_VER
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreturn-type"
+#endif
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4715)  // not all control paths return a value
+#endif
+
+template<class A2D, class B2D, class Scalar = typename A2D::element, class = decltype(Scalar{0.0})>
 auto gemm(Scalar s, A2D const& a, B2D const& b) {  // NOLINT(readability-identifier-length) conventional BLAS naming
 	if constexpr(is_conjugated<A2D>{}) {
 		auto ctxtp = blas::default_context_of(underlying(a.base()));
@@ -328,18 +350,24 @@ auto gemm(Scalar s, A2D const& a, B2D const& b) {  // NOLINT(readability-identif
 		return blas::gemm(ctxtp, s, a, b);
 	}
 }
-#if defined __NVCC__
-	#ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
-		#pragma nv_diagnostic pop
-	#else
-		#pragma    diagnostic pop
-	#endif
-#elif defined __NVCOMPILER
-	#pragma    diagnostic pop
+
+#ifdef __NVCC__
+#pragma nv_diagnostic pop
+#elif defined(__NVCOMPILER)
+#pragma diagnostic pop
+#endif
+
+#ifndef _MSC_VER
+#pragma GCC diagnostic pop
+#endif
+
+#ifdef _MSC_VER
+#pragma warning(pop)
 #endif
 
 namespace operators {
-	template<class A2D, class B2D, std::enable_if_t<(A2D::dimensionality == 2) && (B2D::dimensionality == 2),int> =0>
+	template<class A2D, class B2D,
+		std::enable_if_t<(A2D::dimensionality == 2) && (B2D::dimensionality == 2),int> =0>  // NOLINT(modernize-use-constraints) for C++20
 	auto operator*(A2D const& A, B2D const& B)  // NOLINT(readability-identifier-length) conventional BLAS names
 	->decltype(blas::gemm(1.0, A, B)) {
 		return blas::gemm(1.0, A, B); }

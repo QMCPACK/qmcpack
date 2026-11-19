@@ -1,4 +1,4 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2024 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_CARTESIAN_COMMUNICATOR_HPP
 #define BOOST_MPI3_CARTESIAN_COMMUNICATOR_HPP
@@ -7,6 +7,8 @@
 #include <mpi3/process.hpp>
 
 #include <mpi3/detail/call.hpp>
+
+#include <cassert>
 
 namespace boost::mpi3 {
 
@@ -30,7 +32,7 @@ struct cartesian_communicator<dynamic_extent> : communicator {
 	cartesian_communicator(communicator& comm_old, Shape const& s, Period const& p) {
 		assert(s.size() == p.size());
 		using dimensionality_type = int;
-		MPI_(Cart_create)(comm_old.get(), static_cast<dimensionality_type>(s.size()), s.data(), p.data(), /*reorder*/ true, &impl_);
+		MPI_(Cart_create)(comm_old.get(), static_cast<dimensionality_type>(s.size()), s.data(), p.data(), /*reorder*/ false, &impl_);
 		//  assert(impl_ != MPI_COMM_NULL); // null communicator is a valid outcome
 		// TODO(correaa) try with mpich, WAS: there is an bug in mpich, in which if the remaining dim are none then the communicator is not well defined.
 	}
@@ -46,7 +48,7 @@ struct cartesian_communicator<dynamic_extent> : communicator {
 	: cartesian_communicator(comm_old, std::vector<int>(shape), std::vector<int>(period)) {}
 
 
-#if !defined(EXAMPI)
+#ifndef EXAMPI
 	[[deprecated("use dimensionality() instead of dimension")]]
 	int dimension() const {
 		int ret;  // NOLINT(cppcoreguidelines-init-variables) delayed init  // TODO(correaa)
@@ -62,14 +64,14 @@ struct cartesian_communicator<dynamic_extent> : communicator {
 		if(this == std::addressof(other)) {
 			return *this;
 		}  // lints cppcoreguidelines-c-copy-assignment-signature,misc-unconventional-assign-operator
-		if(not (compare(other) == boost::mpi3::detail::congruent)) {throw std::logic_error{"assignment is going to be deprecated"};}
+		if(not (compare(other) == boost::mpi3::detail::equality::congruent)) {throw std::logic_error{"assignment is going to be deprecated"};}
 		// communicator::operator=(other);
 		return *this;
 	}
 
 	~cartesian_communicator() = default;
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	int dimensionality() const {
 		int ret;  // NOLINT(cppcoreguidelines-init-variables) delayed init
 		MPI_(Cartdim_get)(impl_, &ret);
@@ -122,7 +124,7 @@ struct cartesian_communicator<dynamic_extent> : communicator {
 		//  return operator[](rank);
 	}
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	// int MPI_Cart_map not implemented
 	cartesian_communicator sub_aux(std::vector<int> const& remain_dims) {
 		assert(static_cast<dimensionality_type>(remain_dims.size()) == dimensionality());
@@ -144,9 +146,9 @@ struct cartesian_communicator<dynamic_extent> : communicator {
 #endif
 };
 
-enum fill_t {
+enum fill_t : std::uint8_t {  // NOLINT(cppcoreguidelines-use-enum-class)
 	fill = 0,
-	_    = 0
+	_   = 0
 };
 
 struct circular_communicator;
@@ -161,14 +163,34 @@ struct cartesian_communicator : cartesian_communicator<> {
 
 	~cartesian_communicator() = default;
 
-// #if not defined(EXAMPI)
 	static std::array<int, D> division(int nnodes, std::array<int, D> suggest = {}) {
 		MPI_(Dims_create)(nnodes, D, suggest.data());
 		return suggest;
 	}
-// #endif
 
 	constexpr static dimensionality_type dimensionality = D;
+
+	auto flatten() -> cartesian_communicator<D - 1> {
+		auto const new_dimensions = std::apply([](auto n, auto m, auto... rest) { return std::array{n*m, rest...}; }, this->dimensions());
+		return cartesian_communicator<D - 1>(static_cast<communicator&>(*this), new_dimensions);
+	}
+
+	auto flatten_last() {
+		if constexpr(D == 4) {
+			auto const new_dimensions = std::apply([](auto rest1, auto rest2, auto n, auto m) { return std::array{rest1, rest2, n*m}; }, this->dimensions());
+			return cartesian_communicator<D - 1>(static_cast<communicator&>(*this), new_dimensions);
+		} else if constexpr(D == 3) {
+			auto const new_dimensions = std::apply([](auto rest, auto n, auto m) { return std::array{rest, n*m}; }, this->dimensions());
+			return cartesian_communicator<D - 1>(static_cast<communicator&>(*this), new_dimensions);
+		} else if constexpr(D == 2) {
+			auto const new_dimensions = std::apply([](           auto n, auto m) { return std::array{         n*m}; }, this->dimensions());
+			return cartesian_communicator<D - 1>(static_cast<communicator&>(*this), new_dimensions);
+		} else {
+			throw std::logic_error("not implemented");
+			// std::unreachable();
+		}
+		// std::unreachable();
+	}
 
 	cartesian_communicator(
 		communicator&       other,
@@ -220,7 +242,7 @@ struct cartesian_communicator : cartesian_communicator<> {
 		if(this == std::addressof(other)) {
 			return *this;
 		}  // lints cert-oop54-cpp
-		if(not (compare(other) == boost::mpi3::detail::congruent)) {throw std::logic_error{"assignment is going to be deprecated"};}
+		if(not (compare(other) == boost::mpi3::detail::equality::congruent)) {throw std::logic_error{"assignment is going to be deprecated"};}
 		// cartesian_communicator<>::operator=(other);  // NOLINT(clang-diagnostic-deprecated-declarations)
 		return *this;
 	}
@@ -282,16 +304,16 @@ struct cartesian_communicator : cartesian_communicator<> {
 	using coordinates_type = std::array<int, D>;
 
 	using cartesian_communicator<>::rank;
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	auto rank(coordinates_type cs) const -> int {
 		auto const ps = periods();
 		auto const s  = shape();
-		for(std::size_t i = 0; i != D; ++i) {  // NOLINT(altera-unroll-loops) TODO(correaa) use algorithm
-			if(ps[i] == false) {
-				assert(cs[i] >= 0);
-				assert(cs[i] < s[i]);
-			}
-		}
+		// for(std::size_t i = 0; i != D; ++i) {  // NOLINT(altera-unroll-loops) TODO(correaa) use algorithm
+		//  if(ps[i] == false) {
+		//      assert(cs[i] >= 0);
+		//      assert(cs[i] < s[i]);
+		//  }
+		// }
 		return MPI_(Cart_rank)(impl_, cs.data());
 	}
 #endif
@@ -306,7 +328,7 @@ struct cartesian_communicator : cartesian_communicator<> {
 
 	cartesian_communicator<D - 1> hyperplane(int d) {
 		static_assert(D != 0, "hyperplane not possible for 0D communicators");
-#if defined(MPICH_VERSION)
+#ifdef MPICH_VERSION
 		static_assert(D != 1, "hyperplane not possible for 1D communicators");  // they work in openMPI but do not work in MPICH
 #endif
 		assert(d >= 0);
@@ -344,7 +366,7 @@ struct circular_communicator : cartesian_communicator<1> {
 		if(this == std::addressof(other)) {
 			return *this;
 		}  // lints cert-oop54-cpp
-		if(not (compare(other) == boost::mpi3::detail::congruent)) {throw std::logic_error{"assignment is going to be deprecated"};}
+		if(not (compare(other) == boost::mpi3::detail::equality::congruent)) {throw std::logic_error{"assignment is going to be deprecated"};}
 		// cartesian_communicator<1>::operator=(other);  // NOLINT(clang-diagnostic-deprecated-declarations)
 		return *this;
 	}
@@ -354,7 +376,7 @@ struct circular_communicator : cartesian_communicator<1> {
 
 	using cartesian_communicator<1>::rank;
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	auto rank(int coordinate) const { return cartesian_communicator<1>::rank({coordinate}); }
 #endif
 

@@ -76,7 +76,7 @@ static constexpr const char* const wf_input_spinor_J12 = R"(
   )";
 
 WaveFunctionPool MinimalWaveFunctionPool::make_diamondC_1x1x1(const RuntimeOptions& runtime_options,
-                                                              Communicate* comm,
+                                                              Communicate& comm,
                                                               ParticleSetPool& particle_pool)
 {
   WaveFunctionPool wp(runtime_options, particle_pool, comm);
@@ -93,7 +93,7 @@ WaveFunctionPool MinimalWaveFunctionPool::make_diamondC_1x1x1(const RuntimeOptio
 }
 
 WaveFunctionPool MinimalWaveFunctionPool::make_O2_spinor(const RuntimeOptions& runtime_options,
-                                                         Communicate* comm,
+                                                         Communicate& comm,
                                                          ParticleSetPool& particle_pool)
 {
   WaveFunctionPool wp(runtime_options, particle_pool, comm);
@@ -110,7 +110,7 @@ WaveFunctionPool MinimalWaveFunctionPool::make_O2_spinor(const RuntimeOptions& r
 }
 
 WaveFunctionPool MinimalWaveFunctionPool::make_O2_spinor_J12(const RuntimeOptions& runtime_options,
-                                                             Communicate* comm,
+                                                             Communicate& comm,
                                                              ParticleSetPool& particle_pool)
 {
   WaveFunctionPool wp(runtime_options, particle_pool, comm);

@@ -113,9 +113,9 @@ inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, communicator
   {
     const ComplexType fact = im * static_cast<ComplexType>(1.0 / static_cast<double>(n));
     if (TA == 'H' || TA == 'h')
-      ma::product(fact, ma::H(V(V.extension(0), {M0, Mn})), *pT1, zero, (*pT2).sliced(M0, Mn));
+      ma::product(fact, ma::H(V(get<0>(V.extents()), {M0, Mn})), *pT1, zero, (*pT2).sliced(M0, Mn));
     else if (TA == 'T' || TA == 't')
-      ma::product(fact, ma::T(V(V.extension(0), {M0, Mn})), *pT1, zero, (*pT2).sliced(M0, Mn));
+      ma::product(fact, ma::T(V(get<0>(V.extents()), {M0, Mn})), *pT1, zero, (*pT2).sliced(M0, Mn));
     else
       ma::product(fact, V.sliced(M0, Mn), *pT1, zero, (*pT2).sliced(M0, Mn));
     // overload += ???
@@ -153,15 +153,15 @@ inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, int order = 
   assert(get<1>(S.sizes()) == get<1>(T2.sizes()));
   assert(get<2>(S.sizes()) == get<2>(T2.sizes()));
   // for now limit to continuous
-  assert(S.stride(0) == get<1>(S.sizes()) * get<2>(S.sizes()));
-  assert(T1.stride(0) == get<1>(T1.sizes()) * get<2>(T1.sizes()));
-  assert(T2.stride(0) == get<1>(T2.sizes()) * get<2>(T2.sizes()));
-  assert(S.stride(1) == get<2>(S.sizes()));
-  assert(T1.stride(1) == get<2>(T1.sizes()));
-  assert(T2.stride(1) == get<2>(T2.sizes()));
-  assert(S.stride(2) == 1);
-  assert(T1.stride(2) == 1);
-  assert(T2.stride(2) == 1);
+  assert(S.stride() == get<1>(S.sizes()) * get<2>(S.sizes()));
+  assert(T1.stride() == get<1>(T1.sizes()) * get<2>(T1.sizes()));
+  assert(T2.stride() == get<1>(T2.sizes()) * get<2>(T2.sizes()));
+  assert(get<1>(S.strides()) == get<2>(S.sizes()));
+  assert(get<1>(T1.strides()) == get<2>(T1.sizes()));
+  assert(get<1>(T2.strides()) == get<2>(T2.sizes()));
+  assert(get<2>(S.strides()) == 1);
+  assert(get<2>(T1.strides()) == 1);
+  assert(get<2>(T2.strides()) == 1);
 
   using ComplexType = typename std::decay<MatB>::type::element;
   ComplexType zero(0.);
@@ -174,7 +174,7 @@ inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, int order = 
   // getting around issue in multi, fix later
   //T1 = S;
   using std::copy_n;
-  copy_n(S.origin(), S.num_elements(), T1.origin());
+  copy_n(S.base(), S.num_elements(), T1.base());
   for (int n = 1; n <= order; n++)
   {
     ComplexType fact = im * static_cast<ComplexType>(1.0 / static_cast<double>(n));
@@ -186,7 +186,7 @@ inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, int order = 
       ma::productStridedBatched(fact, V, *pT1, zero, *pT2);
     //ma::add(ComplexType(1.0),*pT2,ComplexType(1.0),S,S);
     using ma::axpy;
-    axpy(S.num_elements(), ComplexType(1.0), (*pT2).origin(), 1, S.origin(), 1);
+    axpy(S.num_elements(), ComplexType(1.0), (*pT2).base(), 1, S.base(), 1);
     std::swap(pT1, pT2);
   }
 }
@@ -213,15 +213,15 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
   assert(get<1>(S.sizes()) == get<1>(T2.sizes()));
   assert(get<2>(S.sizes()) == get<2>(T2.sizes()));
   // for now limit to continuous
-  assert(S.stride(0) == get<1>(S.sizes()) * get<2>(S.sizes()));
-  assert(T1.stride(0) == get<1>(T1.sizes()) * get<2>(T1.sizes()));
-  assert(T2.stride(0) == get<1>(T2.sizes()) * get<2>(T2.sizes()));
-  assert(S.stride(1) == get<2>(S.sizes()));
-  assert(T1.stride(1) == get<2>(T1.sizes()));
-  assert(T2.stride(1) == get<2>(T2.sizes()));
-  assert(S.stride(2) == 1);
-  assert(T1.stride(2) == 1);
-  assert(T2.stride(2) == 1);
+  assert(S.stride() == get<1>(S.sizes()) * get<2>(S.sizes()));
+  assert(T1.stride() == get<1>(T1.sizes()) * get<2>(T1.sizes()));
+  assert(T2.stride() == get<1>(T2.sizes()) * get<2>(T2.sizes()));
+  assert(get<1>(S.strides()) == get<2>(S.sizes()));
+  assert(get<1>(T1.strides()) == get<2>(T1.sizes()));
+  assert(get<1>(T2.strides()) == get<2>(T2.sizes()));
+  assert(get<2>(S.strides()) == 1);
+  assert(get<2>(T1.strides()) == 1);
+  assert(get<2>(T2.strides()) == 1);
 
   using ComplexType = typename std::decay<MatB>::type::element;
   ComplexType zero(0.);
@@ -235,7 +235,7 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
   using pointerC = typename std::decay<MatC>::type::element_ptr;
 
   int nbatch = S.size();
-  int ldv    = V.stride(1);
+  int ldv    = get<1>(V.strides());
   int M      = get<2>(T2.sizes());
   int N      = get<1>(T2.sizes());
   int K      = get<1>(T1.sizes());
@@ -248,13 +248,13 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
   T2i.reserve(T2.size());
   for (int i = 0; i < V.size(); i++)
   {
-    Vi.emplace_back(ma::pointer_dispatch(V[i].origin()));
-    Vi.emplace_back(ma::pointer_dispatch(V[i].origin()));
+    Vi.emplace_back(ma::pointer_dispatch(V[i].base()));
+    Vi.emplace_back(ma::pointer_dispatch(V[i].base()));
   }
   for (int i = 0; i < T1.size(); i++)
-    T1i.emplace_back(ma::pointer_dispatch(T1[i].origin()));
+    T1i.emplace_back(ma::pointer_dispatch(T1[i].base()));
   for (int i = 0; i < T2.size(); i++)
-    T2i.emplace_back(ma::pointer_dispatch(T2[i].origin()));
+    T2i.emplace_back(ma::pointer_dispatch(T2[i].base()));
 
   auto pT1i(std::addressof(T1i));
   auto pT2i(std::addressof(T2i));
@@ -262,16 +262,16 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
   // getting around issue in multi, fix later
   //T1 = S;
   using std::copy_n;
-  copy_n(S.origin(), S.num_elements(), T1.origin());
+  copy_n(S.base(), S.num_elements(), T1.base());
   for (int n = 1; n <= order; n++)
   {
     ComplexType fact = im * static_cast<ComplexType>(1.0 / static_cast<double>(n));
     using ma::gemmBatched;
     // careful with fortran ordering
-    gemmBatched('N', TA, M, N, K, fact, pT1i->data(), (*pT1).stride(1), Vi.data(), ldv, zero, pT2i->data(),
-                (*pT2).stride(1), nbatch);
+    gemmBatched('N', TA, M, N, K, fact, pT1i->data(), get<1>((*pT1).strides()), Vi.data(), ldv, zero, pT2i->data(),
+                get<1>((*pT2).strides()), nbatch);
     using ma::axpy;
-    axpy(S.num_elements(), ComplexType(1.0), (*pT2).origin(), 1, S.origin(), 1);
+    axpy(S.num_elements(), ComplexType(1.0), (*pT2).base(), 1, S.base(), 1);
     std::swap(pT1, pT2);
     std::swap(pT1i, pT2i);
   }

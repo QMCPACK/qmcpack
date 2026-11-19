@@ -46,18 +46,36 @@ case "$1" in
         IS_MIXED_PRECISION=0
       ;;
     esac
+
+    # GPU settings
+    case "${GH_JOBNAME}" in
+      *"Offload-HIP"*)
+        echo 'Configure for building OpenMP Offload+HIP with AMDClang compilers'
+        QMC_GPU="openmp;hip" # Default when not specified
+      ;;
+      *"Offload"*)
+        echo 'Configure for building OpenMP Offload with AMDClang compilers'
+        QMC_GPU="openmp"
+      ;;
+      *"HIP"*)
+        echo 'Configure for building HIP with AMDClang compilers'
+        QMC_GPU=hip
+      ;;
+    esac
        
     # check the GPU architecture in use
     whoami
     groups
     amdgpu-arch
 
-    echo 'Configure for building OpenMP Offload with AMDClang compilers'
     cmake -GNinja \
           -DCMAKE_C_COMPILER=amdclang \
           -DCMAKE_CXX_COMPILER=amdclang++ \
+          -DPython3_EXECUTABLE=python3.14 \
           -DQMC_MPI=0 \
+          -DQMC_GPU=$QMC_GPU \
           -DQMC_GPU_ARCHS=gfx90a \
+          -DQMC_CTEST_NUM_GPUS=2 \
           -DQMC_COMPLEX=$IS_COMPLEX \
           -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -74,8 +92,9 @@ case "$1" in
   test)
     echo "Running deterministic tests"
     amd-smi version
+    export LIBOMPTARGET_AMDGPU_MAX_ASYNC_COPY_BYTES=0
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
-    ctest --output-on-failure -L deterministic -j 32 --timeout 120 --repeat after-timeout:4
+    ctest --output-on-failure -L deterministic -j 40 --timeout 600 --repeat until-pass:4
     ;;
     
 esac

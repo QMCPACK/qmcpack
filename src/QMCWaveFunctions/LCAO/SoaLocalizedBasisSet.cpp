@@ -29,9 +29,7 @@ struct SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBSetMultiWalkerMem : public 
   SoaLocalizedBSetMultiWalkerMem(const SoaLocalizedBSetMultiWalkerMem&) : SoaLocalizedBSetMultiWalkerMem() {}
 
   std::unique_ptr<Resource> makeClone() const override
-  {
-    return std::make_unique<SoaLocalizedBSetMultiWalkerMem>(*this);
-  }
+  { return std::make_unique<SoaLocalizedBSetMultiWalkerMem>(*this); }
 
   Vector<RealType, OffloadPinnedAllocator<RealType>> Tv_list;
   Vector<RealType, OffloadPinnedAllocator<RealType>> displ_list_tr;
@@ -571,9 +569,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateGradSourceVGL(const ParticleSet& P
 
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::add(int icenter, std::unique_ptr<COT> aos)
-{
-  LOBasisSet[icenter] = std::move(aos);
-}
+{ LOBasisSet[icenter] = std::move(aos); }
 
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::initializeSpeciesOffsets()

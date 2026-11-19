@@ -20,7 +20,12 @@
 #ifndef QMCPLUSPLUS_NATIVE_INTITIALIZER_PRINT_HPP
 #define QMCPLUSPLUS_NATIVE_INTITIALIZER_PRINT_HPP
 
+#include <array>
+#include <cstddef>
+#include <iomanip>
 #include <string>
+#include <unordered_map>
+#include <vector>
 #include <iostream>
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/OhmmsVector.h"

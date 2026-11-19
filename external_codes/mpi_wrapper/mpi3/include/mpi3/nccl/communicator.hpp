@@ -8,8 +8,29 @@
 #include "../../mpi3/nccl/detail/basic_datatype.hpp"
 #include "../../mpi3/nccl/detail/basic_reduction.hpp"
 
+#ifdef __NVCC__
 #include <thrust/system/cuda/memory.h>
 #include <thrust/complex.h>
+#else
+
+#include <memory>
+namespace thrust
+{
+
+template<class T, typename = typename std::enable_if_t<std::is_fundamental<T>::value>>
+inline T* raw_pointer_cast(T* p)
+{
+  return p;
+}
+
+template< class T, class U >
+T* reinterpret_pointer_cast( U* p ) 
+{
+  return reinterpret_cast<T*>(p);
+}
+
+}
+#endif
 
 #include <functional>  // for plus
 #include <iostream>
@@ -25,22 +46,26 @@ namespace detail {
 template<class T> auto datatype(T const&) -> decltype(basic_datatype_t<T>::value) {return basic_datatype<T>;}
 template<class T> auto reduction(T const&) -> decltype(basic_reduction<T>) {return basic_reduction<T>;}
 
+inline void check_nccl_result(ncclResult_t r) {
+        switch(r) {
+                case ncclSuccess: break;
+                case ncclInProgress: break;
+                case ncclUnhandledCudaError: assert(0);
+                case ncclSystemError: assert(0);
+                case ncclInternalError: assert(0);
+                case ncclInvalidArgument: assert(0);
+                case ncclInvalidUsage: assert(0 && "likely \"Duplicate GPU detected\", for example if rank 0 and rank 1 both on CUDA device 1000");
+                case ncclRemoteError: assert(0);
+                case ncclNumResults: assert(0);
+        }
+}
+
 }
 
 class communicator {
 	static auto get_unique_id() -> ncclUniqueId {
 		ncclUniqueId nccl_id;
-		auto r = ncclGetUniqueId(&nccl_id);
-		switch(r) {
-			case ncclSuccess: break;
-			case ncclUnhandledCudaError: assert(0);
-			case ncclSystemError: assert(0);
-			case ncclInternalError: assert(0);
-			case ncclInvalidArgument: assert(0);
-			case ncclInvalidUsage: assert(0 && "likely \"Duplicate GPU detected\", for example if rank 0 and rank 1 both on CUDA device 1000");
-			case ncclRemoteError: assert(0);
-			case ncclNumResults: assert(0);
-		}
+		detail::check_nccl_result(ncclGetUniqueId(&nccl_id));
 		return nccl_id;
 	}
 
@@ -50,19 +75,7 @@ class communicator {
 		ncclUniqueId nccl_id = mpi.root()?get_unique_id():ncclUniqueId{};
 		mpi.broadcast_n(reinterpret_cast<char*>(&nccl_id), sizeof(ncclUniqueId));
 		// TODO(correaa) may need mpi.barrier(); here
-		{
-			ncclResult_t r = ncclCommInitRank(&impl_, mpi.size(), nccl_id, mpi.rank());
-			switch(r) {
-				case ncclSuccess: break;
-				case ncclUnhandledCudaError: assert(0);
-				case ncclSystemError: assert(0);
-				case ncclInternalError: assert(0);
-				case ncclInvalidArgument: assert(0);
-				case ncclInvalidUsage: assert(0 && "likely \"Duplicate GPU detected\", for example if rank 0 and rank 1 both on CUDA device 1000");
-				case ncclRemoteError: assert(0);
-				case ncclNumResults: assert(0);
-			}
-		}
+		detail::check_nccl_result(ncclCommInitRank(&impl_, mpi.size(), nccl_id, mpi.rank()));
 	}
 
 	communicator(communicator const&) = delete;
@@ -70,34 +83,10 @@ class communicator {
 	communicator(communicator& other) : impl_{nullptr} {
 		if(other.empty()) {return;}
 		ncclUniqueId nccl_id = other.root()?get_unique_id():ncclUniqueId{};
-		{
-			ncclResult_t r = ncclBcast(&nccl_id, sizeof(ncclUniqueId), ncclChar, 0, other.impl_, NULL);
-			switch(r) {
-				case ncclSuccess: break;
-				case ncclUnhandledCudaError: assert(0);
-				case ncclSystemError: assert(0);
-				case ncclInternalError: assert(0);
-				case ncclInvalidArgument: assert(0);
-				case ncclInvalidUsage: assert(0);
-				case ncclRemoteError: assert(0);
-				case ncclNumResults: assert(0);
-			}
-		}
+                detail::check_nccl_result(ncclBcast(&nccl_id, sizeof(ncclUniqueId), ncclChar, 0, other.impl_, NULL));
 		cudaStreamSynchronize(NULL);
 		// TODO(correaa) may need mpi.barrier(); here
-		{
-			ncclResult_t r = ncclCommInitRank(&impl_, other.count(), nccl_id, other.rank());
-			switch(r) {
-				case ncclSuccess: break;
-				case ncclUnhandledCudaError: assert(0);
-				case ncclSystemError: assert(0);
-				case ncclInternalError: assert(0);
-				case ncclInvalidArgument: assert(0);
-				case ncclInvalidUsage: assert(0 && "likely \"Duplicate GPU detected\", for example if rank 0 and rank 1 both on CUDA device 1000");
-				case ncclRemoteError: assert(0);
-				case ncclNumResults: assert(0);
-			}
-		}
+		detail::check_nccl_result(ncclCommInitRank(&impl_, other.count(), nccl_id, other.rank()));   
 	}
 	communicator(communicator&& other) : impl_{std::exchange(other.impl_, nullptr)} {}
 	// moved from communicators are left in a partially formed, since there is no assigmment it cannot be used
@@ -109,42 +98,63 @@ class communicator {
 		class P1, class Size, class P2,
 		typename = decltype(
 			*thrust::raw_pointer_cast(P2{}) = Op{}(*thrust::raw_pointer_cast(P1{}), *thrust::raw_pointer_cast(P1{})),
-			detail::datatype(*raw_pointer_cast(P1{}))
+			detail::datatype(*thrust::raw_pointer_cast(P1{}))
 		)
 	>
 	auto all_reduce_n(P1 first, Size count, P2 dest, Op op = {}) {
-		ncclResult_t r = ncclAllReduce(
+		detail::check_nccl_result(ncclAllReduce(
 			thrust::raw_pointer_cast(first), thrust::raw_pointer_cast(dest), count, 
 			detail::datatype(*raw_pointer_cast(first)),
 			detail::reduction(op), impl_, NULL
-		);
-		switch(r) {
-			case ncclSuccess: break;
-			case ncclUnhandledCudaError: assert(0);
-			case ncclSystemError: assert(0);
-			case ncclInternalError: assert(0);
-			case ncclInvalidArgument: assert(0);
-			case ncclInvalidUsage: assert(0);
-			case ncclRemoteError: assert(0);
-			case ncclNumResults: assert(0);
-		}
+		));
 		return dest + count;
 	}
+
+        template<
+                class Op = std::plus<>,
+                class P1, class Size, 
+                typename = decltype(
+                        *thrust::raw_pointer_cast(P1{}) = Op{}(*thrust::raw_pointer_cast(P1{}), *thrust::raw_pointer_cast(P1{})),
+                        detail::datatype(*thrust::raw_pointer_cast(P1{}))
+                )
+        >
+        auto all_reduce_in_place_n(P1 first, Size count, Op op = {}) {
+                detail::check_nccl_result(ncclAllReduce(
+                        thrust::raw_pointer_cast(first), thrust::raw_pointer_cast(first), count,
+                        detail::datatype(*raw_pointer_cast(first)),
+                        detail::reduction(op), impl_, NULL
+                ));
+                return first + count;
+        }
+
+        template<
+                class Op = std::plus<>,
+                class P1, class Size, class P2
+        >
+        auto all_reduce_n(P1* first, Size count, P2* dest, Op op = {}) {
+                detail::check_nccl_result(ncclAllReduce((void*)first,(void*)dest,count,
+                        detail::datatype(*first),
+                        detail::reduction(op), impl_, NULL
+                ));
+                return dest + count;
+        }
+
+        template<
+                class Op = std::plus<>,
+                class P1, class Size
+        >
+        auto all_reduce_in_place_n(P1* first, Size count, Op op = {}) {
+                detail::check_nccl_result(ncclAllReduce((void*)first,(void*)first,count,
+                        detail::datatype(*first),
+                        detail::reduction(op), impl_, NULL
+                ));
+                return first + count;
+        }
 
 	template<class P, class Size, typename = decltype(detail::datatype(*raw_pointer_cast(P{})))>
 	auto send_n(P first, Size n, int peer) {
 		// ncclGroupStart();
-		ncclResult_t r = ncclSend(thrust::raw_pointer_cast(first), n, detail::datatype(*raw_pointer_cast(first)), peer, impl_, NULL);
-		switch(r) {
-			case ncclSuccess: break;
-			case ncclUnhandledCudaError: assert(0);
-			case ncclSystemError: assert(0);
-			case ncclInternalError: assert(0);
-			case ncclInvalidArgument: assert(0);
-			case ncclInvalidUsage: assert(0);
-			case ncclRemoteError: assert(0);
-			case ncclNumResults: assert(0);
-		}
+		detail::check_nccl_result(ncclSend(thrust::raw_pointer_cast(first), n, detail::datatype(*raw_pointer_cast(first)), peer, impl_, NULL));
 		// ncclGroupEnd();
 		// cudaStreamSynchronize(NULL);
 		return first + n;
@@ -152,17 +162,7 @@ class communicator {
 	template<class P, class Size, typename = decltype(detail::datatype(*raw_pointer_cast(P{})))>
 	auto receive_n(P first, Size n, int peer) {
 		// ncclGroupStart();
-		ncclResult_t r = ncclRecv(thrust::raw_pointer_cast(first), n, detail::datatype(*raw_pointer_cast(first)), peer, impl_, NULL);
-		switch(r) {
-			case ncclSuccess: break;
-			case ncclUnhandledCudaError: assert(0);
-			case ncclSystemError: assert(0);
-			case ncclInternalError: assert(0);
-			case ncclInvalidArgument: assert(0);
-			case ncclInvalidUsage: assert(0);
-			case ncclRemoteError: assert(0);
-			case ncclNumResults: assert(0);
-		}
+		detail::check_nccl_result(ncclRecv(thrust::raw_pointer_cast(first), n, detail::datatype(*raw_pointer_cast(first)), peer, impl_, NULL));
 		// ncclGroupEnd();
 		// cudaStreamSynchronize(NULL);
 		return first + n;
@@ -174,21 +174,21 @@ class communicator {
 	P broadcast_n(P first, Size n, int root = 0) {
 		// ncclGroupStart();
 		using thrust::raw_pointer_cast;
-		ncclResult_t r = ncclBcast(raw_pointer_cast(first), n, detail::datatype(*raw_pointer_cast(first)), root, impl_, NULL);
-		switch(r) {
-			case ncclSuccess: break;
-			case ncclUnhandledCudaError: assert(0);
-			case ncclSystemError: assert(0);
-			case ncclInternalError: assert(0);
-			case ncclInvalidArgument: assert(0);
-			case ncclInvalidUsage: assert(0);
-			case ncclRemoteError: assert(0);
-			case ncclNumResults: assert(0);
-		}
+		detail::check_nccl_result(ncclBcast(raw_pointer_cast(first), n, detail::datatype(*raw_pointer_cast(first)), root, impl_, NULL));
 		// ncclGroupEnd();
 		// cudaStreamSynchronize(NULL);
 		return first + n;
 	}
+
+        template<
+                class P, 
+                class Size,
+		typename = void
+        >
+        P* broadcast_n(P* first, Size n, int root = 0) {
+                detail::check_nccl_result(ncclBcast(first, n, detail::datatype(*first), root, impl_, NULL));
+                return first + n;
+        }
 
  private:
 	template<class Complex, class Value> static constexpr bool is_numeric_complex_of =
@@ -259,6 +259,7 @@ class communicator {
 //		);
 //		return dest + count;
 //	}
+#ifdef __NVCC__
 	template<class Size>
 	auto all_reduce_n(thrust::cuda::pointer<thrust::complex<double>> first, Size n, thrust::cuda::pointer<thrust::complex<double>> dest) {
 		using thrust::reinterpret_pointer_cast;
@@ -275,6 +276,7 @@ class communicator {
 			reinterpret_pointer_cast<thrust::cuda::universal_pointer<double>>(dest ), std::plus<>{}
 		);
 	}
+#endif
 
 	~communicator() {
 		if(impl_) {
@@ -284,34 +286,17 @@ class communicator {
 
 	int rank() const {  // aka user_rank()
 		int ret;
-		ncclResult_t r = ncclCommUserRank(impl_, &ret);
-		switch(r) {
-			case ncclSuccess: break;
-			case ncclUnhandledCudaError: assert(0);
-			case ncclSystemError: assert(0);
-			case ncclInternalError: assert(0);
-			case ncclInvalidArgument: assert(0);
-			case ncclInvalidUsage: assert(0);
-			case ncclRemoteError: assert(0);
-			case ncclNumResults: assert(0);
-		}
+		detail::check_nccl_result(ncclCommUserRank(impl_, &ret));
 		return ret;
 	}
 	int count() const {
 		int ret;
-		ncclResult_t r = ncclCommCount(impl_, &ret);
-		switch(r) {
-			case ncclSuccess: break;
-			case ncclUnhandledCudaError: assert(0);
-			case ncclSystemError: assert(0);
-			case ncclInternalError: assert(0);
-			case ncclInvalidArgument: assert(0);
-			case ncclInvalidUsage: assert(0);
-			case ncclRemoteError: assert(0);
-			case ncclNumResults: assert(0);
-		}
+		detail::check_nccl_result(ncclCommCount(impl_, &ret));
 		return ret;
 	}
+
+	ncclComm_t& get() {return this->impl_;}
+
 	[[deprecated("in NCCL nomenclature `.size` is called `.count`")]] int size() const {return count();}
 	[[nodiscard]] bool    empty() const {return not count();}
 	[[nodiscard]] bool is_empty() const {return not count();}
@@ -326,30 +311,10 @@ class communicator {
 
 struct group {
 	static void start() {
-		ncclResult_t r = ncclGroupStart();
-		switch(r) {
-			case ncclSuccess: break;
-			case ncclUnhandledCudaError: assert(0);
-			case ncclSystemError: assert(0);
-			case ncclInternalError: assert(0);
-			case ncclInvalidArgument: assert(0);
-			case ncclInvalidUsage: assert(0);
-			case ncclRemoteError: assert(0);
-			case ncclNumResults: assert(0);
-		}
+		detail::check_nccl_result(ncclGroupStart());
 	}
 	static void end() {
-		ncclResult_t r = ncclGroupEnd();
-		switch(r) {
-			case ncclSuccess: break;
-			case ncclUnhandledCudaError: assert(0);
-			case ncclSystemError: assert(0);
-			case ncclInternalError: assert(0);
-			case ncclInvalidArgument: assert(0);
-			case ncclInvalidUsage: assert(0);
-			case ncclRemoteError: assert(0);
-			case ncclNumResults: assert(0);
-		}
+		detail::check_nccl_result(ncclGroupEnd());
 	}
 };
 

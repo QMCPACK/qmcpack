@@ -19,6 +19,10 @@
 
 #include <numeric>
 #include <iomanip>
+#include <stdexcept>
+#ifndef NDEBUG
+#include <typeinfo>
+#endif
 #include "ParticleSet.h"
 #include "Particle/DynamicCoordinatesBuilder.h"
 #include "Particle/DistanceTable.h"
@@ -40,6 +44,32 @@ enum PSetTimers
   PS_accept,
   PS_loadWalker,
   PS_update
+};
+
+/** Reusable crowd scratch for ParticleSet multiwalker operations.
+ *
+ * Proposal and rollback storage use the same particle-major layout as all-particle displacements.
+ */
+struct ParticleSetMultiWalkerMem : public Resource
+{
+  /// Proposed positions, flattened in particle-major order as particle * number of walkers + walker.
+  ParticleSet::ParticlePos proposed_positions;
+  /// Proposed spins, flattened in the same particle-major order as proposed_positions.
+  ParticleSet::ParticleScalar proposed_spins;
+  /// Positions to restore for rejected walkers, flattened in the same particle-major order.
+  ParticleSet::ParticlePos saved_positions;
+  /// Spins to restore for rejected walkers, flattened in the same particle-major order.
+  ParticleSet::ParticleScalar saved_spins;
+  /// Per-walker mask identifying walkers whose all-particle proposals were rejected.
+  std::vector<bool> rejected;
+  /// Whether an all-particle proposal is pending acceptance or rejection.
+  bool all_particle_move_active = false;
+
+  ParticleSetMultiWalkerMem() : Resource("ParticleSetMultiWalkerMem") {}
+
+  ParticleSetMultiWalkerMem(const ParticleSetMultiWalkerMem&) : ParticleSetMultiWalkerMem() {}
+
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<ParticleSetMultiWalkerMem>(*this); }
 };
 
 static const TimerNameList_t<PSetTimers> generatePSetTimerNames(std::string& obj_name)
@@ -69,6 +99,7 @@ ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoo
 
 ParticleSet::ParticleSet(const ParticleSet& p)
     : Properties(p.Properties),
+      current_step(p.current_step),
       simulation_cell_(p.simulation_cell_),
       same_mass_(true),
       is_spinor_(false),
@@ -434,6 +465,122 @@ void ParticleSet::mw_makeSpinMove(const RefVectorWithLeader<ParticleSet>& p_list
     p_list[iw].active_spin_val_ = p_list[iw].spins[iat] + sdispls[iw];
 }
 
+namespace
+{
+#ifndef NDEBUG
+void validateAllParticleCrowdTopology(const RefVectorWithLeader<ParticleSet>& p_list)
+{
+  const ParticleSet& leader        = p_list.getLeader();
+  const size_t num_particles       = leader.getTotalNum();
+  const size_t num_distance_tables = leader.getNumDistTables();
+  const auto coordinate_kind       = leader.getCoordinates().getKind();
+  const bool has_structure_factor  = leader.hasSK();
+  for (const ParticleSet& pset : p_list)
+  {
+    if (pset.getCoordinates().getKind() != coordinate_kind || pset.hasSK() != has_structure_factor ||
+        pset.getNumDistTables() != num_distance_tables || pset.getTotalNum() != num_particles)
+      throw std::runtime_error("All-particle transaction crowd topology does not match the resource leader.");
+    for (size_t idt = 0; idt < num_distance_tables; ++idt)
+    {
+      const DistanceTable& leader_dt = leader.getDistTable(idt);
+      const DistanceTable& walker_dt = pset.getDistTable(idt);
+      if (typeid(walker_dt) != typeid(leader_dt))
+        throw std::runtime_error("All-particle transaction distance-table types do not match.");
+      if (walker_dt.sources() != leader_dt.sources())
+        throw std::runtime_error("All-particle transaction distance-table source dimensions do not match.");
+      if (walker_dt.getModes() != leader_dt.getModes())
+        throw std::runtime_error("All-particle transaction distance-table modes do not match.");
+    }
+  }
+}
+#endif
+} // namespace
+
+template<CoordsType CT>
+void ParticleSet::mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
+                                          const MCCoords<CT>& displacements,
+                                          std::vector<bool>& are_valid)
+{
+  const size_t num_walkers = p_list.size();
+  assert(num_walkers > 0 && "All-particle transaction crowd must not be empty.");
+  ParticleSet& p_leader      = p_list.getLeader();
+  const size_t num_particles = p_leader.getTotalNum();
+#ifndef NDEBUG
+  validateAllParticleCrowdTopology(p_list);
+
+  if (displacements.positions.size() != num_particles * num_walkers)
+    throw std::runtime_error("Flattened all-particle displacement count does not match the crowd.");
+  if (are_valid.size() != num_particles * num_walkers)
+    throw std::runtime_error("Flattened all-particle validity count does not match the crowd.");
+  if constexpr (CT == CoordsType::POS_SPIN)
+    if (displacements.spins.size() != num_particles * num_walkers)
+      throw std::runtime_error("Flattened all-particle spin displacement count does not match the crowd.");
+
+  for (size_t iw = 0; iw < num_walkers; ++iw)
+  {
+    if (p_list[iw].getActivePtcl() != -1)
+      throw std::runtime_error("Cannot start an all-particle transaction with an active particle.");
+    if constexpr (CT == CoordsType::POS_SPIN)
+      if (p_list[iw].spins.size() != num_particles)
+        throw std::runtime_error("All-particle transaction spin counts do not match.");
+  }
+#endif
+
+  ParticleSetMultiWalkerMem& mw_mem = p_leader.mw_mem_handle_.getResource();
+  if (mw_mem.all_particle_move_active)
+    throw std::runtime_error("Cannot start an all-particle transaction before resolving the previous one.");
+
+  ParticlePos& proposed_positions = mw_mem.proposed_positions;
+  proposed_positions.resize(num_particles * num_walkers);
+  mw_mem.saved_positions.resize(num_particles * num_walkers);
+  mw_mem.saved_spins.resize(num_particles * num_walkers);
+  if constexpr (CT == CoordsType::POS_SPIN)
+    mw_mem.proposed_spins.resize(num_particles * num_walkers);
+  else
+    mw_mem.proposed_spins.clear();
+
+  for (size_t iw = 0; iw < num_walkers; ++iw)
+  {
+    const auto& lattice = p_list[iw].simulation_cell_.getLattice();
+    for (size_t ip = 0; ip < num_particles; ++ip)
+    {
+      const size_t flat_index            = ip * num_walkers + iw;
+      mw_mem.saved_positions[flat_index] = p_list[iw].R[ip];
+      mw_mem.saved_spins[flat_index]     = p_list[iw].spins[ip];
+      proposed_positions[flat_index]     = p_list[iw].R[ip] + displacements.positions[flat_index];
+      are_valid[flat_index] =
+          !lattice.explicitly_defined || lattice.isValid(lattice.toUnit(proposed_positions[flat_index]));
+
+      if constexpr (CT == CoordsType::POS_SPIN)
+        mw_mem.proposed_spins[flat_index] = p_list[iw].spins[ip] + displacements.spins[flat_index];
+    }
+  }
+
+  for (size_t iw = 0; iw < num_walkers; ++iw)
+    for (size_t ip = 0; ip < num_particles; ++ip)
+    {
+      const size_t flat_index = ip * num_walkers + iw;
+      if (are_valid[flat_index])
+      {
+        p_list[iw].R[ip] = proposed_positions[flat_index];
+        if constexpr (CT == CoordsType::POS_SPIN)
+          p_list[iw].spins[ip] = mw_mem.proposed_spins[flat_index];
+      }
+    }
+
+  // Keep the all-particle path multiwalker throughout. mw_update's current structure-factor
+  // implementation is scalar, so update coordinates and distance tables there and handle SK here.
+  mw_update(p_list, true);
+  if (p_leader.structure_factor_)
+  {
+    auto sk_list = extractSKRefList(p_list);
+    StructFact::mw_updateAllPart(sk_list, p_list, p_leader.mw_structure_factor_data_handle_);
+  }
+  for (ParticleSet& pset : p_list)
+    pset.active_ptcl_ = -1;
+  mw_mem.all_particle_move_active = true;
+}
+
 bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos& displ)
 {
   active_ptcl_     = iat;
@@ -769,6 +916,72 @@ void ParticleSet::mw_accept_rejectSpinMove(const RefVectorWithLeader<ParticleSet
   }
 }
 
+void ParticleSet::mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                   const std::vector<bool>& accepted)
+{
+  const size_t num_walkers = p_list.size();
+  assert(num_walkers > 0 && "All-particle transaction crowd must not be empty.");
+  const ParticleSet& p_leader = p_list.getLeader();
+  const size_t num_particles  = p_leader.getTotalNum();
+#ifndef NDEBUG
+  validateAllParticleCrowdTopology(p_list);
+  for (size_t iw = 0; iw < num_walkers; ++iw)
+  {
+    if (p_list[iw].active_ptcl_ != -1)
+      throw std::runtime_error("Cannot resolve an all-particle transaction with an active particle.");
+    if (p_list[iw].spins.size() != num_particles)
+      throw std::runtime_error("All-particle transaction particle counts do not match.");
+  }
+#endif
+
+  ParticleSetMultiWalkerMem& mw_mem = p_list.getLeader().mw_mem_handle_.getResource();
+  if (!mw_mem.all_particle_move_active)
+    throw std::runtime_error("Cannot resolve an all-particle transaction before making a proposal.");
+  std::vector<bool>& rejected = mw_mem.rejected;
+  rejected.resize(num_walkers);
+  bool any_rejected = false;
+  for (size_t iw = 0; iw < num_walkers; ++iw)
+  {
+    rejected[iw] = !accepted[iw];
+    if (rejected[iw])
+    {
+      for (size_t ip = 0; ip < num_particles; ++ip)
+      {
+        const size_t flat_index = ip * num_walkers + iw;
+        p_list[iw].R[ip]        = mw_mem.saved_positions[flat_index];
+        p_list[iw].spins[ip]    = mw_mem.saved_spins[flat_index];
+      }
+      p_list[iw].coordinates_->setAllParticlePos(p_list[iw].R);
+      any_rejected = true;
+    }
+    p_list[iw].active_ptcl_ = -1;
+  }
+
+  if (!any_rejected)
+  {
+    mw_mem.all_particle_move_active = false;
+    return;
+  }
+
+  // Keep the original full crowd ordering. Some offload distance-table resources are
+  // shared and indexed by their original walker slot even when only a mask is restored.
+  auto& dts = p_list.getLeader().DistTables;
+  for (size_t idt = 0; idt < dts.size(); ++idt)
+  {
+    const auto dt_list(extractDTRefList(p_list, idt));
+    dts[idt]->mw_recompute(dt_list, p_list, rejected);
+  }
+
+  if (p_list.getLeader().structure_factor_)
+  {
+    // StructFact has no masked full-update API. Recompute the original full crowd to retain
+    // batched execution and preserve crowd-indexed resource ordering.
+    auto sk_list = extractSKRefList(p_list);
+    StructFact::mw_updateAllPart(sk_list, p_list, p_list.getLeader().mw_structure_factor_data_handle_);
+  }
+  mw_mem.all_particle_move_active = false;
+}
+
 void ParticleSet::donePbyP(bool skipSK)
 {
   ScopedTimer donePbyP_scope(myTimers[PS_donePbyP]);
@@ -904,6 +1117,7 @@ void ParticleSet::initPropertyList()
 
 void ParticleSet::createResource(ResourceCollection& collection) const
 {
+  collection.addResource(std::make_unique<ParticleSetMultiWalkerMem>());
   coordinates_->createResource(collection);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->createResource(collection);
@@ -913,7 +1127,8 @@ void ParticleSet::createResource(ResourceCollection& collection) const
 
 void ParticleSet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list)
 {
-  auto& ps_leader = p_list.getLeader();
+  auto& ps_leader          = p_list.getLeader();
+  ps_leader.mw_mem_handle_ = collection.lendResource<ParticleSetMultiWalkerMem>();
   ps_leader.coordinates_->acquireResource(collection, extractCoordsRefList(p_list));
   for (int i = 0; i < ps_leader.DistTables.size(); i++)
     ps_leader.DistTables[i]->acquireResource(collection, extractDTRefList(p_list, i));
@@ -925,6 +1140,7 @@ void ParticleSet::acquireResource(ResourceCollection& collection, const RefVecto
 void ParticleSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list)
 {
   auto& ps_leader = p_list.getLeader();
+  collection.takebackResource(ps_leader.mw_mem_handle_);
   ps_leader.coordinates_->releaseResource(collection, extractCoordsRefList(p_list));
   for (int i = 0; i < ps_leader.DistTables.size(); i++)
     ps_leader.DistTables[i]->releaseResource(collection, extractDTRefList(p_list, i));
@@ -970,6 +1186,13 @@ template void ParticleSet::mw_makeMove<CoordsType::POS_SPIN>(const RefVectorWith
                                                              Index_t iat,
                                                              const MCCoords<CoordsType::POS_SPIN>& displs,
                                                              OptionalRef<std::vector<bool>> are_valid);
+template void ParticleSet::mw_makeMoveAllParticles<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                                    const MCCoords<CoordsType::POS>& displacements,
+                                                                    std::vector<bool>& are_valid);
+template void ParticleSet::mw_makeMoveAllParticles<CoordsType::POS_SPIN>(
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    const MCCoords<CoordsType::POS_SPIN>& displacements,
+    std::vector<bool>& are_valid);
 template void ParticleSet::mw_accept_rejectMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                  Index_t iat,
                                                                  const std::vector<bool>& isAccepted,

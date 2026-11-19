@@ -40,7 +40,7 @@ public:
    * @param c  communicator
    * @param c  using tasking inside TWF
    */
-  WaveFunctionFactory(ParticleSet& qp, const PSetMap& pset, Communicate* c);
+  WaveFunctionFactory(ParticleSet& qp, const PSetMap& pset, Communicate& c);
 
   ///destructor
   ~WaveFunctionFactory();

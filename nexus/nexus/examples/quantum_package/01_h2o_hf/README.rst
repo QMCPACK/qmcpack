@@ -27,7 +27,7 @@ the script are shown below:
     from nexus import generate_quantum_package
     
     # note: you must source the QP config file before running this script
-    #   source /home/ubuntu/apps/qp2/quantum_package.rc
+    #   source /your/path/to/quantum_package.rc
     
     settings(
         results       = '',
@@ -35,7 +35,7 @@ the script are shown below:
         generate_only = 0,
         sleep         = 3,
         machine       = 'ws16',
-        qprc          = '/home/ubuntu/apps/qp2/quantum_package.rc',
+        qprc          = '/your/path/to/quantum_package.rc',
         )
     
     scf_job = job(cores=16,threads=16)
@@ -84,7 +84,7 @@ executing shell.  This is done by sourcing the QP configuration file:
 
 .. code-block:: bash
 
-    >source /home/ubuntu/apps/qp2/quantum_package.rc
+    >source /your/path/to/quantum_package.rc
 
 Now lets run the Nexus script:
 
@@ -104,7 +104,7 @@ Now lets run the Nexus script:
         Executing:
           export OMP_NUM_THREADS=16
   
-          source /home/ubuntu/apps/qp2/quantum_package.rc
+          source /your/path/to/quantum_package.rc
   
           mpirun -np 1 qp_run scf h2o.ezfio
   

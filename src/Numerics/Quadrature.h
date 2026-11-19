@@ -108,7 +108,7 @@ struct Quadrature3D
       D        = 14641.0 / 725760.0;
       break;
     default:
-      ERRORMSG("Unrecognized spherical quadrature rule " << rule << ".");
+      app_error() << "Unrecognized spherical quadrature rule " << rule << "." << std::endl;
       abort();
     }
     // First, build a_i, b_i, and c_i points

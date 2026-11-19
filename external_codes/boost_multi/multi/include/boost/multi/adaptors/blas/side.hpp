@@ -4,7 +4,6 @@
 
 #ifndef BOOST_MULTI_ADAPTORS_BLAS_SIDE_HPP
 #define BOOST_MULTI_ADAPTORS_BLAS_SIDE_HPP
-#pragma once
 
 namespace boost::multi::blas {
 
@@ -13,12 +12,28 @@ enum class side : char {
 	right = 'R'
 };
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch-default"
+#endif
+
 inline auto swap(side sid) noexcept -> side {
-	switch(sid) {
+	switch(sid) {  // NOLINT(clang-diagnostic-switch-default)
 		case side::left : return side::right;
 		case side::right: return side::left ;
-	} __builtin_unreachable();  // LCOV_EXCL_LINE
+	}  // __builtin_unreachable();  // LCOV_EXCL_LINE
+	return side::left;
+	// return {};
 }
+
+inline auto iden(side sid) noexcept -> side {
+	return sid;
+}
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
 
 } // end namespace boost::multi::blas
 #endif

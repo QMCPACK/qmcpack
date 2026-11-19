@@ -14,13 +14,12 @@
 #define QMCPLUSPLUS_STDLIB_PORT_H
 #include <config.h>
 #include <cmath>
+#include <limits>
 #include <type_traits>
 #if defined(HAVE_AMD_LIBM)
 #include <amdlibm.h>
 #endif
-#if defined(HAVE_MASS)
-#include <mass.h>
-#endif
+
 
 namespace qmcplusplus
 {
@@ -44,16 +43,7 @@ inline void sincos(double a, double* restrict s, double* restrict c) { ::sincos(
 
 inline void sincos(float a, float* restrict s, float* restrict c)
 {
-#if defined(HAVE_MASS)
-  // there is no sincosf in libmass
-  // libmass sincos is faster than libm sincosf
-  double ds, dc;
-  ::sincos((double)a, &ds, &dc);
-  *s = ds;
-  *c = dc;
-#else
   ::sincosf(a, s, c);
-#endif
 }
 
 #else // fallback
@@ -102,6 +92,42 @@ bool isfinite(double);
  */
 bool isinf(float);
 bool isinf(double);
+
+/** customized numeric_limits for floating point types.
+ * std::numeric_limits<T>::infinity() and quiet_NaN() can return 0 or be optimized away
+ * when compiled with -ffast-math or -ffinite-math-only.
+ * The customized qmcplusplus::numeric_limits provides out-of-line implementations
+ * that are always effective regardless of compiler optimization flags.
+ */
+template<typename T>
+struct numeric_limits : public std::numeric_limits<T>
+{};
+
+template<>
+struct numeric_limits<float> : public std::numeric_limits<float>
+{
+  static float infinity();
+  static float quiet_NaN();
+};
+
+template<>
+struct numeric_limits<double> : public std::numeric_limits<double>
+{
+  static double infinity();
+  static double quiet_NaN();
+};
+
+template<typename T>
+inline T infinity()
+{
+  return numeric_limits<T>::infinity();
+}
+
+template<typename T>
+inline T quiet_NaN()
+{
+  return numeric_limits<T>::quiet_NaN();
+}
 
 } // namespace qmcplusplus
 

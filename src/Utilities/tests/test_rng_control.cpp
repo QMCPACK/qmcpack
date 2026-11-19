@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 
 //#include "Utilities/RandomGenerator.h"
@@ -46,8 +45,7 @@ TEST_CASE("RandomNumberControl no random in xml", "[ohmmsapp]")
 
 TEST_CASE("RandomNumberControl random in xml", "[ohmmsapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const char* xml_input = R"(<tmp><random seed="0"></random></tmp>)";
 

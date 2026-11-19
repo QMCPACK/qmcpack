@@ -5,9 +5,8 @@ if(NOT QMC_COMPLEX)
   list(APPEND H2O_SCALARS "totenergy" "-17.26138 .006") # total energy
 
   qmc_run_and_check(
-    example_H2O
+    example-H2O_pp-sd_lcao_hf_jas-vmc_dmc
     "${qmcpack_SOURCE_DIR}/examples/molecules/H2O"
-    H2O
     simple-H2O.xml
     1
     1
@@ -16,3 +15,6 @@ if(NOT QMC_COMPLEX)
     H2O_SCALARS # check the DMC data
   )
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

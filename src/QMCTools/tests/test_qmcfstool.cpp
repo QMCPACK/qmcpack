@@ -8,12 +8,11 @@
 //
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include <iostream>
 #include <vector>
 
-#include "Configuration.h"
 #include "QMCTools/QMCFiniteSize/SkParserBase.h"
 #include "QMCTools/QMCFiniteSize/SkParserASCII.h"
 #include "QMCTools/QMCFiniteSize/QMCFiniteSize.h"

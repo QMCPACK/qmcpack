@@ -27,7 +27,6 @@ do
     cd build_andes_${build}
     cmake -DCMAKE_C_COMPILER="mpicc" \
           -DCMAKE_CXX_COMPILER="mpicxx" \
-          -DBUILD_LMYENGINE_INTERFACE=0 \
           ${builds[$build]} \
           ..
     make -j 20

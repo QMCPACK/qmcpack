@@ -9,12 +9,11 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <cstring>
 #include "QMCDrivers/WalkerProperties.h"
-#include "Configuration.h"
 #include "Particle/WalkerConfigurations.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/HDFWalkerInput_0_4.h"
@@ -51,9 +50,23 @@ TEST_CASE("walker assumptions", "[particle]")
   REQUIRE(w1.Properties.cols() == WP::NUMPROPERTIES);
 }
 
+TEST_CASE("MCDataType default initialization", "[particle]")
+{
+  MCDataType<double> data;
+  CHECK(data.NumSamples == 0.0);
+  CHECK(data.RNSamples == 0.0);
+  CHECK(data.Weight == 0.0);
+  CHECK(data.Energy == 0.0);
+  CHECK(data.AlternateEnergy == 0.0);
+  CHECK(data.Variance == 0.0);
+  CHECK(data.R2Accepted == 0.0);
+  CHECK(data.R2Proposed == 0.0);
+  CHECK(data.LivingFraction == 0.0);
+}
+
 TEST_CASE("walker HDF read and write", "[particle]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const size_t num_ptcls = 1;
   MCPWalker w1(num_ptcls);
@@ -71,11 +84,11 @@ TEST_CASE("walker HDF read and write", "[particle]")
 
   REQUIRE(wc_list.getActiveWalkers() == 2);
 
-  std::vector<int> walker_offset(c->size() + 1);
+  std::vector<int> walker_offset(c.size() + 1);
 
   walker_offset[0] = 0;
   int offset       = 2;
-  for (int i = 0; i < c->size(); i++)
+  for (int i = 0; i < c.size(); i++)
   {
     walker_offset[i + 1] = offset;
     offset += 2;
@@ -83,11 +96,10 @@ TEST_CASE("walker HDF read and write", "[particle]")
 
   wc_list.setWalkerOffsets(walker_offset);
 
-  c->setName("walker_test");
-  HDFWalkerOutput hout(num_ptcls, "this string apparently does nothing", c);
-  hout.dump(wc_list, 0);
+  HDFWalkerOutput hout(num_ptcls, c);
+  hout.dump(wc_list, "walker_test", 0);
 
-  c->barrier();
+  c.barrier();
 
   WalkerConfigurations wc_list2;
 

@@ -307,5 +307,3 @@ Because of its history as an academically developed research code, QMCPACK also 
 trial wavefunction forms, potentials, etc., that while not mature,  might be useful for specialized calculations on
 particular material or chemical or model systems. If you are interested in these please ask -- we might have historical inputs available.
 For example, if an older/historical Jastrow factor form that was previously used for a single paper is needed for benchmarking, we can look into the status.
-
-.. bibliography:: /bibs/introduction.bib

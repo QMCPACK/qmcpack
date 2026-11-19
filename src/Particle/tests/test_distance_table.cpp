@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <stdio.h>
 #include <string>
@@ -730,7 +729,7 @@ TEST_CASE("distance_pbc_z batched APIs ee NEED_TEMP_DATA_ON_HOST", "[distance_ta
 
 TEST_CASE("test_distance_pbc_diamond", "[distance_table][xml]")
 {
-  auto pset_pool = MinimalParticlePool::make_diamondC_1x1x1(OHMMS::Controller);
+  auto pset_pool = MinimalParticlePool::make_diamondC_1x1x1(*OHMMS::Controller);
 
   auto& ions  = *pset_pool.getParticleSet("ion");
   auto& elecs = *pset_pool.getParticleSet("e");

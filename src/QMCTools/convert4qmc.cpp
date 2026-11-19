@@ -30,8 +30,8 @@
 int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
-  mpi3::environment env(argc, argv);
-  OHMMS::Controller = new Communicate(env.world());
+  mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
+  OHMMS::Controller = std::make_unique<Communicate>(env.world());
 #endif
 
   if (argc < 2)
@@ -48,6 +48,7 @@ int main(int argc, char** argv)
     std::cout << "When the input format is missing, the  extension of filename is used to determine the format "
               << std::endl;
     std::cout << " *.Fchk -> gaussian; *.out -> gamess; *.h5 -> HDF5" << std::endl;
+    OHMMS::Controller.reset();
     return 0;
   }
   else
@@ -220,18 +221,18 @@ int main(int argc, char** argv)
       {
         if (ext == "Fchk")
         {
-          WARNMSG("Creating GaussianFCHKParser")
+          app_warning() << "Creating GaussianFCHKParser" << std::endl;
           parser = std::make_unique<GaussianFCHKParser>(argc, argv);
         }
         else if (ext == "h5")
         {
-          WARNMSG("Creating LCAOHDFParser")
+          app_warning() << "Creating LCAOHDFParser" << std::endl;
           parser = std::make_unique<LCAOHDFParser>(argc, argv);
-          h5      = true;
+          h5     = true;
         }
         else if (ext == "out")
         {
-          WARNMSG("Creating GamesAsciiParser")
+          app_warning() << "Creating GamesAsciiParser" << std::endl;
           parser = std::make_unique<GamesAsciiParser>(argc, argv);
         }
         else
@@ -250,8 +251,8 @@ int main(int argc, char** argv)
           delimiter = ".out";
         int pos = 0;
         std::string token;
-        pos   = prefix.find(delimiter);
-        token = prefix.substr(0, pos);
+        pos    = prefix.find(delimiter);
+        token  = prefix.substr(0, pos);
         prefix = token;
       }
       std::cout << "Using " << prefix << " to name output files" << std::endl;
@@ -329,6 +330,7 @@ int main(int argc, char** argv)
       APP_ABORT("Unhandled Exception");
     }
   }
-  OHMMS::Controller->finalize();
+  // OHMMS::Controller holds duplicated (linked) mpi3::environment and must be freed first.
+  OHMMS::Controller.reset();
   return 0;
 }

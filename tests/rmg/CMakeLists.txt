@@ -52,7 +52,6 @@ else()
   qmc_run_and_check(
     ${THIS_TEST_NAME}
     "${qmcpack_SOURCE_DIR}/examples/solids/rmg-inputs/${RMG_SYSTEM}"
-    rmg-Diamond2-1x1x1-gamma-ccECP
     rmg-Diamond2-1x1x1-gamma-ccECP.vmc.xml
     1
     16
@@ -66,3 +65,6 @@ else()
   endif()
 
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

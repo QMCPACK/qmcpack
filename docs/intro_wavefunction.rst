@@ -315,6 +315,43 @@ Additional information:
     of pw2qmcpack, there is missing ionic information. This flag bypasses the requirement
     that the ionic information in the eshdf.h5 file match the input XML. 
 
+B-spline sposet sub-options
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The exact behavior of the memory allocations of B-spline orbital coefficients can be managed by ``coefs_mem`` XML node
+when there is more than one MPI rank within each compute node. The B-spline coefficients are by default replicated identically
+by every MPI rank. The ``coefs_mem`` sub-options reduce memory pressure by sharing and/or distributing B-spline coefficients
+over multiple ranks. 
+
+``coefs_mem`` element:
+
+.. table::
+
+  +-----------------+------------+
+  | Parent elements | ``sposet`` |
+  +-----------------+------------+
+  | Child elements  |            |
+  +-----------------+------------+
+
+attribute:
+
++-----------------------+------------+---------------+---------+----------------------------------------------------------+
+| Name                  | Datatype   | Values        | Default | Description                                              |
++=======================+============+===============+=========+==========================================================+
+| ``shared_ranks``      | Integer    | :math:`\gt 0` | 1       | The number of MPI ranks sharing the same allocation      |
++-----------------------+------------+---------------+---------+----------------------------------------------------------+
+| ``distributed_ranks`` | Integer    | :math:`\gt 0` | 1       | The number of MPI ranks that allocations are distributed |
++-----------------------+------------+---------------+---------+----------------------------------------------------------+
+
+The product of ``shared_ranks`` and ``distributed_ranks`` may not exceed the total number of MPI ranks within a compute node.
+
+.. note::
+
+  In an ensemble run, multiple calculations may share a compute node or ranks may be partitioned across nodes. The number of MPI ranks assigned to each individual calculation on a compute node must be divisible by the product of ``shared_ranks`` and ``distributed_ranks``. To ensure this requirement is satisfied across all ensemble calculations, use the ``--vnode-ranks`` command-line option (e.g., set to the product of ``shared_ranks`` and ``distributed_ranks`` or a multiple thereof, such as the number of MPI ranks per node).
+
+Sharing and/or distributing memory only affect the memory allocation on the host. Distributing memory cannot be enabled when
+using GPUs. Sharing memory can be used with GPUs enabled to reduce host memory footprint within the compute node. When evaluations
+of B-spline orbitals happen on the host, sharing and/or distributing memory across NUMA domains may cause performance penalty.
+
 .. _spo-lcao:
 
 Linear combination of atomic orbitals (LCAO) with Gaussian and/or Slater-type basis sets
@@ -613,7 +650,7 @@ To enable hybrid orbital representation, the input XML needs to see the tag ``hy
   :name: Listing 6
 
   <sposet_collection type="bspline" source="i" href="pwscf.h5"
-                tilematrix="1 1 3 1 2 -1 -2 1 0" gpu="yes" meshfactor="0.8"
+                tilematrix="1 1 3 1 2 -1 -2 1 0" meshfactor="0.8"
                 twist="0  0  0" precision="single" hybridrep="yes">
     ...
   </sposet_collection>
@@ -670,6 +707,79 @@ In addition, the hybrid orbital representation allows extra optimization to spee
 
 Plane-wave basis sets
 ~~~~~~~~~~~~~~~~~~~~~
+
+Plane-wave basis sets expand the ``sposet`` directly in the plane waves stored in the orbital HDF5 file, without interpolation onto
+a spline grid. They use the same orbital files as :ref:`spo-spline`. Plane-wave basis sets are more computationally costly than
+spline basis sets, which should be preferred for production runs. The implementation exists primarily as a check on the splines:
+other than for spline specific settings, the inputs are intended to be compatible.
+
+.. code-block:: xml
+  :caption: Plane-wave SPO XML element
+  :name: pw.spo.xml
+
+  <sposet_collection type="pw" href="pwscf.h5"
+                     tilematrix="1 0 0 0 1 0 0 0 1" twist="0 0 0" sort="1">
+    <sposet name="spo-up" size="8" spindataset="0"/>
+    <!-- spin polarized case needs two sposets /-->
+    <sposet name="spo-dn" size="8" spindataset="1"/>
+  </sposet_collection>
+
+``sposet_collection`` attributes:
+
++----------------+------------+---------------------+----------+------------------------------------------+
+| Name           | Datatype   | Values              | Default  | Description                              |
++================+============+=====================+==========+==========================================+
+| ``type``       | Text       | pw                  | Required | Type of orbital set.                     |
++----------------+------------+---------------------+----------+------------------------------------------+
+| ``href``       | Text       | File path           | Required | Orbital HDF5 file.       |
++----------------+------------+---------------------+----------+------------------------------------------+
+| ``tilematrix`` | 9 integers | Nonsingular matrix  | Identity | Primitive-to-supercell tiling matrix.    |
++----------------+------------+---------------------+----------+------------------------------------------+
+| ``twist``      | 3 floats   | Reduced coordinates | 0 0 0    | Supercell twist; overrides twistnum.     |
++----------------+------------+---------------------+----------+------------------------------------------+
+| ``twistnum``   | Integer    | Index or -1         | -1       | Supercell twist index; -1 selects Gamma. |
++----------------+------------+---------------------+----------+------------------------------------------+
+| ``sort``       | Integer    | 0, 1, 2             | 1        | Orbital ordering, as for splines.        |
++----------------+------------+---------------------+----------+------------------------------------------+
+
+Additional information:
+
+- ``type`` must be ``pw``. ``href`` specifies the orbital HDF5 file, as for :ref:`spo-spline`.
+- ``tilematrix`` specifies the primitive-to-supercell tiling matrix, as for :ref:`spo-spline`, and defaults to the identity matrix.
+  The file must contain all primitive-cell k-points that fold onto the selected supercell twist.
+- ``twist`` and ``twistnum`` select the supercell twist with the same meaning and precedence as in :ref:`spo-spline`. The default is
+  the Gamma point.
+- ``twistIndex`` is an alias for ``twistnum``. Index attributes override legacy child parameters; if both index attributes are
+  supplied, they must be equal. Index ``-1`` selects Gamma.
+- ``sort`` controls the ordering of orbitals from the contributing k-points, using the same ordering as the spline implementation:
+  ``0`` preserves file order, ``1`` sorts by energy (the default), and ``2`` sorts first by band index and then by energy.
+  
+
+``sposet`` attributes:
+
++-----------------+----------+--------------------+----------+-----------------------------------------+
+| Name            | Datatype | Values             | Default  | Description                             |
++=================+==========+====================+==========+=========================================+
+| ``name``        | Text     | Unique name        | Required | Name used to reference the orbital set. |
++-----------------+----------+--------------------+----------+-----------------------------------------+
+| ``size``        | Integer  | >0                 | Required | Number of orbitals.                     |
++-----------------+----------+--------------------+----------+-----------------------------------------+
+| ``spindataset`` | Integer  | Spin channel index | 0        | Spin channel in the orbital HDF5 file.  |
++-----------------+----------+--------------------+----------+-----------------------------------------+
+
+Additional information:
+
+- ``name`` identifies the orbital set and ``size`` specifies the number of orbitals, as for :ref:`spo-spline`.
+- ``spindataset`` selects the spin channel in the HDF5 file and defaults to ``0``. Set this attribute on ``sposet`` rather than on
+  ``occupation``. It must satisfy ``0 <= spindataset < number_of_spins``, where ``number_of_spins`` is read from the HDF5 file.
+- ``occupation`` defaults to ``mode="ground"``, filling the first ``size`` orbitals in the selected ordering. For a single
+  contributing primitive-cell k-point, ``mode="excited"`` accepts negative indices for removed orbitals and positive indices for
+  added orbitals, with indices starting at one. Excited occupations are not supported when multiple primitive-cell k-points
+  contribute to the supercell twist.
+
+Real builds support supercell twists whose reduced components are integers or half-integers; other twists require a complex build.
+Spline options such as ``meshfactor``, ``precision``, and ``save_coefs`` are either not applicable or not implemented for this
+basis.
 
 .. _hegbasis:
 
@@ -1173,10 +1283,6 @@ The following modifications are worth a try in the optimization block:
 -  Try increasing “exp0" in the optimization block. Larger values of
    exp0 cause the search directions to more closely follow those
    predicted by steepest-descent than those by the linear method.
-
-Note that the new adaptive shift optimizer has not yet been tried with
-backflow wavefunctions. It should perform better than the older
-optimizers, but a considered optimization process is still recommended.
 
 .. _jastrow:
 
@@ -1884,7 +1990,7 @@ Here :math:`\rho_G` is the Fourier transform of the instantaneous electron densi
 
 and :math:`\rho_G^I` has the same form, but for the fixed ions. In both cases the coefficients are restricted to be real, though in general the coefficients for the one-body term need not be.  See :ref:`feature-kspace-jastrow` for more detail.
 
-Input for the k-space Jastrow follows the familar nesting of ``jastrow-correlation-coefficients`` elements, with attributes unique to the k-space Jastrow at the ``correlation`` input level.
+Input for the k-space Jastrow follows the familiar nesting of ``jastrow-correlation-coefficients`` elements, with attributes unique to the k-space Jastrow at the ``correlation`` input level.
 
 ``jastrow type=kSpace`` element:
 
@@ -2281,5 +2387,3 @@ Example Use Case
         source="ion0" sgroup="H"/>
     </hamiltonian>
   </qmcsystem>
-
-.. bibliography:: /bibs/intro_wavefunction.bib

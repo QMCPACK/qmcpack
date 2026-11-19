@@ -10,10 +10,15 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-add_library(spline2_omptarget OBJECT MultiBsplineOffload.cpp MultiBsplineOffloadMapper.cpp)
-target_link_libraries(spline2_omptarget PUBLIC einspline platform_runtime)
+add_library(spline2_omptarget OBJECT MultiBsplineOffloadMapperBase.cpp MultiBsplineOffloadMapper.cpp)
+if(QMC_CCL)
+  target_sources(spline2_omptarget PRIVATE MultiBsplineOffloadMapperCCLShared.cpp)
+  target_link_libraries(spline2_omptarget PUBLIC Platform::CCL message)
+endif()
+target_link_libraries(spline2_omptarget PUBLIC einspline platform_runtime containers)
 
-set(SPLINE2_SRC MultiBspline.cpp MultiBspline1D.cpp SplineUtils.cpp)
+set(SPLINE2_SRC MultiBspline.cpp
+  MultiBsplineBase.cpp MultiBspline1D.cpp SplineUtils.cpp)
 if(HAVE_MPI)
   list(APPEND SPLINE2_SRC MultiBsplineMPIShared.cpp)
 endif()

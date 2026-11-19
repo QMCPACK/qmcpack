@@ -1,5 +1,7 @@
 #! /usr/bin/env python3
 
+from copy import deepcopy
+
 # import nexus functions
 from nexus import settings,job,run_project
 from nexus import generate_physical_system
@@ -17,7 +19,7 @@ settings(
     generate_only = 0,
     sleep         = 3,
     machine       = 'ws16',
-    ) 
+    )
 
 
 # specify optimization parameters
@@ -34,7 +36,7 @@ linopt1 = linear(
     usebuffer            = True,
     walkers              = 1,
     minwalkers           = 0.5,
-    maxweight            = 1e9, 
+    maxweight            = 1e9,
     usedrift             = True,
     minmethod            = 'quartic',
     beta                 = 0.025,
@@ -46,10 +48,10 @@ linopt1 = linear(
     nstabilizers         = 3,
     )
 
-linopt2 = linopt1.copy()  
+linopt2 = deepcopy(linopt1)
 linopt2.samples = 20480 # opt w/ 20000 samples
 
-linopt3 = linopt1.copy()
+linopt3 = deepcopy(linopt1)
 linopt3.samples = 40960 # opt w/ 40000 samples
 
 opt_calcs = [loop(max=8,qmc=linopt1), # loops over opt's
@@ -68,7 +70,7 @@ qmc_calcs = [
         samples     = 2048
         ),
     dmc(
-        warmupsteps   = 100, 
+        warmupsteps   = 100,
         blocks        = 400,
         steps         =  32,
         timestep      = 0.01,
@@ -115,7 +117,7 @@ p2q = generate_pw2qmcpack(
     write_psir   = False,
     dependencies = (scf,'orbitals'),
     )
-    
+
 # describe optimization run
 opt = generate_qmcpack(
     driver = 'legacy',
@@ -142,7 +144,7 @@ qmc = generate_qmcpack(
     input_type   = 'basic',
     pseudos      = ['O.BFD.xml'],
     bconds       = 'nnn',
-    jastrows     = [],            
+    jastrows     = [],
     calculations = qmc_calcs,
     dependencies = [(p2q,'orbitals'),
                     (opt,'jastrow')],

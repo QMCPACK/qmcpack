@@ -21,7 +21,6 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
-#include "Message/CommUtilities.h"
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/RMCLocalEnergyEstimator.h"
@@ -34,6 +33,7 @@
 #include "Estimators/CSEnergyEstimator.h"
 
 #include <array>
+#include <cassert>
 #include <functional>
 
 //leave it for serialization debug
@@ -60,9 +60,7 @@ EstimatorManagerBase::EstimatorManagerBase(Communicate* c)
       main_estimator_name_("LocalEnergy"),
       max_output_scalar_dat_(8),
       max_block_avg_name_(20)
-{
-  setCommunicator(c);
-}
+{ setCommunicator(c); }
 
 EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
     : Options(em.Options),
@@ -92,10 +90,10 @@ void EstimatorManagerBase::setCommunicator(Communicate* c)
   // I think this is actually checking if this is the "Main Estimator"
   if (myComm && myComm == c)
     return;
-  myComm = c ? c : OHMMS::Controller;
+  myComm = c ? c : OHMMS::Controller.get();
   //set the default options
   // This is a flag to tell manager if there is more than one rank
-  // running walkers, its discovered by smelly query of myComm.
+  // running walkers, its discovered by smelly query of myComm->
   Options.set(COLLECT, myComm->size() > 1);
   Options.set(MANAGE, myComm->rank() == 0);
   if (RemoteData.empty())
@@ -155,8 +153,9 @@ void EstimatorManagerBase::addHeader(std::ostream& o)
   o.setf(std::ios::right, std::ios::adjustfield);
 }
 
-void EstimatorManagerBase::start(int blocks, bool record)
+void EstimatorManagerBase::start(int blocks, const std::string& root_name, bool record)
 {
+  assert(!record || !root_name.empty());
   reset();
   RecordCount = 0;
   energyAccumulator.clear();
@@ -181,7 +180,7 @@ void EstimatorManagerBase::start(int blocks, bool record)
   if (record && !DebugArchive)
   {
     std::array<char, 128> fname;
-    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", myComm->getName().c_str(), myComm->rank()) < 0)
+    if (std::snprintf(fname.data(), fname.size(), "%s.p%03d.scalar.dat", root_name.c_str(), myComm->rank()) < 0)
       throw std::runtime_error("Error generating filename");
     DebugArchive = std::make_unique<std::ofstream>(fname.data());
     addHeader(*DebugArchive);
@@ -191,7 +190,7 @@ void EstimatorManagerBase::start(int blocks, bool record)
   Options.set(RECORD, record && Options[MANAGE]);
   if (Options[RECORD])
   {
-    std::filesystem::path fname(myComm->getName());
+    std::filesystem::path fname(root_name);
     fname.concat(".scalar.dat");
     Archive = std::make_unique<std::ofstream>(fname);
     addHeader(*Archive);
@@ -199,7 +198,7 @@ void EstimatorManagerBase::start(int blocks, bool record)
     {
       h5desc.clear();
     }
-    fname  = myComm->getName() + ".stat.h5";
+    fname = root_name + ".stat.h5";
     h_file.create(fname);
     for (int i = 0; i < Estimators.size(); i++)
       Estimators[i]->registerObservables(h5desc, h_file);

@@ -60,9 +60,7 @@ private:
   DiracMatrix<VALUE_FP> detEng_;
 
 public:
-  DiracMatrixInverterOMPTarget() : DiracMatrixInverter<VALUE_FP, VALUE>("DiracMatrixInverterOMPTarget") {}
-
-  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<DiracMatrixInverterOMPTarget>(*this); }
+  DiracMatrixInverterOMPTarget() = default;
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log
    * when VALUE_FP and TMAT are the same
@@ -104,9 +102,7 @@ public:
                            const RefVector<const OffloadPinnedMatrix<VALUE>>& a_mats,
                            const RefVector<OffloadPinnedMatrix<VALUE>>& inv_a_mats,
                            OffloadPinnedVector<LogValue>& log_values) override
-  {
-    mw_invertTranspose(a_mats, inv_a_mats, log_values);
-  }
+  { mw_invertTranspose(a_mats, inv_a_mats, log_values); }
 };
 
 extern template class DiracMatrixInverterOMPTarget<double, float>;

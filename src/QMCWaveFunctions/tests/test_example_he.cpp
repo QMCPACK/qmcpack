@@ -8,11 +8,9 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "CPU/VectorOps.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -29,7 +27,7 @@ using PsiValue  = WaveFunctionComponent::PsiValue;
 
 TEST_CASE("ExampleHe", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
 

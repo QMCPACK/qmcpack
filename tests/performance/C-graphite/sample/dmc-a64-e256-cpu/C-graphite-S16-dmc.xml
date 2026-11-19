@@ -106,18 +106,15 @@
     </group>
   </particleset>
   <wavefunction name="psi0" target="e">
-    <determinantset type="bspline" href="../lda.pwscf.h5" sort="1"
+    <sposet_collection type="bspline" href="../lda.pwscf.h5" sort="1"
       tilematrix="4 0 0 0 4 0 0 0 1" twistnum="2" source="ion0"
       version="0.10" gpu="yes" LR_dim_cutoff="10" precision="single">
+      <sposet type="bspline" name="spo-ud" size="128" spindataset="0"/>
+    </sposet_collection>
+    <determinantset>
       <slaterdeterminant>
-        <determinant id="updet" size="128">
-          <occupation mode="ground" spindataset="0">
-          </occupation>
-        </determinant>
-        <determinant id="downdet" size="128">
-          <occupation mode="ground" spindataset="0">
-          </occupation>
-        </determinant>
+        <determinant sposet="spo-ud"/>
+        <determinant sposet="spo-ud"/>
       </slaterdeterminant>
     </determinantset>
     <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="ion0">

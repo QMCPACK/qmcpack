@@ -9,9 +9,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSet.h"
@@ -47,7 +46,7 @@ using ValueType = QMCTraits::ValueType;
 
 TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
 #if defined(ENABLE_OFFLOAD)
   const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS_OFFLOAD;
@@ -387,8 +386,8 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   */
 TEST_CASE("TrialWaveFunction::mw_evalGrad for spinors", "[wavefunction]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_O2_spinor(comm);
   auto wavefunction_pool =

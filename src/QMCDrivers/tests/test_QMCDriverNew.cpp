@@ -8,9 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/tests/QMCDriverNewTestWrapper.h"
@@ -30,8 +29,8 @@ namespace qmcplusplus
 TEST_CASE("QMCDriverNew tiny case", "[drivers]")
 {
   using namespace testing;
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
   outputManager.pause();
 
   Libxml2Document doc;
@@ -47,10 +46,16 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   WalkerConfigurations walker_confs;
   RandomNumberGeneratorPool rng_pool(1);
   QMCDriverNewTestWrapper qmcdriver(test_project, std::move(qmcdriver_input), walker_confs,
-                                    MCPopulation(comm->size(), comm->rank(), *particle_pool.getParticleSet("e"),
+                                    MCPopulation(comm.size(), comm.rank(), *particle_pool.getParticleSet("e"),
                                                  wavefunction_pool.getWaveFunction().value(),
                                                  hamiltonian_pool.getHamiltonian().value()),
                                     rng_pool.getRngRefs(), comm);
+
+  CHECK_FALSE(qmcdriver.allow_walker_logs);
+  qmcdriver.requestWalkerLogs(true);
+  CHECK(qmcdriver.allow_walker_logs);
+  qmcdriver.requestWalkerLogs(false);
+  CHECK_FALSE(qmcdriver.allow_walker_logs);
 
   // setStatus must be called before process
   std::string root_name{"Test"};
@@ -72,8 +77,8 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
 TEST_CASE("QMCDriverNew walker counts", "[drivers]")
 {
   using namespace testing;
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
   outputManager.pause();
 
   Libxml2Document doc;
@@ -91,7 +96,7 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
   WalkerConfigurations walker_confs;
   RandomNumberGeneratorPool rng_pool(8);
   QMCDriverNewTestWrapper qmc_batched(test_project, std::move(qmcdriver_copy), walker_confs,
-                                      MCPopulation(comm->size(), comm->rank(), *particle_pool.getParticleSet("e"),
+                                      MCPopulation(comm.size(), comm.rank(), *particle_pool.getParticleSet("e"),
                                                    wavefunction_pool.getWaveFunction().value(),
                                                    hamiltonian_pool.getHamiltonian().value()),
                                       rng_pool.getRngRefs(), comm);
@@ -103,8 +108,8 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
 TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
 {
   using namespace testing;
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
   outputManager.pause();
 
   Libxml2Document doc;
@@ -121,7 +126,7 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
   WalkerConfigurations walker_confs;
   RandomNumberGeneratorPool rng_pool(1);
   QMCDriverNewTestWrapper qmcdriver(test_project, std::move(qmcdriver_input), walker_confs,
-                                    MCPopulation(comm->size(), comm->rank(), *particle_pool.getParticleSet("e"),
+                                    MCPopulation(comm.size(), comm.rank(), *particle_pool.getParticleSet("e"),
                                                  wavefunction_pool.getWaveFunction().value().get(),
                                                  hamiltonian_pool.getHamiltonian().value()),
                                     rng_pool.getRngRefs(), comm);

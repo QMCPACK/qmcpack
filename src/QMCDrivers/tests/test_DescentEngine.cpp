@@ -9,13 +9,12 @@
 //
 // File created by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "VariableSet.h"
-#include "Configuration.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
@@ -28,7 +27,7 @@ using ValueType         = qmcplusplus::QMCTraits::ValueType;
 ///This provides a basic test of the descent engine's parameter update algorithm
 TEST_CASE("DescentEngine RMSprop update", "[drivers][descent]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
 
   const std::string engine_input("<tmp> </tmp>");

@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <MinimalParticlePool.h>
 #include "Particle/VirtualParticleSet.h"
@@ -21,7 +20,7 @@ namespace qmcplusplus
 {
 TEST_CASE("VirtualParticleSet", "[particle]")
 {
-  auto pset_pool = MinimalParticlePool::make_NiO_a4(OHMMS::Controller);
+  auto pset_pool = MinimalParticlePool::make_NiO_a4(*OHMMS::Controller);
 
   auto& ions  = *pset_pool.getParticleSet("i");
   auto& elecs = *pset_pool.getParticleSet("e");

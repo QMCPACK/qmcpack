@@ -1,11 +1,9 @@
-#if COMPILATION_INSTRUCTIONS /* -*- indent-tabs-mode: t -*- */
-(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wall -Wfatal-errors -D_TEST_BOOST_MPI3_BUFFER $0x.cpp -o $0x.x && time mpirun -n 4 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
-#endif
+// Copyright 2017-2025 Alfredo A. Correa
+
 #ifndef BOOST_MPI3_BUFFER_HPP
 #define BOOST_MPI3_BUFFER_HPP
 
-#define OMPI_SKIP_MPICXX 1 // https://github.com/open-mpi/ompi/issues/5157
-#include<mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
 #include<stdexcept>
 #include<cassert>
@@ -19,6 +17,7 @@ void buffer_attach_n(T* data, std::size_t n){
 	int status = MPI_Buffer_attach((void*)data, n*sizeof(T)/sizeof(char));
 	if(status != MPI_SUCCESS) throw std::runtime_error("cannot attach buffer");
 }
+
 template<class T>
 void buffer_attach(T* first, T* last){
 	buffer_attach_n(first, std::distance(first, last));
@@ -65,7 +64,7 @@ struct scoped_buffer{
 	~scoped_buffer(){
 		std::pair<char*, int> check = buffer_detach();
 		assert(check.first == (char*)(buf_));
-	//	assert(check.second/sizeof(T) == size_);
+	//  assert(check.second/sizeof(T) == size_);
 		delete[] buf_;
 	}
 };
@@ -90,7 +89,7 @@ int mpi3::main(int, char*[], mpi3::communicator world){
 		auto r = world.bsend_init_n(a.data(), a.size(), 0, 27 + j);
 		for(int i = 0; i != 10; ++i) a[i] = (world.rank() + 10*j)*world.size() + i;
 		r.start();
-	//	r.wait(); // requests wait automatically on destruction (they don't start automatically)
+	//  r.wait(); // requests wait automatically on destruction (they don't start automatically)
 	}
 	
 	std::vector<int> b(10);

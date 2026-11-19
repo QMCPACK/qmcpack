@@ -32,7 +32,7 @@ class EstimatorManagerNewTest
 public:
   using QMCT = QMCTraits;
 
-  EstimatorManagerNewTest(const QMCHamiltonian& ham, Communicate* comm, int ranks);
+  EstimatorManagerNewTest(const QMCHamiltonian& ham, Communicate& comm, int ranks);
   /** Quickly add main scalar samples using FakeEstimator mock estimator. */
   void fakeMainScalarSamples();
   /** Quickly add scalar samples using FakeEstimator mock estimator. */
@@ -61,7 +61,7 @@ public:
   EstimatorManagerNew em;
 
 private:
-  Communicate* comm_;
+  Communicate& comm_;
   std::vector<FakeEstimator> estimators_;
   std::vector<RefVector<ScalarEstimatorBase>> scalar_estimators_;
 };

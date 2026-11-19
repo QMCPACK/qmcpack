@@ -8,8 +8,8 @@
 //
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
@@ -138,16 +138,14 @@ public:
                            Vector<ValueType>& dhpsioverpsi) override
   {}
   std::unique_ptr<DiracDeterminantBase> makeCopy(SPOSet& spo) const override
-  {
-    return std::make_unique<DummyDiracDetWithMW>(getClassName(), spo, FirstIndex, LastIndex);
-  }
+  { return std::make_unique<DummyDiracDetWithMW>(getClassName(), spo, FirstIndex, LastIndex); }
 };
 
 TEST_CASE("SlaterDet mw_ APIs", "[wavefunction]")
 {
   using Value = typename QMCTraits::ValueType;
 
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   auto particle_pool = MinimalParticlePool::make_O2_spinor(comm);
   auto& elec0        = *(particle_pool).getParticleSet("e");

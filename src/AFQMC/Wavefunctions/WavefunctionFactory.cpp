@@ -264,7 +264,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop,
       if (!newg.second)
         APP_ABORT(" Error: Problems adding new initial guess. \n");
       using ma::conj;
-      std::fill_n((newg.first)->second.origin(), 2 * NPOL * NMO * NAEA, ComplexType(0.0, 0.0));
+      std::fill_n((newg.first)->second.base(), 2 * NPOL * NMO * NAEA, ComplexType(0.0, 0.0));
       {
         auto pbegin = PsiT[iC].pointers_begin();
         auto pend   = PsiT[iC].pointers_end();
@@ -486,7 +486,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop,
       if (iC >= abij.number_of_configurations())
         APP_ABORT(" Error: initial_configuration > ndets \n");
       using ma::conj;
-      std::fill_n((newg.first)->second.origin(), 2 * NMO * NAEA, ComplexType(0.0, 0.0));
+      std::fill_n((newg.first)->second.base(), 2 * NMO * NAEA, ComplexType(0.0, 0.0));
       //auto refc = abij.reference_configuration();
       {
         std::vector<int> alphaC(NAEA);
@@ -1018,7 +1018,7 @@ void WavefunctionFactory::getInitialGuess(hdf_archive& dump,
     if (!newg.second)
       APP_ABORT(" Error: Problems adding new initial guess. \n");
     using ma::conj;
-    std::fill_n((newg.first)->second.origin(), 2 * NPOL * NMO * NAEA, ComplexType(0.0, 0.0));
+    std::fill_n((newg.first)->second.base(), 2 * NPOL * NMO * NAEA, ComplexType(0.0, 0.0));
     {
       boost::multi::array<ComplexType, 2> Psi0Alpha({NPOL * NMO, NAEA});
       if (!dump.readEntry(Psi0Alpha, "Psi0_alpha"))
@@ -1081,15 +1081,15 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG,
   // Allocate H in Node's shared memory, but use as a raw array with proper synchronization
   int dim((recompute_ci ? ndets : 0));
   boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>> H({dim, dim}, TG.Node());
-  boost::multi::array<ComplexType, 1> energy(iextensions<1u>{2});
+  boost::multi::array<ComplexType, 1> energy(extents_t<1u>{2});
   using std::fill_n;
-  fill_n(H.origin(), H.num_elements(), ComplexType(0.0));           // this call synchronizes
-  fill_n(energy.origin(), energy.num_elements(), ComplexType(0.0)); // this call synchronizes
+  fill_n(H.base(), H.num_elements(), ComplexType(0.0));           // this call synchronizes
+  fill_n(energy.base(), energy.num_elements(), ComplexType(0.0)); // this call synchronizes
   ValueType enuc = ham.getNuclearCoulombEnergy();
   for (int idet = 0; idet < ndets; idet++)
   {
     // These should already be sorted.
-    boost::multi::array_ref<int, 1> deti(occs[idet].origin(), {NAEA + NAEB});
+    boost::multi::array_ref<int, 1> deti(occs[idet].base(), {NAEA + NAEB});
     ComplexType cidet = coeff[idet];
     for (int jdet = idet; jdet < ndets; jdet++)
     {
@@ -1108,7 +1108,7 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG,
         else
         {
           ComplexType Hij(0.0);
-          boost::multi::array_ref<int, 1> detj(occs[jdet].origin(), {NAEA + NAEB});
+          boost::multi::array_ref<int, 1> detj(occs[jdet].base(), {NAEA + NAEB});
           ComplexType cjdet = coeff[jdet];
           int perm          = 1;
           std::vector<int> excit;
@@ -1133,8 +1133,8 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG,
   }
   TG.Node().barrier();
   if (TG.Node().root() && recompute_ci)
-    TG.Cores().all_reduce_in_place_n(to_address(H.origin()), H.num_elements(), std::plus<>());
-  TG.Global().all_reduce_in_place_n(energy.origin(), 2, std::plus<>());
+    TG.Cores().all_reduce_in_place_n(to_address(H.base()), H.num_elements(), std::plus<>());
+  TG.Global().all_reduce_in_place_n(energy.base(), 2, std::plus<>());
   app_log() << " - Variational energy of trial wavefunction: " << std::setprecision(16) << energy[0] / energy[1]
             << "\n";
   if (recompute_ci)
@@ -1176,40 +1176,39 @@ HamiltonianOperations WavefunctionFactory::getHamOps(const std::string& restart_
                                                      int ndets_to_read,
                                                      Hamiltonian& h)
 {
-  // if requested, create restart file
-  // Will use phdf5 in the future, for now only head node writes
-  hdf_archive restart(TGwfn.Global());
   if (restart_file != "")
   {
-    if (TGwfn.Global().root())
+    hdf_archive restart_read(TGwfn.Global());
+    if (restart_read.open(restart_file, H5F_ACC_RDONLY))
     {
-      app_log() << " Open " << restart_file << " for HamOps\n";
-      // first, try open existing restart file
-      if (!restart.open(restart_file, H5F_ACC_RDONLY))
-      { // make new restart file if cannot open existing
-        app_log() << " No restart_file create anew.\n";
-        if (!restart.create(restart_file, H5F_ACC_EXCL))
-        {
-          app_error() << " Error in WavefunctionFactory: Failed to create restart_file" << restart_file << "\n";
-          APP_ABORT("");
-        }
+      if (restart_read.is_group("HamiltonianOperations"))
+      {
+        app_log() << " getHamOps using restart file " << restart_file << "\n";
+        return loadHamOps(restart_read, type, NMO, NAEA, NAEB, PsiT, TGprop, TGwfn, cutvn, cutv2);
       }
     }
   }
 
-  bool read = restart.is_group("HamiltonianOperations");
-  if (read)
+  // if requested, create restart file
+  // Will use phdf5 in the future, for now only head node writes
+  hdf_archive restart_write;
+  if (restart_file != "")
   {
-    app_log() << " getHamOps using restart file\n";
-    return loadHamOps(restart, type, NMO, NAEA, NAEB, PsiT, TGprop, TGwfn, cutvn, cutv2);
+    if (TGwfn.Global().root())
+    {
+      app_log() << " No restart_file create anew: " << restart_file << "\n";
+      if (!restart_write.create(restart_file, H5F_ACC_EXCL))
+      {
+        app_error() << " Error in WavefunctionFactory: Failed to create restart_file" << restart_file << "\n";
+        APP_ABORT("");
+      }
+    }
   }
-  else
-  {
-    app_log() << " getHamOps from scratch\n";
-    bool pureSD = false;  // make Sparse ham. 2e rotation more effiecient
-    // pureSD only matters during setup of a large run. Avoid Sparse in that case.
-    return h.getHamiltonianOperations(pureSD, ndets_to_read > 1, type, PsiT, cutvn, cutv2, TGprop, TGwfn, restart);
-  }
+
+  app_log() << " getHamOps from scratch\n";
+  bool pureSD = false; // make Sparse ham. 2e rotation more effiecient
+  // pureSD only matters during setup of a large run. Avoid Sparse in that case.
+  return h.getHamiltonianOperations(pureSD, ndets_to_read > 1, type, PsiT, cutvn, cutv2, TGprop, TGwfn, restart_write);
 
 //  if(restart_file != "")
 //  {

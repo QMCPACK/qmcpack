@@ -24,9 +24,9 @@ namespace qmcplusplus
 class AttribListType : public ParticleTags
 {
   std::map<std::string, int> AttribTypeMap;
-  std::map<std::string, OhmmsObject*> AttribList;
+  std::map<std::string, OhmmsElementBase*> AttribList;
   ///** objects created by getXYZAttrib(aname) */
-  //std::vector<OhmmsObject*>             AllocatedList;
+  //std::vector<OhmmsElementBase*>             AllocatedList;
 
 public:
   AttribListType()
@@ -51,20 +51,10 @@ public:
    * @tparam AT any element type, int, double, float ...
    */
   template<typename AT>
-  int add(ParticleAttrib<AT>& pa)
+  void add(ParticleAttrib<AT>& pa)
   {
-    int oid                                          = AttribList.size();
-    std::map<std::string, OhmmsObject*>::iterator it = AttribList.find(pa.objName());
-    if (it == AttribList.end())
-    {
-      AttribList[pa.objName()] = &pa;
-      pa.setID(oid);
-    }
-    else
-    {
-      oid = (*it).second->id();
-    }
-    return oid;
+    if (auto it = AttribList.find(pa.getName()); it == AttribList.end())
+      AttribList[pa.getName()] = &pa;
   }
 
   ///return a type id: one of the enum values

@@ -18,17 +18,20 @@
 
 namespace qmcplusplus
 {
-/** This should be the minimal ParticleSetPool for integration tests
+/** Minimal ParticleSetPools for integration tests.
  *
+ * Each make_* factory calls ParticleSetPool::reset() after initializing positions,
+ * updating the ParticleSets before returning the pool. Callers that subsequently
+ * change positions or add distance tables must still update the affected sets.
  */
 class MinimalParticlePool
 {
 public:
   static void parseParticleSetXML(const char* xml_string, ParticleSetPool& pp);
-  static ParticleSetPool make_diamondC_1x1x1(Communicate* comm);
-  static ParticleSetPool make_O2_spinor(Communicate* comm);
-  static ParticleSetPool make_NiO_a4(Communicate* comm);
-  static ParticleSetPool make_H2(Communicate* comm);
+  static ParticleSetPool make_diamondC_1x1x1(Communicate& comm);
+  static ParticleSetPool make_O2_spinor(Communicate& comm);
+  static ParticleSetPool make_NiO_a4(Communicate& comm);
+  static ParticleSetPool make_H2(Communicate& comm);
 };
 
 } // namespace qmcplusplus

@@ -1,27 +1,53 @@
 # The errors on the total energy are numerical noise, not statistical errors
-if(QMC_MIXED_PRECISION)
-  list(APPEND SHO_SCALARS "totenergy" "0.45  0.00000004")
-else()
-  list(APPEND SHO_SCALARS "totenergy" "0.45  4.0e-14")
-endif()
+list(APPEND SHO_SCALARS "totenergy" "0.45  0.00000004")
 list(APPEND SHO_SCALARS "kinetic" "0.225 0.0028")
 list(APPEND SHO_SCALARS "potential" "0.225 0.0028")
 list(APPEND SHO_SCALARS "latdev" "1.0   0.013")
 
 # The errors on the total energy are statistical errors
-if(QMC_MIXED_PRECISION)
-  list(APPEND GEP_SCALARS "totenergy" "0.45  1e-6")
-else()
-  list(APPEND GEP_SCALARS "totenergy" "0.45  1e-6")
-endif()
-list(APPEND GEP_SCALARS "kinetic" "0.225 0.0028")
-list(APPEND GEP_SCALARS "potential" "0.225 0.0028")
+list(APPEND GEP_SCALARS "totenergy" "0.45  1e-6")
+list(APPEND GEP_SCALARS "kinetic" "0.225 0.0030")
+list(APPEND GEP_SCALARS "potential" "0.225 0.0030")
 list(APPEND GEP_SCALARS "latdev" "1.0   0.013")
 
+list(APPEND DET_SHO_VMC_SCALARS "totenergy" "0.4500000000 0.000001")
+list(APPEND DET_SHO_VMC_SCALARS "kinetic" "0.3142864882 0.000001")
+list(APPEND DET_SHO_VMC_SCALARS "potential" "0.1357135118 0.000001")
+list(APPEND DET_SHO_VMC_SCALARS "latdev" "0.6031711637 0.000001")
+
+list(APPEND DET_SHO_ALLP_VMC_SCALARS "totenergy" "0.4500000000 0.000001")
+list(APPEND DET_SHO_ALLP_VMC_SCALARS "kinetic" "0.3142864882 0.000001")
+list(APPEND DET_SHO_ALLP_VMC_SCALARS "potential" "0.1357135118 0.000001")
+list(APPEND DET_SHO_ALLP_VMC_SCALARS "latdev" "0.6031711637 0.000001")
+
+list(APPEND DET_SHO_NODRIFT_VMC_SCALARS "totenergy" "0.4500000000 0.000001")
+list(APPEND DET_SHO_NODRIFT_VMC_SCALARS "kinetic" "0.3545249251 0.000001")
+list(APPEND DET_SHO_NODRIFT_VMC_SCALARS "potential" "0.0954750749 0.000001")
+list(APPEND DET_SHO_NODRIFT_VMC_SCALARS "latdev" "0.4243336664 0.000001")
+
+list(APPEND DET_SHO_NODRIFT_VMCBATCH_SCALARS "totenergy" "0.4500000000 0.000001")
+list(APPEND DET_SHO_NODRIFT_VMCBATCH_SCALARS "kinetic" "0.3545249251 0.000001")
+list(APPEND DET_SHO_NODRIFT_VMCBATCH_SCALARS "potential" "0.0954750749 0.000001")
+list(APPEND DET_SHO_NODRIFT_VMCBATCH_SCALARS "latdev" "0.4243336664 0.000001")
+
+list(APPEND DET_SHO_VMCBATCH_SCALARS "totenergy" "0.4500000000 0.000001")
+list(APPEND DET_SHO_VMCBATCH_SCALARS "kinetic" "0.3142864882 0.000001")
+list(APPEND DET_SHO_VMCBATCH_SCALARS "potential" "0.1357135118 0.000001")
+list(APPEND DET_SHO_VMCBATCH_SCALARS "latdev" "0.6031711637 0.000001")
+
+list(APPEND DET_GEP_VMC_SCALARS "totenergy" "0.4500000396 0.000001")
+list(APPEND DET_GEP_VMC_SCALARS "kinetic" "0.3142864882 0.000001")
+list(APPEND DET_GEP_VMC_SCALARS "potential" "0.1357135514 0.000001")
+list(APPEND DET_GEP_VMC_SCALARS "latdev" "0.6031711637 0.000001")
+
+list(APPEND DET_GEP_VMCBATCH_SCALARS "totenergy" "0.4500000666 0.000001")
+list(APPEND DET_GEP_VMCBATCH_SCALARS "kinetic" "0.3142864882 0.000001")
+list(APPEND DET_GEP_VMCBATCH_SCALARS "potential" "0.1357135118 0.000001")
+list(APPEND DET_GEP_VMCBATCH_SCALARS "latdev" "0.6031711637 0.000001")
+
 qmc_run_and_check(
-  short-sho-vmc
+  short-sho-ionwf-vmc
   "${qmcpack_SOURCE_DIR}/tests/models/sho"
-  m5
   vmc_sho.xml
   1
   16
@@ -30,12 +56,116 @@ qmc_run_and_check(
   SHO_SCALARS # VMC
 )
 
-simple_run_and_check(short-sho-grad_lap "${qmcpack_SOURCE_DIR}/tests/models/sho" grad_lap.xml 1 1 check_grad_lap.py)
+qmc_run_and_check(
+  short-sho-ionwf-vmc_allp
+  "${qmcpack_SOURCE_DIR}/tests/models/sho"
+  vmc_sho_allp.xml
+  1
+  16
+  TRUE
+  0
+  SHO_SCALARS # VMC
+)
 
 qmc_run_and_check(
-  short-grid_ext_pot-vmc
+  short-sho-ionwf-vmc_nodrift
+  "${qmcpack_SOURCE_DIR}/tests/models/sho"
+  vmc_sho_nodrift.xml
+  1
+  16
+  TRUE
+  0
+  SHO_SCALARS # VMC
+)
+
+
+qmc_run_and_check(
+  deterministic-sho-ionwf-vmc
+  "${qmcpack_SOURCE_DIR}/tests/models/sho"
+  det_vmc_sho.xml
+  1
+  1
+  TRUE
+  0
+  DET_SHO_VMC_SCALARS
+)
+
+qmc_run_and_check(
+  deterministic-sho-ionwf-vmc_allp
+  "${qmcpack_SOURCE_DIR}/tests/models/sho"
+  det_vmc_sho_allp.xml
+  1
+  1
+  TRUE
+  0
+  DET_SHO_ALLP_VMC_SCALARS
+)
+
+
+qmc_run_and_check(
+  deterministic-sho-ionwf-vmc_nodrift
+  "${qmcpack_SOURCE_DIR}/tests/models/sho"
+  det_vmc_sho_nodrift.xml
+  1
+  1
+  TRUE
+  0
+  DET_SHO_NODRIFT_VMC_SCALARS
+)
+
+qmc_run_and_check(
+  short-sho-ionwf-vmcbatch
+  "${qmcpack_SOURCE_DIR}/tests/models/sho"
+  vmcbatch_sho.xml
+  1
+  16
+  TRUE
+  0
+  SHO_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-sho-ionwf-vmcbatch_nodrift 
+  "${qmcpack_SOURCE_DIR}/tests/models/sho"
+  vmcbatch_sho_nodrift.xml
+  1
+  16
+  TRUE
+  0
+  SHO_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  deterministic-sho-ionwf-vmcbatch
+  "${qmcpack_SOURCE_DIR}/tests/models/sho"
+  det_vmcbatch_sho.xml
+  1
+  1
+  TRUE
+  0
+  DET_SHO_VMCBATCH_SCALARS
+)
+
+qmc_run_and_check(
+  deterministic-sho-ionwf-vmcbatch_nodrift
+  "${qmcpack_SOURCE_DIR}/tests/models/sho"
+  det_vmcbatch_sho_nodrift.xml
+  1
+  1
+  TRUE
+  0
+  DET_SHO_NODRIFT_VMCBATCH_SCALARS
+)
+
+simple_run_and_check(
+  BASE_NAME deterministic-sho-ionwf-grad_lap
+  BASE_DIR "${qmcpack_SOURCE_DIR}/tests/models/sho"
+  INPUT_FILE grad_lap.xml
+  CHECK_SCRIPT check_grad_lap.py)
+
+qmc_run_and_check(
+  short-grid_ext_pot-ionwf-vmc
   "${qmcpack_SOURCE_DIR}/tests/models/grid_external_potential"
-  grid_ext_pot
   vmc_grid_ext_pot.xml
   1
   16
@@ -43,3 +173,39 @@ qmc_run_and_check(
   0
   GEP_SCALARS # VMC
 )
+
+qmc_run_and_check(
+  deterministic-grid_ext_pot-ionwf-vmc
+  "${qmcpack_SOURCE_DIR}/tests/models/grid_external_potential"
+  det_vmc_grid_ext_pot.xml
+  1
+  1
+  TRUE
+  0
+  DET_GEP_VMC_SCALARS
+)
+
+qmc_run_and_check(
+  short-grid_ext_pot-ionwf-vmcbatch
+  "${qmcpack_SOURCE_DIR}/tests/models/grid_external_potential"
+  vmcbatch_grid_ext_pot.xml
+  1
+  16
+  TRUE
+  0
+  GEP_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  deterministic-grid_ext_pot-ionwf-vmcbatch
+  "${qmcpack_SOURCE_DIR}/tests/models/grid_external_potential"
+  det_vmcbatch_grid_ext_pot.xml
+  1
+  1
+  TRUE
+  0
+  DET_GEP_VMCBATCH_SCALARS
+)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

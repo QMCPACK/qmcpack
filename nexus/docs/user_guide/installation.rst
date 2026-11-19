@@ -1,0 +1,538 @@
+.. _installation:
+
+Nexus Installation
+==================
+
+Nexus aims to be very flexible in installation method. Options include use of a package manager and through manual cloning of the
+repository and setting of an environment variable. Package manager-based installation eases installation of dependencies, including
+Python itself, as well as interoperability with other Python-based software. The environment variable route is particularly suited
+to development or (currently) if any scripts/"binaries" are needed. Administrative privileges are not required.
+
+Note that while many supercomputer systems have an outdated system Python, a recent Python version is usually provided via a
+loadable module: check the local documentation or discuss with your system administrators to find the simplest installation route.
+
+.. contents::
+
+Installation using ``pip``
+--------------------------
+
+This simple installation method can install Nexus and all of its dependencies provided that the underlying Python version is new
+enough. A user-level only installation does not require any elevated privileges.
+
+
+User-level installation (recommended)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+To install Nexus only for yourself ("user level installation") we recommend creating a virtual environment. No privileges are
+needed, making it the preferred route in most scenarios. Multiple distinct environments can be created, e.g. for different versions
+of Nexus or for different projects needing distinct Python dependencies. Packages installed via this route do not affect the system
+Python installation and are only available when the environment is activated.
+
+.. code-block:: bash
+
+    cd $HOME/somewhere # Choose an appropriate directory to create the environment
+    python3 -m venv nexusenv # Give the environment a memorable and descriptive name
+    source nexusenv/bin/activate
+    pip install --upgrade pip # Optional unless pip is outdated
+    pip install "nexus@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
+
+This will install Nexus and the standard dependencies, which currently are `numpy <https://numpy.org/doc/stable/>`__, `scipy <https://scipy.org/>`__, `matplotlib <https://matplotlib.org/>`__, `h5py <https://www.h5py.org/>`__, and `pytest <https://docs.pytest.org/en/stable/>`__.
+To take full advantage of Nexus's capabilities, optional dependencies include `spglib <https://spglib.readthedocs.io/en/stable/python-interface.html>`__, `cif2cell <https://github.com/torbjornbjorkman/cif2cell>`__, `pydot <https://github.com/pydot/pydot>`__, and `seekpath <https://seekpath.readthedocs.io/en/latest/>`__.
+A complete install command would look like this
+
+.. code-block:: bash
+
+    pip install "nexus[full]@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
+
+If you have difficulty installing some of these packages, note that Nexus can drive workflows if only numpy is installed.
+This type of install can be performed with:
+
+.. code-block:: bash
+
+    pip install "numpy>=1.26.0,!=2.4.0"
+    pip install --no-deps "nexus@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
+
+If pip is not available on your machine, you can perform a numpy-only install manually (set ``PYTHONPATH``).
+See :ref:`manual_install` for more details.
+
+To subsequently use the environment:
+
+.. code-block:: bash
+
+    cd $HOME/somewhere # Wherever you created the environment
+    source nexusenv/bin/activate
+
+Note that any versions of Nexus found via the ``PYTHONPATH`` environment variable will take precedence over a ``pip`` installed version.
+
+.. important::
+    If you install Nexus into a virtual environment, the Nexus executables (e.g. ``qmca``, ``nxs-sim``, etc.) will only be accessible if you have activated that virtual environment.
+
+
+System-wide installation (not recommended in general)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+If you wish to make Nexus available globally, such as within a container or on a personal laptop, a system-wide installation may be
+appropriate. (The user-level only installation method described above is the preferred route in general and avoids any possibility
+of interference with other installed Python packages.) You will generally need to use ``sudo`` for the installation commands. The
+underlying Python needs to be sufficiently up-to-date; if not you must use the ``uv`` based approach (or an equivalent) described in
+the next section. Do not modify the system Python.
+
+The following will result in a system-wide installation: (prepending ``python3 -m`` if necessary)
+
+.. code-block:: bash
+
+    pip install "nexus@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
+
+This will install Nexus and the standard dependencies, which currently are ``numpy``, ``scipy``, ``matplotlib``, and ``h5py``.
+To take full advantage of Nexus's capabilities, optional dependencies include ``spglib``, ``cif2cell``, ``pydot``, and ``seekpath``.
+A complete install command would look like this
+
+.. code-block:: bash
+
+    pip install "nexus[full]@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
+
+If you wish to install a subset of the optional dependencies, you can do so with ``pip`` in the same manner as shown in
+:ref:`manual_install`.
+
+Installation using the ``uv`` package manager
+---------------------------------------------
+
+``uv`` is a recently developed Python package and project manager. Under nearly all circumstances it can install Nexus and all of
+its dependencies, with no other requirements. Importantly, besides being a drop-in and significantly faster replacement for ``pip``,
+it can be installed by a standard user without any administrative privileges. Unlike ``pip``, it is also able to install specific
+versions of Python, making it a solution for systems with outdated Python installations or simply a route to get the latest Python.
+If you are not familiar with ``uv``, see the latest getting started and installation guide at https://docs.astral.sh/uv/ . ``uv``
+can be installed with a single line. 
+
+Standard practice is to use a virtual environment. Once ``uv`` is installed, you can create a virtual environment with the command
+
+.. code-block:: bash
+
+    uv venv .venv
+
+which will create a virtual environment in the current directory inside a directory called ``.venv``. If you need or have a
+preference to use a specific version of Python, see https://docs.astral.sh/uv/#python-versions .
+
+After setting up the virtual environment you can simply prepend ``uv`` to the installation command:
+
+.. code-block:: bash
+
+    uv pip install "nexus@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
+
+which will install Nexus to your current virtual environment. As described in the ``pip`` section above, this will only install the
+minimum set of dependencies. You can also install the full set of optional dependencies via:
+
+.. code-block:: bash
+
+    uv pip install "nexus[full]@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
+
+Note that when using ``uv`` as a package manager, your Python scripts can optionally use a modified `shebang
+<https://en.wikipedia.org/wiki/Shebang_(Unix)>`__ that tells it to use ``uv`` to run it. For example
+
+.. code-block:: rest
+
+    #! /usr/bin/env -S uv run --script
+
+Additionally, you can optionally use ``uv`` to set the dependencies of a script with the following command
+
+.. code-block:: bash
+
+    uv add --script <script_name>.py "nexus@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
+
+This adds a piece of `Inline Script Metadata <https://packaging.python.org/en/latest/specifications/inline-script-metadata/>`__ to
+the top of your file that specifies two main things, first the Python version, and second the dependencies of the script. For Nexus
+this will look something like:
+
+.. code-block:: python
+
+    # /// script
+    # requires-python = ">=3.14"
+    # dependencies = [
+    #     "nexus",
+    # ]
+    #
+    # [tool.uv.sources]
+    # nexus = { git = "https://github.com/QMCPACK/qmcpack.git", subdirectory = "nexus", rev "main" }
+    # ///
+
+This metadata ensures that ``uv`` can find the required dependencies for your project and will ensure that they are loaded at
+runtime. This inline metadata will not exclude the script from being run directly with Python (e.g. ``python <script_name>.py``),
+and so can be thought of simply as extra documentation. This can help when exchanging scripts with other users but is completely
+optional.
+
+.. tip::
+    As with ``pip``, you can use ``uv`` to add any additional dependencies or packages you desire.
+
+Installing a Specific Version of Nexus
+--------------------------------------
+
+If you want to install the latest development version of Nexus, or a specific release, commit, or pull request, you can switch the link used accordingly:
+
+Latest Development Version
+    .. code-block:: none
+        
+        nexus@git+https://github.com/QMCPACK/qmcpack.git@develop#subdirectory=nexus
+
+Specific Release (only works as far back as QMCPACK v4.3.0). Replace `<TAG>` with e.g. `v4.3.0`
+    .. code-block:: none
+        
+        nexus@git+https://github.com/QMCPACK/qmcpack.git@<TAG>#subdirectory=nexus
+
+Specific Commit (e.g. ``dfc4c2e890c2bc83b4d0aa9922b77fa055c5d259``)
+    .. code-block:: none
+        
+        nexus@git+https://github.com/QMCPACK/qmcpack.git@<COMMIT-HASH>#subdirectory=nexus
+
+Specific Pull Request (Without a preceding ``#``)
+    .. code-block:: none
+        
+        nexus@git+https://github.com/QMCPACK/qmcpack.git@refs/pull/<PR-NUMBER>/head#subdirectory=nexus
+
+.. _manual_install:
+
+Manual Installation of Nexus
+----------------------------
+
+.. warning::
+    Although very simple, this method requires you maintain a consistent Python environment and environment variables. Be sure to
+    consistently point Python at the version of Nexus that you intend.
+    
+Installing Nexus via this method requires downloading a QMCPACK release or cloning the `QMCPACK repository <https://github.com/QMCPACK/qmcpack>`__.
+
+To make your Python installation aware of Nexus, simply set the ``PYTHONPATH`` environment variable to include the topmost nexus
+directory.  For example, in bash this would look like:
+
+.. code-block:: bash
+
+    export PYTHONPATH=/your_download_path/nexus:$PYTHONPATH
+
+Optionally add this to, *e.g.*, your ``.bashrc`` file to make Nexus available in future sessions. Be sure to specify the topmost
+nexus directory, not the lower nexus directory ``/your_download_path/nexus/nexus``.
+
+.. note::
+    If your shell does not use ``export`` for environment variables, you will need to adapt the provided command for use with your shell. For example, the ``fish`` shell would need a command that looks like ``set -gx PYTHONPATH /your_download_path/nexus``.
+
+If you want to use Nexus's command line tools, add them to your PATH:
+
+.. code-block:: bash
+
+    export PATH=/your_download_path/nexus/bin:$PATH
+
+
+Installing Python dependencies
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When manually installing Nexus, you must also install the Python dependencies. The ``numpy`` module must be installed for Nexus to
+function at a basic level. To realize the full range of functionality available, it is recommended that the ``scipy``,
+``matplotlib``, ``h5py``, ``pydot``, ``spglib``, ``pycifrw``, ``cif2cell``, ``seekpath``, and ``pytest`` modules be installed as well. In
+supercomputing environments, most of these packages will *not* be available via system modules due to their specialized nature; you
+will need to install them via ``pip``, ``uv``, or individual manual installation.
+
+You can perform a user level installation via ``pip``. If using ``uv``, prepend ``uv``.
+
+.. code-block:: bash
+
+    pip3 install --user numpy
+    pip3 install --user scipy
+    pip3 install --user matplotlib
+    pip3 install --user h5py
+    pip3 install --user pydot
+    pip3 install --user spglib
+    pip3 install --user PyCifRW
+    pip3 install --user cif2cell
+    pip3 install --user seekpath
+    pip3 install --user pytest
+
+.. note::
+    ``PyCifRW`` is a dependency of ``cif2cell``, thus if you install ``cif2cell`` you will already have ``PyCifRW`` installed as well.
+
+While Nexus does not have strict version requirements, most recent dependency versions that have been tested and are known to work
+can be found at ``qmcpack/nexus/pyproject.toml``. These specific library versions can be installed using the following command:
+
+.. code-block:: bash
+
+    pip3 install --user -r pyproject.toml
+
+.. note::
+    Additionally, for users of ``uv``, the project's ``uv.lock`` file can be used to install the exact versions of dependencies that Nexus is tested with using the command ``uv sync --all-extras --locked``.
+
+If you are making a system-wide installation, on a Linux-based system, such as Ubuntu or Fedora, installation of these Python
+modules can be accomplished using the distribution's package manager (e.g. ``apt`` for Debian-based systems like Ubuntu). For
+example, here is how one may install some of the packages with ``apt``:
+
+.. code-block:: bash
+
+    sudo apt install python3-numpy
+    sudo apt install python3-scipy python3-matplotlib python3-h5py
+    sudo apt install python3-pydot
+    sudo apt install python3-pip
+    sudo apt install python3-pytest
+
+Simple substitutions will be needed on distributions with different package managers (e.g. ``dnf``). Note that the most specialist
+packages may not be available via this route.
+
+The purpose of each library is described below:
+
+``numpy`` 
+    Needed throughout Nexus for array computation. Nexus will not function without NumPy.
+
+``scipy`` 
+    Used by the ``qmc-fit`` executable to perform least squares fits to QMCPACK DMC energies vs. timestep to perform extrapolation to zero timestep.
+
+``matplotlib`` 
+    Needed to view plots of QMCPACK data generated by the ``qmca`` and ``qmc-fit`` executables.
+
+``h5py`` 
+    Needed by the ``qdens`` tool to postprocess QMCPACK densities.
+
+``pydot`` 
+    Used to plot simulation workflow diagrams.
+
+``spglib`` 
+    Used to find crystalline primitive cells and perform k-point symmetrization.
+
+``PyCifRW`` 
+    Needed to read ``.cif`` crystal structure files.
+
+``seekpath`` 
+    Used to find high symmetry lines in reciprocal space for excited state calculations with QMCPACK.
+
+``pytest``
+    Used to test your Nexus installation.
+
+Of course, to run full calculations, the simulation codes and converters involved must be installed as well. These include a patched
+version of Quantum ESPRESSO (``pw.x``, ``pw2qmcpack.x``, optionally ``pw2casino.x``), QMCPACK (``qmcpack``, ``qmcpack_complex``,
+``convert4qmc``, ``wfconvert``, ``ppconvert``), VASP, and/or GAMESS. Complete coverage of this task is beyond the scope of the
+current document, but please see :ref:`install-code`.
+
+Testing your Nexus installation
+-------------------------------
+
+Nexus's testing suite is designed to run with ``pytest >= 6.2.4``.
+We make optional use of the ``pytest-cov`` and ``pytest-order`` plugins. They will not cause test failure if they are not installed.
+
+If you have installed Nexus through ``pip`` or ``uv``, you can run the Nexus testing suite through the ``nxs-test`` command line script, which will automatically run the tests for the version of Nexus installed in your Python environment.
+
+If you have cloned ``qmcpack`` and are using the version of Nexus that comes with it, or if you are working on developing Nexus, you can enter the ``nexus`` directory and simply invoke the ``pytest`` command:
+
+.. code-block:: bash
+
+    > cd nexus/
+    > pytest
+    ============================ test session starts ===========================
+    platform linux -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0
+    rootdir: /home/qmcpack/nexus
+    configfile: pyproject.toml
+    testpaths: nexus/tests
+    plugins: order-1.5.0, cov-7.1.0
+    collected 802 items
+
+    test_testing.py ...                                                  [  0%]
+    test_execute.py .                                                    [  0%]
+    test_memory.py ...                                                   [  0%]
+    test_utilities.py ....                                               [  1%]
+    test_generic.py ...                                                  [  1%]
+    test_developer.py ........                                           [  2%]
+    test_unit_converter.py ..                                            [  2%]
+    test_periodic_table.py ........                                      [  3%]
+    test_numerics.py ..............                                      [  5%]
+    test_statistics.py ................................................. [ 12%]
+    test_grid_functions.py .....................                         [ 14%]
+    test_fileio.py .....                                                 [ 15%]
+    test_hdfreader.py .                                                  [ 15%]
+    test_xmlreader.py .....                                              [ 16%]
+    test_structure.py ............................................       [ 21%]
+    test_physical_system.py .....                                        [ 22%]
+    test_basisset.py ...                                                 [ 22%]
+    test_pseudoset.py ..................................                 [ 26%]
+    test_pseudopotential.py .                                            [ 27%]
+    test_nexus_base.py ....                                              [ 27%]
+    test_error_keys.py ................................................. [ 40%]
+    test_machines.py ......................                              [ 42%]
+    test_simulation_module.py .......................................... [ 48%]
+    test_bundle.py .                                                     [ 48%]
+    test_project_manager.py ...........                                  [ 49%]
+    test_settings.py ....                                                [ 50%]
+    test_pwscf_input.py ..                                               [ 50%]
+    test_pwscf_postprocessor_input.py ....                               [ 50%]
+    test_gamess_input.py .....                                           [ 51%]
+    test_pyscf_input.py ...                                              [ 51%]
+    test_quantum_package_input.py ...                                    [ 52%]
+    test_rmg_input.py ..........                                         [ 53%]
+    test_qmcpack_converter_input.py .........                            [ 54%]
+    test_qmcpack_input.py ...............                                [ 56%]
+    test_vasp_analyzer.py ..                                             [ 56%]
+    test_vasp_input.py .................................                 [ 60%]
+    test_pwscf_analyzer.py ............................................. [ 75%]
+    test_pwscf_postprocessor_analyzers.py ..                             [ 80%]
+    test_gamess_analyzer.py ..                                           [ 80%]
+    test_pyscf_analyzer.py .                                             [ 80%]
+    test_quantum_package_analyzer.py .                                   [ 81%]
+    test_rmg_analyzer.py ..............................................  [ 86%]
+    test_qmcpack_converter_analyzers.py ...                              [ 87%]
+    test_qmcpack_analyzer.py .....                                       [ 87%]
+    test_analyze_output.py ....                                          [ 88%]
+    test_vasp_simulation.py ......                                       [ 89%]
+    test_pwscf_simulation.py .....                                       [ 89%]
+    test_gamess_simulation.py .....                                      [ 90%]
+    test_pyscf_simulation.py ....                                        [ 90%]
+    test_quantum_package_simulation.py .....                             [ 91%]
+    test_rmg_simulation.py .                                             [ 91%]
+    test_pwscf_postprocessor_simulations.py .....                        [ 92%]
+    test_qmcpack_converter_simulations.py ...............                [ 94%]
+    test_qmcpack_simulation.py ......                                    [ 94%]
+    test_observables.py .                                                [ 94%]
+    test_nxs_redo.py .                                                   [ 95%]
+    test_nxs_sim.py .                                                    [ 95%]
+    test_qmc_fit.py .                                                    [ 95%]
+    test_qdens.py ..........                                             [ 96%]
+    test_qdens_radial.py .                                               [ 96%]
+    test_qmca.py .............                                           [ 98%]
+    test_eshdf.py ...                                                    [ 98%]
+    test_user_examples.py ...........                                    [100%] 
+
+    ===================== 802 passed, 6 warnings in 33.98s =====================
+
+Some tests may be skipped depending on what dependencies you have available, or if they are marked to be skipped.
+Additionally, you may see a number of warnings appear; some of these may be warnings about Nexus, but it is likely that the majority arise from a Nexus dependency.
+In general it is safe to ignore these warnings as they likely do not affect the functionality of Nexus.
+
+Developer Topics
+----------------
+
+Assessing Test Coverage
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Code coverage can be assessed by using the ``pytest-cov`` plugin (``pip install --user pytest-cov``):
+
+.. code-block:: bash
+
+    > cd nexus
+    > pytest --cov=nexus
+    ...
+    > coverage report
+
+    Name                                                           Stmts   Miss  Cover
+    ----------------------------------------------------------------------------------
+    __init__.py                                                      472    167    65%
+    basisset.py                                                      672    411    39%
+    bin/eshdf                                                        251     43    83%
+    bin/nxs-redo                                                      96     35    64%
+    bin/nxs-sim                                                      150     64    57%
+    bin/qdens                                                        923    408    56%
+    bin/qdens-radial                                                 291     95    67%
+    bin/qmc-fit                                                      397    204    49%
+    bin/qmca                                                         939    239    75%
+    bundle.py                                                        198     73    63%
+    debug.py                                                          12      6    50%
+    developer.py                                                      32      5    84%
+    developer_tools.py                                               175     26    85%
+    error_keys.py                                                    152      7    95%
+    examples/.../h2o_pp_casscf.py                                      9      0   100%
+    examples/.../h2o_pp_cisd.py                                        9      0   100%
+    examples/.../h2o_pp_hf.py                                          8      0   100%
+    examples/.../h2o_ae_hf.py                                          7      0   100%
+    examples/.../H2O.py                                               29      0   100%
+    examples/.../LiH.py                                               33      0   100%
+    examples/.../c20.py                                               23      4    83%
+    examples/.../diamond.py                                           11      0   100%
+    examples/.../diamond_vacancy.py                                    9      0   100%
+    examples/.../graphene.py                                          22      4    82%
+    examples/.../oxygen_dimer.py                                      23      0   100%
+    examples/.../diamond_lda_dmc_restart_same_dir.py                  13      0   100%
+    examples/.../diamond_lda_dmc_restart_separate_dirs.py             13      0   100%
+    examples/.../diamond_lda_dmc_twistavg_restart_same_dir.py         13      0   100%
+    examples/.../diamond_lda_dmc_twistavg_restart_separate_dirs.py    13      0   100%
+    examples/.../relax_vs_kpoints_example.py                          33     20    39%
+    examples/.../diamond_scf.py                                       12      0   100%
+    execute.py                                                        14      2    86%
+    fileio.py                                                       1049    429    59%
+    gamess.py                                                        160     68    58%
+    gamess_analyzer.py                                               323    144    55%
+    gamess_input.py                                                  661    181    73%
+    generic.py                                                        93     16    83%
+    grid_functions.py                                               1645    701    57%
+    hdfreader.py                                                     202     60    70%
+    machines.py                                                     2692    764    72%
+    memory.py                                                         58      7    88%
+    nexus_base.py                                                    181     13    93%
+    nexus_version.py                                                   2      0   100%
+    numerics.py                                                      917    473    48%
+    numpy_extensions.py                                                7      1    86%
+    observables.py                                                   919    517    44%
+    periodic_table.py                                                313      4    99%
+    physical_system.py                                               296     67    77%
+    project_manager.py                                               349    122    65%
+    pseudopotential.py                                              1588   1039    35%
+    pseudoset.py                                                     556     78    86%
+    pwscf.py                                                         337    176    48%
+    pwscf_analyzer.py                                               1658    296    82%
+    pwscf_data_reader.py                                             131     61    53%
+    pwscf_input.py                                                  1448    505    65%
+    pwscf_input_defs.py                                              304      7    98%
+    pwscf_postprocessors.py                                          531    120    77%
+    pyscf_analyzer.py                                                  3      0   100%
+    pyscf_input.py                                                   311     65    79%
+    pyscf_sim.py                                                      78     15    81%
+    qmcpack.py                                                      1326    937    29%
+    qmcpack_analyzer.py                                              452    105    77%
+    qmcpack_analyzer_base.py                                         336    148    56%
+    qmcpack_converters.py                                            745    264    65%
+    qmcpack_input.py                                                4859   2089    57%
+    qmcpack_method_analyzers.py                                      200     67    66%
+    qmcpack_property_analyzers.py                                    206    105    49%
+    qmcpack_quantity_analyzers.py                                   2037   1760    14%
+    qmcpack_result_analyzers.py                                      292    146    50%
+    quantum_package.py                                               263    148    44%
+    quantum_package_analyzer.py                                        3      0   100%
+    quantum_package_input.py                                         378    176    53%
+    rmg.py                                                            41     11    73%
+    rmg_analyzer.py                                                 1612    128    92%
+    rmg_input.py                                                     763    133    83%
+    simulation.py                                                   1350    358    73%
+    statistics.py                                                   1257    132    89%
+    structure.py                                                    4287   2125    50%
+    testing.py                                                       236     60    75%
+    unit_converter.py                                                123      4    97%
+    utilities.py                                                      62      2    97%
+    vasp.py                                                          104     18    83%
+    vasp_analyzer.py                                                 552     80    86%
+    vasp_input.py                                                   1581    263    83%
+    xmlreader.py                                                     292     54    82%
+    ----------------------------------------------------------------------------------
+    TOTAL                                                          45223  17055    62%
+
+The first column is the total number of statements, the second is the number not yet covered by the tests and the third is the percent covered. At the bottom is the sum total of all covered lines, all missed lines, and the average coverage percent.
+
+To obtain an annotated view of the statements in the source that are not yet covered, run:
+
+.. code-block:: bash
+
+    > pytest --cov=nexus --cov-report=html
+
+Open ``htmlcov/index.html`` in a browser to view the report. More information regarding the ``coverage`` tool can be found at https://coverage.readthedocs.io/en/latest/.
+
+.. note::
+    If you are planning on adding a new feature to Nexus, please add a test for the new feature.
+    Additionally, if you are planning on changing an existing Nexus feature, you must ensure that you either write a test for it, update the existing test, or ensure that your changes do not fail the existing test; your changes will not get merged otherwise!
+
+Creating Portable Nexus Builds
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+With recent changes to Nexus's structure, it has become possible to build binary distributions of Nexus in the form of a wheel file (extension ``.whl``).
+
+Wheel files are compressed ZIP-format archives that are officially recommended by the `Python Packaging Authority (PyPA) <https://packaging.python.org/en/latest/specifications/binary-distribution-format/>`__ and can be built by anyone with the right tools.
+To get started, you must have a tool capable of building a project; here we will be describing how to use ``uv`` for building distributions.
+First, start by cloning the QMCPACK GitHub repository and navigating to the ``nexus`` directory. 
+Next, though this step is not always necessary, it is recommended to run ``pytest`` to ensure you have a clean Nexus installation.
+Finally, you can run the command ``uv build``, which will create a ``qmcpack/nexus/dist`` directory, and build two files to go in it.
+The first is a tar archive of the source code, and the second is a ``.whl`` file.
+This wheel file is then usable as an installation source, which you can access via the following command (if you are in a virtual environment):
+
+.. code-block:: bash
+
+    uv pip install qmcpack/nexus/dist/nexus-2.2.0-py3-none-any.whl
+
+This will install Nexus into your virtual environment and make all of its libraries and executables available to you while you are in that virtual environment.
+
+.. tip::
+    This route for installing and distributing Nexus is especially useful if you are a system administrator as you can create consistent builds of Nexus at regular intervals and ensure that your users all have up-to-date versions available to them.
+    It also allows for users to have access to their own version of Nexus if they choose to not use a global Python environment. This is because the wheels will install a copy of Nexus into their local/virtual environment, which they can edit as much as they please, without disturbing the global installation.

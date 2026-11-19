@@ -15,7 +15,7 @@
 #include <string>
 #include <iomanip>
 #include "Host/sysutil.h"
-#include "OMPTarget/OMPallocator.hpp"
+#include "OMPTarget/OMPTargetUsage.hpp"
 #include "MemManageAlias.hpp"
 
 namespace qmcplusplus
@@ -32,8 +32,8 @@ void print_mem(const std::string& title, std::ostream& log)
   log << "Available memory on node 0, free + buffers : " << std::setw(7) << (freemem() >> 20) << " MiB" << std::endl;
   log << "Memory footprint by rank 0 on node 0       : " << std::setw(7) << (memusage() >> 10) << " MiB" << std::endl;
 #ifdef ENABLE_OFFLOAD
-  log << "Device memory allocated via OpenMP offload : " << std::setw(7) << (getOMPdeviceMemAllocated() >> 20) << " MiB"
-      << std::endl;
+  log << "Device memory allocated via OpenMP offload : " << std::setw(7) << (omptarget_mem_usage.getBalance() >> 20)
+      << " MiB" << std::endl;
 #endif
 #ifdef ENABLE_CUDA
   log << "Device memory allocated via CUDA allocator : " << std::setw(7)

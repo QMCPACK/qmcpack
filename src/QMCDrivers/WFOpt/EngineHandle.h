@@ -18,9 +18,6 @@
 
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 
-#ifdef HAVE_LMY_ENGINE
-#include "formic/utils/lmyengine/engine.h"
-#endif
 
 
 namespace qmcplusplus
@@ -117,60 +114,6 @@ public:
 
   void finishSampling() override { engine_.sample_finish(); }
 };
-
-class LMYEngineHandle : public EngineHandle
-{
-#ifdef HAVE_LMY_ENGINE
-private:
-  cqmc::engine::LMYEngine<Value>& lm_engine_;
-  std::vector<FullPrecValue> der_rat_samp;
-  std::vector<FullPrecValue> le_der_samp;
-
-public:
-  LMYEngineHandle(cqmc::engine::LMYEngine<Value>& lmyEngine) : lm_engine_(lmyEngine){};
-
-  void prepareSampling(int num_params, int num_samples) override
-  {
-    der_rat_samp.resize(num_params + 1, 0.0);
-    le_der_samp.resize(num_params + 1, 0.0);
-    if (lm_engine_.getStoringSamples())
-      lm_engine_.setUpStorage(num_params, num_samples);
-  }
-  void takeSample(const std::vector<FullPrecReal>& energy_list,
-                  const RecordArray<Value>& dlogpsi_array,
-                  const RecordArray<Value>& dhpsioverpsi_array,
-                  int base_sample_index) override
-  {
-    int current_batch_size = dlogpsi_array.getNumOfEntries();
-    for (int local_index = 0; local_index < current_batch_size; local_index++)
-    {
-      const int sample_index = base_sample_index + local_index;
-      der_rat_samp[0]        = 1.0;
-      le_der_samp[0]         = energy_list[local_index];
-
-      int num_params = der_rat_samp.size() - 1;
-      for (int j = 0; j < num_params; j++)
-      {
-        der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array[local_index][j]);
-        le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array[local_index][j]) +
-            le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array[local_index][j]);
-      }
-
-
-      if (lm_engine_.getStoringSamples())
-        lm_engine_.store_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0, sample_index);
-      else
-        lm_engine_.take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);
-    }
-  }
-  void finishSampling() override
-  {
-    if (!lm_engine_.getStoringSamples())
-      lm_engine_.sample_finish();
-  }
-#endif
-};
-
 
 } // namespace qmcplusplus
 #endif

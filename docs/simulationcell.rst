@@ -418,5 +418,3 @@ Example use cases
          </attrib>
        </group>
      </particleset>
-
-.. bibliography:: /bibs/simulationcell.bib

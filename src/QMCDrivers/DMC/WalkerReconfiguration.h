@@ -37,7 +37,7 @@ struct WalkerReconfiguration : public WalkerControlBase
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerReconfiguration(Communicate* c);
+  WalkerReconfiguration(Communicate& c);
 
   /** perform branch and swap walkers as required */
   int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger) override;

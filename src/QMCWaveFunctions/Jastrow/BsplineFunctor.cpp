@@ -29,7 +29,7 @@ void BsplineFunctor<REAL>::mw_evaluateVGL(const int iat,
                                           const int n_src,
                                           const int* grp_ids,
                                           const int nw,
-                                          REAL* mw_vgl,        // [nw][DIM+2]
+                                          REAL* mw_vgl, // [nw][DIM+2]
                                           const int n_padded,
                                           const REAL* mw_dist, // [nw][DIM+1][n_padded]
                                           REAL* mw_cur_allu,   // [nw][3][n_padded]
@@ -47,7 +47,8 @@ void BsplineFunctor<REAL>::mw_evaluateVGL(const int iat,
   REAL** mw_coefs_ptr        = reinterpret_cast<REAL**>(transfer_buffer.data());
   REAL* mw_DeltaRInv_ptr     = reinterpret_cast<REAL*>(transfer_buffer.data() + sizeof(REAL*) * num_groups);
   REAL* mw_cutoff_radius_ptr = mw_DeltaRInv_ptr + num_groups;
-  int* mw_max_index_ptr      = reinterpret_cast<int*>(transfer_buffer.data() + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
+  int* mw_max_index_ptr =
+      reinterpret_cast<int*>(transfer_buffer.data() + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
   for (int ig = 0; ig < num_groups; ig++)
     if (functors[ig])
     {
@@ -87,7 +88,7 @@ void BsplineFunctor<REAL>::mw_evaluateVGL(const int iat,
     REAL** mw_coefs        = reinterpret_cast<REAL**>(transfer_buffer_ptr);
     REAL* mw_DeltaRInv     = reinterpret_cast<REAL*>(transfer_buffer_ptr + sizeof(REAL*) * num_groups);
     REAL* mw_cutoff_radius = mw_DeltaRInv + num_groups;
-    int* mw_max_index      = reinterpret_cast<int*>(transfer_buffer_ptr + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
+    int* mw_max_index = reinterpret_cast<int*>(transfer_buffer_ptr + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
 
     REAL* cur_allu = mw_cur_allu + ip * n_padded * 3;
 
@@ -96,11 +97,11 @@ void BsplineFunctor<REAL>::mw_evaluateVGL(const int iat,
     {
       if (j == iat)
         continue;
-      const int ig       = grp_ids[j];
-      const REAL* coefs  = mw_coefs[ig];
-      REAL DeltaRInv     = mw_DeltaRInv[ig];
-      REAL cutoff_radius = mw_cutoff_radius[ig];
-      const int max_index  = mw_max_index[ig];
+      const int ig        = grp_ids[j];
+      const REAL* coefs   = mw_coefs[ig];
+      REAL DeltaRInv      = mw_DeltaRInv[ig];
+      REAL cutoff_radius  = mw_cutoff_radius[ig];
+      const int max_index = mw_max_index[ig];
 
       REAL r = dist[j];
       REAL u(0);
@@ -151,7 +152,8 @@ void BsplineFunctor<REAL>::mw_evaluateV(const int num_groups,
   REAL** mw_coefs_ptr        = reinterpret_cast<REAL**>(transfer_buffer.data());
   REAL* mw_DeltaRInv_ptr     = reinterpret_cast<REAL*>(transfer_buffer.data() + sizeof(REAL*) * num_groups);
   REAL* mw_cutoff_radius_ptr = mw_DeltaRInv_ptr + num_groups;
-  int* mw_max_index_ptr      = reinterpret_cast<int*>(transfer_buffer.data() + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
+  int* mw_max_index_ptr =
+      reinterpret_cast<int*>(transfer_buffer.data() + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
   for (int ig = 0; ig < num_groups; ig++)
     if (functors[ig])
     {
@@ -181,15 +183,15 @@ void BsplineFunctor<REAL>::mw_evaluateV(const int num_groups,
     REAL** mw_coefs        = reinterpret_cast<REAL**>(transfer_buffer_ptr);
     REAL* mw_DeltaRInv     = reinterpret_cast<REAL*>(transfer_buffer_ptr + sizeof(REAL*) * num_groups);
     REAL* mw_cutoff_radius = mw_DeltaRInv + num_groups;
-    int* mw_max_index      = reinterpret_cast<int*>(transfer_buffer_ptr + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
+    int* mw_max_index = reinterpret_cast<int*>(transfer_buffer_ptr + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
     PRAGMA_OFFLOAD("omp parallel for reduction(+: sum)")
     for (int j = 0; j < n_src; j++)
     {
-      const int ig       = grp_ids[j];
-      const REAL* coefs  = mw_coefs[ig];
-      REAL DeltaRInv     = mw_DeltaRInv[ig];
-      REAL cutoff_radius = mw_cutoff_radius[ig];
-      const int max_index  = mw_max_index[ig];
+      const int ig        = grp_ids[j];
+      const REAL* coefs   = mw_coefs[ig];
+      REAL DeltaRInv      = mw_DeltaRInv[ig];
+      REAL cutoff_radius  = mw_cutoff_radius[ig];
+      const int max_index = mw_max_index[ig];
 
       REAL r = dist[j];
       if (j != ref_at[ip] && r < cutoff_radius)
@@ -207,7 +209,7 @@ void BsplineFunctor<REAL>::mw_updateVGL(const int iat,
                                         const int n_src,
                                         const int* grp_ids,
                                         const int nw,
-                                        REAL* mw_vgl,        // [nw][DIM+2]
+                                        REAL* mw_vgl, // [nw][DIM+2]
                                         const int n_padded,
                                         const REAL* mw_dist, // [nw][DIM+1][n_padded]
                                         REAL* mw_allUat,     // [nw][DIM+2][n_padded]
@@ -227,8 +229,9 @@ void BsplineFunctor<REAL>::mw_updateVGL(const int iat,
   REAL** mw_coefs_ptr        = reinterpret_cast<REAL**>(transfer_buffer.data());
   REAL* mw_DeltaRInv_ptr     = reinterpret_cast<REAL*>(transfer_buffer.data() + sizeof(REAL*) * num_groups);
   REAL* mw_cutoff_radius_ptr = mw_DeltaRInv_ptr + num_groups;
-  int* mw_max_index_ptr      = reinterpret_cast<int*>(transfer_buffer.data() + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
-  int* accepted_indices  = mw_max_index_ptr + num_groups;
+  int* mw_max_index_ptr =
+      reinterpret_cast<int*>(transfer_buffer.data() + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
+  int* accepted_indices = mw_max_index_ptr + num_groups;
 
   for (int ig = 0; ig < num_groups; ig++)
     if (functors[ig])
@@ -263,9 +266,9 @@ void BsplineFunctor<REAL>::mw_updateVGL(const int iat,
     REAL** mw_coefs        = reinterpret_cast<REAL**>(transfer_buffer_ptr);
     REAL* mw_DeltaRInv     = reinterpret_cast<REAL*>(transfer_buffer_ptr + sizeof(REAL*) * num_groups);
     REAL* mw_cutoff_radius = mw_DeltaRInv + num_groups;
-    int* mw_max_index      = reinterpret_cast<int*>(transfer_buffer_ptr + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
-    int* accepted_indices  = mw_max_index + num_groups;
-    const int ip = accepted_indices[iw];
+    int* mw_max_index = reinterpret_cast<int*>(transfer_buffer_ptr + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
+    int* accepted_indices = mw_max_index + num_groups;
+    const int ip          = accepted_indices[iw];
 
     const REAL* dist_new   = mw_dist + ip * dist_stride;
     const REAL* dipl_x_new = dist_new + n_padded;
@@ -290,11 +293,11 @@ void BsplineFunctor<REAL>::mw_updateVGL(const int iat,
     {
       if (j == iat)
         continue;
-      const int ig       = grp_ids[j];
-      const REAL* coefs  = mw_coefs[ig];
-      REAL DeltaRInv     = mw_DeltaRInv[ig];
-      REAL cutoff_radius = mw_cutoff_radius[ig];
-      const int max_index  = mw_max_index[ig];
+      const int ig        = grp_ids[j];
+      const REAL* coefs   = mw_coefs[ig];
+      REAL DeltaRInv      = mw_DeltaRInv[ig];
+      REAL cutoff_radius  = mw_cutoff_radius[ig];
+      const int max_index = mw_max_index[ig];
 
       REAL r = dist_old[j];
       REAL u(0);

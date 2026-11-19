@@ -1,18 +1,28 @@
-// Copyright 2023-2024 Alfredo A. Correa
+// Copyright 2023-2025 Alfredo A. Correa
 
 #include <mpi3/communicator.hpp>
-#include <mpi3/main.hpp>
+#include <mpi3/environment.hpp>
 #include <mpi3/process.hpp>
 
+#include <boost/core/lightweight_test.hpp>
+#include <cstddef>
+#include <cstdint>
+#include <tuple>
 #include <variant>
 
 namespace mpi3 = boost::mpi3;
 
-enum color { red,
-             blue };
+enum class color : std::uint8_t {
+	red,
+	blue
+};
 
-auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int try {
-	assert(world.size() > 1);
+auto main(int argc, char** argv) -> int try {
+	mpi3::environment env(argc, argv);
+
+	auto world = env.world();
+
+	BOOST_TEST(world.size() > 1);
 
 	using std::variant;
 
@@ -25,21 +35,25 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	case 1: {
 		variant<int, double> v;
 		world[0] >> v;
-		assert(( v == variant<int, double>{3.14} ));
+		BOOST_TEST((v == variant<int, double>{3.14}));
 	};
+	default: {
+	}
 	}
 
 	switch(world.rank()) {
 	case 0: {
-		variant<color, double> const v{blue};
+		variant<color, double> const v{color::blue};
 		world[1] << v;
 	};
 		break;
 	case 1: {
 		variant<color, double> v;
 		world[0] >> v;
-		assert(( v == variant<color, double>{blue} ));
+		BOOST_TEST((v == variant<color, double>{color::blue}));
 	};
+	default: {
+	}
 	}
 
 	switch(world.rank()) {
@@ -51,8 +65,10 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	case 1: {
 		variant<int, double> v;
 		world[0] >> v;
-		assert(( v == variant<int, double>{3.14} ));
+		BOOST_TEST((v == variant<int, double>{3.14}));
 	};
+	default: {
+	}
 	}
 
 	switch(world.rank()) {
@@ -64,9 +80,11 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	case 1: {
 		variant<int, double> v;
 		world.receive_n(&v, 1, 0);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) testing not recommended brute force method
-		assert( v.index() == 0 );
-		assert(( v == variant<int, double>{42} ));
+		BOOST_TEST(v.index() == 0);
+		BOOST_TEST((v == variant<int, double>{42}));
 	};
+	default: {
+	}
 	}
 
 	switch(world.rank()) {
@@ -78,8 +96,10 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	case 1: {
 		variant<int, std::tuple<int, int>> v;
 		world.receive_n(reinterpret_cast<char*>(&v), sizeof(v), 0);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) testing not recommended brute force method
-		assert(( v == variant<int, std::tuple<int, int>>{std::make_tuple(5, 42)} ));
+		BOOST_TEST((v == variant<int, std::tuple<int, int>>{std::make_tuple(5, 42)}));
 	};
+	default: {
+	}
 	}
 
 	switch(world.rank()) {
@@ -91,8 +111,10 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	case 1: {
 		variant<int, std::tuple<int, int>> v;
 		world.receive_n(reinterpret_cast<char*>(&v), sizeof(v), 0);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) testing not recommended brute force method
-		assert(( v == variant<int, std::tuple<int, int>>{std::make_tuple(5, 42)} ));
+		BOOST_TEST((v == variant<int, std::tuple<int, int>>{std::make_tuple(5, 42)}));
 	};
+	default: {
+	}
 	}
 
 	switch(world.rank()) {
@@ -104,8 +126,10 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	case 1: {
 		variant<int, std::tuple<int, int>> v;
 		world.receive_n(reinterpret_cast<std::byte*>(&v), sizeof(v), 0);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) testing not recommended brute force method
-		assert(( v == variant<int, std::tuple<int, int>>{std::make_tuple(5, 42)} ));
+		BOOST_TEST((v == variant<int, std::tuple<int, int>>{std::make_tuple(5, 42)}));
 	};
+	default: {
+	}
 	}
 
 	// switch(world.rank()) {
@@ -116,7 +140,7 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	// break; case 1: {
 	//  error_ns::code ec = error_ns::SUCCESS;
 	//  world.receive_n(&ec, 1, 0);
-	//  assert(ec == error_ns::SUCCESS);
+	//  BOOST_TEST(ec == error_ns::SUCCESS);
 	// };
 	// }
 
@@ -128,7 +152,7 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	// break; case 1: {
 	//  error_ns::code ec = error_ns::SUCCESS;
 	//  world.receive_n(&ec, 1);
-	//  assert(ec == error_ns::SUCCESS);
+	//  BOOST_TEST(ec == error_ns::SUCCESS);
 	// };
 	// }
 
@@ -140,7 +164,7 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	// break; case 1: {
 	//  error_ns::code ec = error_ns::SUCCESS;
 	//  world[0] >> ec;
-	//  assert(ec == error_ns::SUCCESS);
+	//  BOOST_TEST(ec == error_ns::SUCCESS);
 	// };
 	// }
 
@@ -152,7 +176,7 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	// break; case 1: {
 	//  error_ns::code ec = error_ns::SUCCESS;
 	//  world >> ec;
-	//  assert(ec == error_ns::SUCCESS);
+	//  BOOST_TEST(ec == error_ns::SUCCESS);
 	// };
 	// }
 
@@ -164,7 +188,7 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	// break; case 1: {
 	//  error_long_ns::code ec  = error_long_ns::SUCCESS;
 	//  world >> ec;
-	//  assert(ec == error_long_ns::SUCCESS);
+	//  BOOST_TEST(ec == error_long_ns::SUCCESS);
 	// };
 	// }
 
@@ -176,11 +200,11 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	// break; case 1: {
 	//  error_class_ns::code ec = error_class_ns::code::SUCCESS;
 	//  world >> ec;
-	//  assert(ec == error_class_ns::code::SUCCESS);
+	//  BOOST_TEST(ec == error_class_ns::code::SUCCESS);
 	// };
 	// }
 
-	return 0;
+	return boost::report_errors();
 } catch(...) {
 	return 1;
 }

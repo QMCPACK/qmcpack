@@ -4,7 +4,7 @@
 [![Documentation Status](https://readthedocs.org/projects/qmcpack/badge/?version=develop)](https://qmcpack.readthedocs.io/en/develop/?badge=develop)
 
 [![GitHub release](https://img.shields.io/github/release/QMCPACK/qmcpack/all.svg)](https://github.com/QMCPACK/qmcpack/releases)
-[![Spack Version](https://img.shields.io/spack/v/qmcpack)](https://spack.readthedocs.io/en/latest/package_list.html#qmcpack)
+[![Spack Version](https://img.shields.io/spack/v/qmcpack)](https://packages.spack.io/package.html?name=qmcpack)
 
 [![GitHub Actions CI](https://github.com/QMCPACK/qmcpack/actions/workflows/ci-github-actions.yaml/badge.svg)](https://github.com/QMCPACK/qmcpack/actions/workflows/ci-github-actions.yaml)
 [![codecov-deterministic](https://codecov.io/gh/QMCPACK/qmcpack/branch/develop/graph/badge.svg?token=35D0u6GlBm)](https://codecov.io/gh/QMCPACK/qmcpack)
@@ -76,22 +76,22 @@ On a standard UNIX-like system such as a Linux workstation:
   compilers. Move to the build directory, run CMake and make
 ```
 cd build
-cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc ..
+cmake -DCMAKE_CXX_COMPILER=mpiicpc ..
 make -j 8
 ```
 
-* Substitute mpicc and mpicxx or other wrapped compiler names to suit
+* Substitute mpicxx or other wrapped compiler names to suit
   your system. e.g. With OpenMPI use
 ```
 cd build
-cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx ..
+cmake -DCMAKE_CXX_COMPILER=mpicxx ..
 make -j 8
 ```
 
 * Non-MPI build:
 ```
 cd build
-cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DQMC_MPI=0 ..
+cmake -DCMAKE_CXX_COMPILER=g++ -DQMC_MPI=0 ..
 make -j 8
 ```
 
@@ -117,8 +117,6 @@ before doing significant production. i.e. Check the details below.
 | Environment variable | Description |
 |----------------------|-------------|
 |   CXX          |    C++ compiler |
-|   CC           |    C Compiler |
-|   MKL_ROOT     |    Path for MKL |
 |   HDF5_ROOT    |    Path for HDF5 |
 |   BOOST_ROOT   |    Path for Boost |
 |   FFTW_HOME    |    Path for FFTW |
@@ -135,21 +133,16 @@ before doing significant production. i.e. Check the details below.
  * General build options
 
 ```
-    CMAKE_C_COMPILER    Set the C compiler
     CMAKE_CXX_COMPILER  Set the C++ compiler
     CMAKE_BUILD_TYPE    A variable which controls the type of build (defaults to Release).
                         Possible values are:
-                        None (Do not set debug/optmize flags, use CMAKE_C_FLAGS or CMAKE_CXX_FLAGS)
+                        None (Do not set debug/optmize flags, use CMAKE_CXX_FLAGS)
                         Debug (create a debug build)
                         Release (create a release/optimized build)
                         RelWithDebInfo (create a release/optimized build with debug info)
                         MinSizeRel (create an executable optimized for size)
     CMAKE_SYSTEM_NAME   Set value to CrayLinuxEnvironment when cross-compiling
                         in Cray Programming Environment.
-    CMAKE_C_FLAGS       Set the C flags.  Note: to prevent default debug/release flags
-                        from being used, set the CMAKE_BUILD_TYPE=None
-                        Also supported: CMAKE_C_FLAGS_DEBUG, CMAKE_C_FLAGS_RELEASE,
-                                        CMAKE_C_FLAGS_RELWITHDEBINFO
     CMAKE_CXX_FLAGS     Set the C++ flags.  Note: to prevent default debug/release flags
                         from being used, set the CMAKE_BUILD_TYPE=None
                         Also supported: CMAKE_CXX_FLAGS_DEBUG, CMAKE_CXX_FLAGS_RELEASE,
@@ -231,7 +224,7 @@ libxml2 will be automatically detected.
 
 ```
 cd build
-cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc ..
+cmake -DCMAKE_CXX_COMPILER=mpiicpc ..
 make -j 8
 ```
 
@@ -243,11 +236,10 @@ environment variables, packages are installed in custom locations,
 or the configure line may be long or complex.  In this case it is
 recommended to add "rm -rf CMake*" before the configure line to remove
 existing CMake configure files to ensure a fresh configure each time
-that the script is called.  and example script build.sh is given
+that the script is called.  An example helper script is given
 below:
 ```
 export CXX=mpic++
-export CC=mpicc
 export HDF5_ROOT=/opt/hdf5
 export BOOST_ROOT=/opt/boost
 
@@ -269,9 +261,7 @@ Set compile flags manually:
 ```
    cmake                                                \
       -D CMAKE_BUILD_TYPE=None                          \
-      -D CMAKE_C_COMPILER=mpicc                         \
       -D CMAKE_CXX_COMPILER=mpic++                      \
-      -D CMAKE_C_FLAGS="  -O3 -fopenmp -malign-double -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated -march=native -mtune=native" \
       -D CMAKE_CXX_FLAGS="-O3 -fopenmp -malign-double -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated -march=native -mtune=native" \
       ..
 ```
@@ -280,7 +270,6 @@ Add extra include directories:
 ```
    cmake                                                \
       -D CMAKE_BUILD_TYPE=Release                       \
-      -D CMAKE_C_COMPILER=mpicc                         \
       -D CMAKE_CXX_COMPILER=mpic++                      \
       -D QMC_INCLUDE="~/path1;~/path2"                  \
       ..

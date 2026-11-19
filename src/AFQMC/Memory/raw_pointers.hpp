@@ -17,6 +17,7 @@
 
 #include <type_traits>
 #include <complex>
+#include <iostream>
 #include "AFQMC/Utilities/type_conversion.hpp"
 
 namespace qmcplusplus

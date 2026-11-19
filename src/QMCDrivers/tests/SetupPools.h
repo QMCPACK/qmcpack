@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2026 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -12,11 +12,17 @@
 #ifndef QMCPLUSPLUS_SETUP_POOLS_H
 #define QMCPLUSPLUS_SETUP_POOLS_H
 
+/** @file
+ *  @brief Provide a set of pools for testing resembling what are
+ *  present in the application at the time of Driver creation.
+ */
+
 #include "Message/Communicate.h"
 #include "type_traits/template_types.hpp"
 #include "OhmmsData/Libxml2Doc.h"
 #include "FakeRandom.h"
 #include "Configuration.h"
+#include "Utilities/ProjectData.h"
 
 namespace qmcplusplus
 {
@@ -29,6 +35,10 @@ namespace testing
 {
 class SetupPools
 {
+  // The pools and their wavefunctions retain references to this project's runtime options.
+  // Declare it first so it outlives the pools.
+  ProjectData project_data_;
+
 public:
   SetupPools();
   ~SetupPools();
@@ -40,7 +50,7 @@ public:
   Libxml2Document doc;
   xmlNodePtr node;
 
-  Communicate* comm;
+  Communicate& comm;
 };
 
 class RandomNumberGeneratorPool

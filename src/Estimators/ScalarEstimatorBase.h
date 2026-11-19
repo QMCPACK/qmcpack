@@ -27,6 +27,7 @@
 namespace qmcplusplus
 {
 class ObservableHelper;
+class hdf_archive;
 
 /** Abstract class for an estimator of a scalar operator.
  *

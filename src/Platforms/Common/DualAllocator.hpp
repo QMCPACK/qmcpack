@@ -39,10 +39,8 @@ inline size_t getDualDeviceMemAllocated() { return dual_device_mem_allocated; }
 template<typename T, class DeviceAllocator, class HostAllocator = std::allocator<T>>
 struct DualAllocator : public HostAllocator
 {
-  using Value        = typename HostAllocator::value_type;
-  using Size         = typename HostAllocator::size_type;
-  using Pointer      = typename HostAllocator::pointer;
-  using ConstPointer = typename HostAllocator::const_pointer;
+  using Value = typename HostAllocator::value_type;
+  using Size  = typename HostAllocator::size_type;
 
   DualAllocator() : device_ptr_(nullptr) {};
   DualAllocator(const DualAllocator&) : device_ptr_(nullptr) {}
@@ -79,9 +77,7 @@ struct DualAllocator : public HostAllocator
   }
 
   void attachReference(const DualAllocator& from, std::ptrdiff_t ptr_offset)
-  {
-    device_ptr_ = const_cast<Pointer>(from.get_device_ptr()) + ptr_offset;
-  }
+  { device_ptr_ = const_cast<Value*>(from.get_device_ptr()) + ptr_offset; }
 
   T* get_device_ptr() { return device_ptr_; }
   const T* get_device_ptr() const { return device_ptr_; }
@@ -105,9 +101,7 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
   static void fill_n(T* ptr, size_t n, const T& value) { qmc_allocator_traits<HostAllocator>::fill_n(ptr, n, value); }
 
   static void attachReference(const DualAlloc& from, DualAlloc& to, std::ptrdiff_t ptr_offset)
-  {
-    to.attachReference(from, ptr_offset);
-  }
+  { to.attachReference(from, ptr_offset); }
 
   /** update to the device, assumes you are copying starting with the implicit host_ptr.
    *
@@ -121,16 +115,12 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
    *  thats an issue. 
    */
   static void updateTo(DualAlloc& alloc, T* host_ptr, size_t n, size_t offset = 0)
-  {
-    DeviceAllocator::memcpy(alloc.get_device_ptr() + offset, host_ptr + offset, n);
-  }
+  { DeviceAllocator::memcpy(alloc.get_device_ptr() + offset, host_ptr + offset, n); }
 
   /** update from the device, assumes you are copying starting with the device_ptr to the implicit host_ptr.
    */
   static void updateFrom(DualAlloc& alloc, T* host_ptr, size_t n, size_t offset = 0)
-  {
-    DeviceAllocator::memcpy(host_ptr + offset, alloc.get_device_ptr() + offset, n);
-  }
+  { DeviceAllocator::memcpy(host_ptr + offset, alloc.get_device_ptr() + offset, n); }
 
   static void deviceSideCopyN(DualAlloc& alloc, size_t to, size_t n, size_t from)
   {

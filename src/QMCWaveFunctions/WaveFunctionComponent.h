@@ -163,6 +163,28 @@ public:
                               const RefVector<ParticleSet::ParticleGradient>& G_list,
                               const RefVector<ParticleSet::ParticleLaplacian>& L_list) const;
 
+  /** Evaluate selected walkers after an all-particle move.
+   * All lists retain their complete crowd ordering; evaluate_mask selects the walkers to evaluate.
+   * The default implementation evaluates selected walkers serially; components can override it
+   * with a batched implementation.
+   */
+  virtual void mw_evaluateLogAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                          const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                          const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                          const std::vector<bool>& evaluate_mask) const;
+
+  /** Resolve an all-particle move after the ParticleSet transaction is resolved.
+   * All lists retain their complete crowd ordering; accepted selects accepted walkers.
+   * The default implementation re-evaluates rejected walkers serially; components can override
+   * it with a batched implementation.
+   */
+  virtual void mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                const RefVectorWithLeader<ParticleSet>& p_list,
+                                                const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                                const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                                const std::vector<bool>& accepted) const;
+
   /** recompute the value of the WaveFunctionComponents which require critical accuracy.
    * needed for Slater Determinants but not needed for most types of WaveFunctionComponents
    */

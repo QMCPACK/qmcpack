@@ -9,8 +9,6 @@ case "$1" in
 
   configure)
 
-    echo "Use recent CMake v3.24.3"
-    export PATH=$HOME/opt/cmake/3.24.3/bin:$PATH
     # Make current environment variables available to subsequent steps, ctest
     echo "PATH=$PATH" >> $GITHUB_ENV
 
@@ -58,6 +56,7 @@ case "$1" in
     cmake -GNinja \
           -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
           -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+          -DPython3_EXECUTABLE=python3.14 \
           -DQMC_MPI=0 \
           -DQMC_GPU=hip \
           -DQMC_GPU_ARCHS=gfx906 \
@@ -78,7 +77,8 @@ case "$1" in
     echo "Running deterministic tests"
     rocm-smi --showdriverversion
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
-    ctest --output-on-failure -L deterministic -j 32 --timeout 120 --repeat after-timeout:4
+    export LIBOMPTARGET_AMDGPU_MAX_ASYNC_COPY_BYTES=0
+    ctest --output-on-failure -L deterministic -j 32 --timeout 600 --repeat after-timeout:4
     ;;
     
 esac

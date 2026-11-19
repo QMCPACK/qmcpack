@@ -1,0 +1,322 @@
+RMG initialization ... 1 image(s) total, 1 per node. 4 MPI processes/image. Thread level 2.
+Warning: localized projectors selected but their diameter exceeds cell size. Switching to delocalized.
+
+
+                     * * * * * * * * * *
+                     *    R   M   G    *
+                     * * * * * * * * * *
+
+     -- A Real Space Multigrid Electronic structure code --
+     --      More information at www.rmgdft.org          --
+
+Code Revision:     7.1.0-master-313012520
+Build Date:        Aug 27 2026  13:45:04
+Start time:        Thu Aug 27 16:57:52 2026
+
+NOTICE: RMG internal pseudopotentials have switched to
+ONCVP from Ultrasoft. You can revert to Ultrasoft by
+adding the input tag internal_pseudo_type="ultrasoft" to
+your input files.
+
+
+Files
+   Control input file:        input.band
+   Data output file:          Waves/wave.out
+
+Run Setup
+    Calculation type:         Band structure calculation.
+    Description:              C2 laptop band-structure analyzer run
+    Orbital Initialization:   LCAO (8 LCAO and 0 random orbitals)
+    Exchange Correlation:     pbe
+    Spin Polarization:        OFF
+    System charge:            Neutral
+
+Processor Topology
+   Total PEs:                 4
+   X direction:               2
+   Y direction:               2
+   Z direction:               1
+   MG Threads/PE:             3
+   OMP Threads/PE:            3
+
+Grid Points  (Linear Anisotropy: 1.000)
+    X:  Total: 16   Per PE: 8   Spacing:0.297 a0  
+    Y:  Total: 16   Per PE: 8   Spacing:0.297 a0  
+    Z:  Total: 16   Per PE: 16   Spacing:0.297 a0  
+
+    Equivalent energy cutoffs (psi,rho):   111.900    447.601 Ry
+
+    Charge density grid:         2 times finer
+
+Coordinate planes
+  Planar Anisotropy: 1.000
+  A0-A1 density:    13.092
+  A0-A2 density:    13.092
+  A1-A2 density:    13.092
+
+
+Lattice (Cell) Setup
+    Type:                       Cubic_FC
+    Volume (a0^3):                 75.87
+    Boundary conditions:        Periodic
+
+    X Basis Vector:       3.360       3.360       0.000 a0
+    Y Basis Vector:       0.000       3.360       3.360 a0
+    Z Basis Vector:       3.360       0.000       3.360 a0
+    X Reci Vector:       0.149       0.149      -0.149 a0
+    Y Reci Vector:      -0.149       0.149       0.149 a0
+    Z Reci Vector:       0.149      -0.149       0.149 a0
+
+K-points
+    Gamma Point Only (real orbitals)
+
+Atoms and States
+    Number of ions:                          2
+    Number of species:                       1
+    Number of states:                        14
+
+Run Parameters
+    SCF Convergence criterion (potential):   1.00e-07
+    SCF Convergence criterion (energy):      1.00e-10
+    Max SCF steps:                           100
+    Max MD steps                             100
+    Timestep for molecular dynamics:          50.00000000
+    Restart data write frequency:            5 MD steps
+
+SCF Cycle Settings
+    Charge density mixing:                   Unknown charge mixing method
+    Hartree Solver:                          PFFT
+    Interpolation type:                      FFT
+
+Adaptive Interpolation
+    On: cmix                                 1.222713044
+
+Finite Difference parameters
+    Kohn Sham FD Order:                      8   
+    Force Gradient Order:                    8   
+    Adaptive Finite Differencing:            On
+    Adaptive CFAC:                           0.479997298
+
+Subspace Diagonalization Options
+    Frequency:                               every 1 SCF step(s)
+    Driver:                                  Lapack
+    Initial diagonalization:                 ON
+    Folded spectrum:                         OFF
+
+Filtering Cutoff  Parameters
+    Wavefunction grid (cparm):               0.800
+    Charge density grid (rhocparm):          1.000
+    Filter factor:                           1.000
+
+Multigrid (MG) Parameters
+    Psi MG levels:                           3
+    Psi global step:                         0.660 
+    Psi pre:                                 2
+    Psi post:                                2
+
+Davidson Parameters
+    Davidson multiplier:                     4
+    Davidson max step:                       8
+    Davidson unocc tol factor:               1000.000
+
+Blas Libraries
+    CPU support with openblas-parallel.
+
+
+Atomic Species Information
+(PP = Pseudopotential, US = Ultrasoft, NC = Norm Conserving)
+-------------------------------------------------------------------------
+|Index|Symbol| Mass|Valence| PP |  Comp  |Local| Local|Nlocal|    PP    |
+|     |      |     |       |Type|Gaussian|  l  |Radius|Radius|Functional|
+-------------------------------------------------------------------------
+|    1|     C| 12.0|   4.00|  NC|    0.66|   -1| 10.91|  7.00|       PBE|
+-------------------------------------------------------------------------
+
+Pseudopotential generation information:
+   C pseudopotential file: ./@Internal
+      Generation info     : Generated using ONCVPSP code by D. R. Hamann
+      Author info         : anonymous
+
+
+Memory usage (Mbytes):     Min        Max       Total
+    wave functions          0.46       0.46       1.84
+    beta-functions          0.00       0.00       0.00
+
+
+
+Initial Ionic Positions And Displacements (Bohr)
+Species      X           Y           Z           dX          dY          dZ
+  C        1.6800      1.6800      1.6800      0.0000      0.0000      0.0000
+  C        0.0000      0.0000      0.0000      0.0000      0.0000      0.0000
+
+
+Initial Ionic Positions And Displacements (Angstrom)
+Species      X           Y           Z           dX          dY          dZ
+  C        0.8890      0.8890      0.8890      0.0000      0.0000      0.0000
+  C        0.0000      0.0000      0.0000      0.0000      0.0000      0.0000
+Davidson converged in 4 steps
+kpt= 0  scf = 0  rms_eig = 1.538512e+01
+Davidson incomplete convergence steps = 8
+kpt= 0  scf = 1  rms_eig = 2.343606e+00
+Davidson converged in 7 steps
+kpt= 0  scf = 2  rms_eig = 3.350096e-04
+Davidson converged in 1 steps
+kpt= 0  scf = 3  rms_eig = 8.163805e-06
+Davidson converged in 2 steps
+kpt= 1  scf = 0  rms_eig = 3.082362e-01
+Davidson incomplete convergence steps = 8
+kpt= 1  scf = 1  rms_eig = 1.317672e-04
+Davidson converged in 1 steps
+kpt= 1  scf = 2  rms_eig = 4.483205e-06
+Davidson converged in 2 steps
+kpt= 2  scf = 0  rms_eig = 8.872492e-01
+Davidson incomplete convergence steps = 8
+kpt= 2  scf = 1  rms_eig = 2.841150e-04
+Davidson converged in 1 steps
+kpt= 2  scf = 2  rms_eig = 2.073881e-05
+Davidson converged in 1 steps
+kpt= 2  scf = 3  rms_eig = 4.321318e-06
+Davidson converged in 3 steps
+kpt= 3  scf = 0  rms_eig = 1.406116e+00
+Davidson incomplete convergence steps = 8
+kpt= 3  scf = 1  rms_eig = 2.421162e-04
+Davidson converged in 1 steps
+kpt= 3  scf = 2  rms_eig = 2.205193e-05
+Davidson converged in 1 steps
+kpt= 3  scf = 3  rms_eig = 4.402746e-06
+Davidson converged in 3 steps
+kpt= 4  scf = 0  rms_eig = 1.967839e+00
+Davidson incomplete convergence steps = 8
+kpt= 4  scf = 1  rms_eig = 1.784643e-04
+Davidson converged in 2 steps
+kpt= 4  scf = 2  rms_eig = 1.133845e-05
+Davidson converged in 1 steps
+kpt= 4  scf = 3  rms_eig = 2.023202e-06
+Davidson converged in 2 steps
+kpt= 5  scf = 0  rms_eig = 4.228336e-01
+Davidson incomplete convergence steps = 8
+kpt= 5  scf = 1  rms_eig = 2.149604e-03
+Davidson converged in 2 steps
+kpt= 5  scf = 2  rms_eig = 1.474278e-05
+Davidson converged in 1 steps
+kpt= 5  scf = 3  rms_eig = 2.605636e-06
+Davidson converged in 2 steps
+kpt= 6  scf = 0  rms_eig = 9.954121e-02
+Davidson incomplete convergence steps = 8
+kpt= 6  scf = 1  rms_eig = 4.240100e-03
+Davidson converged in 2 steps
+kpt= 6  scf = 2  rms_eig = 6.025199e-06
+Davidson converged in 2 steps
+kpt= 7  scf = 0  rms_eig = 5.987089e-01
+Davidson incomplete convergence steps = 8
+kpt= 7  scf = 1  rms_eig = 1.187910e-03
+Davidson converged in 2 steps
+kpt= 7  scf = 2  rms_eig = 1.497861e-05
+Davidson converged in 1 steps
+kpt= 7  scf = 3  rms_eig = 3.106779e-06
+Davidson converged in 2 steps
+kpt= 8  scf = 0  rms_eig = 1.200346e+00
+Davidson incomplete convergence steps = 8
+kpt= 8  scf = 1  rms_eig = 2.496201e-04
+Davidson converged in 1 steps
+kpt= 8  scf = 2  rms_eig = 1.293016e-05
+Davidson converged in 1 steps
+kpt= 8  scf = 3  rms_eig = 2.489502e-06
+Davidson converged in 2 steps
+kpt= 9  scf = 0  rms_eig = 2.559283e+00
+Davidson incomplete convergence steps = 8
+kpt= 9  scf = 1  rms_eig = 2.553408e-03
+Davidson converged in 2 steps
+kpt= 9  scf = 2  rms_eig = 7.951901e-06
+Davidson converged in 3 steps
+kpt= 10  scf = 0  rms_eig = 1.960341e+00
+Davidson incomplete convergence steps = 8
+kpt= 10  scf = 1  rms_eig = 9.818718e-04
+Davidson converged in 3 steps
+kpt= 10  scf = 2  rms_eig = 1.660056e-05
+Davidson converged in 1 steps
+kpt= 10  scf = 3  rms_eig = 2.476844e-06
+Davidson converged in 3 steps
+kpt= 11  scf = 0  rms_eig = 1.238441e+00
+Davidson incomplete convergence steps = 8
+kpt= 11  scf = 1  rms_eig = 6.409682e-04
+Davidson converged in 2 steps
+kpt= 11  scf = 2  rms_eig = 1.887753e-05
+Davidson converged in 1 steps
+kpt= 11  scf = 3  rms_eig = 3.860624e-06
+Davidson converged in 2 steps
+kpt= 12  scf = 0  rms_eig = 5.044784e-01
+Davidson incomplete convergence steps = 8
+kpt= 12  scf = 1  rms_eig = 5.644436e-04
+Davidson converged in 2 steps
+kpt= 12  scf = 2  rms_eig = 8.754947e-06
+
+
+--------TIMING INFORMATION FOR Processor owned the most atoms----------------
+                                        Total time               Per SCF/step
+
+1-TOTAL                                            15.45                5.15
+-----------------------------------------------------------------------------
+  1-TOTAL: Init                                     2.42                0.81
+  1-TOTAL: run                                     13.02                4.34
+
+2-Init                                              2.42                0.81
+-----------------------------------------------------------------------------
+  2-Init: KpointClass                               0.89                0.30
+  2-Init: ReinitIonicPotentials                     0.18                0.06
+  2-Init: radial potentials                         0.70                0.23
+  2-Init: weights                                   0.02                0.01
+
+3-ReinitIonicPotentials                             0.18                0.06
+-----------------------------------------------------------------------------
+  3-ReinitIonicPotentials: get_QI                   0.00                0.00
+  3-ReinitIonicPotentials: get_qqq                  0.00                0.00
+  3-ReinitIonicPotentials: init_nuc                 0.18                0.06
+
+5-Functional                                        0.00                0.00
+
+6-Davidson                                         12.96                4.32
+-----------------------------------------------------------------------------
+  6-Davidson: Betaxpsi                              0.14                0.05
+  6-Davidson: apply hamiltonian                     4.23                1.41
+  6-Davidson: diagonalization                       0.55                0.18
+  6-Davidson: generate residuals                    0.19                0.06
+  6-Davidson: matrix setup/reduce                   0.34                0.11
+  6-Davidson: normalization                         0.16                0.05
+  6-Davidson: orthogonalization                     0.12                0.04
+  6-Davidson: precondition                          7.16                2.39
+  6-Davidson: refresh h_psi and s_psi               0.00                0.00
+  6-Davidson: reset hr,sr,vr                        0.00                0.00
+  6-Davidson: rotate orbitals                       0.03                0.01
+
+AppNls                                              0.03                0.01
+-----------------------------------------------------------------------------
+  AppNls: data_rearrange                            0.00                0.00
+  ---------------------------------------------------------------------------
+    AppNls: data_rearrange: alloc and zeros           0.00                0.00
+    AppNls: data_rearrange: dnm                     0.00                0.00
+    AppNls: data_rearrange: sint                    0.00                0.00
+  AppNls: nv                                        0.02                0.01
+  AppNls: nv_work                                   0.00                0.00
+
+GlobalSums                                          0.25                0.08
+
+Init                                                1.53                0.51
+-----------------------------------------------------------------------------
+  MgridOrtho: 1st stage                             0.12                0.04
+
+Orbital                                             0.01                0.00
+-----------------------------------------------------------------------------
+  Orbital: phase and set                            0.01                0.00
+  Orbital: proj cal                                 0.01                0.00
+
+Weight                                              0.01                0.00
+
+radial beta                                         0.35                0.12
+
+
+------------------------- TIMING INFORMATION FOR THREADS  -------------------
+
+                                           Min            Max            Avg
+GlobalSums                0.72           0.81           0.76
+-----------------------------------------------------------------------------

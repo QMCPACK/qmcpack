@@ -8,13 +8,11 @@
 //
 // File created by: Leon Otis, leon_otis@berkeley.edu, University of California Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/WFOpt/EngineHandle.h"
-#include "Configuration.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
@@ -26,7 +24,7 @@ using ValueType         = qmcplusplus::QMCTraits::ValueType;
 ///This provides a basic test of constructing an EngineHandle object and checking information in it
 TEST_CASE("EngineHandle construction", "[drivers]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
 
   const std::string engine_input("<tmp> </tmp>");

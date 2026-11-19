@@ -8,9 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "QMCDrivers/QMCDriverInput.h"
 #include "EstimatorInputDelegates.h"
@@ -37,5 +36,24 @@ TEST_CASE("QMCDriverInput readXML", "[drivers]")
 
   std::for_each(testing::valid_dmc_input_sections.begin() + testing::valid_dmc_input_dmc_batch_index,
                 testing::valid_dmc_input_sections.end(), xml_test);
+
+  {
+    QMCDriverInput default_input;
+    CHECK(default_input.get_drift_modifier() == "UNR");
+    CHECK(default_input.get_drift_modifier_unr_a() == Approx(1.0));
+
+    const char* custom_drift_xml = R"(
+  <qmc method="vmc" move="pbyp">
+    <parameter name="drift_modifier"> UNR </parameter>
+    <parameter name="drift_UNR_a"> 0.75 </parameter>
+  </qmc>
+)";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(custom_drift_xml));
+    QMCDriverInput qmcdriver_input;
+    qmcdriver_input.readXML(doc.getRoot());
+    CHECK(qmcdriver_input.get_drift_modifier() == "UNR");
+    CHECK(qmcdriver_input.get_drift_modifier_unr_a() == Approx(0.75));
+  }
 }
 } // namespace qmcplusplus

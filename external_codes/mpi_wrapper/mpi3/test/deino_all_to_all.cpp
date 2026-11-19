@@ -1,38 +1,59 @@
-// Copyright 2023 Alfredo A. Correa
+// Copyright 2023-2025 Alfredo A. Correa
 
 // based on http://mpi.deino.net/mpi_functions/MPI_Alltoall.html
 
-#include <mpi3/main.hpp>
-#if not defined(EXAMPI)
+#include <mpi3/communicator.hpp>
+#include <mpi3/environment.hpp>
+
+#ifndef EXAMPI
 #include <mpi3/ostream.hpp>
 #endif
 
+#include <algorithm>
+#include <boost/core/lightweight_test.hpp>
+#include <cstddef>
+#include <iostream>
+#include <iterator>
+#include <numeric>
+#include <vector>
+
 namespace mpi3 = boost::mpi3;
 
-int mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) try {
-	std::size_t chunk = 5;
+auto main(int argc, char** argv) -> int try {
+	mpi3::environment env(argc, argv);
+
+	auto world = env.world();
+
+	std::size_t const chunk = 5;
 
 	auto sb = std::vector<int>(static_cast<std::size_t>(world.size()) * chunk);
-    std::iota(sb.begin(), sb.end(), 40000 + world.rank()*100);
+	std::iota(sb.begin(), sb.end(), 40000 + (world.rank() * 100));  // NOLINT(boost-use-ranges) for C++20, use std::ranges::iota
 
 	auto rb = std::vector<int>(static_cast<std::size_t>(world.size()) * chunk);
 
-	auto sz = static_cast<std::size_t>(world.size()); assert( sz != 0 );
-	assert( sb.size() % sz == 0);
+	auto sz = static_cast<std::size_t>(world.size());
+	BOOST_TEST( sz != 0 );
+	BOOST_TEST( sb.size() % sz == 0);
 
-	world.all_to_all_n(sb.data(), sb.size()/sz, rb.data());
+	world.all_to_all_n(sb.data(), sb.size() / sz, rb.data());
 
-#if not defined(EXAMPI)
-    mpi3::ostream wout(world);
-    std::copy(sb.begin(), sb.end(), std::ostream_iterator<int>(wout<<"sb = ", ", ")); wout<<std::endl;
-    std::copy(rb.begin(), rb.end(), std::ostream_iterator<int>(wout<<"rb = ", ", ")); wout<<std::endl;
+#ifndef EXAMPI
+	mpi3::ostream wout(world);
+	std::copy(sb.begin(), sb.end(), std::ostream_iterator<int>(wout << "sb = ", ", "));  // NOLINT(boost-use-ranges) for C++20, use std::ranges::copy
+	wout << '\n'
+	     << std::flush;
+	std::copy(rb.begin(), rb.end(), std::ostream_iterator<int>(wout << "rb = ", ", "));  // NOLINT(boost-use-ranges) for C++20, use std::ranges::copy
+	wout << '\n'
+	     << std::flush;
 
-	world.all_to_all_inplace_n(sb.data(), sb.size()/sz);
+	world.all_to_all_inplace_n(sb.data(), sb.size() / sz);
 	// do_all_to_all_n(world, sb.data(), sb.size(), sb.data());
 	// world.all_to_all_n(sb.data(), sb.size()); //  , sb.data());
 	// std::copy(sb.begin(), sb.end(), std::ostream_iterator<int>(wout<<"sb (inplace) = ", ", ")); wout<<std::endl;
-	assert(sb == rb);
+	BOOST_TEST(sb == rb);
 #endif
 
-	return 0;
-} catch(...) {return 0;}
+	return boost::report_errors();
+} catch(...) {
+	return 1;
+}

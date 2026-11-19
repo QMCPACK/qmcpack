@@ -8,9 +8,8 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <regex>
 #include "OhmmsData/Libxml2Doc.h"
@@ -57,7 +56,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   const double grad_precision  = std::is_same<SPO_precision, float_tag>::value ? 1.3e-4 : 1e-8;
   const double ratio_precision = std::is_same<SPO_precision, float_tag>::value ? 2e-4 : 1e-5;
 #endif
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const DynamicCoordinateKind kind_selected =
       offload_switches.jas ? DynamicCoordinateKind::DC_POS_OFFLOAD : DynamicCoordinateKind::DC_POS;

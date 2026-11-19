@@ -36,12 +36,10 @@ template<typename ST>
 class AtomicOrbitals
 {
 public:
-  static const int D           = 3;
-  using AtomicSplineType       = typename bspline_traits<ST, 1>::SplineType;
-  using AtomicBCType           = typename bspline_traits<ST, 1>::BCType;
-  using AtomicSingleSplineType = UBspline_1d_d;
-  using PointType              = TinyVector<ST, D>;
-  using value_type             = ST;
+  static const int D = 3;
+  using AtomicBCType = typename bspline_traits<ST, 1>::BCType;
+  using PointType    = TinyVector<ST, D>;
+  using value_type   = ST;
 
   using vContainer_type = aligned_vector<ST>;
 
@@ -136,7 +134,7 @@ public:
 
   inline void flush_zero() { SplineInst->flush_zero(); }
 
-  inline void set_spline(AtomicSingleSplineType* spline, int lm, int ispline)
+  inline void set_spline(UBspline_1d_d* spline, int lm, int ispline)
   { SplineInst->copy_spline(spline, lm * Npad + ispline, 0, BaseN); }
 
   bool read_splines(hdf_archive& h5f);

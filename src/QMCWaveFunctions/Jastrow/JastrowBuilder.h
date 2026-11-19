@@ -27,7 +27,7 @@ class OrbitalConstraintsBase;
 class JastrowBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  JastrowBuilder(Communicate* comm, ParticleSet& p, const PSetMap& psets);
+  JastrowBuilder(Communicate& comm, ParticleSet& p, const PSetMap& psets);
 
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
@@ -44,8 +44,6 @@ private:
   std::string funcOpt;
   /// \xmla{jastrow,spin}
   std::string spinOpt;
-  /// \xmla{jastrow,transform}
-  std::string transformOpt;
   /// \xmla{jastrow,source}
   std::string sourceOpt;
   ///reset the options

@@ -103,7 +103,7 @@ bool readComplexOrReal(hdf_archive& dump, std::string name, boost::multi::array<
     // Real integrals.
     boost::multi::array<RealType, 2> out_real({shape[0], shape[1]});
     dump.readEntry(out_real, name);
-    std::copy_n(out_real.origin(), out_real.num_elements(), out.origin());
+    std::copy_n(out_real.base(), out_real.num_elements(), out.base());
     return true;
   }
   else

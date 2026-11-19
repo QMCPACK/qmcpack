@@ -45,7 +45,7 @@ public:
                          QMCHamiltonian& h,
                          SampleStack& samples,
                          const std::vector<int>& walkers_per_crowd,
-                         Communicate* comm);
+                         Communicate& comm);
 
   ///Destructor
   ~QMCCostFunctionBatched() override;
@@ -53,11 +53,6 @@ public:
   void getConfigurations(const std::string& aroot) override;
   void checkConfigurations(EngineHandle& handle) override;
   void checkConfigurationsSR(EngineHandle& handle) override;
-#ifdef HAVE_LMY_ENGINE
-  void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                  DescentEngine& descentEngineObj,
-                                  const std::string& MinMethod) override;
-#endif
 
 
   void resetPsi(bool final_reset = false) override;
@@ -67,9 +62,6 @@ public:
   void calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec) override;
 
 protected:
-  /// H components used in correlated sampling. It can be KE or KE+NLPP
-  std::vector<std::string> H_KE_node_names_;
-
   Matrix<Return_rt> RecordsOnNode_;
 
   /** Temp derivative properties and Hderivative properties of all the walkers
@@ -84,18 +76,13 @@ protected:
   // Number of samples local to each MPI rank
   int rank_local_num_samples_;
 
-  // Number of walkers per crowd. Size of vector is number of crowds.
+  // Positive batch capacities of active optimization crowds; empty sampling crowds are omitted.
   std::vector<int> walkers_per_crowd_;
 
   NewTimer& check_config_timer_;
   NewTimer& corr_sampling_timer_;
   NewTimer& fill_timer_;
 
-
-#ifdef HAVE_LMY_ENGINE
-  size_t total_samples();
-  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>& EngineObj) override;
-#endif
 
   friend testing::LinearMethodTestSupport;
 };

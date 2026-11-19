@@ -8,9 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "QMCWaveFunctions/CompositeSPOSet.h"
 #include <exception>
 #include <MinimalParticlePool.h>
@@ -20,13 +19,12 @@
 namespace qmcplusplus
 {
 
-TEST_CASE("CompositeSPO::diamond_1x1x1", "[wavefunction")
+TEST_CASE("CompositeSPO::diamond_1x1x1", "[wavefunction]")
 {
   Libxml2Document doc;
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
   outputManager.pause();
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);

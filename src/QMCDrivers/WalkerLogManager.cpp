@@ -27,11 +27,11 @@ TimerNameList_t<WalkerLogManager::Timer> WalkerLogManager::create_names(const st
   return timer_names;
 }
 
-WalkerLogManager::WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate* comm)
-    : walker_log_timers_(getGlobalTimerManager(), create_names(my_name_), timer_level_medium)
+WalkerLogManager::WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate& comm)
+    : file_root(series_root),
+      communicator(comm),
+      walker_log_timers_(getGlobalTimerManager(), create_names(my_name_), timer_level_medium)
 {
-  communicator            = comm;
-  file_root               = series_root;
   bool driver_allows_logs = allow_logs; // driver allows logs or not
 
   bool logs_requested = inp.present; // xml input present or not
@@ -277,8 +277,8 @@ void WalkerLogManager::openHDFFile(const RefVector<WalkerLogCollector>& collecto
   if (collectors.size() == 0)
     throw std::runtime_error("WalkerLogManager::openHDFFile  no log collectors exist, cannot open file");
   // each rank opens a wlogs.h5 file
-  int nprocs = communicator->size();
-  int rank   = communicator->rank();
+  int nprocs = communicator.size();
+  int rank   = communicator.rank();
   std::array<char, 32> ptoken;
   std::string file_name = file_root;
   if (nprocs > 1)

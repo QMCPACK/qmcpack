@@ -14,10 +14,20 @@ if(NOT QMC_COMPLEX)
   list(APPEND LIH_SHORT "eeenergy" "3.488827 0.00088") # e-e energy
   list(APPEND LIH_SHORT "samples" "9600000 0.0") # samples
   qmc_run_and_check(
-    short-LiH_ae_qp-vmc_hf_noj
+    short-LiH_ae-sd_lcao_hf_qp_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_qp"
-    vmc_short_noj
     vmc_short_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    LIH_SHORT # VMC
+  )
+
+  qmc_run_and_check(
+    short-LiH_ae-sd_lcao_hf_qp_noj-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_qp"
+    vmcbatch_short_noj.in.xml
     1
     16
     TRUE
@@ -30,10 +40,20 @@ if(NOT QMC_COMPLEX)
   list(APPEND LIH_LONG "eeenergy" "3.488827 0.00026") # e-e energy
   list(APPEND LIH_LONG "samples" "96000000 0.0") # samples
   qmc_run_and_check(
-    long-LiH_ae_qp-vmc_hf_noj
+    long-LiH_ae-sd_lcao_hf_qp_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_qp"
-    vmc_long_noj
     vmc_long_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    LIH_LONG # VMC
+  )
+
+  qmc_run_and_check(
+    long-LiH_ae-sd_lcao_hf_qp_noj-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_qp"
+    vmcbatch_long_noj.in.xml
     1
     16
     TRUE
@@ -45,3 +65,6 @@ else()
   message(VERBOSE
           "Skipping LiH_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

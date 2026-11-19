@@ -86,9 +86,7 @@ void J1OrbitalSoA<FT>::checkSanity() const
 
 template<typename FT>
 void J1OrbitalSoA<FT>::createResource(ResourceCollection& collection) const
-{
-  collection.addResource(std::make_unique<J1OrbitalSoAMultiWalkerMem<RealType>>());
-}
+{ collection.addResource(std::make_unique<J1OrbitalSoAMultiWalkerMem<RealType>>()); }
 
 template<typename FT>
 void J1OrbitalSoA<FT>::acquireResource(ResourceCollection& collection,

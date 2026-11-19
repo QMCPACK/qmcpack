@@ -10,8 +10,6 @@ from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack
 from nexus import vmc
 
-from nexus.structure import *
-
 from nexus.qmcpack_input import dm1b
 from nexus.qmcpack_input import sposet
 
@@ -36,7 +34,7 @@ dia16 = generate_physical_system(
     tiling = (1,1,1),
     C      = 4
     )
-              
+
 # k-mesh used for density
 scf_kg = dia16.structure.kgrid_from_kspacing(0.5) # Get SCF kmesh from k-spacing
 

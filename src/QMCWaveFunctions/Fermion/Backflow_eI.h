@@ -35,9 +35,7 @@ public:
   std::vector<int> offsetPrms;
 
   Backflow_eI(ParticleSet& ions, ParticleSet& els) : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(ions))
-  {
-    resize(NumTargets, NumCenters);
-  }
+  { resize(NumTargets, NumCenters); }
 
   //  build RadFun manually from builder class
   Backflow_eI(ParticleSet& ions, ParticleSet& els, FT* RF)

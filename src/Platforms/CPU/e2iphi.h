@@ -18,7 +18,6 @@
 // Supported libraries and defines:
 //
 // HAVE_MKL_VML : Intel MKL VML, include with MKL
-// HAVE_MASSV   : IBM MASSV library
 
 #ifndef QMCPLUSPLUS_E2IPHI_H
 #define QMCPLUSPLUS_E2IPHI_H
@@ -28,21 +27,7 @@
 #include <complex>
 #include "CPU/math.hpp"
 
-#if defined(HAVE_MASSV)
-#include <massv.h>
-inline void eval_e2iphi(int n, double* restrict phi, double* restrict c, double* restrict s) { vsincos(s, c, phi, &n); }
-inline void eval_e2iphi(int n, float* restrict phi, float* restrict c, float* restrict s) { vssincos(s, c, phi, &n); }
-
-inline void eval_e2iphi(int n, double* restrict phi, std::complex<double>* restrict z)
-{
-  vcosisin((double _Complex*)z, phi, &n);
-}
-
-inline void eval_e2iphi(int n, float* restrict phi, std::complex<float>* restrict z)
-{
-  vscosisin((float _Complex*)z, phi, &n);
-}
-#elif defined(HAVE_MKL_VML)
+#if defined(HAVE_MKL_VML)
 #include <mkl_vml_functions.h>
 inline void eval_e2iphi(int n, double* restrict phi, double* restrict c, double* restrict s) { vdSinCos(n, phi, s, c); }
 

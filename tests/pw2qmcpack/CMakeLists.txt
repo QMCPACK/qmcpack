@@ -35,7 +35,7 @@ else()
     QE_TEST_NAME)
 
   #MESSAGE("${QE_TEST_NAME}")
-  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-r1-t16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc-r1-t16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME)
 
   # These values are slightly different from those in tests/systems
   # because the h5 is generated in different ways.
@@ -43,11 +43,10 @@ else()
   list(APPEND LIH_GAMMA_SCALARS "localecp" "-11.78311 0.05")
   list(APPEND LIH_GAMMA_SCALARS "samples" "1600000 0.0")
 
-  set(THIS_TEST_NAME "${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj")
+  set(THIS_TEST_NAME "${QE_TEST_NAME}-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc")
   qmc_run_and_check(
     ${THIS_TEST_NAME}
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-gamma
     hf_vmc_LiH-gamma.xml
     1
     16
@@ -60,7 +59,7 @@ else()
     set_tests_properties(${THIS_TEST_NAME}-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
   endif()
 
-  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp-x-vmc_hf_noj-r1-t16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc-r1-t16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME)
 
   # These values are slightly different from those in tests/systems
   # because the h5 is generated in different ways.
@@ -69,9 +68,8 @@ else()
   list(APPEND LIH_X_SCALARS "samples" "1600000 0.0")
 
   qmc_run_and_check(
-    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj
+    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-x
     hf_vmc_LiH-x.xml
     1
     16
@@ -80,7 +78,7 @@ else()
     LIH_X_SCALARS # VMC
   )
 
-  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
   run_qe_test(
     qe-LiH-unpolarized
@@ -94,12 +92,11 @@ else()
     LiH
     QE_TEST_NAME)
 
-  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-r1-t16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc-r1-t16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME)
 
   qmc_run_and_check(
-    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-gamma
     hf_vmc_LiH-gamma.xml
     1
     16
@@ -108,14 +105,13 @@ else()
     LIH_GAMMA_SCALARS # VMC
   )
 
-  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
-  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp-x-vmc_hf_noj-r1-t16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc-r1-t16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME)
 
   qmc_run_and_check(
-    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj
+    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-x
     hf_vmc_LiH-x.xml
     1
     16
@@ -124,7 +120,7 @@ else()
     LIH_X_SCALARS # VMC
   )
 
-  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
   # test case for no wf_collect
   run_qe_test(
@@ -139,12 +135,11 @@ else()
     LiH
     QE_TEST_NAME)
 
-  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-r1-t16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc-r1-t16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME)
 
   qmc_run_and_check(
-    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-gamma
     hf_vmc_LiH-gamma.xml
     1
     16
@@ -153,14 +148,13 @@ else()
     LIH_GAMMA_SCALARS # VMC
   )
 
-  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
-  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp-x-vmc_hf_noj-r1-t16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc-r1-t16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME)
 
   qmc_run_and_check(
-    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj
+    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-x
     hf_vmc_LiH-x.xml
     1
     16
@@ -169,7 +163,7 @@ else()
     LIH_X_SCALARS # VMC
   )
 
-  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
   run_qe_test(
     qe-LiH-unpolarized-no-collect
@@ -183,12 +177,11 @@ else()
     LiH
     QE_TEST_NAME)
 
-  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-r1-t16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc-r1-t16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME)
 
   qmc_run_and_check(
-    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-gamma
     hf_vmc_LiH-gamma.xml
     1
     16
@@ -197,14 +190,13 @@ else()
     LIH_GAMMA_SCALARS # VMC
   )
 
-  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
-  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp-x-vmc_hf_noj-r1-t16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc-r1-t16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME)
 
   qmc_run_and_check(
-    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj
+    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    hf_vmc_LiH-x
     hf_vmc_LiH-x.xml
     1
     16
@@ -213,7 +205,7 @@ else()
     LIH_X_SCALARS # VMC
   )
 
-  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
   # test case for spin polarized case
   run_qe_test(
@@ -228,12 +220,11 @@ else()
     LiH
     QE_TEST_NAME)
 
-  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-r1-t16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc-r1-t16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME)
 
   qmc_run_and_check(
-    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/fake_nspin2"
-    hf_vmc_LiH-gamma
     hf_vmc_LiH-gamma.xml
     1
     16
@@ -242,14 +233,13 @@ else()
     LIH_GAMMA_SCALARS # VMC
   )
 
-  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
-  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp-x-vmc_hf_noj-r1-t16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc-r1-t16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME)
 
   qmc_run_and_check(
-    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj
+    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/fake_nspin2"
-    hf_vmc_LiH-x
     hf_vmc_LiH-x.xml
     1
     16
@@ -258,7 +248,7 @@ else()
     LIH_X_SCALARS # VMC
   )
 
-  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
   # test case for no wf_collect
   run_qe_test(
@@ -273,12 +263,11 @@ else()
     LiH
     QE_TEST_NAME)
 
-  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-r1-t16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc-r1-t16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME)
 
   qmc_run_and_check(
-    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/fake_nspin2"
-    hf_vmc_LiH-gamma
     hf_vmc_LiH-gamma.xml
     1
     16
@@ -287,14 +276,13 @@ else()
     LIH_GAMMA_SCALARS # VMC
   )
 
-  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
-  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp-x-vmc_hf_noj-r1-t16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc-r1-t16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME)
 
   qmc_run_and_check(
-    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj
+    ${QE_TEST_NAME}-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/fake_nspin2"
-    hf_vmc_LiH-x
     hf_vmc_LiH-x.xml
     1
     16
@@ -303,7 +291,7 @@ else()
     LIH_X_SCALARS # VMC
   )
 
-  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  set_tests_properties(${QE_TEST_NAME}-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
   # test case for O atom
   # from a long run
@@ -333,12 +321,11 @@ else()
     atomO
     QE_TEST_NAME)
 
-  softlink_h5(${QE_TEST_NAME} atomO_pp-vmc_sdj-r1-t16 atomO atomO.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} atomO_pp-sd_jas-vmc-r1-t16 atomO atomO.pwscf.h5 LAST_TEST_NAME)
 
   qmc_run_and_check(
-    ${QE_TEST_NAME}-atomO_pp-vmc_sdj
+    ${QE_TEST_NAME}-atomO_pp-sd_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/atomO_pp"
-    qmc_short
     qmc_short.in.xml
     1
     16
@@ -347,18 +334,17 @@ else()
     O_ATOM_SCALARS # VMC
   )
 
-  set_tests_properties(${QE_TEST_NAME}-atomO_pp-vmc_sdj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  set_tests_properties(${QE_TEST_NAME}-atomO_pp-sd_jas-vmc-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
   # pw2casino Kinetic 11.64963538
   # measured   Kinetic 11.64798 +/- 0.00017
   list(APPEND O_ATOM_NOJ_SCALARS "kinetic" "11.64798 0.1")
 
-  softlink_h5(${QE_TEST_NAME} atomO_pp-vmc_noj-r1-t16 atomO atomO.pwscf.h5 LAST_TEST_NAME)
+  softlink_h5(${QE_TEST_NAME} atomO_pp-sd_hf_noj-vmc-r1-t16 atomO atomO.pwscf.h5 LAST_TEST_NAME)
 
   qmc_run_and_check(
-    ${QE_TEST_NAME}-atomO_pp-vmc_noj
+    ${QE_TEST_NAME}-atomO_pp-sd_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/atomO_pp"
-    qmc_short_noj
     qmc_short_noj.in.xml
     1
     16
@@ -367,6 +353,9 @@ else()
     O_ATOM_NOJ_SCALARS # VMC
   )
 
-  set_tests_properties(${QE_TEST_NAME}-atomO_pp-vmc_noj-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  set_tests_properties(${QE_TEST_NAME}-atomO_pp-sd_hf_noj-vmc-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
 
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

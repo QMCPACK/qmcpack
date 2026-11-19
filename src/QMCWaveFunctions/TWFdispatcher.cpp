@@ -12,6 +12,7 @@
 
 #include "TWFdispatcher.h"
 #include <cassert>
+#include <stdexcept>
 #include "TrialWaveFunction.h"
 
 namespace qmcplusplus
@@ -27,6 +28,26 @@ void TWFdispatcher::flex_evaluateLog(const RefVectorWithLeader<TrialWaveFunction
   else
     for (size_t iw = 0; iw < wf_list.size(); iw++)
       wf_list[iw].evaluateLog(p_list[iw]);
+}
+
+void TWFdispatcher::flex_evaluateLogAllParticles(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                 const RefVectorWithLeader<ParticleSet>& p_list,
+                                                 const std::vector<bool>& evaluate_mask) const
+{
+  if (!use_batch_)
+    throw std::runtime_error(
+        "All-particle TrialWaveFunction transactions do not support walker serialization within a crowd.");
+  TrialWaveFunction::mw_evaluateLogAllParticles(wf_list, p_list, evaluate_mask);
+}
+
+void TWFdispatcher::flex_accept_rejectMoveAllParticles(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                                       const std::vector<bool>& accepted) const
+{
+  if (!use_batch_)
+    throw std::runtime_error(
+        "All-particle TrialWaveFunction transactions do not support walker serialization within a crowd.");
+  TrialWaveFunction::mw_accept_rejectMoveAllParticles(wf_list, p_list, accepted);
 }
 
 void TWFdispatcher::flex_recompute(const RefVectorWithLeader<TrialWaveFunction>& wf_list,

@@ -10,10 +10,20 @@ if(NOT QMC_COMPLEX)
   list(APPEND C4_SD_AE_QP_SHORT "ionion" "56.960598986000 0.001000000000")
 
   qmc_run_and_check(
-    short-C4_sd-ae-qp-vmc
+    short-C4_ae-sd_lcao_qp_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-    qmc_short-SD-C4_AE_Mol_QP
     qmc_short-SD-C4_AE_Mol_QP.in.xml
+    1
+    16
+    TRUE
+    0
+    C4_SD_AE_QP_SHORT # VMC
+  )
+
+  qmc_run_and_check(
+    short-C4_ae-sd_lcao_qp_jas-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
+    qmc_short-SD-C4_AE_Mol_QP-batch.in.xml
     1
     16
     TRUE
@@ -23,10 +33,20 @@ if(NOT QMC_COMPLEX)
 
   # Test case where number of orbitals is greater than the number of electrons
   qmc_run_and_check(
-    short-C4_sd-ae-large-qp-vmc
+    short-C4_large_ae-sd_lcao_qp_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-    qmc_short-SD-C4_AE_Mol_large_QP
     qmc_short-SD-C4_AE_Mol_large_QP.in.xml
+    1
+    16
+    TRUE
+    0
+    C4_SD_AE_QP_SHORT # VMC
+  )
+
+  qmc_run_and_check(
+    short-C4_large_ae-sd_lcao_qp_jas-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
+    qmc_short-SD-C4_AE_Mol_large_QP-batch.in.xml
     1
     16
     TRUE
@@ -42,10 +62,20 @@ if(NOT QMC_COMPLEX)
   list(APPEND C4_SD_AE_QP_LONG "ionion" "56.960598986000 0.001000000000")
 
   qmc_run_and_check(
-    long-C4_sd-ae-qp-vmc
+    long-C4_ae-sd_lcao_qp_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-    qmc_long-SD-C4_AE_Mol_QP
     qmc_long-SD-C4_AE_Mol_QP.in.xml
+    1
+    16
+    TRUE
+    0
+    C4_SD_AE_QP_LONG # VMC
+  )
+
+  qmc_run_and_check(
+    long-C4_ae-sd_lcao_qp_jas-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
+    qmc_long-SD-C4_AE_Mol_QP-batch.in.xml
     1
     16
     TRUE
@@ -68,10 +98,20 @@ if(NOT QMC_COMPLEX)
   list(APPEND C4_MD_AE_EXCITED_QP_SHORT "ionion" "56.960598986000 0.001000000000")
 
   qmc_run_and_check(
-    short-C4_md-ae-excited-qp-vmc
+    short-C4_excited_ae-msd_lcao_qp_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-    qmc_short-MD-C4_AE_Mol_Excited_QP
     qmc_short-MD-C4_AE_Mol_Excited_QP.in.xml
+    1
+    16
+    TRUE
+    0
+    C4_MD_AE_EXCITED_QP_SHORT # VMC
+  )
+
+  qmc_run_and_check(
+    short-C4_excited_ae-msd_lcao_qp_jas-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
+    qmc_short-MD-C4_AE_Mol_Excited_QP-batch.in.xml
     1
     16
     TRUE
@@ -87,10 +127,20 @@ if(NOT QMC_COMPLEX)
   list(APPEND C4_MD_AE_GROUND_QP_SHORT "ionion" "56.960598986000 0.001000000000")
 
   qmc_run_and_check(
-    short-C4_md-ae-ground-qp-vmc
+    short-C4_ground_ae-msd_lcao_qp_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-    qmc_short-MD-C4_AE_Mol_Ground_QP
     qmc_short-MD-C4_AE_Mol_Ground_QP.in.xml
+    1
+    16
+    TRUE
+    0
+    C4_MD_AE_GROUND_QP_SHORT # VMC
+  )
+
+  qmc_run_and_check(
+    short-C4_ground_ae-msd_lcao_qp_jas-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
+    qmc_short-MD-C4_AE_Mol_Ground_QP-batch.in.xml
     1
     16
     TRUE
@@ -101,7 +151,7 @@ if(NOT QMC_COMPLEX)
   #--- Deterministic
 
   # Deterministic tests for 1 node & 1 thread
-  ## FOR det_qmc_short-SD-C4_AE_Mol_QP.s000.scalar.dat
+  ## FOR det_qmc-SD-C4_AE_Mol_QP.s000.scalar.dat
   #  LIST(APPEND DET_C4_SD_AE_QP "kinetic" "25.57801835 0.00001")
   #  LIST(APPEND DET_C4_SD_AE_QP "totenergy" "-147.14097018 0.00001")
   #  LIST(APPEND DET_C4_SD_AE_QP "potential" "-172.71898854 0.00001")
@@ -110,14 +160,14 @@ if(NOT QMC_COMPLEX)
   #  LIST(APPEND DET_C4_SD_AE_QP "samples" "9 0.0")
   #  QMC_RUN_AND_CHECK(deterministic-C4_sd-ae-qp-vmc
   #                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-  #                    det_qmc_short-SD-C4_AE_Mol_QP
-  #                    det_qmc_short-SD-C4_AE_Mol_QP.in.xml
+  #                    det_qmc-SD-C4_AE_Mol_QP
+  #                    det_qmc_SD-C4_AE_Mol_QP.in.xml
   #                    1 1
   #                    TRUE
   #                    0 DET_C4_SD_AE_QP # VMC
   #                    )
 
-  ## FOR det_qmc_short-MD-C4_AE_Mol_Ground_QP.s000.scalar.dat
+  ## FOR det_qmc-MD-C4_AE_Mol_Ground_QP.s000.scalar.dat
   #  LIST(APPEND DET_C4_MD_AE_GROUND_QP "kinetic" "99.09812052 0.00001")
   #  LIST(APPEND DET_C4_MD_AE_GROUND_QP "totenergy" "-146.85148712 0.00001")
   #  LIST(APPEND DET_C4_MD_AE_GROUND_QP "potential" "-245.94960764 0.00001")
@@ -126,14 +176,14 @@ if(NOT QMC_COMPLEX)
   #  LIST(APPEND DET_C4_MD_AE_GROUND_QP "samples" "9 0.0")
   #  QMC_RUN_AND_CHECK(deterministic-C4_md-ae-ground-qp-vmc
   #                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-  #                    det_qmc_short-MD-C4_AE_Mol_Ground_QP
-  #                    det_qmc_short-MD-C4_AE_Mol_Ground_QP.in.xml
+  #                    det_qmc-MD-C4_AE_Mol_Ground_QP
+  #                    det_qmc_MD-C4_AE_Mol_Ground_QP.in.xml
   #                    1 1
   #                    TRUE
   #                    0 DET_C4_MD_AE_GROUND_QP # VMC
   #                    )
 
-  ## FOR det_qmc_short-MD-C4_AE_Mol_Excited_QP.s000.scalar.dat
+  ## FOR det_qmc-MD-C4_AE_Mol_Excited_QP.s000.scalar.dat
   #  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "kinetic" "25.92674520 0.00001")
   #  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "totenergy" "-145.57864234 0.00001")
   #  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "potential" "-171.50538754 0.00001")
@@ -142,8 +192,8 @@ if(NOT QMC_COMPLEX)
   #  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "samples" "9 0.0")
   #  QMC_RUN_AND_CHECK(deterministic-C4_md-ae-excited-qp-vmc
   #                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-  #                    det_qmc_short-MD-C4_AE_Mol_Excited_QP
-  #                    det_qmc_short-MD-C4_AE_Mol_Excited_QP.in.xml
+  #                    det_qmc-MD-C4_AE_Mol_Excited_QP
+  #                    det_qmc_MD-C4_AE_Mol_Excited_QP.in.xml
   #                    1 1
   #                    TRUE
   #                    0 DET_C4_MD_AE_EXCITED_QP # VMC
@@ -152,3 +202,6 @@ if(NOT QMC_COMPLEX)
 else()
   message(VERBOSE "Skipping C4_ae tests because Pure real WF are not supported by complex build (QMC_COMPLEX=1)")
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

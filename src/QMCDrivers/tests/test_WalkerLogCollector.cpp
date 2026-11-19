@@ -8,9 +8,8 @@
 //
 // File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Message/Communicate.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
@@ -31,8 +30,8 @@ TEST_CASE("WalkerLogCollector::collect", "[estimators]")
   app_log() << "\n\n=======================================================\n";
   app_log() << "test WalkerLogCollector::collect\n";
 
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project;
+  Communicate& comm(*OHMMS::Controller);
 
 
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
@@ -51,9 +50,7 @@ TEST_CASE("WalkerLogCollector::collect", "[estimators]")
   UPtrVector<TrialWaveFunction> twfs;
   std::vector<ParticleSet> psets;
 
-  int num_walkers   = 4;
-  int num_electrons = particle_pool.getParticleSet("e")->getTotalNum();
-  int num_ions      = particle_pool.getParticleSet("ion")->getTotalNum();
+  int num_walkers = 4;
 
   for (int iw = 0; iw < num_walkers; ++iw)
   {

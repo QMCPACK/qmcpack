@@ -8,8 +8,8 @@
 //
 // File created by: Joshua Townsend, jptowns@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -18,7 +18,6 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "BsplineFactory/EinsplineSetBuilder.h"
 #include "BsplineFactory/EinsplineSpinorSetBuilder.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineC2C.h"
 #include "Utilities/for_testing/checkMatrix.hpp"
 
 #include <stdio.h>
@@ -32,7 +31,7 @@ namespace qmcplusplus
 TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
 {
   // How to get rid of all this annoying boilerplate?
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // diamondC_1x1x1
   Lattice lattice;
@@ -169,7 +168,7 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
 TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
 {
   // How to get rid of all this annoying boilerplate?
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // diamondC_1x1x1
   Lattice lattice;
@@ -379,7 +378,7 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
 TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
 {
   // How to get rid of all this annoying boilerplate?
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // diamondC_1x1x1
   Lattice lattice;
@@ -684,7 +683,7 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
 TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
 {
   // How to get rid of all this annoying boilerplate?
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // diamondC_1x1x1
   Lattice lattice;

@@ -97,16 +97,6 @@ struct PtclOnLatticeTraits
   using SingleParticleValue = QTFull::ValueType;
 };
 
-// For unit tests
-//  Check if we are compiling with Catch defined.  Could use other symbols if needed.
-#ifdef TEST_CASE
-#ifdef QMC_COMPLEX
-using ValueApprox = Catch::Detail::ComplexApprox;
-#else
-using ValueApprox = Catch::Detail::Approx;
-#endif
-#endif
-
 } // namespace qmcplusplus
 
 #endif

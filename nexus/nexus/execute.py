@@ -15,10 +15,12 @@
 #====================================================================#
 
 
-from subprocess import Popen, PIPE
-from .developer import to_str
+from subprocess import PIPE, Popen
 
-def execute(command,verbose=False,skip=False):
+from .utilities import to_str
+
+
+def execute(command,*,verbose=False,skip=False):
     out,err = '',''
     returncode = 0
     if skip:

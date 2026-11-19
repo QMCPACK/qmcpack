@@ -17,7 +17,6 @@ SelfHealingOverlapInput::SelfHealingOverlapInput(xmlNodePtr cur)
   input_section_.readXML(cur);
   auto setIfInInput = LAMBDA_setIfInInput;
   setIfInInput(name_, "name");
-  setIfInInput(type_, "type");
 }
 
 } // namespace qmcplusplus

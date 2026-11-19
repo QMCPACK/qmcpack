@@ -10,10 +10,20 @@ if(NOT QMC_COMPLEX)
   #  LIST(APPEND LIH_PP_SCALARS "flux" "0.0 0.0025")
 
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_noj
+    short-LiH_pp-sd_lcao_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_noj
     vmc_hf_noj.in.xml
+    1
+    16
+    TRUE
+    0
+    LIH_PP_SCALARS # VMC
+  )
+
+  qmc_run_and_check(
+    short-LiH_pp-sd_lcao_hf_noj-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+    vmcbatch_hf_noj.in.xml
     1
     16
     TRUE
@@ -32,9 +42,8 @@ if(NOT QMC_COMPLEX)
   #  LIST(APPEND LIH_PP_SCALARS "flux" "-0.0082 0.0051")
 
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_sdj_xml
+    short-LiH_pp-sd_lcao_hf_XML_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_sdj_xml
     vmc_hf_sdj_xml.xml
     1
     16
@@ -44,9 +53,19 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_sdj_xml
+    short-LiH_pp-sd_lcao_hf_XML_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_sdj_xml
+    vmcbatch_hf_sdj_xml.xml
+    1
+    16
+    TRUE
+    0
+    LIH_PP_XML_SCALARS # VMC
+  )
+
+  qmc_run_and_check(
+    short-LiH_pp-sd_lcao_hf_XML_jas-vmc
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmc_hf_sdj_xml.xml
     16
     1
@@ -55,11 +74,22 @@ if(NOT QMC_COMPLEX)
     LIH_PP_XML_SCALARS # VMC
   )
 
+  
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_sdj_xml
+    short-LiH_pp-sd_lcao_hf_XML_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_sdj_xml
     vmc_hf_sdj_xml.xml
+    4
+    4
+    TRUE
+    0
+    LIH_PP_XML_SCALARS # VMC
+  )
+
+  qmc_run_and_check(
+    short-LiH_pp-sd_lcao_hf_XML_jas-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+    vmcbatch_hf_sdj_xml.xml
     4
     4
     TRUE
@@ -72,9 +102,8 @@ if(NOT QMC_COMPLEX)
   #
 
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_sdj_hdf5
+    short-LiH_pp-sd_lcao_hf_H5_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_sdj_hdf5
     vmc_hf_sdj_hdf5.xml
     1
     16
@@ -84,9 +113,19 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_sdj_hdf5
+    short-LiH_pp-sd_lcao_hf_H5_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_sdj_hdf5
+    vmcbatch_hf_sdj_hdf5.xml
+    1
+    16
+    TRUE
+    0
+    LIH_PP_XML_SCALARS # VMC
+  )
+
+  qmc_run_and_check(
+    short-LiH_pp-sd_lcao_hf_H5_jas-vmc
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmc_hf_sdj_hdf5.xml
     16
     1
@@ -96,10 +135,20 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_sdj_hdf5
+    short-LiH_pp-sd_lcao_hf_H5_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_sdj_hdf5
     vmc_hf_sdj_hdf5.xml
+    4
+    4
+    TRUE
+    0
+    LIH_PP_XML_SCALARS # VMC
+  )
+
+  qmc_run_and_check(
+    short-LiH_pp-sd_lcao_hf_H5_jas-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+    vmcbatch_hf_sdj_hdf5.xml
     4
     4
     TRUE
@@ -112,10 +161,20 @@ if(NOT QMC_COMPLEX)
   #
 
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_sdj_old_hdf5
+    short-LiH_pp-sd_lcao_hf_old_hdf5_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    vmc_hf_sdj_old-hdf5
     vmc_hf_sdj_old-hdf5.xml
+    1
+    16
+    TRUE
+    0
+    LIH_PP_XML_SCALARS # VMC
+  )
+
+  qmc_run_and_check(
+    short-LiH_pp-sd_lcao_hf_old_hdf5_jas-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+    vmcbatch_hf_sdj_old-hdf5.xml
     1
     16
     TRUE
@@ -138,6 +197,15 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_LIH_PP_SCALARS "nonlocalecp" "0.00000000 0.000001")
     list(APPEND DET_LIH_PP_SCALARS "samples" "9.00000000 0.0")
     list(APPEND DET_LIH_PP_SCALARS "flux" "1.05207942 0.00018638")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "kinetic" "0.14529654 0.00009298")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "totenergy" "-0.72276621 0.00009313")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "eeenergy" "0.44908026 0.000001")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "potential" "-0.86806275 0.000001")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "ionion" "0.33179335 0.000001")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "localecp" "-1.64893636 0.00000134")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "nonlocalecp" "0.00000000 0.000001")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "samples" "9.00000000 0.0")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "flux" "1.05201759 0.00018638")
   else()
     list(APPEND DET_LIH_PP_SCALARS "kinetic" "0.14529655 0.000001")
     list(APPEND DET_LIH_PP_SCALARS "totenergy" "-0.72276621 0.000001")
@@ -148,12 +216,20 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_LIH_PP_SCALARS "nonlocalecp" "0.00000000 0.000001")
     list(APPEND DET_LIH_PP_SCALARS "samples" "9.00000000 0.0")
     list(APPEND DET_LIH_PP_SCALARS "flux" "1.05201758 0.000001")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "kinetic" "0.14529654 0.000001")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "totenergy" "-0.72276621 0.000001")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "eeenergy" "0.44908026 0.000001")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "potential" "-0.86806275 0.000001")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "ionion" "0.33179335 0.000001")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "localecp" "-1.64893636 0.000001")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "nonlocalecp" "0.00000000 0.000001")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "samples" "9.00000000 0.0")
+    list(APPEND DET_LIH_PP_BATCHED_SCALARS "flux" "1.05201759 0.000001")
   endif()
 
   qmc_run_and_check(
-    deterministic-LiH_pp-vmc_hf_noj
+    deterministic-LiH_pp-sd_lcao_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    det_vmc_hf_noj
     det_vmc_hf_noj.in.xml
     1
     1
@@ -161,6 +237,16 @@ if(NOT QMC_COMPLEX)
     0
     DET_LIH_PP_SCALARS # VMC
   )
+
+  qmc_run_and_check(
+    deterministic-LiH_pp-sd_lcao_hf_noj-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+    det_vmc_hf_noj_batched.in.xml
+    1
+    1
+    TRUE
+    0
+    DET_LIH_PP_BATCHED_SCALARS)
 
   #  LiH molecule pseudopotential tests with Jastrow from XML
   if(QMC_MIXED_PRECISION)
@@ -173,6 +259,15 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_LIH_PP_XML_SCALARS "nonlocalecp" "0.05095442 0.000001")
     list(APPEND DET_LIH_PP_XML_SCALARS "samples" "9.00000000 0.0")
     list(APPEND DET_LIH_PP_XML_SCALARS "flux" "-0.44733048 0.00054106")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "kinetic" "0.82737097 0.00027385")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "totenergy" "-0.78512613 0.00027387")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "eeenergy" "0.40036884 0.000001")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "potential" "-1.61249710 0.00000192")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "ionion" "0.33179337 0.000001")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "localecp" "-2.39561374 0.00000213")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "nonlocalecp" "0.05095443 0.000001")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "samples" "9.00000000 0.0")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "flux" "-0.44718757 0.00054106")
   else()
     list(APPEND DET_LIH_PP_XML_SCALARS "kinetic" "0.82737098 0.000001")
     list(APPEND DET_LIH_PP_XML_SCALARS "totenergy" "-0.78512613 0.000001")
@@ -183,12 +278,20 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_LIH_PP_XML_SCALARS "nonlocalecp" "0.05095443 0.000001")
     list(APPEND DET_LIH_PP_XML_SCALARS "samples" "9.00000000 0.0")
     list(APPEND DET_LIH_PP_XML_SCALARS "flux" "-0.44718758 0.000001")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "kinetic" "0.82737097 0.000001")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "totenergy" "-0.78512613 0.000001")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "eeenergy" "0.40036884 0.000001")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "potential" "-1.61249710 0.000001")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "ionion" "0.33179337 0.000001")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "localecp" "-2.39561374 0.000001")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "nonlocalecp" "0.05095443 0.000001")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "samples" "9.00000000 0.0")
+    list(APPEND DET_LIH_PP_XML_BATCHED_SCALARS "flux" "-0.44718757 0.000001")
   endif()
 
   qmc_run_and_check(
-    deterministic-LiH_pp-vmc_hf_sdj_xml
+    deterministic-LiH_pp-sd_lcao_hf_XML_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    det_vmc_hf_sdj_xml
     det_vmc_hf_sdj_xml.xml
     1
     1
@@ -196,6 +299,16 @@ if(NOT QMC_COMPLEX)
     0
     DET_LIH_PP_XML_SCALARS # VMC
   )
+
+  qmc_run_and_check(
+    deterministic-LiH_pp-sd_lcao_hf_XML_jas-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+    det_vmc_hf_sdj_xml_batched.xml
+    1
+    1
+    TRUE
+    0
+    DET_LIH_PP_XML_BATCHED_SCALARS)
 
   # LiH molecule pseudopotential tests with Jastrow from HDF5
   if(QMC_MIXED_PRECISION)
@@ -208,6 +321,15 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_LIH_PP_HDF5_SCALARS "nonlocalecp" "0.00009136 0.000001")
     list(APPEND DET_LIH_PP_HDF5_SCALARS "samples" "9.00000000 0.0")
     list(APPEND DET_LIH_PP_HDF5_SCALARS "flux" "-0.31480187 0.0006186")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "kinetic" "0.77797706 0.00031073")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "totenergy" "-0.79723250 0.00031023")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "eeenergy" "0.22789449 0.000001")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "potential" "-1.57520957 0.0000022")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "ionion" "0.33179337 0.000001")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "localecp" "-2.13498879 0.00000215")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "nonlocalecp" "0.00009136 0.000001")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "samples" "9.00000000 0.0")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "flux" "-0.31481796 0.0006186")
   else()
     list(APPEND DET_LIH_PP_HDF5_SCALARS "kinetic" "0.77797717 0.000001")
     list(APPEND DET_LIH_PP_HDF5_SCALARS "totenergy" "-0.79723250 0.000001")
@@ -218,12 +340,20 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_LIH_PP_HDF5_SCALARS "nonlocalecp" "0.00009136 0.000001")
     list(APPEND DET_LIH_PP_HDF5_SCALARS "samples" "9.00000000 0.0")
     list(APPEND DET_LIH_PP_HDF5_SCALARS "flux" "-0.31481816 0.000001")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "kinetic" "0.77797706 0.000001")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "totenergy" "-0.79723250 0.000001")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "eeenergy" "0.22789449 0.000001")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "potential" "-1.57520957 0.000001")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "ionion" "0.33179337 0.000001")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "localecp" "-2.13498879 0.000001")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "nonlocalecp" "0.00009136 0.000001")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "samples" "9.00000000 0.0")
+    list(APPEND DET_LIH_PP_HDF5_BATCHED_SCALARS "flux" "-0.31481796 0.000001")
   endif()
 
   qmc_run_and_check(
-    deterministic-LiH_pp-vmc_hf_sdj_hdf5
+    deterministic-LiH_pp-sd_lcao_hf_H5_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-    det_vmc_hf_sdj_hdf5
     det_vmc_hf_sdj_hdf5.xml
     1
     1
@@ -232,91 +362,96 @@ if(NOT QMC_COMPLEX)
     DET_LIH_PP_HDF5_SCALARS # VMC
   )
 
+  qmc_run_and_check(
+    deterministic-LiH_pp-sd_lcao_hf_H5_jas-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+    det_vmc_hf_sdj_hdf5_batched.xml
+    1
+    1
+    TRUE
+    0
+    DET_LIH_PP_HDF5_BATCHED_SCALARS)
+
   # estimator tests
   include("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
   check_python_reqs("numpy;h5py" diamond-estimator add_tests)
   if(add_tests)
     simple_run_and_check(
-      short-LiH_pp-vmc_hf_sdj_estimator_spindensity
-      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-      vmc_hf_sdj_spindens_short.in.xml
-      4
-      4
-      check_stats.py
-      -s
-      0
-      -q
-      spindensity
-      -e
-      2
-      -c
-      8
-      -p
-      vmc_hf_sdj_spindens_short
-      -r
-      qmc_ref/vmc_hf_sdj_spindens_short.s000.stat_ref_spindensity.dat)
+      BASE_NAME short-LiH_pp-sd_lcao_hf_jas-vmc-spindensity
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmc_hf_sdj_spindens_short.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q spindensity -e 2 -c 8 -p vmc_hf_sdj_spindens_short -r qmc_ref/vmc_hf_sdj_spindens_short.s000.stat_ref_spindensity.dat)
 
     simple_run_and_check(
-      long-LiH_pp-vmc_hf_sdj_estimator_spindensity
-      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-      vmc_hf_sdj_spindens_long.in.xml
-      4
-      4
-      check_stats.py
-      -s
-      0
-      -q
-      spindensity
-      -e
-      20
-      -c
-      8
-      -p
-      vmc_hf_sdj_spindens_long
-      -r
-      qmc_ref/vmc_hf_sdj_spindens_long.s000.stat_ref_spindensity.dat)
+      BASE_NAME short-LiH_pp-sd_lcao_hf_jas-vmcbatch-spindensity
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmcbatch_hf_sdj_spindens_short.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q spindensity -e 2 -c 8 -p vmc_hf_sdj_spindens_short -r qmc_ref/vmc_hf_sdj_spindens_short.s000.stat_ref_spindensity.dat)
 
     simple_run_and_check(
-      short-LiH_pp-vmc_hf_sdj_estimator_energydensity_voronoi
-      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-      vmc_hf_sdj_edens_vor_short.in.xml
-      4
-      4
-      check_stats.py
-      -s
-      0
-      -q
-      'energydensity,EDvoronoi'
-      -e
-      2
-      -c
-      2
-      -p
-      vmc_hf_sdj_edens_vor_short
-      -r
-      qmc_ref/vmc_hf_sdj_edens_vor_short.s000.stat_ref_energydensity.dat)
+      BASE_NAME long-LiH_pp-sd_lcao_hf_jas-vmc-spindensity
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmc_hf_sdj_spindens_long.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q spindensity -e 20 -c 8 -p vmc_hf_sdj_spindens_long -r qmc_ref/vmc_hf_sdj_spindens_long.s000.stat_ref_spindensity.dat)
 
     simple_run_and_check(
-      long-LiH_pp-vmc_hf_sdj_estimator_energydensity_voronoi
-      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
-      vmc_hf_sdj_edens_vor_long.in.xml
-      4
-      4
-      check_stats.py
-      -s
-      0
-      -q
-      'energydensity,EDvoronoi'
-      -e
-      2
-      -c
-      2
-      -p
-      vmc_hf_sdj_edens_vor_long
-      -r
-      qmc_ref/vmc_hf_sdj_edens_vor_long.s000.stat_ref_energydensity.dat)
+      BASE_NAME long-LiH_pp-sd_lcao_hf_jas-vmcbatch-spindensity
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmcbatch_hf_sdj_spindens_long.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q spindensity -e 20 -c 8 -p vmc_hf_sdj_spindens_long -r qmc_ref/vmc_hf_sdj_spindens_long.s000.stat_ref_spindensity.dat)
+
+    simple_run_and_check(
+      BASE_NAME short-LiH_pp-sd_lcao_hf_jas-vmc-energydensity_voronoi
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmc_hf_sdj_edens_vor_short.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_short -r qmc_ref/vmc_hf_sdj_edens_vor_short.s000.stat_ref_energydensity.dat)
+
+    simple_run_and_check(
+      BASE_NAME short-LiH_pp-sd_lcao_hf_jas-vmcbatch-energydensity_voronoi
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmcbatch_hf_sdj_edens_vor_short.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_short -r qmc_ref/vmc_hf_sdj_edens_vor_short.s000.stat_ref_energydensity.dat)
+
+    simple_run_and_check(
+      BASE_NAME long-LiH_pp-sd_lcao_hf_jas-vmc-energydensity_voronoi
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmc_hf_sdj_edens_vor_long.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_long -r qmc_ref/vmc_hf_sdj_edens_vor_long.s000.stat_ref_energydensity.dat)
+
+    simple_run_and_check(
+      BASE_NAME long-LiH_pp-sd_lcao_hf_jas-vmcbatch-energydensity_voronoi
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+      INPUT_FILE vmcbatch_hf_sdj_edens_vor_long.in.xml
+      PROCS 4
+      THREADS 4
+      CHECK_SCRIPT check_stats.py
+      CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_long -r qmc_ref/vmc_hf_sdj_edens_vor_long.s000.stat_ref_energydensity.dat)
   endif()
 
 else()
   message(VERBOSE "Skipping LiH_pp test because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

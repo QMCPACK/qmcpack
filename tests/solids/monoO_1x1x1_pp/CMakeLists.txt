@@ -3,9 +3,8 @@ list(APPEND MONO_O_SCALARS "samples" "64000 0.0")
 #  LIST(APPEND MONO_O_SCALARS "flux" "0.0 0.5")
 
 qmc_run_and_check(
-  short-monoO_1x1x1_pp-vmc_sdj
+  short-monoO_1x1x1_pp-sd_jas-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp"
-  qmc_short
   qmc_short.in.xml
   1
   16
@@ -17,9 +16,8 @@ qmc_run_and_check(
 list(APPEND MONO_O_J3_SCALARS "totenergy" "-31.913838 0.0025")
 list(APPEND MONO_O_J3_SCALARS "samples" "204800 0.0")
 qmc_run_and_check(
-  short-monoO_1x1x1_pp-vmc_sdj3
+  short-monoO_1x1x1_pp-sd_j3-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp"
-  qmc_j3_short
   qmc_j3_short.in.xml
   1
   16
@@ -37,9 +35,8 @@ list(APPEND LONG_MONO_O_SCALARS "samples" "61440000 0.0")
 list(APPEND LONG_MONO_O_SCALARS "flux" "0.0 0.05")
 
 qmc_run_and_check(
-  long-monoO_1x1x1_pp-vmc_sdj
+  long-monoO_1x1x1_pp-sd_jas-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp"
-  qmc_long
   qmc_long.in.xml
   1
   16
@@ -53,9 +50,8 @@ list(APPEND LONG_MONO_O_J3_SCALARS "samples" "2048000 0.0")
 list(APPEND LONG_MONO_O_J3_SCALARS "flux" "0.0 0.27")
 
 qmc_run_and_check(
-  long-monoO_1x1x1_pp-vmc_sdj3
+  long-monoO_1x1x1_pp-sd_j3-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp"
-  qmc_j3_long
   qmc_j3_long.in.xml
   1
   16
@@ -63,3 +59,6 @@ qmc_run_and_check(
   0
   LONG_MONO_O_J3_SCALARS # VMC
 )
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

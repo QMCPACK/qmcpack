@@ -31,7 +31,6 @@ struct HDFWalkerInput_0_4
   {
     bool parallel;
     bool collected;
-    int rank;
     int nprocs;
     hid_t h_plist;
     HDFVersion version;
@@ -40,7 +39,6 @@ struct HDFWalkerInput_0_4
     {
       parallel  = false;
       collected = false;
-      rank      = 0;
       nprocs    = 1;
     }
   };
@@ -50,7 +48,7 @@ struct HDFWalkerInput_0_4
   /// number of particles
   const size_t num_ptcls_;
   //pointer to the communicator
-  Communicate* myComm;
+  Communicate& myComm;
   //current version this class supports
   HDFVersion cur_version;
   //information of the input files
@@ -68,7 +66,7 @@ struct HDFWalkerInput_0_4
    * @param c communicator
    * @param v version
    */
-  HDFWalkerInput_0_4(WalkerConfigurations& wc_list, size_t num_ptcls, Communicate* c, const HDFVersion& v);
+  HDFWalkerInput_0_4(WalkerConfigurations& wc_list, size_t num_ptcls, Communicate& c, const HDFVersion& v);
   ~HDFWalkerInput_0_4();
 
   /** read walkers
@@ -80,6 +78,12 @@ struct HDFWalkerInput_0_4
 
   /** check options from xml */
   void checkOptions(xmlNodePtr cur);
+
+  /** Walker weights: the three read_* functions below share the same semantics.
+   *  - `walker_weights` missing (legacy checkpoint): every loaded walker is assigned weight 1.0.
+   *  - `walker_weights` malformed (shape/count/type) or containing NaN, Inf or negative values:
+   *    UniformCommunicateError is thrown on all ranks and no walkers are added.
+   */
 
   /** read walkers for small number of MPI tasks */
   bool read_hdf5(const std::filesystem::path& h5name);

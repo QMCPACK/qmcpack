@@ -14,10 +14,7 @@
 
 
 /** @file PWRealOrbitalSet.h
- * @brief Define PWRealOrbitalSet derived from SPOSet
- *
- * This is a specialized single-particle orbital set for real trial
- * wavefunctions and enabled with QMC_COMPLEX=0
+ * @brief Real and imaginary projections of complex plane-wave SPOs for real builds.
  */
 #ifndef QMCPLUSPLUS_PLANEWAVE_REALORBITALSET_BLAS_H
 #define QMCPLUSPLUS_PLANEWAVE_REALORBITALSET_BLAS_H
@@ -28,6 +25,16 @@
 
 namespace qmcplusplus
 {
+/** Real-valued SPOs formed by projecting a complex primitive-cell expansion.
+ *
+ * Each orbital selects its real or imaginary projection when coefficients are
+ * loaded. The same projection is applied to values and every derivative, allowing
+ * a retained time-reversal representative to supply two distinct real orbitals.
+ * Call resize() and load coefficients before evaluation.
+ *
+ * Output vectors hold all orbitals. Matrix outputs use (particle-first, orbital)
+ * indexing; legacy logdet names denote orbital values, not logarithms or determinants.
+ */
 class PWRealOrbitalSet : public SPOSet
 {
 public:
@@ -45,51 +52,57 @@ public:
     PW_MAXINDEX = BasisSet_t::PW_MAXINDEX
   };
 
-  /** default constructor
-  */
+  /// Create an SPO of the requested size without attaching a basis or coefficients.
   PWRealOrbitalSet(const std::string& my_name, size_t size)
       : SPOSet(my_name, size), OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0)
   {}
 
   std::string getClassName() const override { return "PWRealOrbitalSet"; }
 
-  /** delete BasisSet only it owns this
-   *
-   * Builder takes care of who owns what
-   */
+  /// Delete myBasisSet only when OwnBasisSet is true.
   ~PWRealOrbitalSet() override;
 
+  /// Copy the SPO and give the clone its own PWBasis evaluation state.
   std::unique_ptr<SPOSet> makeClone() const override;
 
-  /** resize  the orbital base
-   * @param bset PWBasis
-   * @param cleaup if true, owns PWBasis. Will clean up.
+  /** Attach an initialized basis and allocate coefficient and derivative buffers.
+   * Projection flags are reset to select real parts.
+   * @param bset basis with loaded G vectors and prepared evaluation arrays
+   * @param cleanup whether this SPO should delete bset on destruction
    */
   void resize(PWBasisPtr bset, bool cleanup = false);
 
-  /** add eigenstate for jorb-th orbital
-   * @param coefs real input data
-   * @param jorb orbital index
+  /** Load real coefficients for an orbital in input G-vector order.
+   * @param coefs one coefficient per entry of the basis inputmap
+   * @param jorb valid zero-based orbital index
+   * @param use_imaginary_part select imaginary rather than real values and derivatives
    */
-  void addVector(const std::vector<RealType>& coefs, int jorb);
+  void addVector(const std::vector<RealType>& coefs, int jorb, bool use_imaginary_part = false);
 
-  /** add eigenstate for jorb-th orbital
-   * @param coefs complex input data
-   * @param jorb orbital index
+  /** Load complex coefficients for an orbital in input G-vector order.
+   * @param coefs one coefficient per entry of the basis inputmap
+   * @param jorb valid zero-based orbital index
+   * @param use_imaginary_part select imaginary rather than real values and derivatives
    */
-  void addVector(const std::vector<ComplexType>& coefs, int jorb);
+  void addVector(const std::vector<ComplexType>& coefs, int jorb, bool use_imaginary_part = false);
 
 
+  /// Evaluate the selected projection of orbital ib at a Cartesian position.
   inline ValueType evaluate(int ib, const PosType& pos)
   {
     myBasisSet->evaluate(pos);
-    return real(BLAS::dot(BasisSetSize, CC[ib], myBasisSet->Zv.data()));
+    return project(BLAS::dot(BasisSetSize, CC[ib], myBasisSet->Zv.data()), ib);
   }
 
+  /// Evaluate all projected orbital values at P.activeR(iat).
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
+  /// Evaluate projected values, Cartesian gradients, and Laplacians.
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
+  /** Evaluate projected VGL for particles in [first, last).
+   * Output matrices require last-first rows and OrbitalSetSize columns.
+   */
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
@@ -97,32 +110,42 @@ public:
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) override;
 
+  /** Evaluate projected values, gradients, and Cartesian Hessians for [first, last).
+   * Hessian elements use the same per-orbital projection as values and gradients.
+   */
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix& logdet,
                             GradMatrix& dlogdet,
-                            HessMatrix& grad_grad_logdet) override
-  { APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n"); }
+                            HessMatrix& grad_grad_logdet) override;
 
 
-  /** boolean
-   *
-   * If true, this has to delete the BasisSet
-   */
+  /// Whether the destructor deletes myBasisSet.
   bool OwnBasisSet;
-  ///TwistAngle of this PWRealOrbitalSet
+  /// Legacy twist metadata; evaluation uses the twist stored in myBasisSet.
   PosType TwistAngle;
-  ///My basis set
+  /// Basis supplying primitive-cell phases and Cartesian derivatives.
   PWBasisPtr myBasisSet;
-  ///number of basis
+  /// Number of retained plane waves per orbital.
   IndexType BasisSetSize;
-  ///Plane-wave coefficients of complex: (iband,g-vector)
+  /// Complex coefficients indexed by (orbital, G-vector), before projection.
   Matrix<ComplexType> CC;
-  /// temporary array to perform gemm operation
+  /// Contracted complex VGL data indexed by (orbital, PW_* column).
   Matrix<ComplexType> Temp;
-  ///temporary complex vector before assigning to a real psi
+  /// Contracted complex Hessians indexed by (orbital, row*OHMMS_DIM+column).
+  Matrix<ComplexType> TempHess;
+  /// Contracted complex values before per-orbital projection.
   Vector<ComplexType> tempPsi;
+  ///select the imaginary rather than real projection for each orbital
+  std::vector<bool> useImaginaryPart;
+
+private:
+  /// Apply the projection chosen when this orbital's coefficients were loaded.
+  RealType project(const ComplexType& value, int orbital_index) const
+  {
+    return useImaginaryPart[orbital_index] ? value.imag() : value.real();
+  }
 };
 } // namespace qmcplusplus
 #endif

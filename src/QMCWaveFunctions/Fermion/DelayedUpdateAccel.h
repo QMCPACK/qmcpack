@@ -87,13 +87,13 @@ public:
 
   inline void prepareForDeviceCopy(Matrix<T>& mat) const
   {
-    if(mat.size())
+    if (mat.size())
       compute::MemManage<PL>::registerHost(mat.data(), mat.size() * sizeof(T));
   }
 
   inline void releaseFromDeviceCopy(Matrix<T>& mat) const
   {
-    if(mat.size())
+    if (mat.size())
       compute::MemManage<PL>::unregisterHost(mat.data());
   }
 

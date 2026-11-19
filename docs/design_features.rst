@@ -2355,5 +2355,3 @@ The Laplacian is then given by
        2\left(i\mathbf{G}e^{i\mathbf{G}\cdot\mathbf{r}_i}\right) \cdot \left(-i\mathbf{G}e^{-i\mathbf{G}\cdot\mathbf{r}_i}\right)
    \right]\:, \\
    & = & 2 \sum_{\mathbf{G}\neq\mathbf{0}} G^2 a_\mathbf{G}\left[-\mathbf{Re}\left(e^{i\mathbf{G}\cdot\mathbf{r}_i}\rho_{-\mathbf{G}}\right) + 1\right]\:. \end{aligned}
-
-.. bibliography:: /bibs/design_features.bib

@@ -30,7 +30,7 @@ StructureFactorEstimator::StructureFactorEstimator(const StructureFactorInput& s
                                                    const ParticleSet& pset_ions,
                                                    const ParticleSet& pset_elec,
                                                    DataLocality data_locality)
-    : OperatorEstBase(data_locality, sfi.get_name(), sfi.get_type()),
+    : OperatorEstBase(data_locality, sfi.get_name(), std::string{StructureFactorInput::type_tag}),
       input_(sfi),
       elns_(pset_elec),
       elec_num_species_(elns_.getSpeciesSet().getTotalNum()),
@@ -55,7 +55,7 @@ StructureFactorEstimator::StructureFactorEstimator(const StructureFactorInput& s
   one_over_degeneracy_kshell_.resize(max_kshell);
   for (int ks = 0; ks < max_kshell; ks++)
   {
-    kmags_[ks] = std::sqrt(pset_elec.getSimulationCell().getKLists().getKSQWorking()[kshell_offsets_[ks]]);
+    kmags_[ks] = std::sqrt(pset_elec.getSimulationCell().getKLists().getKSQ()[kshell_offsets_[ks]]);
     one_over_degeneracy_kshell_[ks] = 1.0 / static_cast<Real>(kshell_offsets_[ks + 1] - kshell_offsets_[ks]);
   };
 }
@@ -114,7 +114,7 @@ void StructureFactorEstimator::registerOperatorEstimator(hdf_archive& file)
   file.push(path_variables, true);
   // hdf_archive wants non const references, if that code was better
   // this would be unecessary
-  file.write(ions_.getSimulationCell().getKLists().getKptsCartWorking(), "value");
+  file.write(ions_.getSimulationCell().getKLists().getKptsCart(), "value");
   file.pop();
 }
 

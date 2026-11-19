@@ -20,18 +20,19 @@
 #include <Timer.h>
 #if defined(QMC_COMPLEX)
 #include "SplineC2C.h"
-#include "SplineC2COMPTarget.h"
 #else
 #include "SplineR2R.h"
 #include "SplineC2R.h"
-#include "SplineC2ROMPTarget.h"
 #endif
 #include "Message/CommOperators.h"
 #include "spline2/SplineUtils.h"
 #include "spline2/MultiBspline.hpp"
-#include "spline2/MultiBsplineOffload.hpp"
+#include "spline2/MultiBsplineOffloadMapper.hpp"
 #if defined(HAVE_MPI)
 #include "spline2/MultiBsplineMPIShared.hpp"
+#endif
+#if defined(QMC_CCL)
+#include "spline2/MultiBsplineOffloadMapperCCLShared.hpp"
 #endif
 
 
@@ -48,21 +49,26 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
                                                                const std::pair<int, int>& distributed_and_shared_ranks,
                                                                const BandInfoGroup& bandgroup)
 {
-  const int N = bandgroup.getNumDistinctOrbitals();
+  if (use_offload)
+    app_summary() << "    Running OpenMP offload code path." << std::endl;
+  else
+    app_summary() << "    Running on CPU." << std::endl;
 
   auto [distributed_ranks, shared_ranks] = distributed_and_shared_ranks;
 
+#if !defined(QMC_CCL)
   if (use_offload)
   {
-    if (distributed_ranks > 1 || shared_ranks > 1)
-      app_warning() << "Offload implemenation doesn't support distributing or sharing the memory of spline "
-                       "coefficients. Overriding distributed_ranks and shared_ranks to 1."
+    if (distributed_ranks > 1)
+      app_warning() << "Offload implemenation doesn't support distributing the memory of spline "
+                       "coefficients. Overriding distributed_ranks to 1."
                     << std::endl;
     distributed_ranks = 1;
-    shared_ranks      = 1;
   }
+#endif
 
-  auto dist_comm_ptr = std::make_unique<Communicate>(*myComm, myComm->size() / (distributed_ranks * shared_ranks));
+  auto dist_comm_ptr =
+      std::make_unique<Communicate>(myComm.split(myComm.size() / (distributed_ranks * shared_ranks)));
 
   app_log() << "  Using " << (use_duplex_splines_ ? "complex" : "real") << " einspline table." << std::endl;
   if (distributed_ranks > 1)
@@ -79,43 +85,43 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   typename bspline_traits<ST, 3>::BCType xyz_bc[3];
   set_grid(mybuilder->MeshSize, half_g, xyz_grid, xyz_bc);
 
+  const int N              = bandgroup.getNumDistinctOrbitals();
   const size_t num_splines = getAlignedSize<ST>(use_duplex_splines_ ? N * 2 : N);
   std::unique_ptr<MultiBsplineBase<ST>> multi_splines_ptr;
-  if (use_offload)
-    multi_splines_ptr = std::make_unique<MultiBsplineOffload<ST>>(xyz_grid, xyz_bc, num_splines);
+  std::unique_ptr<MultiBsplineOffloadMapperBase<ST>> offload_mapper;
 #if defined(HAVE_MPI)
-  else if (distributed_ranks * shared_ranks > 1)
-    multi_splines_ptr = std::make_unique<MultiBsplineMPIShared<ST>>(xyz_grid, xyz_bc, num_splines,
-                                                                    std::move(dist_comm_ptr), distributed_ranks);
+  if (distributed_ranks * shared_ranks > 1)
+  {
+    auto mpi_shared_splines = std::make_unique<MultiBsplineMPIShared<ST>>(xyz_grid, xyz_bc, num_splines,
+                                                                          std::move(dist_comm_ptr), distributed_ranks);
+#if defined(QMC_CCL)
+    if (use_offload && distributed_ranks > 1)
+      offload_mapper = std::make_unique<MultiBsplineOffloadMapperCCLShared<ST>>(*mpi_shared_splines);
 #endif
+    multi_splines_ptr = std::move(mpi_shared_splines);
+  }
   else
+#endif
     multi_splines_ptr = std::make_unique<MultiBspline<ST>>(xyz_grid, xyz_bc, num_splines);
 
   auto& multi_splines(*multi_splines_ptr);
   app_log() << "MEMORY " << multi_splines.sizeInByte() / (1 << 20) << " MB allocated "
             << "for the coefficients in 3D spline orbital representation" << std::endl;
 
+  if (use_offload && !offload_mapper)
+    offload_mapper = std::make_unique<MultiBsplineOffloadMapper<ST>>(*multi_splines_ptr);
+
   std::unique_ptr<BsplineSet> bspline;
 #if defined(QMC_COMPLEX)
-  if (use_offload)
-    bspline = std::make_unique<SplineC2COMPTarget<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                       std::move(multi_splines_ptr), use_offload);
-  else
-    bspline = std::make_unique<SplineC2C<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                              std::move(multi_splines_ptr), use_offload);
+  bspline = std::make_unique<SplineC2C<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+                                            std::move(multi_splines_ptr), std::move(offload_mapper));
 #else
   if (use_duplex_splines_)
-  {
-    if (use_offload)
-      bspline = std::make_unique<SplineC2ROMPTarget<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                         std::move(multi_splines_ptr), use_offload);
-    else
-      bspline = std::make_unique<SplineC2R<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                std::move(multi_splines_ptr), use_offload);
-  }
+    bspline = std::make_unique<SplineC2R<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+                                              std::move(multi_splines_ptr), std::move(offload_mapper));
   else
     bspline = std::make_unique<SplineR2R<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                              std::move(multi_splines_ptr), use_offload);
+                                              std::move(multi_splines_ptr), std::move(offload_mapper));
 #endif
 
   app_log() << "  ClassName = " << bspline->getClassName() << std::endl;
@@ -131,10 +137,10 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   }
 
   bool foundspline = lookforSplineDataDumpFile(bandgroup, bspline->getKeyword(), sizeof(ST));
-  if (foundspline && myComm->rank() == 0)
+  if (foundspline && myComm.rank() == 0)
   {
     Timer now;
-    hdf_archive h5f(myComm);
+    hdf_archive h5f;
     const auto splinefile = getSplineDumpFileName(bandgroup);
     h5f.open(splinefile, H5F_ACC_RDONLY);
     foundspline = SplineUtils<ST>::read(multi_splines, h5f);
@@ -144,13 +150,13 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   }
 
   /* create a sub communicator. spline table is shared across MPI ranks with identical subcomm rank id.
-   *  myComm->size() == 12 ; shared_ranks = 2; distributed_ranks = 3;
+   *  myComm.size() == 12 ; shared_ranks = 2; distributed_ranks = 3;
    *          | group 0 | group 1 |
    *          |  0 1 2  |  3 4 5  |
    *          |  6 7 8  | 9 10 11 |
    */
-  Communicate shared_comm(*myComm, shared_ranks, distributed_ranks);
-  Communicate dist_comm(shared_comm, shared_comm.size() / distributed_ranks);
+  Communicate shared_comm(myComm.splitByStride(shared_ranks, distributed_ranks));
+  Communicate dist_comm(shared_comm.split(shared_comm.size() / distributed_ranks));
 
   if (!foundspline)
   {
@@ -162,7 +168,7 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
       app_log() << "  SplineSetReader initialize_spline_pio " << now.elapsed() << " sec" << std::endl;
     }
 
-    if (saveSplineCoefs && myComm->rank() == 0)
+    if (saveSplineCoefs && myComm.rank() == 0)
     {
       Timer now;
       const std::string splinefile(getSplineDumpFileName(bandgroup));
@@ -180,11 +186,11 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   }
 
   {
-    myComm->barrier();
+    myComm.barrier();
     Timer now;
     if (shared_comm.getGroupID() == 0)
       SplineUtils<ST>::bcast(multi_splines, dist_comm.rank(), dist_comm.getInterGroupComm());
-    myComm->barrier();
+    myComm.barrier();
     app_log() << "  Time to bcast the table = " << now.elapsed() << std::endl;
   }
 
@@ -209,7 +215,7 @@ void SplineSetReader<ST>::initialize_spline_pio_gather(const int spin,
   const int Nprocs          = comm.size();
   const int Nbandgroups     = Nbands > 0 ? std::min(Nbands, Nprocs) : 1;
 
-  Communicate band_group_comm(comm, Nbandgroups);
+  Communicate band_group_comm(comm.split(Nbandgroups));
   std::vector<int> band_groups(Nbandgroups + 1, 0);
   FairDivideLow(Nbands, Nbandgroups, band_groups);
   const int iorb_first = orb_block_start + band_groups[band_group_comm.getGroupID()];
@@ -217,12 +223,12 @@ void SplineSetReader<ST>::initialize_spline_pio_gather(const int spin,
 
   app_log() << "Start transforming plane waves to 3D B-Splines." << std::endl;
   OneSplineOrbData oneband(mybuilder->MeshSize, half_g, use_duplex_splines_);
-  hdf_archive h5f(&band_group_comm, false);
   Vector<std::complex<double>> cG(mybuilder->Gvecs[0].size());
   const std::vector<BandInfo>& cur_bands = bandgroup.myBands;
   if (band_group_comm.isGroupLeader())
   {
     auto& group_leader_comm = band_group_comm.getInterGroupComm();
+    hdf_archive h5f;
     h5f.open(mybuilder->H5FileName, H5F_ACC_RDONLY);
     for (int iorb = iorb_first; iorb < iorb_last; iorb++)
     {
@@ -232,11 +238,11 @@ void SplineSetReader<ST>::initialize_spline_pio_gather(const int spin,
       oneband.fft_spline(cG, mybuilder->Gvecs[0], mybuilder->primcell_kpoints[ti], rotate);
       if (use_duplex_splines_)
       {
-        multi_splines.set_spline(oneband.get_spline_r(), iorb * 2);
-        multi_splines.set_spline(oneband.get_spline_i(), iorb * 2 + 1);
+        multi_splines.setOneSpline(oneband.get_spline_r(), iorb * 2);
+        multi_splines.setOneSpline(oneband.get_spline_i(), iorb * 2 + 1);
       }
       else
-        multi_splines.set_spline(oneband.get_spline_r(), iorb);
+        multi_splines.setOneSpline(oneband.get_spline_r(), iorb);
     }
 
     {

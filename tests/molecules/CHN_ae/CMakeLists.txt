@@ -14,10 +14,20 @@ if(NOT QMC_COMPLEX)
   list(APPEND CHN_SHORT "eeenergy" "55.2876 0.06") # e-e energy
   list(APPEND CHN_SHORT "samples" "160000 0.0") # samples
   qmc_run_and_check(
-    short-chn_ae_cuspCorrection-vmc
+    short-chn_ae-sd_lcao_cuspCorrection_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/CHN_ae"
-    vmc_short
     vmc_short.in.xml
+    1
+    16
+    TRUE
+    0
+    CHN_SHORT # VMC
+  )
+
+  qmc_run_and_check(
+    short-chn_ae-sd_lcao_cuspCorrection_jas-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/molecules/CHN_ae"
+    vmcbatch_short.in.xml
     1
     16
     TRUE
@@ -30,3 +40,6 @@ else()
     VERBOSE
     "Skipping CuspCorrection tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

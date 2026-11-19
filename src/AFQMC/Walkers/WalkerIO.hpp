@@ -171,11 +171,6 @@ bool restartFromHDF5(WalkerSet& wset,
   TaskGroup_& TG = wset.getTG();
 
   std::vector<int> Idata(7);
-  if (read.is_parallel())
-  {
-    app_error() << " Error: hdf_archive can't be parallel in restartFromHDF5().\n";
-    APP_ABORT("");
-  }
   if (TG.TG_local().root())
   {
     if (!read.open(hdf_read_restart, H5F_ACC_RDONLY))
@@ -444,7 +439,7 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
         }
       }
 
-      TG.TG_heads().gatherv_n(SendBuff.origin(), SendBuff.num_elements(), RecvBuff.origin(), counts.data(),
+      TG.TG_heads().gatherv_n(SendBuff.base(), SendBuff.num_elements(), RecvBuff.base(), counts.data(),
                               displ.data(), 0);
       nsent += nw_to_send;
 

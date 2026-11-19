@@ -1,0 +1,68 @@
+[#howto]
+
+= How-To Guides
+
+:idprefix: howto_
+
+[#howto_fill]
+== How to Fill Elements of an Array with a Constant Value?
+
+Use a standard fill algorithm, `std::ranges::fill` for example.
+If you have an array:
+
+[source,cpp]
+-----
+#include<ranges>
+...
+  multi::array<double, 2> arr({4, 4});
+  ...
+  std::ranges::fill(arr.elements(), 1);
+...
+-----
+
+or a subarray:
+
+[source,cpp]
+-----
+...
+  std::ranges::fill(arr({1, 3}, {1, 3}).elements(), 2);
+-----
+
+If you don't have access to the ranges library (pass:[C++20]) or if you want to control parallelism use `std::fill`:
+[source,cpp]
+-----
+#include<algorithm>
+#include<execution>
+...
+  std::fill(std::execution::par, arr.elements().begin(), arr.elements().end(), 1);
+...
+-----
+link:https://godbolt.org/z/sn8MqPEP5[(open with Compiler Explorer)]
+
+If the data is in the GPU, you can use Thrust algorithms (which detect the memory space automatically, and are parallel by default):
+
+[source,cpp]
+-----
+#include <multi/adaptors/thrust.hpp>
+#include <thrust/fill.h>
+...
+  thrust::fill(arr.elements().begin(), arr.elements().end(), 1);
+...
+-----
+
+or more explicitly as,
+[source,cpp]
+-----
+#include <thrust/execution_policy.h>
+...
+  thrust::fill(thrust::device, arr.elements().begin(), arr.elements().end(), 1);
+...
+-----
+link:https://godbolt.org/z/55vd7v8xf[(open with Compiler Explorer)]
+
+To create a new array with a constant value, it is easier to directly construct it:
+
+[source,cpp]
+-----
+  multi::array<double, 2> arr({4, 4}, 1);  // generate a 4x4 array; all its elements equal to 1
+-----

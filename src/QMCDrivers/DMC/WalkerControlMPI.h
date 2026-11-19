@@ -42,7 +42,7 @@ struct WalkerControlMPI : public WalkerControlBase
    *
    * \param[in] comm can not be null it is not checked.
    */
-  WalkerControlMPI(Communicate* comm);
+  WalkerControlMPI(Communicate& comm);
 
   /** creates the distribution plan
    *

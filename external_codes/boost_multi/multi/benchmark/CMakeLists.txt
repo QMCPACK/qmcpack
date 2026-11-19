@@ -7,7 +7,7 @@ project(
 	LANGUAGES CXX
 )
 
-find_package(Boost REQUIRED COMPONENTS serialization unit_test_framework system iostreams)
+find_package(Boost REQUIRED CONFIG COMPONENTS serialization system iostreams)
 find_package(benchmark REQUIRED)
 
 set(BLA_VENDOR Intel10_64lp) # . /opt/intel/oneapi/mkl/latest/env/vars.sh
@@ -53,7 +53,7 @@ target_link_libraries(matrix_multiplication.cpp.x -ltbb)
 add_test(NAME matrix_multiplication.cpp.x COMMAND matrix_multiplication.cpp.x)
 
 add_executable(algorithms_gemm.cpp.x algorithms_gemm.cpp)
-target_link_libraries(algorithms_gemm.cpp.x benchmark::benchmark Boost::unit_test_framework)
+target_link_libraries(algorithms_gemm.cpp.x benchmark::benchmark)
 target_link_libraries(algorithms_gemm.cpp.x -ltbb)
 add_test(NAME algorithms_gemm.cpp.x COMMAND algorithms_gemm.cpp.x)
 

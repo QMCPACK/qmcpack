@@ -1,13 +1,12 @@
 import pytest
-from . import NexusTestOrder
+from numpy import array, ndarray
+
+from ..developer import obj
+from ..testing import object_eq, value_eq
+from ..vasp_analyzer import VXML, OutcarData, VaspAnalyzer
+from . import TEST_DIR, NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
-
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
-from . import TEST_DIR
-from ..testing import value_eq,object_eq
-
 
 TEST_FILES = {
     "relax.CONTCAR":     TEST_DIR / "test_vasp_analyzer_files/relax.CONTCAR",
@@ -32,18 +31,12 @@ for file in TEST_FILES.values():
 
 
 def test_empty_init():
-    from ..vasp_analyzer import VaspAnalyzer
-
     va = VaspAnalyzer(None)
 #end def test_empty_init
 
 
 
 def test_analyze():
-    from numpy import array,ndarray
-    from ..developer import obj
-    from ..vasp_analyzer import VaspAnalyzer,VXML,OutcarData
-
     incar_path = TEST_FILES['relax.INCAR']
 
 
@@ -102,7 +95,7 @@ def test_analyze():
     assert(object_eq(va.info,info))
 
     types = dict(
-        Efermi               = float  ,               
+        Efermi               = float  ,
         core_potential_radii = ndarray,
         core_potentials      = ndarray,
         force                = ndarray,
@@ -289,7 +282,7 @@ def test_analyze():
         )
 
     assert(object_eq(va.ion_steps[10][4],last_data))
-    
+
 
     vxml = va.xmldata
 
@@ -303,6 +296,7 @@ def test_analyze():
         kpoints
         parameters
         '''.split()
+
     assert(set(vxml.modeling.keys())==set(keys))
 
     parameters = obj(

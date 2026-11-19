@@ -33,8 +33,8 @@ public:
       MCWalkerConfiguration& w,
       TrialWaveFunction& psi,
       QMCHamiltonian& h,
-      Communicate* comm);
-  bool run() override;
+      Communicate& comm);
+  void run() override;
   bool put(xmlNodePtr cur) override;
   QMCRunType getRunType() override { return QMCRunType::RMC; }
 

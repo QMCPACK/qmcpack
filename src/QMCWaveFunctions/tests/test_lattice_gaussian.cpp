@@ -8,9 +8,8 @@
 //
 // File created by: Yubo "Paul Yang", yubo.paul.yang@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -33,8 +32,7 @@ using LogValue = std::complex<QMCTraits::QTFull::RealType>;
 
 TEST_CASE("lattice gaussian", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   // initialize simulationcell for kvectors

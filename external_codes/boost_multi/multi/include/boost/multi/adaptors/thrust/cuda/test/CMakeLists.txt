@@ -1,36 +1,59 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
+if(ENABLE_CUDA OR DEFINED CXXCUDA)
+	enable_language(CUDA)
+	if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+		set(CMAKE_CUDA_ARCHITECTURES native)
+	endif()
+	find_package(CUDAToolkit REQUIRED)  # requires cmake 3.17
+	# Thrust ships with the CUDA toolkit, but its CMake config lands in different places: apt puts it in
+	# CMake's default search path (/usr/share/cmake/thrust), while NVIDIA toolkits/containers put it under
+	# the toolkit (/usr/local/cuda/lib64/cmake/thrust) which is NOT searched by default. Hint at the toolkit,
+	# and fall back to the (header-only) toolkit headers when no Thrust CMake package is installed at all.
+	find_package(Thrust CONFIG QUIET HINTS "${CUDAToolkit_LIBRARY_DIR}/cmake")
+	if(Thrust_FOUND)
+		thrust_create_target(MyThrust)
+	else()
+		add_library(MyThrust INTERFACE)
+		target_link_libraries(MyThrust INTERFACE CUDA::cudart)
+		target_include_directories(MyThrust SYSTEM INTERFACE ${CUDAToolkit_INCLUDE_DIRS})
+	endif()
+endif()
 
-find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 
-include_directories(${Boost_INCLUDE_DIRS})
+find_package(Boost CONFIG REQUIRED)  # tests require Boost.Core LightweightTest
 
-file(
-	GLOB TEST_SRCS
-	RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-	*.cu
-)
-# set(TEST_SRCS managed.cu )
+enable_testing()
+include(CTest)
+
+include_directories(${CMAKE_BINARY_DIR})
+
+set(TEST_SRCS)
+#	neighbor_list.cu)
 
 foreach(TEST_FILE ${TEST_SRCS})
-	get_filename_component(TEST_EXE ${TEST_FILE} NAME_WE)
-	add_executable(${TEST_EXE} ${TEST_FILE})
 	if(ENABLE_CUDA OR DEFINED CXXCUDA)
-		set_source_files_properties(${TEST_FILE} PROPERTIES LANGUAGE CUDA)
-		# target_compile_options(${TEST_EXE} PRIVATE -std=c++17 --expt-relaxed-constexpr)
-	endif()
-	# target_compile_features   (${TEST_EXE} PUBLIC cxx_std_17)
-	target_compile_definitions(${TEST_EXE} PRIVATE "BOOST_PP_VARIADICS")
-	target_compile_definitions(${TEST_EXE} PRIVATE ${Boost_DEFINITIONS})
-	# target_include_directories(${TEST_EXE} SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
-	target_link_libraries(${TEST_EXE} PRIVATE ${Boost_LIBRARIES})
-	target_link_directories(${TEST_EXE} PRIVATE ${Boost_LIBRARY_DIRS})
-	target_link_libraries(${TEST_EXE} PRIVATE multi)
+		set(TEST_EXE "${TEST_FILE}.x")
+		add_executable(${TEST_EXE} ${TEST_FILE})
 
-	# if(NOT ENABLE_CUDA) target_compile_options  (${TEST_EXE} PRIVATE -Werror -Wall -Wextra -fno-common $<$<CXX_COMPILER_ID:GNU>: -Wpedantic -Wformat-truncation -fstack-usage>#-Wconversion
-	# $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
-	# -Wpedantic -Wmove> $<$<CXX_COMPILER_ID:Intel>: -wd161 -diag-disable=remark -Warray-bounds -Wchar-subscripts -Wcomment -Wenum-compare -Wformat -Wuninitialized -Wmaybe-uninitialized -Wmain -Wnarrowing -Wnonnull -Wparentheses
-	# -Wpointer-sign -Wreorder -Wno-return-type -Wsign-compare -Wsequence-point -Wtrigraphs -Wunused-function -Wunused-but-set-variable -Wunused-variable -Wwrite-strings -Werror -diag-error:3846 > $<$<CXX_COMPILER_ID:MSVC>: /W4>) endif()
-	add_test(NAME ${TEST_EXE} COMMAND $<TARGET_FILE:${TEST_EXE}>)
+		target_compile_definitions(${TEST_EXE} PRIVATE ${Boost_DEFINITIONS})
+
+		# target_include_directories(${TEST_EXE}        PRIVATE ${PROJECT_SOURCE_DIR}/include)
+		target_include_directories(${TEST_EXE}        PRIVATE ${CUDA_INCLUDE_DIRS})
+	
+		#target_compile_options(${TEST_EXE} PRIVATE --expt-relaxed-constexpr)
+
+		target_include_directories(${TEST_EXE} SYSTEM PUBLIC ${_THRUST_INCLUDE_DIR})
+		target_link_libraries(${TEST_EXE} PRIVATE MyThrust)
+
+		target_link_libraries(${TEST_EXE} PRIVATE ${CUDA_LIBRARIES})
+		target_link_libraries(${TEST_EXE} PRIVATE multi)
+		target_link_libraries(${TEST_EXE} PRIVATE MyThrust)  # inherits Thrust usage requirements, incl. -Xcompiler=/wd4668 on MSVC+nvcc
+
+		set_source_files_properties(${TEST_FILE} PROPERTIES LANGUAGE CUDA)
+		
+		add_test(NAME ${TEST_EXE} COMMAND ./${TEST_EXE})
+	endif()
 endforeach()
+
+# target_compile_options(neighbor_list.cu.x PRIVATE $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:--extended-lambda>)

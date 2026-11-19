@@ -1,47 +1,21 @@
-// Copyright 2018-2024 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 // Copyright 2024 Matt Borland
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/multi/array.hpp>
+#include <boost/multi/array.hpp>  // for array, array_iterator, static_array
 
-// Suppress warnings from boost.test
-#if defined(__clang__)
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wold-style-cast"
-#  pragma clang diagnostic ignored "-Wundef"
-#  pragma clang diagnostic ignored "-Wconversion"
-#  pragma clang diagnostic ignored "-Wsign-conversion"
-#  pragma clang diagnostic ignored "-Wfloat-equal"
-#elif defined(__GNUC__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wold-style-cast"
-#  pragma GCC diagnostic ignored "-Wundef"
-#  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wfloat-equal"
-#elif defined(_MSC_VER)
-#  pragma warning(push)
-#  pragma warning(disable : 4285)  // Recursive return type for fancy_ptr if infix notationis applied
-#endif
-
-#ifndef BOOST_TEST_MODULE
-#  define BOOST_TEST_MAIN
-#endif
-
-#include <boost/test/unit_test.hpp>
-
-#if defined(__clang__)
-#  pragma clang diagnostic pop
-#elif defined(__GNUC__)
-#  pragma GCC diagnostic pop
-#endif
+#include <cstddef>      // for size_t, nullptr_t, ptrdiff_t
+#include <iterator>     // for random_access_iterator_tag
+#include <memory>       // for allocator
+#include <type_traits>  // for decay_t
+// IWYU pragma: no_include <version>  // for __GLIBCXX__  // NOLINT(misc-include-cleaner)
 
 namespace fancy {
 
 template<class T> class ref;
 
-template<class T = void> class ptr {  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-special-member-functions)
+template<class T = void> class ptr {  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-special-member-functions,misc-use-internal-linkage)
 	static double const value;
 
  public:
@@ -61,28 +35,25 @@ template<class T = void> class ptr {  // NOLINT(cppcoreguidelines-special-member
 	constexpr ptr(ptr const& /*other*/) = default;
 
 	// vvv it is important that these two functions are device or device host functions
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
 	constexpr auto operator*() const noexcept -> reference { return reference{}; }
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
+
 	constexpr auto operator+(difference_type /*unused*/) const noexcept -> ptr { return *this; }
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
+
+	constexpr friend auto operator+(difference_type n, ptr self) { return self + n; }
+
+	constexpr auto operator[](difference_type dist) const noexcept -> reference { return *(*this + dist); }
 
 	auto operator+=(difference_type /*difference*/) noexcept -> ptr& { return *this; }
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
+
 	auto operator++() noexcept -> ptr& { return operator+=(1); }
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
+
 	friend auto operator-(ptr const& /*a*/, ptr const& /*b*/) noexcept -> difference_type { return 0; }
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
+
 	auto operator==(ptr const& /*other*/) const noexcept -> bool { return true; }
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
 	auto operator!=(ptr const& /*other*/) const noexcept -> bool { return false; }
-	//  explicit operator T*() const{return &value;}
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
-	auto operator->() const noexcept -> ptr const& { return *this; }
-	// NOLINTNEXTLINE(fuchsia-trailing-return): this class simulates pointer
-	//  friend auto to_address(ptr const& pointer) -> ptr {return pointer;}
+
 	explicit operator bool() const noexcept { return false; }
-	//  operator double*() const{return &value;}
+
 	friend auto get_allocator(ptr const& /*self*/) noexcept { return std::allocator<value_type>{}; }
 };
 
@@ -111,11 +82,11 @@ template<class T> class ref {
 	using decay_t = std::decay_t<T>;
 };
 
-template<class T> struct allocator {
+template<class T> struct allocator {  // NOLINT(misc-use-internal-linkage)
 	using pointer    = ptr<T>;
 	using value_type = T;
-	auto allocate(std::size_t /*size*/) { return pointer{}; }
-	void deallocate(pointer /*base*/, std::size_t /*size*/) {
+	static auto allocate(std::size_t /*size*/) { return pointer{}; }
+	static void deallocate(pointer /*base*/, std::size_t /*size*/) {
 		/*no-op;*/
 	}
 	//  std::true_type operator==(allocator const&){return {};}
@@ -124,30 +95,33 @@ template<class T> struct allocator {
 		/*no-op;*/
 	}
 	template<class... Args>
-	void construct(pointer /*location*/, Args const&... /*args*/) {
+	static void construct(pointer /*location*/, Args const&... /*args*/) {
 		/*no-op;*/
 	}
-	void destroy(pointer /*location*/) {
+	static void destroy(pointer /*location*/) {
 		/*no-op;*/
 	}
 };
 
-// all these are optional, depending on the level of specialization needed
-template<class Ptr, class T, class Size>
-auto copy_n(Ptr /*first*/, Size /*count*/, ptr<T> result) {
-	//  std::cerr<< "called Pointer-based copy_n(Ptr, n, fancy::ptr)" <<std::endl;
-	return result;
-}
-template<class Ptr, class T, class Size>
-auto copy_n(ptr<T> /*first*/, Size /*count*/, Ptr result) {
-	//  std::cerr<< "called Pointer-based copy_n(fancy::ptr, n, Ptr)" <<std::endl;
-	return result;
-}
-template<class T1, class T2, class Size>
-auto copy_n(ptr<T1> /*first*/, Size /*count*/, ptr<T2> result) {
-	//  std::cerr<< "called Pointer-based copy_n(fancy::ptr, n, fancy::ptr)" <<std::endl;
-	return result;
-}
+// namespace {
+// // all these are optional, depending on the level of specialization needed
+// template<class Ptr, class T, class Size>
+// auto copy_n(Ptr /*first*/, Size /*count*/, ptr<T> result) {
+//  //  std::cerr<< "called Pointer-based copy_n(Ptr, n, fancy::ptr)" <<std::endl;
+//  return result;
+// }
+// template<class Ptr, class T, class Size>
+// auto copy_n(ptr<T> /*first*/, Size /*count*/, Ptr result) {
+//  //  std::cerr<< "called Pointer-based copy_n(fancy::ptr, n, Ptr)" <<std::endl;
+//  return result;
+// }
+// template<class T1, class T2, class Size>
+// auto copy_n(ptr<T1> /*first*/, Size /*count*/, ptr<T2> result) {
+//  //  std::cerr<< "called Pointer-based copy_n(fancy::ptr, n, fancy::ptr)" <<std::endl;
+//  return result;
+// }
+
+// }  // end unnamed namespace
 
 }  // end namespace fancy
 
@@ -158,44 +132,44 @@ auto copy_n(ptr<T1> /*first*/, Size /*count*/, ptr<T2> result) {
 
 namespace boost::multi {
 
-template<class It, class T>
-auto copy(It first, It last, fancy::ptr<T> dest) {
-	return copy(first, last, multi::array_iterator<T, 1, fancy::ptr<T>>{dest});
-	//  std::cerr << "1D copy(it1D, it1D, it1D) with strides " << stride(first) << " " << stride(dest) << std::endl;
-	//  return dest;
-}
+// namespace {
+// template<class It, class T>
+// auto copy(It first, It last, fancy::ptr<T> dest) {
+//  return copy(first, last, multi::array_iterator<T, 1, fancy::ptr<T>>{dest});
+//  //  std::cerr << "1D copy(it1D, it1D, it1D) with strides " << stride(first) << " " << stride(dest) << std::endl;
+//  //  return dest;
+// }
 
-template<class It, class T>  // custom copy 1D (aka strided copy)
-auto copy(It /*first*/, It /*last*/, multi::array_iterator<T, 1, fancy::ptr<T>> dest) {
-	//  std::cerr << "1D copy(it1D, it1D, it1D) with strides " << stride(first) << " " << stride(dest) << std::endl;
-	return dest;
-}
+// template<class It, class T>  // custom copy 1D (aka strided copy)
+// auto copy(It /*first*/, It /*last*/, multi::array_iterator<T, 1, fancy::ptr<T>> dest) {
+//  //  std::cerr << "1D copy(it1D, it1D, it1D) with strides " << stride(first) << " " << stride(dest) << std::endl;
+//  return dest;
+// }
 
-template<class It, class T>  // custom copy 2D (aka double strided copy)
-auto copy(It /*first*/, It /*last*/, multi::array_iterator<T, 2, fancy::ptr<T>> dest) {
-	//  std::cerr<<"2D copy(It, It, it2D) with strides 1"<< first.stride() <<" "<< dest.stride() <<std::endl;
-	return dest;
-}
+// template<class It, class T>  // custom copy 2D (aka double strided copy)
+// auto copy(It /*first*/, It /*last*/, multi::array_iterator<T, 2, fancy::ptr<T>> dest) {
+//  //  std::cerr<<"2D copy(It, It, it2D) with strides 1"<< first.stride() <<" "<< dest.stride() <<std::endl;
+//  return dest;
+// }
 
-//  template<class Alloc, class It, class T> // custom copy 2D (aka double strided copy)
-//  auto uninitialized_copy(Alloc&, It first, It last, multi::array_iterator<T, 2, fancy::ptr<T>> const& dest){
-//     std::cerr << "2D uninitialized_copy(...) calls raw copy 2D" << std::endl;
-//    return copy(first, last, dest);
-//  }
+// }  // end unnamed namespace
 
 }  // end namespace boost::multi
 
-////////////////////////////////////////////////////////////////////////////////
-// user code
-////////////////////////////////////////////////////////////////////////////////
+#include <boost/core/lightweight_test.hpp>
 
-BOOST_AUTO_TEST_CASE(multi_fancy) {
-	namespace multi = boost::multi;
+auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugprone-exception-escape)
+	// BOOST_AUTO_TEST_CASE(multi_fancy)
+	{
+		namespace multi = boost::multi;
 
-	multi::array<double, 2, fancy::allocator<double>> arr({5, 5});
-	BOOST_REQUIRE( arr.size() == 5 );
-	BOOST_REQUIRE( arr[1][1] == arr[2][2] );
+		multi::array<double, 2, fancy::allocator<double>> arr({5, 5});
+		BOOST_TEST( arr.size() == 5 );
+		BOOST_TEST( arr[1][1] == arr[2][2] );
 
-	multi::array<double, 2, fancy::allocator<double>> const arr2({0, 0});
-	BOOST_REQUIRE( arr2.size() == 0 );
+		multi::array<double, 2, fancy::allocator<double>> const arr2({0, 0});
+		BOOST_TEST( arr2.size() == 0 );
+	}
+
+	return boost::report_errors();
 }

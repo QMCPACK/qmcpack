@@ -51,7 +51,7 @@ public:
   UPtrVector<RandomBase<FullPrecRealType>>& get_rng_ptr_list() { return rng_ptr_list_; }
   RandomBase<FullPrecRealType>& get_rng_save() { return *rng_save_ptr_; }
 
-  UPtrVector<TrialWaveFunction>& get_wf_ptr_list() { return wf_ptr_list_; }
+
 
   Return_rt& get_e0() { return e0_; }
   Return_rt& get_e2() { return e2_; }

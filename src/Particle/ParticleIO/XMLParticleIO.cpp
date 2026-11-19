@@ -532,8 +532,8 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
     Particle_t::PAListIterator it = ref_.first_attrib();
     while(it != ref_.last_attrib())
     {
-      OhmmsObject* ooref= (*it).second;
-//       if(ooref->objName() == ionid_tag) {
+      OhmmsElementBase* ooref= (*it).second;
+//       if(ooref->getName() == ionid_tag) {
 // 	IonName.begin_node(fxml);
 //  	for(int iat=0; iat<nloc; iat++) {
 //  	  fxml << IonName[iat] << " ";
@@ -542,7 +542,6 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
 // 	IonName.end_node(fxml);
 //       } else {
       int t_id = ref_AttribList.getAttribType(otype);
-      int o_id = ooref->id();
       ooref->begin_node(fxml);
       if(t_id == PA_IndexType)
       {

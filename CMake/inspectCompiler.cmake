@@ -6,8 +6,6 @@
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(COMPILER GNU)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "XL")
-  set(COMPILER IBM)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
   set(COMPILER Intel)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "PGI" OR CMAKE_CXX_COMPILER_ID MATCHES "NVHPC")
@@ -25,9 +23,7 @@ message(STATUS "C++ Compiler is identified by QMCPACK as : ${COMPILER}")
 #------------------------------------
 # Include compiler-specific cmake file
 #------------------------------------
-if(COMPILER MATCHES "IBM")
-  include(IBMCompilers)
-elseif(COMPILER MATCHES "Intel")
+if(COMPILER MATCHES "Intel")
   include(IntelCompilers)
 elseif(COMPILER MATCHES "GNU")
   include(GNUCompilers)

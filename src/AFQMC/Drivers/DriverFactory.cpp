@@ -136,7 +136,7 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
 
   app_log() << " Using " << ncores_per_TG << " cores per node in all TaskGroups. \n";
 
-  hdf_archive read(gTG.Global());
+  hdf_archive read;
   if (gTG.getGlobalRank() == 0)
   {
     if (hdf_read_restart != std::string(""))

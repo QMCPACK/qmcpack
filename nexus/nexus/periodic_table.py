@@ -5,8 +5,10 @@
 """Classes and methods for getting data and properties of elements."""
 
 from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
+
 from .developer import warn
 
 
@@ -181,7 +183,7 @@ class Elements(ElementData, Enum):
         atomic_weight: float,
         group: int,
         isotopes: dict[int, float]
-    ):
+        ):
         element = ElementData.__new__(cls)
         element._value_ = atomic_number
         return element
@@ -198,7 +200,7 @@ class Elements(ElementData, Enum):
             f"atomic_number={self.atomic_number}, "
             f"atomic_weight={self.atomic_weight}, "
             f"group={self.group}>"
-        )
+            )
 
     def __str__(self) -> str:
         return self.symbol
@@ -230,8 +232,9 @@ class Elements(ElementData, Enum):
     @staticmethod
     def is_element(
         value: str,
+        *,
         return_element: bool = False,
-    ) -> bool | tuple[bool, Elements]:
+        ) -> bool | tuple[bool, Elements]:
         """Robust method that will try to match a wide array of element
         identifier formats, including all that are handled by the parent
         call signature ``Elements(value)``.

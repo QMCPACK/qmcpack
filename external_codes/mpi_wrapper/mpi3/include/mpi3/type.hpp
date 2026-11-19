@@ -1,4 +1,4 @@
-// Copyright 2018-2024 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_TYPE_HPP
 #define BOOST_MPI3_TYPE_HPP
@@ -24,7 +24,7 @@ template<
 	class Stride                                          = typename MultiIt::stride_type,
 	std::enable_if_t<(MultiIt::dimensionality >= 1), int> = 0,
 	typename Element = typename MultiIt::element, typename DataType = detail::basic_datatype<Element>,
-	std::enable_if_t<detail::is_basic<Element>{}, int> = 0>
+	std::enable_if_t<detail::is_basic<Element>{}, int> = 0>  // NOLINT(modernize-use-constraints)
 typename MultiIt::element_ptr base(MultiIt first) { return first.base(); }
 
 template<class T> T* base(T* p) { return p; }
@@ -43,7 +43,7 @@ struct committed_type {
 struct type {
 	explicit type(MPI_Datatype const& dt) noexcept : impl_{dt} {  // NOLINT(bugprone-exception-escape) TODO(correaa) improve this global initialization
 	    if(mpi3::initialized()) {  // cppcheck-suppress[throwInNoexceptFunction]; TODO(correaa) improve this global initialization
-		#if not defined(EXAMPI)
+		#ifndef EXAMPI
 	        MPI_(Type_dup)(dt, &impl_);
 		#endif
 	    }
@@ -58,15 +58,15 @@ struct type {
 
 	template<
 		class T,
-		std::enable_if_t<not std::is_same<T*, MPI_Datatype>{}, int>                                   = 0,
-		std::enable_if_t<std::is_trivially_copy_assignable<T>{} and (not detail::is_basic<T>{}), int> = 0>
+		std::enable_if_t<!std::is_same_v<T*, MPI_Datatype>, int>                                   = 0,  // NOLINT(modernize-use-constraints) for C++20
+		std::enable_if_t<std::is_trivially_copy_assignable_v<T> and (!detail::is_basic<T>::value), int> = 0>  // NOLINT(modernize-use-constraints) for C++20
 	explicit type(T const* /*type*/)
 	: type{type{MPI_BYTE}.contiguous(sizeof(T))} {}
 
 	template<
 		class MultiIt, class Size = typename MultiIt::difference_type, class Stride = typename MultiIt::stride_type, std::enable_if_t<MultiIt::dimensionality == 1, int> = 0,
 		typename E = typename MultiIt::element, typename = decltype(detail::basic_datatype<E>::value_f()),
-		std::enable_if_t<detail::is_basic<E>{}, int> = 0>
+		std::enable_if_t<detail::is_basic<E>::value, int> = 0>  // NOLINT(modernize-use-constraints) for C++20
 	explicit type(MultiIt first) : type{type{first.base()}.vector(1, 1, first.stride() * sizeof(E)).resize(0, first.stride() * sizeof(E))} {}
 
  private:
@@ -87,7 +87,7 @@ struct type {
 		class MultiIt, class Stride = typename MultiIt::stride_type,
 		std::size_t D = MultiIt::dimensionality, std::enable_if_t<(D >= 2), int> = 0,
 		typename E = typename MultiIt::element, typename = decltype(detail::basic_datatype<E>::value_f()),
-		std::enable_if_t<detail::is_basic<E>{}, int> = 0>
+		std::enable_if_t<detail::is_basic<E>{}, int> = 0>  // NOLINT(modernize-use-constraints) for C++20
 	explicit type(MultiIt first) : type{first.base()} {
 		auto const strides = apply([](auto... e) { return std::array<Stride, D - 1>{static_cast<Stride>(e)...}; }, first->strides());  // NOLINT(altera-id-dependent-backward-branch) TODO(correaa) investigate
 		auto const sizes   = apply([](auto... e) { return std::array<Stride, D - 1>{static_cast<Stride>(e)...}; }, first->sizes());  // NOLINT(altera-id-dependent-backward-branch) TODO(correaa) investigate
@@ -101,13 +101,13 @@ struct type {
 
 	type() = default;// {std::clog << "ctor type()" << std::endl;}
 
-	#if not defined(EXAMPI)
+	#ifndef EXAMPI
 	type(type const& other) { MPI_Type_dup(other.impl_, &impl_); }
 	#endif
 
 	type(type&& other) noexcept : impl_{std::exchange(other.impl_, MPI_DATATYPE_NULL)} {}  // TODO(correaa) consider not making it default constructible or movable
 
-	#if not defined(EXAMPI)
+	#ifndef EXAMPI
 	type& operator=(type const& other) {
 		type tmp(other);
 		swap(tmp);
@@ -121,7 +121,7 @@ struct type {
 		return *this;
 	}
 
-	void     swap(type& other) { std::swap(impl_, other.impl_); }
+	void     swap(type& other) noexcept { std::swap(impl_, other.impl_); }
 	explicit operator MPI_Datatype() const& {
 		MPI_Type_commit(const_cast<MPI_Datatype*>(&impl_));  // NOLINT(cppcoreguidelines-pro-type-const-cast) TODO(correaa)
 		return impl_;
@@ -131,16 +131,16 @@ struct type {
 
 	auto operator&() const& -> type const* { return this; }  // NOLINT(google-runtime-operator)
 	auto operator&() && -> MPI_Datatype {  // NOLINT(google-runtime-operator)
-		MPI_Type_commit(const_cast<MPI_Datatype*>(&impl_));  // NOLINT(cppcoreguidelines-pro-type-const-cast) TODO(correaa)
+		MPI_Type_commit(/*const_cast<MPI_Datatype*>(*/&impl_/*)*/);  // NOLINT(cppcoreguidelines-pro-type-const-cast) TODO(correaa)
 		return impl_;
 	}
 	auto operator&() & -> MPI_Datatype {  // NOLINT(google-runtime-operator)
-		MPI_Type_commit(const_cast<MPI_Datatype*>(&impl_));  // NOLINT(cppcoreguidelines-pro-type-const-cast) TODO(correaa)
+		MPI_Type_commit(/*const_cast<MPI_Datatype*>(*/&impl_/*)*/);  // NOLINT(cppcoreguidelines-pro-type-const-cast) TODO(correaa)
 		return impl_;
 	}
 
 	committed_type commit() && {
-		MPI_Type_commit(const_cast<MPI_Datatype*>(&impl_));  // NOLINT(cppcoreguidelines-pro-type-const-cast) TODO(correaa)
+		MPI_Type_commit(&impl_);  // NOLINT(cppcoreguidelines-pro-type-const-cast) TODO(correaa)
 		return committed_type{std::exchange(impl_, MPI_DATATYPE_NULL)};
 	}
 	template<class T> void commit_as(T const& /*unused*/) { return commit_as<T>(); }
@@ -152,7 +152,7 @@ struct type {
 					MPI_Type_free(&impl_);
 				}
 			}
-		} catch(...) {
+		} catch(...) {  // NOLINT(bugprone-empty-catch)
 		}
 	}
 
@@ -189,7 +189,7 @@ struct type {
 		//  array_of_types.reserve(il.size());
 		MPI_Aint    current_disp = 0;
 		std::string new_name     = "{";
-		std::for_each(il.begin(), il.end(), [&il, &disp, &current_disp, &new_name](auto const& e) {
+		std::for_each(il.begin(), il.end(), [&il, &disp, &current_disp, &new_name](auto const& e) {  // NOLINT(boost-use-ranges,modernize-use-ranges) for C++20, use std::ranges::for_each
 			disp.push_back(current_disp);
 			current_disp += e.size();
 			new_name += (&e != il.begin() ? ", " : "") + e.name();
@@ -302,8 +302,23 @@ static type const  short_int{MPI_SHORT_INT};  // NOLINT(fuchsia-statically-const
 static type const  int_int{MPI_2INT};
 static type const& _2int = int_int;  // NOLINT(fuchsia-statically-constructed-objects)
 static type const  long_double_int{MPI_LONG_DOUBLE_INT};  // NOLINT(fuchsia-statically-constructed-objects)
+#ifdef MPI_CXX_FLOAT_COMPLEX
 static type const  float_complex{MPI_CXX_FLOAT_COMPLEX};
+#else
+static type const  float_complex{MPI_C_FLOAT_COMPLEX};
+#endif
+
+#if !defined(_MSC_VER) && (defined(EXAMPI) || defined(MPI_CXX_DOUBLE_COMPLEX))
 static type const  double_complex{MPI_CXX_DOUBLE_COMPLEX};
+#else
+static type const  double_complex{MPI_C_DOUBLE_COMPLEX};
+#endif
+
+#if !defined(_MSC_VER) && (defined(EXAMPI) || defined(MPI_CXX_DOUBLE_COMPLEX))
+static type const  long_double_complex{MPI_CXX_LONG_DOUBLE_COMPLEX};
+#else
+static type const  long_double_complex{MPI_C_LONG_DOUBLE_COMPLEX};
+#endif
 // NOLINTEND(fuchsia-statically-constructed-objects)
 
 template<class T> auto make_type() -> type const&;

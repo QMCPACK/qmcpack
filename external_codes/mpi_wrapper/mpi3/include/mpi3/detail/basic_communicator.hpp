@@ -1,20 +1,21 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #ifndef BMPI3_DETAIL_BASIC_COMMUNICATOR_HPP
 #define BMPI3_DETAIL_BASIC_COMMUNICATOR_HPP
 
-#include "../../mpi3/vector.hpp"
+#include <mpi3/vector.hpp>
 
-#include "../../mpi3/detail/buffer.hpp"
-#include "../../mpi3/detail/iterator_traits.hpp"
-#include "../../mpi3/detail/value_traits.hpp"
+#include <mpi3/detail/buffer.hpp>
+#include <mpi3/detail/iterator_traits.hpp>
+#include <mpi3/detail/value_traits.hpp>
 
-#include "../../mpi3/match.hpp"
-#include<mpi.h>
+#include <mpi3/match.hpp>
 
-#include<algorithm>
+#include <mpi3/detail/mpi_impl.h>
 
-#include<cassert>
+#include <algorithm>
+
+#include <cassert>
 
 namespace boost {
 namespace mpi3 {
@@ -87,7 +88,7 @@ class basic_communicator{
 	auto pack_n(It first, Size count, uvector<detail::packed>& p) {
 		assert(p.size() < std::numeric_limits<int>::max());
 		int const pos = static_cast<int>(p.size());
-		p.resize(p.size() + static_cast<std::size_t>(pack_size<typename std::iterator_traits<It>::value_type>(static_cast<int>(count))));
+		p.resize(p.size() + static_cast<uvector<detail::packed>::size_type>(pack_size<typename std::iterator_traits<It>::value_type>(static_cast<int>(count))));
 		return pack_n(first, count, p, pos);
 	}
 	template<class It>
@@ -174,7 +175,7 @@ class basic_communicator{
 		return b.pos = unpack(b, b.pos, first, last);
 	}
 	template<class It, typename Size>
-	auto unpack_n(uvector<detail::packed>& b, int pos, It first, Size count){
+	auto unpack_n(uvector<detail::packed>& b, int pos, It first, Size count) -> int {
 		return unpack_n(
 			b, pos,
 			first,
@@ -184,7 +185,7 @@ class basic_communicator{
 		);
 	}
 	template<class It, typename Size>
-	auto unpack_n(detail::buffer& b, It first, Size count) {
+	auto unpack_n(detail::buffer& b, It first, Size count) -> int {
 	//  assert(0);
 		b.pos = unpack_n(b, b.pos, first, count);
 		return b.pos;
@@ -196,11 +197,13 @@ class basic_communicator{
 			detail::basic_tag /*basic*/,
 		Size count,
 		int dest, int tag
-	) {
+	) -> void {
+		// When count==0, avoid dereferencing iterator (MSVC debug asserts on end iterators)
+		typename std::iterator_traits<It>::pointer ptr = (count != 0) ? detail::data(first) : nullptr;
 		MPI_(Send)(
-			detail::data(first), static_cast<int>(count),  // TODO(correaa) use safe cast
+			ptr, static_cast<int>(count),  // TODO(correaa) use safe cast
 			detail::basic_datatype<typename std::iterator_traits<It>::value_type>{},
-			dest, tag, 
+			dest, tag,
 			impl_
 		);
 	}
@@ -243,7 +246,7 @@ class basic_communicator{
 		);
 	}
 	auto send(uvector<detail::packed> const& p, int dest, int tag = 0) {
-		return send_n(p.data(), p.size(), dest, tag);
+		return send_n(p.data(), p.size(), dest, tag);  // NOLINT(readability-avoid-return-with-void-value)
 	}
 
 	template<class It, typename Size>
@@ -259,7 +262,7 @@ class basic_communicator{
 		return std::copy_n(buffer.begin(), n, dest);
 	}
 
-	#if not defined(EXAMPI)
+	#ifndef EXAMPI
 	match matched_probe(int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG) const {
 		match m;
 		MPI_(Mprobe)(source, tag, impl_, &m.message::impl_, &m.status::impl_);
@@ -268,16 +271,16 @@ class basic_communicator{
 
 	auto receive(uvector<detail::packed>& b, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG) const {
 		match m = matched_probe(source, tag);
-		auto const count = static_cast<std::size_t>(m.count<detail::packed>());
+		auto const count = static_cast<buffer::size_type>(m.count<detail::packed>());
 		auto const size = static_cast<std::ptrdiff_t>(b.size());
 		b.resize(b.size() + count);
-		return m.receive_n(std::next(b.data(), size), count);
+		return m.receive_n(std::next(b.data(), size), count);  // NOLINT(readability-avoid-return-with-void-value)
 	}
 	#endif
 
-	#if not defined(EXAMPI)
+	#ifndef EXAMPI
 	auto receive(detail::buffer& b, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG) const {
-		return receive(static_cast<uvector<detail::packed>&>(b), source, tag);
+		return receive(static_cast<uvector<detail::packed>&>(b), source, tag);  // NOLINT(readability-avoid-return-with-void-value)
 	}
 	#endif
 	template<class It, typename Size, typename... Meta>

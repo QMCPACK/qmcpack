@@ -18,13 +18,12 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QueueAliases.hpp"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
-#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
 
 template<typename VALUE_INVERTER, typename VALUE>
-class DiracMatrixInverter : public Resource
+class DiracMatrixInverter
 {
   using InverterPrecReal = RealAlias<VALUE_INVERTER>;
   using LogValue         = std::complex<InverterPrecReal>;
@@ -35,7 +34,7 @@ class DiracMatrixInverter : public Resource
   using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
 
 public:
-  DiracMatrixInverter(const std::string& name) : Resource(name) {}
+  virtual ~DiracMatrixInverter() = default;
 
   virtual void mw_invert_transpose(compute::QueueBase& queue,
                                    const RefVector<const OffloadPinnedMatrix<VALUE>>& a_mats,

@@ -1,16 +1,20 @@
 #
 # LiH solid einspline wavefunction tests for different k-points
-# Wavefunctions from quantum espresso. Reference energies obtained via pw2casino option
+# Wavefunctions from Quantum ESPRESSO. Reference energies obtained via pw2casino option
 #
 list(APPEND LIH_GAMMA_SCALARS "kinetic" "7.4145221704067854 0.024")
 list(APPEND LIH_GAMMA_SCALARS "localecp" "-11.718808431876706 0.025")
 list(APPEND LIH_GAMMA_SCALARS "samples" "1600000 0.0")
 #  LIST(APPEND LIH_GAMMA_SCALARS "flux" "0.0 0.05")
 
+# Plane wave tests use one quarter of the samples and twice the statistical error bars.
+list(APPEND LIH_GAMMA_SCALARS_PW "kinetic" "7.4145221704067854 0.048")
+list(APPEND LIH_GAMMA_SCALARS_PW "localecp" "-11.718808431876706 0.050")
+list(APPEND LIH_GAMMA_SCALARS_PW "samples" "400000 0.0")
+
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+  short-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_LiH-gamma
   hf_vmc_LiH-gamma.xml
   1
   16
@@ -20,9 +24,8 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj
+  short-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc_drift
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_LiH-gamma-drift
   hf_vmc_LiH-gamma-drift.xml
   1
   16
@@ -32,9 +35,8 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-gamma-drift-vmcbatch_hf_noj
+  short-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmcbatch_drift
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-gamma-drift
   hf_vmcbatch_LiH-gamma-drift.xml
   1
   16
@@ -43,15 +45,52 @@ qmc_run_and_check(
   LIH_GAMMA_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp_gamma-sd_pw_hf-vmcbatch_drift
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-gamma-drift_pw.xml
+  1
+  16
+  TRUE
+  0
+  LIH_GAMMA_SCALARS_PW # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmcbatch
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-gamma.xml
+  1
+  16
+  TRUE
+  0
+  LIH_GAMMA_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp_gamma-sd_pw_hf-vmcbatch
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-gamma_pw.xml
+  1
+  16
+  TRUE
+  0
+  LIH_GAMMA_SCALARS_PW # VMC
+)
+
 list(APPEND LIH_X_SCALARS "kinetic" "7.3772282047321536 0.024")
 list(APPEND LIH_X_SCALARS "localecp" "-11.414410381100344 0.025")
 list(APPEND LIH_X_SCALARS "samples" "1600000 0.0")
 #  LIST(APPEND LIH_X_SCALARS "flux" "0.0 0.05")
 
+# Plane wave tests use one quarter of the samples and twice the statistical error bars.
+list(APPEND LIH_X_SCALARS_PW "kinetic" "7.3772282047321536 0.048")
+list(APPEND LIH_X_SCALARS_PW "localecp" "-11.414410381100344 0.050")
+list(APPEND LIH_X_SCALARS_PW "samples" "400000 0.0")
+
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-x-vmc_hf_noj
+  short-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_LiH-x
   hf_vmc_LiH-x.xml
   1
   16
@@ -61,9 +100,8 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj
+  short-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmc_drift
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_LiH-x-drift
   hf_vmc_LiH-x-drift.xml
   1
   16
@@ -73,9 +111,8 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-x-drift-vmcbatch_hf_noj
+  short-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmcbatch_drift
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-x-drift
   hf_vmcbatch_LiH-x-drift.xml
   1
   16
@@ -84,11 +121,43 @@ qmc_run_and_check(
   LIH_X_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp_x-sd_pw_hf-vmcbatch_drift
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-x-drift_pw.xml
+  1
+  16
+  TRUE
+  0
+  LIH_X_SCALARS_PW # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp_x-sd_hf_noj-vmcbatch
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-x.xml
+  1
+  16
+  TRUE
+  0
+  LIH_X_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp_x-sd_pw_hf-vmcbatch
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-x_pw.xml
+  1
+  16
+  TRUE
+  0
+  LIH_X_SCALARS_PW # VMC
+)
+
 # Hybridrep is not implemented in legacy CUDA but should be correctly error trapped
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
+  short-LiH_solid_1x1x1_hybridrep_pp_x-sd_hf_noj-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_LiH-x
   hf_vmc_LiH-x_hybridrep.xml
   1
   16
@@ -103,6 +172,11 @@ list(APPEND LIH_ARB_SCALARS "localecp" "-11.615276430529056 0.025")
 list(APPEND LIH_ARB_SCALARS "samples" "1600000 0.0") # samples
 #  LIST(APPEND LIH_ARB_SCALARS "flux" "0.0 0.05")
 
+# Plane wave tests use one quarter of the samples and twice the statistical error bars.
+list(APPEND LIH_ARB_SCALARS_PW "kinetic" "7.4201207734399359 0.048")
+list(APPEND LIH_ARB_SCALARS_PW "localecp" "-11.615276430529056 0.050")
+list(APPEND LIH_ARB_SCALARS_PW "samples" "400000 0.0")
+
 if(QMC_COMPLEX)
   set(LIH_ARB_SUCCEED TRUE)
 else()
@@ -110,9 +184,8 @@ else()
 endif()
 
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj
+  short-LiH_solid_1x1x1_pp_arb-sd_hf_noj-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_LiH-arb
   hf_vmc_LiH-arb.xml
   1
   16
@@ -122,9 +195,8 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj
+  short-LiH_solid_1x1x1_pp_arb-sd_hf_noj-vmc_drift
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_LiH-arb-drift
   hf_vmc_LiH-arb-drift.xml
   1
   16
@@ -134,9 +206,8 @@ qmc_run_and_check(
 )
 
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-arb-drift-vmcbatch_hf_noj
+  short-LiH_solid_1x1x1_pp_arb-sd_hf_noj-vmcbatch_drift
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmcbatch_LiH-arb-drift
   hf_vmcbatch_LiH-arb-drift.xml
   1
   16
@@ -145,13 +216,45 @@ qmc_run_and_check(
   LIH_ARB_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp_arb-sd_pw_hf-vmcbatch_drift
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-arb-drift_pw.xml
+  1
+  16
+  ${LIH_ARB_SUCCEED}
+  0
+  LIH_ARB_SCALARS_PW # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp_arb-sd_hf_noj-vmcbatch
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-arb.xml
+  1
+  16
+  ${LIH_ARB_SUCCEED}
+  0
+  LIH_ARB_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp_arb-sd_pw_hf-vmcbatch
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-arb_pw.xml
+  1
+  16
+  ${LIH_ARB_SUCCEED}
+  0
+  LIH_ARB_SCALARS_PW # VMC
+)
+
 # multi-slater determinant requires complex build to run. Ensure fails with real/non-complex build
 list(APPEND LIH_MD_GAMMA_SCALARS "totenergy" "-8.489858484145001 0.004")
 if(QMC_COMPLEX)
   qmc_run_and_check(
-    short-LiH_solid_1x1x1_pp-gamma-vmc_msdj
+    short-LiH_solid_1x1x1_pp_gamma-msd_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    md_cc_vmc_LiH-gamma
     md_cc_vmc_LiH-gamma.xml
     1
     16
@@ -162,9 +265,8 @@ if(QMC_COMPLEX)
 
 else()
   qmc_run_and_check(
-    short-LiH_solid_1x1x1_pp-gamma-vmc_msdj
+    short-LiH_solid_1x1x1_pp_gamma-msd_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-    md_rc_vmc_LiH-gamma
     md_rc_vmc_LiH-gamma.xml
     1
     16
@@ -178,9 +280,8 @@ endif()
 
 list(APPEND LIH_GAMMA_DMC_SCALARS "totenergy" "-8.54823 0.004")
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj
+  short-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-dmc
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_dmc_short_LiH-gamma
   hf_vmc_dmc_short_LiH-gamma.xml
   1
   16
@@ -191,9 +292,8 @@ qmc_run_and_check(
 
 list(APPEND LIH_X_DMC_SCALARS "totenergy" "-8.31413 0.005")
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-x-dmc-hf_noj
+  short-LiH_solid_1x1x1_pp_x-sd_hf_noj-dmc
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_dmc_short_LiH-x
   hf_vmc_dmc_short_LiH-x.xml
   1
   16
@@ -204,9 +304,8 @@ qmc_run_and_check(
 
 list(APPEND LIH_ARB_DMC_SCALARS "totenergy" "-8.45401 0.004")
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj
+  short-LiH_solid_1x1x1_pp_arb-sd_hf_noj-dmc
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_dmc_short_LiH-arb
   hf_vmc_dmc_short_LiH-arb.xml
   1
   16
@@ -217,9 +316,8 @@ qmc_run_and_check(
 
 list(APPEND LIH_GAMMA_DMCNL_SCALARS "totenergy" "-8.54979 0.004")
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj
+  short-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-dmcnl
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_dmcnl_short_LiH-gamma
   hf_vmc_dmcnl_short_LiH-gamma.xml
   1
   16
@@ -230,9 +328,8 @@ qmc_run_and_check(
 
 list(APPEND LIH_X_DMCNL_SCALARS "totenergy" "-8.31369 0.004")
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj
+  short-LiH_solid_1x1x1_pp_x-sd_hf_noj-dmcnl
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_dmcnl_short_LiH-x
   hf_vmc_dmcnl_short_LiH-x.xml
   1
   16
@@ -243,9 +340,8 @@ qmc_run_and_check(
 
 list(APPEND LIH_ARB_DMCNL_SCALARS "totenergy" "-8.45174 0.004")
 qmc_run_and_check(
-  short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj
+  short-LiH_solid_1x1x1_pp_arb-sd_hf_noj-dmcnl
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  hf_vmc_dmcnl_short_LiH-arb
   hf_vmc_dmcnl_short_LiH-arb.xml
   1
   16
@@ -264,6 +360,14 @@ if(QMC_MIXED_PRECISION)
   list(APPEND DET_LIH_GAMMA_SCALARS "localecp" "-11.33922134 0.000005")
   list(APPEND DET_LIH_GAMMA_SCALARS "samples" "9 0.0")
   list(APPEND DET_LIH_GAMMA_SCALARS "flux" "0.04160754 0.00004")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "totenergy" "-8.57638599 0.00002")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "kinetic" "2.27034355 0.00001588")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "potential" "-10.84672954 0.000005")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "eeenergy" "-0.90292867 0.000001")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "ionion" "-3.68927954 0.000001")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "localecp" "-6.25452133 0.000005")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "samples" "9 0.0")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "flux" "9.94392454 0.00004")
 else()
   list(APPEND DET_LIH_GAMMA_SCALARS "totenergy" "-8.99302939 0.000001")
   list(APPEND DET_LIH_GAMMA_SCALARS "kinetic" "7.42549769 0.000001")
@@ -273,12 +377,19 @@ else()
   list(APPEND DET_LIH_GAMMA_SCALARS "localecp" "-11.33922800 0.000001")
   list(APPEND DET_LIH_GAMMA_SCALARS "samples" "9 0.0")
   list(APPEND DET_LIH_GAMMA_SCALARS "flux" "0.04162024 0.000001")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "totenergy" "-8.57638599 0.000001")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "kinetic" "2.27034355 0.000001")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "potential" "-10.84672954 0.000001")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "eeenergy" "-0.90292867 0.000001")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "ionion" "-3.68927954 0.000001")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "localecp" "-6.25452133 0.000001")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "samples" "9 0.0")
+  list(APPEND DET_LIH_GAMMA_BATCHED_SCALARS "flux" "9.94392454 0.000001")
 endif()
 
 qmc_run_and_check(
-  deterministic-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+  deterministic-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  det_hf_vmc_LiH-gamma
   det_hf_vmc_LiH-gamma.xml
   1
   1
@@ -287,33 +398,45 @@ qmc_run_and_check(
   DET_LIH_GAMMA_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  deterministic-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmcbatch
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  det_hf_vmc_LiH-gamma_batched.xml
+  1
+  1
+  TRUE
+  0
+  DET_LIH_GAMMA_BATCHED_SCALARS)
+
 # Minimal test of ensemble run
 # No check on results
 # Arrange for "imbalanced" ensemble and assume will crash or hang/timeout on major error
 # Should abort if number of MPI tasks is smaller than ensemble
-qmc_run_and_check(
-  deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
-  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  det_ensemble_blocks_hf_vmc_LiH-gamma
-  det_ensemble_blocks_hf_vmc_LiH-gamma.txt
-  4
-  1
-  TRUE)
+simple_run_and_check(
+  BASE_NAME deterministic-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc_ensemble_blocks
+  BASE_DIR "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  INPUT_FILE det_ensemble_blocks_hf_vmc_LiH-gamma.txt
+  PROCS 4
+  CMD_OPTIONS --vnode-ranks 1
+  CHECK_SCRIPT check_ensemble.py
+  CHECK_ARGS --ranks 4 --prefix det_ensemble_blocks_hf_vmc_LiH-gamma --ionion -3.68927954)
 
 qmc_run_and_check(
-  deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+  deterministic-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc_ensemble_blocks
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  det_ensemble_blocks_hf_vmc_LiH-gamma
   det_ensemble_blocks_hf_vmc_LiH-gamma.txt
   3
   1
   FALSE)
 
-qmc_run_and_check(
-  deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
-  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-  det_ensemble_blocks_hf_vmc_LiH-gamma
-  det_ensemble_blocks_hf_vmc_LiH-gamma.txt
-  5
-  1
-  TRUE)
+simple_run_and_check(
+  BASE_NAME deterministic-LiH_solid_1x1x1_pp_gamma-sd_hf_noj-vmc_ensemble_blocks
+  BASE_DIR "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  INPUT_FILE det_ensemble_blocks_hf_vmc_LiH-gamma.txt
+  PROCS 5
+  CMD_OPTIONS --vnode-ranks 1
+  CHECK_SCRIPT check_ensemble.py
+  CHECK_ARGS --ranks 5 --prefix det_ensemble_blocks_hf_vmc_LiH-gamma --ionion -3.68927954)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

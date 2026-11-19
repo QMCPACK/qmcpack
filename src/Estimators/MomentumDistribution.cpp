@@ -24,7 +24,7 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
                                            const PosType& twist_in,
                                            const Lattice& lattice_in,
                                            DataLocality dl)
-    : OperatorEstBase(dl, mdi.get_name(), mdi.get_type()),
+    : OperatorEstBase(dl, mdi.get_name(), std::string{MomentumDistributionInput::type_tag}),
       input_(std::move(mdi)),
       twist(twist_in),
       lattice(lattice_in),

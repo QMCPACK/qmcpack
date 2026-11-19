@@ -8,9 +8,8 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <cstdio>
 #include <string>
@@ -44,7 +43,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
                   int test_nlpp_algorithm_batched,
                   int test_batched_api)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -399,7 +398,7 @@ void test_Bi_msd(const std::string& spo_xml_string,
                  int check_spo_size,
                  int check_basisset_size)
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());

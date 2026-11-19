@@ -24,7 +24,6 @@ template<typename T, typename ALLOC = aligned_allocator<T>>
 class MultiBsplineAllocator
 {
   using SplineType       = typename bspline_traits<T, 3>::SplineType;
-  using SingleSplineType = typename bspline_traits<T, 3>::SingleSplineType;
   using BCType           = typename bspline_traits<T, 3>::BCType;
   using real_type        = typename bspline_traits<T, 3>::real_type;
 

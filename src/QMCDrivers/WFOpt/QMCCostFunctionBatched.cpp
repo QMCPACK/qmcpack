@@ -21,8 +21,9 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"
-#include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "Concurrency/ParallelExecutor.hpp"
+#include <algorithm>
+#include <stdexcept>
 //#define QMCCOSTFUNCTION_DEBUG
 
 namespace qmcplusplus
@@ -32,7 +33,7 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(ParticleSet& w,
                                                QMCHamiltonian& h,
                                                SampleStack& samples,
                                                const std::vector<int>& walkers_per_crowd,
-                                               Communicate* comm)
+                                               Communicate& comm)
     : QMCCostFunctionBase(w, psi, h, comm),
       samples_(samples),
       walkers_per_crowd_(walkers_per_crowd),
@@ -40,7 +41,19 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(ParticleSet& w,
       corr_sampling_timer_(createGlobalTimer("QMCCostFunctionBatched::correlatedSampling", timer_level_medium)),
       fill_timer_(createGlobalTimer("QMCCostFunctionBatched::fillOverlapHamiltonianMatrices", timer_level_medium))
 
-{ app_log() << " Using QMCCostFunctionBatched::QMCCostFunctionBatched" << std::endl; }
+{
+  if (std::any_of(walkers_per_crowd_.begin(), walkers_per_crowd_.end(), [](int count) { return count < 0; }))
+    throw std::runtime_error("QMCCostFunctionBatched crowd capacities must not be negative.");
+
+  // Exclude empty sampling crowds so optimization samples are assigned only to crowds
+  // that can evaluate them; otherwise samples are skipped but still counted in normalization.
+  walkers_per_crowd_.erase(std::remove(walkers_per_crowd_.begin(), walkers_per_crowd_.end(), 0),
+                           walkers_per_crowd_.end());
+  if (walkers_per_crowd_.empty())
+    throw std::runtime_error("QMCCostFunctionBatched requires at least one active crowd.");
+
+  app_log() << " Using QMCCostFunctionBatched::QMCCostFunctionBatched" << std::endl;
+}
 
 
 /** Clean up the vector */
@@ -60,12 +73,10 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     {
       // + FiniteDiff
       opt_vars[i] = PM[i] + FiniteDiff;
-      resetPsi();
       correlatedSampling(false);
       auto CostPlus = computedCost();
       // - FiniteDiff
       opt_vars[i] = PM[i] - FiniteDiff;
-      resetPsi();
       correlatedSampling(false);
       auto CostMinus = computedCost();
       // calculate gradient
@@ -75,7 +86,6 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
   }
   else
   {
-    resetPsi();
     //evaluate new local energies and derivatives
     EffectiveWeight effective_weight = correlatedSampling(true);
     //Estimators::accumulate has been called by correlatedSampling
@@ -101,8 +111,8 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
           HD_avg[pm] += HDsaved[pm];
       }
     }
-    myComm->allreduce(HD_avg);
-    myComm->allreduce(delE_bar);
+    myComm.allreduce(HD_avg);
+    myComm.allreduce(delE_bar);
     for (int pm = 0; pm < num_opt_vars; pm++)
       HD_avg[pm] *= 1.0 / static_cast<Return_rt>(NumSamples);
     {
@@ -132,9 +142,9 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
         }
       }
     }
-    myComm->allreduce(EDtotals);
-    myComm->allreduce(EDtotals_w);
-    myComm->allreduce(URV);
+    myComm.allreduce(EDtotals);
+    myComm.allreduce(EDtotals_w);
+    myComm.allreduce(URV);
     Return_rt smpinv = 1.0 / static_cast<Return_rt>(NumSamples);
     {
       for (int iw = 0; iw < rank_local_num_samples_; iw++)
@@ -153,7 +163,7 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
         }
       }
     }
-    myComm->allreduce(E2Dtotals_w);
+    myComm.allreduce(E2Dtotals_w);
     for (int pm = 0; pm < num_opt_vars; pm++)
       URV[pm] *= smpinv;
     for (int j = 0; j < num_opt_vars; j++)
@@ -168,8 +178,6 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
       if (std::abs(w_abs) > 1.0e-10)
         PGradient[j] += w_abs * EDtotals[j];
     }
-
-    IsValid = isEffectiveWeightValid(effective_weight);
   }
 }
 
@@ -406,7 +414,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   etemp[1] = static_cast<Return_rt>(rank_local_num_samples_);
   etemp[2] = e2_tot;
   // Sum energy values over nodes
-  myComm->allreduce(etemp);
+  myComm.allreduce(etemp);
   Etarget    = static_cast<Return_rt>(etemp[0] / etemp[1]);
   NumSamples = static_cast<int>(etemp[1]);
   app_log() << "  VMC Eavg = " << Etarget << std::endl;
@@ -417,8 +425,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 
   app_log().flush();
   setTargetEnergy(Etarget);
-  ReportCounter = 0;
-  IsValid       = true;
+
 
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];
@@ -601,7 +608,7 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
   etemp[1] = static_cast<Return_rt>(rank_local_num_samples_);
   etemp[2] = e2_tot;
   // Sum energy values over nodes
-  myComm->allreduce(etemp);
+  myComm.allreduce(etemp);
   Etarget    = static_cast<Return_rt>(etemp[0] / etemp[1]);
   NumSamples = static_cast<int>(etemp[1]);
   app_log() << "  VMC Eavg = " << Etarget << std::endl;
@@ -612,8 +619,7 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
 
   app_log().flush();
   setTargetEnergy(Etarget);
-  ReportCounter = 0;
-  IsValid       = true;
+
 
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];
@@ -625,13 +631,6 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
   SumValue[SUM_ABSE_BARE] = 0.0;
 }
 
-#ifdef HAVE_LMY_ENGINE
-void QMCCostFunctionBatched::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                                        DescentEngine& descentEngineObj,
-                                                        const std::string& MinMethod)
-{ APP_ABORT("LMYEngine not implemented with batch optimization"); }
-#endif
-
 
 void QMCCostFunctionBatched::resetPsi(bool final_reset) { resetOptimizableObjects(Psi, opt_vars); }
 
@@ -639,8 +638,10 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
 {
   ScopedTimer tmp_timer(corr_sampling_timer_);
 
+  resetPsi();
+
   {
-    //    synchronize the random number generator with the node
+    // synchronize the random number generator with the node
     (*MoverRng[0]) = (*RngSaved[0]);
     H.setRandomGenerator(MoverRng[0]);
   }
@@ -791,14 +792,14 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
 
   // Sum weights over crowds
   Return_rt wgt_tot       = 0.0;
-  Return_rt inv_n_samples = 1.0 / (samples_.getNumSamples() * myComm->size());
+  Return_rt inv_n_samples = 1.0 / (samples_.getNumSamples() * myComm.size());
   for (int i = 0; i < opt_eval.size(); i++)
     wgt_tot += opt_eval[i]->get_wgt() * inv_n_samples;
 
   //this is MPI barrier
   OHMMS::Controller->barrier();
   //collect the total weight for normalization and apply maximum weight
-  myComm->allreduce(wgt_tot);
+  myComm.allreduce(wgt_tot);
   Return_rt wgtnorm = (wgt_tot == 0) ? 0 : wgt_tot;
   wgt_tot           = 0.0;
   {
@@ -810,7 +811,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
       wgt_tot += inv_n_samples * saved[REWEIGHT];
     }
   }
-  myComm->allreduce(wgt_tot);
+  myComm.allreduce(wgt_tot);
 
   wgtnorm = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
   wgt_tot = 0.0;
@@ -822,7 +823,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
       wgt_tot += inv_n_samples * saved[REWEIGHT];
     }
   }
-  myComm->allreduce(wgt_tot);
+  myComm.allreduce(wgt_tot);
   //    app_log()<<"After Purge"<<wgt_tot<<" "<< std::endl;
   for (int i = 0; i < SumValue.size(); i++)
     SumValue[i] = 0.0;
@@ -844,7 +845,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
     }
   }
   //collect everything
-  myComm->allreduce(SumValue);
+  myComm.allreduce(SumValue);
   return inv_n_samples * SumValue[SUM_WGT] * SumValue[SUM_WGT] / SumValue[SUM_WGTSQ];
 }
 
@@ -885,7 +886,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
     }
   }
 
-  myComm->allreduce(D_avg);
+  myComm.allreduce(D_avg);
 
   for (int iw = 0; iw < rank_local_num_samples_; iw++)
   {
@@ -940,8 +941,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
     crowd_tasks(opt_num_crowds, constructMatrices, params_per_crowd, getNumParams(), Dsaved, HDsaved, weight, eloc_new,
                 V_avg, D_avg, w_beta, curAvg_w, Left, Right);
   }
-  myComm->allreduce(Right);
-  myComm->allreduce(Left);
+  myComm.allreduce(Right);
+  myComm.allreduce(Left);
   Left(0, 0)  = (1 - w_beta) * curAvg_w + w_beta * V_avg;
   Right(0, 0) = 1.0;
 
@@ -969,7 +970,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillHamVec(std::vector
     }
   }
 
-  myComm->allreduce(D_avg);
+  myComm.allreduce(D_avg);
 
   for (int iw = 0; iw < rank_local_num_samples_; iw++)
   {
@@ -1000,7 +1001,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillHamVec(std::vector
     crowd_tasks(opt_num_crowds, constructMatrices, params_per_crowd, getNumParams(), Dsaved, weight, eloc_new, D_avg,
                 curAvg_w, ham);
   }
-  myComm->allreduce(ham);
+  myComm.allreduce(ham);
   ham[0] = curAvg_w;
 
   return 1.0;
@@ -1024,7 +1025,7 @@ void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& param,
       D_avg[pm] += Dsaved[pm] * weight;
   }
 
-  myComm->allreduce(D_avg);
+  myComm.allreduce(D_avg);
 
   std::vector<Return_t> prod(rank_local_num_samples_, 0.0);
   for (int iw = 0; iw < rank_local_num_samples_; iw++)
@@ -1064,6 +1065,6 @@ void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& param,
     crowd_tasks(opt_num_crowds, constructMatrices, params_per_crowd, getNumParams(), Dsaved, weight, D_avg, prod[iw],
                 ovlParmVec);
   }
-  myComm->allreduce(ovlParmVec);
+  myComm.allreduce(ovlParmVec);
 }
 } // namespace qmcplusplus

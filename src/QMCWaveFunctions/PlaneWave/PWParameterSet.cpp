@@ -22,10 +22,10 @@
 
 namespace qmcplusplus
 {
-PWParameterSet::PWParameterSet(Communicate* comm)
+PWParameterSet::PWParameterSet(Communicate& comm)
     : MPIObjectBase(comm),
       hasSpin(true),
-      twistIndex(0),
+      twistIndex(-1),
       numBands(0),
       Ecut(-1),
       Rcut(-1),
@@ -43,6 +43,7 @@ PWParameterSet::PWParameterSet(Communicate* comm)
 {
   m_param.setName("h5tag");
   m_param.add(twistIndex, "twistIndex");
+  m_param.add(twistIndex, "twistnum");
   m_param.add(Rcut, "rcut");
   m_param.add(BufferRadius, "bufferLayer");
   m_param.add(BoxDup, "expand");
@@ -81,7 +82,7 @@ bool PWParameterSet::getEigVectorType(hid_t h)
     rank            = H5Sget_simple_extent_ndims(dataspace);
     int status_n    = H5Sget_simple_extent_dims(dataspace, dimTot, NULL);
   }
-  myComm->bcast(rank);
+  myComm.bcast(rank);
   return rank == 4;
 }
 
@@ -98,7 +99,7 @@ bool PWParameterSet::hasComplexData(hdf_archive& h_file)
     h_file.read(iscomplex, oss.str());
   }
 #endif
-  myComm->bcast(iscomplex);
+  myComm.bcast(iscomplex);
   return iscomplex;
 }
 
@@ -121,8 +122,7 @@ std::string PWParameterSet::getTwistName(int i)
 std::string PWParameterSet::getBandName(int ib, int ispin)
 {
   std::ostringstream oss;
-  oss << "spin_" << ispin << "/"
-      << "state_" << ib;
+  oss << "spin_" << ispin << "/" << "state_" << ib;
   return oss.str();
 }
 
@@ -205,7 +205,7 @@ void PWParameterSet::checkVersion(hdf_archive& h)
       APP_ABORT("PWParameterSet::checkVersion  The type of version is not integer or double.");
     }
   }
-  myComm->bcast(version);
+  myComm.bcast(version);
   app_log() << "\tWavefunction HDF version: " << version[0] << "." << version[1] << std::endl;
   if (version[0] == 0)
   {

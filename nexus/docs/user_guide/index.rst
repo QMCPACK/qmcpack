@@ -1,0 +1,24 @@
+.. _user-guide:
+
+User Guide
+==========
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Table of Contents
+
+    usedocs
+    overview
+    installation
+    examples
+    pseudo-handling
+    nexus-behavior
+    user-scripts
+    sim-tools
+    nexus-jobs
+    qmcpack-input-mod
+    qmcpack-input-gen
+    qmcpack-restarts
+    pwscf
+    rmg
+    adding-supercomputer-machine

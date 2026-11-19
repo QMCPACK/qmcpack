@@ -18,7 +18,7 @@
 ####################################
 # create libqmc
 ####################################
-set(QMCAPPDIR QMCAppBase.cpp QMCMain.cpp)
+set(QMCAPPDIR QMCAppBase.cpp QMCMain.cpp CommandLineOptions.cpp setupQMCState.cpp)
 if(USE_OBJECT_TARGET)
   add_library(qmc OBJECT ${QMCAPPDIR})
 else()
@@ -62,3 +62,8 @@ endif()
 
 add_test_target_in_output_location(qmcpack bin)
 install(TARGETS qmcpack RUNTIME DESTINATION bin)
+
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()
+

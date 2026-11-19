@@ -1,4 +1,3 @@
-# -*-indent-tabs-mode:nil;c-basic-offset:2;tab-width:4;autowrap:nil;-*-
 cmake_minimum_required(VERSION 3.11)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)

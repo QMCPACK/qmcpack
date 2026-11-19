@@ -54,15 +54,9 @@ std::unique_ptr<BackflowTransformation> BackflowBuilder::buildBackflowTransforma
     if (cname == "transf" || cname == "transformation")
     {
       OhmmsAttributeSet spoAttrib;
-      std::string source("none");
-      std::string name("bf0");
       std::string type("none");
-      spoAttrib.add(name, "name");
       spoAttrib.add(type, "type");
-      spoAttrib.add(source, "source");
       spoAttrib.put(cur);
-      BFTrans->sources[source] = BFTrans->names.size();
-      BFTrans->names.push_back(name);
       if (type == "e-e")
       {
         BFTrans->bfFuns.push_back(addTwoBody(cur));
@@ -95,12 +89,10 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
 {
   OhmmsAttributeSet spoAttrib;
   std::string source("none");
-  std::string name("bf0");
   std::string type("none");
   std::string funct("Gaussian");
   std::string unique("no");
   std::string spin("no"); //add spin attribute, with default spin="no"
-  spoAttrib.add(name, "name");
   spoAttrib.add(type, "type");
   spoAttrib.add(source, "source");
   spoAttrib.add(funct, "function");
@@ -286,11 +278,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addTwoBody(xmlNodePtr cur
 {
   app_log() << "Adding electron-electron backflow. \n";
   OhmmsAttributeSet trAttrib;
-  std::string source("none");
-  std::string name("bf0");
-  std::string type("none");
   std::string funct("Bspline");
-  trAttrib.add(name, "name");
   trAttrib.add(funct, "function");
   trAttrib.put(cur);
   xmlNodePtr curRoot = cur;
@@ -403,8 +391,8 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addRPA(xmlNodePtr cur)
       Rs = 100.0;
     }
   }
-  int indx        = targetPtcl.getSimulationCell().getKLists().getKSQWorking().size() - 1;
-  RealType Kc_max = std::pow(targetPtcl.getSimulationCell().getKLists().getKSQWorking()[indx], 0.5);
+  int indx        = targetPtcl.getSimulationCell().getKLists().getKSQ().size() - 1;
+  RealType Kc_max = std::pow(targetPtcl.getSimulationCell().getKLists().getKSQ()[indx], 0.5);
   if (Kc < 0)
   {
     Kc = 2.0 * std::pow(2.25 * M_PI, 1.0 / 3.0) / tlen;
@@ -563,7 +551,7 @@ void BackflowBuilder::makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace* 
         {
           fout << std::sqrt(targetPtcl.getSimulationCell()
                                 .getKLists()
-                                .getKSQWorking()[targetPtcl.getSimulationCell().getKLists().getKShell()[i]])
+                                .getKSQ()[targetPtcl.getSimulationCell().getKLists().getKShell()[i]])
                << " " << yk[i] << std::endl;
         }
         fout.close();
@@ -679,9 +667,9 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur,
       if (bsp->cutoff_radius > cutOff)
         cutOff = bsp->cutoff_radius;
       bsp->myVars.setParameterType(optimize::BACKFLOW_P);
-      tbf->addFunc(ia, ib, std::move(bsp));
       offsets.push_back(tbf->numParams);
       tbf->numParams += bsp->NumParams;
+      tbf->addFunc(ia, ib, std::move(bsp));
     }
     xmlCoefs = xmlCoefs->next;
   }

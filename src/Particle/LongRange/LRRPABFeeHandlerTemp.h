@@ -210,7 +210,7 @@ private:
 
   void fillFk(const KContainer& KList)
   {
-    Fk.resize(KList.getKptsCartWorking().size());
+    Fk.resize(KList.getKptsCart().size());
     const std::vector<int>& kshell(KList.getKShell());
     if (MaxKshell >= kshell.size())
       MaxKshell = kshell.size() - 1;
@@ -218,15 +218,15 @@ private:
     //       std::cout<<"Filling FK :"<<std::endl;
     for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
     {
-      mRealType k  = std::pow(KList.getKSQWorking()[ki], 0.5);
+      mRealType k  = std::pow(KList.getKSQ()[ki], 0.5);
       mRealType uk = evalFk(k);
       Fk_symm[ks]  = uk;
       //         std::cout<<uk<<std::endl;
       while (ki < KList.getKShell()[ks + 1] && ki < Fk.size())
         Fk[ki++] = uk;
     }
-    //for(int ki=0; ki<KList.getKptsCartWorking().size(); ki++){
-    //  mRealType k=dot(KList.getKptsCartWorking()[ki],KList.getKptsCartWorking()[ki]);
+    //for(int ki=0; ki<KList.getKptsCart().size(); ki++){
+    //  mRealType k=dot(KList.getKptsCart()[ki],KList.getKptsCart()[ki]);
     //  k=std::sqrt(k);
     //  Fk[ki] = evalFk(k); //Call derived fn.
     //}

@@ -1,18 +1,17 @@
-import pytest
-from . import NexusTestOrder
-pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_INPUT)
-
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
 from pathlib import Path
 
-from .. import testing
-from ..testing import object_eq
+import numpy as np
+import pytest
 
+from ..developer import obj
+from ..physical_system import generate_physical_system
+from ..quantum_package_input import QuantumPackageInput, generate_quantum_package_input
+from ..testing import dict_serialize, object_eq
+from . import NexusTestOrder
+
+pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_INPUT)
 
 def format_value(v):
-    import numpy as np
     s = ''
     if isinstance(v,np.ndarray):
         pad = 12*' '
@@ -40,11 +39,11 @@ def format_value(v):
 
 
 def make_serial_reference(qi):
-    s = qi.serial()
+    s = dict_serialize(qi,dict_type=obj)
     ref = '    ref = {\n'
     for k in sorted(s.keys()):
         v = s[k]
-        ref +="        '{}' : {},\n".format(k,format_value(v))
+        ref +=f"        '{k}' : {format_value(v)},\n"
     #end for
     ref += '        }\n'
     return ref
@@ -55,9 +54,6 @@ serial_references = dict()
 
 
 def generate_serial_references():
-    import numpy as np
-    from ..developer import obj
-    
     # references for read
     serial_references['h2o.ezfio read'] = {
         'ao_basis/ao_basis' : 'cc-pvtz',
@@ -184,6 +180,7 @@ def generate_serial_references():
             [0.0, 0.75716, -0.58626]]),
         'structure/scale' : 1.0,
         'structure/units' : 'A',
+        'structure/vel' : None,
         }
 
     serial_references['o2.ezfio gen'] = {
@@ -214,6 +211,7 @@ def generate_serial_references():
             [1.2074, 0.0, 0.0]]),
         'structure/scale' : 1.0,
         'structure/units' : 'A',
+        'structure/vel' : None,
         }
 
 #end def generate_serial_references
@@ -228,9 +226,8 @@ def get_serial_references():
 
 
 def check_vs_serial_reference(qi,name):
-    from ..developer import obj
     sr = obj(get_serial_references()[name])
-    sg = qi.serial()
+    sg = dict_serialize(qi,dict_type=obj)
     assert(object_eq(sg,sr))
 #end def check_vs_serial_reference
 
@@ -238,7 +235,7 @@ def check_vs_serial_reference(qi,name):
 
 h2o_xyz = '''3
 
-O  0.000000  0.000000  0.000000 
+O  0.000000  0.000000  0.000000
 H  0.000000  0.757160  0.586260
 H  0.000000  0.757160 -0.586260
 '''
@@ -252,17 +249,18 @@ o2_xyz = '''2
 
 
 def test_empty_init():
-    from ..quantum_package_input import QuantumPackageInput
-
     qi = QuantumPackageInput()
+
+    qi.set(elec_alpha_num=2)
+    assert(qi.get('elec_alpha_num')==2)
+    assert(qi.delete('elec_alpha_num')==2)
+    assert(qi.get('elec_alpha_num') is None)
 
 #end def test_empty_init
 
 
 
 def test_read():
-    from ..quantum_package_input import QuantumPackageInput
-
     ezfio = Path(__file__+"/../test_quantum_package_input_files/h2o.ezfio").resolve()
 
     qi = QuantumPackageInput(ezfio)
@@ -273,10 +271,6 @@ def test_read():
 
 
 def test_generate(tmp_path):
-    import os
-    from ..physical_system import generate_physical_system
-    from ..quantum_package_input import generate_quantum_package_input
-
     # water molecule rhf
     xyz_path = tmp_path / 'H2O.xyz'
     xyz_path.write_text(h2o_xyz)
@@ -319,4 +313,4 @@ def test_generate(tmp_path):
     assert(qi.is_valid())
 #end def test_generate
 
-    
+

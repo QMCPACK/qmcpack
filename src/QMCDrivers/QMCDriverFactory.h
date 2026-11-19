@@ -81,7 +81,7 @@ public:
                                                       ParticleSetPool& particle_pool,
                                                       WaveFunctionPool& wave_function_pool,
                                                       HamiltonianPool& hamiltonian_pool,
-                                                      Communicate* comm) const;
+                                                      Communicate& comm) const;
 
 private:
   /// project info for accessing global fileroot and series id

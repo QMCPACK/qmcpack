@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "Numerics/CartesianTensor.h"
 
 #include <stdio.h>
@@ -35,7 +34,7 @@ TEST_CASE("Cartesian Tensor", "[numerics]")
   ct.evaluate(pt);
 
   //for (int i = 0; i < 35; i++) {
-  //std::cout << "XYZ = " << i << " " << ct.getYlm(i) << std::endl;
+  //app_log() << "XYZ = " << i << " " << ct.getYlm(i) << std::endl;
   //}
   CHECK(ct.getYlm(0) == Approx(0.282094791774));
   CHECK(ct.getYlm(1) == Approx(0.635183265474));
@@ -131,7 +130,7 @@ TEST_CASE("Cartesian Tensor evaluateAll subset", "[numerics]")
   ct.evaluateAll(pt);
 
   //for (int i = 0; i < 35; i++) {
-  //  std::cout << "XYZ = " << i << " " << ct.getYlm(i) << " " << ct.getGradYlm(i) << "  " << ct.getLaplYlm(i) <<  std::endl;
+  //  app_log() << "XYZ = " << i << " " << ct.getYlm(i) << " " << ct.getGradYlm(i) << "  " << ct.getLaplYlm(i) <<  std::endl;
   //}
 
   CHECK(ct.getYlm(0) == Approx(0.282094791774));
@@ -185,7 +184,7 @@ TEST_CASE("Cartesian Tensor evaluateWithHessian subset", "[numerics]")
   ct.evaluateWithHessian(pt);
 
   //for (int i = 0; i < 35; i++) {
-  //  std::cout << "XYZ = " << i << " " << ct.getYlm(i) << " " << ct.getHessYlm(i) <<  std::endl;
+  //  app_log() << "XYZ = " << i << " " << ct.getYlm(i) << " " << ct.getHessYlm(i) <<  std::endl;
   //}
 
   CHECK(ct.getYlm(0) == Approx(0.282094791774));
@@ -292,7 +291,7 @@ TEST_CASE("Cartesian Tensor evaluateWithThirdDeriv subset", "[numerics]")
   ct.evaluateWithThirdDeriv(pt);
 
   //for (int i = 0; i < 35; i++) {
-  //  std::cout << "XYZ = " << i << " " << ct.getYlm(i) << " " << ct.getGGGYlm(i) <<  std::endl;
+  //  app_log() << "XYZ = " << i << " " << ct.getYlm(i) << " " << ct.getGGGYlm(i) <<  std::endl;
   //}
 
 

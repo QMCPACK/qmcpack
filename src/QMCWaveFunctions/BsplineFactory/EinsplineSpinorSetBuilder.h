@@ -32,11 +32,11 @@ class EinsplineSpinorSetBuilder : public EinsplineSetBuilder
 
 public:
   ///constructor
-  EinsplineSpinorSetBuilder(ParticleSet& p, const PSetMap& psets, Communicate* comm, xmlNodePtr cur)
-      : EinsplineSetBuilder(p, psets, comm, cur){};
+  EinsplineSpinorSetBuilder(ParticleSet& p, const PSetMap& psets, Communicate& comm, xmlNodePtr cur)
+      : EinsplineSetBuilder(p, psets, comm, cur) {};
 
   ///destructor
-  ~EinsplineSpinorSetBuilder() override{};
+  ~EinsplineSpinorSetBuilder() override {};
 
   /** initialize the Antisymmetric wave function for electrons
    * @param cur the current xml node

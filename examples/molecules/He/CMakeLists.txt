@@ -11,9 +11,8 @@ if(NOT QMC_COMPLEX)
   list(APPEND HE_SIMPLE_VMC_SCALARS "totenergy" "-2.83 .006") # total energy
 
   qmc_run_and_check(
-    example_He_simple
+    example-He_ae-sd_lcao_jas-vmc
     "${qmcpack_SOURCE_DIR}/examples/molecules/He"
-    He
     he_simple.xml
     1
     1
@@ -24,9 +23,8 @@ if(NOT QMC_COMPLEX)
   list(APPEND HE_SIMPLE_DMC_SCALARS "totenergy" "-2.902 .002") # total energy
 
   qmc_run_and_check(
-    example_He_simple_dmc
+    example-He_ae-sd_lcao_jas-vmc_dmc
     "${qmcpack_SOURCE_DIR}/examples/molecules/He"
-    He
     he_simple_dmc.xml
     1
     1
@@ -38,10 +36,9 @@ if(NOT QMC_COMPLEX)
   list(APPEND HE_SIMPLE_OPT_SCALARS "totenergy" "-2.88 .005") # total energy
 
   qmc_run_and_check(
-    example_He_simple_opt
+    example-He_ae-sd_lcao_jas-optbatch_vmc
     "${qmcpack_SOURCE_DIR}/examples/molecules/He"
-    He
-    he_simple_opt.xml
+    he_simple_optbatch.xml
     1
     1
     ${MP_SUCCESS}
@@ -50,9 +47,8 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    example_He_example_wf
+    example-He_ae-example_he-opt_vmc
     "${qmcpack_SOURCE_DIR}/examples/molecules/He"
-    He
     he_example_wf.xml
     1
     1
@@ -64,9 +60,8 @@ if(NOT QMC_COMPLEX)
   list(APPEND HE_FROM_GAMESS_SCALARS "totenergy" "-2.872 .009") # total energy
 
   qmc_run_and_check(
-    example_He_from_gamess
+    example-He_ae-sd_lcao_gms_jas-opt_vmc
     "${qmcpack_SOURCE_DIR}/examples/molecules/He"
-    He
     he_from_gamess.xml
     1
     1
@@ -88,3 +83,6 @@ if(NOT QMC_COMPLEX)
   #                    10 HE_BSPLINE_OPT_SCALARS # series for VMC on optimized value
   #                    )
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

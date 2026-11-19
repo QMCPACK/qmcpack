@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 
 #include "Utilities/ProjectData.h"
@@ -41,8 +40,7 @@ namespace qmcplusplus
 TEST_CASE("VMC", "[drivers][vmc]")
 {
   ProjectData project_data;
-  Communicate* c = OHMMS::Controller;
-  c->setName("test");
+  Communicate& c(*OHMMS::Controller);
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell);
   MCWalkerConfiguration elec(simulation_cell);
@@ -124,8 +122,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
 TEST_CASE("SOVMC", "[drivers][vmc]")
 {
   ProjectData project_data;
-  Communicate* c = OHMMS::Controller;
-  c->setName("test");
+  Communicate& c(*OHMMS::Controller);
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell);
   MCWalkerConfiguration elec(simulation_cell);
@@ -213,8 +210,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 TEST_CASE("SOVMC-alle", "[drivers][vmc]")
 {
   ProjectData project_data;
-  Communicate* c = OHMMS::Controller;
-  c->setName("test");
+  Communicate& c(*OHMMS::Controller);
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell);
   MCWalkerConfiguration elec(simulation_cell);

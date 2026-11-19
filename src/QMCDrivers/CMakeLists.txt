@@ -37,12 +37,12 @@ set(QMCDRIVERS
     WFOpt/Eigensolver.cpp
     WFOpt/QMCFixedSampleLinearOptimize.cpp
     WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
+    WFOpt/NRCOptimization.cpp
     WFOpt/OutputMatrix.cpp
     WFOpt/WFOptDriverInput.cpp
     WFOpt/GradientTestInput.cpp
     WFOpt/GradientTest.cpp
     Optimizers/DescentEngine.cpp
-    Optimizers/HybridEngine.cpp
     WFOpt/QMCCostFunctionBase.cpp
     WFOpt/HamiltonianRef.cpp
     WFOpt/CostFunctionCrowdData.cpp
@@ -64,6 +64,7 @@ set(QMCDRIVERS
     DMC/DMCUpdatePbyPL2.cpp
     DMC/DMCFactory.cpp
     DMC/DMCBatched.cpp
+    DMC/L2Diffusion.cpp
     DMC/DMCDriverInput.cpp
     DMC/DMCRefEnergy.cpp
     DMC/WalkerControlFactory.cpp
@@ -85,12 +86,6 @@ if(HAVE_MPI)
   set(QMCDRIVERS ${QMCDRIVERS} DMC/WalkerControlMPI.cpp DMC/WalkerReconfigurationMPI.cpp)
 endif(HAVE_MPI)
 
-# if using the LMYEngine interface, make sure we add the necessary functions
-if(BUILD_LMYENGINE_INTERFACE)
-  set(QMCDRIVERS ${QMCDRIVERS} LMYEngineInterface/LMYE_QMCCostFunction.cpp)
-  set(QMCDRIVERS ${QMCDRIVERS} LMYEngineInterface/LMYE_QMCCostFunctionBatched.cpp)
-endif(BUILD_LMYENGINE_INTERFACE)
-
 ####################################
 # create libqmcdriver
 ####################################
@@ -105,9 +100,6 @@ target_include_directories(qmcdriver PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcdriver PUBLIC qmcham qmcestimators)
 
 target_link_libraries(qmcdriver PRIVATE platform_LA Boost::boost)
-if(BUILD_LMYENGINE_INTERFACE)
-  target_link_libraries(qmcdriver PRIVATE formic_utils)
-endif()
 
 if(BUILD_UNIT_TESTS)
   add_subdirectory(tests)

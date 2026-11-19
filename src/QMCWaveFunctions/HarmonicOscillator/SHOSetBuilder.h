@@ -38,7 +38,7 @@ struct SHOSetBuilder : public SPOSetBuilder
   SPOSetInfoSimple<SHOState> basis_states;
 
   //construction/destruction
-  SHOSetBuilder(ParticleSet& P, Communicate* comm);
+  SHOSetBuilder(ParticleSet& P, Communicate& comm);
 
   ~SHOSetBuilder() override;
 

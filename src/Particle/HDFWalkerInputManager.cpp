@@ -18,11 +18,14 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Particle/HDFWalkerInput_0_4.h"
 #include "Message/Communicate.h"
+#include "Message/UniformCommunicateError.h"
 #include "hdf/HDFVersion.h"
 
 namespace qmcplusplus
 {
-HDFWalkerInputManager::HDFWalkerInputManager(WalkerConfigurations& wc_list, size_t num_ptcls, Communicate* c) : wc_list_(wc_list), num_ptcls_(num_ptcls), myComm(c) {}
+HDFWalkerInputManager::HDFWalkerInputManager(WalkerConfigurations& wc_list, size_t num_ptcls, Communicate& c)
+    : wc_list_(wc_list), num_ptcls_(num_ptcls), myComm(c)
+{}
 
 HDFWalkerInputManager::~HDFWalkerInputManager() {}
 
@@ -31,16 +34,14 @@ bool HDFWalkerInputManager::put(xmlNodePtr cur)
   //reference revision number
   HDFVersion start_version(0, 4);
   //current node
-  int pid = myComm->rank();
+  int pid = myComm.rank();
   std::string froot("0"), cfile("0");
   //string  target("e"), collect("no");
-  int anode = -1, nprocs = 1;
+  int nprocs = 1;
   HDFVersion in_version(0, 4); //set to be old version
   OhmmsAttributeSet pAttrib;
   pAttrib.add(cfile, "href");
-  pAttrib.add(cfile, "file");
   pAttrib.add(froot, "fileroot");
-  pAttrib.add(anode, "node");
   pAttrib.add(nprocs, "nprocs");
   //pAttrib.add(collect,"collected");
   pAttrib.add(in_version, "version");
@@ -53,7 +54,7 @@ bool HDFWalkerInputManager::put(xmlNodePtr cur)
     cfile   = win.FileName_noext;
   }
   else
-    myComm->barrier_and_abort("Outdated restart file!");
+    throw UniformCommunicateError("Outdated restart file!");
   if (success)
     CurrentFileRoot = cfile;
   return success;

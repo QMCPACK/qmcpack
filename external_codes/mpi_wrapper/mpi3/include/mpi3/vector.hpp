@@ -1,11 +1,11 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_VECTOR_HPP
 #define BOOST_MPI3_VECTOR_HPP
 
-#include "../mpi3/allocator.hpp"
+#include <mpi3/allocator.hpp>
 
-#include<mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
 #include<vector>
 

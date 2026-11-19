@@ -1,18 +1,36 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXXX $CXXFLAGS -O3 $0 -o $0x -DHAVE_FFTW3_THREADS -lfftw3 -lfftw3_threads -lboost_unit_test_framework -lboost_timer&&$0x&&rm $0x;exit
-#endif
-// © Alfredo A. Correa 2020
+// Copyright 2020-2025 Alfredo A. Correa
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi FFTW copy"
-#define BOOST_TEST_DYN_LINK
-#include<boost/test/unit_test.hpp>
-#include<boost/timer/timer.hpp>
+sass
 
 #include "../../fftw.hpp"
 
+#include<chrono>
 #include<complex>
+#include<iostream>
+#include<string>
+#include<utility>  // move
 
 namespace multi = boost::multi;
+
+namespace {
+// minimal RAII wall-clock timer (replaces boost::timer::auto_cpu_timer)
+class auto_timer {
+	std::string                           label_;
+	std::chrono::steady_clock::time_point start_ = std::chrono::steady_clock::now();
+
+ public:
+	explicit auto_timer(std::string label = {}) : label_{std::move(label)} {}
+	auto_timer(auto_timer const&)                    = delete;
+	auto_timer(auto_timer&&)                         = delete;
+	auto operator=(auto_timer const&) -> auto_timer& = delete;
+	auto operator=(auto_timer&&) -> auto_timer&      = delete;
+	~auto_timer() {
+		std::cerr << label_ << std::chrono::duration<double>(std::chrono::steady_clock::now() - start_).count() << " s (wall)\n";
+	}
+};
+}  // namespace
 
 BOOST_AUTO_TEST_CASE(fftw_copy){
 
@@ -28,7 +46,7 @@ BOOST_AUTO_TEST_CASE(fftw_copy){
 	{
 		multi::array<complex, 4> out(extensions(in), 0.);
 		{
-			boost::timer::auto_cpu_timer t{"fftw_copy in-inorder %ws wall, CPU (%p%)\n"};
+			auto_timer t{"fftw_copy in-inorder: "};
 			multi::fftw::copy(in, rotated(out));
 		}
 		BOOST_REQUIRE( out[1][2][3][4] == in[2][3][4][1] );
@@ -37,7 +55,7 @@ BOOST_AUTO_TEST_CASE(fftw_copy){
 	{
 		multi::array<complex, 4> out(extensions(in), 0.);
 		{
-			boost::timer::auto_cpu_timer t{"fftw_copy out-inorder %ws wall, CPU (%p%)\n"};
+			auto_timer t{"fftw_copy out-inorder: "};
 			multi::fftw::copy(unrotated(in), out);
 		}
 		BOOST_REQUIRE( out[1][2][3][4] == in[2][3][4][1] );
@@ -47,7 +65,7 @@ BOOST_AUTO_TEST_CASE(fftw_copy){
 	{
 		multi::array<complex, 4> out(extensions(in), 0.);
 		{
-			boost::timer::auto_cpu_timer t{"assignment in-inorder %ws wall, CPU (%p%)\n"};
+			auto_timer t{"assignment in-inorder: "};
 			rotated(out) = in;
 		}
 		BOOST_REQUIRE( out[1][2][3][4] == in[2][3][4][1] );
@@ -55,7 +73,7 @@ BOOST_AUTO_TEST_CASE(fftw_copy){
 	{
 		multi::array<complex, 4> out(extensions(in), 0.);
 		{
-			boost::timer::auto_cpu_timer t{"assignment out-inorder %ws wall, CPU (%p%)\n"};
+			auto_timer t{"assignment out-inorder: "};
 			out = unrotated(in);
 		}
 		BOOST_REQUIRE( out[1][2][3][4] == in[2][3][4][1] );
@@ -63,7 +81,7 @@ BOOST_AUTO_TEST_CASE(fftw_copy){
 	{
 		multi::array<complex, 4> out = in;
 		{
-			boost::timer::auto_cpu_timer t{"assignment inplace out-inorder %ws wall, CPU (%p%)\n"};
+			auto_timer t{"assignment inplace out-inorder: "};
 			out = unrotated(out);
 		}
 		BOOST_REQUIRE( out[1][2][3][4] == in[2][3][4][1] );
@@ -72,16 +90,16 @@ BOOST_AUTO_TEST_CASE(fftw_copy){
 	{
 		multi::array<complex, 4> out = in;
 		{
-			boost::timer::auto_cpu_timer t{"assignment inplace in-inorder %ws wall, CPU (%p%)\n"};
+			auto_timer t{"assignment inplace in-inorder: "};
 			rotated(out) = out;
 		}
 		BOOST_REQUIRE( out[1][2][3][4] == in[2][3][4][1] );
-	//	BOOST_REQUIRE( rotated(out) == in );
+	//  BOOST_REQUIRE( rotated(out) == in );
 	}
 	{
 		multi::array<complex, 4> out = in;
 		{
-			boost::timer::auto_cpu_timer t{"assignment inplace with copy out-inorder %ws wall, CPU (%p%)\n"};
+			auto_timer t{"assignment inplace with copy out-inorder: "};
 			out = unrotated(multi::array<complex, 4>{out});
 		}
 		BOOST_REQUIRE( out[1][2][3][4] == in[2][3][4][1] );
@@ -90,7 +108,7 @@ BOOST_AUTO_TEST_CASE(fftw_copy){
 	{
 		multi::array<complex, 4> out = in;
 		{
-			boost::timer::auto_cpu_timer t{"assignment inplace with copy in-inorder %ws wall, CPU (%p%)\n"};
+			auto_timer t{"assignment inplace with copy in-inorder: "};
 			rotated(out) = multi::array<complex, 4>{out};
 		}
 		BOOST_REQUIRE( out[1][2][3][4] == in[2][3][4][1] );
@@ -99,7 +117,7 @@ BOOST_AUTO_TEST_CASE(fftw_copy){
 	{
 		multi::array<complex, 4> out = in;
 		{
-			boost::timer::auto_cpu_timer t{"fftw copy inplace in-inorder %ws wall, CPU (%p%)\n"};
+			auto_timer t{"fftw copy inplace in-inorder: "};
 			multi::fftw::copy(out, rotated(out));
 		}
 		BOOST_REQUIRE( out[1][2][3][4] == in[2][3][4][1] );
@@ -108,7 +126,7 @@ BOOST_AUTO_TEST_CASE(fftw_copy){
 	{
 		multi::array<complex, 4> out = in;
 		{
-			boost::timer::auto_cpu_timer t{"fftw copy inplace out-inorder %ws wall, CPU (%p%)\n"};
+			auto_timer t{"fftw copy inplace out-inorder: "};
 			multi::fftw::copy(unrotated(out), out);
 		}
 		BOOST_REQUIRE( out[1][2][3][4] == in[2][3][4][1] );
@@ -118,7 +136,7 @@ BOOST_AUTO_TEST_CASE(fftw_copy){
 		multi::array<complex, 4> out = in;
 		auto p = out.data_elements();
 		{
-			boost::timer::auto_cpu_timer t{"fftw move construct inplace in-inorder %ws wall, CPU (%p%)\n"};
+			auto_timer t{"fftw move construct inplace in-inorder: "};
 			multi::array<complex, 4> out2 = multi::fftw::copy( out.move().unrotated() );
 			BOOST_REQUIRE( out.empty() );
 			BOOST_REQUIRE( p == out2.data_elements() );
@@ -130,7 +148,7 @@ BOOST_AUTO_TEST_CASE(fftw_copy){
 		auto p = out.data_elements();
 		multi::array<complex, 4> out2;
 		{
-			boost::timer::auto_cpu_timer t{"fftw move assign inplace in-inorder %ws wall, CPU (%p%)\n"};
+			auto_timer t{"fftw move assign inplace in-inorder: "};
 			out2 = multi::fftw::copy( out.move().unrotated() );
 			BOOST_REQUIRE( out.empty() );
 			BOOST_REQUIRE( p == out2.data_elements() );
@@ -141,7 +159,7 @@ BOOST_AUTO_TEST_CASE(fftw_copy){
 		multi::array<complex, 4> out = in;
 		auto p = out.data_elements();
 		{
-			boost::timer::auto_cpu_timer t{"fftw move self-assign inplace in-inorder %ws wall, CPU (%p%)\n"};
+			auto_timer t{"fftw move self-assign inplace in-inorder: "};
 			out = multi::fftw::copy( out.move().unrotated() );
 			BOOST_REQUIRE( p == out.data_elements() );
 			BOOST_TEST( out[1][2][3][4].real() == in[2][3][4][1].real() );

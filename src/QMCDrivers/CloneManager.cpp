@@ -116,7 +116,11 @@ void CloneManager::makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
   #pragma omp parallel
   {
     // check sizes
+#if _OPENMP >= 202011
+    #pragma omp masked
+#else
     #pragma omp master
+#endif
     if (NumThreads != omp_get_num_threads())
       throw std::runtime_error("CloneManager::makeClones Inconsist NumThreads and omp_get_num_threads()!\n");
 

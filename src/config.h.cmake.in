@@ -53,6 +53,12 @@
 /* Manage memory allocations via vendor APIs and associate them with the OpenMP runtime */
 #cmakedefine QMC_OFFLOAD_MEM_ASSOCIATED @QMC_OFFLOAD_MEM_ASSOCIATED@
 
+/* Require OpenMP unified shared memory */
+#cmakedefine QMC_OFFLOAD_USM @QMC_OFFLOAD_USM@
+
+/* Enable collective communication library for GPU */
+#cmakedefine QMC_CCL @QMC_CCL@
+
 /* Define to 1 if you have MPI library */
 #cmakedefine HAVE_MPI @HAVE_MPI@
 
@@ -96,14 +102,15 @@
 
 #endif /* HAVE_EINSPLINE_EXT */
 
-/* Find ESSL library */
-#cmakedefine HAVE_ESSL @HAVE_ESSL@
 
 /* Using translation of CUDA to HIP for GPU execution */
 #cmakedefine QMC_CUDA2HIP @QMC_CUDA2HIP@
 
 /* Disable hipHostRegister/hipHostUnregister */
 #cmakedefine QMC_DISABLE_HIP_HOST_REGISTER @QMC_DISABLE_HIP_HOST_REGISTER@
+
+/* rocBLAS reads alpha/beta as per-batch arrays via rocblas_set_batch_alpha_stride */
+#cmakedefine QMC_ROCBLAS_ALPHA_BETA_ARRAYS @QMC_ROCBLAS_ALPHA_BETA_ARRAYS@
 
 /* build CUDA source code or call libraries from CUDA toolkit for GPU acceleration */
 #cmakedefine ENABLE_CUDA @ENABLE_CUDA@

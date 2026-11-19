@@ -70,6 +70,8 @@ LatticeGaussianProduct::LogValue LatticeGaussianProduct::evaluateLog(const Parti
       disp = -1.0 * d_table.getDisplRow(iat)[icent];
       log_value_ -= a * dist * dist;
       U[iat] += a * dist * dist;
+      dU[iat] -= 2.0 * a * disp;
+      d2U[iat] -= 6.0 * a;
       G[iat] -= 2.0 * a * disp;
       L[iat] -= 6.0 * a;
       icent++;
@@ -88,22 +90,21 @@ PsiValue LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
   int icent           = ParticleCenter[iat];
   if (icent == -1)
     return 1.0;
+  RealType a       = ParticleAlpha[iat];
   RealType newdist = d_table.getTempDists()[icent];
-  curVal           = ParticleAlpha[iat] * (newdist * newdist);
+  PosType newdisp  = -1.0 * d_table.getTempDispls()[icent];
+  curVal           = a * newdist * newdist;
+  curGrad          = -2.0 * a * newdisp;
+  curLap           = -6.0 * a;
   return std::exp(static_cast<PsiValue>(U[iat] - curVal));
 }
 
 
-GradType LatticeGaussianProduct::evalGrad(ParticleSet& P, int iat)
+GradType LatticeGaussianProduct::evalGrad(ParticleSet&, int iat)
 {
-  const auto& d_table = P.getDistTableAB(myTableID);
-  int icent           = ParticleCenter[iat];
-  if (icent == -1)
+  if (ParticleCenter[iat] == -1)
     return GradType();
-  RealType a      = ParticleAlpha[iat];
-  PosType newdisp = -1.0 * d_table.getTempDispls()[icent];
-  curGrad         = -2.0 * a * newdisp;
-  return curGrad;
+  return dU[iat];
 }
 
 
@@ -118,6 +119,7 @@ PsiValue LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType& gr
   PosType newdisp  = -1.0 * d_table.getTempDispls()[icent];
   curVal           = a * newdist * newdist;
   curGrad          = -2.0 * a * newdisp;
+  curLap           = -6.0 * a;
   grad_iat += curGrad;
   return std::exp(static_cast<PsiValue>(U[iat] - curVal));
 }
@@ -126,6 +128,8 @@ void LatticeGaussianProduct::restore(int iat) {}
 
 void LatticeGaussianProduct::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
+  if (ParticleCenter[iat] == -1)
+    return;
   U[iat]   = curVal;
   dU[iat]  = curGrad;
   d2U[iat] = curLap;

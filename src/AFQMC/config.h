@@ -260,8 +260,8 @@ enum HamiltonianTypes
 };
 
 template<std::ptrdiff_t D>
-using iextensions = typename boost::multi::iextensions<D>;
-//using extensions = typename boost::multi::layout_t<D>::extensions_type;
+using extents_t = typename boost::multi::extents_t<D>;
+//using extensions = typename boost::multi::extents_t<D>;
 
 // general matrix definitions
 template<class Alloc = std::allocator<int>>
@@ -289,6 +289,10 @@ template<class Ptr = ComplexType*>
 using ComplexMatrix_ref = boost::multi::array_ref<ComplexType, 2, Ptr>;
 template<class Ptr = SPComplexType*>
 using SPComplexMatrix_ref = boost::multi::array_ref<SPComplexType, 2, Ptr>;
+template<class Ptr = RealType*>
+using RealMatrix_ref = boost::multi::array_ref<RealType, 2, Ptr>;
+template<class Ptr = SPRealType*>
+using SPRealMatrix_ref = boost::multi::array_ref<SPRealType, 2, Ptr>;
 
 template<class Alloc = std::allocator<ComplexType>>
 using Complex3Tensor = boost::multi::array<ComplexType, 3, Alloc>;

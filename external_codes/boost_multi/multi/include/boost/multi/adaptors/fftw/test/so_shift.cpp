@@ -1,23 +1,22 @@
-// Copyright 2022-2024 Alfredo A. Correa
+// Copyright 2022-2026 Alfredo A. Correa
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
 #include <boost/multi/array.hpp>
 
-#include <boost/multi/adaptors/fftw.hpp>  // includes fftw3.hpp
-
-#include <algorithm>  // for std::rotate
 #include <complex>
-#include <iostream>
+#include <functional>
 #include <numeric>  // for std::iota
 
 namespace multi = boost::multi;
 
-auto main() -> int {
+auto main() -> int {  // NOLINT(bugprone-exception-escape)
 	using complex = std::complex<double>;
 
 	// input array
-	auto const x = std::invoke([] {  // NOLINT(readability-identifier-length)
+	auto const x = std::invoke([] () {  // NOLINT(readability-identifier-length)
+		multi::dynamic_array<complex, 1> const ret2(8); (void)ret2;
+
 		multi::array<complex, 1> ret(8);
 		// fill the first array with some numbers
 		std::iota(ret.begin(), ret.end(), 1.0);

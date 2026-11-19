@@ -20,7 +20,6 @@ MomentumDistributionInput::MomentumDistributionInput(xmlNodePtr cur)
 
   auto setIfInInput = [&](auto& var, const std::string& tag) -> bool { return input_section_.setIfInInput(var, tag); };
   setIfInInput(name_, "name");
-  setIfInInput(type_, "type");
   setIfInInput(samples_, "samples");
   setIfInInput(kmax_, "kmax");
   setIfInInput(kmax0_, "kmax0");

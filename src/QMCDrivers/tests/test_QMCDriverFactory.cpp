@@ -8,9 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <iostream>
 #include <stdio.h>
@@ -40,7 +39,7 @@ namespace testing
 class QMCDriverPools
 {
 public:
-  QMCDriverPools(const RuntimeOptions& runtime_options, Communicate* comm)
+  QMCDriverPools(const RuntimeOptions& runtime_options, Communicate& comm)
       : particle(MinimalParticlePool::make_diamondC_1x1x1(comm)),
         wavefunction(MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle)),
         hamiltonian(MinimalHamiltonianPool::make_hamWithEE(comm, particle, wavefunction))
@@ -51,7 +50,7 @@ public:
 };
 
 auto createDriver(const RuntimeOptions& runtime_options,
-                  Communicate* comm,
+                  Communicate& comm,
                   QMCDriverFactory& driver_factory,
                   xmlNodePtr node,
                   QMCDriverFactory::DriverAssemblyState& das)
@@ -68,11 +67,10 @@ auto createDriver(const RuntimeOptions& runtime_options,
 TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
 {
   using namespace testing;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   using DV = ProjectData::DriverVersion;
-  ProjectData test_project("testing", DV::LEGACY);
+  ProjectData test_project(DV::LEGACY);
   QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
@@ -91,13 +89,12 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
 
 TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
 {
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
   using namespace testing;
 
   SECTION("driver version behavior")
   {
-    ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+    ProjectData test_project;
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;
@@ -136,11 +133,10 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
 TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
 {
   using namespace testing;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   using DV = ProjectData::DriverVersion;
-  ProjectData test_project("testing", DV::LEGACY);
+  ProjectData test_project(DV::LEGACY);
   QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
@@ -160,12 +156,11 @@ TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
 TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
 {
   using namespace testing;
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   SECTION("driver version behavior")
   {
-    ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
+    ProjectData test_project;
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;

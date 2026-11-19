@@ -24,19 +24,18 @@
 #include <Timer.h>
 #if defined(QMC_COMPLEX)
 #include "SplineC2C.h"
-#include "SplineC2COMPTarget.h"
 #else
 #include "SplineR2R.h"
 #include "HybridRepReal.h"
 #include "SplineC2R.h"
-#include "SplineC2ROMPTarget.h"
 #endif
 #include "HybridRepCplx.h"
 #include "OneSplineOrbData.hpp"
 #include "spline2/SplineUtils.h"
 #include "Message/CommOperators.h"
+#include "Message/UniformCommunicateError.h"
 #include "spline2/MultiBspline.hpp"
-#include "spline2/MultiBsplineOffload.hpp"
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {
@@ -157,7 +156,8 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
     const std::pair<int, int>& distributed_and_shared_ranks,
     const BandInfoGroup& bandgroup)
 {
-  const int N = bandgroup.getNumDistinctOrbitals();
+  if (use_offload)
+    app_summary() << "    Hybrid representation doesn't support OpenMP offload. Request ignored." << std::endl;
 
   if (use_duplex_splines_)
     app_log() << "  Using complex einspline table" << std::endl;
@@ -172,12 +172,9 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
   typename bspline_traits<ST, 3>::BCType xyz_bc[3];
   set_grid(mybuilder->MeshSize, half_g, xyz_grid, xyz_bc);
 
+  const int N              = bandgroup.getNumDistinctOrbitals();
   const size_t num_splines = getAlignedSize<ST>(use_duplex_splines_ ? N * 2 : N);
-  std::unique_ptr<MultiBsplineBase<ST>> multi_splines_ptr;
-  if (use_offload)
-    multi_splines_ptr = std::make_unique<MultiBsplineOffload<ST>>(xyz_grid, xyz_bc, num_splines);
-  else
-    multi_splines_ptr = std::make_unique<MultiBspline<ST>>(xyz_grid, xyz_bc, num_splines);
+  auto multi_splines_ptr   = std::make_unique<MultiBspline<ST>>(xyz_grid, xyz_bc, num_splines);
 
   auto& multi_splines(*multi_splines_ptr);
   app_log() << "MEMORY " << multi_splines.sizeInByte() / (1 << 20) << " MB allocated "
@@ -186,39 +183,17 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
   std::unique_ptr<BsplineSet> bspline;
   OptionalRef<HybridBase> hybridrep_ref;
 #if defined(QMC_COMPLEX)
-  if (use_offload)
-  {
-    auto ptr =
-        std::make_unique<HybridRepCplx<SplineC2COMPTarget<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                                std::move(multi_splines_ptr));
-    hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
-    bspline       = std::move(ptr);
-  }
-  else
-  {
-    auto ptr      = std::make_unique<HybridRepCplx<SplineC2C<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                                   std::move(multi_splines_ptr));
-    hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
-    bspline       = std::move(ptr);
-  }
+  auto ptr      = std::make_unique<HybridRepCplx<SplineC2C<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+                                                                 std::move(multi_splines_ptr));
+  hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
+  bspline       = std::move(ptr);
 #else
   if (use_duplex_splines_)
   {
-    if (use_offload)
-    {
-      auto ptr =
-          std::make_unique<HybridRepCplx<SplineC2ROMPTarget<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                                  std::move(multi_splines_ptr));
-      hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
-      bspline       = std::move(ptr);
-    }
-    else
-    {
-      auto ptr = std::make_unique<HybridRepCplx<SplineC2R<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                                std::move(multi_splines_ptr));
-      hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
-      bspline       = std::move(ptr);
-    }
+    auto ptr      = std::make_unique<HybridRepCplx<SplineC2R<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+                                                                   std::move(multi_splines_ptr));
+    hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
+    bspline       = std::move(ptr);
   }
   else
   {
@@ -245,10 +220,10 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
   initialize_hybridrep_atomic_centers(hybrid_center_orbs);
   bool foundspline = lookforSplineDataDumpFile(bandgroup, bspline->getKeyword(), sizeof(ST));
   hybrid_center_orbs.resizeStorage(num_splines);
-  if (foundspline && myComm->rank() == 0)
+  if (foundspline && myComm.rank() == 0)
   {
     Timer now;
-    hdf_archive h5f(myComm);
+    hdf_archive h5f;
     const auto splinefile = getSplineDumpFileName(bandgroup);
     h5f.open(splinefile, H5F_ACC_RDONLY);
     foundspline = SplineUtils<ST>::read(multi_splines, h5f) && hybrid_center_orbs.read_atomic_splines(h5f);
@@ -263,7 +238,7 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
     hybrid_center_orbs.flush_zero();
     initialize_hybrid_pio_gather(spin, bandgroup, half_g, bspline->BandIndexMap, hybrid_center_orbs, multi_splines);
 
-    if (saveSplineCoefs && myComm->rank() == 0)
+    if (saveSplineCoefs && myComm.rank() == 0)
     {
       Timer now;
       const std::string splinefile(getSplineDumpFileName(bandgroup));
@@ -283,8 +258,8 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
 
   {
     Timer now;
-    SplineUtils<ST>::bcast(multi_splines, 0, *myComm);
-    hybrid_center_orbs.bcast_atomic_tables(*myComm);
+    SplineUtils<ST>::bcast(multi_splines, 0, myComm);
+    hybrid_center_orbs.bcast_atomic_tables(myComm);
     app_log() << "  Time to bcast the table = " << now.elapsed() << std::endl;
   }
   return bspline;
@@ -330,14 +305,15 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
   if (centers.size() == 0)
   {
     bool success = true;
+    std::ostringstream error_msg;
     app_log() << "Reading atomic center info for hybrid representation" << std::endl;
     for (int center_idx = 0; center_idx < ACInfo.Ncenters; center_idx++)
     {
       const int my_GroupID = ACInfo.GroupID[center_idx];
       if (ACInfo.cutoff[center_idx] < 0)
       {
-        app_error() << "Hybrid orbital representation needs parameter 'cutoff_radius' for atom " << center_idx
-                    << std::endl;
+        error_msg << "Hybrid orbital representation needs parameter 'cutoff_radius' for atom " << center_idx
+                  << std::endl;
         success = false;
       }
 
@@ -353,8 +329,8 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
       }
       else if (ACInfo.inner_cutoff[center_idx] > ACInfo.cutoff[center_idx])
       {
-        app_error() << "Hybrid orbital representation 'inner_cutoff' must be smaller than 'spline_radius' for atom "
-                    << center_idx << std::endl;
+        error_msg << "Hybrid orbital representation 'inner_cutoff' must be smaller than 'spline_radius' for atom "
+                  << center_idx << std::endl;
         success = false;
       }
 
@@ -362,7 +338,7 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
       {
         if (ACInfo.lmax[center_idx] < 0)
         {
-          app_error() << "Hybrid orbital representation needs parameter 'lmax' for atom " << center_idx << std::endl;
+          error_msg << "Hybrid orbital representation needs parameter 'lmax' for atom " << center_idx << std::endl;
           success = false;
         }
 
@@ -386,15 +362,15 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
         {
           if (ACInfo.spline_radius[center_idx] < 0)
           {
-            app_error() << "Hybrid orbital representation needs parameter 'spline_radius' for atom " << center_idx
-                        << std::endl;
+            error_msg << "Hybrid orbital representation needs parameter 'spline_radius' for atom " << center_idx
+                      << std::endl;
             success = false;
           }
 
           if (ACInfo.spline_npoints[center_idx] < 0)
           {
-            app_error() << "Hybrid orbital representation needs parameter 'spline_npoints' for atom " << center_idx
-                        << std::endl;
+            error_msg << "Hybrid orbital representation needs parameter 'spline_npoints' for atom " << center_idx
+                      << std::endl;
             success = false;
           }
         }
@@ -404,9 +380,9 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
             2.0 * ACInfo.spline_radius[center_idx] / (ACInfo.spline_npoints[center_idx] - 1);
         if (success && ACInfo.cutoff[center_idx] > max_allowed_cutoff)
         {
-          app_error() << "Hybrid orbital representation requires cutoff_radius<=" << max_allowed_cutoff
-                      << " calculated by spline_radius-2*spline_radius/(spline_npoints-1) for atom " << center_idx
-                      << std::endl;
+          error_msg << "Hybrid orbital representation requires cutoff_radius<=" << max_allowed_cutoff
+                    << " calculated by spline_radius-2*spline_radius/(spline_npoints-1) for atom " << center_idx
+                    << std::endl;
           success = false;
         }
       }
@@ -420,8 +396,9 @@ void HybridRepSetReader<ST>::initialize_hybridrep_atomic_centers(HybridBase& bsp
     }
 
     if (!success)
-      myComm->barrier_and_abort("initialize_hybridrep_atomic_centers Failed to initialize atomic centers "
-                                "in hybrid orbital representation!");
+      throw UniformCommunicateError("initialize_hybridrep_atomic_centers Failed to initialize atomic centers "
+                                    "in hybrid orbital representation!\n" +
+                                    error_msg.str());
 
     for (int center_idx = 0; center_idx < ACInfo.Ncenters; center_idx++)
     {
@@ -451,7 +428,7 @@ void HybridRepSetReader<ST>::create_atomic_centers_Gspace(const Vector<std::comp
   const int Ngvecs      = mybuilder->Gvecs[0].size();
   const int Nprocs      = band_group_comm.size();
   const int Ngvecgroups = std::min(Ngvecs, Nprocs);
-  Communicate gvec_group_comm(band_group_comm, Ngvecgroups);
+  Communicate gvec_group_comm(band_group_comm.split(Ngvecgroups));
   std::vector<int> gvec_groups(Ngvecgroups + 1, 0);
   FairDivideLow(Ngvecs, Ngvecgroups, gvec_groups);
   const int gvec_first = gvec_groups[gvec_group_comm.getGroupID()];
@@ -682,8 +659,8 @@ void HybridRepSetReader<ST>::create_atomic_centers_Gspace(const Vector<std::comp
         UBspline_1d_d* atomic_spline_r = nullptr;
         for (size_t ip = 0; ip < spline_npoints; ip++)
           splineData_r[ip] = all_vals[idx][ip][lm];
-        atomic_spline_r = einspline::create(atomic_spline_r, 0.0, spline_radius, spline_npoints, splineData_r.data(),
-                                            ((lm == 0) || (lm > 3)));
+        atomic_spline_r = einspline::create_UBspline_1d_d(0.0, spline_radius, spline_npoints, splineData_r.data(),
+                                                          ((lm == 0) || (lm > 3)));
         if (!use_duplex_splines_)
         {
           mycenter.set_spline(atomic_spline_r, lm, iorb);
@@ -695,8 +672,8 @@ void HybridRepSetReader<ST>::create_atomic_centers_Gspace(const Vector<std::comp
           UBspline_1d_d* atomic_spline_i = nullptr;
           for (size_t ip = 0; ip < spline_npoints; ip++)
             splineData_i[ip] = all_vals[idx][ip][lm + lm_tot];
-          atomic_spline_i = einspline::create(atomic_spline_i, 0.0, spline_radius, spline_npoints, splineData_i.data(),
-                                              ((lm == 0) || (lm > 3)));
+          atomic_spline_i = einspline::create_UBspline_1d_d(0.0, spline_radius, spline_npoints, splineData_i.data(),
+                                                            ((lm == 0) || (lm > 3)));
           mycenter.set_spline(atomic_spline_r, lm, iorb * 2);
           mycenter.set_spline(atomic_spline_i, lm, iorb * 2 + 1);
           einspline::destroy(atomic_spline_r);
@@ -717,9 +694,9 @@ void HybridRepSetReader<ST>::initialize_hybrid_pio_gather(const int spin,
 {
   //distribute bands over processor groups
   int Nbands            = bandgroup.getNumDistinctOrbitals();
-  const int Nprocs      = myComm->size();
+  const int Nprocs      = myComm.size();
   const int Nbandgroups = std::min(Nbands, Nprocs);
-  Communicate band_group_comm(*myComm, Nbandgroups);
+  Communicate band_group_comm(myComm.split(Nbandgroups));
   std::vector<int> band_groups(Nbandgroups + 1, 0);
   FairDivideLow(Nbands, Nbandgroups, band_groups);
   int iorb_first = band_groups[band_group_comm.getGroupID()];
@@ -727,7 +704,7 @@ void HybridRepSetReader<ST>::initialize_hybrid_pio_gather(const int spin,
 
   app_log() << "Start transforming plane waves to 3D B-splines and atomic radial orbital 1D B-splines." << std::endl;
   OneSplineOrbData oneband(mybuilder->MeshSize, half_g, use_duplex_splines_);
-  hdf_archive h5f(&band_group_comm, false);
+  hdf_archive h5f;
   Vector<std::complex<double>> cG(mybuilder->Gvecs[0].size());
   const std::vector<BandInfo>& cur_bands = bandgroup.myBands;
   if (band_group_comm.isGroupLeader())
@@ -742,17 +719,17 @@ void HybridRepSetReader<ST>::initialize_hybrid_pio_gather(const int spin,
       oneband.fft_spline(cG, mybuilder->Gvecs[0], mybuilder->primcell_kpoints[ti], rotate);
       if (use_duplex_splines_)
       {
-        multi_splines.set_spline(oneband.get_spline_r(), iorb * 2);
-        multi_splines.set_spline(oneband.get_spline_i(), iorb * 2 + 1);
+        multi_splines.setOneSpline(oneband.get_spline_r(), iorb * 2);
+        multi_splines.setOneSpline(oneband.get_spline_i(), iorb * 2 + 1);
       }
       else
-        multi_splines.set_spline(oneband.get_spline_r(), iorb);
+        multi_splines.setOneSpline(oneband.get_spline_r(), iorb);
     }
     band_group_comm.bcast(cG);
     create_atomic_centers_Gspace(cG, band_group_comm, iorb, oneband.getRotatePhase(), half_g, multi_atomic_splines);
   }
 
-  myComm->barrier();
+  myComm.barrier();
   if (band_group_comm.isGroupLeader())
   {
     auto& group_leader_comm = band_group_comm.getInterGroupComm();

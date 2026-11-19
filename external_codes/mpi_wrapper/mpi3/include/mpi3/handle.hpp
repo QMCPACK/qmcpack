@@ -1,4 +1,4 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_DETAIL_HANDLE_HPP
 #define BOOST_MPI3_DETAIL_HANDLE_HPP
@@ -7,14 +7,18 @@
 #include <stdexcept> // runtime_error
 #include <string>
 
-#include<mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
 namespace boost {
 namespace mpi3 {
 namespace detail {
 
 template<class Self, class Impl>
-struct caller {
+class caller {
+	caller() = default;
+	friend Self;
+
+public:
 	Impl& impl() {return static_cast<Self&>(*this).impl_;}
 	Impl const& impl() const {return static_cast<Self const&>(*this).impl_;}
 
@@ -36,7 +40,7 @@ struct caller {
 	}
 	template<int(*F)(Impl, int*)> int call() const {
 		int ret = -1;
-	//	static_call(F, impl_, &ret);
+	//  static_call(F, impl_, &ret);
 		int const status = F(impl(), &ret);
 		if(status != MPI_SUCCESS) {throw std::runtime_error{"error " + std::to_string(status)};}
 		return ret;
@@ -83,16 +87,23 @@ struct regular_handle : caller<regular_handle<Self, Impl, CreateFunction, DupFun
 	using impl_t = Impl;
 	impl_t impl_;  // NOLINT(misc-non-private-member-variables-in-classes) TODO(correaa)
 
+ private:
 	regular_handle() {CreateFunction(&impl_);}
-	regular_handle(regular_handle&&) = delete;  // TODO(correaa) : introspect if "null state" is valid
 	regular_handle(regular_handle const& other) {  // TODO(correaa) : revise in what cases a regular const& is correct
 		int status = DupFunction(other.impl_, &impl_);
 		if(status != MPI_SUCCESS) {throw std::runtime_error{"cannot copy handle"};}
 	}
+	// TODO(correaa) : introspect if "null state" is valid
+	regular_handle(regular_handle&&) = default;
+
+	friend Self;
+
+ public:
 	~regular_handle() {
 		assert(impl_ != MPI_INFO_NULL);
 		if(impl_ != MPI_INFO_NULL) {FreeFunction(&impl_);}
 	}
+
 	void swap(Self& other) {std::swap(impl_, other.impl_);}
 	regular_handle& operator=(regular_handle const& other) {
 		if(this == &other) {return *this;}
@@ -115,18 +126,23 @@ struct nondefault_handle : caller<nondefault_handle<Self, Impl, FreeFunction>, I
 	impl_t impl_;  // NOLINT(misc-non-private-member-variables-in-classes) TODO(correaa)
 	bool predefined_ = false;  // NOLINT(misc-non-private-member-variables-in-classes) TODO(correaa)
 
+ private:
 	explicit nondefault_handle(Impl code) : impl_(code), predefined_(true){}
-	nondefault_handle() = delete;
-	explicit nondefault_handle(uninitialized /*unused*/){};
-	nondefault_handle(nondefault_handle const&) = delete;
-	nondefault_handle(nondefault_handle&&) = delete;
+	nondefault_handle() = delete;  // NOLINT(hicpp-use-equals-delete,modernize-use-equals-delete) CRTP class
+	nondefault_handle(nondefault_handle&&) = delete;  // NOLINT(hicpp-use-equals-delete,modernize-use-equals-delete) CRTP class
+	explicit nondefault_handle(uninitialized /*unused*/) {};
+	nondefault_handle(nondefault_handle const&) = delete;  // NOLINT(hicpp-use-equals-delete,modernize-use-equals-delete) CRTP class
+
+	friend Self;
+
+ public:
 	~nondefault_handle(){
 		int fin; MPI_Finalized(&fin);  // NOLINT(cppcoreguidelines-init-variables) delayed init
-		if(not static_cast<bool>(fin)) {
+		if(!static_cast<bool>(fin)) {
 			if(not predefined_) {FreeFunction(&impl_);}
 		}
 	}
-	void swap(nondefault_handle& other){std::swap(impl_, other.impl_);}
+	void swap(nondefault_handle& other) noexcept { std::swap(impl_, other.impl_); }
 	nondefault_handle& operator=(nondefault_handle const& other) = delete;
 	nondefault_handle& operator=(nondefault_handle&& other) = delete;
 };

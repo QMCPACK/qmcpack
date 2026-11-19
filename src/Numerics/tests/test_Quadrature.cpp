@@ -8,9 +8,7 @@
 //
 // File refactored from QMCHamiltonians/tests/test_ecp.cpp
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include "Configuration.h"
 #include "Numerics/Quadrature.h"
 

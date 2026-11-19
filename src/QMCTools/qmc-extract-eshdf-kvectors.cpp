@@ -22,7 +22,7 @@
 int main(int argc, char* argv[])
 {
 #ifdef HAVE_MPI
-  mpi3::environment env(argc, argv);
+  mpi3::environment env(argc, argv, boost::mpi3::thread_level::funneled);
 #endif
 
   using namespace qmcplusplus;

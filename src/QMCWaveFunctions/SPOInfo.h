@@ -82,8 +82,8 @@ struct EnergyOrder
 {
   using RealType = QMCTraits::RealType;
   RealType energy_tol;
-  EnergyOrder(RealType tol = 1e-6) : energy_tol(tol){};
-  ~EnergyOrder(){};
+  EnergyOrder(RealType tol = 1e-6) : energy_tol(tol) {};
+  ~EnergyOrder() {};
   inline bool operator()(const SPOInfo* left, const SPOInfo* right)
   {
     if (std::abs(left->energy - right->energy) < energy_tol)

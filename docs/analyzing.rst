@@ -1427,7 +1427,8 @@ Using the qdens tool to obtain electron densities
 The ``qdens`` tool is provided to post-process the heavy density data
 produced by QMCPACK and output the mean density (with and without
 errorbars) in file formats viewable with, e.g., XCrysDen or VESTA. The
-tool currently works only with the ``SpinDensity`` estimator in QMCPACK.
+tool supports the ``SpinDensity`` in for both batched and legacy
+drivers and the legacy ``Density`` estimator for legacy drivers in QMCPACK.
 
 Note: this tool is provisional and may be changed or replaced at any
 time. The planned successor to this tool (``qstat``) will expand access
@@ -1435,10 +1436,26 @@ to other observables and will retain at least the non-plotting
 capabilities of ``qdens``.
 
 To use ``qdens``, Nexus must be installed along with NumPy and H5Py. A
-short list of example use cases are covered in the next section. Current
-input flags are:
+short list of example use cases are covered in the next section. When ``-i``
+is provided, qdens obtains each density estimator's grid and sampling geometry
+from the QMCPACK input section that produced the ``sNNN`` output file.  This
+input metadata is authoritative: matching ``--grid``, ``--density_cell``, and
+``--density_corner`` options are ignored with a warning.  Without matching
+input metadata, these options retain their legacy role as fallback metadata
+for a single unambiguous density group.
 
-.. code-block:: 
+The grid dimensions must describe the stored HDF5 data exactly; qdens checks
+that their product equals the number of stored bins.  ``--reblock`` performs
+statistical block coarsening only.  qdens does not resample a spatial density
+grid.  The fallback ``--density_cell`` and ``--density_corner`` options set
+the geometry written to output files but do not move or resample the stored
+density values, so they should describe the data's actual sampling geometry.
+CHGCAR output is available only when the density sampling cell is the
+simulation cell with a zero corner; use XSF for a subcell or shifted density.
+
+Current input flags are:
+
+.. code-block::
 
   >qdens
 
@@ -1460,16 +1477,20 @@ input flags are:
     -w WEIGHTS, --weights=WEIGHTS
                           List of weights for averaging (default=None).
     -i INPUT, --input=INPUT
-                          QMCPACK input file containing structure and grid
-                          information (default=None).
+                          QMCPACK input file; matching estimator metadata is
+                          used per output series (default=None).
     -s STRUCTURE, --structure=STRUCTURE
                           File containing atomic structure (default=None).
-    -g GRID, --grid=GRID  Density grid dimensions (default=None).
+    -g GRID, --grid=GRID  Fallback density grid dimensions; must match stored
+                          bins and is ignored when input metadata matches
+                          (default=None).
     -c CELL, --cell=CELL  Simulation cell axes (default=None).
     --density_cell=DENSITY_CELL
-                          Density cell axes (default=None).
+                          Fallback density cell axes; ignored when input
+                          metadata matches (default=None).
     --density_corner=DENSITY_CORNER
-                          Density cell corner (default=None).
+                          Fallback density cell corner; ignored when input
+                          metadata matches (default=None).
     --lineplot=LINEPLOT   Produce a line plot along the selected dimension: 0,
                           1, or 2 (default=None).
     --noplot              Do not show plots interactively (default=False).
@@ -1592,7 +1613,7 @@ The radial density can be chosen to be non-cumulative or cumulative (integrated)
   >qdens-radial
 
   Usage: qdens-radial [options] xsf_file
-  
+
   Options:
     --version             show program's version number and exit
     -h, --help            Print help information and exit (default=False).
@@ -1660,7 +1681,7 @@ Estimate of the extrapolated atomic occupation:
 ::
 
   qdens-radial -p -s O -r 1.1 -c --vmc=dmc.s000.Density_q.xsf dmc.s002.Density_q.xsf
-  
+
 Output:
 
 ::
@@ -1694,4 +1715,3 @@ Output:
   Will compute 20 samples...
   ...
   Cumulative Value of O Species at Cutoff 1.1 is: 6.55517033828574+/-0.001558553749396279
-

@@ -191,7 +191,7 @@ private:
   /// @}
 
   //number of samples accumulated
-  int nsamples_;
+  int nsamples_{0};
 
   DataLocality data_locality_{DataLocality::crowd};
 

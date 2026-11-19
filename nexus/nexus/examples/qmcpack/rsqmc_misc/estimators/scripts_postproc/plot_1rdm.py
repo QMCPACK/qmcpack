@@ -18,7 +18,7 @@ def plot_matrix(arr, figname="arr"):
     ax.set_title("One Body Reduced Density Matrix")
     ax.set_xlabel("Orbital Index")
     ax.set_ylabel("Orbital Index")
-    
+
     ax.set_xticks(np.arange(0,arr.shape[0],5))   # major ticks
     ax.set_yticks(np.arange(0,arr.shape[0],5))
     ax.set_xticklabels(np.arange(1,arr.shape[0]+1,5))
@@ -28,7 +28,7 @@ def plot_matrix(arr, figname="arr"):
     ax.tick_params(axis='both', which="both", length=0)
     plt.grid(False)
     plt.grid(which="minor", color="k", linestyle="-", linewidth=1)
-    
+
     plt.savefig(figname + ".pdf", bbox_inches="tight")
     plt.show()
     plt.close()

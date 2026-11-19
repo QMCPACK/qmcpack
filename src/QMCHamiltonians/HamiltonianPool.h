@@ -42,7 +42,7 @@ class HamiltonianPool : public MPIObjectBase, public ObjectPool<QMCHamiltonian>
 public:
   HamiltonianPool(ParticleSetPool& pset_pool,
                   WaveFunctionPool& psi_pool,
-                  Communicate* c,
+                  Communicate& c,
                   const char* aname = "hamiltonian");
   HamiltonianPool(const HamiltonianPool&)            = delete;
   HamiltonianPool& operator=(const HamiltonianPool&) = delete;

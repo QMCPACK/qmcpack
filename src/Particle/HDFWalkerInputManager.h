@@ -27,15 +27,15 @@ class HDFWalkerInputManager
   WalkerConfigurations& wc_list_;
   /// number of particles
   const size_t num_ptcls_;
-  Communicate* myComm;
+  Communicate& myComm;
   std::string CurrentFileRoot;
 
 public:
-  HDFWalkerInputManager(WalkerConfigurations& w, size_t num_ptcls, Communicate* c);
+  HDFWalkerInputManager(WalkerConfigurations& w, size_t num_ptcls, Communicate& c);
   ~HDFWalkerInputManager();
   bool put(xmlNodePtr cur);
   //bool put(std::vector<xmlNodePtr>& mset, int pid);
-  //bool put(std::vector<xmlNodePtr>& mset, Communicate* comm);
+  //bool put(std::vector<xmlNodePtr>& mset, Communicate& comm);
   std::string getFileRoot() { return CurrentFileRoot; }
 };
 } // namespace qmcplusplus

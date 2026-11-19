@@ -1,5 +1,6 @@
-//#define OMPI_SKIP_MPICXX 1 // https://github.com/open-mpi/ompi/issues/5157
-#include<mpi.h>
+// Copyright 2018-2025 Alfredo A. Correa
+
+#include <mpi3/detail/mpi_impl.h>
 
 #include<type_traits> // make_signed_t
 

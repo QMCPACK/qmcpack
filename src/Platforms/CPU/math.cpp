@@ -10,13 +10,22 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-// To make the customized qmcplusplus::isnan/isfinite/isinf always effective, this file must be compiled without -ffast-math.
+// To make the customized qmcplusplus::numeric_limits/isnan/isfinite/isinf always effective,
+// this file must be compiled without -ffast-math.
+#include "math.hpp"
 #include <cmath>
+#include <limits>
 
 namespace qmcplusplus
 {
-bool isnan(float a) { return a != a; }
-bool isnan(double a) { return a != a; }
+float numeric_limits<float>::infinity() { return std::numeric_limits<float>::infinity(); }
+float numeric_limits<float>::quiet_NaN() { return std::numeric_limits<float>::quiet_NaN(); }
+
+double numeric_limits<double>::infinity() { return std::numeric_limits<double>::infinity(); }
+double numeric_limits<double>::quiet_NaN() { return std::numeric_limits<double>::quiet_NaN(); }
+
+bool isnan(float a) { return std::isnan(a); }
+bool isnan(double a) { return std::isnan(a); }
 
 bool isfinite(float a) { return std::isfinite(a); }
 bool isfinite(double a) { return std::isfinite(a); }

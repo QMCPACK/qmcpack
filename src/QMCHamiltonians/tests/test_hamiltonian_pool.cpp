@@ -8,12 +8,9 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
 
 
-#include "catch.hpp"
-
-
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
@@ -32,8 +29,7 @@ extern std::unique_ptr<ParticleSet> createElectronParticleSet(const SimulationCe
 
 TEST_CASE("HamiltonianPool", "[qmcapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   // See src/QMCHamiltonians/tests/test_hamiltonian_factory for parsing tests
   const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">

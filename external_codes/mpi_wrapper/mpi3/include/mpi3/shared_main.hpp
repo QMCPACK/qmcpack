@@ -1,13 +1,12 @@
-#if COMPILATION_INSTRUCTIONS /* -*- indent-tabs-mode: t -*- */
-(echo "#include<"$0">" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wfatal-errors -D_TEST_BOOST_MPI3_SHARED_MAIN $0x.cpp -o $0x.x && time mpirun -np 4 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
-#endif
+// Copyright 2019-2025 Alfredo A. Correa
+
 #ifndef BOOST_MPI3_SHARED_MAIN_HPP
 #define BOOST_MPI3_SHARED_MAIN_HPP
 
-#include<mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
-#include "../mpi3/environment.hpp"
-#include "../mpi3/shared_communicator.hpp"
+#include <mpi3/environment.hpp>
+#include <mpi3/shared_communicator.hpp>
 
 namespace boost{
 namespace mpi3{
@@ -16,7 +15,7 @@ int main(int argc, char* argv[], boost::mpi3::shared_communicator node);
 
 }}
 
-int main(int argc, char* argv[]){
+int ssmain(int argc, char* argv[]){
 	boost::mpi3::environment env(argc, argv);
 	return boost::mpi3::main(argc, argv, env.world().split_shared());
 }

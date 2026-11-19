@@ -17,6 +17,8 @@
 
 #include "WaveFunctionComponent.h"
 
+#include <stdexcept>
+
 namespace qmcplusplus
 {
 // for return types
@@ -36,6 +38,28 @@ void WaveFunctionComponent::mw_evaluateLog(const RefVectorWithLeader<WaveFunctio
   assert(this == &wfc_list.getLeader());
   for (int iw = 0; iw < wfc_list.size(); iw++)
     wfc_list[iw].evaluateLog(p_list[iw], G_list[iw], L_list[iw]);
+}
+
+void WaveFunctionComponent::mw_evaluateLogAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                                       const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                                       const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                                       const std::vector<bool>& evaluate_mask) const
+{
+  for (int iw = 0; iw < wfc_list.size(); ++iw)
+    if (evaluate_mask[iw])
+      wfc_list[iw].evaluateLog(p_list[iw], G_list[iw], L_list[iw]);
+}
+
+void WaveFunctionComponent::mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                             const RefVectorWithLeader<ParticleSet>& p_list,
+                                                             const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                                             const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                                             const std::vector<bool>& accepted) const
+{
+  for (int iw = 0; iw < wfc_list.size(); ++iw)
+    if (!accepted[iw])
+      wfc_list[iw].evaluateLog(p_list[iw], G_list[iw], L_list[iw]);
 }
 
 void WaveFunctionComponent::recompute(const ParticleSet& P)

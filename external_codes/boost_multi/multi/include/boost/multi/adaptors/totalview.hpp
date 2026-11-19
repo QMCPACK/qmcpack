@@ -21,14 +21,14 @@
 
 template<typename T> constexpr char const* pretty_name = "unknown";
 
-template<> constexpr char const* pretty_name<double> = "double";
-template<> constexpr char const* pretty_name<float>  = "float";
+template<> inline constexpr char const* pretty_name<double> = "double";
+template<> inline constexpr char const* pretty_name<float>  = "float";
 
-template<> constexpr char const* pretty_name<std::complex<double>> = "std::complex<double>";
-template<> constexpr char const* pretty_name<std::complex<float>>  = "std::complex<float>";
+template<> inline constexpr char const* pretty_name<std::complex<double>> = "std::complex<double>";
+template<> inline constexpr char const* pretty_name<std::complex<float>>  = "std::complex<float>";
 
-template<> constexpr char const* pretty_name<long> = "long";
-template<> constexpr char const* pretty_name<int>  = "int";
+template<> inline constexpr char const* pretty_name<long> = "long";
+template<> inline constexpr char const* pretty_name<int>  = "int";
 
 template<class TT>
 #ifdef __GCC__

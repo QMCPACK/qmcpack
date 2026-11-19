@@ -8,9 +8,8 @@
 //
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "type_traits/template_types.hpp"
 #include "type_traits/ConvertToReal.h"
@@ -174,7 +173,7 @@ void test_msd_wrapper(const std::string& wffile,
   using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -185,7 +184,6 @@ void test_msd_wrapper(const std::string& wffile,
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
-  int Nelec = elec.getTotalNum();
 
   //////////////////////////////////
   /////////////////////////////////
@@ -218,7 +216,7 @@ void test_msd_wrapper(const std::string& wffile,
   auto ham_ptr = create_CN_Hamiltonian(hf);
   QMCHamiltonian& ham(*ham_ptr);
 
-  RealType eloc = ham.evaluateDeterministic(psi, elec);
+  ham.evaluateDeterministic(psi, elec);
 
   //Enum to give human readable indexing into QMCHamiltonian.
   enum observ_id
@@ -415,12 +413,12 @@ void test_msd_wrapper(const std::string& wffile,
 
   // same order as Dets in msd; index of associated SPOset in twf.sposets_
   std::vector<int> mdd_spo_ids;
-  std::vector<const WaveFunctionComponent*> mdd_list;
+  std::vector<const MultiDiracDeterminant*> mdd_list;
 
   for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
   {
     const MultiDiracDeterminant& multidiracdet_i = msd.getDet(i_mdd);
-    mdd_list.push_back(static_cast<const WaveFunctionComponent*>(&multidiracdet_i));
+    mdd_list.push_back(&multidiracdet_i);
     // particle group id for this multidiracdet
     const int gid = elec.getGroupID(multidiracdet_i.getFirstIndex());
     // SPOSet location in twf.sposets_ for this particle group
@@ -675,7 +673,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Single Slater No Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -685,7 +683,6 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
-  int Nelec = elec.getTotalNum();
 
   HamiltonianFactory::PSetMap particle_set_map;
   particle_set_map.emplace("e", std::move(elec_ptr));
@@ -832,7 +829,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Single Slater+Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -842,7 +839,6 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
-  int Nelec = elec.getTotalNum();
 
   HamiltonianFactory::PSetMap particle_set_map;
   particle_set_map.emplace("e", std::move(elec_ptr));
@@ -995,7 +991,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Multislater No Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -1005,7 +1001,6 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
-  int Nelec = elec.getTotalNum();
 
   HamiltonianFactory::PSetMap particle_set_map;
   particle_set_map.emplace("e", std::move(elec_ptr));
@@ -1143,7 +1138,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Multislater+Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -1153,7 +1148,6 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
-  int Nelec = elec.getTotalNum();
 
   HamiltonianFactory::PSetMap particle_set_map;
   particle_set_map.emplace("e", std::move(elec_ptr));
@@ -1285,7 +1279,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -1543,7 +1537,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -1806,7 +1800,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   std::ostringstream section_name;
   section_name << "Carbon diamond off gamma unit test: ";
 
-  Communicate* c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   Lattice lattice;
   lattice.BoxBConds[0]             = 1; // periodic
@@ -2324,8 +2318,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Single Slater+Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSet ions;
   ParticleSet elec;
@@ -2491,8 +2484,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Multislater No Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSet ions;
   ParticleSet elec;
@@ -2644,8 +2636,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Multislater+Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate& c(*OHMMS::Controller);
 
   ParticleSet ions;
   ParticleSet elec;

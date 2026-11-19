@@ -11,7 +11,8 @@
 
 
 #include "MockGoldWalkerElements.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "EnergyDensityEstimator.h"
 #include <iostream>
@@ -32,8 +33,7 @@ namespace qmcplusplus
 
 TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
 {
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(comm)};
 
@@ -53,13 +53,16 @@ TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
   EnergyDensityInput edein{node};
   {
     NEEnergyDensityEstimator e_den_est(edein, particle_pool.getPool());
+    PooledData<QMCTraits::RealType> buffer;
+    e_den_est.packData(buffer);
+    REQUIRE(buffer.size() == e_den_est.getFullDataSize());
+    CHECK(buffer[buffer.size() - 1] == Approx(0.0));
   }
 }
 
 TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
 {
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
   ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(comm)};
 
@@ -83,13 +86,19 @@ TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
     auto clone = original_e_den_est.spawnCrowdClone();
     REQUIRE(clone != nullptr);
     REQUIRE(clone.get() != &original_e_den_est);
-    REQUIRE(dynamic_cast<decltype(&original_e_den_est)>(clone.get()) != nullptr);
+    auto* clone_e_den_est = dynamic_cast<decltype(&original_e_den_est)>(clone.get());
+    REQUIRE(clone_e_den_est != nullptr);
+
+    PooledData<QMCTraits::RealType> buffer;
+    clone_e_den_est->packData(buffer);
+    REQUIRE(buffer.size() == clone_e_den_est->getFullDataSize());
+    CHECK(buffer[buffer.size() - 1] == Approx(0.0));
   }
 }
 
 TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
 #ifndef ENABLE_OFFLOAD
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
@@ -148,12 +157,22 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   CHECK(summed_grid == Approx(expected_sum));
 
   e_den_est.write(hd);
-  std::cout << "wrote success\n";
+
+  PooledData<QMCTraits::RealType> buffer;
+  e_den_est.packData(buffer);
+  REQUIRE(buffer.size() == e_den_est.getFullDataSize());
+  CHECK(buffer[buffer.size() - 1] == Approx(4.0));
+
+  e_den_est.zero();
+  buffer.clear();
+  e_den_est.packData(buffer);
+  CHECK(buffer[buffer.size() - 1] == Approx(0.0));
+  app_log() << "wrote success\n";
 }
 
 TEST_CASE("NEEnergyDensityEstimator::Collect", "[estimators]")
 {
-  Communicate* comm = OHMMS::Controller;
+  Communicate& comm(*OHMMS::Controller);
 
 #ifndef ENABLE_OFFLOAD
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
@@ -213,7 +232,7 @@ TEST_CASE("NEEnergyDensityEstimator::Collect", "[estimators]")
   CHECK(summed_grid == Approx(expected_sum));
 
   e_den_est.write(hd);
-  std::cout << "wrote success\n";
+  app_log() << "wrote success\n";
 }
 
 } // namespace qmcplusplus

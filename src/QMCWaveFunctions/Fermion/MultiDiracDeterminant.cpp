@@ -888,7 +888,7 @@ void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<Multi
 
 // this has been fixed
 MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
-    : WaveFunctionComponent(s),
+    : UpdateMode(s.UpdateMode),
       inverse_timer(s.inverse_timer),
       buildTable_timer(s.buildTable_timer),
       table2ratios_timer(s.table2ratios_timer),
@@ -918,17 +918,9 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       uniquePairs(s.uniquePairs),
       DetSigns(s.DetSigns),
       ndets_per_excitation_level_(s.ndets_per_excitation_level_)
-{
-  resize();
-}
+{ resize(); }
 
 std::unique_ptr<SPOSet> MultiDiracDeterminant::clonePhi() const { return Phi->makeClone(); }
-
-std::unique_ptr<WaveFunctionComponent> MultiDiracDeterminant::makeClone(ParticleSet& tqp) const
-{
-  APP_ABORT(" Illegal action. Cannot use MultiDiracDeterminant::makeClone");
-  return std::unique_ptr<MultiDiracDeterminant>();
-}
 
 /** constructor
  *@param spos the single-particle orbital set
@@ -936,22 +928,22 @@ std::unique_ptr<WaveFunctionComponent> MultiDiracDeterminant::makeClone(Particle
  *@param spinor flag to determinane if spin arrays need to be resized and used
  */
 MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor, int first, int nel)
-    : inverse_timer(createGlobalTimer(getClassName() + "::invertRefDet")),
-      buildTable_timer(createGlobalTimer(getClassName() + "::buildTable")),
-      table2ratios_timer(createGlobalTimer(getClassName() + "::table2ratios")),
-      evalWalker_timer(createGlobalTimer(getClassName() + "::evalWalker")),
-      evalOrbValue_timer(createGlobalTimer(getClassName() + "::evalOrbValue")),
-      evalOrbVGL_timer(createGlobalTimer(getClassName() + "::evalOrbVGL")),
-      updateInverse_timer(createGlobalTimer(getClassName() + "::updateRefDetInv")),
-      calculateRatios_timer(createGlobalTimer(getClassName() + "::calcRatios")),
-      calculateGradRatios_timer(createGlobalTimer(getClassName() + "::calcGradRatios")),
-      updateRatios_timer(createGlobalTimer(getClassName() + "::updateRatios")),
-      evaluateDetsForPtclMove_timer(createGlobalTimer(getClassName() + "::evaluateDet")),
-      evaluateDetsAndGradsForPtclMove_timer(createGlobalTimer(getClassName() + "::evaluateDetAndGrad")),
-      evaluateGrads_timer(createGlobalTimer(getClassName() + "::evaluateGrad")),
-      offload_timer(createGlobalTimer(getClassName() + "::offload")),
-      transferH2D_timer(createGlobalTimer(getClassName() + "::transferH2D")),
-      transferD2H_timer(createGlobalTimer(getClassName() + "::transferD2H")),
+    : inverse_timer(createGlobalTimer(class_name_ + "::invertRefDet")),
+      buildTable_timer(createGlobalTimer(class_name_ + "::buildTable")),
+      table2ratios_timer(createGlobalTimer(class_name_ + "::table2ratios")),
+      evalWalker_timer(createGlobalTimer(class_name_ + "::evalWalker")),
+      evalOrbValue_timer(createGlobalTimer(class_name_ + "::evalOrbValue")),
+      evalOrbVGL_timer(createGlobalTimer(class_name_ + "::evalOrbVGL")),
+      updateInverse_timer(createGlobalTimer(class_name_ + "::updateRefDetInv")),
+      calculateRatios_timer(createGlobalTimer(class_name_ + "::calcRatios")),
+      calculateGradRatios_timer(createGlobalTimer(class_name_ + "::calcGradRatios")),
+      updateRatios_timer(createGlobalTimer(class_name_ + "::updateRatios")),
+      evaluateDetsForPtclMove_timer(createGlobalTimer(class_name_ + "::evaluateDet")),
+      evaluateDetsAndGradsForPtclMove_timer(createGlobalTimer(class_name_ + "::evaluateDetAndGrad")),
+      evaluateGrads_timer(createGlobalTimer(class_name_ + "::evaluateGrad")),
+      offload_timer(createGlobalTimer(class_name_ + "::offload")),
+      transferH2D_timer(createGlobalTimer(class_name_ + "::transferH2D")),
+      transferD2H_timer(createGlobalTimer(class_name_ + "::transferD2H")),
       Phi(std::move(spos)),
       NumOrbitals(Phi->getOrbitalSetSize()),
       FirstIndex(first),
@@ -997,9 +989,7 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 void MultiDiracDeterminant::createResource(ResourceCollection& collection) const
-{
-  collection.addResource(std::make_unique<MultiDiracDetMultiWalkerResource>());
-}
+{ collection.addResource(std::make_unique<MultiDiracDetMultiWalkerResource>()); }
 
 void MultiDiracDeterminant::acquireResource(ResourceCollection& collection,
                                             const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list) const
@@ -1294,8 +1284,6 @@ void MultiDiracDeterminant::evaluateDerivativesWF(ParticleSet& P,
 }
 
 void MultiDiracDeterminant::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
-{
-  twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get());
-}
+{ twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get()); }
 
 } // namespace qmcplusplus

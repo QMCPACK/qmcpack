@@ -25,7 +25,7 @@ namespace qmcplusplus
 class SPOSetBuilderFactory : public MPIObjectBase
 {
 public:
-  using SPOMap = SPOSet::SPOMap;
+  using SPOMap  = SPOSet::SPOMap;
   using PSetMap = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
   /** constructor
@@ -33,7 +33,7 @@ public:
    * \param els reference to the electrons
    * \param ions reference to the ions
    */
-  SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, const PSetMap& psets);
+  SPOSetBuilderFactory(Communicate& comm, ParticleSet& els, const PSetMap& psets);
 
   ~SPOSetBuilderFactory();
 

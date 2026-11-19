@@ -52,7 +52,7 @@ struct WalkerReconfigurationMPI : public WalkerControlBase
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerReconfigurationMPI(Communicate* c = 0);
+  WalkerReconfigurationMPI(Communicate& c);
 
   /** perform branch and swap walkers as required */
   int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger) override;

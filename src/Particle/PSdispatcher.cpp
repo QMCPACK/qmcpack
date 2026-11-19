@@ -12,6 +12,8 @@
 
 #include "PSdispatcher.h"
 
+#include <stdexcept>
+
 namespace qmcplusplus
 {
 PSdispatcher::PSdispatcher(bool use_batch) : use_batch_(use_batch) {}
@@ -40,6 +42,24 @@ void PSdispatcher::flex_update(const RefVectorWithLeader<ParticleSet>& p_list, b
   else
     for (ParticleSet& pset : p_list)
       pset.update(skipSK);
+}
+
+template<CoordsType CT>
+void PSdispatcher::flex_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
+                                             const MCCoords<CT>& displacements,
+                                             std::vector<bool>& are_valid) const
+{
+  if (!use_batch_)
+    throw std::runtime_error("All-particle ParticleSet transactions do not support walker serialization with in a crowd.");
+  ParticleSet::mw_makeMoveAllParticles(p_list, displacements, are_valid);
+}
+
+void PSdispatcher::flex_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                      const std::vector<bool>& accepted) const
+{
+  if (!use_batch_)
+    throw std::runtime_error("All-particle ParticleSet transactions do not support walker serialization with in a crowd.");
+  ParticleSet::mw_accept_rejectMoveAllParticles(p_list, accepted);
 }
 
 template<CoordsType CT>
@@ -90,6 +110,13 @@ void PSdispatcher::flex_saveWalker(const RefVectorWithLeader<ParticleSet>& p_lis
       p_list[iw].saveWalker(walkers[iw]);
 }
 
+template void PSdispatcher::flex_makeMoveAllParticles<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                                       const MCCoords<CoordsType::POS>& displacements,
+                                                                       std::vector<bool>& are_valid) const;
+template void PSdispatcher::flex_makeMoveAllParticles<CoordsType::POS_SPIN>(
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    const MCCoords<CoordsType::POS_SPIN>& displacements,
+    std::vector<bool>& are_valid) const;
 template void PSdispatcher::flex_makeMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
                                                            int iat,
                                                            const MCCoords<CoordsType::POS>& displs,

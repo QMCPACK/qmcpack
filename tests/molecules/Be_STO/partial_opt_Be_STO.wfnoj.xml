@@ -41,10 +41,10 @@
       </sposet>
     </rotated_sposet>
     </sposet_collection>
-    <determinantset key="STO" source="ion0" transform="no" type="MO">
+    <determinantset>
       <slaterdeterminant batch="no">
-        <determinant id="rot-spo-up"/>
-        <determinant id="rot-spo-up"/>
+        <determinant sposet="rot-spo-up"/>
+        <determinant sposet="rot-spo-up"/>
       </slaterdeterminant>
     </determinantset>
  </wavefunction>

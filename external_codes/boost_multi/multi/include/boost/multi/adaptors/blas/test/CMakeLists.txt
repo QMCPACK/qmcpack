@@ -21,7 +21,8 @@ if((NOT
 		"icpc"
 	   )
 )
-	find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+	find_package(Boost CONFIG)  # COMPONENTS boost)  # headers unit_test_framework)
+#	find_package(Boost REQUIRED NO_MODULE)  # COMPONENTS boost)  # headers unit_test_framework)
 #   link_libraries("-lboost_unit_test_framework")
 
 	find_package(BLAS REQUIRED)
@@ -36,7 +37,7 @@ if((NOT
 	link_libraries(${BLAS_LIBRARIES})
 else()
 	find_package(Boost REQUIRED) # cmake cannot detect this component with pgi compiler
-	link_libraries("-lboost_unit_test_framework")
+	# link_libraries("-lboost_unit_test_framework")
 
 	link_libraries("-lblas") # cmake cannot detect BLAS with pgi/nvc++ but it ships with its own version
 endif()
@@ -51,7 +52,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "NVHPC")  # nvhpc will find its own blas versi
 	add_definitions(-DBLAS_DOT_RETURNS_VOID)
 endif()
 
-
 if(ENABLE_CUDA OR DEFINED CXXCUDA)
 	enable_language(CUDA)
 	if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
@@ -60,10 +60,9 @@ if(ENABLE_CUDA OR DEFINED CXXCUDA)
 endif()
 
 enable_testing()
-list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure") # needs cmake 3.17
 include(CTest)
 
-configure_file("config.hpp.in" ${CMAKE_BINARY_DIR}/config.hpp)
+# configure_file("config.hpp.in" ${CMAKE_BINARY_DIR}/config.hpp)
 
 include_directories(${CMAKE_BINARY_DIR})
 
@@ -83,34 +82,34 @@ set(TEST_SRCS
 	trsm.cpp
 )
 
+find_package(TBB)
+
+add_library(multi-blas INTERFACE)
+target_link_libraries(multi-blas INTERFACE multi)
+target_link_libraries(multi-blas INTERFACE BLAS::BLAS)
+
 foreach(TEST_FILE ${TEST_SRCS})
 	set(TEST_EXE "${TEST_FILE}.x")
 	add_executable(${TEST_EXE} ${TEST_FILE})
 	if(ENABLE_CUDA OR DEFINED CXXCUDA)
 		set_source_files_properties(${TEST_FILE} PROPERTIES LANGUAGE CUDA)
 		#set_property(TARGET ${TEST_EXE} PROPERTY "${CUDA_ARCH_LIST}")
-		target_compile_options(${TEST_EXE} PRIVATE -std=c++17)
+		set_property(TARGET ${TEST_EXE} PROPERTY CUDA_STANDARD 17)
 	endif()
 
 	target_include_directories(${TEST_EXE}        PRIVATE ${PROJECT_SOURCE_DIR}/include)
 
-	target_link_libraries     (${TEST_EXE} PRIVATE Boost::unit_test_framework   )
-	# target_include_directories(${TEST_EXE} SYSTEM PRIVATE ${Boost_INCLUDE_DIRS} )
+	# target_link_libraries     (${TEST_EXE} PRIVATE Boost::boost)  # headers)   # unit_test_framework   )
+	target_include_directories(${TEST_EXE} SYSTEM PRIVATE ${Boost_INCLUDE_DIRS} )
 
-	target_compile_definitions(${TEST_EXE} PRIVATE "BOOST_PP_VARIADICS")
-	target_compile_definitions(${TEST_EXE} PRIVATE BOOST_TEST_DYN_LINK=1)
-	target_compile_definitions(${TEST_EXE} PRIVATE BOOST_TEST_MODULE="C++ Unit Tests for Multi BLAS")
-	target_compile_options(
-	  ${TEST_EXE} PRIVATE
-	  $<$<CXX_COMPILER_ID:IntelLLVM>:
-	  -Wno-unknown-warning-option  # for -Wno-enum-constexpr-conversion in older versions
-	  -Wno-enum-constexpr-conversion  # for Boost.Test
-	  >
-	)
+	if(TBB_FOUND)
+		target_link_libraries(${TEST_EXE} PRIVATE TBB::tbb)
+		target_compile_definitions(${TEST_EXE} PRIVATE MULTI_HAVE_TBB)  # gate parallel-execution code paths on TBB availability (libstdc++ std::execution::par needs TBB at link time)
+	endif()
 
 	target_link_libraries(${TEST_EXE} PRIVATE ${BLAS_LIBRARIES})  # there is no BLAS_INCLUDE_DIRS
 
-    target_link_libraries(${TEST_EXE} PRIVATE multi)
+    target_link_libraries(${TEST_EXE} PUBLIC multi)
 	target_link_libraries(${TEST_EXE} PRIVATE BLAS::BLAS)
 
 	if(NOT ENABLE_CIRCLE)
@@ -138,18 +137,36 @@ foreach(TEST_FILE ${TEST_SRCS})
 		)
 		target_compile_options(
 			${TEST_EXE}
-			PRIVATE -Werror
-					-Wall
+			PRIVATE
 					$<$<CXX_COMPILER_ID:GNU>:
+					#-Werror
+					-Wall
 					-Wextra
 					-Wpedantic
 					-Wformat-truncation
-					-Wno-unknown-pragmas> # -Wconversion
+					-Wno-unknown-pragmas
+					-Wparentheses
+					> # -Wconversion
 					$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
+					#-Werror
+					-Wall
+					# -Weverything
 					-Wextra
 					-Wpedantic
 					-Wmove
-					-Wno-error=\#warnings>
+					-Wno-padded
+					-Wno-pass-failed
+					-Wno-exit-time-destructors  # bug in cmake 4, boost,
+					-Wno-poison-system-directories  # bug in cmake 4, boost,
+					-Wno-documentation-unknown-command  # array_ref.hpp uses \mathrm{} etc. in doc comments, not a recognized Doxygen/clang command
+					# -Wno-float-equal  # BLWT uses equality between float and double
+					-Wno-error=\#warnings
+					-Wno-c++98-compat -Wno-c++98-compat-bind-to-temporary-copy
+					> # -Wno-c++98-compat  # use of constexpr
+					$<$<CXX_COMPILER_ID:IntelLLVM>:
+					-Wno-unknown-warning-option  # for -Wno-enum-constexpr-conversion in older versions
+					# -Wno-enum-constexpr-conversion  # for Boost.Test
+					>
 					$<$<CXX_COMPILER_ID:Intel>:
 					-Wextra
 					-wd161
@@ -178,10 +195,11 @@ foreach(TEST_FILE ${TEST_SRCS})
 					-Wwrite-strings
 					-diag-error:3846>
 						$<$<OR:$<CXX_COMPILER_ID:PGI>,$<CXX_COMPILER_ID:NVHPC>>:  # EDG diagnostics list: http://www.ssl.berkeley.edu/~jimm/grizzly_docs/SSL/opt/intel/cc/9.0/lib/locale/en_US/mcpcom.msg
-						--display_error_number --diag_error=incompatible_assignment_operands,returning_ptr_to_local_variable,subscript_out_of_range,used_before_set,undefined_preproc_id,implicit_func_decl,implicit_return_from_non_void_function,missing_type_specifier
+						--display_error_number --diag_error=incompatible_assignment_operands,returning_ptr_to_local_variable,subscript_out_of_range,used_before_set,undefined_preproc_id,implicit_func_decl,implicit_return_from_non_void_function,missing_type_specifier,invalid_error_tag
 					>
 					$<$<CXX_COMPILER_ID:MSVC>:
-					/W4>
+					#/W4
+					>
 		)
 		endif()
 	endif()

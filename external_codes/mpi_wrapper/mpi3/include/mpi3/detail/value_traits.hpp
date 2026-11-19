@@ -49,6 +49,8 @@ std::false_type is_serializable_aux(...);
 template<class T>
 struct is_serializable : decltype(is_serializable_aux(std::declval<T>())){};
 
+template<class... T> void what(T&&...) = delete;  // NOLINT(cppcoreguidelines-missing-std-forward)
+
 struct value_unspecified_tag{};
 struct nonmemcopyable_serializable_tag : value_unspecified_tag{
 	using base = value_unspecified_tag;

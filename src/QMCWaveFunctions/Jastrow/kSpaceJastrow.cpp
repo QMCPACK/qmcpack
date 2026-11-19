@@ -286,17 +286,12 @@ kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions,
   Ion_rhoG.resize(nOne);
   OneBodyPhase.resize(nOne);
   OneBody_e2iGr.resize(nOne);
-  int nTwo   = TwoBodyGvecs.size();
-  int nelecs = elecs.getTotalNum();
+  int nTwo = TwoBodyGvecs.size();
   TwoBodyCoefs.resize(nTwo);
   TwoBody_rhoG.resize(nTwo);
   TwoBodyPhase.resize(nTwo);
   TwoBody_e2iGr_new.resize(nTwo);
   TwoBody_e2iGr_old.resize(nTwo);
-  Delta_e2iGr.resize(nelecs, nTwo);
-  for (int iat = 0; iat < nelecs; iat++)
-    for (int i = 0; i < nTwo; i++)
-      Delta_e2iGr(iat, i) = ComplexType();
   // Set Ion_rhoG
   for (int i = 0; i < OneBodyGvecs.size(); i++)
   {
@@ -422,7 +417,8 @@ kSpaceJastrow::LogValue kSpaceJastrow::evaluateLog(const ParticleSet& P,
           Prefactor * 2.0 * TwoBodyCoefs[i] * dot(Gvec, Gvec) * (-real(z * qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0);
     }
   }
-  return J1 + J2;
+  log_value_ = J1 + J2;
+  return log_value_;
 }
 
 
@@ -525,9 +521,10 @@ kSpaceJastrow::PsiValue kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, GradTy
     PosType Gvec(TwoBodyGvecs[i]);
     ComplexType z = TwoBody_e2iGr_new[i];
     grad_iat += -Prefactor * 2.0 * TwoBodyGvecs[i] * TwoBodyCoefs[i] *
-        imag(qmcplusplus::conj(TwoBody_rhoG[i]) * TwoBody_e2iGr_new[i]);
+        imag(qmcplusplus::conj(TwoBody_rhoG[i] + TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i]) * TwoBody_e2iGr_new[i]);
   }
-  return std::exp(static_cast<PsiValue>(J1new + J2new - (J1old + J2old)));
+  pending_log_ratio_ = J1new + J2new - (J1old + J2old);
+  return std::exp(static_cast<PsiValue>(pending_log_ratio_));
 }
 
 /* evaluate the ratio with P.R[iat]
@@ -567,7 +564,8 @@ kSpaceJastrow::PsiValue kSpaceJastrow::ratio(ParticleSet& P, int iat)
     ComplexType rho_G = TwoBody_rhoG[i] + TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
     J2new += Prefactor * TwoBodyCoefs[i] * std::norm(rho_G);
   }
-  return std::exp(static_cast<PsiValue>(J1new + J2new - (J1old + J2old)));
+  pending_log_ratio_ = J1new + J2new - (J1old + J2old);
+  return std::exp(static_cast<PsiValue>(pending_log_ratio_));
 }
 
 /** evaluate the ratio
@@ -615,6 +613,7 @@ void kSpaceJastrow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<kSpaceJas
 
 void kSpaceJastrow::restore(int iat)
 {
+  pending_log_ratio_ = 0;
   //substract the addition in logRatio
   //if(NeedToRestore) Rhok -= delta_eikr;
 }
@@ -622,8 +621,8 @@ void kSpaceJastrow::restore(int iat)
 void kSpaceJastrow::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   for (int i = 0; i < TwoBody_e2iGr_new.size(); i++)
-    TwoBody_rhoG[i] += Delta_e2iGr(iat, i);
-  //TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
+    TwoBody_rhoG[i] += TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
+  log_value_ += pending_log_ratio_;
   // copy(eikr_new.data(),eikr_new.data()+MaxK,eikr[iat]);
   // U += offU;
   // dU += offdU;
@@ -804,7 +803,6 @@ void kSpaceJastrow::copyFrom(const kSpaceJastrow& old)
   OneBody_e2iGr     = old.OneBody_e2iGr;
   TwoBody_e2iGr_new = old.TwoBody_e2iGr_new;
   TwoBody_e2iGr_old = old.TwoBody_e2iGr_old;
-  Delta_e2iGr       = old.Delta_e2iGr;
   OneBodyID         = old.OneBodyID;
   TwoBodyID         = old.TwoBodyID;
   //copy the variable map

@@ -16,10 +16,9 @@
  *  real-space path that spans regions both inside and outside of the cell are required to agree with
  *  the reference values obtained from PySCF. The reference values were generated from Carbon1x1x1-tw1_gen_mos.py.   
 */
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Numerics/OneDimGridBase.h"
 #include "ParticleIO/XMLParticleIO.h"
@@ -37,7 +36,7 @@ void test_C_diamond()
 
   SECTION(section_name.str())
   {
-    Communicate* c = OHMMS::Controller;
+    Communicate& c(*OHMMS::Controller);
 
     Libxml2Document doc;
     REQUIRE(doc.parse("C_diamond-twist-third.structure.xml"));

@@ -166,7 +166,7 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher,
 
 void QMCUpdateBase::startRun(int blocks, bool record)
 {
-  Estimators->start(blocks, record);
+  Estimators->start(blocks, "", record);
 #if !defined(REMOVE_TRACEMANAGER)
   if (!Traces)
   {
@@ -276,7 +276,11 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
     H.saveProperty(awalker.getPropertyBase());
     awalker.Weight = 1.;
   }
+#if _OPENMP >= 202011
+#pragma omp masked
+#else
 #pragma omp master
+#endif
   print_mem("Memory Usage after the buffer registration", app_log());
 }
 

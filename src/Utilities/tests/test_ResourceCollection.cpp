@@ -8,8 +8,9 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <iostream>
+#include <sstream>
 #include "ResourceCollection.h"
 
 namespace qmcplusplus
@@ -54,14 +55,10 @@ public:
   }
 
   void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WFCResourceConsumer>& wfcrc_list)
-  {
-    external_memory_handle = collection.lendResource<MemoryResource>();
-  }
+  { external_memory_handle = collection.lendResource<MemoryResource>(); }
 
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WFCResourceConsumer>& wfcrc_list)
-  {
-    collection.takebackResource(external_memory_handle);
-  }
+  { collection.takebackResource(external_memory_handle); }
 
   auto& getResourceHandle() { return external_memory_handle; }
 
@@ -92,6 +89,22 @@ TEST_CASE("ResourceCollection", "[utilities]")
   }
 
   REQUIRE(wfc.getResourceHandle().hasResource() == false);
+}
+
+
+TEST_CASE("ResourceCollection::printResources", "[utilities]")
+{
+  ResourceCollection res_collection("test_collection");
+  res_collection.addResource(std::make_unique<DummyResource>("dummy1"));
+  res_collection.addResource(std::make_unique<DummyResource>("dummy2"));
+
+  std::stringstream buffer;
+  res_collection.printResources(buffer);
+
+  std::string output = buffer.str();
+  REQUIRE(output.find("list resources in test_collection") != std::string::npos);
+  REQUIRE(output.find("resource 0    name: dummy1") != std::string::npos);
+  REQUIRE(output.find("resource 1    name: dummy2") != std::string::npos);
 }
 
 } // namespace qmcplusplus

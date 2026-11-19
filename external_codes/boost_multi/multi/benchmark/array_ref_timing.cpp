@@ -1,18 +1,36 @@
 #ifdef COMPILATION_INSTRUCTIONS
-clang++ -O3 -Ofast -std=c++14 -DNDEBUG -Wall -Wextra -Wpedantic -Werror $0 -o $0.x -lboost_timer && time $0.x $@ && rm -f $0.x; exit
+clang++ -O3 -Ofast -std=c++14 -DNDEBUG -Wall -Wextra -Wpedantic -Werror $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
 #endif
 
 #include "../array_ref.hpp"
 
-#include <boost/timer/timer.hpp>
-
+#include<chrono>
 #include<iostream>
 #include<numeric>
+#include<string>
+#include<utility>  // move
 #include<vector>
-#include<numeric>
 
 using std::cout; using std::cerr;
 namespace multi = boost::multi;
+
+namespace {
+// minimal RAII wall-clock timer (replaces boost::timer::auto_cpu_timer)
+class auto_timer {
+	std::string                           label_;
+	std::chrono::steady_clock::time_point start_ = std::chrono::steady_clock::now();
+
+ public:
+	explicit auto_timer(std::string label = {}) : label_{std::move(label)} {}
+	auto_timer(auto_timer const&)                    = delete;
+	auto_timer(auto_timer&&)                         = delete;
+	auto operator=(auto_timer const&) -> auto_timer& = delete;
+	auto operator=(auto_timer&&) -> auto_timer&      = delete;
+	~auto_timer() {
+		std::cerr << label_ << std::chrono::duration<double>(std::chrono::steady_clock::now() - start_).count() << " s (wall)\n";
+	}
+};
+}  // namespace
 
 int main(){
 
@@ -31,7 +49,7 @@ int main(){
 	double sum_raw;
 	{
 		double sum = 0.0;
-		boost::timer::auto_cpu_timer t{std::cerr, 3, "sum: raw %t seconds\n"};
+		auto_timer t{"sum: raw: "};
 		for(auto const& e : data) sum += e;
 		sum_raw = sum;
 	}
@@ -39,7 +57,7 @@ int main(){
 	double sum_2D;
 	{
 		double sum = 0.0;
-		boost::timer::auto_cpu_timer t{std::cerr, 3, "sum: 2D %t seconds\n"};
+		auto_timer t{"sum: 2D: "};
 		auto ext = extensions(data2D_cref);
 		for(auto i : std::get<0>(ext)){
 			for(auto j : std::get<1>(ext)) sum += data2D_cref(i, j);
@@ -50,7 +68,7 @@ int main(){
 	double sum_2D_acc;
 	{
 		double sum = 0.0;
-		boost::timer::auto_cpu_timer t{cerr, 3, "sum: 2D acc %t seconds\n"};
+		auto_timer t{"sum: 2D acc: "};
 		sum = std::accumulate(
 			begin(data2D_cref), end(data2D_cref), 0.0,
 			[](auto const& a, auto const& b){return a + std::accumulate(begin(b), end(b), 0.0);}
@@ -60,7 +78,7 @@ int main(){
 	iota(begin(data), end(data), 1.2); iota(begin(data), end(data), 2.15); data[1234] = 3419.1;
 	double sum_2Dwrong_acc;
 	{
-		boost::timer::auto_cpu_timer t{cerr, 3, "sum: 2Dwrong acc %t seconds\n"};
+		auto_timer t{"sum: 2Dwrong acc: "};
 		sum_2Dwrong_acc = std::accumulate(
 			begin(rotated(data2D_cref)), end(rotated(data2D_cref)), 0.0,
 			[](auto const& a, auto const& b){return a + std::accumulate(begin(b), end(b), 0.0);}
@@ -70,7 +88,7 @@ int main(){
 	double sum_2Dwrong;
 	{
 		double sum = 0.0;
-		boost::timer::auto_cpu_timer t{std::cerr, 3, "sum: 2Dwrong sum %t seconds\n"};
+		auto_timer t{"sum: 2Dwrong sum: "};
 		auto const [is, js] = extensions(data2D_cref);
 		for(auto j : js){
 			for(auto i : is){
@@ -83,14 +101,14 @@ int main(){
 	double sum_raw2;
 	{
 		double sum = 0.0;
-		boost::timer::auto_cpu_timer t{cerr, 3, "sum: raw %t seconds\n"};
+		auto_timer t{"sum: raw: "};
 		for(auto const& e : data) sum += e;
 		sum_raw2 = sum;
 	}
 	iota(begin(data), end(data), 1.2); iota(begin(data), end(data), 33.112); data[1234] = 1199.1;
 	double sum_raw_acc;
 	{
-		boost::timer::auto_cpu_timer t{cerr, 3, "sum: raw acc %t seconds\n"};
+		auto_timer t{"sum: raw acc: "};
 		sum_raw_acc = std::accumulate(data.data(), data.data() + data.size(), 0.);
 	}
 	cout<< sum_2D + sum_2D_acc + sum_2Dwrong_acc + sum_2Dwrong + sum_raw + sum_raw2 + sum_raw_acc <<std::endl;
@@ -109,14 +127,14 @@ cout<<'\n';
 	assert( num_elements(v3D_cref) == std::ptrdiff_t(v.size()) );
 	{
 		double sum = 0.0;
-		boost::timer::auto_cpu_timer t{std::cerr, 3, "sum: 3D raw %t seconds\n"};
+		auto_timer t{"sum: 3D raw: "};
 		for(auto const& e : v) sum += e;
 		cout << sum << '\n';
 	}
 	iota(begin(v), end(v), 1.2);
 	{
 		double sum = 0.0;
-		boost::timer::auto_cpu_timer t{std::cerr, 3, "sum: 3D indexed %t seconds\n"};
+		auto_timer t{"sum: 3D indexed: "};
 		auto const [is, js, ks] = extensions(v3D_cref);
 		for(auto i : is) {
 			auto const& v3D_crefi = v3D_cref[i];
@@ -132,7 +150,7 @@ cout<<'\n';
 	iota(begin(v), end(v), 4444.5);
 	{
 		double sum = 0.0;
-		boost::timer::auto_cpu_timer t{std::cerr, 3, "sum: 3Dwrong indexed %t seconds\n"};
+		auto_timer t{"sum: 3Dwrong indexed: "};
 		for(auto k : v3D_cref.extension(2))  // TODO(correaa) this doesn't work anymore
 			for(auto j : v3D_cref.extension(1))
 				for(auto i : v3D_cref.extension(0))
@@ -153,14 +171,14 @@ cout<<'\n';
 	iota(begin(v), end(v), 0.1);
 	{
 		double sum = 0.0;
-		boost::timer::auto_cpu_timer t{std::cerr, 3, "sum: 4D raw %t seconds\n"};
+		auto_timer t{"sum: 4D raw: "};
 		for(auto const& e : v) sum += e;
 		cout<< sum <<'\n';
 	}
 	iota(begin(v), end(v), 1222.1);
 	{
 		double sum = 0.0;
-		boost::timer::auto_cpu_timer t{std::cerr, 3, "sum: 4D indexed %t seconds\n"};
+		auto_timer t{"sum: 4D indexed: "};
 		auto const [is, js, ks, ls] = extensions(v4D_cref);
 		for(auto i : is) {
 		//	auto const& v4D_crefi = v4D_cref[i]; // not necessary in clang or gcc

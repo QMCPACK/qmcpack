@@ -107,22 +107,11 @@ public:
     direction *= -1;
   }
 
-  inline void setDirection(IndexType dir) { direction = dir; }
 
-  inline void setBead(Walker_t& walker, IndexType i)
-  {
-    IndexType index = getBeadIndex(i);
-    Walker_t& newbead(getWalker(index));
-    newbead = walker; //This should be a hard copy
-  }
 
-  inline void setHead(Walker_t& overwrite)
-  {
-    //overwrite last element.
-    headindex = getBeadIndex(nbeads - 1); //sets to position of tail.
-    Walker_t& newhead(getBead(0));
-    newhead = overwrite;
-  }
+
+
+
   //This function does two things:  1.)  Moves the reptile forward 1 step.  2.) Returns the new head.
   inline Walker_t& getNewHead()
   {
@@ -150,13 +139,7 @@ public:
     return walker.Properties(nPsi, Action[actionindex]);
   }
 
-  RealType getLinkAction(Walker_t& new_walker, Walker_t& old_walker, IndexType d, IndexType nPsi = 0)
-  {
-    RealType af = getDirectionalAction(old_walker, +1, nPsi);
-    RealType ab = getDirectionalAction(new_walker, -1, nPsi);
-    RealType a0 = getDirectionalAction(old_walker, 0, nPsi) + getDirectionalAction(new_walker, 0, nPsi);
-    return af + ab + a0;
-  }
+
 
   void saveTransProb(Walker_t& walker, IndexType d, RealType val, IndexType nPsi = 0)
   {
@@ -184,36 +167,7 @@ public:
     return W.Properties(nPsi, TransProb[transindex]);
   }
 
-  inline void printState()
-  {
-    app_log() << "********PRINT REPTILE STATE*********\n";
-    app_log() << "Direction=" << direction << "  Headindex=" << headindex << "  tail=" << getBeadIndex(nbeads - 1)
-              << "\n  next=" << getBeadIndex(nbeads - 2) << "  nbeads=" << nbeads << std::endl;
-    app_log() << "BeadIndex\tWrapIndex\tEnergy\tAction[0]\tAction[1]\tAction[2]\t\n";
-    for (int i = 0; i < nbeads; i++)
-    {
-      app_log() << i << "\t" << getBeadIndex(i) << "\t" << getBead(i).Properties(WP::LOCALENERGY) << "\t"
-                << getBead(i).Properties(Action[0]) << "\t" << getBead(i).Properties(Action[1]) << "\t"
-                << getBead(i).Properties(Action[2]) << "\n";
-    }
-    app_log() << "POSITIONS===============:\n";
-    for (int i = 0; i < nbeads; i++)
-    {
-      //  app_log()<<i<<"\t1"<<1<<"\t"<<getBead(i).R[0]<<"\n";
-      //  app_log()<<i<<"\t2"<<2<<"\t"<<getBead(i).R[1]<<"\n";
-      app_log() << "BEAD #" << i << " tau = " << tau * i << std::endl;
-      app_log() << getBead(i).R << std::endl;
-    }
-    app_log() << "GVECS===============:\n";
-    for (int i = 0; i < nbeads; i++)
-    {
-      //      app_log()<<i<<"\t1"<<1<<"\t"<<getBead(i).G[0]<<"\n";
-      //      app_log()<<i<<"\t2"<<2<<"\t"<<getBead(i).G[1]<<"\n";
-      app_log() << "BEAD #" << i << " tau = " << tau * i << std::endl;
-      app_log() << getBead(i).G << std::endl;
-    }
-    app_log() << "************************************\n";
-  }
+
   inline RealType getTau() { return tau; }
   inline void setTau(RealType t) { tau = t; }
 

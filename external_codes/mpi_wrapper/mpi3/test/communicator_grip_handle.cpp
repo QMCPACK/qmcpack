@@ -1,10 +1,12 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
-#include "../../mpi3/communicator.hpp"
+#include <mpi3/communicator.hpp>
 
-#include<iostream>
-#include<numeric>
-#include<vector>
+#include <mpi3/detail/mpi_impl.h>
+
+#include <cassert>
+#include <iterator>
+#include <vector>
 
 namespace bmpi3 = boost::mpi3;
 
@@ -32,6 +34,7 @@ int main(int argc, char** argv) try {
 				assert(xrecv[5] == -1.);
 				break;
 			}
+			default: {}
 		}
 	}
 	MPI_Comm_free(&W);

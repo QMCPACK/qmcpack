@@ -37,18 +37,18 @@
       </group>
     </particleset>
     <wavefunction name="psi0" target="e">
-      <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" href="../C12-e48-pp.h5">
-        <slaterdeterminant>
-          <determinant id="updet" size="24">
-            <occupation mode="ground"/>
-            <coefficient size="168" spindataset="0"/>
-          </determinant>
-          <determinant id="downdet" size="24">
-            <occupation mode="ground"/>
-            <coefficient size="168" spindataset="0"/>
-          </determinant>
-        </slaterdeterminant>
-      </determinantset>
+      <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" href="../C12-e48-pp.h5">
+      <sposet name="spo-ud" size="24">
+        <occupation mode="ground"/>
+        <coefficient size="168" spindataset="0"/>
+      </sposet>
+    </sposet_collection>
+    <determinantset>
+      <slaterdeterminant>
+        <determinant sposet="spo-ud"/>
+        <determinant sposet="spo-ud"/>
+      </slaterdeterminant>
+    </determinantset>
       <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
         <correlation rcut="10" size="10" speciesA="u" speciesB="u">
           <coefficients id="uu" type="Array"> 0.5960977216 0.4091699625 0.2762008095 0.1861129698 0.127668012 0.08641047914 0.05623983734 0.03414390693 0.01839033676 0.007070507835</coefficients>

@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include "config.h"
+#include "OMPrequires.hpp"
 #if !defined(OPENMP_NO_COMPLEX)
 #include "ompReductionComplex.hpp"
 #endif

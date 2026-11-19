@@ -8,7 +8,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "SpaceGridTest.hpp"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "ValidSpaceGridInput.h"
 #include <ParticleSetPool.h>
 #include "GenerateRandomParticleSets.h"
@@ -71,7 +72,7 @@ void SpaceGridEnv<ValidSpaceGridInput::valid::CYLINDRICAL>::setDefaultStartingPo
 {}
 
 template<ValidSpaceGridInput::valid VALID>
-SpaceGridEnv<VALID>::SpaceGridEnv(Communicate* comm)
+SpaceGridEnv<VALID>::SpaceGridEnv(Communicate& comm)
     : particle_pool_(MinimalParticlePool::make_diamondC_1x1x1(comm)),
       pset_elec_(*(particle_pool_.getParticleSet("e"))),
       pset_ions_(*(particle_pool_.getParticleSet("ion")))
@@ -96,7 +97,7 @@ SpaceGridEnv<VALID>::SpaceGridEnv(Communicate* comm)
 }
 
 template<>
-SpaceGridEnv<ValidSpaceGridInput::valid::CYLINDRICAL>::SpaceGridEnv(Communicate* comm)
+SpaceGridEnv<ValidSpaceGridInput::valid::CYLINDRICAL>::SpaceGridEnv(Communicate& comm)
     : particle_pool_(MinimalParticlePool::make_H2(comm)),
       pset_elec_(*(particle_pool_.getParticleSet("e"))),
       pset_ions_(*(particle_pool_.getParticleSet("ion")))
@@ -128,9 +129,7 @@ SpaceGridTest<REAL, VALID>::SpaceGridTest(const SpaceGridEnv<VALID>& env, int nu
 
 template<typename REAL, ValidSpaceGridInput::valid VALID>
 RefVectorWithLeader<ParticleSet> SpaceGridTest<REAL, VALID>::getPSetList()
-{
-  return {psets_[0], makeRefVector<ParticleSet>(psets_)};
-}
+{ return {psets_[0], makeRefVector<ParticleSet>(psets_)}; }
 
 
 template class SpaceGridEnv<ValidSpaceGridInput::valid::DEFAULT>;

@@ -51,7 +51,6 @@ function(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
   qmc_run_and_check(
     ${TESTNAME}
     ${input_dir}
-    qmc
     afqmc.xml
     16
     1
@@ -182,3 +181,6 @@ if(NOT ENABLE_CUDA)
       afqmc.h5)
   endif()
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

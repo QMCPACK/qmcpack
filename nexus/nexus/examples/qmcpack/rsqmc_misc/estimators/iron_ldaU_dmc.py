@@ -152,21 +152,21 @@ magdens = magnetizationdensity(
     dr         = (0.05, 0.05, 0.05),    # Grid spacing in Bohr (matching spin density)
     integrator = 'simpsons',            # Integration method
     samples    = 9,                     # Number of samples for integration
-)
+    )
 
 #===== Energy density =====
 from nexus.qmcpack_input import generate_energydensity
 edens = generate_energydensity(
     coord = 'cartesian',
     grid  = (100, 100, 100),
-)
+    )
 
 #===== Momentum distribution =====
 from nexus.qmcpack_input import momentumdistribution
 mom_dist = momentumdistribution(
     samples = 40,
     kmax    = 8.0,
-)
+    )
 
 #===== One body density matrix =====
 from nexus.qmcpack_input import onebodydensitymatrices, sposet
@@ -183,7 +183,7 @@ dm_est = onebodydensitymatrices(
     evaluator     = 'matrix',
     samples       = 10,
     basis         = sposet(type='bspline', size=nbnd, spindataset=0), # Uses the spin up channel (0) KS-DFT orbitals as the DM basis
-)
+    )
 
 # In production runs containing estimators, large numbers (100+) of blocks are preferred for robust statistical analysis.
 # More steps per block than specified here are additionally preferred for computational efficiency due to the I/O cost of estimators.

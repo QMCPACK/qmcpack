@@ -12,9 +12,8 @@ if(QMC_COMPLEX)
   list(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "nonlocalecp" "1.591560552665 0.016677475370")
   list(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "ionion" "-10.812685912000 0.020000000000")
   qmc_run_and_check(
-    long-Al-1x1x1-Gaussian-pp-cplx
+    long-Al_1x1x1_pp-sd_lcao_jas_cplx-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/Al-1x1x1-Gaussian_pp_ShiftedTwist"
-    vmc_long
     vmc_long.in.xml
     1
     16
@@ -35,9 +34,8 @@ if(QMC_COMPLEX)
   list(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "nonlocalecp" "1.591560552665 0.047099343376")
   list(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "ionion" "-10.812685912000 0.020000000000")
   qmc_run_and_check(
-    short-Al-1x1x1-Gaussian-pp-cplx
+    short-Al_1x1x1_pp-sd_lcao_jas_cplx-vmc
     "${qmcpack_SOURCE_DIR}/tests/solids/Al-1x1x1-Gaussian_pp_ShiftedTwist"
-    vmc_short
     vmc_short.in.xml
     1
     16
@@ -49,3 +47,6 @@ if(QMC_COMPLEX)
 else()
   message(VERBOSE "Skipping Complex Periodic LCAO  if Complex code not build (QMC_COMPLEX=0)")
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

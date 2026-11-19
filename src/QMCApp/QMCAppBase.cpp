@@ -67,17 +67,4 @@ bool QMCAppBase::parse(const std::string& infile)
   return pushDocument(infile);
 }
 
-void QMCAppBase::saveXml()
-{
-  if (!xml_doc_stack_.empty())
-  {
-    std::string newxml(my_project_.currentMainRoot());
-    newxml.append(".cont.xml");
-    app_log() << "\n========================================================="
-              << "\n  A new xml input file : " << newxml << std::endl;
-    xml_doc_stack_.top()->dump(newxml);
-  }
-}
-
-const std::string& QMCAppBase::getTitle() const { return my_project_.getTitle(); }
 } // namespace qmcplusplus

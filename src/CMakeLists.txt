@@ -129,15 +129,10 @@ else() #{{{
   add_subdirectory(QMCWaveFunctions)
   add_subdirectory(QMCHamiltonians)
 
-  subdirs(integration_testing)
+  add_subdirectory(integration_testing)
 
   add_subdirectory(Estimators)
   add_subdirectory(QMCDrivers)
-
-  if(BUILD_LMYENGINE_INTERFACE)
-    set(FORMIC_BINARY_DIR ${qmcpack_BINARY_DIR})
-    add_subdirectory(formic/utils)
-  endif(BUILD_LMYENGINE_INTERFACE)
 
   if(BUILD_AFQMC)
     add_subdirectory(AFQMC)

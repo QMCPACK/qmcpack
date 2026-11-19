@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from nexus import settings,job,run_project
-from nexus import generate_physical_system,read_structure
+from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack,vmc,dmc

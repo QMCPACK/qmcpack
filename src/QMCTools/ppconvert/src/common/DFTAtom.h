@@ -28,12 +28,12 @@ private:
   void UpdateHartree();
   void UpdateExCorr();
   Array<double, 1> temp, temp2;
-  Potential* BarePot;
+  Potential* BarePot{nullptr};
   Array<double, 1> OldEnergies;
 
 public:
   ScreenedPot V;
-  double NewMix;
+  double NewMix{0.0};
 
   AtomType Type() override;
   /// This function calculates the charge density, hartree and exchange

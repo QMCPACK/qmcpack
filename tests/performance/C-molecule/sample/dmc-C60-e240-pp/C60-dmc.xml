@@ -85,18 +85,18 @@
       </group>
     </particleset>
     <wavefunction name="psi0" target="e">
-      <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" href="../C60-e240-pp.h5">
-        <slaterdeterminant>
-          <determinant id="updet" size="120">
-            <occupation mode="ground"/>
-            <coefficient size="780" spindataset="0"/>
-          </determinant>
-          <determinant id="downdet" size="120">
-            <occupation mode="ground"/>
-            <coefficient size="780" spindataset="0"/>
-          </determinant>
-        </slaterdeterminant>
-      </determinantset>
+      <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" href="../C60-e240-pp.h5">
+      <sposet name="spo-ud" size="120">
+        <occupation mode="ground"/>
+        <coefficient size="780" spindataset="0"/>
+      </sposet>
+    </sposet_collection>
+    <determinantset>
+      <slaterdeterminant>
+        <determinant sposet="spo-ud"/>
+        <determinant sposet="spo-ud"/>
+      </slaterdeterminant>
+    </determinantset>
       <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
         <correlation rcut="10" size="10" speciesA="u" speciesB="u">
           <coefficients id="uu" type="Array"> 0.5307216191 0.3455285645 0.218122896 0.1410370646 0.09408747925 0.06204442569 0.03937239686 0.02375241113 0.01236166929 0.00502265351</coefficients>

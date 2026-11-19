@@ -8,9 +8,7 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "Pools/PooledMemory.h"
 #include "Pools/PooledData.h"
@@ -102,9 +100,9 @@ TEST_CASE("pack scalar", "[utilities]")
   REQUIRE(i3 == j3);
   REQUIRE(i4 == j4);
   REQUIRE(i5 == j5);
-  REQUIRE(i6[0] == i6[0]);
-  REQUIRE(i6[1] == i6[1]);
-  REQUIRE(i6[2] == i6[2]);
+  REQUIRE(i6[0] == j6[0]);
+  REQUIRE(i6[1] == j6[1]);
+  REQUIRE(i6[2] == j6[2]);
 
 #ifdef CHECK_ALLOCATION_PERF
   // up to 512 MB.
@@ -116,24 +114,24 @@ TEST_CASE("pack scalar", "[utilities]")
       pm_walker.Current = size;
       Timer PoolTimer;
       pm_walker.allocate();
-      std::cout << "PooledMemory Allocate " << pm_walker.byteSize() << " bytes Time " << PoolTimer.elapsed()
+      app_log() << "PooledMemory Allocate " << pm_walker.byteSize() << " bytes Time " << PoolTimer.elapsed()
                 << std::endl;
       PoolTimer.restart();
       PooledMemory<double> pm_walker_copy(pm_walker);
-      std::cout << "PooledMemory Copy Time " << PoolTimer.elapsed() << std::endl;
+      app_log() << "PooledMemory Copy Time " << PoolTimer.elapsed() << std::endl;
     }
 
     {
       PooledData<double> pd_walker;
       Timer PoolTimer;
       pd_walker.resize(size / 8);
-      std::cout << "PooledData Allocate " << pd_walker.byteSize() << " bytes Time " << PoolTimer.elapsed() << std::endl;
+      app_log() << "PooledData Allocate " << pd_walker.byteSize() << " bytes Time " << PoolTimer.elapsed() << std::endl;
       PoolTimer.restart();
       PooledData<double> pd_walker_copy(pd_walker);
-      std::cout << "PooledData Copy Time " << PoolTimer.elapsed() << std::endl;
+      app_log() << "PooledData Copy Time " << PoolTimer.elapsed() << std::endl;
     }
 
-    std::cout << std::endl;
+    app_log() << std::endl;
   }
 #endif
 }
