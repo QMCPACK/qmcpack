@@ -145,7 +145,7 @@ private:
    */
   unsigned long n_reject_          = 0;
   unsigned long n_accept_          = 0;
-  unsigned long n_nonlocal_accept_ = 0;
+  unsigned long n_nonlocal_accept_ = 0; // never actually read or reported
   /** @} */
 };
 
