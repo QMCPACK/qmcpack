@@ -74,6 +74,7 @@ void PWBasis::reset()
   //logC.resize(3,2*maxmaxg+1);
   Z.resize(NumPlaneWaves, 2 + DIM);
   Zh.resize(NumPlaneWaves, DIM * DIM);
+  Zgh.resize(NumPlaneWaves, DIM * DIM * DIM);
   Zv.resize(NumPlaneWaves);
   phi.resize(NumPlaneWaves);
 }
@@ -85,6 +86,20 @@ void PWBasis::evaluateHessian()
       for (int column = 0; column < OHMMS_DIM; ++column)
         Zh(ig, row * OHMMS_DIM + column) =
             -kplusgvecs_cart[ig][row] * kplusgvecs_cart[ig][column] * Z(ig, PW_VALUE);
+}
+
+void PWBasis::evaluateGradHessian()
+{
+  for (int ig = 0; ig < NumPlaneWaves; ++ig)
+  {
+    const ComplexType& pw = Z(ig, PW_VALUE);
+    const ComplexType mipw(pw.imag(), -pw.real()); // -i * pw
+    for (int i = 0; i < OHMMS_DIM; ++i)
+      for (int j = 0; j < OHMMS_DIM; ++j)
+        for (int k = 0; k < OHMMS_DIM; ++k)
+          Zgh(ig, (i * OHMMS_DIM + j) * OHMMS_DIM + k) =
+              kplusgvecs_cart[ig][i] * kplusgvecs_cart[ig][j] * kplusgvecs_cart[ig][k] * mipw;
+  }
 }
 
 /** Remove basis elements if kinetic energy > ecut.
