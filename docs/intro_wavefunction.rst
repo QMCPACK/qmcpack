@@ -61,9 +61,6 @@ is any of the Jastrow functions (described in :ref:`jastrow`).  The antisymmetri
      </jastrow>
    </wavefunction>
 
-.. include:: deepqmc.inc
-
-
 .. _singleparticle:
 
 Single-particle orbitals
@@ -2390,3 +2387,5 @@ Example Use Case
         source="ion0" sgroup="H"/>
     </hamiltonian>
   </qmcsystem>
+
+.. include:: deepqmc.inc

@@ -1,7 +1,13 @@
 .. _deepqmc-inference:
 
-DeepQMC wavefunction inference
-------------------------------
+DeepQMC wavefunction inference (experimental)
+---------------------------------------------
+
+.. warning::
+
+   Only the helium VMC workflow below has been validated. Sign/phase propagation
+   is not implemented; DMC, nonlocal pseudopotential calculations, and
+   off-diagonal estimators are not supported.
 
 QMCPACK can evaluate a pretrained DeepQMC wavefunction through an embedded
 Python/JAX bridge. This is an experimental, inference-only integration: it does
