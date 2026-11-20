@@ -13,7 +13,6 @@
 #define QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_OMPTARGET_H
 
 #include "Configuration.h"
-#include "CPU/Blasf.h"
 #include "CPU/BlasThreadingEnv.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OMPTarget/AccelBLAS_OMPTarget.hpp"

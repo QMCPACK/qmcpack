@@ -25,7 +25,6 @@
 #include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCDrivers/WFOpt/GradientTest.h"
-#include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include "Message/UniformCommunicateError.h"
 #include "Numerics/DeterminantOperators.h"
