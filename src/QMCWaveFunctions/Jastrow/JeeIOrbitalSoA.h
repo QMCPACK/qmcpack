@@ -385,6 +385,74 @@ public:
     return log_value_ = computeGL(G, L);
   }
 
+  void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override
+  {
+    constexpr valT czero(0);
+    constexpr valT cone(1);
+
+    const auto& ee_table  = P.getDistTableAA(ee_Table_ID_);
+    const auto& ee_dists  = ee_table.getDistances();
+    const auto& ee_displs = ee_table.getDisplacements();
+
+    TinyVector<valT, 3> u3grad;
+    Tensor<valT, 3> u3hess;
+    Tensor<valT, OHMMS_DIM> ident;
+    grad_grad_psi = czero;
+    ident.diagonal(cone);
+    log_value_ = czero;
+
+    build_compact_list(P);
+
+    for (int iat = 0; iat < Nion; ++iat)
+    {
+      const int ig = Ions.GroupID[iat];
+      for (int jg = 0; jg < eGroups; ++jg)
+        for (int jind = 0; jind < elecs_inside(jg, iat).size(); jind++)
+        {
+          const int jel       = elecs_inside(jg, iat)[jind];
+          const valT r_Ij     = elecs_inside_dist(jg, iat)[jind];
+          const posT disp_Ij  = elecs_inside_displ(jg, iat)[jind];
+          const valT r_Ij_inv = cone / r_Ij;
+
+          for (int kg = 0; kg < eGroups; ++kg)
+            for (int kind = 0; kind < elecs_inside(kg, iat).size(); kind++)
+            {
+              const int kel = elecs_inside(kg, iat)[kind];
+              if (kel < jel)
+              {
+                const valT r_Ik     = elecs_inside_dist(kg, iat)[kind];
+                const posT disp_Ik  = elecs_inside_displ(kg, iat)[kind];
+                const valT r_Ik_inv = cone / r_Ik;
+
+                const valT r_jk     = ee_dists[jel][kel];
+                const posT disp_jk  = ee_displs[jel][kel];
+                const valT r_jk_inv = cone / r_jk;
+
+                const FT& feeI(*F(ig, jg, kg));
+                log_value_ -= feeI.evaluate(r_jk, r_Ij, r_Ik, u3grad, u3hess);
+                u3grad[0] *= r_jk_inv;
+                u3grad[1] *= r_Ij_inv;
+                u3grad[2] *= r_Ik_inv;
+
+                auto hess_jk = r_jk_inv * r_jk_inv * outerProduct(disp_jk, disp_jk) * (u3hess(0, 0) - u3grad[0]) +
+                    ident * u3grad[0];
+                auto hess_Ij = r_Ij_inv * r_Ij_inv * outerProduct(disp_Ij, disp_Ij) * (u3hess(1, 1) - u3grad[1]) +
+                    ident * u3grad[1];
+                auto hess_Ik = r_Ik_inv * r_Ik_inv * outerProduct(disp_Ik, disp_Ik) * (u3hess(2, 2) - u3grad[2]) +
+                    ident * u3grad[2];
+
+                grad_grad_psi[jel] -= hess_jk + hess_Ij +
+                    r_jk_inv * r_Ij_inv * u3hess(0, 1) *
+                        (outerProduct(disp_jk, disp_Ij) + outerProduct(disp_Ij, disp_jk));
+                grad_grad_psi[kel] -= hess_jk + hess_Ik -
+                    r_jk_inv * r_Ik_inv * u3hess(0, 2) *
+                        (outerProduct(disp_jk, disp_Ik) + outerProduct(disp_Ik, disp_jk));
+              }
+            }
+        }
+    }
+  }
+
   PsiValue ratio(ParticleSet& P, int iat) override
   {
     UpdateMode = ORB_PBYP_RATIO;
