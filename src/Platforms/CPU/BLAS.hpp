@@ -18,6 +18,8 @@
 #define QMCPLUSPLUS_NUMERIC_BLAS_H
 
 //generic header for blas routines
+#include <algorithm>
+#include <cassert>
 #include "Blasf.h"
 
 /** Interfaces to blas library
@@ -184,6 +186,7 @@ namespace BLAS
                           double* y,
                           int incy)
   {
+    assert(lda >= std::max(1, n));
     dgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
   }
 
@@ -199,6 +202,7 @@ namespace BLAS
                           float* y,
                           int incy)
   {
+    assert(lda >= std::max(1, n));
     sgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
   }
 
@@ -214,6 +218,7 @@ namespace BLAS
                           std::complex<double>* y,
                           int incy)
   {
+    assert(lda >= std::max(1, n));
     zgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
   }
 
@@ -229,6 +234,7 @@ namespace BLAS
                           std::complex<float>* y,
                           int incy)
   {
+    assert(lda >= std::max(1, n));
     cgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
   }
 
@@ -246,6 +252,9 @@ namespace BLAS
                           double* restrict C,
                           int ldc)
   {
+    assert(lda >= std::max(1, (Atrans == 'N' || Atrans == 'n') ? M : K));
+    assert(ldb >= std::max(1, (Btrans == 'N' || Btrans == 'n') ? K : N));
+    assert(ldc >= std::max(1, M));
     dgemm(Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
   }
 
@@ -263,6 +272,9 @@ namespace BLAS
                           float* restrict C,
                           int ldc)
   {
+    assert(lda >= std::max(1, (Atrans == 'N' || Atrans == 'n') ? M : K));
+    assert(ldb >= std::max(1, (Btrans == 'N' || Btrans == 'n') ? K : N));
+    assert(ldc >= std::max(1, M));
     sgemm(Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
   }
 
@@ -280,6 +292,9 @@ namespace BLAS
                           std::complex<double>* restrict C,
                           int ldc)
   {
+    assert(lda >= std::max(1, (Atrans == 'N' || Atrans == 'n') ? M : K));
+    assert(ldb >= std::max(1, (Btrans == 'N' || Btrans == 'n') ? K : N));
+    assert(ldc >= std::max(1, M));
     zgemm(Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
   }
 
@@ -297,6 +312,9 @@ namespace BLAS
                           std::complex<float>* restrict C,
                           int ldc)
   {
+    assert(lda >= std::max(1, (Atrans == 'N' || Atrans == 'n') ? M : K));
+    assert(ldb >= std::max(1, (Btrans == 'N' || Btrans == 'n') ? K : N));
+    assert(ldc >= std::max(1, M));
     cgemm(Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
   }
 
@@ -444,6 +462,7 @@ namespace BLAS
                          double* a,
                          int lda)
   {
+    assert(lda >= std::max(1, m));
     dger(&m, &n, &alpha, x, &incx, y, &incy, a, &lda);
   }
 
@@ -457,6 +476,7 @@ namespace BLAS
                          float* a,
                          int lda)
   {
+    assert(lda >= std::max(1, m));
     sger(&m, &n, &alpha, x, &incx, y, &incy, a, &lda);
   }
 
@@ -470,6 +490,7 @@ namespace BLAS
                          std::complex<double>* a,
                          int lda)
   {
+    assert(lda >= std::max(1, m));
     zgeru(&m, &n, &alpha, x, &incx, y, &incy, a, &lda);
   }
 
@@ -483,6 +504,7 @@ namespace BLAS
                          std::complex<float>* a,
                          int lda)
   {
+    assert(lda >= std::max(1, m));
     cgeru(&m, &n, &alpha, x, &incx, y, &incy, a, &lda);
   }
 };
@@ -500,6 +522,7 @@ struct LAPACK
                           float* rwork,
                           int& info)
   {
+    assert(lda >= std::max(1, n));
     cheev(jobz, uplo, n, a, lda, w, work, lwork, rwork, info);
   }
 
@@ -514,6 +537,7 @@ struct LAPACK
                           double* rwork,
                           int& info)
   {
+    assert(lda >= std::max(1, n));
     zheev(jobz, uplo, n, a, lda, w, work, lwork, rwork, info);
   }
 
@@ -532,6 +556,7 @@ struct LAPACK
                            const int& lwork,
                            int& info)
   {
+    assert(lda >= std::max(1, m));
     sgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
   }
 
@@ -550,6 +575,7 @@ struct LAPACK
                            const int& lwork,
                            int& info)
   {
+    assert(lda >= std::max(1, m));
     dgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
   }
 
@@ -569,6 +595,7 @@ struct LAPACK
                            float* rwork,
                            int& info)
   {
+    assert(lda >= std::max(1, m));
     cgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);
   }
 
@@ -588,6 +615,7 @@ struct LAPACK
                            double* rwork,
                            int& info)
   {
+    assert(lda >= std::max(1, m));
     zgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);
   }
 
@@ -606,6 +634,7 @@ struct LAPACK
                           int* lwork,
                           int* info)
   {
+    assert(*lda >= std::max(1, *n));
     dgeev(jobvl, jobvr, n, a, lda, alphar, alphai, vl, ldvl, vr, ldvr, work, lwork, info);
   }
 
@@ -624,6 +653,7 @@ struct LAPACK
                           int* lwork,
                           int* info)
   {
+    assert(*lda >= std::max(1, *n));
     sgeev(jobvl, jobvr, n, a, lda, alphar, alphai, vl, ldvl, vr, ldvr, work, lwork, info);
   }
 
@@ -642,6 +672,7 @@ struct LAPACK
                           double* rwork,
                           int* info)
   {
+    assert(*lda >= std::max(1, *n));
     zgeev(jobvl, jobvr, n, a, lda, alpha, vl, ldvl, vr, ldvr, work, lwork, rwork, info);
   }
 
@@ -660,6 +691,7 @@ struct LAPACK
                           float* rwork,
                           int* info)
   {
+    assert(*lda >= std::max(1, *n));
     cgeev(jobvl, jobvr, n, a, lda, alpha, vl, ldvl, vr, ldvr, work, lwork, rwork, info);
   }
 
@@ -682,6 +714,8 @@ struct LAPACK
                           int* lwork,
                           int* info)
   {
+    assert(*lda >= std::max(1, *n));
+    assert(*ldb >= std::max(1, *n));
     dggev(jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta, vl, ldvl, vr, ldvr, work, lwork, info);
   }
 
@@ -703,6 +737,8 @@ struct LAPACK
                           int* lwork,
                           int* info)
   {
+    assert(*lda >= std::max(1, *n));
+    assert(*ldb >= std::max(1, *n));
     sggev(jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta, vl, ldvl, vr, ldvr, work, lwork, info);
   }
 
@@ -730,6 +766,7 @@ struct LAPACK
                           int& LIWORK,
                           int& INFO)
   {
+    assert(LDA >= std::max(1, N));
     if (WORK)
       WORK[0] = 0;
     ssyevr(JOBZ, RANGE, UPLO, N, A, LDA, VL, VU, IL, IU, ABSTOL, M, W, Z, LDZ, ISUPPZ, RWORK, LRWORK, IWORK, LIWORK,
@@ -760,6 +797,7 @@ struct LAPACK
                           int& LIWORK,
                           int& INFO)
   {
+    assert(LDA >= std::max(1, N));
     if (WORK)
       WORK[0] = 0;
     dsyevr(JOBZ, RANGE, UPLO, N, A, LDA, VL, VU, IL, IU, ABSTOL, M, W, Z, LDZ, ISUPPZ, RWORK, LRWORK, IWORK, LIWORK,
@@ -790,6 +828,7 @@ struct LAPACK
                           int& LIWORK,
                           int& INFO)
   {
+    assert(LDA >= std::max(1, N));
     cheevr(JOBZ, RANGE, UPLO, N, A, LDA, VL, VU, IL, IU, ABSTOL, M, W, Z, LDZ, ISUPPZ, WORK, LWORK, RWORK, LRWORK,
            IWORK, LIWORK, INFO);
   }
@@ -818,6 +857,7 @@ struct LAPACK
                           int& LIWORK,
                           int& INFO)
   {
+    assert(LDA >= std::max(1, N));
     zheevr(JOBZ, RANGE, UPLO, N, A, LDA, VL, VU, IL, IU, ABSTOL, M, W, Z, LDZ, ISUPPZ, WORK, LWORK, RWORK, LRWORK,
            IWORK, LIWORK, INFO);
   }
@@ -895,11 +935,13 @@ struct LAPACK
                     int LWORK,
                     int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     zgeqrf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
   static void geqrf(int M, int N, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     dgeqrf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
@@ -912,11 +954,13 @@ struct LAPACK
                     int LWORK,
                     int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     cgeqrf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
   static void geqrf(int M, int N, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     sgeqrf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
@@ -929,11 +973,13 @@ struct LAPACK
                     int LWORK,
                     int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     zgelqf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
   static void gelqf(int M, int N, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     dgelqf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
@@ -946,11 +992,13 @@ struct LAPACK
                     int LWORK,
                     int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     cgelqf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
   static void gelqf(int M, int N, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     sgelqf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
@@ -964,11 +1012,13 @@ struct LAPACK
                   int LWORK,
                   int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     zungqr(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
   static void gqr(int M, int N, int K, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     dorgqr(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
@@ -982,11 +1032,13 @@ struct LAPACK
                   int LWORK,
                   int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     cungqr(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
   static void gqr(int M, int N, int K, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     sorgqr(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
@@ -1000,11 +1052,13 @@ struct LAPACK
                   int LWORK,
                   int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     zunglq(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
   static void glq(int M, int N, int K, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     dorglq(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
@@ -1018,31 +1072,37 @@ struct LAPACK
                   int LWORK,
                   int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     cunglq(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
   static void glq(int M, int N, int K, float* A, const int LDA, float* TAU, float* WORK, int const LWORK, int& INFO)
   {
+    assert(LDA >= std::max(1, M));
     sorglq(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
   static void potrf(const char& UPLO, const int& N, float* A, const int& LDA, int& INFO)
   {
+    assert(LDA >= std::max(1, N));
     spotrf(UPLO, N, A, LDA, INFO);
   }
 
   static void potrf(const char& UPLO, const int& N, double* A, const int& LDA, int& INFO)
   {
+    assert(LDA >= std::max(1, N));
     dpotrf(UPLO, N, A, LDA, INFO);
   }
 
   static void potrf(const char& UPLO, const int& N, std::complex<float>* A, const int& LDA, int& INFO)
   {
+    assert(LDA >= std::max(1, N));
     cpotrf(UPLO, N, A, LDA, INFO);
   }
 
   static void potrf(const char& UPLO, const int& N, std::complex<double>* A, const int& LDA, int& INFO)
   {
+    assert(LDA >= std::max(1, N));
     zpotrf(UPLO, N, A, LDA, INFO);
   }
 };
