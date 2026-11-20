@@ -17,48 +17,19 @@
 #define QMCPLUSPLUS_DETERMINANT_MINIAPPS_H
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
+#include "CPU/BLAS.hpp"
 #include "Numerics/DeterminantOperators.h"
 #include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
 /**@{Determinant utilities */
-/** Inversion of a double matrix after LU factorization*/
-inline void getri(int n, double* restrict a, int lda, int* restrict piv, double* restrict work, int& lwork)
+/** Inversion of a matrix after LU factorization*/
+template<typename T>
+inline void getri(int n, T* restrict a, int lda, int* restrict piv, T* restrict work, int& lwork)
 {
   int status;
-  dgetri(n, a, lda, piv, work, lwork, status);
-}
-
-/** Inversion of a float matrix after LU factorization*/
-inline void getri(int n, float* restrict a, int lda, int* restrict piv, float* restrict work, int& lwork)
-{
-  int status;
-  sgetri(n, a, lda, piv, work, lwork, status);
-}
-
-/** Inversion of a std::complex<double> matrix after LU factorization*/
-inline void getri(int n,
-                  std::complex<double>* restrict a,
-                  int lda,
-                  int* restrict piv,
-                  std::complex<double>* restrict work,
-                  int& lwork)
-{
-  int status;
-  zgetri(n, a, lda, piv, work, lwork, status);
-}
-
-/** Inversion of a complex<float> matrix after LU factorization*/
-inline void getri(int n,
-                  std::complex<float>* restrict a,
-                  int lda,
-                  int* restrict piv,
-                  std::complex<float>* restrict work,
-                  int& lwork)
-{
-  int status;
-  cgetri(n, a, lda, piv, work, lwork, status);
+  LAPACK::getri(n, a, lda, piv, work, lwork, status);
 }
 
 /** query the size of workspace for Xgetri after LU decompisiton */
