@@ -28,7 +28,14 @@ class VMCBatchedTest;
 }
 
 /** @ingroup QMCDrivers  ParticleByParticle
- * @brief Implements a VMC using particle-by-particle move. Threaded execution.
+ * @brief Implements threaded VMC with particle-by-particle moves by default.
+ *
+ * A QMCDriverInput update mode of exactly "allp" selects an internal, batched
+ * all-particle algorithm.  That algorithm currently supports position-only,
+ * no-drift moves in non-serialized crowds.  Its Metropolis decision is per
+ * walker; each particle contributes one acceptance/rejection counter event.
+ * An invalid individual proposal remains at its old position and is
+ * counted as a rejection, but does not reject the walker configuration.
  */
 class VMCBatched : public QMCDriverNew
 {
