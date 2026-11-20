@@ -27,7 +27,6 @@
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCDrivers/WFOpt/ConjugateGradient.h"
 #include "Concurrency/Info.hpp"
-#include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include "EstimatorInputDelegates.h"
 #include "Message/UniformCommunicateError.h"

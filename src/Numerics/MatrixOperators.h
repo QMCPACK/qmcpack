@@ -208,30 +208,17 @@ inline void product(const Matrix<T>& A, const Tensor<T, D>* xvPtr, Tensor<T, D>*
 
 /** static function to perform y=Ax for generic matrix and vector
    */
-template<unsigned D>
-inline void product(const Matrix<double>& A,
-                    const Vector<TinyVector<double, D>>& x,
-                    TinyVector<double, D>* restrict yptr)
+template<typename T, unsigned D>
+inline void product(const Matrix<T>& A,
+                    const Vector<TinyVector<T, D>>& x,
+                    TinyVector<T, D>* restrict yptr)
 {
-  const double one  = 1.0;
-  const double zero = 0.0;
+  const T one(1.0);
+  const T zero(0.0);
   const char transa = 'N';
   const char transb = 'N';
-  dgemm(transa, transb, D, A.rows(), x.size(), one, x.data()->begin(), D, A.data(), A.cols(), zero, yptr->begin(), D);
-}
-
-/** static function to perform y=Ax for generic matrix and vector
-   */
-template<unsigned D>
-inline void product(const Matrix<std::complex<double>>& A,
-                    const Vector<TinyVector<std::complex<double>, D>>& x,
-                    TinyVector<std::complex<double>, D>* restrict yptr)
-{
-  const char transa = 'N';
-  const char transb = 'N';
-  const std::complex<double> zone(1.0, 0.0);
-  const std::complex<double> zero(0.0, 0.0);
-  zgemm(transa, transb, D, A.rows(), x.size(), zone, x.data()->begin(), D, A.data(), A.cols(), zero, yptr->begin(), D);
+  BLAS::gemm(transa, transb, D, A.rows(), x.size(), one, x.data()->begin(), D, A.data(), A.cols(), zero, yptr->begin(),
+             D);
 }
 
 
@@ -244,7 +231,7 @@ inline void product(const Matrix<std::complex<double>>& A,
   const char transa = 'T';
   const std::complex<double> zone(1.0, 0.0);
   const std::complex<double> zero(0.0, 0.0);
-  zgemv(transa, A.cols(), A.rows(), zone, A.data(), A.cols(), x.data(), 1, zero, yptr, 1);
+  BLAS::gemv(transa, A.cols(), A.rows(), zone, A.data(), A.cols(), x.data(), 1, zero, yptr, 1);
 }
 
 /** static function to perform y=Ax for generic matrix and vector
