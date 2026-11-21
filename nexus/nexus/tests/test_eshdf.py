@@ -86,7 +86,6 @@ def test_write_nk(tmp_path):
 
     outfile = tmp_path / "eshdf_write_nk.h5"
     command = f"{ESHDF_EXECUTABLE} write_nk {TEST_FILES['small_archive.h5']} --Ef={E_FERMI} --outfile={outfile}"
-    print(command)
     out, _, rc = execute(command)
 
     # Assert that return code is 0
@@ -103,3 +102,14 @@ def test_write_nk(tmp_path):
     calc_data = np.asarray(calc.get("data"), dtype=float)
 
     np.testing.assert_allclose(ref_data, calc_data)
+
+
+def test_invalid_file(tmp_path):
+    tmp_file = tmp_path / "not_a_real_hdf_file.bean"
+    tmp_file.touch()
+    command = f"{ESHDF_EXECUTABLE} kinetic {tmp_file} --Ef={E_FERMI}"
+    with pytest.raises(
+        AssertionError,
+        match="File provided is not an HDF5 file",
+    ):
+        execute(command)
