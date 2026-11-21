@@ -37,14 +37,34 @@ for kgrid in supercell_kgrids:          # loop over supercell kgrids
                                             # run directory
         path       = f'relax/kgrid_{kgrid[0]}{kgrid[1]}{kgrid[2]}',
         job        = job(cores=16),         # will run with mpirun -np 16
-        input_type = 'relax',               # this is a relax calculation
         input_dft  = 'pbe',                 # PBE functional
-        ecut       = 50,                    # 50 Ry planewave cutoff
+        ecutwfc    = 50,                    # 50 Ry planewave cutoff
+        ecutrho    = 200,
         conv_thr   = 1e-6,                  # convergence threshold
         kgrid      = kgrid,                 # supercell k-point grid
         kshift     = (1,1,1),               # grid centered at supercell L point
         pseudos    = ['Ge.pbe-kjpaw.UPF'],  # PBE pseudopotential
         system     = T_system,              # the interstitial system
+        nspin      = None,
+        calculation       = 'relax',
+        occupations       = 'smearing',
+        smearing          = 'fermi-dirac',
+        degauss           = 0.0001,
+        nosym             = True,
+        restart_mode      = 'from_scratch',
+        disk_io           = 'low',
+        verbosity         = 'high',
+        wf_collect        = False,
+        ibrav             = 0,
+        electron_maxstep  = 1000,
+        mixing_mode       = 'plain',
+        mixing_beta       = 0.7,
+        diagonalization   = 'david',
+        ion_dynamics      = 'bfgs',
+        upscale           = 100,
+        pot_extrapolation = 'second_order',
+        wfc_extrapolation = 'second_order',
+        use_folded        = False,
         )
                                         # link together the simulation cascade
                                         #   current relax gets structure from previous

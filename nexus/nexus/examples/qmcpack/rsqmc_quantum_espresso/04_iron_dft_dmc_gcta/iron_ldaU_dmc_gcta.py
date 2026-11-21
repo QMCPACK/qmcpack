@@ -26,7 +26,6 @@ pseudos = 'ccECP-soft'
 
 # inputs shared by all dft calculations
 dft_shared = obj(
-    input_type       = 'generic',
     input_dft        = 'lda',
     ecutwfc          = 400,
     bandfac          = 1.5,
