@@ -38,6 +38,7 @@ dev = [
 docs = [
     "sphinx>=8.1.0",
     "sphinxcontrib-bibtex>=2.6.5",
+    "sphinxcontrib-mermaid>=2.1.1",
     "pydata-sphinx-theme>=0.17.1",
     "numpydoc>=1.10.0",
     "sphinx-design>=0.6.1",
