@@ -173,7 +173,7 @@ class SimTool(obj):
             for ind in inds:
                 sim[ind] = val
                 if ind=='submitted' and val==0:
-                    sim.process_id = None
+                    sim["process_id"] = None
                 #end if
             #end for
             save(sim,path)
