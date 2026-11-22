@@ -83,7 +83,7 @@ indent-width = 4
 
 [tool.ruff.format]
 quote-style = "double"
-nested-string-quote-style = "preferred"
+nested-string-quote-style = "alternating"
 indent-style = "space"
 line-ending = "lf"
 exclude = [
