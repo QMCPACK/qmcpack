@@ -4,10 +4,10 @@
 
 """Calculate memory used by the Nexus host process and its children"""
 
-#===========================================#
-# The following is adapted from recipe 8.2  #
-# in the Python Cookbook by Jean Brouwers   #
-#===========================================#
+# ========================================== #
+#  The following is adapted from recipe 8.2  #
+#  in the Python Cookbook by Jean Brouwers   #
+# ========================================== #
 
 import os
 
@@ -48,7 +48,7 @@ def get_children(pid: int) -> list | list[int]:
     """Read ``/proc/<pid>/task/<pid>/children`` and return a list of children"""
     proc_children = f"/proc/{pid}/task/{pid}/children"
     try:
-        with open(proc_children,'r') as t:
+        with open(proc_children, "r") as t:
             v = t.read()
     except Exception:  # noqa: BLE001
         return []
