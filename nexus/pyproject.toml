@@ -86,7 +86,6 @@ indent-style = "space"
 line-ending = "lf"
 exclude = [
     "basisset.py",
-    "_bin.py",
     "bundle.py",
     "debug.py",
     "developer.py",
@@ -102,7 +101,6 @@ exclude = [
     "hdfreader.py",
     "__init__.py",
     "machines.py",
-    "memory.py",
     "nexus_base.py",
     "nexus_version.py",
     "numerics.py",
