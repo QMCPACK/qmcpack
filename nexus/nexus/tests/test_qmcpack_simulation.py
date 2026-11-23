@@ -13,6 +13,7 @@ from ..physical_system import generate_physical_system
 from ..qmcpack import Qmcpack, generate_qmcpack
 from ..qmcpack_analyzer import QmcpackAnalyzer
 from ..qmcpack_input import QmcpackInput, TracedQmcpackInput, dmc, mcwalkerset
+from ..rmg import generate_rmg
 from ..testing import clear_all_sims, failed, text_eq, value_eq
 from . import TEST_DIR, NexusTestOrder, create_pseudo_files, isolate_nexus_core
 from .test_qmcpack_converter_simulations import (
@@ -527,6 +528,70 @@ def test_incorporate_result(tmp_path):
 
     clear_all_sims()
 #end def test_incorporate_result()
+
+@isolate_nexus_core
+def test_incorporate_rmg_result(tmp_path):
+    # incorporate rmg orbitals
+    h5py = pytest.importorskip("h5py")
+
+    nexus_config.runs    = ''
+    nexus_config.results = ''
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
+
+    sim = get_qmcpack_sim(identifier='qmc_rmg_orbitals')
+
+    rmg_orb = generate_rmg(
+        identifier            = 'rmg_orbitals',
+        job                   = job(machine='ws1',cores=1),
+        calculation_mode      = 'NSCF',
+        write_qmcpack_restart = True,
+        )
+    assert(rmg_orb.check_result('orbitals',None))
+
+    result = rmg_orb.get_result('orbitals',None)
+
+    rmg_h5file = tmp_path / 'Waves' / 'wave.out.h5'
+    rmg_h5file.parent.mkdir()
+    with h5py.File(rmg_h5file,'w') as f:
+        f['electrons/number_of_kpoints'] = array([2])
+    #end with
+
+    spo = sim.input.get('bspline')
+    assert(spo.href=='MISSING.h5')
+
+    with pytest.raises(ValueError,match='does not match the k-points of the system'):
+        sim.incorporate_result('orbitals',result,rmg_orb)
+    #end with
+
+    with h5py.File(rmg_h5file,'w') as f:
+        f['electrons/number_of_kpoints'] = array([1])
+    #end with
+
+    sim.incorporate_result('orbitals',result,rmg_orb)
+
+    assert(spo.href=='Waves/wave.out.h5')
+    assert(spo.twistnum==0)
+
+    # tiled cell: RMG holds the folded k-points (or the twists with use_folded=False)
+    sim = get_qmcpack_sim(identifier='qmc_rmg_orbitals_tiled',tiling=(2,1,1),kgrid=(2,2,2))
+    nfolded = len(sim.system.structure.folded_structure.kpoints)
+    ntwists = len(sim.system.structure.kpoints)
+    assert(nfolded==2*ntwists)
+    for nk in (nfolded,ntwists):
+        with h5py.File(rmg_h5file,'w') as f:
+            f['electrons/number_of_kpoints'] = array([nk])
+        #end with
+        sim.incorporate_result('orbitals',result,rmg_orb)
+    #end for
+    with h5py.File(rmg_h5file,'w') as f:
+        f['electrons/number_of_kpoints'] = array([nfolded-1])
+    #end with
+    with pytest.raises(ValueError,match='does not match the k-points of the system'):
+        sim.incorporate_result('orbitals',result,rmg_orb)
+    #end with
+
 
 
 @isolate_nexus_core

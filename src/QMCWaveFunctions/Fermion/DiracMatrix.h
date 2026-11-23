@@ -12,7 +12,7 @@
 #ifndef QMCPLUSPLUS_DIRAC_MATRIX_H
 #define QMCPLUSPLUS_DIRAC_MATRIX_H
 
-#include "CPU/Blasf.h"
+#include "CPU/BLAS.hpp"
 #include "CPU/BlasThreadingEnv.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "type_traits/complex_help.hpp"
@@ -29,71 +29,20 @@ namespace qmcplusplus
  *  \param[in] lda    leading dimension of a
  *  \param[out] piv   pivot vector
  */
-inline int Xgetrf(int n, int m, float* restrict a, int lda, int* restrict piv)
+template<typename T>
+inline int Xgetrf(int n, int m, T* restrict a, int lda, int* restrict piv)
 {
   int status;
-  sgetrf(n, m, a, lda, piv, status);
+  LAPACK::getrf(n, m, a, lda, piv, status);
   return status;
 }
 
-inline int Xgetrf(int n, int m, std::complex<float>* restrict a, int lda, int* restrict piv)
+/** inversion of a matrix after lu factorization*/
+template<typename T>
+inline int Xgetri(int n, T* restrict a, int lda, int* restrict piv, T* restrict work, int& lwork)
 {
   int status;
-  cgetrf(n, m, a, lda, piv, status);
-  return status;
-}
-
-inline int Xgetrf(int n, int m, double* restrict a, int lda, int* restrict piv)
-{
-  int status;
-  dgetrf(n, m, a, lda, piv, status);
-  return status;
-}
-
-inline int Xgetrf(int n, int m, std::complex<double>* restrict a, int lda, int* restrict piv)
-{
-  int status;
-  zgetrf(n, m, a, lda, piv, status);
-  return status;
-}
-
-/** inversion of a float matrix after lu factorization*/
-inline int Xgetri(int n, float* restrict a, int lda, int* restrict piv, float* restrict work, int& lwork)
-{
-  int status;
-  sgetri(n, a, lda, piv, work, lwork, status);
-  return status;
-}
-
-inline int Xgetri(int n,
-                  std::complex<float>* restrict a,
-                  int lda,
-                  int* restrict piv,
-                  std::complex<float>* restrict work,
-                  int& lwork)
-{
-  int status;
-  cgetri(n, a, lda, piv, work, lwork, status);
-  return status;
-}
-
-inline int Xgetri(int n, double* restrict a, int lda, int* restrict piv, double* restrict work, int& lwork)
-{
-  int status;
-  dgetri(n, a, lda, piv, work, lwork, status);
-  return status;
-}
-
-/** inversion of a std::complex<double> matrix after lu factorization*/
-inline int Xgetri(int n,
-                  std::complex<double>* restrict a,
-                  int lda,
-                  int* restrict piv,
-                  std::complex<double>* restrict work,
-                  int& lwork)
-{
-  int status;
-  zgetri(n, a, lda, piv, work, lwork, status);
+  LAPACK::getri(n, a, lda, piv, work, lwork, status);
   return status;
 }
 
