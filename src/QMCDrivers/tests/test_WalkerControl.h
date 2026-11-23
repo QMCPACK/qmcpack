@@ -43,6 +43,22 @@ public:
   /** Verify live WalkerControl inputs remain active. */
   void testInput();
 
+  /** Exercise deterministic comb assignment without constructing physical walker elements. */
+  static std::vector<int> comb(const std::vector<QMCTraits::FullPrecRealType>& weights,
+                               const std::vector<QMCTraits::FullPrecRealType>& rank_weights,
+                               int rank,
+                               int population,
+                               QMCTraits::FullPrecRealType offset,
+                               std::vector<int>& counts);
+
+  /** Check real population copying, MPI balancing, conserved non-unit weights, and RNG consumption. */
+  void testFixedPopulation(int scenario, bool blocking);
+
+  /** Check skipped/debug combs preserve unequal weights and unbalanced rank distributions without RNG draws. */
+  void testSkippedComb(bool debug);
+
+  /** Reject invalid weights on one rank uniformly before modifying populations. */
+  void testInvalidWeights(QMCTraits::FullPrecRealType invalid_weight);
   /** Verify branching edge cases e.g. zero walkers/extinction. */
   void testBranching();
 
