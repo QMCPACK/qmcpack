@@ -5,9 +5,12 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include "bspline_create.h"
+#include <array>
 #include <cstdlib>
 #include <cstdio>
 #include <cstdint>
+#include <stdexcept>
+#include <vector>
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
@@ -183,6 +186,26 @@ void solve_antiperiodic_interp_1d_d(double bands[], double coefs[], double lastC
 }
 
 
+namespace
+{
+// The first three entries multiply the endpoint's three neighboring
+// coefficients; the fourth is the prescribed derivative.
+std::array<double, 4> derivative_boundary_row(bc_code code, double value, double delta_inv)
+{
+  switch (code)
+  {
+  case FLAT:
+  case DERIV1:
+    return {-0.5 * delta_inv, 0.0, 0.5 * delta_inv, code == FLAT ? 0.0 : value};
+  case NATURAL:
+  case DERIV2:
+    return {delta_inv * delta_inv, -2.0 * delta_inv * delta_inv, delta_inv * delta_inv, code == NATURAL ? 0.0 : value};
+  default:
+    throw std::invalid_argument("Expected a derivative B-spline boundary condition");
+  }
+}
+} // namespace
+
 void find_coefs_1d_d(Ugrid grid, BCtype_d bc, double* data, intptr_t dstride, double* coefs, intptr_t cstride)
 {
   int M           = grid.num;
@@ -210,43 +233,8 @@ void find_coefs_1d_d(Ugrid grid, BCtype_d bc, double* data, intptr_t dstride, do
   }
   else
   {
-    // Setup boundary conditions
-    double abcd_left[4]{}, abcd_right[4]{};
-    // Left boundary
-    if (bc.lCode == FLAT || bc.lCode == NATURAL)
-      bc.lVal = 0.0;
-    if (bc.lCode == FLAT || bc.lCode == DERIV1)
-    {
-      abcd_left[0] = -0.5 * grid.delta_inv;
-      abcd_left[1] = 0.0 * grid.delta_inv;
-      abcd_left[2] = 0.5 * grid.delta_inv;
-      abcd_left[3] = bc.lVal;
-    }
-    if (bc.lCode == NATURAL || bc.lCode == DERIV2)
-    {
-      abcd_left[0] = 1.0 * grid.delta_inv * grid.delta_inv;
-      abcd_left[1] = -2.0 * grid.delta_inv * grid.delta_inv;
-      abcd_left[2] = 1.0 * grid.delta_inv * grid.delta_inv;
-      abcd_left[3] = bc.lVal;
-    }
-
-    // Right boundary
-    if (bc.rCode == FLAT || bc.rCode == NATURAL)
-      bc.rVal = 0.0;
-    if (bc.rCode == FLAT || bc.rCode == DERIV1)
-    {
-      abcd_right[0] = -0.5 * grid.delta_inv;
-      abcd_right[1] = 0.0 * grid.delta_inv;
-      abcd_right[2] = 0.5 * grid.delta_inv;
-      abcd_right[3] = bc.rVal;
-    }
-    if (bc.rCode == NATURAL || bc.rCode == DERIV2)
-    {
-      abcd_right[0] = 1.0 * grid.delta_inv * grid.delta_inv;
-      abcd_right[1] = -2.0 * grid.delta_inv * grid.delta_inv;
-      abcd_right[2] = 1.0 * grid.delta_inv * grid.delta_inv;
-      abcd_right[3] = bc.rVal;
-    }
+    const auto abcd_left  = derivative_boundary_row(bc.lCode, bc.lVal, grid.delta_inv);
+    const auto abcd_right = derivative_boundary_row(bc.rCode, bc.rVal, grid.delta_inv);
 
     double* bands = static_cast<double*>(std::malloc((M + 2) * 4 * sizeof(double)));
 
@@ -407,6 +395,179 @@ UBspline_3d_d* create_UBspline_3d_d(Ugrid x_grid,
   return spline;
 }
 
+namespace
+{
+// Helper class to factor the cubic B-spline interpolation system once per axis.
+// Reuse is possible because all lines share the interior weights (1/6, 2/3,
+// 1/6) and the same boundary equations. Periodic and antiperiodic systems have
+// corner couplings. Derivative conditions instead add one equation at each end
+// without wrapping.
+class SplineLineSolver
+{
+  // Factors for each row except the last, handled separately.
+  struct Row
+  {
+    double inv_diag;          // Reciprocal pivot before normalizing the row.
+    double upper;             // Normalized coefficient of the next unknown.
+    double wrap        = 0.0; // Cyclic coupling to the final unknown.
+    double last_weight = 0.0; // Cyclic elimination weight in the final row.
+  };
+
+  static constexpr double a = 1.0 / 6.0; // Off-diagonal interpolation weight.
+  static constexpr double b = 2.0 / 3.0; // Main-diagonal interpolation weight.
+  const int num_points_;
+  const double sign_; // +1 for periodic, -1 for antiperiodic, zero for derivative boundaries.
+  std::vector<Row> rows_;
+  double last_lower_    = 0.0; // Final row's coupling to the penultimate unknown before elimination.
+  double last_inv_diag_ = 0.0; // Reciprocal pivot of the final row after elimination.
+  // Additional factors and RHS values from the derivative endpoint equations.
+  double left_second_upper_  = 0.0;
+  double left_rhs_           = 0.0;
+  double right_second_lower_ = 0.0;
+  double right_rhs_          = 0.0;
+
+  static double interior_pivot(double previous_upper) { return b - a * previous_upper; }
+
+  void factor_derivative(Ugrid grid, BCtype_d bc)
+  {
+    const auto left  = derivative_boundary_row(bc.lCode, bc.lVal, grid.delta_inv);
+    const auto right = derivative_boundary_row(bc.rCode, bc.rVal, grid.delta_inv);
+    const int m      = num_points_;
+    rows_.resize(m + 1);
+
+    // The left boundary row couples the first three coefficients. Eliminate
+    // the first coefficient from the first sample row before the regular sweep.
+    rows_[0]                 = {1.0 / left[0], left[1] / left[0]};
+    left_second_upper_       = left[2] / left[0];
+    left_rhs_                = left[3] / left[0];
+    const double first_pivot = interior_pivot(rows_[0].upper);
+    rows_[1]                 = {1.0 / first_pivot, (a - a * left_second_upper_) / first_pivot};
+    for (int i = 2; i <= m; ++i)
+    {
+      const double pivot = interior_pivot(rows_[i - 1].upper);
+      rows_[i]           = {1.0 / pivot, a / pivot};
+    }
+
+    // The right boundary row couples the last three coefficients. Eliminate the
+    // first two using their normalized sample rows.
+    right_second_lower_ = right[0];
+    last_lower_         = right[1] - right_second_lower_ * rows_[m - 1].upper;
+    last_inv_diag_      = 1.0 / (right[2] - last_lower_ * rows_[m].upper);
+    right_rhs_          = right[3];
+  }
+
+  void solve_derivative(const double* data,
+                        intptr_t dstride,
+                        double* coefs,
+                        intptr_t cstride,
+                        std::vector<double>& rhs) const
+  {
+    const int m = num_points_;
+    rhs[0]      = left_rhs_;
+    for (int i = 1; i <= m; ++i)
+      rhs[i] = (data[(i - 1) * dstride] - a * rhs[i - 1]) * rows_[i].inv_diag;
+
+    // All samples have been read so back substitute in place.
+    double next              = (right_rhs_ - right_second_lower_ * rhs[m - 1] - last_lower_ * rhs[m]) * last_inv_diag_;
+    coefs[(m + 1) * cstride] = next;
+    for (int i = m; i > 0; --i)
+    {
+      next               = rhs[i] - rows_[i].upper * next;
+      coefs[i * cstride] = next;
+    }
+    coefs[0] = left_rhs_ - rows_[0].upper * next - left_second_upper_ * coefs[2 * cstride];
+  }
+
+  void factor_cyclic()
+  {
+    const int m = num_points_;
+    rows_.resize(m - 1);
+    // Normalize the first row and eliminate the first unknown from the final row.
+    rows_[0]         = {1.0 / b, a / b, sign_ * a / b, sign_ * a};
+    double last_diag = b - rows_[0].last_weight * rows_[0].wrap; // Running pivot of the final row.
+    double weight    = -rows_[0].last_weight * rows_[0].upper; // Induced coupling in the final row to the next unknown.
+
+    // Walk the remaining rows index i except the last.
+    for (int i = 1; i < m - 1; ++i)
+    {
+      const double diag = interior_pivot(rows_[i - 1].upper);
+      rows_[i]          = {1.0 / diag, a / diag, -a * rows_[i - 1].wrap / diag, weight};
+      if (i < m - 2)
+      {
+        last_diag -= weight * rows_[i].wrap;
+        weight = -weight * rows_[i].upper;
+      }
+    }
+    // At the penultimate row, the induced coupling joins the original lower
+    // diagonal. That row's upper and wrap terms both refer to the final unknown.
+    last_lower_    = a + weight;
+    last_inv_diag_ = 1.0 / (last_diag - last_lower_ * (rows_.back().upper + rows_.back().wrap));
+  }
+
+public:
+  SplineLineSolver(Ugrid grid, BCtype_d bc)
+      : num_points_(grid.num),
+        sign_(bc.lCode == PERIODIC           ? 1.0
+                  : bc.lCode == ANTIPERIODIC ? -1.0
+                                             : 0.0)
+  {
+    if (sign_ == 0.0)
+      factor_derivative(grid, bc);
+    else
+      factor_cyclic();
+  }
+
+  // Scratch for the transformed right-hand side; reuse it across independent
+  // lines rather than allocating it for each solve.
+  std::vector<double> make_workspace() const { return std::vector<double>(rows_.size()); }
+
+  // Solve/interpolate one line of samples (data) into coefficients (coefs).
+  // dstride and cstride are element strides; rhs is scratch from make_workspace().
+  // IMPORTANT: Input and output may alias: forward elimination consumes all samples before
+  // back substitution writes any coefficients.
+  void solve(const double* data, intptr_t dstride, double* coefs, intptr_t cstride, std::vector<double>& rhs) const
+  {
+    if (sign_ == 0.0)
+    {
+      solve_derivative(data, dstride, coefs, cstride, rhs);
+      return;
+    }
+
+    const int m = num_points_;
+
+    // Apply the stored elimination to the right-hand side. rhs holds the
+    // normalized entries for rows 0 through m - 2; last holds the final entry.
+    rhs[0]      = data[0] * rows_[0].inv_diag;
+    double last = data[(m - 1) * dstride] - rows_[0].last_weight * rhs[0];
+    for (int i = 1; i < m - 2; ++i)
+    {
+      rhs[i] = (data[i * dstride] - a * rhs[i - 1]) * rows_[i].inv_diag;
+      last -= rows_[i].last_weight * rhs[i];
+    }
+    if (m > 2) // For two samples, the first entry is already the penultimate one.
+      rhs[m - 2] = (data[(m - 2) * dstride] - a * rhs[m - 3]) * rows_.back().inv_diag;
+
+    // Solve for the final unknown, then walk backward. Keep that value in
+    // last for the wrap terms; next holds the most recently solved coefficient.
+    last               = (last - last_lower_ * rhs.back()) * last_inv_diag_;
+    double next        = last;
+    coefs[m * cstride] = last;
+    for (int i = m - 2; i >= 0; --i)
+    {
+      next                     = rhs[i] - rows_[i].upper * next - rows_[i].wrap * last;
+      coefs[(i + 1) * cstride] = next;
+    }
+    // Independent coefficients occupy slots 1 through m. Fill the three
+    // boundary slots with signed copies for periodic or antiperiodic evaluation.
+    coefs[0]                 = sign_ * last;
+    coefs[(m + 1) * cstride] = sign_ * coefs[cstride];
+    coefs[(m + 2) * cstride] = sign_ * coefs[2 * cstride];
+  }
+};
+} // namespace
+
+// Recompute coefficients using one factorization per axis for either cyclic
+// or derivative boundary conditions.
 void recompute_UBspline_3d_d(UBspline_3d_d* spline, double* data)
 {
   int Mx = spline->x_grid.num;
@@ -427,35 +588,50 @@ void recompute_UBspline_3d_d(UBspline_3d_d* spline, double* data)
   else
     Nz = Mz + 2;
 
-  // First, solve in the X-direction
+  // Solve the spline system one axis at a time. The axis solvers share
+  // read-only factors across OpenMP iterations; each outer iteration owns its
+  // rhs workspace and reuses it for the inner loop's grid lines. X reads the
+  // input samples; Y and Z solve in place in the coefficient table.
+  const SplineLineSolver x_solver(spline->x_grid, spline->xBC);
 #pragma omp parallel for
   for (int iy = 0; iy < My; iy++)
+  {
+    auto rhs = x_solver.make_workspace();
     for (int iz = 0; iz < Mz; iz++)
     {
       intptr_t doffset = iy * Mz + iz;
       intptr_t coffset = iy * Nz + iz;
-      find_coefs_1d_d(spline->x_grid, spline->xBC, data + doffset, My * Mz, spline->coefs + coffset, Ny * Nz);
+      x_solver.solve(data + doffset, My * Mz, spline->coefs + coffset, Ny * Nz, rhs);
     }
+  }
 
-  // Now, solve in the Y-direction
+  // In-place Y-direction solve
+  const SplineLineSolver y_solver(spline->y_grid, spline->yBC);
 #pragma omp parallel for
   for (int ix = 0; ix < Nx; ix++)
+  {
+    auto rhs = y_solver.make_workspace();
     for (int iz = 0; iz < Nz; iz++)
     {
       intptr_t doffset = ix * Ny * Nz + iz;
       intptr_t coffset = ix * Ny * Nz + iz;
-      find_coefs_1d_d(spline->y_grid, spline->yBC, spline->coefs + doffset, Nz, spline->coefs + coffset, Nz);
+      y_solver.solve(spline->coefs + doffset, Nz, spline->coefs + coffset, Nz, rhs);
     }
+  }
 
-  // Now, solve in the Z-direction
+  // In-place Z-direction solve
+  const SplineLineSolver z_solver(spline->z_grid, spline->zBC);
 #pragma omp parallel for
   for (int ix = 0; ix < Nx; ix++)
+  {
+    auto rhs = z_solver.make_workspace();
     for (int iy = 0; iy < Ny; iy++)
     {
       intptr_t doffset = (ix * Ny + iy) * Nz;
       intptr_t coffset = (ix * Ny + iy) * Nz;
-      find_coefs_1d_d(spline->z_grid, spline->zBC, spline->coefs + doffset, 1, spline->coefs + coffset, 1);
+      z_solver.solve(spline->coefs + doffset, 1, spline->coefs + coffset, 1, rhs);
     }
+  }
 }
 
 
