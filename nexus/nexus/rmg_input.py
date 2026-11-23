@@ -2780,6 +2780,9 @@ Miscellaneous options
 
 '''
 
+# Keywords read by RMG but not (yet) listed in docs/Input-File-Options.md.
+# batch_*, exx_energy_convergence_criterion, exx_qpoint_mesh, exx_vexx_mixing,
+# max_run_seconds and tot_magnetization follow Input/ReadCommon.cpp of RMG develop.
 undocumented_options = '''
 Undocumented options
 
@@ -2788,6 +2791,85 @@ Undocumented options
     Key type:     formatted
     Expert:       No
     Experimental: No
+
+    Key name:     batch_density
+    Required:     no
+    Key type:     boolean
+    Expert:       No
+    Experimental: No
+    Default:      "false"
+    Description:  Interpolate the orbitals to the density grid and accumulate the
+                  density for all occupied states at once. Default true for SYCL
+                  builds and false otherwise.
+
+    Key name:     batch_preconditioner
+    Required:     no
+    Key type:     boolean
+    Expert:       No
+    Experimental: No
+    Default:      "false"
+    Description:  Apply the Davidson multigrid preconditioner to all unconverged
+                  states at once. Default true for SYCL builds and false otherwise.
+
+    Key name:     exx_energy_convergence_criterion
+    Required:     no
+    Key type:     double
+    Expert:       No
+    Experimental: No
+    Min value:    0.000000e+00
+    Max value:    1.000000e-02
+    Default:      0.000000e+00
+    Description:  Optional EXX exit criterion in Ha on |f1 - (f0+f2)/2|, where f0, f1
+                  and f2 are the Fock energies of the previous and current orbitals
+                  (the quantity Quantum ESPRESSO calls dexx). 0 disables it.
+
+    Key name:     exx_qpoint_mesh
+    Required:     no
+    Key type:     integer array
+    Expert:       No
+    Experimental: No
+    Default:      "0 0 0 "
+    Description:  q-point mesh for the exact exchange sum (QE nqx1 nqx2 nqx3). Each
+                  entry must divide the corresponding kpoint_mesh entry. 0 0 0 uses
+                  the full kpoint mesh.
+
+    Key name:     exx_vexx_mixing
+    Required:     no
+    Key type:     double
+    Expert:       No
+    Experimental: No
+    Min value:    1.000000e-02
+    Max value:    1.000000
+    Default:      1.000000
+    Description:  Fraction of the new exchange potential used at each EXX outer step
+                  with k-points: vexx = a*vexx_new + (1-a)*vexx_old. 1 replaces it
+                  (no damping). Smaller values damp the outer loop.
+
+    Key name:     max_run_seconds
+    Required:     no
+    Key type:     double
+    Expert:       No
+    Experimental: No
+    Min value:    0.000000e+00
+    Max value:    unlimited
+    Default:      0.000000e+00
+    Description:  Wall time in seconds after which an electronic quench stops at the
+                  end of the current scf step, writes its restart files and exits,
+                  so that it can be continued with start_mode="Restart From File"
+                  (QE max_seconds). 0 means no limit.
+
+    Key name:     tot_magnetization
+    Required:     no
+    Key type:     double
+    Expert:       No
+    Experimental: No
+    Min value:    -1.000000e+04
+    Max value:    1.000000e+04
+    Default:      -1.000000e+04
+    Description:  Fixed total magnetization (number of up minus down electrons) for a
+                  spin polarized calculation with smeared occupations; each spin gets
+                  its own Fermi level. The default -10000 leaves the magnetization
+                  free.
 
 '''
 
@@ -4234,6 +4316,22 @@ def generate_any_rmg_input(**kwargs):
                 )
             if 'kpoint_is_shift' in ri:
                 del ri.kpoint_is_shift
+            #end if
+            # RMG reads the kpoints list only if an entry of kpoint_mesh is
+            # below 1 (with its default mesh, 1 1 1, it runs at Gamma only)
+            # and symmetry is off
+            if len(kpu)>1 or not np.allclose(kpu[0],0.0):
+                ri.assign(kpoint_mesh=(-1,-1,-1))
+                if 'use_symmetry' not in ri:
+                    ri.assign(use_symmetry=0)
+                elif ri.use_symmetry!=0:
+                    msg = (
+                        'RMG reads a list of k-points only with use_symmetry=0.\n'
+                        f'Received use_symmetry={ri.use_symmetry} with the k-points of the system.\n'
+                        'Remove use_symmetry, or set kpoint_mesh to use an RMG k-point mesh.'
+                        )
+                    raise ValueError(msg)
+                #end if
             #end if
         #end if
 

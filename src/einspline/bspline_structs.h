@@ -6,23 +6,23 @@
 
 #ifndef BSPLINE_STRUCTS_STD_H
 #define BSPLINE_STRUCTS_STD_H
-#include <stdlib.h>
+#include <cstddef>
 #include "bspline_base.h"
 
 //////////////////////
 // Single precision //
 //////////////////////
-typedef struct
+struct UBspline_1d_s
 {
   spline_code spcode;
   type_code tcode;
   float* restrict coefs;
   Ugrid x_grid;
   BCtype_s xBC;
-} UBspline_1d_s;
+};
 
 
-typedef struct
+struct UBspline_3d_s
 {
   spline_code spcode;
   type_code tcode;
@@ -31,23 +31,23 @@ typedef struct
   Ugrid x_grid, y_grid, z_grid;
   BCtype_s xBC, yBC, zBC;
   size_t coefs_size;
-} UBspline_3d_s;
+};
 
 
 //////////////////////
 // Double precision //
 //////////////////////
-typedef struct
+struct UBspline_1d_d
 {
   spline_code spcode;
   type_code tcode;
   double* restrict coefs;
   Ugrid x_grid;
   BCtype_d xBC;
-} UBspline_1d_d;
+};
 
 
-typedef struct
+struct UBspline_3d_d
 {
   spline_code spcode;
   type_code tcode;
@@ -56,6 +56,6 @@ typedef struct
   Ugrid x_grid, y_grid, z_grid;
   BCtype_d xBC, yBC, zBC;
   size_t coefs_size;
-} UBspline_3d_d;
+};
 
 #endif

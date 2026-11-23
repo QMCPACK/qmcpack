@@ -280,7 +280,6 @@ void MCPopulation::syncWalkersPerRank(Communicate& comm)
   num_global_walkers_ = std::accumulate(num_local_walkers_per_rank.begin(), num_local_walkers_per_rank.end(), 0);
 }
 
-// Measure the global energy and variance across all walkers, optionally validating weights. Abort if invalid.
 void MCPopulation::measureGlobalEnergyVariance(Communicate& comm,
                                                FullPrecRealType& ener,
                                                FullPrecRealType& variance,
@@ -291,6 +290,7 @@ void MCPopulation::measureGlobalEnergyVariance(Communicate& comm,
   {
     auto w = walkers_[iw]->Weight;
     auto e = walker_hamiltonians_[iw]->getLocalEnergy();
+    // Reject non-finite or negative local walker weights and flag the failure for allreduce.
     if (validate_weights && (!qmcplusplus::isfinite(w) || w < 0))
     {
       weight_energy_variance[3] = 1;
@@ -303,9 +303,11 @@ void MCPopulation::measureGlobalEnergyVariance(Communicate& comm,
 
   comm.allreduce(weight_energy_variance);
   if (validate_weights &&
-      (weight_energy_variance[3] != 0 || !qmcplusplus::isfinite(weight_energy_variance[0]) ||
-       weight_energy_variance[0] <= 0 || !qmcplusplus::isfinite(weight_energy_variance[1]) ||
-       !qmcplusplus::isfinite(weight_energy_variance[2])))
+      (weight_energy_variance[3] != 0 ||                  // any rank saw an invalid local weight
+       !qmcplusplus::isfinite(weight_energy_variance[0]) || // global weight sum is non-finite
+       weight_energy_variance[0] <= 0 ||                    // global weight sum is non-positive
+       !qmcplusplus::isfinite(weight_energy_variance[1]) || // global weighted energy sum is non-finite
+       !qmcplusplus::isfinite(weight_energy_variance[2])))  // global weighted squared-energy sum is non-finite
     throw UniformCommunicateError("MCPopulation: invalid fixed-population DMC weights or energy moments.");
   ener     = weight_energy_variance[1] / weight_energy_variance[0];
   variance = weight_energy_variance[2] / weight_energy_variance[0] - ener * ener;

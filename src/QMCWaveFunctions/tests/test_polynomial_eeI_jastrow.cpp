@@ -250,6 +250,31 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
   CHECK(KE == Approx(-0.058051245)); // note: number not validated
 
+  // now test evaluateHessian
+  WaveFunctionComponent::HessVector grad_grad_psi;
+  grad_grad_psi.resize(elec_.getTotalNum());
+  grad_grad_psi = 0.0;
+
+  j3->evaluateHessian(elec_, grad_grad_psi);
+  // Reference values from finite differences of the scalar log J3 polynomial.
+  std::vector<double> hess_values = {
+      -0.162856192412, 0, 0.047282328904, 0, -0.077502933625, 0, 0.047282328904, 0, -0.050647923817,
+      0.193310694590, 0, 0, 0, 0.057357438500, 0, 0, 0, 0.070070662163,
+      -0.186406064531, 0, -0.023429438653, 0, -0.103001229143, 0, -0.023429438653, 0, -0.110856922801,
+      0.070602250282, 0, 0.004786276888, 0, 0.139454792098, 0, 0.004786276888, 0, 0.125899468466,
+  };
+
+  int m = 0;
+  for (int n = 0; n < elec_.getTotalNum(); n++)
+    for (int i = 0; i < OHMMS_DIM; i++)
+      for (int j = 0; j < OHMMS_DIM; j++, m++)
+      {
+        CHECK(std::real(grad_grad_psi[n](i, j)) == Approx(hess_values[m]));
+      }
+
+  for (int n = 0; n < elec_.getTotalNum(); n++)
+    CHECK(std::real(trace(grad_grad_psi[n])) == Approx(std::real(elec_.L[n])));
+
   using ValueType = QMCTraits::ValueType;
   using PosType   = QMCTraits::PosType;
 

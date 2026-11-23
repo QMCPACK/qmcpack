@@ -78,6 +78,8 @@ public:
   void stopBlockUpToWrite(unsigned long accept, unsigned long reject, double weight);
 
   const ScalarEstimatorBase& getMainEstimator() { return *(emn_.main_estimator_.get()); }
+  auto getBlockWeight() const { return emn_.PropertyCache[emn_.weightInd]; }
+  auto getAcceptanceRatio() const { return emn_.PropertyCache[emn_.acceptRatioInd]; }
   RefVector<OperatorEstBase> getOperatorEstimators() { return convertUPtrToRefVector(emn_.operator_ests_); }
 
 private:

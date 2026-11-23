@@ -16,7 +16,7 @@
  *
  * This will replace QMCDriver once unified drivers are finished
  * the general documentation from QMCDriver.h must be moved before then
- *  
+ *
  * This driver base class should be generic with respect to precision,
  * value type, device execution, and ...
  * It should contain no typdefs not related to compiler bugs or platform workarounds
@@ -77,7 +77,7 @@ public:
   using IndexType        = QMCTraits::IndexType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   /** separate but similar to QMCModeEnum
-   *  
+   *
    *  a code smell
    */
   enum
@@ -308,7 +308,7 @@ protected:
    */
   static int determineNumCrowds(const int requested_num_crowds, const int rng_count);
 
-  /** pure function returning AdjustedWalkerCounts data structure 
+  /** pure function returning AdjustedWalkerCounts data structure
    *
    *  The logic is now walker counts is fairly simple.
    *  TotalWalkers trumps all other walker parameters
@@ -351,7 +351,7 @@ protected:
 
   /** The timers for the driver.
    *
-   * This cleans up the driver constructor, and a reference to this structure 
+   * This cleans up the driver constructor, and a reference to this structure
    * Takes the timers into thread scope. We assume the timers are threadsafe.
    */
   struct DriverTimers
@@ -362,6 +362,7 @@ protected:
     NewTimer& init_walkers_timer;
     NewTimer& buffer_timer;
     NewTimer& movepbyp_timer;
+    NewTimer& moveallp_timer;
     NewTimer& hamiltonian_timer;
     NewTimer& collectables_timer;
     NewTimer& estimators_timer;
@@ -377,6 +378,7 @@ protected:
           init_walkers_timer(createGlobalTimer(prefix + "InitWalkers", timer_level_medium)),
           buffer_timer(createGlobalTimer(prefix + "Buffer", timer_level_medium)),
           movepbyp_timer(createGlobalTimer(prefix + "MovePbyP", timer_level_medium)),
+          moveallp_timer(createGlobalTimer(prefix + "MoveAllP", timer_level_medium)),
           hamiltonian_timer(createGlobalTimer(prefix + "Hamiltonian", timer_level_medium)),
           collectables_timer(createGlobalTimer(prefix + "Collectables", timer_level_medium)),
           estimators_timer(createGlobalTimer(prefix + "Estimators", timer_level_medium)),

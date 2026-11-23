@@ -9,12 +9,59 @@ RMG Workflows
 Allowed inflowing dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-TBD
+``charge_density`` from an RMG SCF run (``calculation_mode='Quench
+Electrons'``) into an RMG NSCF run (``calculation_mode='NSCF'``).  The NSCF
+run restarts from the restart files of the SCF run.  By default Nexus copies
+them into the NSCF directory with ``rsync`` (the ``.h5`` orbital file of the
+SCF run is not copied).  With ``sync_from_scf=False`` in ``generate_rmg``, the
+NSCF run instead reads them in place through ``input_wave_function_file``.
+
+RMG writes one restart file per spin, k-point and real-space processor, so the
+NSCF run must use the same ``wavefunction_grid``, the same number of MPI
+ranks and the same ``kpoint_distribution`` as the SCF run.  Nexus checks the
+grids and raises an error if ``wavefunction_grid`` or ``processor_grid``
+differ.
 
 Available outflowing dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-TBD
+``charge_density`` from an SCF run, for an NSCF run (see above).
+
+``orbitals`` from any run with ``write_qmcpack_restart=True``, for QMCPACK.
+RMG writes the orbitals in ESHDF format to ``Waves/wave.out.h5`` (the name
+follows ``output_wave_function_file``), so no converter step is needed.  For
+twist averaging, compute the orbitals in an NSCF run on the k-points of the
+system: do not set ``kpoint_mesh``, and Nexus writes the k-point list of the
+(folded) system into the RMG input.  RMG reduces a ``kpoint_mesh`` by
+symmetry, so Nexus checks that the orbital file holds every k-point of the
+system before it writes the QMCPACK input.
+
+.. code-block:: python
+
+    scf = generate_rmg(
+        identifier       = 'scf',
+        path             = 'diamond/scf',
+        calculation_mode = 'Quench Electrons',
+        kpoint_mesh      = (4,4,4),
+        ...
+        )
+
+    nscf = generate_rmg(
+        identifier            = 'nscf',
+        path                  = 'diamond/nscf_twist',
+        calculation_mode      = 'NSCF',
+        write_qmcpack_restart = True,
+        dependencies          = (scf,'charge_density'),
+        ...
+        )
+
+    qmc = generate_qmcpack(
+        ...
+        dependencies = (nscf,'orbitals'),
+        )
+
+A complete workflow (SCF, NSCF, Jastrow optimization and twist-averaged DMC)
+is in ``nexus/examples/rmg/02_diamond_dmc_twistavg``.
 
 
 RMG Input

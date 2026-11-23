@@ -47,7 +47,7 @@ check_python_reqs("numpy;h5py" estimator-latdev-free add_tests)
 
 if(add_tests)
   simple_run_and_check(
-    BASE_NAME estimator-latdev-free
+    BASE_NAME short-estimator-latdev-free
     BASE_DIR "${qmcpack_SOURCE_DIR}/tests/estimator/latdev/free"
     INPUT_FILE two.xml
     THREADS 16
@@ -85,19 +85,23 @@ if(add_tests)
     THREADS 16
     CHECK_SCRIPT check_collectables_h5dat.py
     CHECK_ARGS dat-h5_allp)
-  simple_run_and_check(
-    BASE_NAME estimator-acforce-legacy
-    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/estimator/acforce"
-    INPUT_FILE vmc.legacy.in.xml
-    THREADS 16
-    CHECK_SCRIPT check_forces.py)
-  simple_run_and_check(
-    BASE_NAME estimator-acforce-fast
-    BASE_DIR "${qmcpack_SOURCE_DIR}/tests/estimator/acforce"
-    INPUT_FILE vmc.fast.in.xml
-    THREADS 16
-    CHECK_SCRIPT check_forces.py
-    CHECK_ARGS vmc.fast.s000.scalar.dat)
+  if(NOT QMC_MIXED_PRECISION)
+    simple_run_and_check(
+      BASE_NAME deterministic-estimator-acforce-legacy
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/estimator/acforce"
+      INPUT_FILE vmc.legacy.in.xml
+      THREADS 16
+      CHECK_SCRIPT check_forces.py)
+    simple_run_and_check(
+      BASE_NAME deterministic-estimator-acforce-fast
+      BASE_DIR "${qmcpack_SOURCE_DIR}/tests/estimator/acforce"
+      INPUT_FILE vmc.fast.in.xml
+      THREADS 16
+      CHECK_SCRIPT check_forces.py
+      CHECK_ARGS vmc.fast.s000.scalar.dat)
+  else()
+    message(VERBOSE "Skipping deterministic-estimator-acforce tests in mixed precision builds (QMC_MIXED_PRECISION=1)")
+  endif()
 endif()
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)

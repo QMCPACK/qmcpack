@@ -12,7 +12,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND H_POSITRON_SD_SCALARS "samples" "160000 0.0")
 
   qmc_run_and_check(
-    short-H_positron-vmc_hf_noj
+    short-H_positron-sd_lcao_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/H_positron"
     qmc_short-SD-H_Ground.in.xml
     1
@@ -23,7 +23,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-H_positron-vmcbatch_hf_noj
+    short-H_positron-sd_lcao_hf_noj-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/H_positron"
     qmc_short_vmcbatch-SD-H_Ground.in.xml
     1
@@ -40,7 +40,7 @@ if(NOT QMC_COMPLEX)
   list(APPEND H_POSITRON_MD_SCALARS "samples" "160000 0.0")
 
   qmc_run_and_check(
-    short-H_positron_MSD-vmc_hf_noj
+    short-H_positron-msd_lcao_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/H_positron"
     qmc_short-MD-H_Ground.in.xml
     1
@@ -51,7 +51,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-H_positron_MSD-vmcbatch_hf_noj
+    short-H_positron-msd_lcao_hf_noj-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/H_positron"
     qmc_short_vmcbatch-MD-H_Ground.in.xml
     1
@@ -76,7 +76,7 @@ if(NOT QMC_COMPLEX)
   endif()
 
   qmc_run_and_check(
-    deterministic-H_positron-vmc_hf_noj
+    deterministic-H_positron-sd_lcao_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/H_positron"
     det_qmc-SD-H_Ground.in.xml
     1
@@ -99,7 +99,7 @@ if(NOT QMC_COMPLEX)
   endif()
 
   qmc_run_and_check(
-    deterministic-H_positron-vmcbatch_hf_noj
+    deterministic-H_positron-sd_lcao_hf_noj-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/H_positron"
     det_qmc_vmcbatch-SD-H_Ground.in.xml
     1
@@ -123,7 +123,7 @@ if(NOT QMC_COMPLEX)
   endif()    
 
   qmc_run_and_check(
-    deterministic-H_positron_MSD-vmc_hf_noj
+    deterministic-H_positron-msd_lcao_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/H_positron"
     det_qmc-MD-H_Ground.in.xml
     1
@@ -146,7 +146,7 @@ if(NOT QMC_COMPLEX)
   endif()
 
   qmc_run_and_check(
-    deterministic-H_positron_MSD-vmcbatch_hf_noj
+    deterministic-H_positron-msd_lcao_hf_noj-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/H_positron"
     det_qmc_vmcbatch-MD-H_Ground.in.xml
     1

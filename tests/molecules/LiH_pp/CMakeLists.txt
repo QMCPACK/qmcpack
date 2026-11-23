@@ -10,7 +10,7 @@ if(NOT QMC_COMPLEX)
   #  LIST(APPEND LIH_PP_SCALARS "flux" "0.0 0.0025")
 
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_noj
+    short-LiH_pp-sd_lcao_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmc_hf_noj.in.xml
     1
@@ -21,7 +21,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_pp-vmcbatch_hf_noj
+    short-LiH_pp-sd_lcao_hf_noj-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmcbatch_hf_noj.in.xml
     1
@@ -42,7 +42,7 @@ if(NOT QMC_COMPLEX)
   #  LIST(APPEND LIH_PP_SCALARS "flux" "-0.0082 0.0051")
 
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_sdj_xml
+    short-LiH_pp-sd_lcao_hf_XML_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmc_hf_sdj_xml.xml
     1
@@ -53,7 +53,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_pp-vmcbatch_hf_sdj_xml
+    short-LiH_pp-sd_lcao_hf_XML_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmcbatch_hf_sdj_xml.xml
     1
@@ -64,7 +64,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_sdj_xml
+    short-LiH_pp-sd_lcao_hf_XML_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmc_hf_sdj_xml.xml
     16
@@ -76,7 +76,7 @@ if(NOT QMC_COMPLEX)
 
   
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_sdj_xml
+    short-LiH_pp-sd_lcao_hf_XML_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmc_hf_sdj_xml.xml
     4
@@ -87,7 +87,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_pp-vmcbatch_hf_sdj_xml
+    short-LiH_pp-sd_lcao_hf_XML_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmcbatch_hf_sdj_xml.xml
     4
@@ -102,7 +102,7 @@ if(NOT QMC_COMPLEX)
   #
 
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_sdj_hdf5
+    short-LiH_pp-sd_lcao_hf_H5_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmc_hf_sdj_hdf5.xml
     1
@@ -113,7 +113,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_pp-vmcbatch_hf_sdj_hdf5
+    short-LiH_pp-sd_lcao_hf_H5_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmcbatch_hf_sdj_hdf5.xml
     1
@@ -124,7 +124,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_sdj_hdf5
+    short-LiH_pp-sd_lcao_hf_H5_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmc_hf_sdj_hdf5.xml
     16
@@ -135,7 +135,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_sdj_hdf5
+    short-LiH_pp-sd_lcao_hf_H5_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmc_hf_sdj_hdf5.xml
     4
@@ -146,7 +146,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_pp-vmcbatch_hf_sdj_hdf5
+    short-LiH_pp-sd_lcao_hf_H5_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmcbatch_hf_sdj_hdf5.xml
     4
@@ -161,7 +161,7 @@ if(NOT QMC_COMPLEX)
   #
 
   qmc_run_and_check(
-    short-LiH_pp-vmc_hf_sdj_old_hdf5
+    short-LiH_pp-sd_lcao_hf_old_hdf5_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmc_hf_sdj_old-hdf5.xml
     1
@@ -172,7 +172,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    short-LiH_pp-vmcbatch_hf_sdj_old_hdf5
+    short-LiH_pp-sd_lcao_hf_old_hdf5_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     vmcbatch_hf_sdj_old-hdf5.xml
     1
@@ -228,7 +228,7 @@ if(NOT QMC_COMPLEX)
   endif()
 
   qmc_run_and_check(
-    deterministic-LiH_pp-vmc_hf_noj
+    deterministic-LiH_pp-sd_lcao_hf_noj-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     det_vmc_hf_noj.in.xml
     1
@@ -239,7 +239,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    deterministic-LiH_pp-vmc_hf_noj-batched
+    deterministic-LiH_pp-sd_lcao_hf_noj-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     det_vmc_hf_noj_batched.in.xml
     1
@@ -290,7 +290,7 @@ if(NOT QMC_COMPLEX)
   endif()
 
   qmc_run_and_check(
-    deterministic-LiH_pp-vmc_hf_sdj_xml
+    deterministic-LiH_pp-sd_lcao_hf_XML_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     det_vmc_hf_sdj_xml.xml
     1
@@ -301,7 +301,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    deterministic-LiH_pp-vmc_hf_sdj_xml-batched
+    deterministic-LiH_pp-sd_lcao_hf_XML_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     det_vmc_hf_sdj_xml_batched.xml
     1
@@ -352,7 +352,7 @@ if(NOT QMC_COMPLEX)
   endif()
 
   qmc_run_and_check(
-    deterministic-LiH_pp-vmc_hf_sdj_hdf5
+    deterministic-LiH_pp-sd_lcao_hf_H5_jas-vmc
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     det_vmc_hf_sdj_hdf5.xml
     1
@@ -363,7 +363,7 @@ if(NOT QMC_COMPLEX)
   )
 
   qmc_run_and_check(
-    deterministic-LiH_pp-vmc_hf_sdj_hdf5-batched
+    deterministic-LiH_pp-sd_lcao_hf_H5_jas-vmcbatch
     "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
     det_vmc_hf_sdj_hdf5_batched.xml
     1
@@ -377,7 +377,7 @@ if(NOT QMC_COMPLEX)
   check_python_reqs("numpy;h5py" diamond-estimator add_tests)
   if(add_tests)
     simple_run_and_check(
-      BASE_NAME short-LiH_pp-vmc_hf_sdj_estimator_spindensity
+      BASE_NAME short-LiH_pp-sd_lcao_hf_jas-vmc-spindensity
       BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
       INPUT_FILE vmc_hf_sdj_spindens_short.in.xml
       PROCS 4
@@ -386,7 +386,7 @@ if(NOT QMC_COMPLEX)
       CHECK_ARGS -s 0 -q spindensity -e 2 -c 8 -p vmc_hf_sdj_spindens_short -r qmc_ref/vmc_hf_sdj_spindens_short.s000.stat_ref_spindensity.dat)
 
     simple_run_and_check(
-      BASE_NAME short-LiH_pp-vmcbatch_hf_sdj_estimator_spindensity
+      BASE_NAME short-LiH_pp-sd_lcao_hf_jas-vmcbatch-spindensity
       BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
       INPUT_FILE vmcbatch_hf_sdj_spindens_short.in.xml
       PROCS 4
@@ -395,7 +395,7 @@ if(NOT QMC_COMPLEX)
       CHECK_ARGS -s 0 -q spindensity -e 2 -c 8 -p vmc_hf_sdj_spindens_short -r qmc_ref/vmc_hf_sdj_spindens_short.s000.stat_ref_spindensity.dat)
 
     simple_run_and_check(
-      BASE_NAME long-LiH_pp-vmc_hf_sdj_estimator_spindensity
+      BASE_NAME long-LiH_pp-sd_lcao_hf_jas-vmc-spindensity
       BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
       INPUT_FILE vmc_hf_sdj_spindens_long.in.xml
       PROCS 4
@@ -404,7 +404,7 @@ if(NOT QMC_COMPLEX)
       CHECK_ARGS -s 0 -q spindensity -e 20 -c 8 -p vmc_hf_sdj_spindens_long -r qmc_ref/vmc_hf_sdj_spindens_long.s000.stat_ref_spindensity.dat)
 
     simple_run_and_check(
-      BASE_NAME long-LiH_pp-vmcbatch_hf_sdj_estimator_spindensity
+      BASE_NAME long-LiH_pp-sd_lcao_hf_jas-vmcbatch-spindensity
       BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
       INPUT_FILE vmcbatch_hf_sdj_spindens_long.in.xml
       PROCS 4
@@ -413,7 +413,7 @@ if(NOT QMC_COMPLEX)
       CHECK_ARGS -s 0 -q spindensity -e 20 -c 8 -p vmc_hf_sdj_spindens_long -r qmc_ref/vmc_hf_sdj_spindens_long.s000.stat_ref_spindensity.dat)
 
     simple_run_and_check(
-      BASE_NAME short-LiH_pp-vmc_hf_sdj_estimator_energydensity_voronoi
+      BASE_NAME short-LiH_pp-sd_lcao_hf_jas-vmc-energydensity_voronoi
       BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
       INPUT_FILE vmc_hf_sdj_edens_vor_short.in.xml
       PROCS 4
@@ -422,7 +422,7 @@ if(NOT QMC_COMPLEX)
       CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_short -r qmc_ref/vmc_hf_sdj_edens_vor_short.s000.stat_ref_energydensity.dat)
 
     simple_run_and_check(
-      BASE_NAME short-LiH_pp-vmcbatch_hf_sdj_estimator_energydensity_voronoi
+      BASE_NAME short-LiH_pp-sd_lcao_hf_jas-vmcbatch-energydensity_voronoi
       BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
       INPUT_FILE vmcbatch_hf_sdj_edens_vor_short.in.xml
       PROCS 4
@@ -431,7 +431,7 @@ if(NOT QMC_COMPLEX)
       CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_short -r qmc_ref/vmc_hf_sdj_edens_vor_short.s000.stat_ref_energydensity.dat)
 
     simple_run_and_check(
-      BASE_NAME long-LiH_pp-vmc_hf_sdj_estimator_energydensity_voronoi
+      BASE_NAME long-LiH_pp-sd_lcao_hf_jas-vmc-energydensity_voronoi
       BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
       INPUT_FILE vmc_hf_sdj_edens_vor_long.in.xml
       PROCS 4
@@ -440,7 +440,7 @@ if(NOT QMC_COMPLEX)
       CHECK_ARGS -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_long -r qmc_ref/vmc_hf_sdj_edens_vor_long.s000.stat_ref_energydensity.dat)
 
     simple_run_and_check(
-      BASE_NAME long-LiH_pp-vmcbatch_hf_sdj_estimator_energydensity_voronoi
+      BASE_NAME long-LiH_pp-sd_lcao_hf_jas-vmcbatch-energydensity_voronoi
       BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
       INPUT_FILE vmcbatch_hf_sdj_edens_vor_long.in.xml
       PROCS 4

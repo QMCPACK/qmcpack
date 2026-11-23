@@ -207,7 +207,7 @@ if(NOT HDF5_DIFF_EXECUTABLE)
 endif()
 
 run_restart_and_check(
-  deterministic-save_spline_coefs-batched
+  deterministic-save_bspline_coefs-batched
   "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs"
   1
   qmc_batched
@@ -215,7 +215,7 @@ run_restart_and_check(
   2)
 
 run_restart_and_check(
-  deterministic-save_spline_coefs-batched
+  deterministic-save_bspline_coefs-batched
   "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs"
   1
   qmc_batched
@@ -223,7 +223,7 @@ run_restart_and_check(
   4)
 
 run_restart_and_check(
-  deterministic-save_spline_coefs_hybridrep-batched
+  deterministic-save_bspline_coefs_hybridrep-batched
   "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs_hybridrep"
   1
   qmc_batched
@@ -231,7 +231,7 @@ run_restart_and_check(
   2)
 
 run_restart_and_check(
-  deterministic-save_spline_coefs_hybridrep-batched
+  deterministic-save_bspline_coefs_hybridrep-batched
   "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs_hybridrep"
   1
   qmc_batched
