@@ -34,8 +34,7 @@ class VMCBatchedTest;
  * all-particle algorithm.  That algorithm currently supports position-only,
  * no-drift moves in non-serialized crowds.  Its Metropolis decision is per
  * walker; each particle contributes one acceptance/rejection counter event.
- * An invalid individual proposal remains at its old position and is
- * counted as a rejection, but does not reject the walker configuration.
+ * An invalid individual proposal rejects the entire walker configuration.
  */
 class VMCBatched : public QMCDriverNew
 {
