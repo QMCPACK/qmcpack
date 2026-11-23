@@ -18,6 +18,7 @@
 #include "einspline/multi_bspline_create.h"
 
 #include <stdio.h>
+#include <cmath>
 #include <limits>
 #include <memory>
 #include "config/stdlib/Constants.h"
@@ -100,4 +101,54 @@ TEST_CASE("double_3d_periodic","[einspline]")
   CHECK(val == Approx(data[N*N + N + 1]));
 
   // See miniqmc-python/splines/test_3d.py for values
+}
+
+TEST_CASE("double_3d_recompute_mixed_boundaries", "[einspline]")
+{
+  const Ugrid x{0.0, 1.0, 5}, z{0.0, 1.0, 7};
+  const BCtype_d periodic{PERIODIC, PERIODIC}, antiperiodic{ANTIPERIODIC, ANTIPERIODIC}, natural{NATURAL, NATURAL};
+  double data[5 * 6 * 7];
+  for (int i = 0; i < 5 * 6 * 7; ++i)
+    data[i] = std::sin(0.7 * i) + std::cos(1.3 * i);
+
+  using SplinePtr = std::unique_ptr<UBspline_3d_d, decltype(&destroy_Bspline)>;
+  for (const int num_points : {2, 6})
+  {
+    const Ugrid y{0.0, 1.0, num_points};
+    const SplinePtr reference(create_UBspline_3d_d(x, y, z, periodic, antiperiodic, natural, data), destroy_Bspline);
+    const SplinePtr spline(create_UBspline_3d_d(x, y, z, periodic, antiperiodic, natural, nullptr), destroy_Bspline);
+    recompute_UBspline_3d_d(spline.get(), data);
+
+    for (size_t i = 0; i < spline->coefs_size; ++i)
+      CHECK(spline->coefs[i] == Approx(reference->coefs[i]).margin(1e-12).epsilon(1e-12));
+  }
+}
+
+TEST_CASE("double_3d_recompute_derivative_boundaries", "[einspline]")
+{
+  using SplinePtr = std::unique_ptr<UBspline_3d_d, decltype(&destroy_Bspline)>;
+  const Ugrid y{-1.0, 2.0, 3}, z{0.0, 0.5, 4};
+  const bc_code codes[] = {FLAT, NATURAL, DERIV1, DERIV2};
+
+  for (const int nx : {2, 5})
+    for (const auto left : codes)
+      for (const auto right : codes)
+      {
+        CAPTURE(nx, left, right);
+        const Ugrid x{0.0, 2.0, nx};
+        const BCtype_d xbc{left, right, 0.75, -1.25};
+        const BCtype_d ybc{right, left, -0.5, 2.0};
+        const BCtype_d zbc{DERIV1, DERIV2, 0.25, -0.75};
+        double data[5 * 3 * 4];
+        for (int i = 0; i < nx * 3 * 4; ++i)
+          data[i] = std::sin(0.7 * i) + std::cos(1.3 * i);
+
+        const SplinePtr reference(create_UBspline_3d_d(x, y, z, xbc, ybc, zbc, data), destroy_Bspline);
+        const SplinePtr spline(create_UBspline_3d_d(x, y, z, xbc, ybc, zbc, nullptr), destroy_Bspline);
+        recompute_UBspline_3d_d(spline.get(), data);
+
+        REQUIRE(spline->coefs_size == reference->coefs_size);
+        for (size_t i = 0; i < spline->coefs_size; ++i)
+          CHECK(spline->coefs[i] == Approx(reference->coefs[i]).margin(1e-12).epsilon(1e-12));
+      }
 }
