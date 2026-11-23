@@ -589,51 +589,58 @@ void recompute_UBspline_3d_d(UBspline_3d_d* spline, double* data)
     Nz = Mz + 2;
 
   // Solve the spline system one axis at a time. The axis solvers share
-  // read-only factors across OpenMP iterations; each outer iteration owns its
-  // rhs workspace and reuses it for the inner loop's grid lines. X reads the
+  // read-only factors across OpenMP iterations; each thread owns its
+  // rhs workspace and reuses it across its assigned grid lines. X reads the
   // input samples; Y and Z solve in place in the coefficient table.
-  const SplineLineSolver x_solver(spline->x_grid, spline->xBC);
-#pragma omp parallel for
-  for (int iy = 0; iy < My; iy++)
   {
-    auto rhs = x_solver.make_workspace();
-    for (int iz = 0; iz < Mz; iz++)
+    const SplineLineSolver x_solver(spline->x_grid, spline->xBC);
+#pragma omp parallel
     {
-      intptr_t doffset = iy * Mz + iz;
-      intptr_t coffset = iy * Nz + iz;
-      x_solver.solve(data + doffset, My * Mz, spline->coefs + coffset, Ny * Nz, rhs);
+      auto rhs = x_solver.make_workspace();
+#pragma omp for
+      for (int iy = 0; iy < My; iy++)
+        for (int iz = 0; iz < Mz; iz++)
+        {
+          intptr_t doffset = iy * Mz + iz;
+          intptr_t coffset = iy * Nz + iz;
+          x_solver.solve(data + doffset, My * Mz, spline->coefs + coffset, Ny * Nz, rhs);
+        }
     }
   }
 
-  // In-place Y-direction solve
-  const SplineLineSolver y_solver(spline->y_grid, spline->yBC);
-#pragma omp parallel for
-  for (int ix = 0; ix < Nx; ix++)
-  {
-    auto rhs = y_solver.make_workspace();
-    for (int iz = 0; iz < Nz; iz++)
+  { // In-place Y-direction solve
+    const SplineLineSolver y_solver(spline->y_grid, spline->yBC);
+#pragma omp parallel
     {
-      intptr_t doffset = ix * Ny * Nz + iz;
-      intptr_t coffset = ix * Ny * Nz + iz;
-      y_solver.solve(spline->coefs + doffset, Nz, spline->coefs + coffset, Nz, rhs);
+      auto rhs = y_solver.make_workspace();
+#pragma omp for
+      for (int ix = 0; ix < Nx; ix++)
+        for (int iz = 0; iz < Nz; iz++)
+        {
+          intptr_t doffset = ix * Ny * Nz + iz;
+          intptr_t coffset = ix * Ny * Nz + iz;
+          y_solver.solve(spline->coefs + doffset, Nz, spline->coefs + coffset, Nz, rhs);
+        }
     }
   }
 
-  // In-place Z-direction solve
-  const SplineLineSolver z_solver(spline->z_grid, spline->zBC);
-#pragma omp parallel for
-  for (int ix = 0; ix < Nx; ix++)
-  {
-    auto rhs = z_solver.make_workspace();
-    for (int iy = 0; iy < Ny; iy++)
+
+  { // In-place Z-direction solve
+    const SplineLineSolver z_solver(spline->z_grid, spline->zBC);
+#pragma omp parallel
     {
-      intptr_t doffset = (ix * Ny + iy) * Nz;
-      intptr_t coffset = (ix * Ny + iy) * Nz;
-      z_solver.solve(spline->coefs + doffset, 1, spline->coefs + coffset, 1, rhs);
+      auto rhs = z_solver.make_workspace();
+#pragma omp for
+      for (int ix = 0; ix < Nx; ix++)
+        for (int iy = 0; iy < Ny; iy++)
+        {
+          intptr_t doffset = (ix * Ny + iy) * Nz;
+          intptr_t coffset = (ix * Ny + iy) * Nz;
+          z_solver.solve(spline->coefs + doffset, 1, spline->coefs + coffset, 1, rhs);
+        }
     }
   }
 }
-
 
 void destroy_UBspline(Bspline* spline)
 {

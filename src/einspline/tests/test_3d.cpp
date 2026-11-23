@@ -18,6 +18,7 @@
 #include "einspline/multi_bspline_create.h"
 
 #include <stdio.h>
+#include <cmath>
 #include <limits>
 #include <memory>
 #include "config/stdlib/Constants.h"
