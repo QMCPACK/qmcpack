@@ -426,8 +426,16 @@ class SplineLineSolver
   double right_second_lower_ = 0.0;
   double right_rhs_          = 0.0;
 
+  // Compute the elimination pivot of a tridiagonal interior row with weights
+  // (a, b, a) after eliminating the sub-diagonal entry `a` against the
+  // normalized upper-diagonal entry `previous_upper` of the preceding row.
   static double interior_pivot(double previous_upper) { return b - a * previous_upper; }
 
+  // Precompute the Gauss elimination factors for a 1D system of size (m + 2)
+  // with derivative boundary conditions (FLAT, NATURAL, DERIV1, or DERIV2) at
+  // both endpoints. Populates `rows_` (size m + 1) along with the endpoint
+  // coupling scalars `left_second_upper_`, `left_rhs_`, `right_second_lower_`,
+  // `last_lower_`, `last_inv_diag_`, and `right_rhs_`.
   void factor_derivative(Ugrid grid, BCtype_d bc)
   {
     const auto left  = derivative_boundary_row(bc.lCode, bc.lVal, grid.delta_inv);
@@ -456,6 +464,11 @@ class SplineLineSolver
     right_rhs_          = right[3];
   }
 
+  // Solve a 1D derivative-boundary system for a single grid line using the
+  // precomputed factors from `factor_derivative`. Reads `m` samples from `data`
+  // with stride `dstride` into `rhs` during forward elimination, then writes
+  // `m + 2` B-spline coefficients to `coefs` with stride `cstride` via back
+  // substitution. Safe when `data` and `coefs` alias.
   void solve_derivative(const double* data,
                         intptr_t dstride,
                         double* coefs,
@@ -478,6 +491,11 @@ class SplineLineSolver
     coefs[0] = left_rhs_ - rows_[0].upper * next - left_second_upper_ * coefs[2 * cstride];
   }
 
+  // Precompute the Gauss elimination factors for a cyclic (PERIODIC or
+  // ANTIPERIODIC) 1D system of `m` independent equations. Tracks the cyclic
+  // corner couplings in each row's `wrap` (coupling to the final unknown) and
+  // `last_weight` (fill-in weight accumulated into the final row), populating
+  // `rows_` (size m - 1), `last_lower_`, and `last_inv_diag_`.
   void factor_cyclic()
   {
     const int m = num_points_;
@@ -505,6 +523,9 @@ class SplineLineSolver
   }
 
 public:
+  // Construct and pre-factor the 1D cubic B-spline interpolation solver for the
+  // given axis grid `grid` and boundary conditions `bc`. Dispatches to
+  // `factor_cyclic()` for PERIODIC/ANTIPERIODIC or `factor_derivative()` otherwise.
   SplineLineSolver(Ugrid grid, BCtype_d bc)
       : num_points_(grid.num),
         sign_(bc.lCode == PERIODIC           ? 1.0
@@ -517,14 +538,19 @@ public:
       factor_cyclic();
   }
 
-  // Scratch for the transformed right-hand side; reuse it across independent
-  // lines rather than allocating it for each solve.
+  // Allocate a per-thread scratch vector sized to `rows_.size()` (`m + 1` for
+  // derivative BCs, `m - 1` for cyclic BCs) to hold the transformed right-hand
+  // side during `solve()`; reuse across lines to avoid per-line allocations.
   std::vector<double> make_workspace() const { return std::vector<double>(rows_.size()); }
 
-  // Solve/interpolate one line of samples (data) into coefficients (coefs).
-  // dstride and cstride are element strides; rhs is scratch from make_workspace().
-  // IMPORTANT: Input and output may alias: forward elimination consumes all samples before
-  // back substitution writes any coefficients.
+  // Solve/interpolate one line of `m` samples (`data` with stride `dstride`)
+  // into B-spline coefficients (`coefs` with stride `cstride`), using `rhs`
+  // from `make_workspace()` as scratch space. Dispatches to `solve_derivative`
+  // for derivative BCs, or executes the cyclic forward elimination, back
+  // substitution, and periodic/antiperiodic boundary padding (`m + 3` total
+  // coefficients). Safe for in-place use (`data == coefs`) because all input
+  // samples are consumed during forward elimination before any coefficients are
+  // written.
   void solve(const double* data, intptr_t dstride, double* coefs, intptr_t cstride, std::vector<double>& rhs) const
   {
     if (sign_ == 0.0)
