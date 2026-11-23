@@ -1,0 +1,45 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  check-commits:
+    name: Check PR Commits for AI Co-Authored-By
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Action
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check for AI Agent Co-Authored-By Trailers
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          echo "Checking commits in range ${BASE_SHA}..${HEAD_SHA}"
+
+          AI_PATTERN='(claude|anthropic|copilot|gemini|antigravity|chatgpt|openai|codex|cursor|devin|cognition|aider|windsurf|codeium|cline|roo[- ]?code|augment|junie|amazon[- ]?q|tabnine|\[bot\])'
+
+          failed=0
+          for sha in $(git rev-list "${BASE_SHA}..${HEAD_SHA}"); do
+            msg=$(git log -1 --format=%B "$sha")
+            matches=$(echo "$msg" | grep -iE "^[[:space:]]*Co-Authored-By:.*${AI_PATTERN}" || true)
+            if [[ -n "$matches" ]]; then
+              echo "::error::Commit $sha contains disallowed AI agent Co-Authored-By trailer(s):"
+              echo "$matches"
+              failed=1
+            fi
+          done
+
+          if [[ "$failed" -ne 0 ]]; then
+            exit 1
+          fi
+          echo "No AI agent Co-Authored-By trailers found."
