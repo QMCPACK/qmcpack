@@ -134,7 +134,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
           if (walker_valid)
           {
             const RealType probability = std::exp(2.0 * (walker_twfs[iw].getLogPsi() - old_logpsi[iw]));
-            is_accepted[iw]            = walker_valid && step_context.get_random_gen()() < probability;
+            is_accepted[iw]            = step_context.get_random_gen()() < probability;
           }
           // All particles in a walker share the all-particle transaction decision.
           if (is_accepted[iw])
