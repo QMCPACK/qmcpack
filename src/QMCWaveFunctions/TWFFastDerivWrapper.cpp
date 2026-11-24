@@ -297,6 +297,13 @@ void TWFFastDerivWrapper::computeMDDerivatives_Obs(const std::vector<ValueMatrix
     size_t virt_offset = nocc;                             // first idx of virt orbs within norb
     assert(norb == numOrbitals(sid));
 
+    if (nvirt == 0)
+    {
+      assert(multidiracdet_i.getMaxExcLevel() == 0);
+      dvals_O[mdd_id][0] = 0.0;
+      continue;
+    }
+
     /// NOTE: in any place where we handle virtuals, we will only ever need the ones which appear as particles in the excited dets
     ///       in *SOME* places where we handle occupied orbs, we only need the ones which appear as holes in the excited dets
     ///       these are denoted as h (for hole) below
@@ -426,6 +433,9 @@ void TWFFastDerivWrapper::computeMDDerivatives_Obs(const std::vector<ValueMatrix
 
 void TWFFastDerivWrapper::transform_Av_AoBv(const ValueMatrix& A, const ValueMatrix& B, ValueMatrix& X) const
 {
+  // if nvirt == 0, no work to do
+  if (X.cols() == 0) return;
+
   // A [h,o+v]
   // B [o,v]
 
@@ -470,6 +480,14 @@ void TWFFastDerivWrapper::computeMDDerivatives_dmu(const std::vector<ValueMatrix
     size_t nvirt       = norb - nocc;                      // number of orbs past those occupied in refdet
     size_t virt_offset = nocc;                             // first idx of virt orbs within norb
     assert(norb == numOrbitals(sid));
+
+    if (nvirt == 0)
+    {
+      assert(multidiracdet_i.getMaxExcLevel() == 0);
+      dvals_dmu_O[mdd_id][0] = 0.0;
+      dvals_dmu[mdd_id][0]   = 0.0;
+      continue;
+    }
 
 
     // input mats:
@@ -828,8 +846,9 @@ void TWFFastDerivWrapper::buildIntermediates(const std::vector<ValueMatrix>& Min
     // n: all orbs (o+v)
 
     // Minv_Mv = Minv[o,e].M[e,v]
-    BLAS::gemm('n', 'n', nvirt, ptclnum, ptclnum, 1.0, M[id].data() + ptclnum, M[id].cols(), Minv[id].data(),
-               Minv[id].cols(), 0.0, Minv_Mv[id].data(), Minv_Mv[id].cols());
+    if (nvirt > 0) // avoid gemm call with LDC == 0
+      BLAS::gemm('n', 'n', nvirt, ptclnum, ptclnum, 1.0, M[id].data() + ptclnum, M[id].cols(), Minv[id].data(),
+                 Minv[id].cols(), 0.0, Minv_Mv[id].data(), Minv_Mv[id].cols());
 
     // Minv_B = Minv[o,e].B[e,n]
     BLAS::gemm('n', 'n', norb, ptclnum, ptclnum, 1.0, B[id].data(), B[id].cols(), Minv[id].data(), Minv[id].cols(), 0.0,
