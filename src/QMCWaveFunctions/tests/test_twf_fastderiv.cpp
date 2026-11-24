@@ -23,7 +23,7 @@ namespace qmcplusplus
 {
 // With no virtual orbitals (norb == nelec) buildIntermediates must not issue a GEMM with
 // M=0/LDC=0, which violates LDC >= max(1,M) ("Parameter 13 was incorrect on entry to ZGEMM").
-TEST_CASE("TWFFastDerivWrapper buildIntermediates without virtual orbitals", "[wavefunction][.wip]")
+TEST_CASE("TWFFastDerivWrapper buildIntermediates without virtual orbitals", "[wavefunction]")
 {
   using ValueMatrix = TWFFastDerivWrapper::ValueMatrix;
 

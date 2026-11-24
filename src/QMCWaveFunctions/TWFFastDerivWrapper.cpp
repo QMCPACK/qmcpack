@@ -297,6 +297,13 @@ void TWFFastDerivWrapper::computeMDDerivatives_Obs(const std::vector<ValueMatrix
     size_t virt_offset = nocc;                             // first idx of virt orbs within norb
     assert(norb == numOrbitals(sid));
 
+    if (nvirt == 0)
+    {
+      assert(multidiracdet_i.getMaxExcLevel() == 0);
+      dvals_O[mdd_id][0] = 0.0;
+      continue;
+    }
+
     /// NOTE: in any place where we handle virtuals, we will only ever need the ones which appear as particles in the excited dets
     ///       in *SOME* places where we handle occupied orbs, we only need the ones which appear as holes in the excited dets
     ///       these are denoted as h (for hole) below
@@ -334,9 +341,8 @@ void TWFFastDerivWrapper::computeMDDerivatives_Obs(const std::vector<ValueMatrix
 
     // s[h,v] = -Minv_B[h,o].Minv_Mv[o,v]
     ValueMatrix s_hv(nocc, nvirt);
-    if (nvirt > 0)
-      BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, Minv_Mv[sid].data(), Minv_Mv[sid].cols(), Minv_B[sid].data(),
-                 Minv_B[sid].cols(), 0.0, s_hv.data(), s_hv.cols());
+    BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, Minv_Mv[sid].data(), Minv_Mv[sid].cols(), Minv_B[sid].data(),
+               Minv_B[sid].cols(), 0.0, s_hv.data(), s_hv.cols());
 
     // s[h,v] = Minv_B[h,v] - Minv_B[h,o].Minv_Mv[o,v]
     for (size_t i = 0; i < s_hv.rows(); i++)
@@ -475,6 +481,14 @@ void TWFFastDerivWrapper::computeMDDerivatives_dmu(const std::vector<ValueMatrix
     size_t virt_offset = nocc;                             // first idx of virt orbs within norb
     assert(norb == numOrbitals(sid));
 
+    if (nvirt == 0)
+    {
+      assert(multidiracdet_i.getMaxExcLevel() == 0);
+      dvals_dmu_O[mdd_id][0] = 0.0;
+      dvals_dmu[mdd_id][0]   = 0.0;
+      continue;
+    }
+
 
     // input mats:
     // a  = Minv_Mv  [occ, virt]
@@ -532,9 +546,8 @@ void TWFFastDerivWrapper::computeMDDerivatives_dmu(const std::vector<ValueMatrix
     transform_Av_AoBv(Minv_B[sid], Minv_Mv[sid], X3b_ov);
 
     // X432b[h,v] -= Minv_dM[h,o].X3b[o,v]
-    if (nvirt > 0)
-      BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, X3b_ov.data(), X3b_ov.cols(), Minv_dM[sid].data(),
-                 Minv_dM[sid].cols(), 1.0, X432b_hv.data(), X432b_hv.cols());
+    BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, X3b_ov.data(), X3b_ov.cols(), Minv_dM[sid].data(),
+               Minv_dM[sid].cols(), 1.0, X432b_hv.data(), X432b_hv.cols());
 
 
     // compute difference from ref here and add that term back later
