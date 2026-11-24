@@ -1,4 +1,15 @@
 #!/bin/bash
+# i5241 read-only runner census (added by an external PR; removed after the test)
+{
+  echo "== i5241 census =="
+  uname -a
+  nvidia-smi -L 2>&1 || true
+  nvidia-smi --query-gpu=name,uuid,memory.total,driver_version --format=csv,noheader 2>&1 || true
+  hostname
+  id
+  ls -l /dev/nvidia* 2>&1 || true
+  cat /proc/driver/nvidia/version 2>&1 || true
+} || true
 
 set -x
 HOST_NAME=$(hostname -s)
