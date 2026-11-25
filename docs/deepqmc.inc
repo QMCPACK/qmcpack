@@ -229,8 +229,18 @@ and one walker are only an installation smoke test, not an energy estimate.
 Use the absolute path to the QMCPACK executable. ``DEEPQMC_HYDRA_CONFIG``
 selects the matching configuration explicitly; absent that override, the
 bridge can discover ``.hydra/config.yaml`` in the checkpoint directory or an
-ancestor. If no configuration is found, the bridge falls back to a default
-helium ansatz that need not match your checkpoint; do not rely on that fallback.
+ancestor. A plain ``config.yaml`` beside the checkpoint is not discovered;
+set ``DEEPQMC_HYDRA_CONFIG`` explicitly for that layout. If no configuration is
+found, initialization fails before the checkpoint is loaded. There is no
+default molecule or ansatz: checkpoint parameters alone do not define the
+trained wavefunction.
+
+For another system, supply its checkpoint and matching training configuration,
+and adapt the QMCPACK XML particle sets and Hamiltonian accordingly. The bridge
+does not verify that these inputs describe the same physical system; finding a
+configuration is not a compatibility check. Only the helium workflow above has
+been validated.
+
 The configuration is trusted input too: Hydra instantiation and OmegaConf
 resolvers can execute code. ``PYTHONPATH`` is shown as an explicit way to expose packages to
 the embedded interpreter; preserve any existing entries as in the command

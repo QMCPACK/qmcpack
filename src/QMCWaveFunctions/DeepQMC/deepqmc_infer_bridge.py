@@ -30,7 +30,6 @@ import deepqmc
 import jax
 import jax.numpy as jnp
 import jax_dataclasses as jdc
-from hydra import compose, initialize_config_dir
 from hydra.utils import instantiate
 
 # PySCF imports h5py at module import time.  In embedded QMCPACK, binary h5py
@@ -43,8 +42,6 @@ _h5py_stub.File = type("File", (), {})
 sys.modules.setdefault("h5py", _h5py_stub)
 
 from deepqmc.app import instantiate_ansatz
-from deepqmc.hamil import MolecularHamiltonian
-from deepqmc.molecule import Molecule
 from deepqmc.parallel import replicate_on_devices, scatter_electrons_to_devices
 from deepqmc.types import PhysicalConfiguration
 
@@ -73,7 +70,12 @@ def _find_hydra_config(model_path):
         candidate = directory / ".hydra" / "config.yaml"
         if candidate.exists():
             return candidate
-    return None
+    raise FileNotFoundError(
+        "No DeepQMC Hydra config found for checkpoint "
+        f"{checkpoint}. Set DEEPQMC_HYDRA_CONFIG to the training config.yaml, "
+        "or place the associated .hydra/config.yaml in the checkpoint directory "
+        "or one of its ancestors."
+    )
 
 
 def _instantiate_problem_from_hydra_config(config_path):
@@ -83,20 +85,6 @@ def _instantiate_problem_from_hydra_config(config_path):
     cfg = OmegaConf.load(config_path)
     hamiltonian = instantiate(cfg.hamil, _recursive_=True, _convert_="all")
     ansatz_cfg = instantiate(cfg.ansatz, _recursive_=True, _convert_="all")
-    return hamiltonian, instantiate_ansatz(hamiltonian, ansatz_cfg)
-
-
-def _instantiate_default_he_problem():
-    """Fallback prototype default used by older local He checkpoints."""
-    mol = Molecule(coords=[[0.0, 0.0, 0.0]], charges=[2], charge=0, spin=0, unit="bohr")
-    hamiltonian = MolecularHamiltonian(mol=mol)
-
-    deepqmc_dir = os.path.dirname(deepqmc.__file__)
-    config_dir = os.path.join(deepqmc_dir, "conf/ansatz")
-    with initialize_config_dir(version_base=None, config_dir=config_dir):
-        cfg = compose(config_name="default")
-
-    ansatz_cfg = instantiate(cfg, _recursive_=True, _convert_="all")
     return hamiltonian, instantiate_ansatz(hamiltonian, ansatz_cfg)
 
 
@@ -135,10 +123,7 @@ def _load_checkpoint_without_h5py(path):
 class DeepQMCInferBridge:
     def __init__(self, model_path):
         hydra_config = _find_hydra_config(model_path)
-        if hydra_config is not None:
-            self.H, self.ansatz = _instantiate_problem_from_hydra_config(hydra_config)
-        else:
-            self.H, self.ansatz = _instantiate_default_he_problem()
+        self.H, self.ansatz = _instantiate_problem_from_hydra_config(hydra_config)
 
         step, train_state = _load_checkpoint_without_h5py(Path(model_path))
         params = train_state.params

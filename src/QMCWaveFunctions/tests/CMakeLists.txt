@@ -94,6 +94,14 @@ set(TRIALWF_SRC
     test_TWFGrads.cpp)
 if(ENABLE_DEEPQMC_INFERENCE)
   set(TRIALWF_SRC ${TRIALWF_SRC} test_deepqmc_wfc.cpp)
+
+  set(DEEPQMC_PYTHON_TEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/deepqmc_python_tests)
+  file(MAKE_DIRECTORY ${DEEPQMC_PYTHON_TEST_DIR}/tmp)
+  add_test(NAME deepqmc_hydra_config_discovery
+    COMMAND ${Python3_EXECUTABLE} -m unittest test_deepqmc_infer_bridge)
+  set_tests_properties(deepqmc_hydra_config_discovery PROPERTIES
+    WORKING_DIRECTORY ${DEEPQMC_PYTHON_TEST_DIR}
+    ENVIRONMENT "PYTHONPATH=${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/DeepQMC;TMPDIR=${DEEPQMC_PYTHON_TEST_DIR}/tmp")
 endif()
 
 set(SPOSET_SRC
