@@ -27,9 +27,16 @@ from ..simulation import (
     multi_input_template,
 )
 from ..testing import FailedTest, failed, object_eq, value_eq
-from . import NexusTestOrder, isolate_nexus_core
+from . import TEST_DIR, NexusTestOrder, isolate_nexus_core
 
 pytestmark = pytest.mark.order(NexusTestOrder.SIMULATION)
+
+TEST_FILES = {
+    "old_sim_image": TEST_DIR / "reference/simulation_module/old_sim.p", # commit 9d0d968139fc33f71dbf9159f526dd7b47f10a3b
+    }
+
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
 
 class SimulationInputForTests(SimulationInput):
     def __init__(self,*args,**kwargs):
@@ -1631,8 +1638,8 @@ def test_save_load_image(tmp_path):
     nexus_config.remote_directory = str(tmp_path)
     nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
-    nsave = 31
-    nload = 23
+    nsave = 35
+    nload = 27
 
     assert(len(SimulationImage.save_fields)==nsave)
     assert(len(SimulationImage.load_fields)==nload)
@@ -1780,7 +1787,7 @@ a    = 1
     s.write_inputs()
 
     assert(s.setup)
-    assert(set(s.timestamps.keys())=={'setup'})
+    assert(set(s.timestamps.keys())=={"created_directories", 'setup'})
     assert(input_file.exists())
     assert(image_file.exists())
     assert(input_image_file.exists())
@@ -1830,7 +1837,7 @@ def test_send_files(tmp_path):
     s.send_files()
 
     assert(s.sent_files)
-    assert(set(s.timestamps.keys())=={'sent_files'})
+    assert(set(s.timestamps.keys())=={"created_directories", 'sent_files'})
     assert(loc_data_file1.exists())
     assert(loc_data_file2.exists())
 
@@ -1933,7 +1940,7 @@ def test_check_status(tmp_path):
     s.check_status()
 
     assert(s.finished)
-    assert(set(s.timestamps.keys())=={'exited_queue','finished'})
+    assert(set(s.timestamps.keys())=={"created_directories", 'exited_queue','finished'})
     for timestamp in s.timestamps.values():
         assert(datetime.fromisoformat(timestamp).tzinfo is not None)
     #end for
@@ -1966,7 +1973,7 @@ def test_check_status_timeout(tmp_path):
 
     assert(not s.failed)
     assert(not s.finished)
-    assert(set(s.timestamps.keys())=={'exited_queue'})
+    assert(set(s.timestamps.keys())=={"created_directories", 'exited_queue'})
     image_file = Path(s.imlocdir).resolve() / s.sim_image
     assert(image_file.exists())
 
@@ -1998,7 +2005,7 @@ def test_check_status_timeout(tmp_path):
     assert(s.finished)
     assert(s.timestamps.exited_queue==exited_queue)
     assert(set(s.timestamps.keys())=={
-        'exited_queue','timed_out','failed','finished'
+        "created_directories", 'exited_queue','timed_out','failed','finished'
         })
     assert(datetime.fromisoformat(s.timestamps.timed_out).tzinfo is not None)
 
@@ -2053,7 +2060,7 @@ def test_get_output(tmp_path):
     s.get_output()
 
     assert(s.got_output)
-    assert(set(s.timestamps.keys())=={'got_output'})
+    assert(set(s.timestamps.keys())=={"created_directories", "finished", 'got_output'})
     for loc_file,res_file in zip(loc_files,res_files):
         assert(loc_file.exists())
         assert(res_file.exists())
@@ -2088,7 +2095,7 @@ def test_analyze(tmp_path):
     s.analyze()
 
     assert(s.analyzed)
-    assert(set(s.timestamps.keys())=={'analyzed'})
+    assert(set(s.timestamps.keys())=={"created_directories", "finished", 'analyzed'})
     assert(analyzer_image.exists())
 
     s.analyzed = False
@@ -2816,3 +2823,51 @@ def test_graph_sims():
 
     Simulation.clear_all_sims()
 #end def test_graph_sims
+
+
+def test_load_old_image():
+    """Test that old simulation images can still be loaded (retain backwards-compatibility)."""
+
+    sim = Simulation(job=Job(machine='ws1',app_command='test.x'))
+
+    sim.load_image(TEST_FILES["old_sim_image"])
+
+    assert(sim.analyzer_image      == "analyzer.p")
+    assert(sim.app_name            == "pw.x")
+    assert(sim.app_props           == ['mpi', 'serial'])
+    assert(sim.block               is False)
+    assert(sim.block_subcascade    is False)
+    assert(sim.errfile             == "scf.err")
+    assert(sim.files               == {'scf.in', 'C.BFD.upf'})
+    assert(sim.identifier          == "scf")
+    assert(sim.image_dir           == "sim_scf")
+    assert(sim.imlocdir            == "./runs/diamond/scf/sim_scf")
+    assert(sim.imremdir            == "./runs/diamond/scf/sim_scf")
+    assert(sim.imresdir            == "./runs/diamond/scf/sim_scf")
+    assert(sim.infile              == "scf.in")
+    assert(sim.input_image         == "input.p")
+    assert(sim.locdir              == "./runs/diamond/scf")
+    assert(sim.outfile             == "scf.out")
+    assert(sim.outputs             is None)
+    assert(sim.path                == "diamond/scf")
+    assert(sim.process_id          == 548572)
+    assert(sim.remdir              == "./runs/diamond/scf")
+    assert(sim.resdir              == "./runs/diamond/scf")
+    assert(sim.sim_image           == "sim.p")
+    assert(sim.subcascade_finished is False)
+
+    # Affected by legacy migration
+    assert(sim.setup      is True)
+    assert(sim.sent_files is True)
+    assert(sim.submitted  is True)
+    assert(sim.finished   is True)
+    assert(sim.failed     is False)
+    assert(sim.got_output is True)
+    assert(sim.analyzed   is True)
+
+    # Not saved in old sims, default to False as before.
+    assert(sim.created_directories is False)
+    assert(sim.got_dependencies    is False)
+    assert(sim.exited_queue        is False)
+    assert(sim.timed_out           is False)
+#end def test_load_old_image
