@@ -38,15 +38,27 @@ class HydraConfigDiscoveryTest(unittest.TestCase):
             ):
                 self.assertEqual(_find_hydra_config(root / "checkpoint.pt"), explicit)
 
-    def test_associated_config_is_discovered_in_ancestor(self):
+    def test_associated_config_is_discovered_next_to_checkpoint(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            associated = root / ".hydra" / "config.yaml"
-            checkpoint = root / "training" / "checkpoint.pt"
+            checkpoint_dir = root / "training"
+            associated = checkpoint_dir / ".hydra" / "config.yaml"
+            checkpoint = checkpoint_dir / "checkpoint.pt"
             with patch.dict(os.environ, {}, clear=True), patch.object(
                 Path, "exists", autospec=True, side_effect=lambda self: self == associated
             ):
                 self.assertEqual(_find_hydra_config(checkpoint), associated)
+
+    def test_ancestor_config_is_not_discovered(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            ancestor_config = root / ".hydra" / "config.yaml"
+            checkpoint = root / "training" / "checkpoint.pt"
+            with patch.dict(os.environ, {}, clear=True), patch.object(
+                Path, "exists", autospec=True, side_effect=lambda self: self == ancestor_config
+            ):
+                with self.assertRaisesRegex(FileNotFoundError, "beside the checkpoint"):
+                    _find_hydra_config(checkpoint)
 
 
 if __name__ == "__main__":

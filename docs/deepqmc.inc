@@ -227,11 +227,10 @@ energies and a ``QMCPACK execution completed successfully`` message. Two blocks
 and one walker are only an installation smoke test, not an energy estimate.
 
 Use the absolute path to the QMCPACK executable. ``DEEPQMC_HYDRA_CONFIG``
-selects the matching configuration explicitly; absent that override, the
-bridge can discover ``.hydra/config.yaml`` in the checkpoint directory or an
-ancestor. A plain ``config.yaml`` beside the checkpoint is not discovered;
-set ``DEEPQMC_HYDRA_CONFIG`` explicitly for that layout. If no configuration is
-found, initialization fails before the checkpoint is loaded. There is no
+selects the matching configuration explicitly. Otherwise, the bridge expects
+``.hydra/config.yaml`` in the directory containing the checkpoint, following
+DeepQMC's conventional training output layout. If the configuration is missing,
+initialization fails before the checkpoint is loaded. There is no
 default molecule or ansatz: checkpoint parameters alone do not define the
 trained wavefunction.
 

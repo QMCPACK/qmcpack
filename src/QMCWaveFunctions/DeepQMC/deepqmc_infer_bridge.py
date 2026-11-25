@@ -47,16 +47,7 @@ from deepqmc.types import PhysicalConfiguration
 
 
 def _find_hydra_config(model_path):
-    """Find a resolved DeepQMC Hydra config associated with a checkpoint.
-
-    DeepQMC checkpoints store parameters/optimizer/sampler state, but the Haiku
-    module tree is defined by the training Hydra config. Prefer an explicit
-    environment override, then common DeepQMC workdir layouts:
-
-      workdir/chkpt-*.pt
-      workdir/training/chkpt-*.pt
-      workdir/evaluation/chkpt-*.pt
-    """
+    """Find the Hydra config from the explicit override or beside the checkpoint."""
     env_path = os.environ.get("DEEPQMC_HYDRA_CONFIG")
     if env_path:
         path = Path(env_path).expanduser()
@@ -65,16 +56,13 @@ def _find_hydra_config(model_path):
         return path
 
     checkpoint = Path(model_path).expanduser()
-    search_dirs = [checkpoint.parent, *checkpoint.parents]
-    for directory in search_dirs:
-        candidate = directory / ".hydra" / "config.yaml"
-        if candidate.exists():
-            return candidate
+    candidate = checkpoint.parent / ".hydra" / "config.yaml"
+    if candidate.exists():
+        return candidate
     raise FileNotFoundError(
         "No DeepQMC Hydra config found for checkpoint "
         f"{checkpoint}. Set DEEPQMC_HYDRA_CONFIG to the training config.yaml, "
-        "or place the associated .hydra/config.yaml in the checkpoint directory "
-        "or one of its ancestors."
+        "or place .hydra/config.yaml beside the checkpoint."
     )
 
 
