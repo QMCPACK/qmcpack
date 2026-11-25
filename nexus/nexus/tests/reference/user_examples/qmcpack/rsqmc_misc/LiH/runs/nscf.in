@@ -19,6 +19,7 @@
    ibrav           = 0
    nat             = 2
    nosym           = .false.
+   nspin           = 1
    ntyp            = 2
    occupations     = 'smearing'
    smearing        = 'fermi-dirac'

@@ -20,6 +20,7 @@
    input_dft       = 'lda'
    nat             = 20
    nosym           = .true.
+   nspin           = 1
    ntyp            = 1
    occupations     = 'smearing'
    smearing        = 'fermi-dirac'

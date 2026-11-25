@@ -42,7 +42,6 @@ scf = generate_pwscf(
     identifier   = 'scf',
     path         = 'diamond_est/scf',
     job          = job(cores=16,app='pw.x'),
-    input_type   = 'generic',
     calculation  = 'scf',
     input_dft    = 'lda',
     nbnd         = 8,      # needed for density matrix
@@ -58,7 +57,6 @@ nscf = generate_pwscf(
     identifier   = 'nscf',
     path         = 'diamond_est/nscf',
     job          = job(cores=16,app='pw.x'),
-    input_type   = 'generic',
     calculation  = 'nscf',
     input_dft    = 'lda',
     ecutwfc      = 200,

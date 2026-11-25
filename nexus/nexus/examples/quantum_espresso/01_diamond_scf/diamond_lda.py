@@ -27,7 +27,6 @@ scf = generate_pwscf(
     identifier   = 'scf',
     path         = 'diamond/scf',
     job          = job(cores=6,app='pw.x'),
-    input_type   = 'generic',
     calculation  = 'scf',
     input_dft    = 'lda',
     ecutwfc      = 200,

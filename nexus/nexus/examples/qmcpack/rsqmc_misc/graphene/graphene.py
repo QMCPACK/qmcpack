@@ -42,17 +42,30 @@ scf = generate_pwscf(
     job          = job(cores=16),   # run on 16 cores
     pseudos      = ['C.BFD.upf'],   # pwscf PP file
     system       = graphene,        # run graphene
-    # input format selector
-    input_type   = 'scf',           # scf, nscf, relax, or generic
     # pwscf input parameters
     input_dft    = 'lda',           # dft functional
-    ecut         =  150 ,           # planewave energy cutoff (Ry)
+    ecutwfc      =  150 ,           # planewave energy cutoff (Ry)
+    ecutrho      =  600,
     conv_thr     =  1e-6,           # scf convergence threshold (Ry)
     mixing_beta  =    .7,           # charge mixing factor
     kgrid        = (8,8,8),         # MP grid of primitive cell
     kshift       = (1,1,1),         #  to converge charge density
     wf_collect   = False,           # don't collect orbitals
     use_folded   = True,            # use primitive rep of graphene
+    calculation      = 'scf',
+    occupations      = 'smearing',
+    smearing         = 'fermi-dirac',
+    degauss          = 0.0001,
+    nosym            = False,
+    restart_mode     = 'from_scratch',
+    tstress          = True,
+    tprnfor          = True,
+    disk_io          = 'low',
+    verbosity        = 'high',
+    ibrav            = 0,
+    electron_maxstep = 1000,
+    mixing_mode      = 'plain',
+    diagonalization  = 'david',
     )
 
 # nscf run to produce orbitals for jastrow optimization
@@ -63,11 +76,10 @@ nscf_opt = generate_pwscf(
     job          = job(cores=16),   # run on 16 cores
     pseudos      = ['C.BFD.upf'],   # pwscf PP file
     system       = graphene,        # run graphene
-    # input format selector
-    input_type   = 'nscf',          # scf, nscf, relax, or generic
     # pwscf input parameters
     input_dft    = 'lda',           # dft functional
-    ecut         =  150 ,           # planewave energy cutoff (Ry)
+    ecutwfc      =  150 ,           # planewave energy cutoff (Ry)
+    ecutrho      =  600,
     conv_thr     =  1e-6,           # scf convergence threshold (Ry)
     mixing_beta  =    .7,           # charge mixing factor
     nosym        = True,            # don't symmetrize k-points
@@ -75,6 +87,20 @@ nscf_opt = generate_pwscf(
     wf_collect   = True,            # write out orbitals
     kgrid        = (1,1,1),         # single k-point for opt
     kshift       = (0,0,0),         # gamma point
+    nogamma      = True,
+    calculation      = 'nscf',
+    occupations      = 'smearing',
+    smearing         = 'fermi-dirac',
+    degauss          = 0.0001,
+    restart_mode     = 'from_scratch',
+    tstress          = True,
+    tprnfor          = True,
+    disk_io          = 'low',
+    verbosity        = 'high',
+    ibrav            = 0,
+    electron_maxstep = 1000,
+    mixing_mode      = 'plain',
+    diagonalization  = 'david',
     # workflow dependencies
     dependencies = (scf,'charge_density'),
     )
@@ -135,16 +161,30 @@ nscf = generate_pwscf(
     job          = job(cores=16),   # run on 16 cores
     pseudos      = ['C.BFD.upf'],   # pwscf PP file
     system       = graphene,        # run graphene
-    # input format selector
-    input_type   = 'nscf',          # scf, nscf, relax, or generic
     # pwscf input parameters
     input_dft    = 'lda',           # dft functional
-    ecut         =  150 ,           # planewave energy cutoff (Ry)
+    ecutwfc      =  150 ,           # planewave energy cutoff (Ry)
+    ecutrho      =  600,
     conv_thr     =  1e-6,           # scf convergence threshold (Ry)
     mixing_beta  =    .7,           # charge mixing factor
     nosym        = True,            # don't symmetrize k-points
     use_folded   = True,            # use primitive rep of graphene
     wf_collect   = True,            # write out orbitals
+    calculation      = 'nscf',
+    occupations      = 'smearing',
+    smearing         = 'fermi-dirac',
+    degauss          = 0.0001,
+    restart_mode     = 'from_scratch',
+    tstress          = True,
+    tprnfor          = True,
+    disk_io          = 'low',
+    verbosity        = 'high',
+    ibrav            = 0,
+    electron_maxstep = 1000,
+    mixing_mode      = 'plain',
+    diagonalization  = 'david',
+    kgrid            = None,
+    kshift           = None,
     # workflow dependencies
     dependencies = (scf,'charge_density'),
     )
