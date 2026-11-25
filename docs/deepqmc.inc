@@ -297,9 +297,9 @@ Verify it against the checksum pinned in this repository before extracting:
 
 .. code-block:: console
 
-   $ sha256sum -c "$QMCPACK_SOURCE/tests/molecules/He_deepqmc/deepqmc-he-v2.tar.gz.sha256"
+   $ sha256sum -c "$QMCPACK_SOURCE/tests/molecules/He_deepqmc/deepqmc-he-v1.tar.gz.sha256"
    $ mkdir -p HeECP
-   $ tar -xzf deepqmc-he-v2.tar.gz -C HeECP
+   $ tar -xzf deepqmc-he-v1.tar.gz -C HeECP
    $ export DEEPQMC_TEST_DATA_DIR="$PWD/HeECP"
 
 The extracted directory has this layout:
