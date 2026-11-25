@@ -262,16 +262,18 @@ MPI support but does not select the compiler wrappers.
 
 .. code-block:: console
 
-   $ cmake -S . -B build/deepqmc-llvm \
+   $ cd "$QMCPACK_SOURCE"
+   $ mkdir build-deepqmc
+   $ cd build-deepqmc
+   $ cmake \
        -DCMAKE_C_COMPILER="$(command -v mpicc)" \
        -DCMAKE_CXX_COMPILER="$(command -v mpicxx)" \
        -DCMAKE_BUILD_TYPE=Release \
        -DENABLE_DEEPQMC_INFERENCE=ON \
        -DPython3_EXECUTABLE="$DEEPQMC_PYTHON" \
        -DQMC_MPI=ON -DBUILD_AFQMC=OFF \
-       -DBUILD_UNIT_TESTS=ON -DBUILD_MICRO_BENCHMARKS=OFF
-   $ cmake --build build/deepqmc-llvm \
-       --target qmcpack test_wavefunction_trialwf -j 4
+       -DBUILD_UNIT_TESTS=ON -DBUILD_MICRO_BENCHMARKS=OFF ..
+   $ make -j4 qmcpack test_wavefunction_trialwf
 
 The option enables the embedded Python bridge; CMake must find both the
 interpreter and development components and link ``Python3::Python``. Inspect the
@@ -324,12 +326,10 @@ reference tests with:
 
 .. code-block:: console
 
-   $ cmake -S "$QMCPACK_SOURCE" -B "$QMCPACK_SOURCE/build/deepqmc-llvm" \
-       -DQMC_DEEPQMC_TEST_DATA_DIR="$DEEPQMC_TEST_DATA_DIR"
-   $ cmake --build "$QMCPACK_SOURCE/build/deepqmc-llvm" \
-       --target qmcpack test_wavefunction_trialwf -j 4
-   $ ctest --test-dir "$QMCPACK_SOURCE/build/deepqmc-llvm" \
-       -R '^deepqmc-he-' --output-on-failure
+   $ cd "$QMCPACK_SOURCE/build-deepqmc"
+   $ cmake -DQMC_DEEPQMC_TEST_DATA_DIR="$DEEPQMC_TEST_DATA_DIR" ..
+   $ make -j4 qmcpack test_wavefunction_trialwf
+   $ ctest -R '^deepqmc-he-' --output-on-failure
 
 CMake checks both required files against the pinned SHA256 values in
 ``tests/molecules/He_deepqmc/SHA256SUMS`` before enabling the tests. A missing
@@ -367,7 +367,7 @@ checkpoint, and accompanying ``.hydra`` directory there:
    $ cd run-deepqmc-he
    $ export PYTHONPATH="$("$DEEPQMC_PYTHON" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')${PYTHONPATH:+:$PYTHONPATH}"
    $ export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
-   $ "$QMCPACK_SOURCE/build/deepqmc-llvm/bin/qmcpack" he_deepqmc.xml
+   $ "$QMCPACK_SOURCE/build-deepqmc/bin/qmcpack" he_deepqmc.xml
 
 Successful completion produces ``He.deepqmc.s000.scalar.dat`` with finite
 energies and a ``QMCPACK execution completed successfully`` message. Two blocks
@@ -423,7 +423,7 @@ variable:
 .. code-block:: console
 
    $ DEEPQMC_TEST_DATA_DIR=/trusted/path/HeECP \
-     "$QMCPACK_SOURCE/build/deepqmc-llvm/src/QMCWaveFunctions/tests/test_wavefunction_trialwf" \
+     "$QMCPACK_SOURCE/build-deepqmc/src/QMCWaveFunctions/tests/test_wavefunction_trialwf" \
        'PythonDeepQMCBridge can load a real DeepQMC He checkpoint' -s
 
 When configured with ``QMC_DEEPQMC_TEST_DATA_DIR``, CTest supplies this variable
@@ -453,8 +453,9 @@ no reinstall or view repair is needed. Give CMake the base prefix as a hint:
 
 .. code-block:: console
 
-   $ cmake -S "$QMCPACK_SOURCE" -B "$QMCPACK_SOURCE/build/deepqmc-llvm" \
-       -DPython3_ROOT_DIR="$(python3.13 -c 'import sys; print(sys.base_prefix)')"
+   $ cd "$QMCPACK_SOURCE/build-deepqmc"
+   $ cmake \
+       -DPython3_ROOT_DIR="$(python3.13 -c 'import sys; print(sys.base_prefix)')" ..
 
 If the files are genuinely missing, complete the Python installation before
 creating the venv; installing packages with ``uv`` cannot supply them. A complete
