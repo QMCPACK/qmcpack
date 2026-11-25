@@ -1,8 +1,2 @@
-leak:calloc
-leak:malloc
-leak:operator new
-leak:strdup
-leak:opal_free_list_grow_st
-leak:opal_hash_table_init2
 leak:ompi*
 leak:pmix*
