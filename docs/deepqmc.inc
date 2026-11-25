@@ -19,12 +19,6 @@ It does not currently propagate the sign/phase from deepQMC, so it does not yet
 have general nodal, complex-wavefunction, or DMC correctness. At this time it is
 intended only for batched VMC use with diagonal observables.
 
-The end-to-end recipe below was exercised for a small all-electron helium VMC
-run on Linux Ubuntu 24.04 (aarch64), using Open MPI 5.0.10 with Clang 21.1.4,
-Python 3.13.17, DeepQMC 1.2.0, and JAX/jaxlib 0.8.3. It is a smoke test, not a
-convergence or accuracy guarantee. A complete reference package snapshot is
-supplied; other Python versions and platforms require their own validation.
-
 .. _deepqmc-input-specification:
 
 Input specification
@@ -380,7 +374,15 @@ batch job or a different shell. Do not set ``PYTHONHOME`` for this recipe.
 This example uses the pretrained model as-is; it performs no training or
 variational parameter optimization.
 
-The CPU workflow was reproduced on the validation platform listed above.
+Focused validation and limitations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The end-to-end recipe was exercised for a small all-electron helium VMC run
+on Linux Ubuntu 24.04 (aarch64), using Open MPI 5.0.10 with Clang 21.1.4,
+Python 3.13.17, DeepQMC 1.2.0, and JAX/jaxlib 0.8.3. It is a smoke test, not a
+convergence or accuracy guarantee. A complete reference package snapshot is
+supplied; other Python versions and platforms require their own validation.
+
 The original DeepQMC integration also used ``jax[cuda12]==0.8.3`` for GPU
 inference, but the GPU instructions have not been execution-tested on that
 CPU validation platform. Verify that ``jax.devices()`` reports the intended
@@ -388,9 +390,6 @@ GPU and complete the manual helium run on the target machine; passing the
 CPU reference tests does not validate GPU execution. JAX computes a full
 Hessian in this bridge, and first-use JIT compilation adds warm-up cost;
 no general performance claim is implied.
-
-Focused validation and limitations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The optional real-checkpoint unit test only performs inference when both
 ``DEEPQMC_HE_CHECKPOINT`` and ``DEEPQMC_PYTHON_SITE_PACKAGES`` are set; otherwise
