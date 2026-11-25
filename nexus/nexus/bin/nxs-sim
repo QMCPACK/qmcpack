@@ -1,11 +1,15 @@
 #! /usr/bin/env python3
 
-import os
+import argparse
+import difflib
+import shutil
 import sys
-from optparse import OptionParser
+import textwrap
+from argparse import ArgumentParser
+from collections.abc import Sequence
 from pathlib import Path
 
-if sys.version_info[0:3] < (3, 12, 0):
+if sys.version_info[0:3] < (3, 12, 0):  # pragma: no cover
     v = sys.version_info[0:3]
     print(
        f"Your version of Python ({v[0]}.{v[1]}.{v[2]}) is less than the minimum required for Nexus!\n"
@@ -19,7 +23,7 @@ if sys.version_info[0:3] < (3, 12, 0):
 # Locate and import the closely coupled Nexus module
 search_basepath = Path(__file__).resolve().parent.parent
 nexus_library_search_path = search_basepath.parent
-def find_nexus_modules():
+def find_nexus_modules():  # pragma: no cover
     import sys
 
     # "import nexus" will succeed if nexus directory exists without __init__.py in it.
@@ -61,192 +65,220 @@ def find_nexus_modules():
         sys.exit(1)
 #end def find_nexus_modules
 
-# Load Nexus modules
 find_nexus_modules()
 
-from nexus.developer import load, obj, save
+from nexus import nexus_version
+from nexus.developer import load, save
 
 
-class SimTool(obj):
+class SimTool:
 
-    indicators = ('setup','sent_files','submitted','finished','failed','got_output','analyzed')
+    indicators = (
+        "setup",
+        "sent_files",
+        "submitted",
+        "finished",
+        "failed",
+        "got_output",
+        "analyzed",
+    )
 
     fields = frozenset(indicators)
 
+    def vprint(self, msg: str):
+        if self.verbose:
+            print(msg)
 
-    def __init__(self):
-        self.paths = []
-        self.sims  = []
+    def __init__(self, paths: list[Path], *, verbose: bool):
+        self.paths = paths
+        self.verbose = verbose
+        self.vprint("Loading sim images:")
+        for pth in self.paths:
+            self.vprint(f"  ./{pth.relative_to(Path.cwd(), walk_up=True)}")
+        self.sims = [load(path) for path in self.paths]
+        self.vprint("Done!")
     #end def __init__
 
 
-    def load(self,paths):
-        for path in paths:
-            sim = load(path)
-            self.sims.append(sim)
-            self.paths.append(path)
-        #end for
-    #end def load
-
-
-    def write_state(self,fields=()):
-        if len(fields)==0:
+    def write_state(self, fields: Sequence[str] = ()):
+        if len(fields) == 0:
             fields = self.indicators
-        #end if
-        forbidden = set(fields)-set(self.fields)
-        if len(forbidden)>0:
-            msg = 'unrecognized fields encountered:\n'
-            for f in forbidden:
-                msg += f'  {f}\n'
-            #end for
-            raise ValueError(msg)
-        #end if
-        for i in range(len(self.paths)):
-            path = self.paths[i]
-            sim  = self.sims[i]
+
+        field_len = max(map(len, fields)) + 1
+        for i, path in enumerate(self.paths):
+            sim = self.sims[i]
             print(path)
             for f in fields:
-                print(f'   {f:<12} {int(sim[f])}')
-            #end for
-        #end for
+                print(f"  {f + ':':<{field_len}} {sim[f]}")
+            print()
     #end def write_state
 
 
-    def write_state_all(self,fields=()):
-        if len(fields)==0:
-            fields = self.indicators
-        #end if
-        forbidden = set(fields)-set(self.fields)
-        if len(forbidden)>0:
-            msg = 'unrecognized fields encountered:\n'
-            for f in forbidden:
-                msg += f'  {f}\n'
-            #end for
-            raise ValueError(msg)
-        #end if
-        for i in range(len(self.paths)):
-            path = self.paths[i]
-            sim  = self.sims[i]
+    def write_state_all(self):
+        for i, path in enumerate(self.paths):
+            sim = self.sims[i]
             print(path)
             print(sim)
-        #end for
+            print()
     #end def write_state_all
 
 
     def backup(self):
         for path in self.paths:
-            base,file = os.path.split(path)
-            bufile = os.path.join(base,'backup_'+file)
-            os.system('cp '+path+' '+bufile)
-        #end for
+            backup_file = path.parent / f"backup_{path.name}"
+            self.vprint(
+                f"Creating backup of ./{path.relative_to(Path.cwd(), walk_up=True)}"
+            )
+            shutil.copy(path, backup_file)
     #end def backup
 
 
     def restore(self):
         for path in self.paths:
-            base,file = os.path.split(path)
-            bufile = os.path.join(base,'backup_'+file)
-            os.system('cp '+bufile+' '+path)
-        #end for
+            backup_file = path.parent / f"backup_{path.name}"
+            self.vprint(
+                f"Restoring backup of ./{path.relative_to(Path.cwd(), walk_up=True)}"
+            )
+            shutil.copy(backup_file, path)
     #end def restore
 
 
-    def set_indicators(self,inds,val=1):
-        if len(inds)==0:
-            msg = (
-                'no indicators specified\n'
-                '  options are: '+self.indicators
-                )
-            raise ValueError(msg)
-        #end if
-        forbidden = set(inds)-set(self.indicators)
-        if len(forbidden)>0:
-            msg = 'unrecognized indicators encountered:\n'
-            for f in forbidden:
-                msg += f'  {f}\n'
-            #end for
-            raise ValueError(msg)
-        #end if
-        for i in range(len(self.paths)):
-            path = self.paths[i]
-            sim  = self.sims[i]
+    def set_indicators(self, inds: Sequence[str], *, val: bool = True):
+        for i, path in enumerate(self.paths):
+            self.vprint(f"./{path.relative_to(Path.cwd(), walk_up=True)}")
+            sim = self.sims[i]
+            spacing = max(map(len, inds)) + 1
             for ind in inds:
-                sim[ind] = val
-                if ind=='submitted' and val==0:
+                if ind == "submitted" and val is False:
+                    self.vprint(
+                        f"  {ind + ':':<{spacing}} {sim[ind]} -> {val} "
+                        "(and setting sim.process_id to None)"
+                    )
                     sim.process_id = None
-                #end if
-            #end for
-            save(sim,path)
-        #end for
-    #end def set_indicators
+                else:
+                    self.vprint(f"  {ind + ':':<{spacing}} {sim[ind]} -> {val}")
 
+                sim[ind] = val
+            save(sim, path)
+    #end def set_indicators
 #end class SimTool
 
 
-if __name__=='__main__':
-    parser = OptionParser()
-    (opts,inargs) = parser.parse_args()
+if __name__ == "__main__":
+    parser = ArgumentParser(
+        prog="nxs-sim",
+        usage=(
+            f"nxs-sim [command] [-h] [paths ...] [{{{', '.join(SimTool.indicators)}}} ...]"
+        ),
+        description=textwrap.dedent("""
+            Tool for controlling the status indicators of a simulation or
+            creating/restoring backups of a simulation pickle.
 
-    allowed_commands = ['show','showall','complete','reset','set','unset','backup','restore']
-    if len(inargs)==0:
-        print('simtool usage:')
-        print('  allowed commands are')
-        for comm in allowed_commands:
-            print('   ',comm)
-        #end for
-        sys.exit()
-    #end if
+            Commands
+            --------
+            `show`:     Show the selected simulation status indicators.
+            `showall`:  Show all simulation properties.
+            `complete`: Set simulation status flags to indicate it is completed.
+            `reset`:    Reset all simulation status flags.
+            `set`:      Set the specified simulation status flags to `True`.
+            `unset`:    Set the specified simulation status flags to `False`.
+            `backup`:   Make a backup of the specified simulation pickle at `sim_backup.p`.
+            `restore`:  Take a backup of the specified simulation pickle at `sim_backup.p`
+                      and rename it back to `sim.p`.
+        """),
+        epilog=(
+            "Indicators are required in `set`, `unset`, and are optional in `show`. "
+            "Other subcommands do not accept indicators."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s {}.{}.{}".format(*nexus_version)
+    )
+    parser.add_argument(
+        "command",
+        metavar="command",
+        choices={"show", "showall", "complete", "reset", "set", "unset", "backup", "restore"},
+        help="Available commands: {%(choices)s}"
+    )
+    parser.add_argument(
+        "paths_or_inds",
+        nargs="*",
+        help=(
+            "Paths pointing to `sim.p` files and/or indicators. "
+            f"Available indicators are {{{',\xa0'.join(SimTool.indicators)}}}"
+            # \xa0 is non-breaking space
+        ),
+        default=Path("./sim.p"),
+    )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Print detailed information. (default: %(default)s)"
+    )
 
-    paths = []
-    command = ''
-    args = []
-    if len(inargs)>0:
-        command = inargs[0]
-        inargs=inargs[1:]
-    #end if
-    for arg in inargs:
-        if os.path.exists(arg):
-            paths.append(arg)
+    args = parser.parse_args()
+
+    command: str = args.command
+    paths_or_inds: list[str] = args.paths_or_inds
+    verbose: bool = args.verbose
+
+    paths: list[Path] = []
+    indicators: list[str] = []
+    unrecognized_args = []
+    for item in paths_or_inds:
+        if (path := Path(item)).exists() and path.name == "sim.p":
+            paths.append(path.resolve())
+        elif item in SimTool.fields:
+            indicators.append(item)
         else:
-            args.append(arg)
-        #end if
-    #end for
+            close_matches = difflib.get_close_matches(item, SimTool.fields)
+            if len(close_matches) > 0:
+                close_match = close_matches[0]
+            else:
+                close_match = None
+            unrecognized_args.append((item, close_match))
 
+    if len(unrecognized_args) > 0:
+        msg = "Unrecognized arguments:\n"
+        for arg, close_match in unrecognized_args:
+            extra = f" - Did you mean `{close_match}`?" if close_match is not None else ""
+            msg += f"  {arg}{extra}\n"
+        parser.exit(1, message=msg)
 
-    if command not in allowed_commands:
-        msg = 'command '+command+' not recognized'
-        raise ValueError(msg)
-    #end if
+    if command in {"set", "unset"} and len(indicators) == 0:
+        msg = (
+            f"No indicators specified for command `{command}`, see "
+            "`nxs-sim --help` for available indicators."
+        )
+        parser.exit(1, message=msg)
 
-    if len(paths)==0:
-        if os.path.exists('./sim.p'):
-            paths = ['./sim.p']
-        else:
-            msg = 'no simulation images found'
-            raise FileNotFoundError(msg)
-        #end if
-    #end if
+    if len(paths) == 0:
+        msg = "No simulation images found!"
+        parser.exit(1, message=msg)
 
-    st = SimTool()
-    st.load(paths)
+    st = SimTool(paths, verbose=verbose)
 
-    if command=='show':
-        st.write_state(args)
-    elif command=='showall':
-        st.write_state_all(args)
-    elif command=='complete':
-        inds = ['setup','sent_files','submitted','finished','got_output','analyzed']
-        st.set_indicators(inds)
-    elif command=='reset':
-        st.set_indicators(st.indicators,val=0)
-    elif command=='set':
-        st.set_indicators(args)
-    elif command=='unset':
-        st.set_indicators(args,val=0)
-    elif command=='backup':
-        st.backup()
-    elif command=='restore':
-        st.restore()
-    #end if
-
-#end if
+    match command:
+        case "show":
+            st.write_state(indicators)
+        case "showall":
+            st.write_state_all()
+        case "complete":
+            indicators = SimTool.fields - {"failed"}
+            st.set_indicators(indicators)
+        case "reset":
+            st.set_indicators(st.indicators, val=False)
+        case "set":
+            st.set_indicators(indicators, val=True)
+        case "unset":
+            st.set_indicators(indicators, val=False)
+        case "backup":
+            st.backup()
+        case "restore":
+            st.restore()
+        case _:  # pragma: no cover
+            raise RuntimeError("Unreachable!")
