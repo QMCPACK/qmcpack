@@ -318,10 +318,10 @@ With ``BUILD_UNIT_TESTS=OFF``, only the application tests are available.
 Run the helium example
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The XML input is ``examples/molecules/He/he_deepqmc.xml``. It describes a tiny
-batched particle-by-particle VMC smoke test for two-electron all-electron
-helium. Supply a trusted checkpoint trained for this system and its matching
-Hydra configuration; model weights are not distributed with QMCPACK.
+The XML input is ``examples/molecules/He/he_deepqmc.xml``. It describes a short
+batched particle-by-particle VMC run for two-electron all-electron helium.
+Supply a trusted checkpoint trained for this system and its matching Hydra
+configuration; model weights are not distributed with QMCPACK.
 Checkpoints are Python pickle data: load only files from a trusted source,
 since unpickling can execute code.
 
@@ -343,7 +343,7 @@ configuration override at the matching configuration file:
 
 Successful completion produces ``He.deepqmc.s000.scalar.dat`` with finite
 energies and a ``QMCPACK execution completed successfully`` message. Two blocks
-and one walker are only an installation smoke test, not an energy estimate.
+and one walker demonstrate execution, not a converged energy estimate.
 
 Use the absolute path to the QMCPACK executable. ``DEEPQMC_HYDRA_CONFIG``
 selects the matching configuration explicitly. Otherwise, the bridge expects
@@ -375,19 +375,20 @@ variational parameter optimization.
 Focused validation and limitations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The end-to-end recipe was exercised for a small all-electron helium VMC run
-on Linux Ubuntu 24.04 (aarch64), using Open MPI 5.0.10 with Clang 21.1.4,
-Python 3.13.17, DeepQMC 1.2.0, and JAX/jaxlib 0.8.3. It is a smoke test, not a
-convergence or accuracy guarantee. A complete reference package snapshot is
-supplied; other Python versions and platforms require their own validation.
+Inference has been demonstrated with the supplied single-atom helium
+checkpoint, whose training configuration specifies ``ccECP``. As described in
+:ref:`deepqmc-system-matching`, no ECP is active for this helium system.
+The integration is ready for testing with other checkpoints and larger systems
+within the current VMC and observable limitations.
 
-The original DeepQMC integration also used ``jax[cuda12]==0.8.3`` for GPU
-inference, but the GPU instructions have not been execution-tested on that
-CPU validation platform. Verify that ``jax.devices()`` reports the intended
-GPU and complete the manual helium run on the target machine; passing the
-CPU reference tests does not validate GPU execution. JAX computes a full
-Hessian in this bridge, and first-use JIT compilation adds warm-up cost;
-no general performance claim is implied.
+The CPU recipe was exercised on Linux Ubuntu 24.04 (aarch64), using Open MPI
+5.0.10 with Clang 21.1.4, Python 3.13.17, DeepQMC 1.2.0, and JAX/jaxlib 0.8.3.
+The GPU directions have also been exercised in a container on a host with an
+NVIDIA A30 passed through and CUDA 12.6. Only CUDA 12.6 has been tested.
+
+Only the reported Python and package versions have been tried. The package
+versions are largely constrained by DeepQMC's requirements; the supplied
+requirements file records the tested package versions.
 
 The optional real-checkpoint unit test only performs inference when both
 ``DEEPQMC_HE_CHECKPOINT`` and ``DEEPQMC_PYTHON_SITE_PACKAGES`` are set; otherwise
@@ -406,9 +407,8 @@ With the environment variables set, the focused test checks the output shapes
 and finite log-amplitude, gradient, and Laplacian values (12 assertions).
 It does not compare against reference energies.
 
-This bridge has been exercised only for helium VMC. Its ansatz/log-amplitude
-interface and current Hessian evaluation should not be taken as validation for
-other molecules, complex states, DMC, or production performance.
+These results demonstrate helium VMC inference, not validation of other
+systems, complex states, DMC, or production performance.
 
 Troubleshooting Python discovery
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
