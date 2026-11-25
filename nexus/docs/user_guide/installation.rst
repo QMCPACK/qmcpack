@@ -395,6 +395,9 @@ Some tests may be skipped depending on what dependencies you have available, or 
 Additionally, you may see a number of warnings appear; some of these may be warnings about Nexus, but it is likely that the majority arise from a Nexus dependency.
 In general it is safe to ignore these warnings as they likely do not affect the functionality of Nexus.
 
+Additional tests that run real workflows are available by using ``pytest -m real_run``.
+These require that you have a ``pw.x`` executable reachable from your ``$PATH``, and will run short, single-core workflows from start to finish to further ensure your Nexus installation is working properly.
+
 Developer Topics
 ----------------
 
