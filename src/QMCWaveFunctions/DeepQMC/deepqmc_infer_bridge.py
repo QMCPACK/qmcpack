@@ -20,7 +20,6 @@ Import order is intentional.  The standalone miniapp found that importing
 DeepQMC before JAX avoids initialization problems.
 """
 
-import os
 import pickle
 import sys
 import types
@@ -46,13 +45,12 @@ from deepqmc.parallel import replicate_on_devices, scatter_electrons_to_devices
 from deepqmc.types import PhysicalConfiguration
 
 
-def _find_hydra_config(model_path):
-    """Find the Hydra config from the explicit override or beside the checkpoint."""
-    env_path = os.environ.get("DEEPQMC_HYDRA_CONFIG")
-    if env_path:
-        path = Path(env_path).expanduser()
+def _find_hydra_config(model_path, config_path=None):
+    """Find an explicit Hydra config or the config adjacent to the checkpoint."""
+    if config_path:
+        path = Path(config_path).expanduser()
         if not path.exists():
-            raise FileNotFoundError(f"DEEPQMC_HYDRA_CONFIG does not exist: {path}")
+            raise FileNotFoundError(f"Explicit config path does not exist: {path}")
         return path
 
     checkpoint = Path(model_path).expanduser()
@@ -61,8 +59,7 @@ def _find_hydra_config(model_path):
         return candidate
     raise FileNotFoundError(
         "No DeepQMC Hydra config found for checkpoint "
-        f"{checkpoint}. Set DEEPQMC_HYDRA_CONFIG to the training config.yaml, "
-        "or place .hydra/config.yaml beside the checkpoint."
+        f"{checkpoint}. Set the deepqmc config attribute or place .hydra/config.yaml beside the checkpoint."
     )
 
 
@@ -109,8 +106,8 @@ def _load_checkpoint_without_h5py(path):
 
 
 class DeepQMCInferBridge:
-    def __init__(self, model_path):
-        hydra_config = _find_hydra_config(model_path)
+    def __init__(self, model_path, config_path=None):
+        hydra_config = _find_hydra_config(model_path, config_path)
         self.H, self.ansatz = _instantiate_problem_from_hydra_config(hydra_config)
 
         step, train_state = _load_checkpoint_without_h5py(Path(model_path))

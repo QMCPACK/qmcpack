@@ -53,6 +53,12 @@ Slater or Jastrow components. The ``deepqmc`` element has no child elements.
      - File path
      - (required)
      - Trained checkpoint; relative paths are resolved from the run directory.
+   * - ``config``
+     - Text
+     - File path
+     - Beside checkpoint
+     - Optional training configuration; defaults to ``.hydra/config.yaml``
+       in the checkpoint directory.
    * - ``mol_idx``
      - Integer
      - Model-dependent
@@ -77,6 +83,21 @@ select a Python executable.
    <wavefunction name='psi0' target='e'>
      <deepqmc name='DNN' source='ion0' model='chkpt.pt' mol_idx='0'/>
    </wavefunction>
+
+The optional ``config`` attribute selects a separately stored training
+configuration:
+
+.. code-block:: xml
+
+   <deepqmc source="ion0" model="../model/chkpt-30000.pt"
+            config="../model/config.yaml"/>
+
+Explicit ``model`` and ``config`` paths may be absolute or relative to the
+working directory from which QMCPACK is launched, not to the XML file.
+Without ``config``, the bridge uses ``.hydra/config.yaml`` in the checkpoint
+directory, following DeepQMC's conventional training output layout. A missing
+configuration is an initialization error; no default molecule or ansatz is
+substituted.
 
 .. _deepqmc-system-matching:
 
@@ -276,9 +297,9 @@ Verify it against the checksum pinned in this repository before extracting:
 
 .. code-block:: console
 
-   $ sha256sum -c "$QMCPACK_SOURCE/tests/molecules/He_deepqmc/deepqmc-he-v1.tar.gz.sha256"
+   $ sha256sum -c "$QMCPACK_SOURCE/tests/molecules/He_deepqmc/deepqmc-he-v2.tar.gz.sha256"
    $ mkdir -p HeECP
-   $ tar -xzf deepqmc-he-v1.tar.gz -C HeECP
+   $ tar -xzf deepqmc-he-v2.tar.gz -C HeECP
    $ export DEEPQMC_TEST_DATA_DIR="$PWD/HeECP"
 
 The extracted directory has this layout:
@@ -287,10 +308,13 @@ The extracted directory has this layout:
 
    HeECP/
      chkpt-30000.pt
-     config.yaml
+     .hydra/
+       config.yaml
+       hydra.yaml
+       overrides.yaml
 
-The archive may also contain ``hydra.yaml`` and ``overrides.yaml`` for training
-provenance. The inference bridge uses ``config.yaml``, not ``hydra.yaml``.
+The files ``hydra.yaml`` and ``overrides.yaml`` record training provenance.
+The inference bridge uses ``.hydra/config.yaml``.
 Once the Python environment and build above are configured, enable the
 reference tests with:
 
@@ -310,8 +334,9 @@ one specific reference fixture; it is not a mechanism for selecting arbitrary
 trained models. Leave it unset to build without reference-data tests.
 
 The tests run actual checkpoint inference and the short helium VMC example,
-then check that its scalar output is finite. They set the Python package path
-and configuration explicitly; venv activation is not required. These checks
+then check that its scalar output is finite. CMake supplies the fixture
+directory and Python package path to CTest; venv activation is not required.
+The configuration is read from the fixture's ``.hydra/config.yaml``. These checks
 establish that inference executed, not scientific accuracy or convergence.
 With ``BUILD_UNIT_TESTS=OFF``, only the application tests are available.
 
@@ -326,18 +351,17 @@ Checkpoints are Python pickle data: load only files from a trusted source,
 since unpickling can execute code.
 
 Run from a dedicated directory so the XML's relative ``model="chkpt.pt"`` is
-resolved as expected. Copy the XML and checkpoint there, and point the
-configuration override at the matching configuration file:
+resolved as expected. Using the reference data extracted above, copy the XML,
+checkpoint, and accompanying ``.hydra`` directory there:
 
 .. code-block:: console
 
    $ mkdir -p run-deepqmc-he
-   $ cp examples/molecules/He/he_deepqmc.xml run-deepqmc-he/
-   $ cp /trusted/path/chkpt-30000.pt run-deepqmc-he/chkpt.pt
+   $ cp "$QMCPACK_SOURCE/examples/molecules/He/he_deepqmc.xml" run-deepqmc-he/
+   $ cp "$DEEPQMC_TEST_DATA_DIR/chkpt-30000.pt" run-deepqmc-he/chkpt.pt
+   $ cp -R "$DEEPQMC_TEST_DATA_DIR/.hydra" run-deepqmc-he/
    $ cd run-deepqmc-he
-   $ export DEEPQMC_HYDRA_CONFIG=/trusted/path/config.yaml
-   $ export DEEPQMC_PYTHON_SITE_PACKAGES="$("$DEEPQMC_PYTHON" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')"
-   $ export PYTHONPATH="$DEEPQMC_PYTHON_SITE_PACKAGES${PYTHONPATH:+:$PYTHONPATH}"
+   $ export PYTHONPATH="$("$DEEPQMC_PYTHON" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')${PYTHONPATH:+:$PYTHONPATH}"
    $ export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
    $ "$QMCPACK_SOURCE/build/deepqmc-llvm/bin/qmcpack" he_deepqmc.xml
 
@@ -345,13 +369,9 @@ Successful completion produces ``He.deepqmc.s000.scalar.dat`` with finite
 energies and a ``QMCPACK execution completed successfully`` message. Two blocks
 and one walker demonstrate execution, not a converged energy estimate.
 
-Use the absolute path to the QMCPACK executable. ``DEEPQMC_HYDRA_CONFIG``
-selects the matching configuration explicitly. Otherwise, the bridge expects
-``.hydra/config.yaml`` in the directory containing the checkpoint, following
-DeepQMC's conventional training output layout. If the configuration is missing,
-initialization fails before the checkpoint is loaded. There is no
-default molecule or ansatz: checkpoint parameters alone do not define the
-trained wavefunction.
+Use the absolute path to the QMCPACK executable. This example uses the
+checkpoint-local configuration layout described in
+:ref:`deepqmc-input-specification`; no ``config`` attribute is needed.
 
 For another system, supply its checkpoint and matching training configuration,
 and adapt the QMCPACK XML particle sets and Hamiltonian as described in
@@ -390,21 +410,21 @@ Only the reported Python and package versions have been tried. The package
 versions are largely constrained by DeepQMC's requirements; the supplied
 requirements file records the tested package versions.
 
-The optional real-checkpoint unit test only performs inference when both
-``DEEPQMC_HE_CHECKPOINT`` and ``DEEPQMC_PYTHON_SITE_PACKAGES`` are set; otherwise
-it can report success without exercising a model. With a trusted matching
-checkpoint and environment, run the focused test against the built executable:
+The optional real-checkpoint unit test uses ``DEEPQMC_TEST_DATA_DIR`` to locate
+``chkpt-30000.pt`` and its accompanying ``.hydra/config.yaml``. If the variable
+is unset, the case reports success without exercising a model. With the Python
+packages available as shown above, run it directly with one fixture-directory
+variable:
 
 .. code-block:: console
 
-   $ DEEPQMC_HE_CHECKPOINT=/trusted/path/chkpt-30000.pt \
-     DEEPQMC_PYTHON_SITE_PACKAGES="$DEEPQMC_PYTHON_SITE_PACKAGES" \
+   $ DEEPQMC_TEST_DATA_DIR=/trusted/path/HeECP \
      "$QMCPACK_SOURCE/build/deepqmc-llvm/src/QMCWaveFunctions/tests/test_wavefunction_trialwf" \
        'PythonDeepQMCBridge can load a real DeepQMC He checkpoint' -s
 
-Keep ``DEEPQMC_HYDRA_CONFIG`` set to the matching configuration for this test.
-With the environment variables set, the focused test checks the output shapes
-and finite log-amplitude, gradient, and Laplacian values (12 assertions).
+When configured with ``QMC_DEEPQMC_TEST_DATA_DIR``, CTest supplies this variable
+and the Python package path automatically. The focused test checks the output
+shapes and finite log-amplitude, gradient, and Laplacian values.
 It does not compare against reference energies.
 
 These results demonstrate helium VMC inference, not validation of other
