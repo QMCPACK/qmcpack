@@ -2,209 +2,443 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+"""Simple unit conversion utilities."""
 
-#====================================================================#
-#  unit_converter.py                                                 #
-#    Support for physical unit conversion of scalars and arrays.     #
-#    Several distance, time, mass, energy, charge, pressure, and     #
-#    force units are supported.                                      #
-#                                                                    #
-#  Content summary:                                                  #
-#    convert                                                         #
-#      User-facing function to convert a scalar or array from one    #
-#      unit system to another.                                       #
-#                                                                    #
-#    UnitConverter                                                   #
-#      Class performs unit conversion.  Wrapped by convert function. #
-#                                                                    #
-#====================================================================#
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import Enum
+from types import MappingProxyType
+from typing import Self
+
+import numpy as np
+import numpy.typing as npt
 
 
-from .developer import DevBase, obj
+@dataclass
+class Unit:
+    val: float
+    shift: float = 0.0
 
 
-class Unit(DevBase):
+class UnitEnum(Unit, Enum):
 
-    unit_dicts = obj(all=obj())
+    def __new__(cls, val: float, shift: float = 0.0) -> Self:
+        unit = Unit.__new__(cls)
+        unit._value_ = Unit(val, shift)
+        return unit
 
-    def __init__(self,type,name,symbol,value,shift=0):
-        self.type   = type
-        self.name   = name
-        self.symbol = symbol
-        self.value  = value
-        self.shift  = shift
-
-        ud = Unit.unit_dicts
-        if type not in ud:
-            ud[type] = obj()
-        #end if
-        td = ud[type]
-        td[symbol] = self
-        ud.all[symbol] = self
-    #end def __init__
-#end class Unit
+    @classmethod
+    def _missing_(cls, value) -> Self:
+        value = value.replace(" ", "_")
+        if (val := cls.__members__.get(value)) is not None:
+            return val
+        else:
+            return None
 
 
-class UnitConverter(DevBase):
+class Constant(UnitEnum):
+    """Constant values that are not necessarily a base unit. All values are in SI units.
 
-    unassigned = None
+    Attributes
+    ----------
+    kB : float
+        Boltzmann constant in Joules per Kelvin [1]_.
+    mol : float
+        Avogadro's number [2]_.
 
-    kb = 1.3806503e-23 #J/K
+    References
+    ----------
+    .. [1] https://physics.nist.gov/cgi-bin/cuu/Value?k
+    .. [2] https://physics.nist.gov/cgi-bin/cuu/Value?na
+    """
 
-    # count
-    mol = 6.0221415e23
+    kB = 1.380_649e-23
+    kb = kB
+    mole = 6.022_140_76e23
+    mol = mole
 
-    # distance
-    m  = 1.e0
-    A  = 1.e-10*m
-    B  = .52917720859e-10*m
-    nm = 1.e-9*m
-    pm = 1.e-12*m
-    fm = 1.e-15*m
 
-    # time
-    s = 1.e0
-    ms = 1.e-3*s
-    ns = 1.e-9*s
-    ps = 1.e-12*s
-    fs = 1.e-15*s
+class Energy(UnitEnum):
+    """Energy conversions. All values are in units of joules.
 
-    # mass
-    kg  = 1.e0
-    me  = 9.10938291e-31*kg
-    mp  = 1.672621777e-27*kg
-    amu = 1.660538921e-27*kg
-    Da  = amu
+    Attributes
+    ----------
+    Joule, J : float
+        One joule.
+    electron_volt, eV : float
+        One electron volt [1]_.
+    Hartree, Ha, au : float
+        One Hartree [2]_.
+    Rydberg, Ry : float
+        One Rydberg [3]_.
+    kJ_mol : float
+        One kilojoule per mole.
+    kcal_mol : float
+        One kilocalorie per mole [4]_. See also :attr:`Constant.mole`.
+    Kelvin, K : float
+        Thermal energy per Kelvin. See :attr:`Constant.kB`.
+    Celsius, degC : float
+        Thermal energy per degree Celsius. Equal to :attr:`K`.
+    Fahrenheit, degF : float
+        Thermal energy per degree Fahrenheit [5]_.
 
-    # energy
-    J      = 1.e0
-    eV     = 1.60217646e-19*J
-    Ry     = 13.6056923*eV
-    Ha     = 2*Ry
-    kJ_mol = 1000.*J/mol
-    kcal_mol = 0.04336411531*eV
-    K      = kb
-    degC   = K
-    degF   = 5./9.*K
+    References
+    ----------
+    .. [1] https://physics.nist.gov/cgi-bin/cuu/Value?evj
+    .. [2] https://physics.nist.gov/cgi-bin/cuu/Value?hrev
+    .. [3] https://physics.nist.gov/cgi-bin/cuu/Value?rydhcj
+    .. [4] https://www.nist.gov/glossary-term/26261
+    .. [5] https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b9#ENERGY
+    """
 
-    degC_shift = -273.15
-    degF_shift = 9./5*degC_shift+32
+    Joule = 1.0
+    J = Joule
+    electron_volt = 1.602_176_634e-19
+    eV = electron_volt
+    Hartree = 4.359_744_722_2060e-18
+    Ha = Hartree
+    au = Hartree
+    Rydberg = 2.179_872_361_1030e-18
+    Ry = Rydberg
+    kJ_mol = 1_000.0 / Constant.mol.val
+    kcal_mol = kJ_mol * 4.184
+    Kelvin = Constant.kb.val
+    K = Constant.kb.val
+    Celsius = Kelvin, -273.15
+    degC = Celsius
+    Fahrenheit = (Kelvin * 5.0 / 9.0), (9.0 / 5.0 * -273.15) + 32
+    degF = Fahrenheit
 
-    # charge
-    C = 1.e0
-    e = 1.60217646e-19*C
 
-    # pressure
-    Pa   = 1.e0
-    bar  = 1.e5*Pa
-    Mbar = 1.e6*bar
-    GPa  = 1.e9*Pa
-    atm  = 1.01325e5*Pa
+class Length(UnitEnum):
+    """Length conversions. All values are in units of meters.
 
-    # force
-    N  = 1.e0
-    pN = 1e-12*N
+    Attributes
+    ----------
+    meter, m : float
+        One meter.
+    Angstrom, A, ang : float
+        One Angstrom [1]_.
+    Bohr, B, a0, au : float
+        One Bohr radius [2]_.
+    millimeter, mm : float
+        One millimeter [3]_.
+    micrometer, um : float
+        One micrometer [3]_.
+    nanometer, nm : float
+        One nanometer [3]_.
+    picometer, pm : float
+        One picometer [3]_.
+    femtometer, fm : float
+        One femtometer [3]_.
 
-    # thermal conductivity
+    References
+    ----------
+    .. [1] https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b9#LENGTH
+    .. [2] https://physics.nist.gov/cgi-bin/cuu/Value?bohrrada0
+    .. [3] https://www.nist.gov/pml/owm/metric-si-prefixes#prefixes
+    """
+
+    meter = 1.0
+    m = meter
+    Angstrom = 1.0e-10
+    A = Angstrom
+    ang = Angstrom
+    Bohr = 0.529_177_208_59e-10
+    B = Bohr
+    a0 = Bohr
+    au = Bohr
+    millimeter = 1.0e-3
+    mm = millimeter
+    micrometer = 1.0e-6
+    um = micrometer
+    nanometer = 1.0e-9
+    nm = nanometer
+    picometer = 1.0e-12
+    pm = picometer
+    femtometer = 1.0e-15
+    fm = femtometer
+
+
+class Time(UnitEnum):
+    """Time conversions. All values are in units of seconds.
+
+    Attributes
+    ----------
+    second, s : float
+        One second.
+    millisecond, ms : float
+        One millisecond [1]_.
+    microsecond, us : float
+        One microsecond [1]_.
+    nanosecond, ns : float
+        One nanosecond [1]_.
+    picosecond, ps : float
+        One picosecond [1]_.
+    femtosecond, fs : float
+        One femtosecond [1]_.
+    au : float
+        Atomic unit of time [2]_.
+
+    References
+    ----------
+    .. [1] https://www.nist.gov/pml/owm/metric-si-prefixes#prefixes
+    .. [2] https://physics.nist.gov/cgi-bin/cuu/Value?aut
+    """
+
+    second = 1.0
+    s = second
+    millisecond = 1.0e-3
+    ms = millisecond
+    microsecond = 1.0e-6
+    us = microsecond
+    nanosecond = 1.0e-9
+    ns = nanosecond
+    picosecond = 1.0e-12
+    ps = picosecond
+    femtosecond = 1.0e-15
+    fs = femtosecond
+    au = 2.418_884_326_5864e-17
+
+
+class Mass(UnitEnum):
+    """Mass conversions. All values are in units of kilograms.
+
+    Attributes
+    ----------
+    kilogram, kg : float
+        One kilogram.
+    electron_mass, me, au : float
+        Mass of one electron [2]_.
+    proton_mass, mp : float
+        Mass of one proton [3]_.
+    atomic_mass_unit, amu, Dalton, Da : float
+        Atomic mass constant [4]_.
+
+    References
+    ----------
+    .. [1] https://www.nist.gov/pml/owm/metric-si-prefixes#prefixes
+    .. [2] https://physics.nist.gov/cgi-bin/cuu/Value?me
+    .. [3] https://physics.nist.gov/cgi-bin/cuu/Value?mp
+    .. [4] https://physics.nist.gov/cgi-bin/cuu/Value?u
+    """
+    kilogram = 1.0
+    kg = kilogram
+    gram = 1.0e-3
+    g = gram
+    electron_mass = 9.109_383_7139e-31
+    me = electron_mass
+    au = me
+    proton_mass = 1.672_621_925_95e-27
+    mp = proton_mass
+    atomic_mass_unit = 1.660_539_068_92e-27
+    amu = atomic_mass_unit
+    Dalton = atomic_mass_unit
+    Da = atomic_mass_unit
+
+
+class Charge(UnitEnum):
+    """Charge conversions. All values are in units of Coulombs.
+
+    Attributes
+    ----------
+    Coulomb, C : float
+        One Coulomb.
+    electron_charge, e, au : float
+        Elementary charge [1]_.
+
+    References
+    ----------
+    .. [1] https://physics.nist.gov/cgi-bin/cuu/Value?e
+    """
+
+    Coulomb = 1.0
+    C = Coulomb
+    electron_charge = 1.602_176_634e-19
+    e = electron_charge
+    au = electron_charge
+
+
+class Pressure(UnitEnum):
+    """Pressure conversions. All values are in units of pascals.
+
+    Attributes
+    ----------
+    Pascal, Pa : float
+        One pascal.
+    kiloPascal, kPa : float
+        One kilopascal [1]_.
+    megaPascal, MPa : float
+        One megapascal [1]_.
+    gigaPascal, GPa : float
+        One gigapascal [1]_.
+    bar : float
+        One bar [2]_.
+    kilobar, kbar : float
+        One kilobar [2]_.
+    megabar, Mbar : float
+        One megabar [2]_.
+    gigabar, Gbar : float
+        One gigabar [2]_.
+    atmosphere, atm : float
+        One atmosphere [2]_.
+    mmHg : float
+        One millimeter of Mercury [2]_.
+
+    References
+    ----------
+    .. [1] https://www.nist.gov/pml/owm/metric-si-prefixes#prefixes
+    .. [2] https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b9#PRESSURE
+    """
+
+    Pascal = 1.0
+    Pa = Pascal
+    kiloPascal = 1.0e3
+    kPa = kiloPascal
+    megaPascal = 1.0e6
+    MPa = megaPascal
+    gigaPascal = 1.0e9
+    GPa = gigaPascal
+    bar = 1.0e5
+    kilobar = 1.0e8
+    kbar = kilobar
+    megabar = 1.0e11
+    Mbar = megabar
+    gigabar = 1.0e14
+    Gbar = gigabar
+    atmosphere = 1.013_25e5
+    atm = atmosphere
+    mmHg = 1.333_224e2
+
+
+class Force(UnitEnum):
+    """Force conversions. All values are in units of Newtons.
+
+    Attributes
+    ----------
+    Newton, N : float
+        One newton.
+    kiloNewton, kN : float
+        One kilonewton [1]_.
+    megaNewton, MN : float
+        One meganewton [1]_.
+    gigaNewton, GN : float
+        One giganewton [1]_.
+    milliNewton, mN : float
+        One millinewton [1]_.
+    microNewton, uN : float
+        One micronewton [1]_.
+    nanoNewton, nN : float
+        One nanonewton [1]_.
+    picoNewton, pN : float
+        One piconewton [1]_.
+    Hartree_Bohr, au : float
+        One Hartree per bohr radius [2]_.
+    Rydberg_Bohr, Ry_a0 : float
+        One Rydberg per bohr radius [2]_.
+
+    References
+    ----------
+    .. [1] https://www.nist.gov/pml/owm/metric-si-prefixes#prefixes
+    .. [2] https://physics.nist.gov/cgi-bin/cuu/Value?auforce
+    """
+
+    Newton = 1.0
+    N = Newton
+    kiloNewton = 1e3
+    kN = kiloNewton
+    megaNewton = 1e6
+    MN = megaNewton
+    gigaNewton = 1e9
+    GN = gigaNewton
+    milliNewton = 1e-3
+    mN = milliNewton
+    microNewton = 1e-6
+    uN = microNewton
+    nanoNewton = 1e-9
+    nN = nanoNewton
+    picoNewton = 1e-12
+    pN = picoNewton
+    Hartree_Bohr = 8.238_723_5038e-8
+    au = Hartree_Bohr
+    Rydberg_Bohr = 4.119_361_7519e-8
+    Ry_a0 = Rydberg_Bohr
+
+
+class ThermalConductivity(UnitEnum):
+    """Thermal conductivity conversions. All values are in units of W/mK.
+
+    Attributes
+    ----------
+    W_mK : float
+        Watts per meter Kelvin.
+    """
     W_mK = 1.0
 
 
-    meter            = Unit('distance'  ,'meter'           ,'m'       ,m              )
-    angstrom         = Unit('distance'  ,'Angstrom'        ,'A'       ,A              )
-    bohr             = Unit('distance'  ,'Bohr'            ,'B'       ,B              )
-    nanometer        = Unit('distance'  ,'nanometer'       ,'nm'      ,nm             )
-    picometer        = Unit('distance'  ,'picometer'       ,'pm'      ,pm             )
-    femtometer       = Unit('distance'  ,'femtometer'      ,'pm'      ,fm             )
-
-    second           = Unit('time'      ,'second'          ,'s'       ,s              )
-    millisecond      = Unit('time'      ,'millisecond'     ,'ms'      ,ms             )
-    nanosecond       = Unit('time'      ,'nanosecond'      ,'ns'      ,ns             )
-    picosecond       = Unit('time'      ,'picosecond'      ,'ps'      ,ps             )
-    femtosecond      = Unit('time'      ,'femtosecond'     ,'fs'      ,fs             )
-
-    kilogram         = Unit('mass'      ,'kilogram'        ,'kg'      ,kg             )
-    electron_mass    = Unit('mass'      ,'electron mass'   ,'me'      ,me             )
-    proton_mass      = Unit('mass'      ,'proton mass'     ,'mp'      ,mp             )
-    atomic_mass_unit = Unit('mass'      ,'atomic mass unit','amu'     ,amu            )
-    dalton           = Unit('mass'      ,'Dalton'          ,'Da'      ,Da             )
-
-    joule            = Unit('energy'    ,'Joule'           ,'J'       ,J              )
-    electron_volt    = Unit('energy'    ,'electron Volt'   ,'eV'      ,eV             )
-    rydberg          = Unit('energy'    ,'Rydberg'         ,'Ry'      ,Ry             )
-    hartree          = Unit('energy'    ,'Hartree'         ,'Ha'      ,Ha             )
-    kJ_mole          = Unit('energy'    ,'kJ_mole'         ,'kJ_mol'  ,kJ_mol         )
-    kcal_mole        = Unit('energy'    ,'kcal_mole'       ,'kcal_mol',kcal_mol       )
-    kelvin           = Unit('energy'    ,'Kelvin'          ,'K'       ,K              )
-    celsius          = Unit('energy'    ,'Celsius'         ,'degC'    ,degC,degC_shift)
-    fahrenheit       = Unit('energy'    ,'Fahrenheit'      ,'degF'    ,degF,degF_shift)
-
-    coulomb          = Unit('charge'    ,'Coulomb'         ,'C'       ,C              )
-    electron_charge  = Unit('charge'    ,'electron charge' ,'e'       ,e              )
-
-    pascal           = Unit('pressure'  ,'Pascal'          ,'Pa'      ,Pa             )
-    bar              = Unit('pressure'  ,'bar'             ,'bar'     ,bar            )
-    megabar          = Unit('pressure'  ,'megabar'         ,'Mbar'    ,Mbar           )
-    gigapascal       = Unit('pressure'  ,'gigaPascal'      ,'Gpa'     ,GPa            )
-    atmosphere       = Unit('pressure'  ,'atmosphere'      ,'atm'     ,atm            )
-
-    newton           = Unit('force'     ,'Newton'          ,'N'       ,N              )
-    piconewton       = Unit('force'     ,'picoNewton'      ,'pN'      ,pN             )
-
-    W_per_mK         = Unit('therm_cond','W/(m*K)'         ,'W_mK'    ,W_mK           )
+ALL_UNITS: MappingProxyType[str, UnitEnum] = MappingProxyType(
+    {
+        name: val for unit_enum in UnitEnum.__subclasses__()
+        for name, val in unit_enum.__members__.items() if name != "au"
+    }
+)
 
 
-    distance_dict   = Unit.unit_dicts.distance
-    mass_dict       = Unit.unit_dicts.mass
-    energy_dict     = Unit.unit_dicts.energy
-    charge_dict     = Unit.unit_dicts.charge
-    pressure_dict   = Unit.unit_dicts.pressure
-    force_dict      = Unit.unit_dicts.force
-    therm_cond_dict = Unit.unit_dicts.therm_cond
+type Convertable = float | int | npt.NDArray[np.number]
+type UnitStr = str
 
-    unit_dict = Unit.unit_dicts.all
+def convert[V: Convertable, Unit: UnitStr | UnitEnum](
+    value: V, source_unit: Unit, target_unit: Unit,
+) -> V:
+    """Convert a value from a source unit to a target unit.
 
+    Examples
+    --------
+    Simple float conversion.
 
-    def __init__(self):
-        msg = 'UnitConverter should not be instantiated'
-        raise RuntimeError(msg)
-    #def __init__
+    >>> convert(1.0, "A", "B")
+    1.8897261328856432
 
-    @staticmethod
-    def convert(value,source_unit,target_unit):
-        ui = UnitConverter.unit_dict[source_unit]
-        uo = UnitConverter.unit_dict[target_unit]
+    Array conversion.
 
-        if(ui.type != uo.type):
-            msg = (
-                'in UnitConverter.convert()\n'
-                'type conversion attempted between '+ui.type+' and '+uo.type
-                )
-            raise ValueError(msg)
-        else:
-            value_out = (value-ui.shift)*ui.value/uo.value+uo.shift
-        #end if
+    >>> convert(np.eye(3), "Ha", "eV")
+    array([[27.21138625,  0.        ,  0.        ],
+           [ 0.        , 27.21138625,  0.        ],
+           [ 0.        ,  0.        , 27.21138625]])
+    """
+    if isinstance(source_unit, str):
+        source_unit = ALL_UNITS[source_unit.replace(" ", "_")]
 
-        return (value_out,target_unit)
-    #end def convert
+    if isinstance(target_unit, str):
+        target_unit = ALL_UNITS[target_unit.replace(" ", "_")]
 
-    @staticmethod
-    def convert_scalar_to_all(units,value_orig):
-        unit_type = UnitConverter.unit_dict[units].type
-
-        value = dict()
-        value['orig'] = value_orig
-
-        for k,u in UnitConverter.unit_dict.items():
-            if(u.type == unit_type and u.value!=UnitConverter.unassigned):
-                (value[k],utmp) = UnitConverter.convert(value['orig'],units,k)
-            #end if
-        #end for
-
+    if source_unit is target_unit:
         return value
-    #end def convert_scalar_to_all
-#end class UnitConverter
+
+    if (su_typ := type(source_unit)) is not (tu_typ := type(target_unit)):
+        msg = f"Can not convert between {su_typ.__name__} units and {tu_typ.__name__} units!"
+        raise ValueError(msg)
+
+    value_out = (
+        (value - source_unit.shift) * source_unit.val
+        / target_unit.val
+        + target_unit.shift
+    )
+
+    return value_out
 
 
-def convert(value,source_unit,target_unit):
-    return UnitConverter.convert(value,source_unit,target_unit)[0]
-#end def convert
+def convert_scalar_to_all[T: Convertable](
+    units: str | UnitEnum, value_orig: T
+) -> dict[str, T]:
+    if isinstance(units, str):
+        unit_type = type(ALL_UNITS[units.replace(" ", "_")])
+    else:
+        unit_type = type(units)
+
+    value = {"orig": value_orig}
+    for unit in unit_type:
+        value[unit.name] = convert(value_orig, units, unit)
+
+    return value

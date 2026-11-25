@@ -34,7 +34,7 @@ from .pwscf_data_reader import read_qexml
 from .pwscf_input import PwscfInput
 from .simulation import Simulation, SimulationAnalyzer
 from .structure import Structure, get_kpath
-from .unit_converter import UnitConverter, convert
+from .unit_converter import Energy, Length, convert
 from .utilities import path_string
 
 
@@ -1534,9 +1534,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
         'Mbar' : 1e11,
         'GPa'  : 1e9,
         'atm'  : 1.01325e5,
-        'eV/A^3'    : UnitConverter.eV/UnitConverter.A**3,
-        'Ha/Bohr^3' : UnitConverter.Ha/UnitConverter.B**3,
-        'Ry/Bohr^3' : UnitConverter.Ry/UnitConverter.B**3,
+        'eV/A^3'    : Energy.eV.val/Length.A.val**3,
+        'Ha/Bohr^3' : Energy.Ha.val/Length.B.val**3,
+        'Ry/Bohr^3' : Energy.Ry.val/Length.B.val**3,
         })
 
 
