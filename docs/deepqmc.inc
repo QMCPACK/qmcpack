@@ -292,12 +292,17 @@ using Box's Download button. The matching
 is also available on Box. These are sharing pages, not direct-download URLs;
 CMake does not download the files.
 
-Place the archive in the directory where you want to keep the test data.
-Verify it against the checksum pinned in this repository before extracting:
+Place ``deepqmc-he-v1.tar.gz`` in the directory where you want to keep the
+test data, and change into that directory. Copy the repository's checksum file
+there as shown below. For the verification command below, both
+``deepqmc-he-v1.tar.gz`` and ``deepqmc-he-v1.tar.gz.sha256`` must be in your
+current working directory. Pass only the checksum file to ``sha256sum -c``;
+it reads the archive filename from that file. Verify before extracting:
 
 .. code-block:: console
 
-   $ sha256sum -c "$QMCPACK_SOURCE/tests/molecules/He_deepqmc/deepqmc-he-v1.tar.gz.sha256"
+   $ cp "$QMCPACK_SOURCE/tests/molecules/He_deepqmc/deepqmc-he-v1.tar.gz.sha256" .
+   $ sha256sum -c deepqmc-he-v1.tar.gz.sha256
    $ mkdir -p HeECP
    $ tar -xzf deepqmc-he-v1.tar.gz -C HeECP
    $ export DEEPQMC_TEST_DATA_DIR="$PWD/HeECP"
