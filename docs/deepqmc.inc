@@ -64,9 +64,9 @@ Slater or Jastrow components. The ``deepqmc`` element has no child elements.
      - None
      - Optional directory added to Python's ``sys.path``.
 
-``mol_idx`` selects a molecule in the model configuration (default ``0`` for
-this single-molecule example); it is not an atom index. Multiple-system use
-has not been validated. The ``model`` file is a
+``mol_idx`` is a molecular configuration index for applicable models where a reference to a molecular
+configuration is part of the model's inputs as determined by the ansatz the model uses, this is not applicable to all model ansatz and is ignored if not applicable. QMCPACK at this time does know whether this is necessary for a particular model's ansatz and so the applicability and bounds of the index are not checked.
+The ``model`` file is a
 full-wavefunction checkpoint, not an orbital or determinant file. The
 ``python_module_path`` attribute adds a directory to ``sys.path``; it does not
 select a Python executable.
@@ -84,17 +84,15 @@ Matching particle sets and Hamiltonian
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For the standard ``MolecularHamiltonian``/``Molecule`` configuration shown
-here, inspect the resolved molecule used by the trained ansatz and match its
+here, the resolved molecule used by the trained model needs to be determined and
+ion and electron ParticleSets need to be defined to match its
 particle count, spin, nuclear charges, positions, and ordering in the QMCPACK
 input. Hydra configurations may instead use references, interpolation, named
 molecules, or external definitions, so the relevant molecule may not appear as
-an inline ``hamil.mol`` mapping in the YAML; inspect the resolved
-configuration, not just the raw YAML. Configuration initializes the ansatz; it
-does not generate QMCPACK particle sets or a Hamiltonian, and the bridge does
-not cross-check that these inputs match. Nuclear positions are supplied at
-runtime.
+an inline ``hamil.mol`` mapping in the YAML; you may need to inspect the resolved
+configuration, not just the raw YAML. The hydra config.yaml initializes the ansatz; at this time we do no generate the necessary QMCPACK particle sets and Hamiltonian from it. The QMCPACK DeepQMC code does not cross check that they match and the behavior when they don't has not be investiaged.
 
-For the supplied helium fixture, the following is an extract, not a complete
+For the supplied helium fixture, the following is an extract from the config.yaml covering the molecular configuration and hamiltonian which in this case is just the ansatz default plus an ecp_type.
 usable configuration:
 
 .. code-block:: yaml
