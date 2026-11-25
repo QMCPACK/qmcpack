@@ -20,3 +20,4 @@ This is an in-depth look at all of the user-facing classes and functions in Nexu
     quantum_package/index
     vasp/index
     rmg/index
+    apps/index
