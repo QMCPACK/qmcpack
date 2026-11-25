@@ -22,7 +22,6 @@ class Unit:
 
 
 class UnitEnum(Unit, Enum):
-
     def __new__(cls, val: float, shift: float = 0.0) -> Self:
         unit = Unit.__new__(cls)
         unit._value_ = Unit(val, shift)
@@ -223,6 +222,7 @@ class Mass(UnitEnum):
     .. [3] https://physics.nist.gov/cgi-bin/cuu/Value?mp
     .. [4] https://physics.nist.gov/cgi-bin/cuu/Value?u
     """
+
     kilogram = 1.0
     kg = kilogram
     gram = 1.0e-3
@@ -374,13 +374,16 @@ class ThermalConductivity(UnitEnum):
     W_mK : float
         Watts per meter Kelvin.
     """
+
     W_mK = 1.0
 
 
 ALL_UNITS: MappingProxyType[str, UnitEnum] = MappingProxyType(
     {
-        name: val for unit_enum in UnitEnum.__subclasses__()
-        for name, val in unit_enum.__members__.items() if name != "au"
+        name: val
+        for unit_enum in UnitEnum.__subclasses__()
+        for name, val in unit_enum.__members__.items()
+        if name != "au"
     }
 )
 
@@ -388,8 +391,9 @@ ALL_UNITS: MappingProxyType[str, UnitEnum] = MappingProxyType(
 type Convertable = float | int | npt.NDArray[np.number]
 type UnitStr = str
 
-def convert[V: Convertable, Unit: UnitStr | UnitEnum](
-    value: V, source_unit: Unit, target_unit: Unit,
+
+def convert[V: Convertable, U: UnitStr | UnitEnum](
+    value: V, source_unit: U, target_unit: U
 ) -> V:
     """Convert a value from a source unit to a target unit.
 
@@ -421,17 +425,15 @@ def convert[V: Convertable, Unit: UnitStr | UnitEnum](
         raise ValueError(msg)
 
     value_out = (
-        (value - source_unit.shift) * source_unit.val
-        / target_unit.val
-        + target_unit.shift
-    )
+        value - source_unit.shift
+    ) * source_unit.val / target_unit.val + target_unit.shift
 
     return value_out
 
 
-def convert_scalar_to_all[T: Convertable](
-    units: str | UnitEnum, value_orig: T
-) -> dict[str, T]:
+def convert_scalar_to_all[T: Convertable, U: UnitStr | UnitEnum](
+    units: U, value_orig: T
+) -> dict[UnitStr, T]:
     if isinstance(units, str):
         unit_type = type(ALL_UNITS[units.replace(" ", "_")])
     else:
