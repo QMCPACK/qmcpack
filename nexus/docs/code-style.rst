@@ -55,7 +55,7 @@ Split long strings with newlines on the newline characters:
         "It will display as many lines\n"
         "and realistically there is no good reason for this to be\n"
         "over 150 characters long on one line"
-        )
+    )
 
 It is preferable to keep strings that do not have newlines on a single line so that users can use tools like ``grep`` to search for them in source code.
 
@@ -66,7 +66,7 @@ It is preferable to keep strings that do not have newlines on a single line so t
     raise ValueError(
         "This is a string that is a single line but is actually quite "
         "long and may extend well past the suggested line length limits of Nexus"
-        )
+    )
 
 :lgreen:`Yes`
 
@@ -74,7 +74,7 @@ It is preferable to keep strings that do not have newlines on a single line so t
 
     raise ValueError(
         "This is a string that is a single line but is actually quite long and may extend well past the suggested line length limits of Nexus"
-        )
+    )
 
 This does not always apply for f-strings or formatted strings, which are generally unable to be grepped regardless of if they are split across multiple lines.
 
@@ -92,7 +92,7 @@ This does not always apply for f-strings or formatted strings, which are general
         f"This is single line that is {greater_than} the suggested line length "
         f"limits of Nexus {included} but "
         f"has substitutions that make it {hard} to grep."
-        )
+    )
 
 Prefer `f-strings <https://docs.python.org/3/reference/lexical_analysis.html#f-strings>`__ over :py:meth:`str.format()`:
 
@@ -110,8 +110,8 @@ Prefer `f-strings <https://docs.python.org/3/reference/lexical_analysis.html#f-s
         "{2}\n"
         "Absolute difference: {3}\n".format(
             present, given, consistent, diff
-            )
         )
+    )
 
 :lgreen:`Yes`
 
@@ -126,7 +126,7 @@ Prefer `f-strings <https://docs.python.org/3/reference/lexical_analysis.html#f-s
         "Consistent value:\n"
         f"{consistent}\n"
         f"Absolute difference: {diff}\n"
-        )
+    )
 
 Avoid putting non-minimal code inside an f-string, prefer to assign to a variable beforehand.
 
@@ -136,7 +136,7 @@ Avoid putting non-minimal code inside an f-string, prefer to assign to a variabl
 
     msg += (
         f"Present value: {sum([i for i in thing])} does not match given {sum([i for i in given])}\n"
-        )
+    )
 
 :lgreen:`Yes`
 
@@ -146,7 +146,7 @@ Avoid putting non-minimal code inside an f-string, prefer to assign to a variabl
     given = sum([i for i in given])
     msg += (
         f"Present value: {present} does not match given {given}\n"
-        )
+    )
 
 
 .. _variable-names:
@@ -174,130 +174,13 @@ Be descriptive and generally limit names to three words or less for legibility.
 
 .. code-block:: python
 
-    total_amount_of_money_in_bag = total_number_of_pennies_in_bag + number_of_pennies_in_a_nickel*total_number_of_nickels_in_bag + number_of_pennies_in_a_dime*total_number_of_nickels_in_bag + ...
+    total_amount_of_money_in_bag = total_number_of_pennies_in_bag + number_of_pennies_in_a_nickel * total_number_of_nickels_in_bag + number_of_pennies_in_a_dime * total_number_of_nickels_in_bag + ...
 
 :lgreen:`Yes`
 
 .. code-block:: python
 
-    money_tot = pennies + 5*nickels + 10*dimes + ...
-
-
-.. _encapsulation:
-
-Encapsulation
--------------
-
-Function and class endings are delimited with a comment:
-
-.. code-block:: python
-
-    def perform_work():
-        ...
-    #end def perform_work
-
-    class BaseClass:
-        ...
-    #end class BaseClass
-
-Enclosing comments such as ``#end if`` and ``#end for`` are not required, but are encouraged in cases of deep nesting for readability.
-
-For closing parentheses (and similar), the closing character should have the same indentation as the function arguments or e.g. list elements.
-
-:lred:`No`
-
-.. code-block:: python
-
-    def operate(key1 = 'key1',
-                key2 = 'key2',
-                key3 = 'key3',
-    ):
-        key = (key1,key2,key3)
-        return key
-    #end def operate
-
-:lgreen:`Yes`
-
-.. code-block:: python
-
-    def operate(key1 = 'key1',
-                key2 = 'key2',
-                key3 = 'key3',
-                ):
-        key = (key1,key2,key3)
-        return key
-    #end def operate
-
-:lred:`No`
-
-.. code-block:: python
-
-    d = dict(a = 1,
-             b = 2,
-    )
-
-:lgreen:`Yes`
-
-.. code-block:: python
-
-    d = dict(a = 1,
-             b = 2,
-             )
-
-    # or
-
-    d = dict(a = 1,
-             b = 2)
-
-:lred:`No`
-
-.. code-block:: python
-
-    l = ['key1',
-         'key2',
-         'key3',
-    ]
-
-
-:lgreen:`Yes`
-
-.. code-block:: python
-
-    l = ['key1',
-         'key2',
-         'key3',
-         ]
-
-    # or
-
-    l = ['key1',
-         'key2',
-         'key3']
-
-:lred:`No`
-
-.. code-block:: python
-
-    def operate(argument1='arg1',other_thing='other',
-                key='key',value='bar',extra_thing='bean',
-                other_extra='bean2'):
-        ...
-    #end def operate
-
-:lgreen:`Yes`
-
-.. code-block:: python
-
-    def operate(
-        argument1   = 'arg1',
-        other_thing = 'other',
-        key         = 'key',
-        value       = 'bar',
-        extra_thing = 'bean',
-        other_extra = 'bean2',
-        ):
-        ...
-    #end def operate
+    money_tot = pennies + 5 * nickels + 10 * dimes + ...
 
 
 .. _opening-files:
@@ -340,7 +223,6 @@ This prevent's mistakes due to `Python's "truthiness" evaluation <https://docs.p
 
     def func(arg0: int, arg1: bool, arg2: int):
         ...
-    #end def func
 
 :lgreen:`Yes`
 
@@ -348,7 +230,6 @@ This prevent's mistakes due to `Python's "truthiness" evaluation <https://docs.p
 
     def func(arg0: int, *, arg1: bool, arg2: int):
         ...
-    #end def func
 
 Functions with arbitrary arguments are allowed, but generally discouraged if there is not a good reason.
 
@@ -360,7 +241,6 @@ Functions with arbitrary arguments are allowed, but generally discouraged if the
         thing1 = kwargs.get("thing1", 0)
         thing2 = kwargs.get("thing2", 0)
         return thing1 + thing2
-    #end def func
 
 :lgreen:`Yes`
 
@@ -369,9 +249,8 @@ Functions with arbitrary arguments are allowed, but generally discouraged if the
     def func(
         thing1 = 0,
         thing2 = 0,
-        ):
+    ):
         return thing1 + thing2
-    #end def func
 
 You should use kwargs when calling another function whose arguments may vary over time, or are excessively long.
 This makes the outer function less prone to becoming out of date if the inner function changes.
@@ -384,7 +263,6 @@ This makes the outer function less prone to becoming out of date if the inner fu
         my_kwargs = [mine1, mine2]
         other_stuff = other_func(other1, other2, ..., otherN)
         return my_kwargs, other_stuff
-    #end def func_calling_func
 
 :lgreen:`Yes`
 
@@ -399,7 +277,6 @@ This makes the outer function less prone to becoming out of date if the inner fu
         # Remaining things in kwargs get passed to other_func
         other_stuff = other_func(**kwargs)
         return my_kwargs, other_stuff
-    #end def func_calling_func
 
 
 .. _classes:
@@ -496,7 +373,7 @@ Python is a dynamically-typed language, so do not insist on strong typing unless
 .. code-block:: python
 
     def exponentiate(values):
-        assert isinstance(values,list) # A tuple, set, frozenset, or numpy array is also valid
+        assert isinstance(values, list) # A tuple, set, frozenset, or numpy array is also valid
         return [np.exp(v) for v in values]
 
 :lgreen:`Yes`
@@ -509,11 +386,11 @@ Python is a dynamically-typed language, so do not insist on strong typing unless
 
 Use type conversion for flexibility where possible:
 
-:yellow:`Less`: ``assert isinstance(item_counts,np.ndarray)``
+:yellow:`Less`: ``assert isinstance(item_counts, np.ndarray)``
 
 :green:`More`: ``item_counts = np.asarray(item_counts)``
 
-:yellow:`Less`: ``assert isinstance(x,float)``
+:yellow:`Less`: ``assert isinstance(x, float)``
 
 :green:`More`: ``x = float(x)``
 
@@ -525,7 +402,7 @@ Accessors
 
 Prefer dot style over string literals:
 
-:red:`No`: ``name = data['nested']['path']['to']['name']``
+:red:`No`: ``name = data["nested"]["path"]["to"]["name"]``
 
 :green:`Yes`: ``name = data.nested.path.to.name``
 
@@ -544,26 +421,20 @@ In classes, avoid set/get syntax. Instead promote dot access:
     class MyClass(DevBase):
         def __init__(self, data):
             self._data = data
-        #end def __init__
 
         def get_data(self):
             return self._data
-        #end def get_data
 
         def set_data(self, data):
             self._data = data
-        #end def set_data
-    #end class MyClass
 
 :lgreen:`Yes`
 
 .. code-block:: python
 
     class MyClass(DevBase):
-        def __init__(self,data):
+        def __init__(self, data):
             self.data = data
-        #end def __init__
-    #end class MyClass
 
 If function execution is needed for set/get, use properties:
 
@@ -576,13 +447,10 @@ If function execution is needed for set/get, use properties:
         def data(self):
             output = repackage_data(self.internal_data)
             return output
-        #end def data
 
         @data.setter
         def data(self, data):
             self.internal_data = process_data(data)
-        #end def data
-    #end class MyClass
 
 
 .. _imports:
@@ -602,7 +470,6 @@ Function/method imports:
     def save_data():
         import h5py
         ...
-    #end def save_data
 
 
 .. _exceptions:
@@ -625,9 +492,10 @@ Allow the code to error out to reveal the actual problem (``try-except`` can mas
 Auto-formatting
 ---------------
 
-Nexus code is not required to follow formats used by auto-formatting tools.
-
-If you use such a tool for newly committed code, ensure that the formatted code is largely consistent with existing code in the Nexus repository.
+Nexus is currently in the process of gradually adopting the ``ruff`` auto-formatter.
+You can install this with ``pip install ruff``, and then run the formatter with ``ruff format``.
+The configuration for ``ruff format`` can be found in Nexus's ``pyproject.toml`` file, which lists the files that are currently excluded from formatting rules.
+If you rewrite a significant percent of a file, please remove it from the exclusion list and run ``ruff format`` on it.
 
 
 .. _unit-tests:
@@ -699,7 +567,6 @@ follow NumPy's formatting for class/function docs (see `the numpydoc format <htt
         array([1., 3.])
         """
         return value.real
-    #end def real
 
 
 .. _uv_lock:
