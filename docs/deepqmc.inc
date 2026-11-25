@@ -25,6 +25,133 @@ Python 3.13.17, DeepQMC 1.2.0, and JAX/jaxlib 0.8.3. It is a smoke test, not a
 convergence or accuracy guarantee. A complete reference package snapshot is
 supplied; other Python versions and platforms require their own validation.
 
+.. _deepqmc-input-specification:
+
+Input specification
+~~~~~~~~~~~~~~~~~~~
+
+DeepQMC is specified as the wavefunction component for the electron particle
+set named by the enclosing ``wavefunction`` element's ``target`` attribute.
+The component represents the complete pretrained wavefunction; do not add
+Slater or Jastrow components. The ``deepqmc`` element has no child elements.
+
+.. list-table:: Attributes of the ``deepqmc`` element
+   :header-rows: 1
+   :widths: 20 12 18 12 38
+
+   * - Name
+     - Datatype
+     - Values
+     - Default
+     - Description
+   * - ``name``
+     - Text
+     - Component name
+     - ``deepqmc``
+     - Name of this wavefunction component.
+   * - ``source``
+     - Text
+     - Particle-set name
+     - ``ion0``
+     - Ion particle set supplying nuclear coordinates.
+   * - ``model``
+     - Text
+     - File path
+     - (required)
+     - Trained checkpoint; relative paths are resolved from the run directory.
+   * - ``mol_idx``
+     - Integer
+     - Model-dependent
+     - ``0``
+     - Molecule index passed to the configured model.
+   * - ``python_module_path``
+     - Text
+     - Directory path
+     - None
+     - Optional directory added to Python's ``sys.path``.
+
+``mol_idx`` selects a molecule in the model configuration (default ``0`` for
+this single-molecule example); it is not an atom index. Multiple-system use
+has not been validated. The ``model`` file is a
+full-wavefunction checkpoint, not an orbital or determinant file. The
+``python_module_path`` attribute adds a directory to ``sys.path``; it does not
+select a Python executable.
+
+.. code-block:: xml
+   :caption: DeepQMC wavefunction component
+
+   <wavefunction name='psi0' target='e'>
+     <deepqmc name='DNN' source='ion0' model='chkpt.pt' mol_idx='0'/>
+   </wavefunction>
+
+.. _deepqmc-system-matching:
+
+Matching particle sets and Hamiltonian
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For the standard ``MolecularHamiltonian``/``Molecule`` configuration shown
+here, inspect the resolved molecule used by the trained ansatz and match its
+particle count, spin, nuclear charges, positions, and ordering in the QMCPACK
+input. Hydra configurations may instead use references, interpolation, named
+molecules, or external definitions, so the relevant molecule may not appear as
+an inline ``hamil.mol`` mapping in the YAML; inspect the resolved
+configuration, not just the raw YAML. Configuration initializes the ansatz; it
+does not generate QMCPACK particle sets or a Hamiltonian, and the bridge does
+not cross-check that these inputs match. Nuclear positions are supplied at
+runtime.
+
+For the supplied helium fixture, the following is an extract, not a complete
+usable configuration:
+
+.. code-block:: yaml
+
+   hamil:
+     mol:
+       coords: [[0, 0, 0]]
+       charges: [2]
+       charge: 0
+       spin: 0
+       unit: angstrom
+     ecp_type: ccECP
+
+``charges`` are nuclear atomic numbers, not net charges. Coordinate rows
+correspond to nuclei in the same order as the XML ion particle set. DeepQMC
+coordinates are converted from the configured unit to bohr; the bridge forwards
+QMCPACK ion and electron coordinates without conversion, so supply them in
+bohr. The XML ion particle set must have the same nuclei in the same order and
+at the geometry used for this workflow. For an all-electron calculation, set
+each ion species' ``charge`` to its nuclear ``Z`` and each electron species'
+``charge`` to ``-1``.
+
+For an all-electron system with total charge ``Q``, the electron count is
+``N = sum(Z) - Q``. With spin ``S = Nup - Ndown``,
+``Nup = (N + S)/2`` and ``Ndown = (N - S)/2``. Specify the QMCPACK electron
+groups in DeepQMC's order: ``Nup`` spin-up electrons first, then ``Ndown``
+spin-down electrons. The example uses group names ``u`` then ``d``; the bridge
+passes coordinates in particle order, not according to the group names. For
+the helium fixture, ``N=2`` and ``S=0``, so the XML has one electron in each group.
+
+When an ECP is used, its valence electron counts (``ns_valence``) replace
+nuclear ``Z`` in the electron-count relation; the actual ECP choice, mask, and
+data must also be compatible. Nonlocal ECPs are not supported by this
+implementation, so the fixture's ``ccECP`` setting is not an ECP usage recipe:
+helium has ``Z=2`` and no active ECP mask, and the tested input is all-electron.
+When ``hamil.ecp_type`` is ``None`` the model is all-electron. If it is set,
+the default ECP mask selects charges greater than 2.
+
+The corresponding QMCPACK helium particles, wavefunction, and Hamiltonian are
+shown in the existing example:
+
+.. literalinclude:: ../examples/molecules/He/he_deepqmc.xml
+   :language: xml
+   :start-at: <particleset name="ion0"
+   :end-at: </hamiltonian>
+
+That Hamiltonian includes electron-electron and electron-ion Coulomb terms and
+uses QMCPACK's default electronic kinetic energy. A single nucleus has zero
+ion-ion interaction; multi-ion systems require ion-ion repulsion and have not
+been validated here.
+
 Python environment
 ~~~~~~~~~~~~~~~~~~
 
@@ -235,10 +362,9 @@ default molecule or ansatz: checkpoint parameters alone do not define the
 trained wavefunction.
 
 For another system, supply its checkpoint and matching training configuration,
-and adapt the QMCPACK XML particle sets and Hamiltonian accordingly. The bridge
-does not verify that these inputs describe the same physical system; finding a
-configuration is not a compatibility check. Only the helium workflow above has
-been validated.
+and adapt the QMCPACK XML particle sets and Hamiltonian as described in
+:ref:`deepqmc-system-matching`.
+Only the helium workflow above has been validated.
 
 The configuration is trusted input too: Hydra instantiation and OmegaConf
 resolvers can execute code. ``PYTHONPATH`` is shown as an explicit way to expose packages to
@@ -251,12 +377,8 @@ Venv activation also worked on the tested system, but cannot fix a mismatched
 embedded Python ABI; use explicit package discovery when launching from a
 batch job or a different shell. Do not set ``PYTHONHOME`` for this recipe.
 
-The ``<deepqmc>`` element accepts ``model`` (required), ``source`` (ion particle
-set, default ``ion0``), ``name`` (default ``deepqmc``), ``mol_idx`` (default
-``0``), and optional ``python_module_path`` (a package directory). Coordinates
-are in bohr; the configured molecule, ion/electron species, checkpoint, and
-ansatz configuration must agree. This example uses the pretrained model as-is;
-it performs no training or variational parameter optimization.
+This example uses the pretrained model as-is; it performs no training or
+variational parameter optimization.
 
 The CPU workflow was reproduced on the validation platform listed above.
 The original DeepQMC integration also used ``jax[cuda12]==0.8.3`` for GPU
