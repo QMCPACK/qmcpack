@@ -271,35 +271,44 @@ def negate(expr):
 #end def negate
 
 
-def kmesh(kaxes,dim,shift=None):
-    '''
-    Create a Monkhorst-Pack k-point mesh
-    '''
-    if shift is None:
-        shift = (0.,0,0)
-    #end if
-    ndim = len(dim)
-    d = np.array(dim)
-    s = np.array(shift)
-    npe.reshape_inplace(s, (1, ndim))
-    npe.reshape_inplace(d, (1, ndim))
-    kp = np.empty((1,ndim),dtype=float)
-    kgrid = np.empty((d.prod(),ndim))
-    n=0
-    for k in range(dim[2]):
-        for j in range(dim[1]):
-            for i in range(dim[0]):
-                kp[:] = i,j,k
-                kp = dot((kp+s)/d,kaxes)
-                #kp = (kp+s)/d
-                kgrid[n] = kp
-                n+=1
-            #end for
-        #end for
-    #end for
-    return kgrid
-#end def kmesh
+def kmesh(
+    kaxes: npt.ArrayLike[np.floating],
+    dim: tuple[int, int, int],
+    shift: tuple[float, float, float] = (0, 0, 0),
+) -> npt.NDArray[np.float64]:
+    """Create a Monkhorst-Pack kpoint mesh.
 
+    Examples
+    --------
+    Simple non-shifted mesh.
+
+    >>> s = Structure(axes=2*np.pi*np.eye(3))
+    >>> kmesh(s.kaxes, (3, 2, 1))
+    array([[0.        , 0.        , 0.        ],
+           [0.33333333, 0.        , 0.        ],
+           [0.66666667, 0.        , 0.        ],
+           [0.        , 0.5       , 0.        ],
+           [0.33333333, 0.5       , 0.        ],
+           [0.66666667, 0.5       , 0.        ]])
+
+    Mesh with shift.
+
+    >>> s = Structure(axes=2*np.pi*np.eye(3))
+    >>> kmesh(s.kaxes, (3, 2, 1), (0.5, 0.5, 0.5))
+    array([[0.16666667, 0.25      , 0.5       ],
+           [0.5       , 0.25      , 0.5       ],
+           [0.83333333, 0.25      , 0.5       ],
+           [0.16666667, 0.75      , 0.5       ],
+           [0.5       , 0.75      , 0.5       ],
+           [0.83333333, 0.75      , 0.5       ]])
+    """
+    kpts = np.fliplr(np.indices(reversed(dim)).reshape(len(dim), -1).T)
+    kgrid = np.einsum(
+        "...i, ...ij -> ...j",
+        (kpts + np.asarray(shift)) / np.asarray(dim),
+        kaxes,
+    )
+    return kgrid
 
 
 def reduce_tilematrix(tiling):
