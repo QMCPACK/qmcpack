@@ -51,7 +51,8 @@ public:
  * Empty config_path selects .hydra/config.yaml in the checkpoint directory.
  * Explicit model/config paths are relative to the working directory unless absolute.
  */
-std::unique_ptr<const DeepQMCBridge> makePythonDeepQMCBridge(std::string model_path, std::string python_module_path,
+std::unique_ptr<const DeepQMCBridge> makePythonDeepQMCBridge(std::string model_path,
+                                                             std::string python_module_path,
                                                              std::string config_path = "");
 
 /** Placeholder useful for tests and clear disabled-path errors. */

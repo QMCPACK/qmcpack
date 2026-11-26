@@ -91,7 +91,9 @@ std::string formatPythonError()
 }
 
 [[noreturn]] void throwPythonError(const std::string& context)
-{ throw std::runtime_error(context + ": " + formatPythonError()); }
+{
+  throw std::runtime_error(context + ": " + formatPythonError());
+}
 
 void ensurePythonInitialized()
 {
@@ -185,8 +187,8 @@ public:
       if (!python_class.get() || !PyCallable_Check(python_class.get()))
         throwPythonError("loading DeepQMCInferBridge class failed");
 
-      python_instance_ = PyObjectHandle(
-          PyObject_CallFunction(python_class.get(), "ss", model_path_.c_str(), config_path_.c_str()));
+      python_instance_ =
+          PyObjectHandle(PyObject_CallFunction(python_class.get(), "ss", model_path_.c_str(), config_path_.c_str()));
       if (!python_instance_.get())
         throwPythonError("constructing DeepQMCInferBridge failed");
     }
@@ -281,14 +283,17 @@ public:
   explicit UnavailableDeepQMCBridge(std::string reason) : reason_(std::move(reason)) {}
 
   BatchResult evaluateLogBatch(const std::vector<RealType>&, const std::vector<RealType>&, int, int, int) const override
-  { throw std::runtime_error("DeepQMC inference bridge is not available: " + reason_); }
+  {
+    throw std::runtime_error("DeepQMC inference bridge is not available: " + reason_);
+  }
 
 private:
   std::string reason_;
 };
 } // namespace
 
-std::unique_ptr<const DeepQMCBridge> makePythonDeepQMCBridge(std::string model_path, std::string python_module_path,
+std::unique_ptr<const DeepQMCBridge> makePythonDeepQMCBridge(std::string model_path,
+                                                             std::string python_module_path,
                                                              std::string config_path)
 {
   return std::make_unique<PythonDeepQMCBridge>(std::move(model_path), std::move(python_module_path),
@@ -296,6 +301,8 @@ std::unique_ptr<const DeepQMCBridge> makePythonDeepQMCBridge(std::string model_p
 }
 
 std::unique_ptr<const DeepQMCBridge> makeUnavailableDeepQMCBridge(std::string reason)
-{ return std::make_unique<UnavailableDeepQMCBridge>(std::move(reason)); }
+{
+  return std::make_unique<UnavailableDeepQMCBridge>(std::move(reason));
+}
 
 } // namespace qmcplusplus

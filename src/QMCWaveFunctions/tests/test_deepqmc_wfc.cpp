@@ -615,7 +615,7 @@ TEST_CASE("PythonDeepQMCBridge can load a real DeepQMC He checkpoint", "[wavefun
   const std::filesystem::path checkpoint = std::filesystem::path(fixture_dir) / "chkpt-30000.pt";
   REQUIRE(std::filesystem::is_regular_file(checkpoint));
   REQUIRE(std::filesystem::is_regular_file(std::filesystem::path(fixture_dir) / ".hydra" / "config.yaml"));
-  auto bridge = makePythonDeepQMCBridge(checkpoint.string(), "");
+  auto bridge       = makePythonDeepQMCBridge(checkpoint.string(), "");
   const auto result = bridge->evaluateLogBatch({0.0, 0.0, 0.0}, {0.1, 0.0, 0.0, -0.1, 0.0, 0.0}, 0, 1, 2);
 
   REQUIRE(result.log_values.size() == 1);
