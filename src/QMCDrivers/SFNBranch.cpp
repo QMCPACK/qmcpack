@@ -17,6 +17,7 @@
 #include "Particle/Reptile.h"
 #include "type_traits/template_types.hpp"
 #include "Message/UniformCommunicateError.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -123,10 +124,12 @@ int SFNBranch::initParam(const MCPopulation& population,
 
 void SFNBranch::updateParamAfterPopControl(const MCDataType<FullPrecRealType>& wc_ensemble_prop, int Nelec)
 {
-  //target weight
-  const auto logN = std::log(static_cast<FullPrecRealType>(iParam[B_TARGETWALKERS]));
   //population weight before branching
   const FullPrecRealType pop_weight = wc_ensemble_prop.Weight;
+  if (iParam[B_TARGETWALKERS] <= 0 || !qmcplusplus::isfinite(pop_weight) || pop_weight <= 0)
+    throw UniformCommunicateError("SFNBranch: target and total population weight must be finite and positive.");
+  // target_walkers operates as a total weight target in fixed population mode.
+  const auto logN = std::log(static_cast<FullPrecRealType>(iParam[B_TARGETWALKERS]));
   //current energy
   vParam[SBVP::ENOW] = wc_ensemble_prop.Energy;
 
@@ -150,19 +153,11 @@ void SFNBranch::updateParamAfterPopControl(const MCDataType<FullPrecRealType>& w
     vParam[SBVP::EREF]      = ene_avg;
 
     // update Etrial based on EREF
-    if (BranchMode[B_POPCONTROL])
+    --EtrialUpdateToDoSteps;
+    if (EtrialUpdateToDoSteps == 0)
     {
-      --EtrialUpdateToDoSteps;
-      if (EtrialUpdateToDoSteps == 0)
-      {
-        vParam[SBVP::ETRIAL]  = vParam[SBVP::EREF] + vParam[SBVP::FEEDBACK] * (logN - std::log(pop_weight));
-        EtrialUpdateToDoSteps = iParam[B_ENERGYUPDATEINTERVAL];
-      }
-    }
-    else
-    {
-      throw UniformCommunicateError("Bug: FIXME SBVP::EREF should be calculated based on weights");
-      /// FIXME vParam[SBVP::ETRIAL] = vParam[SBVP::EREF];
+      vParam[SBVP::ETRIAL]  = vParam[SBVP::EREF] + vParam[SBVP::FEEDBACK] * (logN - std::log(pop_weight));
+      EtrialUpdateToDoSteps = iParam[B_ENERGYUPDATEINTERVAL];
     }
   }
   else //warmup
@@ -173,20 +168,12 @@ void SFNBranch::updateParamAfterPopControl(const MCDataType<FullPrecRealType>& w
     // Use Enow as the best estimate of ground state energy during warmup.
     vParam[SBVP::EREF] = vParam[SBVP::ENOW];
     // update Etrial based on Enow as Enow is not yet converged in warmup stage
-    if (BranchMode[B_POPCONTROL])
-    {
-      if (BranchMode[B_KILLNODES])
-        vParam[SBVP::ETRIAL] = (0.00 * vParam[SBVP::EREF] + 1.0 * vParam[SBVP::ENOW]) +
-            vParam[SBVP::FEEDBACK] * (logN - std::log(pop_weight)) -
-            std::log(wc_ensemble_prop.LivingFraction) / vParam[SBVP::TAU];
-      else
-        vParam[SBVP::ETRIAL] = vParam[SBVP::ENOW] + (logN - std::log(pop_weight)) / vParam[SBVP::TAU];
-    }
+    if (BranchMode[B_KILLNODES])
+      vParam[SBVP::ETRIAL] = (0.00 * vParam[SBVP::EREF] + 1.0 * vParam[SBVP::ENOW]) +
+          vParam[SBVP::FEEDBACK] * (logN - std::log(pop_weight)) -
+          std::log(wc_ensemble_prop.LivingFraction) / vParam[SBVP::TAU];
     else
-    {
-      throw UniformCommunicateError("Bug: FIXME SBVP::EREF should be calculated based on weights");
-      /// FIXME vParam[SBVP::ETRIAL] = vParam[SBVP::ENOW];
-    }
+      vParam[SBVP::ETRIAL] = vParam[SBVP::ENOW] + (logN - std::log(pop_weight)) / vParam[SBVP::TAU];
 
     --WarmUpToDoSteps;
     if (WarmUpToDoSteps == 0) //warmup is done
@@ -208,7 +195,7 @@ void SFNBranch::updateParamAfterPopControl(const MCDataType<FullPrecRealType>& w
       app_log() << "branch cutoff = " << vParam[SBVP::BRANCHCUTOFF] << " " << vParam[SBVP::BRANCHMAX] << std::endl;
 
       BranchMode.set(B_DMCSTAGE, 1); //set BranchModex to main stage
-      if (sParam[MIXDMCOPT] == "yes")
+      if (sParam[MIXDMCOPT] == "yes" && BranchMode[B_POPCONTROL])
       {
         app_log() << "Switching to DMC with fluctuating populations" << std::endl;
         BranchMode.set(B_POPCONTROL, 1); //use standard DMC
