@@ -1,0 +1,23 @@
+# Verify a nonempty DMC report has positive total weights and a fixed population at every step.
+# Inputs passed with -D: REPORT is the path to the .dmc.dat file; EXPECTED is the fixed global walker count.
+file(STRINGS "${REPORT}" ROWS REGEX "^[ \t]*[0-9]")
+if(NOT ROWS)
+  message(FATAL_ERROR "No DMC steps found in ${REPORT}")
+endif()
+
+foreach(ROW IN LISTS ROWS)
+  string(STRIP "${ROW}" ROW)
+  string(REGEX REPLACE "[ \t]+" ";" FIELDS "${ROW}")
+  list(LENGTH FIELDS FIELD_COUNT)
+  if(FIELD_COUNT LESS 5)
+    message(FATAL_ERROR "Incomplete DMC record in ${REPORT}: ${ROW}")
+  endif()
+  list(GET FIELDS 3 WEIGHT)
+  list(GET FIELDS 4 WALKERS)
+  if(NOT WEIGHT MATCHES "^[0-9]+([.][0-9]*)?([eE][+-]?[0-9]+)?$" OR NOT WEIGHT GREATER 0)
+    message(FATAL_ERROR "Invalid total weight in ${REPORT}: ${ROW}")
+  endif()
+  if(NOT WALKERS EQUAL EXPECTED)
+    message(FATAL_ERROR "Expected ${EXPECTED} walkers in ${REPORT}: ${ROW}")
+  endif()
+endforeach()

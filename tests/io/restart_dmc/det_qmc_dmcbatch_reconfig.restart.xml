@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="det_qmc_dmcbatch_reconfig" series="3">
+    <parameter name="driver_version">batched</parameter>
+  </project>
+  <random seed="36"/>
+  <include href="diamond_reconfig.structure.xml"/>
+  <mcwalkerset fileroot="det_qmc_dmcbatch_reconfig.s001" node="-1" nprocs="1" version="0 4" collected="yes"/>
+  <qmc method="dmc" move="pbyp" checkpoint="0">
+    <estimator name="LocalEnergy" hdf5="yes"/>
+    <parameter name="target_walkers">24</parameter>
+    <parameter name="reconfiguration">yes</parameter>
+    <parameter name="warmupSteps">2</parameter>
+    <parameter name="timestep">0.005</parameter>
+    <parameter name="steps">3</parameter>
+    <parameter name="blocks">1</parameter>
+    <parameter name="nonlocalmoves">v1</parameter>
+  </qmc>
+</simulation>

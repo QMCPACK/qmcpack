@@ -1200,7 +1200,7 @@ Parameters:
   +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
   | ``sigmaBound``                 | 10           | :math:`\geq 0`          | 10                | Parameter to cutoff large weights               |
   +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
-  | ``reconfiguration``            | string       | yes/pure/other          | no                | Fixed population technique                      |
+  | ``reconfiguration``            | string       | yes/no/runwhileincorrect| no                | Fixed population stochastic comb                |
   +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
   | ``use_nonblocking``            | string       | yes/no                  | yes               | Using nonblocking send/recv                     |
   +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
@@ -1233,7 +1233,11 @@ Parameters:
   and ``walkers_per_rank`` are provided, which is not recommended, ``total_walkers`` must be consistently set equal to
   ``walkers_per_rank`` times the number MPI ranks.
 
-- ``target_walkers`` The target population size. Population control algorithms work towards this target. Do not confuse it with the actual walker count during random walking. The default will be the number of walkers when a DMC calculation starts, namely ``total_walkers``.
+- ``target_walkers`` The target population size. Population control algorithms work towards this target. Do not confuse it with
+  the actual walker count during random walking. The default will be the number of walkers when a DMC calculation starts, namely
+  ``total_walkers``. With fixed population (``reconfiguration=yes``), ``target_walkers`` is not generally needed. It currently sets the
+  target total walker weight, not the walker count. For example, ``total_walkers=16`` and ``target_walkers=24`` maintain 16
+  walkers while steering their total weight towards 24.
 
 - ``drift_modifier`` See details in :ref:`vmc_batch`.
 
@@ -1250,6 +1254,8 @@ Parameters:
   which the instantaneous population average energy is used to update the trial
   energy and updates happen at every step. The aim is to rapidly equilibrate the population while avoiding overly large population fluctuations.
   Unlike VMC, these warmupsteps are included in the requested DMC step count.
+
+  The first DMC iteration skips load balancing of walker configurations in both fixed and variable-population DMC. This reduces the risk of a large fluctuation and significant load balancing on the first step.
 
 .. math::
 
@@ -1278,10 +1284,25 @@ where :math:`E_\text{ref}` is the :math:`E_\text{pop\_avg}` average over all the
   to population fluctuations when doing population control. Default value is 1. See the
   equation in ``warmupsteps`` for more details.
 
+- ``reconfiguration``: Set to ``yes`` to use stochastic-comb resampling with a
+  fixed total number of walkers. ``no`` (default) runs
+  variable-population DMC. ``runwhileincorrect`` is accepted as an alias for
+  ``yes`` and runs the now fully implemented stochastic-comb algorithm.
+  
+  Walker weights evolve multiplicatively using the usual DMC branching factor.
+  At each population-control step, a single uniformly offset comb with
+  :math:`N` equally spaced teeth selects descendants from the global cumulative
+  weight distribution. Every descendant receives weight :math:`W/N`, where
+  :math:`W` is the total propagated weight before resampling. As with variable population
+  algorithms, the stochastic comb will tend to split high weight walkers while removing
+  low weight walkers from the population.
+
 - ``refenergy_update_scheme``: choose a scheme for updating :math:`E_\text{ref}` used in calculating :math:`E_\text{trial}`.
   'unlimited_history' uses unweighted average of :math:`E_\text{pop\_avg}` of all the steps collected post warm-up.
   'limited_history' uses weighted average of :math:`E_\text{pop\_avg}` of the latest at maximum
   min(1, int(1.0 / (feedback * tau))) steps collected post warm-up. Default 'unlimited_history'.
+
+- ``debug_disable_branching=yes`` skips resampling/branching. This is useful for debugging purposes and performance profiling but note that the results will be incorrect.
 
 .. code-block:: xml
   :caption: The following is an example of a minimal DMC section using the batched ``dmc`` driver

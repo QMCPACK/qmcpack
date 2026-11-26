@@ -71,10 +71,11 @@ void DMC::resetUpdateEngines()
   ReportEngine PRE("DMC", "resetUpdateEngines");
   bool fixW = (Reconfiguration == "runwhileincorrect");
   if (Reconfiguration != "no" && Reconfiguration != "runwhileincorrect")
-    throw std::runtime_error("Reconfiguration is currently broken and gives incorrect results. Use dynamic "
+    throw std::runtime_error("Reconfiguration is broken and gives incorrect results in legacy DMC. Use dynamic "
                              "population control by setting reconfiguration=\"no\" or removing the reconfiguration "
                              "option from the DMC input section. If accessing the broken reconfiguration code path "
-                             "is still desired, set reconfiguration to \"runwhileincorrect\" instead of \"yes\".");
+                             "is still desired, set reconfiguration to \"runwhileincorrect\" instead of \"yes\". "
+                             "Alternatively, switch to the batched DMC driver where reconfiguration is supported.");
   makeClones(W, Psi, H);
   Timer init_timer;
   bool spinor = false;

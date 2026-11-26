@@ -251,7 +251,8 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
 void QMCDriverNew::initialLogEvaluation(int crowd_id,
                                         UPtrVector<Crowd>& crowds,
                                         const RefVector<ContextForSteps>& context_for_steps,
-                                        const bool serializing_crowd_walkers)
+                                        const bool serializing_crowd_walkers,
+                                        const bool preserve_weights)
 {
   Crowd& crowd = *(crowds[crowd_id]);
   if (crowd.size() == 0)
@@ -305,12 +306,12 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   for (int iw = 0; iw < crowd.size(); ++iw)
     savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
 
-  auto doesDoinTheseLastMatter = [](MCPWalker& walker) {
-    walker.Weight     = 1.;
+  for (MCPWalker& walker : walkers)
+  {
+    if (!preserve_weights)
+      walker.Weight = 1.;
     walker.wasTouched = false;
-  };
-  for (int iw = 0; iw < crowd.size(); ++iw)
-    doesDoinTheseLastMatter(walkers[iw]);
+  }
 }
 
 

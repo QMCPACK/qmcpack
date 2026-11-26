@@ -473,10 +473,11 @@ void DMCBatched::run()
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
     auto step_contexts_refs = getContextForStepsRefs();
-    section_start_task(crowds_.size(), initialLogEvaluation, crowds_, step_contexts_refs, serializing_crowd_walkers_);
+    section_start_task(crowds_.size(), initialLogEvaluation, crowds_, step_contexts_refs, serializing_crowd_walkers_,
+                       dmcdriver_input_.get_reconfiguration());
 
     FullPrecRealType energy, variance;
-    population_.measureGlobalEnergyVariance(myComm, energy, variance);
+    population_.measureGlobalEnergyVariance(myComm, energy, variance, dmcdriver_input_.get_reconfiguration());
     // false indicates we do not support kill at node crossings.
     branch_engine_->initParam(population_, energy, variance, dmcdriver_input_.get_reconfiguration(), false);
     walker_controller_->setTrialEnergy(branch_engine_->getEtrial());

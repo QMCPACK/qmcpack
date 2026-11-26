@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="qmc_short_vmc_dmc_batched" series="0">
+    <parameter name="driver_version">batched</parameter>
+  </project>
+  <include href="diamond_dmc.structure.xml"/>
+  <qmc method="vmc" move="pbyp">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="total_walkers">256</parameter>
+    <parameter name="substeps">1</parameter>
+    <parameter name="warmupSteps">100</parameter>
+    <parameter name="steps">1</parameter>
+    <parameter name="blocks">1</parameter>
+    <parameter name="timestep">1.0</parameter>
+    <parameter name="usedrift">no</parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" checkpoint="-1">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="total_walkers">256</parameter>
+    <parameter name="target_walkers">256</parameter>
+    <parameter name="reconfiguration">no</parameter>
+    <parameter name="warmupSteps">100</parameter>
+    <parameter name="timestep">0.005</parameter>
+    <parameter name="steps">100</parameter>
+    <parameter name="blocks">25</parameter>
+    <parameter name="nonlocalmoves">no</parameter>
+  </qmc>
+</simulation>
