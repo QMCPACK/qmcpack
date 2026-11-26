@@ -7,7 +7,7 @@ from ..developer import obj
 from ..rmg_analyzer import RmgAnalyzer, RmgOutData
 from ..rmg_input import RmgInput
 from ..structure import Structure
-from ..unit_converter import UnitConverter, convert
+from ..unit_converter import Energy, Length, convert
 from . import TEST_DIR, NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.RMG_ANALYZER)
@@ -730,9 +730,9 @@ potential convergence has been achieved. stopping ...
     assert np.isclose(analyzer.pressure(units='kbar'),-2.0)
     assert type(analyzer.pressure()) is float
     energy_density_units = {
-        'eV/A^3'    : UnitConverter.eV/UnitConverter.A**3,
-        'Ha/Bohr^3' : UnitConverter.Ha/UnitConverter.B**3,
-        'Ry/Bohr^3' : UnitConverter.Ry/UnitConverter.B**3,
+        'eV/A^3'    : Energy.eV.val/Length.A.val**3,
+        'Ha/Bohr^3' : Energy.Ha.val/Length.B.val**3,
+        'Ry/Bohr^3' : Energy.Ry.val/Length.B.val**3,
         }
     for units,pascals_per_unit in energy_density_units.items():
         assert np.allclose(
