@@ -2,7 +2,14 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
-"""Simple unit conversion utilities."""
+"""Support for physical unit conversion of scalars and arrays.
+
+The most important function here is :func:`convert`, which takes an input value,
+source unit, and target unit, and performs a conversion. The remaining classes
+in this file are just to store the supported units and their conversion factors.
+
+See the enums below for all supported units.
+"""
 
 from __future__ import annotations
 
@@ -17,11 +24,13 @@ import numpy.typing as npt
 
 @dataclass
 class Unit:
+    """Simple storage class for information about a unit."""
     val: float
     shift: float = 0.0
 
 
 class UnitEnum(Unit, Enum):
+    """Base class for all enums containing unit conversion data."""
     def __new__(cls, val: float, shift: float = 0.0) -> Self:
         unit = Unit.__new__(cls)
         unit._value_ = Unit(val, shift)
@@ -386,10 +395,13 @@ ALL_UNITS: MappingProxyType[str, UnitEnum] = MappingProxyType(
         if name != "au"
     }
 )
+"""Mapping from all unit names to their enumeration member equivalents."""
 
 
 type Convertable = float | int | npt.NDArray[np.number]
+"""Union type of all types that can be converted."""
 type UnitStr = str
+"""Any string that represents a unit."""
 
 
 def convert[V: Convertable, U: UnitStr | UnitEnum](
@@ -429,18 +441,3 @@ def convert[V: Convertable, U: UnitStr | UnitEnum](
     ) * source_unit.val / target_unit.val + target_unit.shift
 
     return value_out
-
-
-def convert_scalar_to_all[T: Convertable, U: UnitStr | UnitEnum](
-    units: U, value_orig: T
-) -> dict[UnitStr, T]:
-    if isinstance(units, str):
-        unit_type = type(ALL_UNITS[units.replace(" ", "_")])
-    else:
-        unit_type = type(units)
-
-    value = {"orig": value_orig}
-    for unit in unit_type:
-        value[unit.name] = convert(value_orig, units, unit)
-
-    return value

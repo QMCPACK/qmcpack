@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from ..testing import value_eq
-from ..unit_converter import Energy, Length, convert, convert_scalar_to_all
+from ..unit_converter import Energy, Length, convert
 from . import NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.UNIT_CONVERTER)
@@ -109,8 +109,7 @@ def test_convert_scalar_to_all():
         'Celsius':       11331.368121550082,
         'Fahrenheit':    20428.46261879015,
     }
-
-    v = convert_scalar_to_all('eV', 1.0)
+    v = {unit.name: convert(1.0, Energy.eV, unit) for unit in Energy}
 
     for unit, val in eV_to.items():
         assert(value_eq(v[unit], val))
@@ -126,8 +125,7 @@ def test_convert_scalar_to_all():
         'femtometer': 1000000000000000.0,
     }
 
-    v = convert_scalar_to_all(Length.meter, 1.0)
-
+    v = {unit.name: convert(1.0, Length.meter, unit) for unit in Length}
     for unit, val in meter_to.items():
         assert(value_eq(v[unit], val))
 #end def test_convert_scalar_to_all
