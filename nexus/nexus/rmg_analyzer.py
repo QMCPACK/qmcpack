@@ -18,7 +18,7 @@ from .numerics import simstats
 from .rmg_input import RmgInput
 from .simulation import Simulation, SimulationAnalyzer
 from .structure import generate_structure
-from .unit_converter import UnitConverter, convert
+from .unit_converter import Energy, Length, Pressure, convert
 from .utilities import path_string
 
 
@@ -2306,10 +2306,10 @@ class RmgAnalyzer(SimulationAnalyzer):
         'kbar'      : 1.0,
         'Mbar'      : 1e-3,
         'GPa'       : 1e-1,
-        'atm'       : 1e8/UnitConverter.atm,
-        'eV/A^3'    : 1e8*UnitConverter.A**3/UnitConverter.eV,
-        'Ha/Bohr^3' : 1e8*UnitConverter.B**3/UnitConverter.Ha,
-        'Ry/Bohr^3' : 1e8*UnitConverter.B**3/UnitConverter.Ry,
+        'atm'       : 1e8/Pressure.atm.val,
+        'eV/A^3'    : 1e8*Length.A.val**3/Energy.eV.val,
+        'Ha/Bohr^3' : 1e8*Length.B.val**3/Energy.Ha.val,
+        'Ry/Bohr^3' : 1e8*Length.B.val**3/Energy.Ry.val,
         })
 
 

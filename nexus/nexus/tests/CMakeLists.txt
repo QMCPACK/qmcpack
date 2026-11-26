@@ -42,7 +42,7 @@ if(ADD_TEST)
       string(REPLACE "nexus/tests/test_" "" TESTNAME "${TESTFILE}")
       #message("Adding test ntest_nexus_${TESTNAME}")
       set(NEXUS_TEST_DIR ${qmcpack_BINARY_DIR}/nexus-test-tmp-dir/test_${TESTNAME}_output)
-      make_directory(${NEXUS_TEST_DIR})
+      file(MAKE_DIRECTORY ${NEXUS_TEST_DIR})
       add_test(NAME ntest_nexus_${TESTNAME}
                COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/${TESTFILE}.py 
                                                                             -c ${qmcpack_SOURCE_DIR}/nexus/pyproject.toml

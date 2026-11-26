@@ -12,7 +12,7 @@ from ..pwscf_analyzer import (
 )
 from ..pwscf_input import PwscfInput
 from ..structure import Structure
-from ..unit_converter import UnitConverter
+from ..unit_converter import Energy, Length
 from . import TEST_DIR, NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_ANALYZER)
@@ -854,9 +854,9 @@ def test_quantity_accessors():
     assert(scf.stress('kbar').shape==(3,3))
     assert(scf.pressure('kbar') is not None)
     unit_scales = {
-        'eV/A^3'    : UnitConverter.A**3/UnitConverter.eV,
-        'Ha/Bohr^3' : UnitConverter.B**3/UnitConverter.Ha,
-        'Ry/Bohr^3' : UnitConverter.B**3/UnitConverter.Ry,
+        'eV/A^3'    : Length.A.val**3/Energy.eV.val,
+        'Ha/Bohr^3' : Length.B.val**3/Energy.Ha.val,
+        'Ry/Bohr^3' : Length.B.val**3/Energy.Ry.val,
         }
     for units,scale in unit_scales.items():
         assert(np.allclose(scf.stress(units),scf.stress('kbar')*1e8*scale))
