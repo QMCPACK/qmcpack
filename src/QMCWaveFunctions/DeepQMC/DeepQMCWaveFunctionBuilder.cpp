@@ -16,6 +16,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/DeepQMC/DeepQMCBridge.h"
 #include "QMCWaveFunctions/DeepQMC/DeepQMCWF.h"
+#include "OutputManager.h"
 
 namespace qmcplusplus
 {
@@ -46,6 +47,7 @@ std::unique_ptr<WaveFunctionComponent> DeepQMCWaveFunctionBuilder::buildComponen
   if (ion_it == ptcl_pool_.end())
     throw std::runtime_error("DeepQMC wavefunction source particle set not found: " + source_name);
 
+  app_log() << "  Building DeepQMC wavefunction " << name << " from checkpoint " << model_path << '\n';
   auto bridge = makePythonDeepQMCBridge(model_path, python_module_path, config_path);
   return std::make_unique<DeepQMCWF>(name, *ion_it->second, std::move(bridge), mol_idx);
 }
