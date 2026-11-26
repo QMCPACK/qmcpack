@@ -13,6 +13,7 @@
 #include <catch2/benchmark/catch_benchmark.hpp>
 
 #include <cstdlib>
+#include <filesystem>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -116,7 +117,12 @@ std::string benchmarkName(int batch_size)
 
 TEST_CASE("DeepQMC TrialWaveFunction mw_evaluateLog batching benchmark", "[wavefunction][deepqmc][.benchmark]")
 {
-  const std::string checkpoint_path(getRequiredEnv("DEEPQMC_HE_CHECKPOINT"));
+  namespace fs = std::filesystem;
+  const fs::path fixture_dir(getRequiredEnv("DEEPQMC_TEST_DATA_DIR"));
+  const fs::path checkpoint = fixture_dir / "chkpt-30000.pt";
+  REQUIRE(fs::is_regular_file(checkpoint));
+  REQUIRE(fs::is_regular_file(fixture_dir / ".hydra" / "config.yaml"));
+  const std::string checkpoint_path = checkpoint.string();
 
   // The benchmark executable is intentionally constructed directly from the DeepQMC
   // WaveFunctionComponent rather than through WaveFunctionFactory/XML. The external

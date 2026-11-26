@@ -492,11 +492,13 @@ TEST_CASE("PythonDeepQMCBridge calls Python batch bridge", "[wavefunction][deepq
   std::ofstream bridge_py(bridge_dir / "deepqmc_infer_bridge.py");
   bridge_py << R"PY(
 class DeepQMCInferBridge:
-    def __init__(self, model_path):
+    def __init__(self, model_path, config_path=None):
         self.model_path = model_path
+        self.config_path = config_path
 
     def compute_log_gl(self, nuclear_coords, electron_coords, mol_idx, batch_size, n_elec):
         assert self.model_path == 'fake-model'
+        assert self.config_path == ''
         assert nuclear_coords == [1.0, 2.0, 3.0]
         assert electron_coords == [0.0, 0.1, 0.2, 1.0, 1.1, 1.2]
         assert batch_size == 1
@@ -528,11 +530,13 @@ TEST_CASE("WaveFunctionFactory builds DeepQMC component from XML", "[wavefunctio
   std::ofstream bridge_py(bridge_dir / "deepqmc_infer_bridge.py");
   bridge_py << R"PY(
 class DeepQMCInferBridge:
-    def __init__(self, model_path):
+    def __init__(self, model_path, config_path=None):
         self.model_path = model_path
+        self.config_path = config_path
 
     def compute_log_gl(self, nuclear_coords, electron_coords, mol_idx, batch_size, n_elec):
         assert self.model_path == 'factory-model'
+        assert self.config_path == 'factory-config.yaml'
         assert nuclear_coords == [0.0, 0.0, 0.0]
         assert electron_coords == [0.0, 0.1, 0.2, 1.0, 1.1, 1.2,
                                    2.0, 2.1, 2.2, 3.0, 3.1, 3.2]
@@ -566,7 +570,7 @@ class DeepQMCInferBridge:
 
   std::string wavefunction_xml = "<wavefunction name=\"psi0\" target=\"e\">"
                                  "<deepqmc name=\"DNN\" source=\"ion0\" model=\"factory-model\" mol_idx=\"9\" "
-                                 "python_module_path=\"" +
+                                 "config=\"factory-config.yaml\" python_module_path=\"" +
       bridge_dir.string() +
       "\"/>"
       "</wavefunction>";
@@ -601,15 +605,17 @@ class DeepQMCInferBridge:
 
 TEST_CASE("PythonDeepQMCBridge can load a real DeepQMC He checkpoint", "[wavefunction][deepqmc]")
 {
-  const char* checkpoint  = std::getenv("DEEPQMC_HE_CHECKPOINT");
-  const char* python_path = std::getenv("DEEPQMC_PYTHON_SITE_PACKAGES");
-  if (checkpoint == nullptr || python_path == nullptr)
+  const char* fixture_dir = std::getenv("DEEPQMC_TEST_DATA_DIR");
+  if (fixture_dir == nullptr || fixture_dir[0] == '\0')
   {
-    SUCCEED("Set DEEPQMC_HE_CHECKPOINT and DEEPQMC_PYTHON_SITE_PACKAGES to run the optional real DeepQMC bridge test");
+    SUCCEED("Set DEEPQMC_TEST_DATA_DIR to run the optional real DeepQMC bridge test");
     return;
   }
 
-  auto bridge       = makePythonDeepQMCBridge(checkpoint, python_path);
+  const std::filesystem::path checkpoint = std::filesystem::path(fixture_dir) / "chkpt-30000.pt";
+  REQUIRE(std::filesystem::is_regular_file(checkpoint));
+  REQUIRE(std::filesystem::is_regular_file(std::filesystem::path(fixture_dir) / ".hydra" / "config.yaml"));
+  auto bridge       = makePythonDeepQMCBridge(checkpoint.string(), "");
   const auto result = bridge->evaluateLogBatch({0.0, 0.0, 0.0}, {0.1, 0.0, 0.0, -0.1, 0.0, 0.0}, 0, 1, 2);
 
   REQUIRE(result.log_values.size() == 1);

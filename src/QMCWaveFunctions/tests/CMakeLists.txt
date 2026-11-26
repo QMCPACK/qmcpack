@@ -95,6 +95,14 @@ set(TRIALWF_SRC
     test_TWFGrads.cpp)
 if(ENABLE_DEEPQMC_INFERENCE)
   set(TRIALWF_SRC ${TRIALWF_SRC} test_deepqmc_wfc.cpp)
+
+  set(DEEPQMC_PYTHON_TEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/deepqmc_python_tests)
+  file(MAKE_DIRECTORY ${DEEPQMC_PYTHON_TEST_DIR}/tmp)
+  add_test(NAME deepqmc_hydra_config_discovery
+    COMMAND ${Python3_EXECUTABLE} -m unittest test_deepqmc_infer_bridge)
+  set_tests_properties(deepqmc_hydra_config_discovery PROPERTIES
+    WORKING_DIRECTORY ${DEEPQMC_PYTHON_TEST_DIR}
+    ENVIRONMENT "PYTHONPATH=${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/DeepQMC;TMPDIR=${DEEPQMC_PYTHON_TEST_DIR}/tmp")
 endif()
 
 set(SPOSET_SRC
@@ -198,6 +206,17 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
   endif()
 
 endforeach()
+
+if(QMC_DEEPQMC_TEST_DATA_DIR AND BUILD_UNIT_TESTS)
+  set(_deepqmc_test_name deepqmc-he-inference)
+  add_unit_test(BASENAME ${_deepqmc_test_name} TEST_BINARY $<TARGET_FILE:test_wavefunction_trialwf>
+    ARGS "PythonDeepQMCBridge can load a real DeepQMC He checkpoint" -s THREADS 1 PROCS 1)
+  if(ADDED_UNIT_TEST_NAME)
+    deepqmc_set_test_environment(${ADDED_UNIT_TEST_NAME})
+    set_property(TEST ${ADDED_UNIT_TEST_NAME} APPEND PROPERTY LABELS "deepqmc;integration")
+    set_tests_properties(${ADDED_UNIT_TEST_NAME} PROPERTIES TIMEOUT 120)
+  endif()
+endif()
 
 if(ENABLE_DEEPQMC_INFERENCE AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_deepqmc_wfc)

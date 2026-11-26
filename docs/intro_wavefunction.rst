@@ -2387,3 +2387,5 @@ Example Use Case
         source="ion0" sgroup="H"/>
     </hamiltonian>
   </qmcsystem>
+
+.. include:: deepqmc.inc

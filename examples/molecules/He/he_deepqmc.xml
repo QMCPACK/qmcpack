@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<!-- Experimental DeepQMC inference smoke test; see the DeepQMC manual page.
+     Supply a trusted two-electron helium checkpoint as chkpt.pt, its matching
+     Hydra configuration, and the documented Python runtime environment.
+     This short run is not intended to produce a converged energy estimate. -->
+<simulation>
+  <project id="He.deepqmc" series="0">
+    <parameter name="driver_version">batched</parameter>
+  </project>
+  <random seed="13"/>
+  <particleset name="ion0" size="1">
+    <group name="He">
+      <parameter name="charge">2</parameter>
+    </group>
+    <attrib name="position" datatype="posArray">0.0 0.0 0.0</attrib>
+  </particleset>
+  <particleset name="e" random="yes" randomsrc="ion0">
+    <group name="u" size="1">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="1">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+  <wavefunction name="psi0" target="e">
+    <deepqmc name="DNN" source="ion0" model="chkpt.pt" mol_idx="0"/>
+  </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <pairpot name="Coulomb" type="coulomb" source="ion0" target="e"/>
+  </hamiltonian>
+  <qmc method="vmc" move="pbyp" target="e">
+    <parameter name="total_walkers">1</parameter>
+    <parameter name="crowds">1</parameter>
+    <parameter name="warmupsteps">1</parameter>
+    <parameter name="blocks">2</parameter>
+    <parameter name="steps">1</parameter>
+    <parameter name="timestep">0.1</parameter>
+  </qmc>
+</simulation>

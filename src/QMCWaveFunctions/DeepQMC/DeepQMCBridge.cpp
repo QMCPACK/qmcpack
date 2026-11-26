@@ -91,7 +91,9 @@ std::string formatPythonError()
 }
 
 [[noreturn]] void throwPythonError(const std::string& context)
-{ throw std::runtime_error(context + ": " + formatPythonError()); }
+{
+  throw std::runtime_error(context + ": " + formatPythonError());
+}
 
 void ensurePythonInitialized()
 {
@@ -158,8 +160,10 @@ std::vector<DeepQMCBridge::RealType> extractFloatList(PyObject* obj, const char*
 class PythonDeepQMCBridge : public DeepQMCBridge
 {
 public:
-  PythonDeepQMCBridge(std::string model_path, std::string python_module_path)
-      : model_path_(std::move(model_path)), python_module_path_(std::move(python_module_path))
+  PythonDeepQMCBridge(std::string model_path, std::string python_module_path, std::string config_path)
+      : model_path_(std::move(model_path)),
+        python_module_path_(std::move(python_module_path)),
+        config_path_(std::move(config_path))
   {
     if (model_path_.empty())
       throw std::runtime_error("DeepQMC wavefunction requires a non-empty model path");
@@ -183,7 +187,8 @@ public:
       if (!python_class.get() || !PyCallable_Check(python_class.get()))
         throwPythonError("loading DeepQMCInferBridge class failed");
 
-      python_instance_ = PyObjectHandle(PyObject_CallFunction(python_class.get(), "s", model_path_.c_str()));
+      python_instance_ =
+          PyObjectHandle(PyObject_CallFunction(python_class.get(), "ss", model_path_.c_str(), config_path_.c_str()));
       if (!python_instance_.get())
         throwPythonError("constructing DeepQMCInferBridge failed");
     }
@@ -257,6 +262,7 @@ public:
 private:
   std::string model_path_;
   std::string python_module_path_;
+  std::string config_path_;
   PyObjectHandle python_module_;
   PyObjectHandle python_instance_;
   /** Serialize calls into this Python bridge instance.
@@ -277,17 +283,26 @@ public:
   explicit UnavailableDeepQMCBridge(std::string reason) : reason_(std::move(reason)) {}
 
   BatchResult evaluateLogBatch(const std::vector<RealType>&, const std::vector<RealType>&, int, int, int) const override
-  { throw std::runtime_error("DeepQMC inference bridge is not available: " + reason_); }
+  {
+    throw std::runtime_error("DeepQMC inference bridge is not available: " + reason_);
+  }
 
 private:
   std::string reason_;
 };
 } // namespace
 
-std::unique_ptr<const DeepQMCBridge> makePythonDeepQMCBridge(std::string model_path, std::string python_module_path)
-{ return std::make_unique<PythonDeepQMCBridge>(std::move(model_path), std::move(python_module_path)); }
+std::unique_ptr<const DeepQMCBridge> makePythonDeepQMCBridge(std::string model_path,
+                                                             std::string python_module_path,
+                                                             std::string config_path)
+{
+  return std::make_unique<PythonDeepQMCBridge>(std::move(model_path), std::move(python_module_path),
+                                               std::move(config_path));
+}
 
 std::unique_ptr<const DeepQMCBridge> makeUnavailableDeepQMCBridge(std::string reason)
-{ return std::make_unique<UnavailableDeepQMCBridge>(std::move(reason)); }
+{
+  return std::make_unique<UnavailableDeepQMCBridge>(std::move(reason));
+}
 
 } // namespace qmcplusplus

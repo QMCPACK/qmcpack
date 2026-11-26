@@ -20,7 +20,6 @@ Import order is intentional.  The standalone miniapp found that importing
 DeepQMC before JAX avoids initialization problems.
 """
 
-import os
 import pickle
 import sys
 import types
@@ -30,7 +29,6 @@ import deepqmc
 import jax
 import jax.numpy as jnp
 import jax_dataclasses as jdc
-from hydra import compose, initialize_config_dir
 from hydra.utils import instantiate
 
 # PySCF imports h5py at module import time.  In embedded QMCPACK, binary h5py
@@ -43,37 +41,26 @@ _h5py_stub.File = type("File", (), {})
 sys.modules.setdefault("h5py", _h5py_stub)
 
 from deepqmc.app import instantiate_ansatz
-from deepqmc.hamil import MolecularHamiltonian
-from deepqmc.molecule import Molecule
 from deepqmc.parallel import replicate_on_devices, scatter_electrons_to_devices
 from deepqmc.types import PhysicalConfiguration
 
 
-def _find_hydra_config(model_path):
-    """Find a resolved DeepQMC Hydra config associated with a checkpoint.
-
-    DeepQMC checkpoints store parameters/optimizer/sampler state, but the Haiku
-    module tree is defined by the training Hydra config. Prefer an explicit
-    environment override, then common DeepQMC workdir layouts:
-
-      workdir/chkpt-*.pt
-      workdir/training/chkpt-*.pt
-      workdir/evaluation/chkpt-*.pt
-    """
-    env_path = os.environ.get("DEEPQMC_HYDRA_CONFIG")
-    if env_path:
-        path = Path(env_path).expanduser()
+def _find_hydra_config(model_path, config_path=None):
+    """Find an explicit Hydra config or the config adjacent to the checkpoint."""
+    if config_path:
+        path = Path(config_path).expanduser()
         if not path.exists():
-            raise FileNotFoundError(f"DEEPQMC_HYDRA_CONFIG does not exist: {path}")
+            raise FileNotFoundError(f"Explicit config path does not exist: {path}")
         return path
 
     checkpoint = Path(model_path).expanduser()
-    search_dirs = [checkpoint.parent, *checkpoint.parents]
-    for directory in search_dirs:
-        candidate = directory / ".hydra" / "config.yaml"
-        if candidate.exists():
-            return candidate
-    return None
+    candidate = checkpoint.parent / ".hydra" / "config.yaml"
+    if candidate.exists():
+        return candidate
+    raise FileNotFoundError(
+        "No DeepQMC Hydra config found for checkpoint "
+        f"{checkpoint}. Set the deepqmc config attribute or place .hydra/config.yaml beside the checkpoint."
+    )
 
 
 def _instantiate_problem_from_hydra_config(config_path):
@@ -83,20 +70,6 @@ def _instantiate_problem_from_hydra_config(config_path):
     cfg = OmegaConf.load(config_path)
     hamiltonian = instantiate(cfg.hamil, _recursive_=True, _convert_="all")
     ansatz_cfg = instantiate(cfg.ansatz, _recursive_=True, _convert_="all")
-    return hamiltonian, instantiate_ansatz(hamiltonian, ansatz_cfg)
-
-
-def _instantiate_default_he_problem():
-    """Fallback prototype default used by older local He checkpoints."""
-    mol = Molecule(coords=[[0.0, 0.0, 0.0]], charges=[2], charge=0, spin=0, unit="bohr")
-    hamiltonian = MolecularHamiltonian(mol=mol)
-
-    deepqmc_dir = os.path.dirname(deepqmc.__file__)
-    config_dir = os.path.join(deepqmc_dir, "conf/ansatz")
-    with initialize_config_dir(version_base=None, config_dir=config_dir):
-        cfg = compose(config_name="default")
-
-    ansatz_cfg = instantiate(cfg, _recursive_=True, _convert_="all")
     return hamiltonian, instantiate_ansatz(hamiltonian, ansatz_cfg)
 
 
@@ -133,12 +106,9 @@ def _load_checkpoint_without_h5py(path):
 
 
 class DeepQMCInferBridge:
-    def __init__(self, model_path):
-        hydra_config = _find_hydra_config(model_path)
-        if hydra_config is not None:
-            self.H, self.ansatz = _instantiate_problem_from_hydra_config(hydra_config)
-        else:
-            self.H, self.ansatz = _instantiate_default_he_problem()
+    def __init__(self, model_path, config_path=None):
+        hydra_config = _find_hydra_config(model_path, config_path)
+        self.H, self.ansatz = _instantiate_problem_from_hydra_config(hydra_config)
 
         step, train_state = _load_checkpoint_without_h5py(Path(model_path))
         params = train_state.params
