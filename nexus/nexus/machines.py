@@ -3886,7 +3886,7 @@ class Frontier(Supercomputer):
             self.cores_per_node = 56
         elif 'gpu' in job.constraint:
             self.cores_per_node = 56
-            self.gpus_per_node  = 4
+            self.gpus_per_node  = 8
         else:
             msg = (
                 'SLURM input "constraint" must contain either "cpu" or "gpu" on Frontier\n'
@@ -3898,12 +3898,11 @@ class Frontier(Supercomputer):
 
 
     def post_process_job(self, job):
-        if 'cpu' in job.constraint:
-            job.run_options.add(
-                cpu_bind='--cpu-bind=threads',
-                threads_per_core=f'--threads-per-core={job.threads}'
-                )
-        elif 'gpu' in job.constraint:
+        job.run_options.add(
+            cpu_bind='--cpu-bind=threads',
+            threads_per_core=f'--threads-per-core=1'
+        )
+        if 'gpu' in job.constraint:
             gpus_per_task = int(np.floor(float(self.gpus_per_node)/job.processes_per_node))
             job.run_options.add(
                 gpu_bind='--gpu-bind=closest',
@@ -3933,6 +3932,7 @@ class Frontier(Supercomputer):
         c += f'#SBATCH -t {job.sbatch_walltime()}\n'
         c += f'#SBATCH -N {job.nodes}\n'
         c += '#SBATCH -S 8\n' # Uses default low-noise mode layout(default), reduces number of cores from 64 to 56.
+        c += '#SBATCH --threads-per-core=1\n' # Physical cores only, no hyperthreading.
         c += f'#SBATCH -o {job.name}.out\n'
         c += f'#SBATCH -e {job.name}.err\n'
         if job.qos:
